@@ -1,0 +1,589 @@
+
+{-# LANGUAGE NoImplicitPrelude #-}
+
+{-# LANGUAGE TypeFamilies, TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds, RankNTypes #-}
+
+-- | Kernels and Cokernels for homomorphisms between finitely generated abelian groups.
+module OAlg.Entity.AbelianGroup.KernelsAndCokernels
+  (
+    -- * Kernel
+    abhKernels
+
+    -- * Cokernels
+  , abhCokernels
+    
+    -- * Smith Normal
+  , isoSmithNormal
+
+    -- * Adjunction
+  , abhSliceFreeAdjunction
+
+  )
+  where
+
+import Control.Monad
+
+import Data.List (map,(++),repeat,zip)
+
+import OAlg.Prelude
+
+import OAlg.Data.Canonical
+import OAlg.Data.Generator
+
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative as M
+import OAlg.Structure.Additive
+import OAlg.Structure.Exponential
+import OAlg.Structure.Operational
+import OAlg.Structure.Number
+
+import OAlg.Hom.Oriented
+
+import OAlg.Adjunction
+
+import OAlg.Limes.Cone
+import OAlg.Limes.Definition
+import OAlg.Limes.Limits
+import OAlg.Limes.KernelsAndCokernels
+import OAlg.Limes.PullbacksAndPushouts
+
+import OAlg.Entity.Natural hiding ((++))
+import OAlg.Entity.FinList as F hiding ((++),repeat,zip)
+import OAlg.Entity.Diagram
+import OAlg.Entity.Sequence
+import OAlg.Entity.Matrix as M
+import OAlg.Entity.Slice
+import OAlg.Entity.Product (fromWord)
+
+import OAlg.Entity.AbelianGroup.Definition
+import OAlg.Entity.AbelianGroup.ZMod
+import OAlg.Entity.AbelianGroup.Euclid
+import OAlg.Entity.AbelianGroup.Free
+
+--------------------------------------------------------------------------------
+-- abhCokernelFree -
+
+-- | the cokernel of a free cokernel diagram.
+--
+--  __Propoerty__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
+-- @coker = 'abhCokernelFree' d@, then holds: 
+--
+-- (1) @'diagram' coker '==' d@.
+--
+-- (2) @'tip' ('universalCone' coker)@ is smith normal (see t'AbGroup').
+abhCokernelFree :: CokernelDiagramFree N1 AbHom -> Cokernel N1 AbHom
+abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
+  = LimesInjective (ConeCokernel d coker) univ where
+
+  m = abhz h
+  SmithNormalForm o ds (RowTrafo ra) _ = smithNormalForm m
+  Inv a aInv = amap GLTGL ra
+  AbHom aInv' = zabh aInv
+  p = lengthN ds
+  q = lengthN (rows m) >- (o + p)
+
+  d0 = dim (ZMod 0)
+  gp = Dim $ productSymbol $ amap1 (ZMod . prj) ds
+  gq = d0 ^ q
+  gpq = gp * gq
+  
+  coker = ( AbHom $ mtxJoin
+          $ matrixBlc [gp,gq] [d0^o,d0^p,gq] [(matrix gp (d0^p) ps,0,1),(one gq,1,2)]
+          )
+        * zabh a where
+    ps = [(zmh (ZMod 0 :> ZMod (prj d)) 1,i,i)| (d,i) <- ds `zip` [0..]]
+    -- @0 < d@ for all d in ds as ds is the diagonal of the smith normal form
+
+  univ :: CokernelCone N1 AbHom -> AbHom
+  univ (ConeCokernel _ (AbHom x))
+    = AbHom
+    $ Matrix (rows x) gpq
+    $ rcets $ Row $ PSequence
+    $ map (\(cl,j) -> (cl,j>-o))
+    $ fcts o (map fst $ listN gp)
+    $ listN $ etsrc $ mtxxs (x*aInv')
+    where
+      
+      fcts :: (Enum j, Ord j) => j -> [ZMod] -> [(Col i ZModHom,j)] -> [(Col i ZModHom,j)] 
+      fcts _ [] cls = cls
+      fcts _ _ []   = []
+      fcts j (z:zs) cls@((cl,j'):cls') = if j < j'
+        then fcts (succ j) zs cls
+        else ((amap1 (fct z) cl,j'):fcts (succ j) zs cls')
+
+      fct :: ZMod -> ZModHom -> ZModHom
+      fct z h = zmh (z:>end h) (toZ h)
+      
+--------------------------------------------------------------------------------
+-- abhCokernelFreeTo -
+
+-- | the cokernel of a free site to.
+--
+--  __Propoerty__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
+-- @coker = 'abhCokernelFreeTo' s@, then holds: 
+--
+-- (1) @'diagram' coker '==' 'cokernelDiagram' h@.
+--
+-- (2) @'tip' ('universalCone' coker)@ is smith normal (see t'AbGroup').
+abhCokernelFreeTo :: Attestable k
+  => Slice To (Free k) AbHom -> Cokernel N1 AbHom
+abhCokernelFreeTo (SliceTo k h) = LimesInjective hCoker hUniv where
+
+  h' = amap FreeAbHom (amap AbHomFree h)
+  -- h' has free start and end
+  -- as end h is free it follows that, end h == end h' and
+  -- unitRight abhFreeAdjunction (end h) == one (end h) and hence
+  -- h == h' * unitRight abhFreeAdjunction (start h)
+
+  h'Dgm = case someNatural (lengthN $ start h') of
+    SomeNatural k' -> DiagramFree ks (cokernelDiagram h') where
+      ks = SomeFree k:|SomeFree (Free k'):|Nil
+
+  h'Coker = abhCokernelFree h'Dgm
+  
+  -- as unitRight abhFreeAdjunction (start h) is an epimorphism it follows
+  -- that h and h' have the same cokernelFactor!
+  hCoker = ConeCokernel (cokernelDiagram h) (cokernelFactor $ universalCone h'Coker)
+
+  hUniv (ConeCokernel _ x) = universalFactor h'Coker (ConeCokernel (diagram h'Coker) x)
+
+--------------------------------------------------------------------------------
+-- abhPullbackFree -
+
+-- | the pullback with a free tip of its universal cone for the given free pullback diagram.
+--
+--  __Property__ Let @d = 'DiagramFree' _ d'@ be in @'PullbackDiagramFree' __n__ 'AbHom'@,
+--  then holds: @'diagram' ('limesFree' p) = d'@ where @p = 'abhPullbackFree' d@.
+abhPullbackFree :: PullbackDiagramFree n AbHom -> PullbackFree n AbHom
+abhPullbackFree (DiagramFree _ d') = case freeTip p of
+  SomeFree k -> LimesFree k p
+  where
+    -- if d = DiagramFree _ d' is valid, then the r (l d') == d' for the right
+    -- and left adjoint of abhFreeAdjunction. Furthermore the tip of p is free!
+    freeTip :: Pullback n AbHom -> SomeFree AbHom
+    freeTip p = case someNatural n of
+      SomeNatural n' -> SomeFree (Free n')
+      where n = lengthN $ tip $ universalCone p
+
+    p = lmPrjMap adj $ limes zmxPullbacks $ dgMap l d' where
+      adj = abhFreeAdjunction
+      Adjunction l _ _ _ = adj
+
+someFree :: N -> SomeFree AbHom
+someFree n = case someNatural n of
+  SomeNatural n' -> SomeFree (Free n')
+
+plbDgmFree :: PullbackDiagram n (Matrix Z) -> PullbackDiagramFree n AbHom
+plbDgmFree d = DiagramFree (amap1 (someFree . lengthN) $ dgPoints d) (dgMap FreeAbHom d)
+
+pp1 :: Statement
+pp1 = Forall xd (valid . limesFree . abhPullbackFree) where
+  xd = amap1 plbDgmFree (xStandard :: X (PullbackDiagram N3 (Matrix Z)))
+  
+--------------------------------------------------------------------------------
+-- abhSplitCy -
+
+-- | splits an abelian homomorphism @h@ into a list @hs@ where each
+--   @h'@ in @hs@ has as start point equal to the start point of @h@ and end point a
+--   cyclic group to the power of some order such that all  @h'@ /cover/ @h@.
+--
+--  __Properties__ Let @h@ be in 'AbHom' and @hs = 'abhSplitCy', then holds:
+--
+--  (1) For all @h'@ in @hs@ holds: @'orientation' h' '==' 'start' h ':>' 'abg' n '^' r@
+--  for some @n@, @r@ in 'N'.
+--
+--  (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h '*' x '==' 0@
+--  if and only if @h' '*' x '==' 0@ for all @h'@ in @hs@.
+abhSplitCy :: AbHom -> [AbHom]
+abhSplitCy (AbHom m@(Matrix r _ _))
+  = amap1 (\(m',_,_) -> AbHom m')
+  $ etsxs
+  $ mtxxs
+  $ mtxGroupRow
+  $ (RowTrafo (permute r' r p) *> m)
+  where (r',p) = permuteBy nProxy compare id r
+  
+--------------------------------------------------------------------------------
+-- abhFreeFromSplitCy -
+
+-- | splits an abelian homomorphism @h@ into some finite list @hs@ where each
+--   @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
+--   @h'@ /cover/ @h@.
+--
+--  __Properties__ Let @s = 'SliceFrom' _ h@ be in @'Slice' 'From' ('Free' __k__) 'AbHom'@
+--  and @hs = 'abhFreeFromSplitCy' s@, then holds:
+--
+--  (1) For all @'SliceFrom' _ h'@ in @hs@ exists a @n@, @r@ in 'N' such that
+--  @'end' h' '==' 'abg' n '^' r@.
+--
+--  (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h '*' x '==' 0@ if
+--  and only if @h' '*' x '==' 0@ for all @'SliceFrom' _ h'@ in @hs@.
+abhFreeFromSplitCy :: Slice From (Free k) AbHom -> SomeFinList (Slice From (Free k) AbHom)
+abhFreeFromSplitCy (SliceFrom k h)
+  = someFinList $ amap1 (SliceFrom k) $ abhSplitCy h 
+
+--------------------------------------------------------------------------------
+-- abhKernelFreeFromCy -
+
+xFreeFromCy :: Free k AbHom -> X (Slice From (Free k) AbHom)
+xFreeFromCy k@(Free k') = do
+  n <- xNB 0 1000
+  r <- xNB 0 10
+  h <- xAbHom 0.3 (abg 0 ^ (lengthN k') :> abg n ^ r)
+  return (SliceFrom k h)
+
+pp2 :: Attestable k => Free k AbHom -> Statement
+pp2 k = Forall xs (valid . abhKernelFreeFromCy) where
+  xs = xFreeFromCy k
+  
+-- | free kernel where the end point is equal to some cyclic group to some order.
+--
+--  __Property__ Let @s = 'SliceFrom' _ h@ where @'end' h '==' abg n '^' r@ for some
+--  @n@, @r@ in 'N', then holds:
+--  @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@
+--  where @ker = 'abhKernelFreeFromCy' s@.
+abhKernelFreeFromCy :: Attestable k => Slice From (Free k) AbHom -> KernelFree N1 AbHom
+abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $abgDim $ end h where
+
+  freeTip :: Kernel N1 AbHom -> SomeFree AbHom
+  freeTip k = case someNatural n of
+    SomeNatural n' -> SomeFree (Free n')
+    where n = lengthN $ tip $ universalCone k
+
+  hKer [] = LimesFree k (kernelZero s (orientation h))
+  -- h == 0
+
+  hKer [(ZMod 0,_)] = case freeTip ker of
+    SomeFree k' -> LimesFree k' ker
+    where ker = lmPrjMapDst adj $ limes zmxKernels $ dgMap l (kernelDiagram h)
+          adj = abhFreeAdjunction
+          Adjunction l _ _ _ = adj
+
+  hKer [(ZMod 1,_)] = hKer []
+
+  hKer [(ZMod c,_)] = case freeTip ker of
+    SomeFree k' -> LimesFree k' ker
+    where
+      ker = LimesProjective kCone kUniv
+
+      DiagonalForm d _ (ColTrafo t) = zmxDiagonalForm (abhz h)
+      -- d = (rt*>h)<*ct
+    
+      m = lengthN (start h)
+      s = lengthN d
+      r = m >- s
+
+      Inv b bInv = amap GLTGL t
+
+      dm = dim () ^ m
+      kDgm = DiagramParallelLR (start h) (end h) (h:|Nil)
+  
+      k = map f d ++ takeN r (repeat 1)
+      -- 0 < d
+      f d = if d' == 0 then 1 else inj (lcm d' c) // d' where d' = prj (mod0 d c)
+
+      kLim = zabh (b*diagonal dm dm k)
+      kCone = ConeKernel kDgm kLim
+
+      kUniv cn@(ConeKernel _ x) = AbHom $ Matrix (Dim e) (Dim sx) xs'' where
+        -- note: from x valid and eligible follows that
+        -- for all non zero (z,i,j) in x holds: orientation z = cy 0 :> cy 0
+        AbGroup e = end kLim
+        
+        AbGroup sx = tip cn
+        
+        Matrix _ _ xs'  = bInv * abhz x
+        xs'' = crets $ Col $ PSequence $ div' (list nProxy $ etscr xs') (k `zip` [0..])
+  
+        div' :: Ord i => [(Row j Z,i)] -> [(Z,i)] -> [(Row j ZModHom,i)]
+        div' [] _             = []
+        div' ((rw,i):rws') [] = (amap1 fromZ rw,i):div' rws' []
+        div' rws@((rw,i):rws') ((k,i'):kis')
+          | i' < i    = div' rws kis'
+          | otherwise = (amap1 (fromZ . \z -> div z k) rw,i):div' rws' kis' 
+
+  hKer _ = error "faild precondition"
+
+--------------------------------------------------------------------------------
+-- abhKernelFreeFrom -
+
+xFreeFrom :: Free k AbHom -> X (Slice From (Free k) AbHom)
+xFreeFrom k@(Free k') = do
+  h <- xh (abg 0 ^ (lengthN k'))
+  return (SliceFrom k h)
+  where XStart _ xh = xStandardOrtSite :: XOrtSite From AbHom 
+
+pp3 :: Attestable k => Free k AbHom -> Statement
+pp3 k = Forall xs valid where xs = xFreeFrom k
+
+-- | the kernel of a free site from.
+--
+-- @
+--          h
+--      a ------> b
+--      
+-- @ where @a@ is free of some order @k@.
+--
+-- __Property__ Let @s = 'SliceFrom' _ h@ be in @'Slice' 'From' ('Free' __k__)@ and
+-- @ker = 'abhKernelFreeFrom' s@, then holds:
+-- @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@.
+abhKernelFreeFrom :: Attestable k => Slice From (Free k) AbHom -> KernelFree N1 AbHom
+abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) where
+
+  plbDgm :: Attestable k
+    => Free k AbHom -> FinList n (KernelFree N1 AbHom) -> PullbackDiagramFree n AbHom
+  plbDgm k kers = DiagramFree ks dgm where
+    ks = SomeFree k :| amap1 (\(LimesFree k' _) -> SomeFree k') kers
+    dgm = DiagramSink (slicePoint k)
+      $ amap1 (kernelFactor . universalCone . limesFree)
+      $ kers
+  
+  ker :: Attestable k
+    => Slice From (Free k) AbHom -> SomeFinList (KernelFree N1 AbHom)
+    -> KernelFree N1 AbHom
+  ker s@(SliceFrom k _) (SomeFinList kers) = ker' s kers (abhPullbackFree $ plbDgm k kers)
+
+  ker'
+    :: Slice From (Free k) AbHom
+    -> FinList n (KernelFree N1 AbHom)
+    -> PullbackFree n AbHom
+    -> KernelFree N1 AbHom
+  ker' (SliceFrom _ h) kers (LimesFree kt plb)
+    = LimesFree kt (LimesProjective hKer hUniv) where
+    
+    hDgm = kernelDiagram h
+    hKer = ConeKernel hDgm (F.head $ shell $ universalCone plb)
+    
+    hUniv (ConeKernel _ x) = universalFactor plb plbCone where
+      plbCone = ConeProjective (diagram plb) (start x) cs
+      cs = x:|amap1
+        (\(LimesFree _ ker)
+         -> universalFactor ker (ConeKernel (diagram ker) x)
+          -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
+        ) kers
+
+--------------------------------------------------------------------------------
+-- abhKernel -
+
+-- | kernel for a given additive homomorphism.
+--
+--  __Property__ Let @d@ be in @'KernelDiagram' 'N1' 'AbHom'@ and
+-- @ker = 'abhKernel' d@, then holds:
+--
+-- (1) @'diagram' ker '==' d@.
+--
+-- (2) @'tip' ('universalCone' ker)@ is smith normal.
+--
+--  The construction follows the diagram below by using 'abgGeneratorTo':
+--
+-- @
+--         k''         
+--    r'' ------> s'' 
+--     |           | 
+--  q' |        p' | 
+--     |           | 
+--     v    k'     v
+--    r' --------> s'
+--     |           |
+--  q  |         p | 
+--     |           | 
+--     v   hKer    v     h 
+--     r --------> s -------> e
+-- @
+abhKernel :: KernelDiagram N1 AbHom -> Kernel N1 AbHom
+abhKernel d = hKer d (abgGeneratorTo (start h)) where
+
+  DiagramParallelLR _ _ (h:|Nil) = d
+  
+  hKer :: KernelDiagram N1 AbHom -> Generator To AbHom -> Kernel N1 AbHom
+  hKer
+    d@(DiagramParallelLR _ _ (h:|Nil))
+    g@(GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) ns' _ _ _ _)
+    = hKer' d g (abhKernelFreeFrom (SliceFrom ns' (h*p)))
+
+  hKer'
+    :: KernelDiagram N1 AbHom
+    -> Generator To AbHom
+    -> KernelFree N1 AbHom
+    -> Kernel N1 AbHom
+  hKer'
+    d
+    g@(GeneratorTo (DiagramChainTo _ (_:|p':|Nil)) ns' ns'' _ _ _)
+    hpKerFree@(LimesFree nr' hpKer)
+    = hKer'' d g hpKerFree k'p'Plb where
+
+    k'p'Plb = abhPullbackFree
+      (DiagramFree (SomeFree ns':|SomeFree nr':|SomeFree ns'':|Nil) k'p'PlbDgm)
+    k'p'PlbDgm = DiagramSink (end k') (k':|p':|Nil)
+
+    k' = kernelFactor $ universalCone hpKer
+    
+  hKer''
+    :: KernelDiagram N1 AbHom
+    -> Generator To AbHom
+    -> KernelFree N1 AbHom
+    -> PullbackFree N2 AbHom
+    -> Kernel N1 AbHom
+  hKer''
+    d
+    (GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) _ _ _ _ lp)
+    (LimesFree nr' hpKer)
+    (LimesFree nr'' k'p'Plb)
+    = LimesProjective hKer hUniv where
+
+    _:|q':|_   = shell $ universalCone k'p'Plb
+    q'CokerDgm = cokernelDiagram q' 
+    q'Coker    = abhCokernelFree
+      ( DiagramFree
+         (SomeFree nr':|SomeFree nr'':|Nil)
+         q'CokerDgm
+      )
+      
+    hKer = ConeKernel d hKerFactor where
+      hKerFactor = universalFactor q'Coker (ConeCokernel q'CokerDgm (p*k'))
+      k' = kernelFactor $ universalCone hpKer
+    
+    hUniv cn@(ConeKernel _ x) = case abgGeneratorTo (start x) of
+      GeneratorTo (DiagramChainTo _ (t:|_)) nv' _ t'Coker _ _
+        | not (d == cnDiagram cn) -> throw $ ConeNotEligible $ show cn
+        | otherwise               -> universalFactor t'Coker t'Cone where
+                
+        t'Cone = ConeCokernel (diagram t'Coker) (q*u')
+        q  = cokernelFactor $ universalCone q'Coker
+        u' = universalFactor hpKer x'Cone
+
+        x'Cone = ConeKernel (diagram hpKer) x'
+        x' = lp (SliceFrom nv' (x*t))
+
+
+--------------------------------------------------------------------------------
+-- abhKernels -
+
+-- | kernels for the 'Distributive' structure 'AbHom'.
+abhKernels :: Kernels N1 AbHom
+abhKernels = Limits abhKernel
+
+--------------------------------------------------------------------------------
+-- AbHom - SliceCokernelTo -
+
+instance Attestable k => SliceCokernelTo (Free k) AbHom where
+  sliceCokernelTo = abhCokernelFreeTo
+
+--------------------------------------------------------------------------------
+-- AbHom - SliceKernelFrom -
+
+instance Attestable k => SliceKernelFrom (Free k) AbHom where
+  sliceKernelFrom = limesFree . abhKernelFreeFrom
+
+--------------------------------------------------------------------------------
+-- abhSliceFreeAdjunction -
+
+-- | the cokernle-kernel adjunciton for a given @'Free' __k__@. 
+abhSliceFreeAdjunction :: Attestable k
+  => Free k AbHom
+  -> Adjunction (SliceCokernelKernel (Free k) AbHom)
+       (SliceFactor From (Free k) AbHom)
+       (SliceFactor To (Free k) AbHom)
+abhSliceFreeAdjunction = slcAdjunction
+
+--------------------------------------------------------------------------------
+-- abhCokernel -
+
+-- | cokernel for a given additive homomorphism.
+--
+-- @
+--           w          
+--     c <------- e'' 
+--     ^           | 
+--   u |        q' | 
+--     |           | 
+--     |    h'     v    
+--    s' --------> e' -----> h'L
+--     |           |          |
+--  p  |         q |          | u'
+--     |           |          |
+--     v     h     v    w'    v
+--     s --------> e ------> c'L
+-- @
+abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
+abhCokernel d@(DiagramParallelRL _ _ (h:|Nil))
+  = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
+  ( GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
+    , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
+    ) -> LimesInjective w'Cn w'Univ where
+
+    adj@(Adjunction lAdj _ _ _) = abhSliceFreeAdjunction ne'
+    
+    q'SliceTo = SliceTo ne' q'    
+    q'Coker'  = sliceCokernelTo q'SliceTo
+    q'L       = pmap lAdj q'SliceTo
+
+    qSliceFrom = SliceFrom ne' q
+    
+    -- isomorphism with inverse qIso'
+    qIso = SliceFactor qSliceFrom q'L u  where
+      u = universalFactor q'Coker (ConeCokernel (diagram q'Coker) i)
+      SliceFrom _ i = q'L 
+
+    qIso' = SliceFactor q'L qSliceFrom u where
+      u = universalFactor q'Coker' (ConeCokernel (diagram q'Coker') q)
+      
+    h'        = lq (SliceFrom ns' (h*p))
+    h'SliceTo = SliceTo ne' h'
+    h'L       = pmap lAdj h'SliceTo
+    h'Coker   = sliceCokernelTo h'SliceTo
+    
+    cSum = limes (slfLimitsInjective abhSums)
+                 (DiagramDiscrete (h'SliceTo:|q'SliceTo:|Nil))
+           
+    _:|w:|Nil = shell $ universalCone cSum        
+
+    -- the univesal cone
+    w'Cn = ConeCokernel d w'
+    SliceFactor _ _ w' = amap lAdj w * qIso
+
+    c'Sum = lmInjMap adj cSum
+
+    -- the universal factor
+    w'Univ (ConeCokernel _ x) = f where
+      SliceFactor _ _ f = universalFactor c'Sum
+        (ConeInjective (diagram c'Sum) t (yFrom:|xFrom * qIso':|Nil))
+
+      xq = x*q
+      t = SliceFrom ne' xq
+      
+      xFrom = SliceFactor qSliceFrom t x
+
+      yFrom = SliceFactor h'L t y
+
+      y = universalFactor h'Coker (ConeCokernel (diagram h'Coker) xq)
+
+--------------------------------------------------------------------------------
+-- abhCokernels -
+
+-- | cokernels for the 'Distributive' structure 'AbHom' 
+abhCokernels :: Cokernels N1 AbHom
+abhCokernels = Limits abhCokernel
+
+--------------------------------------------------------------------------------
+-- isoSmithNormal -
+
+-- | isomorphism to its smith normal group.
+--
+--  __Property__ Let @g@ be in 'AbGroup', then holds:
+--
+--  (1) @'start' ('isoSmithNormal' g) '==' g@.
+--
+--  (2) @'end' ('isoSmithNormal' g)@ is smith normal (see definition t'AbGroup').
+isoSmithNormal :: AbGroup -> Inv AbHom
+isoSmithNormal g = Inv h h' where
+  c  = limes abhCokernels (cokernelDiagram (zero (one ():>g)))
+  h  = cokernelFactor $ universalCone c
+  h' = universalFactor c (ConeCokernel (diagram c) (one g))
+
+

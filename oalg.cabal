@@ -1,0 +1,83 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg
+version:        0.1.0.0
+synopsis:       Algebraic structures on oriented entities.
+description:    Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg#readme>
+category:       Algebra, Category Theory
+homepage:       https://github.com/zErichGut/oalg#readme
+bug-reports:    https://github.com/zErichGut/oalg/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      Erich Gut
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg
+
+library
+  exposed-modules:
+      Lib
+      OAlg
+      OAlg.Proposition
+  other-modules:
+      Paths_oalg
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Wno-identities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds
+  build-depends:
+      array >=0.5.4.0
+    , base >=4.7 && <5
+    , deepseq >=1.4.4.0
+    , oalg-abg >=0.9
+    , oalg-base >=0.9
+    , random >=1.2.0
+    , time >=1.9.3
+  default-language: Haskell2010
+
+executable oalg-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_oalg
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Wno-identities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      array >=0.5.4.0
+    , base >=4.7 && <5
+    , deepseq >=1.4.4.0
+    , oalg
+    , oalg-abg >=0.9
+    , oalg-base >=0.9
+    , random >=1.2.0
+    , time >=1.9.3
+  default-language: Haskell2010
+
+test-suite oalg-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Wno-identities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      array >=0.5.4.0
+    , base >=4.7 && <5
+    , deepseq >=1.4.4.0
+    , oalg
+    , oalg-abg >=0.9
+    , oalg-base >=0.9
+    , random >=1.2.0
+    , time >=1.9.3
+  default-language: Haskell2010

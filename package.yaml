@@ -1,0 +1,68 @@
+name:                oalg
+version:             0.1.0.0
+github:              "zErichGut/oalg"
+license:             BSD3
+author:              "Erich.Gut"
+maintainer:          "zerich.gut@gmail.com"
+copyright:           "Erich Gut"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+synopsis:            Algebraic structures on oriented entities.
+category:            Algebra, Category Theory
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- deepseq >=1.4.4.0
+- random >=1.2.0
+- array >=0.5.4.0
+- time >=1.9.3
+- oalg-base >=0.9
+- oalg-abg >=0.9
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Wno-identities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -Wno-unticked-promoted-constructors
+- -Wno-name-shadowing
+- -Wno-unused-top-binds
+
+library:
+  source-dirs: src
+
+executables:
+  oalg-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - oalg
+
+tests:
+  oalg-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - oalg

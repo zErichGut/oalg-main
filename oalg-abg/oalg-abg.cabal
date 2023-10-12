@@ -1,0 +1,58 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-abg
+version:        0.9.0.0
+description:    Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
+homepage:       https://github.com/zErichGut/oalg-abg#readme
+bug-reports:    https://github.com/zErichGut/oalg-abg/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      Erich Gut
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-abg
+
+library
+  exposed-modules:
+      OAlg.Entity.AbelianGroup.Definition
+      OAlg.Entity.AbelianGroup.Euclid
+      OAlg.Entity.AbelianGroup.Free
+      OAlg.Entity.AbelianGroup.Free.Limes
+      OAlg.Entity.AbelianGroup.Free.SmithNormalForm
+      OAlg.Entity.AbelianGroup.KernelsAndCokernels
+      OAlg.Entity.AbelianGroup.Proposition
+      OAlg.Entity.AbelianGroup.ZMod
+  other-modules:
+      Paths_oalg_abg
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , oalg-base >=0.9
+  default-language: Haskell2010
+
+test-suite oalg-abg-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_abg
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , oalg-abg
+    , oalg-base >=0.9
+  default-language: Haskell2010
