@@ -9,7 +9,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Limits of diagrams.
+-- |
+-- Module      : OAlg.Limes.Limits
+-- Description : limits of diagrams
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.
 module OAlg.Limes.Limits
   (
     -- * Limits
@@ -47,11 +54,11 @@ import OAlg.Limes.Definition
 --------------------------------------------------------------------------------
 -- Limits -
 
--- | Limits of diagrams.
+-- | limes of a diagram, i.e. assigning to each diagram a limes over the given diagram.
 --
---   __Propoerty__ Let @lms@ be in @'Limits' __s__ __p__ __t__ __n__ __m__ __a__@
---   and @d@ in @'Diagram' __t__ __n__ __m__ __a__@ then holds:
---   @'diagram' ('limes' lms d) '==' d@.
+-- __Property__ Let @lms@ be in @'Limits' __s__ __p__ __t__ __n__ __m__ __a__@
+-- and @d@ in @'Diagram' __t__ __n__ __m__ __a__@ then holds:
+-- @'diagram' ('limes' lms d) '==' d@.
 newtype Limits s p t n m a
   = Limits (Diagram t n m a -> Limes s p t n m a)
 
@@ -65,7 +72,7 @@ limes (Limits lm) = lm
 --------------------------------------------------------------------------------
 -- lmsMap -
 
--- | mapping between limits.
+-- | mapping of limits.
 lmsMap :: IsoOrt s h
   => h a b -> Limits s p t n m a -> Limits s p t n m b
 lmsMap h (Limits ls) = Limits (ls' h ls) where
@@ -99,7 +106,7 @@ coLimits cs rp rt (Limits lm) = Limits lm' where
 --------------------------------------------------------------------------------
 -- lmsFromOpOp -
 
--- | from @'Op' '.' 'Op'@.
+-- | from the bidual.
 lmsFromOpOp :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Limits s p t n m (Op (Op a)) -> Limits s p t n m a
 lmsFromOpOp cs Refl Refl = case cs of
@@ -109,7 +116,7 @@ lmsFromOpOp cs Refl Refl = case cs of
 --------------------------------------------------------------------------------
 -- coLimitsInv -
 
--- | the inverse of 'coLimits'.
+-- | from the co limits, with its inverse of 'coLimits'.
 coLimitsInv :: ConeStruct s a
   -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Dual (Limits s p t n m a) -> Limits s p t n m a
@@ -144,6 +151,7 @@ lmsFromOp (LimitsDuality cs Refl Refl rp rt) = coLimitsInv cs rp rt
 --------------------------------------------------------------------------------
 -- prpLimitsDiagram -
 
+-- | validity according to 'Limits'.
 prpLimitsDiagram :: ConeStruct s a -> XOrtPerspective p a
   -> Limits s p t n m a -> Diagram t n m a 
   -> Statement
@@ -157,6 +165,7 @@ prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
 --------------------------------------------------------------------------------
 -- prpLimits -
 
+-- | validity according to 'Limits', relative to the given random variable for 'Diagram's. 
 prpLimits :: ConeStruct s a -> Limits s p t n m a
   -> X (Diagram t n m a) -> XOrtPerspective p a -> Statement
 prpLimits cs lms xd xop = Prp "Limits"
@@ -178,7 +187,7 @@ instance ( Distributive a, XStandard (Diagram t n m a)
 --------------------------------------------------------------------------------
 -- lmsToPrjOrnt -
 
--- | projectove limits for @'Orientation' __p__@.
+-- | projective limits for @'Orientation' __p__@.
 lmsToPrjOrnt :: Entity p => p -> Limits Mlt Projective t n m (Orientation p)
 lmsToPrjOrnt = Limits . lmToPrjOrnt
   

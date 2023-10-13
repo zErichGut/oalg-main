@@ -9,7 +9,14 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
--- | Terminal and initial point.
+-- |
+-- Module      : OAlg.Limes.Limits
+-- Description : terminal and initial point
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- terminal and initial point within a 'Multiplicative' structure.
 module OAlg.Limes.TerminalAndInitialPoint
   (
     -- * Terminal
@@ -60,9 +67,16 @@ import OAlg.Limes.Limits
 --------------------------------------------------------------------------------
 -- Terminal -
 
+-- | 'Diagram' for a terminal point.
 type TerminalDiagram = Diagram 'Empty N0 N0
+
+-- | 'Cone' for a terminal point.
 type TerminalCone    = Cone Mlt Projective 'Empty N0 N0
+
+-- | terminal point as 'Limes'.
 type TerminalPoint   = Limes Mlt Projective 'Empty N0 N0
+
+-- | evaluating a terminal point.
 type Terminals       = Limits Mlt Projective 'Empty N0 N0
 
 --------------------------------------------------------------------------------
@@ -93,25 +107,36 @@ trmsOrnt = lmsToPrjOrnt
 --------------------------------------------------------------------------------
 -- Initial -
 
+-- | 'Diagram' for a initial point.
 type InitialDiagram = Diagram 'Empty N0 N0
+
+-- | 'Cone' for a initial point.
 type InitialCone    = Cone Mlt Injective 'Empty N0 N0
+
+-- | initial point as 'Limes'.
 type InitialPoint   = Limes Mlt Injective 'Empty N0 N0
+
+-- | evaluating a initial point.
 type Initials       = Limits Mlt Injective 'Empty N0 N0
 
 --------------------------------------------------------------------------------
 -- Duality - Terminal -
 
+-- | terminal 'Diagram' duality.
 trmDiagramDuality :: Oriented a => DiagramDuality TerminalDiagram InitialDiagram a
 trmDiagramDuality = DiagramDuality Refl Refl Refl
 
+-- | terminal 'Cone' duality.
 trmConeDuality :: Multiplicative a
   => ConeDuality Mlt TerminalCone InitialCone a
 trmConeDuality = ConeDuality ConeStructMlt Refl Refl Refl Refl
 
+-- |  terminal 'Limes' duality.
 trmLimesDuality :: Multiplicative a
   => LimesDuality Mlt TerminalPoint InitialPoint a
 trmLimesDuality = LimesDuality ConeStructMlt Refl Refl Refl Refl
 
+-- |  terminal 'Limits' duality.
 trmLimitsDuality :: Multiplicative a
   => LimitsDuality Mlt Terminals Initials a
 trmLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
@@ -119,17 +144,21 @@ trmLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- Duality - Initial -
 
+-- | initial 'Diagram' duality.
 intDiagramDuality :: Oriented a => DiagramDuality InitialDiagram TerminalDiagram a
 intDiagramDuality = DiagramDuality Refl Refl Refl
 
+-- | initial 'Cone' duality.
 intConeDuality :: Multiplicative a
   => ConeDuality Mlt InitialCone TerminalCone a
 intConeDuality = ConeDuality ConeStructMlt Refl Refl Refl Refl
 
+-- | initial 'Limes' duality.
 intLimesDuality :: Multiplicative a
   => LimesDuality Mlt InitialPoint TerminalPoint a
 intLimesDuality = LimesDuality ConeStructMlt Refl Refl Refl Refl
 
+-- | initial 'Limits' duality.
 intLimitsDuality :: Multiplicative a
   => LimitsDuality Mlt Initials Terminals a
 intLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
@@ -151,9 +180,11 @@ intCone i = ConeInjective DiagramEmpty i Nil
 --------------------------------------------------------------------------------
 -- initialPointOrnt -
 
+-- | initial point for 'Orientation'.
 initialPointOrnt :: Entity p => p -> InitialPoint (Orientation p)
 initialPointOrnt i = lmFromInjOrnt i intDiagram
 
+-- | initials.
 intsOrnt :: Entity p => p -> Initials (Orientation p)
 intsOrnt = lmsFromInjOrnt
 

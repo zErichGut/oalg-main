@@ -1,6 +1,5 @@
-A package for solving algebraic problems purely written in Haskell.
+Basic definition of algebraic structures, viewing thru the lens of categories.
 
-
-Limits - in context of categories - serve as a backbone for solving algebraic
-proplems, e. g. finding all solutions of the equation a * x == 0 is given by the kernel of a.
+- Limits serve as a backbone for solving algebraic problems, e. g. finding all solutions of the
+equation a * x == 0 is given by the kernel of a.
 

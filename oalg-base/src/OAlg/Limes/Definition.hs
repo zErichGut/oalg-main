@@ -9,7 +9,14 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
 
--- | Limes of diagrams.
+-- |
+-- Module      : OAlg.Limes.Definition
+-- Description : definition of a limes of a diagram.
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- definition of a 'Limes' of a 'Diagram'.
 module OAlg.Limes.Definition
   (
     -- * Limes
@@ -58,7 +65,7 @@ import OAlg.Limes.Cone
 --------------------------------------------------------------------------------
 -- LimesException -
 
--- | arithmetic exceptions which are sub exceptions from 'SomeOAlgException'.
+-- | limes exceptions which are sub exceptions from 'SomeOAlgException'.
 data LimesException
   = ConeNotEligible String
   deriving (Eq,Show)
@@ -71,38 +78,38 @@ instance Exception LimesException where
 -- Limes -
 
 -- | limes of a diagram, i.e. a distinguished cone over a given diagram
---   having the following /univeral/ property
+-- having the following /universal/ property
 --
---   __Property__ Let __@a@__ be a 'Multiplicative' structure and
---   @u@ in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
---   Let @l = 'universalCone' u@ in
+-- __Property__ Let __@a@__ be a 'Multiplicative' structure and
+-- @u@ in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
+-- Let @l = 'universalCone' u@ in
 --
---   (1) @l@ is 'valid'.
+-- (1) @l@ is 'valid'.
 --
---   (1) @'eligibleCone' u l@.
+-- (2) @'eligibleCone' u l@.
 --
---   (1) @'eligibleFactor' u l ('one' ('tip' l))@.
+-- (3) @'eligibleFactor' u l ('one' ('tip' l))@.
 --
---   (1) For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with
---   @'eligibleCone' u c@ holds: Let @f = 'universalFactor' u c@ in
+-- (4) For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with
+-- @'eligibleCone' u c@ holds: Let @f = 'universalFactor' u c@ in
 --
---       (1) @f@ is 'valid'.
+--     (1) @f@ is 'valid'.
 --
---       (1) @'eligibleFactor' u c f@.
+--     (2) @'eligibleFactor' u c f@.
 --
---       (1) For all @x@ in __@a@__ with @'eligibleFactor' u c x@
---       holds: @x '==' f@.
+--     (3) For all @x@ in __@a@__ with @'eligibleFactor' u c x@
+--     holds: @x '==' f@.
 --
---   __Note__
+-- __Note__
 --
---   (1) #Nt1#As the function @'universalFactor' l@ for a given limes @l@ is uniqualiy
---   determind by the underlying cone of @l@, it is permissible to test equality of two
---   limits just by there underling cones. In every computation equal limits
---   can be safely replaced by each other.
+-- (1) #Nt1#As the function @'universalFactor' l@ for a given limes @l@ is uniquely
+-- determined by the underlying cone of @l@, it is permissible to test equality of two
+-- limits just by there underling cones. In every computation equal limits
+-- can be safely replaced by each other.
 --
---   (2) It is not required that the evaluation of uninversal factor on a non eligible cone
---    yield an exception! The implementation of the general algorithems for limites do not
---    check for eligibility.
+-- (2) It is not required that the evaluation of universal factor on a non eligible cone
+--  yield an exception! The implementation of the general algorithms for limits do not
+--  check for eligibility.
 data Limes s p t n m a where
   LimesProjective :: Cone s Projective t n m a -> (Cone s Projective t n m a -> a)
             -> Limes s Projective t n m a
@@ -154,9 +161,9 @@ lmDiagramTypeRefl (LimesInjective l _)  = cnDiagramTypeRefl l
 
 -- | the universal factor of a 'Limes' @l@ to a given eligible cone.
 --
---  __Property__ Let @l@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
---  For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' l c@
---  holds: @'eligibleFactor' l c ('universalFactor' l c)@.
+-- __Property__ Let @l@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
+-- For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' l c@
+-- holds: @'eligibleFactor' l c ('universalFactor' l c)@.
 universalFactor :: Limes s p t n m a -> Cone s p t n m a -> a
 universalFactor (LimesProjective _ u) = u
 universalFactor (LimesInjective _ u)  = u
@@ -164,11 +171,11 @@ universalFactor (LimesInjective _ u)  = u
 --------------------------------------------------------------------------------
 -- eligibleCone -
 
--- | eligibility of a cone with resprect to a limes.
+-- | eligibility of a cone with respect to a limes.
 --
---   __Property__ Let @u@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@
---   and @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
---   @'eligibleCone' u c@ is true if and only if @'diagram' u '==' 'cnDiagram' c@ is true.
+-- __Property__ Let @u@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@
+-- and @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
+-- @'eligibleCone' u c@ is true if and only if @'diagram' u '==' 'cnDiagram' c@ is true.
 eligibleCone :: Oriented a => Limes s p t n m a -> Cone s p t n m a -> Bool
 eligibleCone u c = diagram u == cnDiagram c 
 
@@ -177,15 +184,15 @@ eligibleCone u c = diagram u == cnDiagram c
 
 -- | eligibility of a factor with respect to a limes and a cone.
 --
---   __Propoerty__ Let @u@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@,
---   @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' u c@
---   and @x@ in __@a@__ then holds:
+-- __Property__ Let @u@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@,
+-- @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' u c@
+-- and @x@ in __@a@__ then holds:
 --
---   (1) If @u@ matches @'LimesProjective' l _@ then holds: @'eligibleFactor' u c x@ is true
---    if and only if @'cnEligibleFactor' x c l@ is true.
+-- (1) If @u@ matches @'LimesProjective' l _@ then holds: @'eligibleFactor' u c x@ is true
+-- if and only if @'cnEligibleFactor' x c l@ is true.
 --
---   (1) If @u@ matches @'LimesInjective' l _@ then holds: @'eligibleFactor' u c x@ is true
---    if and only if @'cnEligibleFactor' x l c@ is true.
+-- (2) If @u@ matches @'LimesInjective' l _@ then holds: @'eligibleFactor' u c x@ is true
+-- if and only if @'cnEligibleFactor' x l c@ is true.
 eligibleFactor :: Limes s p t n m a -> Cone s p t n m a -> a -> Bool
 eligibleFactor (LimesProjective l _) c x = cnEligibleFactor x c l
 eligibleFactor (LimesInjective l _) c x  = cnEligibleFactor x l c
@@ -328,7 +335,7 @@ instance ( Distributive a, XStandardOrtPerspective p a
 --------------------------------------------------------------------------------
 -- lmToPrjOrnt -
 
--- | projective limes on oriented structures. 
+-- | projective limes on oriented structures.
 lmToPrjOrnt :: (Entity p, a ~ Orientation p)
   => p -> Diagram t n m a -> Limes Mlt Projective t n m a
 lmToPrjOrnt t d = LimesProjective l u where

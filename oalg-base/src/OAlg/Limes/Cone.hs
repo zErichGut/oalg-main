@@ -1,7 +1,14 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | Cones over diagrams.
+-- |
+-- Module      : OAlg.Limes.Cone
+-- Description : cones over diagrams
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- cones over diagrams.
 module OAlg.Limes.Cone
   ( module Def
   , module Elg
