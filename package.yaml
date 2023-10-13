@@ -1,6 +1,6 @@
 name:                oalg
 version:             0.1.0.0
-github:              "zErichGut/oalg"
+github:              "zErichGut/oalg-main"
 license:             BSD3
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
@@ -17,7 +17,7 @@ category:            Algebra, Category Theory
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg#readme>
+description:         Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
 
 dependencies:
 - base >= 4.7 && < 5

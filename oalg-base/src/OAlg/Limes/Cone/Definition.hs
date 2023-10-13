@@ -77,7 +77,7 @@ import OAlg.Limes.Perspective
 --------------------------------------------------------------------------------
 -- Cone -
 
--- | cone over diagrams.
+-- | cone over a diagram.
 --
 -- __Properties__ Let @c@ be in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
 --

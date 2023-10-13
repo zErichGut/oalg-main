@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,8 +25,8 @@ description:    A package for solving algebraic problems purely written in Haske
                 .
                 Please see also the README on GitHub at <https://github.com/zErichGut/oalg-base#readme>
 category:       Algebra, Category
-homepage:       https://github.com/zErichGut/oalg-base#readme
-bug-reports:    https://github.com/zErichGut/oalg-base/issues
+homepage:       https://github.com/zErichGut/oalg-main#readme
+bug-reports:    https://github.com/zErichGut/oalg-main/issues
 author:         Erich.Gut
 maintainer:     zerich.gut@gmail.com
 copyright:      Erich Gut
@@ -39,7 +39,8 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/zErichGut/oalg-base
+  location: https://github.com/zErichGut/oalg-main
+  subdir: oalg-base
 
 library
   exposed-modules:

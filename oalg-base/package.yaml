@@ -1,6 +1,6 @@
 name:                oalg-base
 version:             0.9.0.0
-github:              "zErichGut/oalg-base"
+github:              "zErichGut/oalg-main/oalg-base"
 license:             BSD3
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
