@@ -4,8 +4,14 @@
 {-# LANGUAGE TypeOperators, TypeFamilies, FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Pullbacks and Pushouts
--- i.e. limits of 'Star'-diagrams.
+-- |
+-- Module      : OAlg.Limes.PullbacksAndPushouts
+-- Description : pullbacks and pushouts
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- pullbacks and pushouts, i.e. limits of @'Diagram' ('Star' __d__)@.
 module OAlg.Limes.PullbacksAndPushouts
   (
     -- * Pullbacks
@@ -54,23 +60,31 @@ import OAlg.Limes.EqualizersAndCoequalizers
 --------------------------------------------------------------------------------
 -- Pullbacks -
 
+-- | 'Diagram' for a pullback.
 type PullbackDiagram n = Diagram (Star To) (n+1) n
-type PullbackCone n    = Cone Mlt Projective (Star To) (n+1) n
-type Pullback n        = Limes Mlt Projective (Star To) (n+1) n
-type Pullbacks n       = Limits Mlt Projective (Star To) (n+1) n
+
+-- | 'Cone' for a pullback.
+type PullbackCone n = Cone Mlt Projective (Star To) (n+1) n
+
+-- | pullback as 'Limes'.
+type Pullback n = Limes Mlt Projective (Star To) (n+1) n
+
+-- | pullbacks for 'Multiplicative' structures.
+type Pullbacks n = Limits Mlt Projective (Star To) (n+1) n
 
 
 --------------------------------------------------------------------------------
 -- plbMinimumDiagram0 -
 
--- | projection of the sink point to minimum diagram.
+-- | the underlying minimum diagram.
 plbMinimumDiagram0 :: PullbackDiagram n a -> MinimumDiagram To N0 a
 plbMinimumDiagram0 (DiagramSink e _) = DiagramChainTo e Nil
 
 
 --------------------------------------------------------------------------------
 -- plbMinimumCone0 -
--- | projection of the sink point to mimimum cone.
+
+-- | the underlying minimum cone.
 plbMinimumCone0 :: PullbackCone n a -> MinimumCone To N0 a
 plbMinimumCone0 (ConeProjective d t (c0:|_))
   = ConeProjective (plbMinimumDiagram0 d) t (c0:|Nil)
@@ -78,6 +92,7 @@ plbMinimumCone0 (ConeProjective d t (c0:|_))
 --------------------------------------------------------------------------------
 -- pullbacks0 -
 
+-- | pullbacks for zero arrows as 'Minima'.
 pullbacks0 :: Multiplicative a => Pullbacks N0 a
 pullbacks0 = Limits (plb minimaTo) where
   plb :: Multiplicative a => Minima To N0 a -> PullbackDiagram N0 a -> Pullback N0 a
@@ -89,13 +104,14 @@ pullbacks0 = Limits (plb minimaTo) where
 --------------------------------------------------------------------------------
 -- plbMinimumDiagram1 -
 
--- | projection of a pullback diagram with at least one arrow to its minimum diagram.
+-- | the underlying minimum diagram given by the first arrow.
 plbMinimumDiagram1 :: PullbackDiagram (n+1) a -> MinimumDiagram To N1 a
 plbMinimumDiagram1 (DiagramSink e (a0:|_)) = DiagramChainTo e (a0:|Nil)
 
 --------------------------------------------------------------------------------
 -- plbMinimumCone1 -
 
+-- | the underlying minimum cone given by the first arrow.
 plbMinimumCone1 :: PullbackCone (n+1) a -> MinimumCone To N1 a
 plbMinimumCone1 (ConeProjective d t (c0:|c1:|_))
   = ConeProjective (plbMinimumDiagram1 d) t (c0:|c1:|Nil)
@@ -103,6 +119,7 @@ plbMinimumCone1 (ConeProjective d t (c0:|c1:|_))
 --------------------------------------------------------------------------------
 -- pullbacks1 -
 
+-- | pullbacks of one arrow, i.e. 'Minima'.
 pullbacks1 :: Multiplicative a => Pullbacks N1 a
 pullbacks1 = Limits (plb minimaTo) where
   plb :: Multiplicative a => Minima To N1 a -> PullbackDiagram N1 a -> Pullback N1 a
@@ -115,6 +132,9 @@ pullbacks1 = Limits (plb minimaTo) where
 --------------------------------------------------------------------------------
 -- pullbacks2 -
 
+-- | promotion of pullbacks with at least two arrows.
+--
+-- ![image pullback](c:/Users/zeric/haskell/oalg/src/OAlg/Limes/pullback.png)
 pullbacks2 :: Multiplicative a => Pullbacks N2 a -> Pullbacks (n+2) a
 pullbacks2 plb2 = Limits (plb plb2) where
   plb :: Multiplicative a
@@ -134,9 +154,7 @@ pullbacks2 plb2 = Limits (plb plb2) where
 --------------------------------------------------------------------------------
 -- pullbacks -
 
--- | promotion of pullbacks
---
--- ![image pullback](c:/Users/zeric/haskell/oalg/src/OAlg/Limes/pullback.png)
+-- | promotion of pullbacks by 'pullbacks2' and 'pullbacks1'.
 pullbacks :: Multiplicative a => Pullbacks N2 a -> Pullbacks n a
 pullbacks plb2 = Limits (plb plb2) where
   plb :: Multiplicative a
@@ -149,7 +167,7 @@ pullbacks plb2 = Limits (plb plb2) where
 --------------------------------------------------------------------------------
 -- plbPrdEql2 -
 
--- | pullbacks from products and equalizers.
+-- | pullbacks given by products and equalizers.
 plbPrdEql2 :: Multiplicative a => Products N2 a -> Equalizers N2 a -> Pullbacks N2 a
 plbPrdEql2 prd eql = Limits (plb prd eql) where
   plb :: Multiplicative a
@@ -170,20 +188,29 @@ plbPrdEql2 prd eql = Limits (plb prd eql) where
 --------------------------------------------------------------------------------
 -- pullbacksOrnt -
 
+-- | pullbacks for 'Orientation'.
 pullbacksOrnt :: Entity p => p -> Pullbacks n (Orientation p)
 pullbacksOrnt = lmsToPrjOrnt
 
 --------------------------------------------------------------------------------
 -- Pushouts -
 
+-- | 'Diagram' for a pushout.
 type PushoutDiagram n = Diagram (Star From) (n+1) n
-type PushoutCone n    = Cone Mlt Injective (Star From) (n+1) n
-type Pushout n        = Limes Mlt Injective (Star From) (n+1) n
+
+-- | 'Cone' for a pushout.
+type PushoutCone n = Cone Mlt Injective (Star From) (n+1) n
+
+-- | pushout as 'Limes'.
+type Pushout n = Limes Mlt Injective (Star From) (n+1) n
+
+-- | pushouts for a 'Multiplicative' structures.
 type Pushouts n       = Limits Mlt Injective (Star From) (n+1) n
 
 --------------------------------------------------------------------------------
 -- Pusouts - Duality -
 
+-- | duality between pushouts and pullbacks.
 pshLimitsDuality :: Multiplicative a
   => LimitsDuality Mlt (Pushouts n) (Pullbacks n) a
 pshLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
@@ -191,22 +218,26 @@ pshLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- pushouts -
 
+-- | promotion of pushouts by pushouts for two arrows.
 pushouts :: Multiplicative a => Pushouts N2 a -> Pushouts n a
 pushouts psh2 = lmsFromOp pshLimitsDuality $ pullbacks plb2 where
   plb2 = lmsToOp pshLimitsDuality psh2
 
+-- | 'pushouts' given by a proxy for @n@.
 pushouts' :: Multiplicative a => p n -> Pushouts N2 a -> Pushouts n a
 pushouts' _ = pushouts
 
 --------------------------------------------------------------------------------
 -- pushoutsOrnt -
 
+-- | pushouts for 'Orientation'.
 pushoutsOrnt :: Entity p => p -> Pushouts n (Orientation p)
 pushoutsOrnt = lmsFromInjOrnt
 
 --------------------------------------------------------------------------------
 -- pshSumCoeql2 -
 
+-- | pushouts given by sums and coequalizers.
 pshSumCoeql2 :: Multiplicative a => Sums N2 a -> Coequalizers N2 a -> Pushouts N2 a
 pshSumCoeql2 sum coeql = lmsFromOp pshLimitsDuality $ plbPrdEql2 prd eql where
   prd = lmsToOp sumLimitsDuality sum

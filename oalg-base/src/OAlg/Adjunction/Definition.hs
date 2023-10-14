@@ -9,13 +9,13 @@
 
 -- |
 -- Module      : OAlg.Adjunction.Definition
--- Description : adjunction between multiplicative structures
+-- Description : definition adjunction between multiplicative structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- adjunction between 'Multiplicative' structures. We relay on the terms and notation as used in
--- [nLab](http://ncatlab.org/nlab/show/adjoint+functor)
+-- definition adjunction between 'Multiplicative' structures. We relay on the terms and notation as
+-- used in [nLab](http://ncatlab.org/nlab/show/adjoint+functor)
 module OAlg.Adjunction.Definition
   (
     -- * Adjunction

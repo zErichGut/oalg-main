@@ -2,13 +2,18 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE GADTs, StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Kernels and Cokernels,
--- i.e. limits of 'Parallel'-diagrams with first arrow equal to 'zero'.
+-- |
+-- Module      : OAlg.Limes.KernelsAndCokernels
+-- Description : kernels and cokernels
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- kernels and cokernels, i.e. limits in a 'Distributive' structure of @'Diagram' ('Parallel' __d__)@
+-- making all arrows 'zero'.
 module OAlg.Limes.KernelsAndCokernels
   (
     -- * Kernels
@@ -64,9 +69,16 @@ import OAlg.Limes.EqualizersAndCoequalizers
 --------------------------------------------------------------------------------
 -- Kernels -
 
+-- | 'Diagram' for a kernel.
 type KernelDiagram n = Diagram (Parallel LeftToRight) N2 n
-type KernelCone n    = Cone Dst Projective (Parallel LeftToRight) N2 n
-type Kernel n        = Limes Dst Projective (Parallel LeftToRight) N2 n
+
+-- | 'Cone' for a kernel.
+type KernelCone n = Cone Dst Projective (Parallel LeftToRight) N2 n
+
+-- | kernel as a 'Limes'.
+type Kernel n = Limes Dst Projective (Parallel LeftToRight) N2 n
+
+-- | kernels for 'Distributive' structures.
 type Kernels n       = Limits Dst Projective (Parallel LeftToRight) N2 n
 
 --------------------------------------------------------------------------------
@@ -96,6 +108,7 @@ kernelZero _ o = LimesProjective oKer kernelFactor where
 --------------------------------------------------------------------------------
 -- kernels0 -
 
+-- | kernels for zero arrows.
 kernels0 :: Distributive a => Kernels N0 a
 kernels0 = Limits krn where
   krn :: Distributive a => KernelDiagram N0 a -> Kernel N0 a
@@ -107,6 +120,7 @@ kernels0 = Limits krn where
 --------------------------------------------------------------------------------
 -- krnEqls -
 
+-- | the induced equalizers where its first arrow is 'zero'.
 krnEqls :: (Distributive a, Abelian a) => Kernels n a -> Equalizers (n+1) a
 krnEqls krn = Limits (eql krn) where
   eql :: (Distributive a, Abelian a)
@@ -121,6 +135,7 @@ krnEqls krn = Limits (eql krn) where
 --------------------------------------------------------------------------------
 -- eqlKrns -
 
+-- | the induced kernels given by adjoining a 'zero' arrow as first arrow.
 eqlKrns :: Distributive a => Equalizers (n+1) a -> Kernels n a
 eqlKrns eql = Limits (krn eql) where
   krn :: Distributive a => Equalizers (n+1) a -> KernelDiagram n a -> Kernel n a
@@ -133,6 +148,7 @@ eqlKrns eql = Limits (krn eql) where
 --------------------------------------------------------------------------------
 -- kenrels1 -
 
+-- | promoting kernels.
 kernels1 :: Distributive a => Kernels N1 a -> Kernels (n+1) a
 kernels1 krn1 = Limits (krn krn1) where
   krn :: Distributive a => Kernels N1 a -> KernelDiagram (n+1) a -> Kernel (n+1) a
@@ -151,6 +167,7 @@ kernels1 krn1 = Limits (krn krn1) where
 --------------------------------------------------------------------------------
 -- kernels -
 
+-- | promoting kernels.
 kernels :: Distributive a => Kernels N1 a -> Kernels n a
 kernels krn1 = Limits (krn krn1) where
   krn :: Distributive a
@@ -163,6 +180,7 @@ kernels krn1 = Limits (krn krn1) where
 --------------------------------------------------------------------------------
 -- kernelsOrnt -
 
+-- | kernels for 'Orientation'.
 kernelsOrnt :: Entity p => p -> Kernels n (Orientation p)
 kernelsOrnt t = Limits (krn t) where
   krn :: (Entity p, a ~ Orientation p) => p -> KernelDiagram n a -> Kernel n a
@@ -174,9 +192,16 @@ kernelsOrnt t = Limits (krn t) where
 --------------------------------------------------------------------------------
 -- Cokernels -
 
+-- | 'Diagram' for a cokernel.
 type CokernelDiagram n = Diagram (Parallel RightToLeft) N2 n
-type CokernelCone n    = Cone Dst Injective (Parallel RightToLeft) N2 n
-type Cokernel n        = Limes Dst Injective (Parallel RightToLeft) N2 n
+
+-- | 'Cone' for a cokernel.
+type CokernelCone n = Cone Dst Injective (Parallel RightToLeft) N2 n
+
+-- | cokernel as 'Limes'.
+type Cokernel n = Limes Dst Injective (Parallel RightToLeft) N2 n
+
+-- | cokernels for 'Distributive' structures.
 type Cokernels n       = Limits Dst Injective (Parallel RightToLeft) N2 n
 
 --------------------------------------------------------------------------------
@@ -189,13 +214,14 @@ cokernelFactor (ConeCokernel _ f) = f
 --------------------------------------------------------------------------------
 -- cokernelDiagram -
 
--- | the cokernel diagram of a given factor
+-- | the cokernel diagram of a given factor.
 cokernelDiagram :: Oriented c => c -> CokernelDiagram N1 c
 cokernelDiagram f = DiagramParallelRL (end f) (start f) (f:|Nil)
 
 --------------------------------------------------------------------------------
 -- Cokernels - Duality -
 
+-- | duality between cokernels and kernels.
 cokrnLimitsDuality :: Distributive a
   => LimitsDuality Dst (Cokernels n) (Kernels n) a
 cokrnLimitsDuality = LimitsDuality ConeStructDst Refl Refl Refl Refl
@@ -203,6 +229,7 @@ cokrnLimitsDuality = LimitsDuality ConeStructDst Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- cokrnLimesDuality -
 
+-- | duality between kernels and cokernels.
 cokrnLimesDuality :: Distributive a
   => LimesDuality Dst (Cokernel n) (Kernel n) a
 cokrnLimesDuality = LimesDuality ConeStructDst Refl Refl Refl Refl
@@ -210,16 +237,19 @@ cokrnLimesDuality = LimesDuality ConeStructDst Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- cokernels -
 
+-- | promoting cokernels.
 cokernels :: Distributive a => Cokernels N1 a -> Cokernels n a
 cokernels ckrn = lmsFromOp cokrnLimitsDuality $ kernels krn where
   krn = lmsToOp cokrnLimitsDuality ckrn
 
+-- | 'cokernels' given by an additional proxy for @n@.
 cokernels' :: Distributive a => p n -> Cokernels N1 a -> Cokernels n a
 cokernels' _ = cokernels
 
 --------------------------------------------------------------------------------
 -- cokernelsOrnt -
 
+-- | cokernels for 'Orientation'.
 cokernelsOrnt :: Entity p => p -> Cokernels n (Orientation p)
 cokernelsOrnt t = Limits (cokrn t) where
   cokrn :: (Entity p, a ~ Orientation p) => p -> CokernelDiagram n a -> Cokernel n a
@@ -237,16 +267,16 @@ relIsKernel (LimesProjective (ConeKernel d k') _) fs k
         ]
     
 -- | checks if the arrows of the kernel diagram are equal to the given ones and if its
---   shell is equal to the given arrow.
+-- shell is equal to the given arrow.
 --
---  __Propery__ Let
---  @'LimesProjective' ('ConeKerenl d k') _ = ker@ be in @'Kernel' __n__ __a__@,
---  @fs@ in @'FinList' __n__ __a__@ and @k@ be in @__a__@, then the statement
---  @'prpIsKernel' ker fs k@ holds iff
+-- __Property__ Let
+-- @'LimesProjective' ('ConeKerenl d k') _ = ker@ be in @'Kernel' __n__ __a__@,
+-- @fs@ in @'FinList' __n__ __a__@ and @k@ be in @__a__@, then the statement
+-- @'prpIsKernel' ker fs k@ holds if and only if
 --
---  (1) @fs '==' 'dgArrows' d@.
+-- (1) @fs '==' 'dgArrows' d@.
 --
---  (2) @k '==' k'@.
+-- (2) @k '==' k'@.
 prpIsKernel :: Distributive a => Kernel n a -> FinList n a -> a -> Statement
 prpIsKernel ker fs k = Prp "IsKernel" :<=>: relIsKernel ker fs k
 
@@ -254,16 +284,16 @@ prpIsKernel ker fs k = Prp "IsKernel" :<=>: relIsKernel ker fs k
 -- prpIsCokernel -
 
 -- | checks if the arrows of the cokernel diagram are equal to the given ones and if its
---   shell is equal to the given arrow.
+-- shell is equal to the given arrow.
 --
---  __Propery__ Let
---  @'LimesInjective' ('ConeCokerenl d k') _ = coker@ be in @'Cokernel' __n__ __a__@,
---  @fs@ in @'FinList' __n__ __a__@ and @k@ be in @__a__@, then the statement
---  @'prpIsCokernel' coker fs k@ holds iff
+-- __Property__ Let
+-- @'LimesInjective' ('ConeCokerenl d k') _ = coker@ be in @'Cokernel' __n__ __a__@,
+-- @fs@ in @'FinList' __n__ __a__@ and @k@ be in @__a__@, then the statement
+-- @'prpIsCokernel' coker fs k@ holds if and only if
 --
---  (1) @fs '==' 'dgArrows' d@.
+-- (1) @fs '==' 'dgArrows' d@.
 --
---  (2) @k '==' k'@.
+-- (2) @k '==' k'@.
 prpIsCokernel :: Distributive a => Cokernel n a -> FinList n a -> a -> Statement
 prpIsCokernel coker fs k = Prp "IsCokernel" :<=>: relIsKernel ker (amap1 Op fs) (Op k)
   where ker = lmToOp cokrnLimesDuality coker

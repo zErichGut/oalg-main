@@ -82,14 +82,14 @@ type Products n = Limits Mlt Projective Discrete n N0
 --------------------------------------------------------------------------------
 -- prdDiagram -
 
--- | the underlying product diagram given by a source diagram.
+-- | the underlying product diagram.
 prdDiagram :: Oriented a => Diagram (Star From) (n+1) n a -> ProductDiagram n a
 prdDiagram (DiagramSource _ as) = DiagramDiscrete (amap1 end as)
 
 --------------------------------------------------------------------------------
 -- prdCone -
 
--- | the product cone given by a source diagram.
+-- | the product cone.
 prdCone :: Multiplicative a => Diagram (Star From) (n+1) n a -> ProductCone n a
 prdCone d@(DiagramSource p as) = ConeProjective (prdDiagram d) p as
 

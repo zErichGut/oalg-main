@@ -5,8 +5,14 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Equalizers and Coequalizers,
--- i.e. limits of 'Parallel'-diagrams.
+-- |
+-- Module      : OAlg.Limes.EqualizersAndCoequalizers
+-- Description : equalizers and coequalizers
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- equalizers and coequalizers, i.e. limits of @'Diagram' ('Parallel' __d__)@.
 module OAlg.Limes.EqualizersAndCoequalizers
   (
     -- * Equalizers
@@ -54,29 +60,37 @@ import OAlg.Limes.ProductsAndSums
 --------------------------------------------------------------------------------
 -- Equalizers -
 
+-- | 'Diagram' for a equalizer. 
 type EqualizerDiagram n = Diagram (Parallel LeftToRight) N2 n
-type EqualizerCone n    = Cone Mlt Projective (Parallel LeftToRight) N2 n
-type Equalizer n        = Limes Mlt Projective (Parallel LeftToRight) N2 n
-type Equalizers n       = Limits Mlt Projective (Parallel LeftToRight) N2 n
+
+-- | 'Cone' for a equalizer.
+type EqualizerCone n = Cone Mlt Projective (Parallel LeftToRight) N2 n
+
+-- | equalizer as 'Limes'.
+type Equalizer n = Limes Mlt Projective (Parallel LeftToRight) N2 n
+
+-- | equalizers for a 'Multiplicative' structures.
+type Equalizers n = Limits Mlt Projective (Parallel LeftToRight) N2 n
 
 
 --------------------------------------------------------------------------------
 -- eqlProductDiagram -
 
--- | projection to product diagram.
+-- | the underlying product diagram.
 eqlProductDiagram :: EqualizerDiagram n a -> ProductDiagram N2 a
 eqlProductDiagram (DiagramParallelLR p q _) = DiagramDiscrete (p:|q:|Nil)
 
 --------------------------------------------------------------------------------
 -- eqlProductCone -
 
--- | projection to product cone.
+-- | the underlying product cone.
 eqlProductCone :: EqualizerCone n a -> ProductCone N2 a
 eqlProductCone (ConeProjective d t cs) = ConeProjective (eqlProductDiagram d) t cs
 
 --------------------------------------------------------------------------------
 -- equalizers0 -
 
+-- | the induced equalizers of zero parallel arrows.
 equalizers0 :: Multiplicative a => Products N2 a -> Equalizers N0 a
 equalizers0 prd2 = Limits (eql prd2) where
   eql :: Multiplicative a
@@ -89,20 +103,21 @@ equalizers0 prd2 = Limits (eql prd2) where
 --------------------------------------------------------------------------------
 -- eqlHeadDiagram -
 
--- | projection to minimum diagram.
+-- | the underlying minimum diagram given by the first arrow.
 eqlHeadDiagram :: EqualizerDiagram (n+1) a -> MinimumDiagram From N1 a
 eqlHeadDiagram (DiagramParallelLR p _ (a:|_)) = DiagramChainFrom p (a:|Nil)
 
 --------------------------------------------------------------------------------
 -- eqlHeadCone -
 
--- | projection to minimum cone.
+-- | the underlying minimum cone given by the first arrow.
 eqlHeadCone :: EqualizerCone (n+1) a -> MinimumCone From N1 a
 eqlHeadCone (ConeProjective d t cs) = ConeProjective (eqlHeadDiagram d) t cs
 
 --------------------------------------------------------------------------------
 -- equlizers1 -
 
+-- | equalizers of one parallel arrow, i.e. 'Minima'.
 equalizers1 :: Multiplicative a => Equalizers N1 a
 equalizers1 = Limits eql where
   eql :: Multiplicative a => EqualizerDiagram N1 a -> Equalizer N1 a
@@ -113,6 +128,7 @@ equalizers1 = Limits eql where
 
 --------------------------------------------------------------------------------
 -- equlizers2 -
+
 -- | promoting equalizers.
 --
 -- ![image equalizer](c:/Users/zeric/haskell/oalg/src/OAlg/Limes/equalizer.jpg)
@@ -136,6 +152,7 @@ equalizers2 eql2 = Limits (eql eql2) where
 --------------------------------------------------------------------------------
 -- equlizers -
 
+-- | equalizers of @n@ arrows given by products of two points and equalizers of two arrows.
 equalizers :: Multiplicative a => Products N2 a -> Equalizers N2 a -> Equalizers n a
 equalizers prd2 eql2 = Limits (eql prd2 eql2) where
   eql :: Multiplicative a
@@ -148,20 +165,29 @@ equalizers prd2 eql2 = Limits (eql prd2 eql2) where
 --------------------------------------------------------------------------------
 -- equlizersOrnt -
 
+-- | equalizers for 'Orientation' 
 equalizersOrnt :: Entity p => p -> Equalizers n (Orientation p)
 equalizersOrnt = lmsToPrjOrnt
 
 --------------------------------------------------------------------------------
 -- Coequalizers -
 
+-- | 'Diagram' for a coequalizer.
 type CoequalizerDiagram n = Diagram (Parallel RightToLeft) N2 n
-type CoequalizerCone n    = Cone Mlt Injective (Parallel RightToLeft) N2 n
-type Coequalizer n        = Limes Mlt Injective (Parallel RightToLeft) N2 n
+
+-- | 'Cone' for a coequalizer.
+type CoequalizerCone n = Cone Mlt Injective (Parallel RightToLeft) N2 n
+
+-- | coequalizer as 'Limes.
+type Coequalizer n = Limes Mlt Injective (Parallel RightToLeft) N2 n
+
+-- | coequalizers for a 'Multiplicative' structure.
 type Coequalizers n       = Limits Mlt Injective (Parallel RightToLeft) N2 n
 
 --------------------------------------------------------------------------------
 -- Coequalizer - Duality -
 
+-- | duality between coequalizers and equalizers.
 coeqlLimitsDuality :: Multiplicative a
   => LimitsDuality Mlt (Coequalizers n) (Equalizers n) a
 coeqlLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
@@ -169,11 +195,13 @@ coeqlLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- coequalizers -
 
+-- | coequalizers of @n@ arrows given by sums of two points and coequalizers of two arrows.
 coequalizers :: Multiplicative a => Sums N2 a -> Coequalizers N2 a -> Coequalizers n a
 coequalizers sum2 coeql2 = lmsFromOp coeqlLimitsDuality $ equalizers prd2 eql2 where
   prd2 = lmsToOp sumLimitsDuality sum2
   eql2 = lmsToOp coeqlLimitsDuality coeql2
 
+-- | 'coequalizers' given by a proxy for @n@.
 coequalizers' :: Multiplicative a
   => p n -> Sums N2 a -> Coequalizers N2 a -> Coequalizers n a
 coequalizers' _ = coequalizers
@@ -181,6 +209,7 @@ coequalizers' _ = coequalizers
 --------------------------------------------------------------------------------
 -- coequalizersOrnt -
 
+-- | coequalizers for 'Orientation'.
 coequalizersOrnt :: Entity p => p -> Coequalizers n (Orientation p)
 coequalizersOrnt = lmsFromInjOrnt
 
