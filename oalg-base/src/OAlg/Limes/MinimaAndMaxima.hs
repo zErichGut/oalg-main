@@ -6,8 +6,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Minima and Maxima,
--- i.e. limits of 'Chain'-diagrams.
+-- |
+-- Module      : OAlg.Limes.MinimaAndMaxima
+-- Description : minima and maxima
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- minima and maxima within a 'Multiplicative' structure, i.e. limits of @'Diagram' ('Chain' __t__)@.
 module OAlg.Limes.MinimaAndMaxima
   (
     -- * Minima
@@ -41,14 +47,22 @@ import OAlg.Limes.Limits
 --------------------------------------------------------------------------------
 -- Minima -
 
-type MinimumDiagram t n         = Diagram (Chain t) (n+1) n
-type MinimumCone t n            = Cone Mlt Projective (Chain t) (n+1) n
-type Minimum t n                = Limes Mlt Projective (Chain t) (n+1) n
-type Minima t n                 = Limits Mlt Projective (Chain t) (n+1) n
+-- | 'Diagram' for a minimum.
+type MinimumDiagram t n = Diagram (Chain t) (n+1) n
+
+-- | 'Cone' for a minimum.
+type MinimumCone t n = Cone Mlt Projective (Chain t) (n+1) n
+
+-- | minimum as 'Limes'.
+type Minimum t n = Limes Mlt Projective (Chain t) (n+1) n
+
+-- | minima for a 'Multiplicative' structure.
+type Minima t n = Limits Mlt Projective (Chain t) (n+1) n
 
 --------------------------------------------------------------------------------
 -- minima -
 
+-- | minima according to @'Chain' 'To'@.
 minimaTo :: Multiplicative a => Minima To n a
 minimaTo = Limits lMin where
   lMin :: Multiplicative a => MinimumDiagram To n a -> Minimum To n a
@@ -56,6 +70,7 @@ minimaTo = Limits lMin where
     l = cnPrjChainTo (FactorChain (one (chnToStart d)) d)
     u c = f where FactorChain f _ = cnPrjChainToInv c
 
+-- | minima according to @'Chain' 'From'@.
 minimaFrom :: Multiplicative a => Minima From n a
 minimaFrom = Limits lMin where
   lMin :: Multiplicative a => MinimumDiagram From n a -> Minimum From n a
@@ -66,17 +81,26 @@ minimaFrom = Limits lMin where
 --------------------------------------------------------------------------------
 -- Maxima -
 
-type MaximumDiagram t n         = Diagram (Chain t) (n+1) n
-type MaximumCone t n            = Cone Mlt Injective (Chain t) (n+1) n
-type Maximum t n                = Limes Mlt Injective (Chain t) (n+1) n
-type Maxima t n                 = Limits Mlt Injective (Chain t) (n+1) n
+-- | 'Diagram' for a maximum.
+type MaximumDiagram t n = Diagram (Chain t) (n+1) n
+
+-- | 'Cone' for a maximum.
+type MaximumCone t n = Cone Mlt Injective (Chain t) (n+1) n
+
+-- | maximum as a 'Limes'.
+type Maximum t n = Limes Mlt Injective (Chain t) (n+1) n
+
+-- | maxima for a 'Multiplicative' structure.
+type Maxima t n = Limits Mlt Injective (Chain t) (n+1) n
 
 --------------------------------------------------------------------------------
 -- Duality - Max -
 
+-- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.
 maxLimitsDualityTo :: Multiplicative a => LimitsDuality Mlt (Maxima To n) (Minima From n) a
 maxLimitsDualityTo = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 
+-- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.
 maxLimitsDualityFrom :: Multiplicative a
   => LimitsDuality Mlt (Maxima From n) (Minima To n) a
 maxLimitsDualityFrom = LimitsDuality ConeStructMlt Refl Refl Refl Refl
@@ -84,14 +108,18 @@ maxLimitsDualityFrom = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- maxima -
 
+-- | maxima according to @'Chain' 'To'@.
 maximaTo :: Multiplicative a => Maxima To n a
 maximaTo = lmsFromOp maxLimitsDualityTo minimaFrom
 
+-- | maxima according to @'Chain' 'From'@.
 maximaFrom :: Multiplicative a => Maxima From n a
 maximaFrom = lmsFromOp maxLimitsDualityFrom minimaTo
 
+-- | maxima according to @'Chain' 'To'@ given by two proxy types.
 maximaTo' :: Multiplicative a => p n -> f a -> Maxima To n a
 maximaTo' _ _ = maximaTo
 
+-- | maxima according to @'Chain' 'From'@ given by two proxy types.
 maximaFrom' :: Multiplicative a => p n -> f a -> Maxima From n a
 maximaFrom' _ _ = maximaFrom

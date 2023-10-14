@@ -10,13 +10,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- |
--- Module      : OAlg.Limes.Limits
+-- Module      : OAlg.Limes.TerminalAndInitialPoint
 -- Description : terminal and initial point
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- terminal and initial point within a 'Multiplicative' structure.
+-- terminal and initial point within a 'Multiplicative' structure, i.e. limits of
+-- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.
 module OAlg.Limes.TerminalAndInitialPoint
   (
     -- * Terminal
@@ -71,13 +72,13 @@ import OAlg.Limes.Limits
 type TerminalDiagram = Diagram 'Empty N0 N0
 
 -- | 'Cone' for a terminal point.
-type TerminalCone    = Cone Mlt Projective 'Empty N0 N0
+type TerminalCone = Cone Mlt Projective 'Empty N0 N0
 
 -- | terminal point as 'Limes'.
-type TerminalPoint   = Limes Mlt Projective 'Empty N0 N0
+type TerminalPoint = Limes Mlt Projective 'Empty N0 N0
 
--- | evaluating a terminal point.
-type Terminals       = Limits Mlt Projective 'Empty N0 N0
+-- | terminal point within a 'Multiplicative' structure.
+type Terminals = Limits Mlt Projective 'Empty N0 N0
 
 --------------------------------------------------------------------------------
 -- trmDiagram -
@@ -111,13 +112,13 @@ trmsOrnt = lmsToPrjOrnt
 type InitialDiagram = Diagram 'Empty N0 N0
 
 -- | 'Cone' for a initial point.
-type InitialCone    = Cone Mlt Injective 'Empty N0 N0
+type InitialCone = Cone Mlt Injective 'Empty N0 N0
 
 -- | initial point as 'Limes'.
-type InitialPoint   = Limes Mlt Injective 'Empty N0 N0
+type InitialPoint = Limes Mlt Injective 'Empty N0 N0
 
--- | evaluating a initial point.
-type Initials       = Limits Mlt Injective 'Empty N0 N0
+-- | initial point within a 'Multiplicative' structure.
+type Initials = Limits Mlt Injective 'Empty N0 N0
 
 --------------------------------------------------------------------------------
 -- Duality - Terminal -

@@ -10,7 +10,14 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 
 
--- | Products and Sums, i.e. limits of 'Discrete'-diagrams.
+-- |
+-- Module      : OAlg.Limes.ProductsAndSums
+-- Description : products and sums
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- products and sums, i.e. limits of @'Diagram' 'Discrete'@.
 module OAlg.Limes.ProductsAndSums
   (
     -- * Products
@@ -60,16 +67,22 @@ import OAlg.Limes.MinimaAndMaxima
 --------------------------------------------------------------------------------
 -- Product -
 
-type ProductDiagram n         = Diagram Discrete n N0
-type ProductCone n            = Cone Mlt Projective Discrete n N0
-type Product n                = Limes Mlt Projective Discrete n N0
-type Products n               = Limits Mlt Projective Discrete n N0
+-- | 'Diagram' for a product.
+type ProductDiagram n = Diagram Discrete n N0
 
+-- | 'Cone' for a product.
+type ProductCone n = Cone Mlt Projective Discrete n N0
+
+-- | product as a 'Limes'.
+type Product n = Limes Mlt Projective Discrete n N0
+
+-- | products for a 'Multiplicative' structure.
+type Products n = Limits Mlt Projective Discrete n N0
 
 --------------------------------------------------------------------------------
 -- prdDiagram -
 
--- | the product diagram given by a source diagram.
+-- | the underlying product diagram given by a source diagram.
 prdDiagram :: Oriented a => Diagram (Star From) (n+1) n a -> ProductDiagram n a
 prdDiagram (DiagramSource _ as) = DiagramDiscrete (amap1 end as)
 
@@ -83,7 +96,7 @@ prdCone d@(DiagramSource p as) = ConeProjective (prdDiagram d) p as
 --------------------------------------------------------------------------------
 -- products0 -
 
--- | products of @0@ points given by a terminal point.
+-- | products of zero points given by a terminal point.
 products0 :: Multiplicative a => TerminalPoint a -> Products N0 a
 products0 t = Limits (prd t) where
   prd :: Multiplicative a => TerminalPoint a -> ProductDiagram N0 a -> Product N0 a
@@ -94,7 +107,7 @@ products0 t = Limits (prd t) where
 --------------------------------------------------------------------------------
 -- products1 -
 
--- | products of @1@ point, i.e. 'minima'.
+-- | products of one point, i.e. 'Minima'.
 products1 :: Multiplicative a => Products N1 a
 products1 = Limits prd where
   prd :: Multiplicative a => ProductDiagram N1 a -> Product N1 a
@@ -107,7 +120,7 @@ products1 = Limits prd where
 --------------------------------------------------------------------------------
 -- products2 -
 
--- | products of at least @2@ points given by products of @2@ points.
+-- | products of at least two points given by products of two points.
 products2 :: Multiplicative a => Products N2 a -> Products (n+2) a
 products2 prd2 = Limits (prd prd2) where
   prd :: (Multiplicative a, n ~ (n'+2))
@@ -134,7 +147,7 @@ products2 prd2 = Limits (prd prd2) where
 --------------------------------------------------------------------------------
 -- products -
 
--- | products of @n@ points given by products of @0@ and @2@ points.
+-- | products of @n@ points given by products of zero and two points.
 products :: Multiplicative a => Products N0 a -> Products N2 a -> Products n a
 products prd0 prd2 = Limits (prd prd0 prd2) where
   prd :: Multiplicative a
@@ -169,41 +182,55 @@ productsOrnt = lmsToPrjOrnt
 --------------------------------------------------------------------------------
 -- Sum -
 
-type SumDiagram n         = Diagram Discrete n N0
-type SumCone n            = Cone Mlt Injective Discrete n N0
-type Sum n                = Limes Mlt Injective Discrete n N0
-type Sums n               = Limits Mlt Injective Discrete n N0
+-- | 'Diagram' for a sum. 
+type SumDiagram n = Diagram Discrete n N0
+
+-- | 'Cone' for a sum.
+type SumCone n = Cone Mlt Injective Discrete n N0
+
+-- | sum as a 'Limes.
+type Sum n = Limes Mlt Injective Discrete n N0
+
+-- | sums for a 'Multiplicative' structure.
+type Sums n = Limits Mlt Injective Discrete n N0
 
 --------------------------------------------------------------------------------
 -- sumDiagram -
 
+-- | the underlying sum diagram given by a sink diagram.
 sumDiagram :: Oriented a => Diagram (Star To) (n+1) n a -> SumDiagram n a
 sumDiagram (DiagramSink _ as) = DiagramDiscrete (amap1 start as)
 
 --------------------------------------------------------------------------------
 -- sumCone -
 
+-- | the sum cone given by a sink diagram.
 sumCone :: Multiplicative a => Diagram (Star To) (n+1) n a -> SumCone n a
 sumCone d@(DiagramSink p as) = ConeInjective (sumDiagram d) p as
 
 --------------------------------------------------------------------------------
 -- Sum - Duality - 
 
+-- | duality between sums and products.
 sumLimitsDuality :: Multiplicative a => LimitsDuality Mlt (Sums n) (Products n) a
 sumLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- sums0 -
 
+-- | sums of zero points given by a initial point.
 sums0 :: Multiplicative a => InitialPoint a -> Sums N0 a
 sums0 int = lmsFromOp sumLimitsDuality $ products0 $ lmToOp intLimesDuality int
 
+-- | sums of one point, i.e. 'Maxima'.
 sums1 :: Multiplicative a => Sums N1 a
 sums1 = lmsFromOp sumLimitsDuality $ products1
 
+-- | sums of at least two points given by sums of two points.
 sums2 :: Multiplicative a => Sums N2 a -> Sums (n+2) a
 sums2 sum2 = lmsFromOp sumLimitsDuality $ products2 $ lmsToOp sumLimitsDuality sum2
 
+-- | sums of @n@ points given by sums of zero and two points.
 sums :: Multiplicative a => Sums N0 a -> Sums N2 a -> Sums n a
 sums sum0 sum2 = Limits (sum sum0 sum2) where
   sum :: Multiplicative a
@@ -213,24 +240,28 @@ sums sum0 sum2 = Limits (sum sum0 sum2) where
     DiagramDiscrete (_:|Nil)  -> limes sums1 d
     DiagramDiscrete (_:|_:|_) -> limes (sums2 sum2) d 
 
+-- | sums given by a proxy type for @n@.
 sums' :: Multiplicative a => p n -> Sums N0 a -> Sums N2 a -> Sums n a
 sums' _ = sums
 
 --------------------------------------------------------------------------------
 -- sumConeOrnt -
 
+-- | sum cone for 'Orientation'.
 sumConeOrnt :: Entity p => p -> FinList n p -> SumCone n (Orientation p)
 sumConeOrnt p ps = cnInjOrnt p (DiagramDiscrete ps)
 
 --------------------------------------------------------------------------------
 -- sumOrnt -
 
+-- | sum for 'Orientation'.
 sumOrnt :: Entity p => p -> FinList n p -> Sum n (Orientation p)
 sumOrnt p ps = lmFromInjOrnt p (DiagramDiscrete ps)
   
 --------------------------------------------------------------------------------
 -- sumsOnt -
 
+-- | sums for 'Orientation'.
 sumsOrnt :: Entity p => p -> Sums n (Orientation p)
 sumsOrnt = lmsFromInjOrnt
 
