@@ -133,8 +133,6 @@ pullbacks1 = Limits (plb minimaTo) where
 -- pullbacks2 -
 
 -- | promotion of pullbacks with at least two arrows.
---
--- ![image pullback](c:/Users/zeric/haskell/oalg/src/OAlg/Limes/pullback.png)
 pullbacks2 :: Multiplicative a => Pullbacks N2 a -> Pullbacks (n+2) a
 pullbacks2 plb2 = Limits (plb plb2) where
   plb :: Multiplicative a
@@ -154,7 +152,9 @@ pullbacks2 plb2 = Limits (plb plb2) where
 --------------------------------------------------------------------------------
 -- pullbacks -
 
--- | promotion of pullbacks by 'pullbacks2' and 'pullbacks1'.
+-- | promotion of pullbacks.
+--
+-- ![image pullback](c:/Users/zeric/haskell/oalg/src/OAlg/Limes/pullback.png)
 pullbacks :: Multiplicative a => Pullbacks N2 a -> Pullbacks n a
 pullbacks plb2 = Limits (plb plb2) where
   plb :: Multiplicative a
@@ -218,7 +218,7 @@ pshLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- pushouts -
 
--- | promotion of pushouts by pushouts for two arrows.
+-- | promotion of pushouts.
 pushouts :: Multiplicative a => Pushouts N2 a -> Pushouts n a
 pushouts psh2 = lmsFromOp pshLimitsDuality $ pullbacks plb2 where
   plb2 = lmsToOp pshLimitsDuality psh2

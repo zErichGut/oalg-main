@@ -11,7 +11,14 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Sliced structures with an assignet /free/ point of some given /dimension/.
+-- |
+-- Module      : OAlg.Entity.Slice.Free
+-- Description : slicing by free points
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- sliced structures with an assigned /free/ 'Point' of some given /dimension/.
 module OAlg.Entity.Slice.Free
   (
     -- * Free
@@ -57,7 +64,7 @@ import OAlg.Entity.Slice.Definition
 --------------------------------------------------------------------------------
 -- Free -
 
--- | index for free points within a 'Multiplicative' structure __@c@__.
+-- | index for free points within a 'Multiplicative' structure @__c__@.
 --
 -- >>> lengthN (Free attest :: Free N3 c)
 -- 3
@@ -74,7 +81,7 @@ instance Typeable k => Entity1 (Free k)
 --------------------------------------------------------------------------------
 -- freeN -
 
--- | the underlying natrual number.
+-- | the underlying natural number.
 freeN :: Free k c -> N
 freeN (Free k) = lengthN k
 
@@ -88,16 +95,17 @@ castFree (Free k) = Free k
 --------------------------------------------------------------------------------
 -- isFree -
 
--- | check for beeing free point, i.e. if it is equal to 'slicePoint'.
+-- | check for being a free point, i.e. if it is equal to 'slicePoint'.
 --
---  __Definition__ Let @n@ be in @'Free' __n__ __c__@ and @p@ in @'Point' __c__@ then
--- we call @p@ of __/order/__ @n@ if and only if @'isSlice' n p@.
+-- __Definition__ Let @n@ be in @'Free' __n__ __c__@ and @p@ in @'Point' __c__@ then
+-- we call @p@ of __/order/__ @n@ if and only if @'slicePoint' i '==' p@.
 isFree :: (Eq (Point c), Sliced (Free k) c) => Free k c -> Point c -> Bool
 isFree i p = slicePoint i == p
 
 --------------------------------------------------------------------------------
 -- SomeFree -
 
+-- | some free attest.
 data SomeFree c where
   SomeFree :: (Attestable k, Sliced (Free k) c) => Free k c -> SomeFree c
 
@@ -108,6 +116,7 @@ instance Validable (SomeFree c) where
 --------------------------------------------------------------------------------
 -- SomeFreeSlice -
 
+-- | some free point within a 'Multiplicative' structure @__c__@.
 data SomeFreeSlice s c where
   SomeFreeSlice :: (Attestable k, Sliced (Free k) c)
     => Slice s (Free k) c -> SomeFreeSlice s c
@@ -128,9 +137,9 @@ class XStandardSomeFreeSliceFrom c where
 
 -- | predicate for a limes with a /free/ tip of its universal cone.
 --
---  __Property__ Let @'LimesFree k l@ be in
+-- __Property__ Let @'LimesFree k l@ be in
 -- @'LimesFree' __s__ __p__ __t__ __n__ __m__ __a__@ and
---  then holds: @'slicePoint' k '==' t@ where @t = 'tip' ('universalCone' l)@. 
+-- then holds: @'slicePoint' k '==' t@ where @t = 'tip' ('universalCone' l)@. 
 data LimesFree s p t n m a where
   LimesFree :: (Attestable k, Sliced (Free k) a)
     => Free k a -> Limes s p t n m a -> LimesFree s p t n m a
@@ -157,15 +166,15 @@ limesFree (LimesFree _ l) = l
 --------------------------------------------------------------------------------
 -- KernelSliceFromSomeFreeTip -
 
--- | perdicate for a kernel with a start point of its diagram given by the slice index and
---   a free universal tip.
+-- | predicate for a kernel with a start point of its diagram given by the slice index and
+-- a free universal tip.
 --
---  __Property__ Let @'KernelSliceFromSomeFreeTip' k' i ker@ be in
---  @'KernelSliceFromSomeFreeTip' __n__ __c__@, then holds:
+-- __Property__ Let @'KernelSliceFromSomeFreeTip' k' i ker@ be in
+-- @'KernelSliceFromSomeFreeTip' __n__ __c__@, then holds:
 --
---  (1) @'slicePoint' i '==' s@ where @'DiagramParallelLR' s _ _ = 'diagram' ker@.
+-- (1) @'slicePoint' i '==' s@ where @'DiagramParallelLR' s _ _ = 'diagram' ker@.
 --
---  (2) @'slicePoint' k' '==' 'tip' ('universalCone' ker)@.
+-- (2) @'slicePoint' k' '==' 'tip' ('universalCone' ker)@.
 data KernelSliceFromSomeFreeTip n i c where
   KernelSliceFromSomeFreeTip :: (Attestable k', Sliced (Free k') c)
     => Free k' c -> i c -> Kernel n c -> KernelSliceFromSomeFreeTip n i c
@@ -213,24 +222,31 @@ instance Oriented a => Validable (DiagramFree t n m a) where
 --------------------------------------------------------------------------------
 -- dgfDiagram -
 
+-- | the underlying diagram.
 dgfDiagram :: DiagramFree t n m a -> Diagram t n m a
 dgfDiagram (DiagramFree _ d) = d
 
 --------------------------------------------------------------------------------
 -- KernelFree -
 
+-- | kerne diagram with free points. 
 type KernelDiagramFree = DiagramFree (Parallel LeftToRight) N2
+
+-- | kernel of a diagram with free points.
 type KernelFree = LimesFree Dst Projective (Parallel LeftToRight) N2
 
 --------------------------------------------------------------------------------
 -- CokernelFree -
 
--- | type for cokernel diagrams with free points.
+-- | cokernel diagrams with free points.
 type CokernelDiagramFree = DiagramFree (Parallel RightToLeft) N2
 
 --------------------------------------------------------------------------------
 -- PullbackFree -
 
+-- | pullback diagram with free points.
 type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
+
+-- | pullback of a diagram with free points.
 type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
 

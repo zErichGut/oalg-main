@@ -5,7 +5,14 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 
--- | Products and sums for matrices.
+-- |
+-- Module      : OAlg.Entity.Matrix.ProductsAndSums
+-- Description : products and sums for matrices
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- 'Products' and 'Sums' for matrices.
 module OAlg.Entity.Matrix.ProductsAndSums
   ( mtxProducts, mtxSums
   ) where
@@ -40,6 +47,7 @@ import OAlg.Entity.Matrix.Entries
 --------------------------------------------------------------------------------
 -- mtxProducts -
 
+-- | products for matrices.
 mtxProducts :: Distributive x => Products n (Matrix x)
 mtxProducts = Limits prd where
   
@@ -75,6 +83,7 @@ mtxProducts = Limits prd where
 --------------------------------------------------------------------------------
 -- mtxSums -
 
+-- | sums for matrices.
 mtxSums :: Distributive x => Sums n (Matrix x)
 mtxSums = lmsFromOp sumLimitsDuality $ lmsMap isoToOp $ mtxProducts where
   isoToOp :: Distributive x => IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x)) 

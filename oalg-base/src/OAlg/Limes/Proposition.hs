@@ -5,10 +5,16 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Propositions about the algerbaic structure of types.
+-- |
+-- Module      : OAlg.Limes.Proposition
+-- Description : propositions on limits
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- propositions on 'OAlg.Limes.Limits.Limits'.
 module OAlg.Limes.Proposition
   (
     prpLimitsOrntSymbol
@@ -32,28 +38,10 @@ import OAlg.Limes.EqualizersAndCoequalizers
 import OAlg.Limes.PullbacksAndPushouts
 import OAlg.Limes.KernelsAndCokernels
 
-{-
---------------------------------------------------------------------------------
--- prpLimitsToProjectiveSomeDiagram -
-
-prpLimitsToProjectiveSomeDiagram :: Multiplicative a
-  => XStandardOrtSite To a
-  => Products N0 a -> Products N2 a
-  -> SomeDiagram a -> Statement
-prpLimitsToProjectiveSomeDiagram prd0 prd2 (SomeDiagram d)
-  = Prp "LimitsToProjectiveSomeDiagram" :<=>: case d of
-    DiagramDiscrete _     -> prpLimitsProduct
-                               xStandardEligibleFactor
-                               (products prd0 prd2) d
-    DiagramChainTo _ _    -> prpLimitsMinimum xStandardEligibleFactor minimaTo d
---    DiagramChainFrom _ _  -> prpLimitsMinimum xStandardEligibleFactor minimaFrom d
-    _                     -> PTrue
--}
-
 --------------------------------------------------------------------------------
 -- prpLimitsOrntSymbol -
 
--- | validity of limits for @'Orientation' 'Symbole'@.
+-- | validity of 'OAlg.Limes.Limits.Limits' for @'Orientation' 'Symbol'@.
 prpLimitsOrntSymbol :: Statement
 prpLimitsOrntSymbol = Prp "LimesOrntSymbol" :<=>:
   And [ Label "TerminalAndInitialPoint" :<=>:

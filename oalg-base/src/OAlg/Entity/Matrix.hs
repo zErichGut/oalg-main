@@ -1,6 +1,14 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
+-- |
+-- Module      : OAlg.Entity.Matrix
+-- Description : matrices over distributive structures
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- matrices over 'OAlg.Structure.Distributive.Definition.Distributive' structures
 module OAlg.Entity.Matrix
   ( module Def
   , module Dim

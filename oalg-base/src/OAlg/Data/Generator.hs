@@ -8,7 +8,14 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
--- | Singelton types having exactly one element.
+-- |
+-- Module      : OAlg.Data.Generator
+-- Description : generator for finitely generated points.
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- 'Generator' for finitely generated 'Point's within a 'Distributive' structure.
 module OAlg.Data.Generator
   ( -- * Generator
     Generator(..)
@@ -38,10 +45,10 @@ import OAlg.Limes.KernelsAndCokernels
 --------------------------------------------------------------------------------
 -- Generator -
 
--- | the generator for a finitely generated abelian group.
+-- | generator for finitely generated 'Point's within a 'Distributive' structure.
 --
---  __Property__ Let @'Generator' d k' k'' coker ker lft@ be in 'Generator' and let
---  @'DiagramChainTo' g (p':|'p'':|''Nil') = d@
+-- __Property__ Let @'Generator' d k' k'' coker ker lft@ be in 'Generator' and let
+-- @'DiagramChainTo' g (p':|'p'':|''Nil') = d@
 --
 -- @
 --          p           p'
@@ -51,20 +58,20 @@ import OAlg.Limes.KernelsAndCokernels
 --
 -- then holds:
 --
---  (1) @coker@ is the cokernel of @p'@ with @p@ as the shell of its universal cone.
+-- (1) @coker@ is the cokernel of @p'@ with @p@ as the shell of its universal cone.
 --
---  (2) @ker@ is the kernel of @p@ with @p'@ as the shell of its universal cone.
+-- (2) @ker@ is the kernel of @p@ with @p'@ as the shell of its universal cone.
 --
---  (3) @'KenrelSliceFromSomeFreeTip k'' k' ker@ is 'valid'.
+-- (3) @'KenrelSliceFromSomeFreeTip k'' k' ker@ is 'valid'.
 --
---  (4) For all @h = 'SliceFrom' _ h'@ in @'Slice' 'From' ('Free' __k__) a@ with
---      @'end' h' '==' g@ holds:
+-- (4) For all @h = 'SliceFrom' _ h'@ in @'Slice' 'From' ('Free' __k__) a@ with
+-- @'end' h' '==' g@ holds:
 --
---      (1) @lft h@ is 'valid'.
+--     (1) @lft h@ is 'valid'.
 --
---      (2) @'orientation' (lft h) '==' 'start' h ':>' 'start' p@.
+--     (2) @'orientation' (lft h) '==' 'start' h ':>' 'start' p@.
 --
---      (3) @p 'M.*' lft h '==' h'@.
+--     (3) @p 'M.*' lft h '==' h'@.
 --
 -- @
 --             g'
@@ -129,16 +136,20 @@ instance (Oriented a, XStandardPoint a) => Validable (XSomeFreeSliceFromLiftable
                             )
       )
 
+--------------------------------------------------------------------------------
+-- xsfsfl -
+
+-- | the underlying random variable for some free slice.
 xsfsfl :: XSomeFreeSliceFromLiftable a -> Point a -> X (SomeFreeSlice From a)
 xsfsfl (XSomeFreeSliceFromLiftable xfl) = xfl
 
 --------------------------------------------------------------------------------
 -- XStandardSomeFreeSliceFromLifable -
 
--- | random variable of liftable free slice froms.
+-- | random variable of lift-able free slice froms.
 --
---  __Property__ Let @__a__@ be in instance of 'XStandardSomeFreeSliceLiftable' then holds:
--- For all @p@ in @'Point' a@ and @'SomeSliceFrom' ('SliceFrom' _ h)@ in the range of
+--  __Property__ Let @__a__@ be in instance of 'XStandardSomeFreeSliceFromLiftable' then holds:
+-- For all @p@ in @'Point' __a__@ and @'SomeFreeSlice' ('SliceFrom' _ h)@ in the range of
 -- @'xStandardSomeFreeSliceFromLiftable' p@ holds: @'end' h '==' p@.
 class XStandardSomeFreeSliceFromLiftable a where
   xStandardSomeFreeSliceFromLiftable :: XSomeFreeSliceFromLiftable a

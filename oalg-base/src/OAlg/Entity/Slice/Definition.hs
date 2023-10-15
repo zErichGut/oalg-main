@@ -12,10 +12,17 @@
 {-# LANGUAGE DataKinds #-}
 
 
--- | Sliceing a multiplicative structures by a given indexed point.
+-- |
+-- Module      : OAlg.Entity.Slice.Definition
+-- Description : slicing a multiplicative structure
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- slicing a 'Multiplicative' structures according a given indexed 'Point'.
 --
---  __Note__ Unfortunatly for /haskell/ it is in general not possible to lift a value to
--- the type level, as such we need to sircumvit some how this restriction by using an
+-- __Note__ Unfortunately for /Haskell/ it is in general not possible to lift a value to
+-- the type level, as such we need to circumvent somehow this restriction by using an
 -- /index/ type where the associated point depends only of that type (see 'Sliced').
 module OAlg.Entity.Slice.Definition
   (
@@ -81,11 +88,11 @@ import OAlg.Data.Symbol
 --------------------------------------------------------------------------------
 -- Sliced -
 
--- | Sliceing a multiplicative structures at the point given by the type of the index
+-- | Slicing a 'Multiplicative' structures at the 'Point' given by the type of the index
 --  __@i@__. 
 --
---  __Note__ The constraint @'Singleton1' __i__@ ensures that the distinguised point
---  dependes only on the type __@i c@__.
+--  __Note__ The constraint @'Singleton1' __i__@ ensures that the distinguished point
+--  depends only on the type __@i c@__.
 class (Entity1 i, Singleton1 i) => Sliced i c where
   -- | the distingueished point of the given index type @__i__@.
   slicePoint :: i c -> Point c
@@ -103,7 +110,7 @@ instance Sliced i c => Sliced i (Op c) where
 --------------------------------------------------------------------------------
 -- Slice -
 
--- | slice over __@c@__ by a given 'Site' and indexed by __@i@__.
+-- | slice over __@c@__ by a given 'Site' and indexed by @__i__@.
 data Slice s i c where
   SliceFrom :: i c -> c -> Slice From i c
   SliceTo :: i c -> c -> Slice To i c
@@ -129,6 +136,7 @@ slice (SliceTo _ p)   = p
 
 type instance Dual (Slice s i c) = Slice (Dual s) i (Op c)
 
+-- | to the dual 'Slice'.
 coSlice :: Singleton1 i => Slice s i c -> Dual (Slice s i c)
 coSlice (SliceFrom _ f) = SliceTo unit1 (Op f)
 coSlice (SliceTo _ f)   = SliceFrom unit1 (Op f)
@@ -137,13 +145,14 @@ coSlice (SliceTo _ f)   = SliceFrom unit1 (Op f)
 --------------------------------------------------------------------------------
 -- Slice - Validable -
 
+-- | validity of a 'Slice'.
 relValidSlice :: (Oriented c, Sliced i c)
   => Slice s i c -> Statement
 relValidSlice s@(SliceFrom i f)
   = And [ valid1 i
         , valid f
         , let p = slicePoint i in
-            (start f == p):?>Params ["s":=show s] -- ["f":=show f,"p":=show p]
+            (start f == p):?>Params ["s":=show s]
         ]
 relValidSlice s                 = relValidSlice (coSlice s)
 
@@ -189,6 +198,7 @@ slfDrop (SliceFactor _ _ f) = f
 
 type instance Dual (SliceFactor s i c) = SliceFactor (Dual s) i (Op c)
 
+-- | to the dual 'SliceFactor'.
 coSliceFactor :: Singleton1 i
   => SliceFactor s i c -> Dual (SliceFactor s i c)
 coSliceFactor (SliceFactor a b t)
@@ -197,6 +207,7 @@ coSliceFactor (SliceFactor a b t)
 --------------------------------------------------------------------------------
 -- SliceTransformatin - Entity -
 
+-- | validity of a 'SliceFactor'.
 relValidSliceFactor :: (Multiplicative c, Sliced i c) => SliceFactor s i c -> Statement
 relValidSliceFactor (SliceFactor a@(SliceFrom _ a') b@(SliceFrom _ b') t)
   = And [ valid a
@@ -238,6 +249,7 @@ instance (Multiplicative c, Sliced i c, Typeable s)
 --------------------------------------------------------------------------------
 -- SliceFactor - TerminalPoint -
 
+-- | terminal point for factors sliced to a 'Point'.
 slfTerminalPoint :: (Multiplicative c, Sliced i c) => TerminalPoint (SliceFactor To i c)
 slfTerminalPoint = LimesProjective l u where
   o  :: (Multiplicative c, Sliced i c) => i c -> Slice To i c
@@ -249,12 +261,12 @@ slfTerminalPoint = LimesProjective l u where
 --------------------------------------------------------------------------------
 -- DiagramSlicedCenter -
 
--- | predicate for a @'Satr' __t__@ diagram with center point given by the index type
---   @__i__ __c__@.
+-- | predicate for a @'Star' __t__@ diagram with center 'Point' given by the index type
+-- @__i__ __c__@.
 --
---  __Property__ Let @'DiagramSlicedCenter' i d@ be in
---  @'DiagramSlicedCenter' __i__ __t__ __n__ __m__ __c__@ then holds:
---  @'slicePoint' i '==' 'dgCenter' d@.
+-- __Property__ Let @'DiagramSlicedCenter' i d@ be in
+-- @'DiagramSlicedCenter' __i__ __t__ __n__ __m__ __c__@ then holds:
+-- @'slicePoint' i '==' 'dgCenter' d@.
 data DiagramSlicedCenter i t n m c where
   DiagramSlicedCenter :: Sliced i c
     => i c
@@ -276,6 +288,7 @@ instance Oriented c => Validable (DiagramSlicedCenter i t n m c) where
 --------------------------------------------------------------------------------
 -- slfPullback -
 
+-- | the induced pullback.
 slfPullback :: Multiplicative c
   => Products n (SliceFactor To i c)
   -> DiagramSlicedCenter i To (n+1) n c -> Pullback n c
@@ -300,7 +313,7 @@ slfPullback prds (DiagramSlicedCenter kc d@(DiagramSink _ as))
 
 -- | predicate for a limes with a sliced tip of the universal cone.
 --
---  __Propery__ Let @'LimesSlicedTip' i l@ be in
+--  __Property__ Let @'LimesSlicedTip' i l@ be in
 -- @'LimesSlicedTip' __i__ __s__ __p__ __t__ __n__ __m__ __c__@ then holds:
 -- @'tip' ('universalCone' l) '==' 'slicePoint' i@.
 data LimesSlicedTip i s p t n m c where
@@ -384,6 +397,7 @@ instance Typeable s => HomMultiplicative (SliceFactorDrop s) where
 --------------------------------------------------------------------------------
 -- slfSliceIndex -
 
+-- | the given attest for the slice index @__i__ __c__@ given by the diagram proxy.
 slfSliceIndex :: Sliced i c => Diagram t n m (SliceFactor To i c) -> i c
 slfSliceIndex _ = unit1
 
@@ -401,6 +415,7 @@ dgSlfToSlicePoint d = ConeInjective d' t cs where
 --------------------------------------------------------------------------------
 -- slfLimesInjective -
 
+-- | the induced 'Injective' limes for 'SliceFactor'. 
 slfLimesInjective :: (Multiplicative c, Sliced i c)
   => Limits Mlt Injective t n m c
   -> Diagram t n m (SliceFactor To i c)
@@ -418,7 +433,7 @@ slfLimesInjective l dgSlf = LimesInjective slfLim slfUniv where
 --------------------------------------------------------------------------------
 -- slfLimitsInjective -
 
--- | injective limits.
+-- | the induced 'Injective' 'Limits'.
 slfLimitsInjective :: (Multiplicative c, Sliced i c)
   => Limits Mlt Injective t n m c -> Limits Mlt Injective t n m (SliceFactor To i c)
 slfLimitsInjective lms = Limits $ slfLimesInjective lms
@@ -426,6 +441,7 @@ slfLimitsInjective lms = Limits $ slfLimesInjective lms
 --------------------------------------------------------------------------------
 -- xSliceTo -
 
+-- | the induced random variable.
 xSliceTo :: Sliced i c
   => XOrtSite To c -> i c -> X (Slice To i c)
 xSliceTo (XEnd _ xTo) i = xTo (slicePoint i) >>= return . SliceTo i
@@ -433,6 +449,7 @@ xSliceTo (XEnd _ xTo) i = xTo (slicePoint i) >>= return . SliceTo i
 --------------------------------------------------------------------------------
 -- xSlicFrom -
 
+-- | the induced random variable.
 xSliceFrom :: Sliced i c
   => XOrtSite From c -> i c -> X (Slice From i c)
 xSliceFrom (XStart _ xFrom) i = xFrom (slicePoint i) >>= return . SliceFrom i
@@ -440,6 +457,7 @@ xSliceFrom (XStart _ xFrom) i = xFrom (slicePoint i) >>= return . SliceFrom i
 --------------------------------------------------------------------------------
 -- xosXOrtSiteToSliceFactorTo -
 
+-- | the induced random variable.
 xosXOrtSiteToSliceFactorTo :: (Multiplicative c, Sliced i c)
   => XOrtSite To c -> i c -> XOrtSite To (SliceFactor To i c)
 xosXOrtSiteToSliceFactorTo xTo@(XEnd _ xTo') i = XEnd xp xsfTo where
@@ -451,6 +469,7 @@ xosXOrtSiteToSliceFactorTo xTo@(XEnd _ xTo') i = XEnd xp xsfTo where
 --------------------------------------------------------------------------------
 -- xosXOrtSiteFromSliceFactorFrom -
 
+-- | the induced random variable.
 xosXOrtSiteFromSliceFactorFrom :: (Multiplicative c, Sliced i c)
   => XOrtSite From c -> i c -> XOrtSite From (SliceFactor From i c)
 xosXOrtSiteFromSliceFactorFrom xFrom@(XStart _ xFrom') i = XStart xp xsfFrom where
@@ -515,20 +534,7 @@ instance (Multiplicative c, Sliced i c, XStandardOrtSite To c)
 
 instance Sliced Proxy OS where
   slicePoint _ = P
-{-
-slfToOrnt :: Orientation p -> SliceFactor To Proxy (Orientation p)
-slfToOrnt = error "nyi"
 
-slfOrntRL :: Slice To Proxy OS -> Slice To Proxy OS -> SliceFactor To Proxy OS
-slfOrntRL e@(SliceTo _ (e':>_)) s@(SliceTo _ (s':>_))
-      = SliceFactor s e (e':>s')
-
-instance XStandardOrtDirection RightToLeft (SliceFactor To Proxy OS) where
-  xStandardOrtDirection = XOrtRightToLeft xStandard xrl where
-    xrl :: Slice To Proxy OS -> Slice To Proxy OS -> X (SliceFactor To Proxy OS)
-    xrl e@(SliceTo _ (e':>_)) s@(SliceTo _ (s':>_))
-      = return $ SliceFactor s e (s':>e')
--}
 instance XStandardOrtSite From (SliceFactor To Proxy OS) where
   xStandardOrtSite = XStart xp xFrom where
     xp = xStandard

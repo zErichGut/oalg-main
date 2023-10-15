@@ -8,7 +8,14 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Mapping of limits under adjunctions.
+-- |
+-- Module      : OAlg.Adjunction.Limes
+-- Description : mapping of limits under adjunctions
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- mapping of 'OAlg.Limes.Limits.Limits' under 'Adjunction's.
 module OAlg.Adjunction.Limes
   (
     -- * Multiplicative
@@ -40,6 +47,7 @@ import OAlg.Limes.Definition
 --------------------------------------------------------------------------------
 -- lmPrjMap -
 
+-- 
 lmPrjMapStruct :: Hom Mlt h
   => Struct Mlt d
   -> Adjunction h d c
@@ -58,7 +66,7 @@ lmPrjMapStruct Struct adj@(Adjunction l r _ _) (LimesProjective dLim dUniv)
     fs' = amap1 (uncurry (adjl adj)) (dgPoints dDgm `zip` fs)
 
 
--- | mapping a 'Projective' limes under an adjunction.
+-- | mapping a projective limes under an adjunction.
 lmPrjMap :: Hom Mlt h
   => Adjunction h d c -> Limes Mlt Projective t n m d -> Limes Mlt Projective t n m c
 lmPrjMap adj@(Adjunction _ r _ _) = lmPrjMapStruct (tau (domain r)) adj
@@ -76,6 +84,7 @@ lmInjMapHom (Struct:>:Struct) rt adj@(Adjunction _ _ _ _) lim
   $ lmPrjMap (coAdjunction adj) (coLimes ConeStructMlt Refl rt lim)
 
 
+-- | mapping a injective limes under an adjunction.
 lmInjMap :: Hom Mlt h
   => Adjunction h d c -> Limes Mlt Injective t n m c -> Limes Mlt Injective t n m d
 lmInjMap adj lim = lmInjMapHom (adjHomMlt adj) (lmDiagramTypeRefl lim) adj lim
@@ -95,7 +104,7 @@ lmPrjMapDstStruct Struct adj@(Adjunction _ r _ _)
   cUniv (ConeKernel _ x) = adjr adj (start x) (dUniv dCone) where
     dCone = ConeKernel dDgm (adjl adj (head $ dgPoints dDgm) x)
 
-
+-- | mapping a projective limes under an adjunction.
 lmPrjMapDst :: Hom Dst h
   => Adjunction h d c -> Limes Dst Projective t n m d -> Limes Dst Projective t n m c
 lmPrjMapDst adj@(Adjunction _ r _ _) = lmPrjMapDstStruct (tau (domain r)) adj 
@@ -111,6 +120,7 @@ lmInjMapDstHom (Struct:>:Struct) rt adj@(Adjunction _ _ _ _) lim
   = coLimesInv ConeStructDst Refl rt
   $ lmPrjMapDst (coAdjunction adj) (coLimes ConeStructDst Refl rt lim)
 
+-- | mapping a injective limes under an adjunction.
 lmInjMapDst :: Hom Dst h
   => Adjunction h d c -> Limes Dst Injective t n m c -> Limes Dst Injective t n m d
 lmInjMapDst adj@(Adjunction _ r _ _) lim
