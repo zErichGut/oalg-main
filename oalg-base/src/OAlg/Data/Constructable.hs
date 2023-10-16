@@ -1,7 +1,14 @@
 
 {-# LANGUAGE TypeFamilies #-}
 
--- | Constructable types.
+-- |
+-- Module      : OAlg.Data.Constructable
+-- Description : constructing values
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- constructing values by there 'Form'..
 module OAlg.Data.Constructable
   (
     -- * Constructable
@@ -16,8 +23,8 @@ module OAlg.Data.Constructable
 --------------------------------------------------------------------------------
 -- Exposable -
 
--- | types with an associated /form/ type and a function 'form' which expose its values
---   to its /form/.
+-- | types with an associated /form/ type and a function 'form' which exposes its values
+-- to its /form/.
 class Exposable x where
   -- | the form.
   type Form x
@@ -37,12 +44,12 @@ restrict f = f . form
 -- Constructable -
 
 -- | types with an associated /form/, which serves as a /blueprint/ to construct a
---   corresponding value.
+-- corresponding value.
 --
---  A commen setting for this structure is a module with a reducible type __@f@__
---  (see @'OAlg.Data.Reducible'@) with public constructors - which serves as a form to be
---  filled out - and in the same module a type @e@ with a private constructor - lets say
---  @E@ - to hold the 'OAlg.Data.Reducible.reduced' @f@. Than an implementation would be
+-- A common setting for this structure is a module with a reducible type __@f@__
+-- (see @'OAlg.Data.Reducible'@) with public constructors - which serves as a form to be
+-- filled out - and in the same module a type @e@ with a private constructor - lets say
+-- @E@ - to hold the 'OAlg.Data.Reducible.reduced' @f@. Than an implementation would be
 --
 -- > make f = E (reduce f)
 --
@@ -50,8 +57,8 @@ restrict f = f . form
 --
 -- > form (E f) = f
 --
---  __Property__ Let __@x@__ be an instance of the class 'Constructable' than holds:
---  For all @x@ in __@x@__ holds: @'make' ('form' x) '==' x@.
+-- __Property__ Let __@x@__ be an instance of the class 'Constructable' than holds:
+-- For all @x@ in __@x@__ holds: @'make' ('form' x) '==' x@.
 class Exposable x => Constructable x where
   -- | constructor.
   make :: Form x -> x

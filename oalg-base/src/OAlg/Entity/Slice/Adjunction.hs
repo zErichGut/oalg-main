@@ -11,7 +11,14 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
--- | cokernel-kernel adjunction for sliced structures. 
+-- |
+-- Module      : OAlg.Entity.Slice.Adjunction
+-- Description : cokernel-kernel adjunction
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- 'Cokernel'-'Kernel' 'Adjunction' for 'Slice'd structures. 
 module OAlg.Entity.Slice.Adjunction
   ( -- * Adjunction
     slcAdjunction

@@ -11,7 +11,7 @@
 
 -- |
 -- Module      : OAlg.Entity.Diagram.Transformation
--- Description : natural transformations between diagrams.
+-- Description : natural transformations between diagrams
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com

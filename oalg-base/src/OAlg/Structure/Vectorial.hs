@@ -1,6 +1,6 @@
 
 -- |
--- Module      : OAlg.Structure.Vectorial.Proposition
+-- Module      : OAlg.Structure.Vectorial
 -- Description : vectorial structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3

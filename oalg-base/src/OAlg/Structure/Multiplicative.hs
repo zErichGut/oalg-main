@@ -1,15 +1,12 @@
 
-{-# LANGUAGE NoImplicitPrelude #-}
-
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
-
--- | Multiplicative structures.
+-- |
+-- Module      : OAlg.Structure.Multiplicative
+-- Description : multiplicative structures
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- 'Multiplicative' structures.
 module OAlg.Structure.Multiplicative
   ( module Mlt
   , module Prp

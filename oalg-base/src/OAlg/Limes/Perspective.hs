@@ -4,7 +4,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 
--- | concept of 'Projective' and 'Injective'.
+-- |
+-- Module      : OAlg.Limes.Perspective
+-- Description : concept of perspective
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- concept of 'Projective' and 'Injective'.
 module OAlg.Limes.Perspective
   ( Perspective(..)
   ) where
@@ -19,8 +26,4 @@ data Perspective = Projective | Injective deriving (Show,Eq,Ord,Enum,Bounded)
 
 type instance Dual Projective = Injective
 type instance Dual Injective = Projective
-{-
-instance Transposable Perspective where
-  transpose Projective = Injective
-  transpose Injective = Projective
--}
+

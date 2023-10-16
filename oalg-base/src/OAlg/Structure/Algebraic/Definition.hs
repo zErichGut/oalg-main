@@ -10,12 +10,13 @@
 
 -- |
 -- Module      : OAlg.Structure.Algebraic.Definition
--- Description : distributive structures with a suitable vectorial structure.
+-- Description : definition of algebraic structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- 'Distributive' structures with a suitable 'Vectorial' structure.
+-- definition of algebraic structures, i.e. 'Distributive' structures with a suitable
+-- 'Vectorial' structure.
 module OAlg.Structure.Algebraic.Definition
   ( -- * Algebraic
     Algebraic, Alg, ForgetfulAlg

@@ -11,12 +11,12 @@
 
 -- |
 -- Module      : OAlg.Entity.Diagram.Definition
--- Description : Diagrams on oriented structures
+-- Description : definition of diagrams on oriented structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- diagrams on 'Oriented' structures.
+-- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
     -- * Diagram

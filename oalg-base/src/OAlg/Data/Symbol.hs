@@ -1,6 +1,13 @@
 
--- | Symbols from 'A' to 'Z'. They are primarly used to validate the
---   algebraic structure of 'OAlg.Structure.Multiplicative.Orientation'.
+-- |
+-- Module      : OAlg.Data.Symbol
+-- Description : character symbols
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- symbols from 'A' to 'Z'. They are mainly used to validate the
+-- algebraic structure of 'OAlg.Structure.Multiplicative.Orientation'.
 module OAlg.Data.Symbol
   ( Symbol(..), xSymbol
   )
@@ -14,7 +21,7 @@ import OAlg.Data.Validable
 --------------------------------------------------------------------------------
 -- Symbol -
 
--- | Symbols from 'A' to 'Z'.
+-- | symbols from 'A' to 'Z'.
 data Symbol
   = A | B | C | D | E | F | G | H | I | J | K | L | M
   | N | O | P | Q | R | S | T | U | V | W | X | Y | Z

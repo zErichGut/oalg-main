@@ -1,7 +1,14 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | Definition of the basic algebraic structures.
+-- |
+-- Module      : OAlg.Structure.Vectorial.Definition
+-- Description : propositions on basic algebraic structures
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- propositions on basic algebraic structures.
 module OAlg.Structure.Proposition
   ( -- * Proposition
     prpStructureN, prpStructureZ, prpStructureQ

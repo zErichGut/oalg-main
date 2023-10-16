@@ -11,12 +11,12 @@
 
 -- |
 -- Module      : OAlg.Structure.Definition
--- Description : definition of parameterized structure as constraint
+-- Description : introducing the idiom of structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- Introducing the idiom of structures as parameterized constraints.
+-- introducing the idiom of 'Structure's as parameterized constraints.
 module OAlg.Structure.Definition
   (
     -- * Structure

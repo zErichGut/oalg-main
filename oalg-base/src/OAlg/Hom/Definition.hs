@@ -4,7 +4,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 
--- | Introducing the idiom 'Hom'.
+-- |
+-- Module      : OAlg.Hom.Definition
+-- Description : introducing the idiom of Hom
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- introducing the idiom 'Hom'.
 module OAlg.Hom.Definition
   ( -- * Hom
     Hom

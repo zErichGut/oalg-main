@@ -10,12 +10,12 @@
 
 -- |
 -- Module      : OAlg.Structure.Vectorial.Definition
--- Description : additive structure 3with a scalar multiplication
+-- Description : definition of vectorial structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- 'Additive' structures with a scalar multiplication @('!')@.
+-- definition of vectorial structures, i.e. 'Additive' structures with a scalar multiplication @('!')@.
 module OAlg.Structure.Vectorial.Definition
   ( -- * Vectorial
     Vectorial(..), Vec, ForgetfulVec

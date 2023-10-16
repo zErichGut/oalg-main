@@ -1,7 +1,14 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | Homomorphisms between algebraic structures.
+-- |
+-- Module      : OAlg.Hom
+-- Description : homomorphisms between algebraic structures
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- homomorphisms between algebraic structures.
 module OAlg.Hom
   (
     module Def

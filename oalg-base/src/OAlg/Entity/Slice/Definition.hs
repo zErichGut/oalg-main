@@ -14,16 +14,12 @@
 
 -- |
 -- Module      : OAlg.Entity.Slice.Definition
--- Description : slicing a multiplicative structure
+-- Description : definition of slicing a multiplicative structure
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- slicing a 'Multiplicative' structures according a given indexed 'Point'.
---
--- __Note__ Unfortunately for /Haskell/ it is in general not possible to lift a value to
--- the type level, as such we need to circumvent somehow this restriction by using an
--- /index/ type where the associated point depends only of that type (see 'Sliced').
+-- definition of slicing a 'Multiplicative' structures according a given indexed 'Point'.
 module OAlg.Entity.Slice.Definition
   (
     -- * Slice

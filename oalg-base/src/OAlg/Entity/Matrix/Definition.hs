@@ -12,12 +12,12 @@
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Definition
--- Description : matrices over distributive structures
+-- Description : definition of matrices over distributive structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- matrices over 'Distributive' structures.
+-- defintion of matrices over 'Distributive' structures.
 module OAlg.Entity.Matrix.Definition
   (
 

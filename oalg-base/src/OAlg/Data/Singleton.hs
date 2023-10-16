@@ -1,5 +1,12 @@
 
--- | Singleton types having exactly one value.
+-- |
+-- Module      : OAlg.Data.Singleton
+-- Description : singleton types
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- singleton types having exactly one value.
 module OAlg.Data.Singleton
   ( -- ** Singleton
     Singleton(..)
@@ -29,7 +36,7 @@ instance Singleton u => Singleton (a -> u) where
 -- Singleton1 -
 
 -- | one parameterized types @__s__@ with exactly one element for each @__x__@ which is
---   called the __/unit1/__ of @__s__ __x__@.
+-- called the __/unit1/__ of @__s__ __x__@.
 class Singleton1 s where
   unit1 :: s x
 

@@ -8,7 +8,14 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
--- | Propositions of Matrices.
+-- |
+-- Module      : OAlg.Entity.Matrix.Proposition
+-- Description : propositions on matrices
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- propositions on matrices.
 module OAlg.Entity.Matrix.Proposition
   (
     -- * Proposition

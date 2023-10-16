@@ -8,7 +8,14 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
--- | Additive structures.
+-- |
+-- Module      : OAlg.Structure.Additive
+-- Description : additive structures
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- 'Additive' structures.
 module OAlg.Structure.Additive
   ( module Add
   , module Prp

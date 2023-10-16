@@ -10,7 +10,7 @@
 
 -- |
 -- Module      : OAlg.Data.Generator
--- Description : generator for finitely generated points.
+-- Description : generator for finitely generated points
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com

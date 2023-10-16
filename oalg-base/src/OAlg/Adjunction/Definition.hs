@@ -9,17 +9,17 @@
 
 -- |
 -- Module      : OAlg.Adjunction.Definition
--- Description : definition adjunction between multiplicative structures
+-- Description : definition of adjunctions between multiplicative structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- definition adjunction between 'Multiplicative' structures. We relay on the terms and notation as
+-- definition of adjunctions between 'Multiplicative' structures. We relay on the terms and notation as
 -- used in [nLab](http://ncatlab.org/nlab/show/adjoint+functor)
 module OAlg.Adjunction.Definition
   (
     -- * Adjunction
-    Adjunction(..), unitr, unitl, adjl, adjr, adjHomMlt --, adjHomDst
+    Adjunction(..), unitr, unitl, adjl, adjr, adjHomMlt
 
     -- * Dual
   , coAdjunction

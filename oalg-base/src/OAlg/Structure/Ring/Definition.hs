@@ -6,12 +6,12 @@
 
 -- |
 -- Module      : OAlg.Structure.Ring.Definition
--- Description : rings
+-- Description : definition of rings
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- rings.
+-- definition of 'Ring's.
 module OAlg.Structure.Ring.Definition
   (
     -- * Semiring

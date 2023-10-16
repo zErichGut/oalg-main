@@ -13,12 +13,12 @@
 
 -- |
 -- Module      : OAlg.Limes.Cone.Definition
--- Description : cones over diagrams
+-- Description : definition of cones over diagrams
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- cones over 'Diagram's.
+-- definition of 'Cone's over 'Diagram's.
 module OAlg.Limes.Cone.Definition
   (
     -- * Cone
