@@ -169,11 +169,11 @@ instance Multiplicative c => Projectible c (Path c) where
 -- one' -
 
 -- | the 'one' to a given point. The type @p c@ serves only as proxy and 'one'' is
---   lazy in it.
+-- lazy in it.
 --
---   __Note__ As 'Point' may be a non-injective type family,
---   the type checker needs some times a little bit more information
---   to pic the right 'one'.
+-- __Note__ As 'Point' may be a non-injective type family,
+-- the type checker needs some times a little bit more information
+-- to pic the right 'one'.
 one' :: Multiplicative c => p c -> Point c -> c
 one' _ = one
 
@@ -189,12 +189,12 @@ isOne f = f == one (end f)
 
 -- | transposable 'Multiplicative' structures.
 --
---   __Property__ Let __@c@__ be a 'TransposableMultiplicative' structure, then holds:
+-- __Property__ Let __@c@__ be a 'TransposableMultiplicative' structure, then holds:
 --
---   (1) For all @p@ in @'Point' __c__@ holds: @'transpose' ('one' p) = 'one' p@.
+-- (1) For all @p@ in @'Point' __c__@ holds: @'transpose' ('one' p) = 'one' p@.
 --
---   (2) For all @f@, @g@ in __@c@__ with @'start' f '==' 'end' g@ holds:
---   @'transpose' (f '*' g) '==' 'transpose' g '*' 'transpose' f@.
+-- (2) For all @f@, @g@ in __@c@__ with @'start' f '==' 'end' g@ holds:
+-- @'transpose' (f '*' g) '==' 'transpose' g '*' 'transpose' f@.
 class (TransposableOriented c, Multiplicative c) => TransposableMultiplicative c
 
 instance Entity p => TransposableMultiplicative (Orientation p)
@@ -321,21 +321,21 @@ instance Cayleyan c => Cayleyan (Op c)
 -- Inv -
 
 -- | invertible factors within a 'Multiplicative' structures @__c__@, which forms a /sub/
---  'Multiplicative' structure on @__c__@, given by the canonical inclusion 'inj' which is
---  given by @\\'Inv' f _ -> f@.
+-- 'Multiplicative' structure on @__c__@, given by the canonical inclusion 'inj' which is
+-- given by @\\'Inv' f _ -> f@.
 --
---  __Property__ Let @'Inv' f f'@ be in @'Inv' __c__@ where @__c__@ is a 'Multiplicative'
---  structure, then holds:
+-- __Property__ Let @'Inv' f f'@ be in @'Inv' __c__@ where @__c__@ is a 'Multiplicative'
+-- structure, then holds:
 --
---  (1) @'orientation' f' '==' 'opposite' ('orientation' f)@.
+-- (1) @'orientation' f' '==' 'opposite' ('orientation' f)@.
 --
---  (2) @f' '*' f '==' 'one' ('start' f)@.
+-- (2) @f' '*' f '==' 'one' ('start' f)@.
 --
---  (3) @f '*' f' '==' 'one' ('end' f)@.
+-- (3) @f '*' f' '==' 'one' ('end' f)@.
 --
---  __Note__ The canonical inclusion is obviously not injective on the /set/ of all values
---  of type @'Inv' __c__@ to @__c__@. But restricted to the 'valid' ones it is injective,
---  because the inverses of a @f@ in @__c__@ are uniquely determined by @f@.
+-- __Note__ The canonical inclusion is obviously not injective on the /set/ of all values
+-- of type @'Inv' __c__@ to @__c__@. But restricted to the 'valid' ones it is injective,
+-- because the inverses of a @f@ in @__c__@ are uniquely determined by @f@.
 data Inv c = Inv c c deriving (Show,Eq)
 
 instance Embeddable (Inv c) c where

@@ -234,16 +234,16 @@ instance TransposableOriented Q
 
 -- | a path in a 'Oriented' structure @__q__@ starting at a given point.
 --
---  __Definition__ Let @__q__@ be a 'Oriented' structure and @p = 'Path' s [a0..an-1]@ a
---  path in @__q__@, then @p@ is 'valid' if and only if
+-- __Definition__ Let @__q__@ be a 'Oriented' structure and @p = 'Path' s [a 0..a (n-1)]@ a
+-- path in @__q__@, then @p@ is 'valid' if and only if
 --
---  (1) @s@ is 'valid' and @ai@ are 'valid' for all @i = 0..n-1@.
+-- (1) @s@ is 'valid' and @a i@ are 'valid' for all @i = 0..n-1@.
 --
---  (1) @'start' an-1 '==' s@ and @'start' ai '==' 'end' fa+1@ for all @i = 0..n-2@.
+-- (2) @'start' (a (n-1)) '==' s@ and @'start' (a i) '==' 'end' (a (n+1))@ for all @i = 0..n-2@.
 --
---  furthermore @n@ is called the __/length/__ of @p@.
+-- furthermore @n@ is called the __/length/__ of @p@.
 --
---  __Note__ Paths admit a canonical embedding in to 'OAlg.Entity.Product.Product'.
+-- __Note__ Paths admit a canonical embedding in to 'OAlg.Entity.Product.Product'.
 data Path q = Path (Point q) [q]
 
 deriving instance Oriented q => Show (Path q)
@@ -310,7 +310,7 @@ pthMlt (Path s fs) p@(Path t gs)
 -- Total -
 
 -- | structures where its associated 'Point' type is singleton. They yield
---   globally defiend algebraic operations.
+-- globally defiend algebraic operations.
 class Singleton (Point x) => Total x
 
 instance Total ()
@@ -384,16 +384,15 @@ structOrtOp Struct = Struct
 -- XOrtSite -
 
 -- | random variables @'OAlg.Data.X.X' __q__@ and @'OAlg.Data.X.X' ('Point' __q__)@ for
---  'Oriented' structure @__q__@.
+-- 'Oriented' structure @__q__@.
 --
---   __Properties__ Let @__q__@ be an instance of the class 'Oriented', then holds:
+-- __Properties__ Let @__q__@ be an instance of the class 'Oriented', then holds:
 --
---  (1) Let @'XStart' xp xStart@ be in @'XOrtSite' 'From' __q__@, then holds:
---  For all @p@ in @'Point' __q__@ and @x@ in the range of @xStart p@ holds: @'start' x '==' p@.
+-- (1) Let @'XStart' xp xStart@ be in @'XOrtSite' 'From' __q__@, then holds:
+-- For all @p@ in @'Point' __q__@ and @x@ in the range of @xStart p@ holds: @'start' x '==' p@.
 --
---
---  (2) Let @'XEnd' xp xEnd@ be in @'XOrtSite' 'To' __q__@, then holds:
---  For all @p@ in @'Point' __q__@ and @x@ in the range of @xEnd p@ holds: @'end' x '==' p@.
+-- (2) Let @'XEnd' xp xEnd@ be in @'XOrtSite' 'To' __q__@, then holds:
+-- For all @p@ in @'Point' __q__@ and @x@ in the range of @xEnd p@ holds: @'end' x '==' p@.
 --
 -- __Note__ The random variables @xp@ should have a bias to non trivial random variables
 -- @xp '>>=' xStart@ or @xp '>>=' xEnd@.
@@ -462,21 +461,21 @@ xosEnd (XEnd _ xe) = xe
 --------------------------------------------------------------------------------
 -- xosPathMaxAt -
 
--- | tries to make a path at the given point with maximal lenght of the given length.
+-- | tries to make a path at the given point with maximal length of the given length.
 --
---  __Properties__ Let @xPath = 'xosPathMaxAt' xos n x@, then holds:
+-- __Properties__ Let @xPath = 'xosPathMaxAt' xos n x@, then holds:
 --
---  (1) If @xos@ matches @'XStart' _ xq@ then for all @p@ in the range of @xPath@ holds:
+-- (1) If @xos@ matches @'XStart' _ xq@ then for all @p@ in the range of @xPath@ holds:
 --
---      (1) @'start' p '==' x@.
+--     (1) @'start' p '==' x@.
 --
---      (1) If @'pthLength' p '<' n@ then @xq ('end' p)@ matches 'XEmpty'.
+--     (2) If @'pthLength' p '<' n@ then @xq ('end' p)@ matches 'XEmpty'.
 --
---  (1) If @xos@ matches @'XEnd' _ xq@ then for all @p@ in the range of @xPath@ holds:
+-- (2) If @xos@ matches @'XEnd' _ xq@ then for all @p@ in the range of @xPath@ holds:
 --
---      (1) @'end' p '==' x@.
+--     (1) @'end' p '==' x@.
 --
---      (1) If @'pthLength' p '<' n@ then @xq ('start' p)@ matches 'XEmpty'.
+--     (2) If @'pthLength' p '<' n@ then @xq ('start' p)@ matches 'XEmpty'.
 xosPathMaxAt :: Oriented q => XOrtSite s q -> N -> Point q -> X (Path q)
 xosPathMaxAt (XStart _ xq) n s = pth n s (pthOne s) where
 
@@ -549,7 +548,7 @@ instance XStandard p => XStandardOrtSiteFrom (Orientation p)
 --------------------------------------------------------------------------------
 -- XStandardPoint -
 
--- | standard random variable of 'Point's of __@a@__.
+-- | standard random variable of 'Point's of @__a__@.
 class XStandard (Point a) => XStandardPoint a
 
 instance XStandardPoint N
@@ -562,13 +561,13 @@ instance XStandard p => XStandardPoint (Orientation p)
 
 -- | random variable of arrows given by an orientation.
 --
---  __Properties__ Let @'XOrtOrientation' xo xArrow@ be in @'XOrtOrientation' __q__@ for a
---  'Oriented' structure @__q__@, then holds: For all @o@ in @'Orientation' __q__@ and @x@ in the
---  range of @xArrow o@ holds: @'orientation' x '==' o@.
+-- __Properties__ Let @'XOrtOrientation' xo xArrow@ be in @'XOrtOrientation' __q__@ for a
+-- 'Oriented' structure @__q__@, then holds: For all @o@ in @'Orientation' __q__@ and @x@ in the
+-- range of @xArrow o@ holds: @'orientation' x '==' o@.
 --
---  __Note__ The random variable @xo@ should have a bias to non trivial random variables
---  @xo '>>=' xArrow@ and as such the range of @xo@ should be included in one connection component
---  of @__q__@.
+-- __Note__ The random variable @xo@ should have a bias to non trivial random variables
+-- @xo '>>=' xArrow@ and as such the range of @xo@ should be included in one connection component
+-- of @__q__@.
 data XOrtOrientation q
   = XOrtOrientation (X (Orientation (Point q))) (Orientation (Point q) -> X q)
 
@@ -589,7 +588,7 @@ instance Oriented q => Validable (XOrtOrientation q) where
 
 type instance Dual (XOrtOrientation q) = XOrtOrientation (Op q)
 
--- | the co-'XOrtOrientation'.
+-- | to the dual.
 coXOrtOrientation :: XOrtOrientation q -> Dual (XOrtOrientation q)
 coXOrtOrientation (XOrtOrientation xo xq) = XOrtOrientation xo' xq' where
   xo' = amap1 opposite xo
@@ -613,7 +612,7 @@ xoArrow (XOrtOrientation _ xq) = xq
 -- xoPoint -
 
 -- | the underlying random variable of points, i.e. the union of the induced 'start' and 'end'
---   random variable of 'xoOrientation'.
+-- random variable of 'xoOrientation'.
 xoPoint :: Oriented q => XOrtOrientation q -> X (Point q)
 xoPoint (XOrtOrientation xo _) = amap1 start xo <|> amap1 end xo
 
@@ -636,7 +635,7 @@ xoFrom xo = coXOrtSiteInv Refl $ xoTo $ coXOrtOrientation xo
 --------------------------------------------------------------------------------
 -- xoTtl -
 
--- | random varaiable of @'XOrtOrientation' __q__@ for a total @__q__@.
+-- | random variable of @'XOrtOrientation' __q__@ for a total @__q__@.
 xoTtl :: Total q => X q -> XOrtOrientation q
 xoTtl xx = XOrtOrientation xo xq where
   xo = return (unit :> unit)

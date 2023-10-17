@@ -134,20 +134,18 @@ class Ord (Root f) => OrdRoot f
 
 -- | a list in a 'Fibred' structure having all the same 'root'.
 --
---   __Definition__ Let __@f@__ be a 'Fibred' structure and @s = 'Sheaf' r [t0..tn-1]@ a
---  sheaf in __@'Sheaf' f@__, then @s@ is 'valid' if and only if
+-- __Definition__ Let __@f@__ be a 'Fibred' structure and @s = 'Sheaf' r [t 0..t (n-1)]@ a
+-- sheaf in __@'Sheaf' f@__, then @s@ is 'valid' if and only if
 --
---   (1) @r@ is 'valid' and @ti@ are valid for all @i = 0..n-1@.
+-- (1) @r@ is 'valid' and @t i@ are valid for all @i = 0..n-1@.
 --
---   (2) @'root' ti '==' r@ for all @i = 0..n-1@.
+-- (2) @'root' (t i) '==' r@ for all @i = 0..n-1@.
 --
---  furthermore @n@ is called the __/length/__ of @s@.
+-- furthermore @n@ is called the __/length/__ of @s@.
 --
---  If two sheafs have the same 'root' then there stalks can be composed - via @('++')@ -
---  to a new sheaf having the same 'root'. But as @('++')@ is not commutative they
---  are equipped with a 'Multiplicative' structure.
---
---  Sheafs admit a canonical embedding in to 'OAlg.Entity.Sum.Sum'
+-- If two sheafs have the same 'root' then there stalks can be composed - via @('++')@ -
+-- to a new sheaf having the same 'root'. But as @('++')@ is not commutative they
+-- are equipped with a 'Multiplicative' structure.
 data Sheaf f = Sheaf (Root f) [f]
 
 deriving instance Fibred f => Show (Sheaf f)
