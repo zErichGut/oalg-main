@@ -248,7 +248,7 @@ pp2 k = Forall xs (valid . abhKernelFreeFromCy) where
 --  @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@
 --  where @ker = 'abhKernelFreeFromCy' s@.
 abhKernelFreeFromCy :: Attestable k => Slice From (Free k) AbHom -> KernelFree N1 AbHom
-abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $abgDim $ end h where
+abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $ abgDim $ end h where
 
   freeTip :: Kernel N1 AbHom -> SomeFree AbHom
   freeTip k = case someNatural n of

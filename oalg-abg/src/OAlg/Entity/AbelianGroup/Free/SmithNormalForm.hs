@@ -6,14 +6,18 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
--- | Diagonal and Smith Normal Form for 'Z'-matrices.
+-- |
+-- Module      : OAlg.Entity.AbelianGroup.Free.SmithNormalForm
+-- Description : diagonal and Smith Normal Form for matrices over integers
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- diagonal and Smith Normal Form for 'Z'-matrices.
 module OAlg.Entity.AbelianGroup.Free.SmithNormalForm
   (
     -- * Diagonal Form
     zmxDiagonalForm
-
-  -- , crDiagonalForm, dnf, dnf'
-  -- , NF, TPRows, TPCols
 
     -- * Smith Normal Form
   , smithNormalForm, smithNormalForm'
@@ -54,8 +58,8 @@ type TPRows a = ProductForm Z (Transformation a)
 type TPCols a = ProductForm Z (Transformation a)
 type NF a     = ([a], TPRows a, TPCols a)
 
--- | reducing a matrix over Z to a diagonal matrix by applying elements of @'GLT' 'Z'@.
---  The entries of the diagonal may not be succesively divisible!
+-- | reducing a matrix over 'Z' to a diagonal matrix by applying elements of @'GLT' 'Z'@.
+-- The entries of the diagonal may not be successively divisible!
 crDiagonalForm :: (i ~ N, j ~ N) => Dim Z () -> Dim Z () -> Col i (Row j Z) -> NF Z
 crDiagonalForm = dnf' 0
 
@@ -70,21 +74,22 @@ dnfjs i = rowxs . rowTail . crHeadRowAt i
 
 
 -- | transformation by the given offset to diagonal form where the entries of the
---  diagonal may not be succesively divisible.
+-- diagonal may not be successively divisible.
 --
---  __Property__ Let @r@ be in 'N', @n@, @m@ in @'Dim'' 'Z'@ and @rws@ be in
---  @'Col' i ('Row' j 'Z')@ where for alle entries @(x,(i,j)@ in @rws@ holds
+-- __Properties__ Let @r@ be in 'N', @n@, @m@ in @'Dim'' 'Z'@ and @rws@ be in
+-- @'Col' i ('Row' j 'Z')@ where for all entries @(x,(i,j)@ in @rws@ holds
 --
---  (1) @x '/= 0@.
+-- (1) @x '/= 0@.
 --
---  (2) @r '<=' i@ and @r '<=' j@.
+-- (2) @r '<=' i@ and @r '<=' j@.
 --
---  then holds: Let @(ds,a',b') = 'dnf'' r n m rws@ in
+-- then holds: Let @(ds,a',b') = 'dnf'' r n m rws@ in
 --
---  (1) @0 < d@ for all @d@ in @ds@.
+-- (1) @0 < d@ for all @d@ in @ds@.
 --
---  (2) @(a '*>' 'Matrix' n m ('crets' rws)) '<*' b '==' 'diagonal'' r n m ds@ where
---  @a' = 'RowTrafo' ('make' a' :: 'GLT' 'Z')@ and @b = 'ColTrafo' ('make' b :: 'GLT' 'Z')@.
+-- (2) @(a 'OAlg.Structure.Operational.*>' 'Matrix' n m ('crets' rws))
+-- 'OAlg.Structure.Operational.<*' b '==' 'diagonal'' r n m ds@ where
+-- @a' = 'RowTrafo' ('make' a' :: 'GLT' 'Z')@ and @b = 'ColTrafo' ('make' b :: 'GLT' 'Z')@.
 dnf' :: (i ~ N, j ~ N) => i -> Dim' Z -> Dim' Z -> Col i (Row j Z) -> NF Z
 dnf' r n m rws = dnf1 n m r rws ([],One n,One m)
 
@@ -99,15 +104,15 @@ dnf1 dr dc r rws res = if colIsEmpty rws
 
 -- | swap a non zero entry to the position @(r,r)@ and scale it to be strict positive.
 --
---   pre:
+-- pre:
 --
---  (1) @rws@ is not empty.
+-- (1) @rws@ is not empty.
 --
---  (1) for all @i@, @j@ in @rws@ holds: @r '<=' i@ and @r '<=' j@.
+-- (2) for all @i@, @j@ in @rws@ holds: @r '<=' i@ and @r '<=' j@.
 --
---  post:
+-- post:
 --
---  (1) the entry @0 '<' rws' r r@.
+-- (1) the entry @0 '<' rws' r r@.
 dnf2 :: (i ~ N, j ~ N)
   => Dim Z () -> Dim Z () -> N -> Col i (Row j Z) -> NF Z -> (Col i (Row j Z),NF Z)
 dnf2 dr dc r rws (ds,trs,tcs) = (rws',(ds,trs',tcs')) where
@@ -128,7 +133,7 @@ dnf2 dr dc r rws (ds,trs,tcs) = (rws',(ds,trs',tcs')) where
 
 -- | @gcd@ of @a@ and @b@ with the appropriate row transformations to eliminate @b@.
 --
---   pre: @0 < a@, @k < l@.
+-- pre: @0 < a@, @k < l@.
 tRows :: i ~ N => Dim Z () -> (Z,i) -> (Z,i) -> (Z,TPRows Z)
 tRows d (a,k) (b,l) = trws a b (One d) where
   trws a b ts | m == 0 = (a,P (Shear d k l (GL2 1 0 (-q) 1)):*ts) where
@@ -140,28 +145,28 @@ tRows d (a,k) (b,l) = trws a b (One d) where
     tr = P $ Shear d k l (GL2 s t (-u) v)
 
 
--- | @gcd@ of @a@ and @b@ with the appropriate column transformaition to eliminate @b@.
+-- | @gcd@ of @a@ and @b@ with the appropriate column transformation to eliminate @b@.
 --
---   pre: @0 < a@, @k < l@.
+-- pre: @0 < a@, @k < l@.
 tCols :: j ~ N => Dim Z () -> (Z,j) -> (Z,j) -> (Z,TPCols Z)
 tCols d ak bl = (g,gltfTrsp tr) where
   (g,tr) = tRows d ak bl
 
 
--- | eliminiate all non zero entries in the @r@-th row and column
+-- | eliminates all non zero entries in the @r@-th row and column
 --
---   pre:
+-- pre:
 --
---   (1) the entry at @(r,r)@ is strict positive
+-- (1) the entry at @(r,r)@ is strict positive
 --
---   (1) @is@ are the row numbers of @rws@ with non zero entries at the column @r@
---       with @r '<' i@ for all @i@ in @is@.
+-- (1) @is@ are the row numbers of @rws@ with non zero entries at the column @r@
+-- with @r '<' i@ for all @i@ in @is@.
 --
---   (1) @js@ are the column numbers of @rws@ with non zero entries at the row @r@
---       with @r '<' j@ for all @j@ in @js@.
+-- (1) @js@ are the column numbers of @rws@ with non zero entries at the row @r@
+-- with @r '<' j@ for all @j@ in @js@.
 --
---   post: all entries in the @r@-th row and columne - exept the one at position @(r,r)@ -
---   are zero (i.e. are eliminated).
+-- post: all entries in the @r@-th row and column - except the one at position @(r,r)@ -
+-- are zero (i.e. are eliminated).
 dnf3 :: (i ~ N, j ~ N)
   => Dim Z () -> Dim Z () -> N -> Col i (Row j Z) -> [(Z,i)] -> [(Z,i)] -> NF Z -> NF Z
 -- this algorithem terminates because in each step the number of primfactors of
@@ -207,15 +212,15 @@ zmxDiagonalForm m = m'
 -- zmxDiagonalFormStrictPositive -
 
 -- | transforming a matrix over Z to a diagonal matrix with strict positive entries
---   by applying elements of @'GLT' 'Z'@.
+-- by applying elements of @'GLT' 'Z'@.
 --
---  __Property__ Let @m@ be in @'Matrix' Z@ and
---  @'DiagonalFormStrictPositive' d = 'zmxDiagonalFormStrictPositive' m@, then holds:
---  @(a '*>' m) '<*' b '==' 'diagonal' ('rows' m) ('cols' m) ds@ where
---  @'DiagonalForm' ds a b = d@.
+-- __Property__ Let @m@ be in @'Matrix' Z@ and
+-- @'DiagonalFormStrictPositive' d = 'zmxDiagonalFormStrictPositive' m@, then holds:
+-- @(a 'OAlg.Structure.Operational.*>' m) 'OAlg.Structure.Operational.<*' b '=='
+-- 'diagonal' ('rows' m) ('cols' m) ds@ where  @'DiagonalForm' ds a b = d@.
 --
---  __Note__ The entries of the diagonal may not be succesively divisible, as such
---  it is a pre-form of the Smith Normal Form.
+-- __Note__ The entries of the diagonal may not be successively divisible, as such
+-- it is a pre-form of the Smith Normal Form.
 zmxDiagonalFormStrictPositive :: Matrix Z -> DiagonalFormStrictPositive Z
 zmxDiagonalFormStrictPositive (Matrix r c xs)
   = DiagonalFormStrictPositive (DiagonalForm d (RowTrafo $ make trs) (ColTrafo $ make tcs))
@@ -226,20 +231,21 @@ zmxDiagonalFormStrictPositive (Matrix r c xs)
 
 -- | the smith normal form.
 --
---  __Property__ Let @s = 'SmithNormalForm' o ds a b@ be in @'SmithNormalForm' 'Z'@,
---  then holds: 
+-- __Properties__ Let @s = 'SmithNormalForm' o ds a b@ be in @'SmithNormalForm' 'Z'@,
+-- then holds: 
 --
---  (1) @'snfDiagonalForm' s@ is 'valid'.
+-- (1) @'snfDiagonalForm' s@ is 'valid'.
 --
---  (2) For all @k@ in @ks@ holds: @0 < k@.
+-- (2) For all @k@ in @ks@ holds: @0 < k@.
 --
---  (3) For all @..k':'k'..@ in @ks@ holds: @k' `'mod'` k '==' 0@.
+-- (3) For all @..k':'k'..@ in @ks@ holds: @'mod' k' k '==' 0@.
 data SmithNormalForm k = SmithNormalForm N [k] (RowTrafo k) (ColTrafo k)
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
 -- snfDiagonalForm -
 
+-- | the underlying diagonal form.
 snfDiagonalForm :: Semiring k => SmithNormalForm k -> DiagonalForm k
 snfDiagonalForm (SmithNormalForm o ds r c)
   = DiagonalForm (takeN o (repeat rOne) ++ ds) r c
@@ -272,9 +278,10 @@ instance Entity (SmithNormalForm Z)
 
 -- | Smith Normal Form of a matrix.
 --
---  __Property__ Let @m@ be in @'Matrix' 'Z'@ and
+-- __Property__ Let @m@ be in @'Matrix' 'Z'@ and
 -- @'SmithNormalForm o ds a b = 'smithNormalForm' m@, then holds:
--- @(a '*>' m) '<*' b '==' 'diagonal' ('rows' m) ('cols' m) ds@ where
+-- @(a 'OAlg.Structure.Operational.*>' m) 'OAlg.Structure.Operational.<*' b '=='
+-- 'diagonal' ('rows' m) ('cols' m) ds@ where
 -- @ds = ('takeN' o '$' 'repeat' 1) '++' ds'@. 
 smithNormalForm :: Matrix Z -> SmithNormalForm Z
 smithNormalForm = smithNormalForm' . zmxDiagonalFormStrictPositive
@@ -282,9 +289,9 @@ smithNormalForm = smithNormalForm' . zmxDiagonalFormStrictPositive
   
 -- | Smith Normal Form of a diagonal matrix over 'Z' with strict positive entries.
 --
---  __Propoerty__ Let @d = 'DiagonalFromStrictPositive' d'@('DiagornalForm' ds a b)@ be in
---  @'DiagonalFormStrictPositive' 'Z'@, @m = 'dgfMatrix' d'@ and
---  @s = 'smithNormalForm'' d@, then holds: @m '==' 'dgfMatrix' ('snfDiagonalForm' s)@.
+-- __Property__ Let @d = 'DiagonalFormStrictPositive' d' ('DiagonalForm' ds a b)@ be in
+-- @'DiagonalFormStrictPositive' 'Z'@, @m = 'dgfMatrix' d'@ and
+-- @s = 'smithNormalForm'' d@, then holds: @m '==' 'dgfMatrix' ('snfDiagonalForm' s)@.
 smithNormalForm' :: DiagonalFormStrictPositive Z -> SmithNormalForm Z
 smithNormalForm' (DiagonalFormStrictPositive (DiagonalForm ds (RowTrafo a) (ColTrafo b)))
   = SmithNormalForm o ds'' (RowTrafo $ make (a':*form a)) (ColTrafo $ make (form b:*b'))
@@ -320,6 +327,7 @@ dnf4 n m = rdcSort >>>= rdcDiv (0::N) where
 --------------------------------------------------------------------------------
 -- prpDiagonalFormZ -
 
+-- | validating diagonal and Smith Normal form for 'Z'-matrices.
 prpDiagonalFormZ :: N -> Q -> Statement
 prpDiagonalFormZ dMax dens = Prp "DiagonalFormZ" :<=>:
   Forall (xoOrt $ xMatrixTtl dMax dens xStandard)
