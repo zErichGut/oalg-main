@@ -8,7 +8,14 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
--- | Homomorphisms between finitely generated abelian groups.
+-- |
+-- Module      : OAlg.Entity.AbelianGroup.Definition
+-- Description : homomorphisms between finitely generated abelian groups
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- homomorphisms between finitely generated abelian groups.
 module OAlg.Entity.AbelianGroup.Definition
   ( -- * Abelian Group
     AbGroup(..), abg, isSmithNormal
@@ -181,7 +188,6 @@ import OAlg.Entity.AbelianGroup.Euclid
 --
 -- >>> end (isoSmithNormal (abg 1))
 -- AbGroup[]
---
 newtype AbGroup = AbGroup (ProductSymbol ZMod)
   deriving (Eq,Ord,LengthN,Validable,Entity,Multiplicative)
 
@@ -229,7 +235,7 @@ isSmithNormal (AbGroup g) = sn (amap1 fst ws) where
 -- AbHom -
 
 -- | additive homomorphism between finitely generated abelian groups which are
---   represented by matrizes over 'ZModHom'.
+-- represented by matrices over 'ZModHom'.
 newtype AbHom = AbHom (Matrix ZModHom)
   deriving (Show,Eq,Validable,Entity)
 
@@ -255,8 +261,8 @@ abhz (AbHom (Matrix r c xs)) = Matrix r' c' xs' where
 --------------------------------------------------------------------------------
 -- zabh -
 
--- | the associated homomorphism between products of @'abg' 0@ given by the columen
---   - respectively row - length.
+-- | the associated homomorphism between products of @'abg' 0@ given by the column
+-- - respectively row - length.
 zabh :: Matrix Z -> AbHom
 zabh (Matrix r c xs) = AbHom (Matrix r' c' xs') where
   u = dim (ZMod 0)
@@ -302,11 +308,11 @@ instance Algebraic AbHom
 --------------------------------------------------------------------------------
 -- abh -
 
--- | the additive homomorphism with the given orientation and 'ZModHom'-entires.
+-- | the additive homomorphism with the given orientation and 'ZModHom'-entries.
 abh :: Orientation AbGroup -> [(ZModHom,N,N)] -> AbHom
 abh (s :> e) xs = AbHom $ matrix (abgDim e) (abgDim s) xs 
 
--- | the additive homomorphism with the given orientation and 'Z'-entires.
+-- | the additive homomorphism with the given orientation and 'Z'-entries.
 abh' :: Orientation AbGroup -> [(Z,N,N)] -> AbHom
 abh' o@(s :> e) xs = abh o xs' where
   xs' = amap1 (\(r,i,j) -> (zmh (s' j :> e' i) r,i,j)) xs
@@ -318,6 +324,8 @@ abh' o@(s :> e) xs = abh o xs' where
 --------------------------------------------------------------------------------
 -- AbHomMap -
 
+-- | morphisms between 'AbHom' and the underlying @'Matrix' 'ZModHom'@ which constitute
+-- isomorphisms (see 'IsoAbHomMap').
 data AbHomMap x y where
   AbHomMatrix :: AbHomMap AbHom (Matrix ZModHom)
   MatrixAbHom :: AbHomMap (Matrix ZModHom) AbHom
@@ -342,6 +350,7 @@ instance Entity2 AbHomMap
 --------------------------------------------------------------------------------
 -- invAbHomMap -
 
+-- | the inverse.
 invAbHomMap :: AbHomMap x y -> AbHomMap y x
 invAbHomMap AbHomMatrix = MatrixAbHom
 invAbHomMap MatrixAbHom = AbHomMatrix
@@ -372,6 +381,7 @@ instance HomMultiplicative AbHomMap
 --------------------------------------------------------------------------------
 -- PathAbHomMap -
 
+-- | paths of 'AbHomMap'.
 type PathAbHomMap = C.Path AbHomMap
 
 --------------------------------------------------------------------------------
@@ -384,6 +394,7 @@ newtype IsoAbHomMap x y = IsoAbHomMap (PathAbHomMap x y)
 --------------------------------------------------------------------------------
 -- IsoAbHomMap - Constructable -
 
+-- | reducing paths of 'AbHomMap'.
 rdcPathAbHomMap :: PathAbHomMap x y -> Rdc (PathAbHomMap x y)
 rdcPathAbHomMap pth = case pth of
   AbHomMatrix :. MatrixAbHom :. p -> reducesTo p >>= rdcPathAbHomMap
@@ -404,12 +415,14 @@ instance Constructable (IsoAbHomMap x y) where
 --------------------------------------------------------------------------------
 -- abHomMatrix -
 
+-- | the induced isomorphism from 'AbHom' to @'Matrix' 'ZModHom'@ with inverse 'matrixAbHom'.
 abHomMatrix :: IsoAbHomMap AbHom (Matrix ZModHom)
 abHomMatrix = IsoAbHomMap (AbHomMatrix :. IdPath Struct)
 
 --------------------------------------------------------------------------------
 -- matrixAbHom -
 
+-- | the induced isomorphism from @'Matrix' 'ZModHom'@ to 'AbHom' with inverse 'abHomMatrix'.
 matrixAbHom :: IsoAbHomMap (Matrix ZModHom) AbHom
 matrixAbHom = IsoAbHomMap (MatrixAbHom :. IdPath Struct)
 
@@ -452,12 +465,14 @@ instance FunctorialHomOriented IsoAbHomMap
 --------------------------------------------------------------------------------
 -- abhProducts -
 
+-- | products for 'AbHom'.
 abhProducts :: Products n AbHom
 abhProducts = lmsMap matrixAbHom mtxProducts
 
 --------------------------------------------------------------------------------
 -- abhSums -
 
+-- | sums for 'AbHom'.
 abhSums :: Sums n AbHom
 abhSums = lmsMap matrixAbHom mtxSums
 
@@ -480,7 +495,7 @@ instance Attestable k => Sliced (Free k) AbHom where
 --------------------------------------------------------------------------------
 -- abgMaybeFree -
 
--- | ckeck of being free of some length.
+-- | check of being free of some length.
 --
 -- >>> abgMaybeFree (abg 0 ^ 5)
 -- Just (SomeFree (Free 5))
@@ -504,7 +519,7 @@ abgFrees = lengthN . filter ((== ZMod 0) . fst) . abgxs
 --------------------------------------------------------------------------------
 -- AbHomFree -
 
--- | projection to @'Matrix' 'Z'@.
+-- | projection homomorphisms to @'Matrix' 'Z'@.
 data AbHomFree x y where
   AbHomFree :: AbHomFree AbHom (Matrix Z)
   FreeAbHom :: AbHomFree (Matrix Z) AbHom
@@ -607,12 +622,12 @@ abhFreeAdjunction = Adjunction AbHomFree FreeAbHom u one where
       else ((o,(i,j)): xs (succ i) js)
 
 --------------------------------------------------------------------------------
--- abhGenerator -
+-- abgGeneratorTo -
 
 -- | the generator for a finitely generated abelian group.
 --
---  __Property__ Let @a@ be in 'AbGroup', then holds
---  @a '==' g@ where @'Generator' ('DiagramChainTo' g _) _ _ _ _ = 'abhGenerator' a@.  
+-- __Property__ Let @a@ be in 'AbGroup', then holds
+-- @a '==' g@ where @'Generator' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
 abgGeneratorTo :: AbGroup -> Generator To AbHom
 abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
   (SomeNatural k',SomeNatural k'') -> GeneratorTo chn (Free k') (Free k'') coker ker lft
@@ -688,11 +703,10 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
         | i == i'   = (amap1 (fromZ . toZ) rw,i''):lftRows (succ i'') gs rws'
         | otherwise = lftRows (succ i'') gs rws
 
-
 --------------------------------------------------------------------------------
 -- XSomeFreeSliceFromLiftable -
 
-
+-- | random variable for 'AbHom'.
 xsfsflAbHom :: XSomeFreeSliceFromLiftable AbHom
 xsfsflAbHom = XSomeFreeSliceFromLiftable xsf where
   q = 0.1
@@ -709,9 +723,9 @@ instance XStandardSomeFreeSliceFromLiftable AbHom where
 -- AbGroup - XStandard -
 
 -- | the maximal length of abelian groups for the standard random variable of type
---   @'X' 'AbGroup'@.
+-- @'X' 'AbGroup'@.
 --
---  __Property__ @1 '<=' stdMaxDim@.
+-- __Property__ @1 '<=' 'stdMaxDim'@.
 stdMaxDim :: N
 stdMaxDim = 10
 
@@ -732,6 +746,7 @@ instance XStandardPoint AbHom
 --------------------------------------------------------------------------------
 -- xAbHom -
 
+-- | random variable for 'AbHom' given by a density and an orientation.
 xAbHom :: Q -> Orientation AbGroup -> X AbHom
 xAbHom q = xAbHom' q (xZB (-100) 100)
 
@@ -778,7 +793,7 @@ dstXAbHom s n q r = getOmega >>= putDistribution n (amap1 s $ xAbHom q r)
 -- xAbHomTo -
 
 -- | random variable of homomorphisms between abelian groups with 'end' equal to the given
---   one.
+-- one.
 --
 -- @
 --    r s t
@@ -887,7 +902,7 @@ lngMax (AbHom (Matrix r c _)) = show (lengthN r `max` lengthN c)
 -- xAbHomFrom -
 
 -- | random variable of homomorphisms between abelian groups with 'start' equal to the given
---   one.
+-- one.
 --
 -- @
 --    a b c
@@ -971,9 +986,7 @@ xAbHomFrom d r s t (AbGroup g) = amap1 AbHom xm where
   xdt = case xt of
     XEmpty -> return (productSymbol [])
     _      -> xTakeN t xt >>= return . productSymbol
-
-
-    
+ 
 --------------------------------------------------------------------------------
 -- AbHom - XStandardOrtSite -
 
@@ -989,7 +1002,7 @@ instance XStandardOrtSite To AbHom where
       xAbHomTo (inj n * q) r s t g
 
 -- | distribution of the density of the random variable of @'X' 'AbHom'@, induced by the
---   standard random variable of type @'XOrtSite' 'To' 'AbHom'@.
+-- standard random variable of type @'XOrtSite' 'To' 'AbHom'@.
 dstXStdOrtSiteToAbHom :: Int -> (AbHom -> String) -> IO ()
 dstXStdOrtSiteToAbHom n f = getOmega >>= putDistribution n (amap1 f xh) where
   XEnd xg xt = xStandardOrtSite :: XOrtSite To AbHom
@@ -1009,7 +1022,7 @@ instance XStandardOrtSite From AbHom where
       xAbHomFrom (inj n * q) r s t g
 
 -- | distribution of the density of the random variable of @'X' 'AbHom'@, induced by the
---   standard random variable of type @'XOrtSite' 'From' 'AbHom'@.
+-- standard random variable of type @'XOrtSite' 'From' 'AbHom'@.
 dstXStdOrtSiteFromAbHom :: Int -> (AbHom -> String) -> IO ()
 dstXStdOrtSiteFromAbHom n f = getOmega >>= putDistribution n (amap1 f xh) where
   XStart xg xs = xStandardOrtSite :: XOrtSite From AbHom

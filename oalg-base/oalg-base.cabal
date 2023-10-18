@@ -24,7 +24,7 @@ description:    A package for solving algebraic problems purely written in Haske
                 Since we take the view that a value of a data structure or an instance of a class must strictly fulfill the required properties to be valid, @Double@, for example, has not been implemented as a numerical type.
                 .
                 Please see also the README on GitHub at <https://github.com/zErichGut/oalg-main/blob/main/oalg-base/README.md>
-category:       Algebra, Category
+category:       Mathematics, Algebra, Category
 homepage:       https://github.com/zErichGut/oalg-main#readme
 bug-reports:    https://github.com/zErichGut/oalg-main/issues
 author:         Erich.Gut
