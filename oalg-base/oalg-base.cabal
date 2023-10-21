@@ -6,7 +6,7 @@ cabal-version: 1.12
 
 name:           oalg-base
 version:        1.0.0.0
-synopsis:       Algebraic structures on oriented entities.
+synopsis:       Algebraic structures on oriented entities and limits as a tool kit to solve algebraic problems.
 description:    A package for solving algebraic problems purely written in Haskell.
                 .
                 First of all we define [entities]("OAlg.Entity.Definition"). Based on them and since we look at algebra through the lens of categories, we define [oriented]("OAlg.Structure.Oriented.Definition") structures on which, by means of a suitable __partially__ defined multiplication, [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. If one provides such a multiplicative structure with a matching [additive]("OAlg.Structure.Additive.Definition") structure, one obtains [distributive]("OAlg.Structure.Distributive.Definition") structures on which [matrices]("OAlg.Entity.Matrix.Definition") are build. If an additive structure is provided with a matching scalar multiplication, [vectorial]("OAlg.Structure.Vectorial.Definition") structures are obtained, which then form the basis for [algebraic]("OAlg.Structure.Algebraic.Definition") structures together with the distributive structures.
@@ -179,11 +179,11 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns
   build-depends:
-      array >=0.5.4.0
-    , base >=4.7 && <5
-    , deepseq >=1.4.4.0
-    , random >=1.2.0
-    , time >=1.9.3
+      array >=0.5.4.0 && <0.6
+    , base >=4.7 && <4.18
+    , deepseq >=1.4.4.0 && <1.5
+    , random >=1.2.0 && <1.3
+    , time >=1.9.3 && <1.13
   default-language: Haskell2010
 
 test-suite oalg-base-test
@@ -195,10 +195,10 @@ test-suite oalg-base-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      array >=0.5.4.0
-    , base >=4.7 && <5
-    , deepseq >=1.4.4.0
+      array >=0.5.4.0 && <0.6
+    , base >=4.7 && <4.18
+    , deepseq >=1.4.4.0 && <1.5
     , oalg-base
-    , random >=1.2.0
-    , time >=1.9.3
+    , random >=1.2.0 && <1.3
+    , time >=1.9.3 && <1.13
   default-language: Haskell2010
