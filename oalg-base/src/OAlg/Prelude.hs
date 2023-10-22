@@ -70,9 +70,9 @@ module OAlg.Prelude
 import Prelude( Bounded(..)
               , seq
               , undefined, error
-              , type (~)
               )
 
+import Data.Type.Equality (type (~))
 import System.IO (IO,putStrLn)
 
 import OAlg.Control.Exception as Exc
