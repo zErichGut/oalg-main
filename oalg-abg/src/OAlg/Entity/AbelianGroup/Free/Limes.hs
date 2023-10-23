@@ -5,7 +5,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
--- | Limits for 'Z'-matrices.
+-- |
+-- Module      : OAlg.Entity.AbelianGroup.Free.Limes
+-- Description : limits for matrices over integers.
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- limits for 'Z'-matrices.
 module OAlg.Entity.AbelianGroup.Free.Limes
   ( -- * Projective
     zmxKernels
@@ -66,25 +73,27 @@ zmxKernel kDgm@(DiagramParallelLR _ _ (h:|Nil)) = LimesProjective lim univ where
 --------------------------------------------------------------------------------
 -- zmxKernels1 -
 
--- | 'N1'-kernels for 'Z'-matrizes 
+-- | 'N1'-kernels for 'Z'-matrices.
 zmxKernels1 :: Kernels N1 (Matrix Z)
 zmxKernels1 = Limits zmxKernel
 
 --------------------------------------------------------------------------------
 -- zmxKernels -
 
--- | kernels for 'Z'-matrizes.
+-- | kernels for 'Z'-matrices.
 zmxKernels :: Kernels n (Matrix Z)
 zmxKernels = kernels zmxKernels1
 
 --------------------------------------------------------------------------------
 -- zmxPullbacks2 -
 
+-- | 'N2'-pullbacks for 'Z'-matrices.
 zmxPullbacks2 :: Pullbacks N2 (Matrix Z)
 zmxPullbacks2 = plbPrdEql2 mtxProducts (krnEqls zmxKernels1)
 
 --------------------------------------------------------------------------------
 -- zmxPullbacks -
 
+-- | pullbacks for 'Z'-matrices.
 zmxPullbacks :: Pullbacks n (Matrix Z)
 zmxPullbacks = pullbacks zmxPullbacks2

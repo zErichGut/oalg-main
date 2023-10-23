@@ -8,10 +8,17 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
--- | Kernels and Cokernels for homomorphisms between finitely generated abelian groups.
+-- |
+-- Module      : OAlg.Entity.AbelianGroup.KernelsAndCokernels
+-- Description : kernels and cokernels for homomorphisms between finitely generated abelian groups
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.Entity.AbelianGroup.KernelsAndCokernels
   (
-    -- * Kernel
+    -- * Kernels
     abhKernels
 
     -- * Cokernels
@@ -70,7 +77,7 @@ import OAlg.Entity.AbelianGroup.Free
 
 -- | the cokernel of a free cokernel diagram.
 --
---  __Propoerty__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
+--  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
 -- @coker = 'abhCokernelFree' d@, then holds: 
 --
 -- (1) @'diagram' coker '==' d@.
@@ -124,7 +131,7 @@ abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
 
 -- | the cokernel of a free site to.
 --
---  __Propoerty__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
+--  __Properties__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
 -- @coker = 'abhCokernelFreeTo' s@, then holds: 
 --
 -- (1) @'diagram' coker '==' 'cokernelDiagram' h@.
@@ -189,16 +196,16 @@ pp1 = Forall xd (valid . limesFree . abhPullbackFree) where
 -- abhSplitCy -
 
 -- | splits an abelian homomorphism @h@ into a list @hs@ where each
---   @h'@ in @hs@ has as start point equal to the start point of @h@ and end point a
---   cyclic group to the power of some order such that all  @h'@ /cover/ @h@.
+-- @h'@ in @hs@ has as start point equal to the start point of @h@ and end point a
+-- cyclic group to the power of some order such that all  @h'@ /cover/ @h@.
 --
---  __Properties__ Let @h@ be in 'AbHom' and @hs = 'abhSplitCy', then holds:
+-- __Properties__ Let @h@ be in 'AbHom' and @hs = 'abhSplitCy', then holds:
 --
---  (1) For all @h'@ in @hs@ holds: @'orientation' h' '==' 'start' h ':>' 'abg' n '^' r@
---  for some @n@, @r@ in 'N'.
+-- (1) For all @h'@ in @hs@ holds: @'orientation' h' '==' 'start' h ':>' 'abg' n '^' r@
+-- for some @n@, @r@ in 'N'.
 --
---  (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h '*' x '==' 0@
---  if and only if @h' '*' x '==' 0@ for all @h'@ in @hs@.
+-- (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h v'*' x '==' 0@
+-- if and only if @h' v'*' x '==' 0@ for all @h'@ in @hs@.
 abhSplitCy :: AbHom -> [AbHom]
 abhSplitCy (AbHom m@(Matrix r _ _))
   = amap1 (\(m',_,_) -> AbHom m')
@@ -212,17 +219,17 @@ abhSplitCy (AbHom m@(Matrix r _ _))
 -- abhFreeFromSplitCy -
 
 -- | splits an abelian homomorphism @h@ into some finite list @hs@ where each
---   @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
---   @h'@ /cover/ @h@.
+--  @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
+--  @h'@ /cover/ @h@.
 --
---  __Properties__ Let @s = 'SliceFrom' _ h@ be in @'Slice' 'From' ('Free' __k__) 'AbHom'@
---  and @hs = 'abhFreeFromSplitCy' s@, then holds:
+-- __Properties__ Let @s = 'SliceFrom' _ h@ be in @'Slice' 'From' ('Free' __k__) 'AbHom'@
+-- and @hs = 'abhFreeFromSplitCy' s@, then holds:
 --
---  (1) For all @'SliceFrom' _ h'@ in @hs@ exists a @n@, @r@ in 'N' such that
---  @'end' h' '==' 'abg' n '^' r@.
+-- (1) For all @'SliceFrom' _ h'@ in @hs@ exists a @n@, @r@ in 'N' such that
+-- @'end' h' '==' 'abg' n '^' r@.
 --
---  (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h '*' x '==' 0@ if
---  and only if @h' '*' x '==' 0@ for all @'SliceFrom' _ h'@ in @hs@.
+-- (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h v'*' x '==' 0@ if
+-- and only if @h' v'*' x '==' 0@ for all @'SliceFrom' _ h'@ in @hs@.
 abhFreeFromSplitCy :: Slice From (Free k) AbHom -> SomeFinList (Slice From (Free k) AbHom)
 abhFreeFromSplitCy (SliceFrom k h)
   = someFinList $ amap1 (SliceFrom k) $ abhSplitCy h 
@@ -243,10 +250,9 @@ pp2 k = Forall xs (valid . abhKernelFreeFromCy) where
   
 -- | free kernel where the end point is equal to some cyclic group to some order.
 --
---  __Property__ Let @s = 'SliceFrom' _ h@ where @'end' h '==' abg n '^' r@ for some
---  @n@, @r@ in 'N', then holds:
---  @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@
---  where @ker = 'abhKernelFreeFromCy' s@.
+-- __Property__ Let @s = 'SliceFrom' _ h@ where @'end' h '==' abg n '^' r@ for some
+-- @n@, @r@ in 'N', then holds:
+-- @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@ where @ker = 'abhKernelFreeFromCy' s@.
 abhKernelFreeFromCy :: Attestable k => Slice From (Free k) AbHom -> KernelFree N1 AbHom
 abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $ abgDim $ end h where
 
@@ -372,14 +378,14 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
 
 -- | kernel for a given additive homomorphism.
 --
---  __Property__ Let @d@ be in @'KernelDiagram' 'N1' 'AbHom'@ and
+-- __Properties__ Let @d@ be in @'KernelDiagram' 'N1' 'AbHom'@ and
 -- @ker = 'abhKernel' d@, then holds:
 --
 -- (1) @'diagram' ker '==' d@.
 --
 -- (2) @'tip' ('universalCone' ker)@ is smith normal.
 --
---  The construction follows the diagram below by using 'abgGeneratorTo':
+-- The construction follows the diagram below by using 'abgGeneratorTo':
 --
 -- @
 --         k''         
@@ -464,7 +470,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
 --------------------------------------------------------------------------------
 -- abhKernels -
 
--- | kernels for the 'Distributive' structure 'AbHom'.
+-- | kernels for 'AbHom'. 
 abhKernels :: Kernels N1 AbHom
 abhKernels = Limits abhKernel
 
@@ -483,7 +489,7 @@ instance Attestable k => SliceKernelFrom (Free k) AbHom where
 --------------------------------------------------------------------------------
 -- abhSliceFreeAdjunction -
 
--- | the cokernle-kernel adjunciton for a given @'Free' __k__@. 
+-- | the cokernel-kernel adjunction for a given @'Free' __k__@. 
 abhSliceFreeAdjunction :: Attestable k
   => Free k AbHom
   -> Adjunction (SliceCokernelKernel (Free k) AbHom)
@@ -566,7 +572,7 @@ abhCokernel d@(DiagramParallelRL _ _ (h:|Nil))
 --------------------------------------------------------------------------------
 -- abhCokernels -
 
--- | cokernels for the 'Distributive' structure 'AbHom' 
+-- | cokernels for 'AbHom'. 
 abhCokernels :: Cokernels N1 AbHom
 abhCokernels = Limits abhCokernel
 
@@ -575,11 +581,11 @@ abhCokernels = Limits abhCokernel
 
 -- | isomorphism to its smith normal group.
 --
---  __Property__ Let @g@ be in 'AbGroup', then holds:
+-- __Properties__ Let @g@ be in 'AbGroup', then holds:
 --
---  (1) @'start' ('isoSmithNormal' g) '==' g@.
+-- (1) @'start' ('isoSmithNormal' g) '==' g@.
 --
---  (2) @'end' ('isoSmithNormal' g)@ is smith normal (see definition t'AbGroup').
+-- (2) @'end' ('isoSmithNormal' g)@ is smith normal (see definition t'AbGroup').
 isoSmithNormal :: AbGroup -> Inv AbHom
 isoSmithNormal g = Inv h h' where
   c  = limes abhCokernels (cokernelDiagram (zero (one ():>g)))

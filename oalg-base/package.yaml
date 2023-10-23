@@ -77,11 +77,11 @@ description:
 
 
 dependencies:
-- base >= 4.17.2.0 && < 5
-- deepseq >= 1.4.8.0 && < 2
-- random >= 1.2.1.1 && < 2
-- array >= 0.5.4.0 && < 1
-- time >= 1.12.2 && < 2
+- base >= 4.17 && < 5
+- deepseq >= 1.4 && < 2
+- random >= 1.2 && < 2
+- array >= 0.5 && < 1
+- time >= 1.12 && < 2
 
 ghc-options:
 - -Wall

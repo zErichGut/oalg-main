@@ -108,7 +108,7 @@ import OAlg.Entity.AbelianGroup.Euclid
 --
 -- (1) @2 '<=' n i@ for all @0 '<=' i < k@.
 --
--- (2) @n (i '+' 1) `mod` n i '==' 0@ for all @i@ in @0 '<=' i < k-1@.
+-- (2) @n (i v'+' 1) `mod` n i '==' 0@ for all @i@ in @0 '<=' i < k-1@.
 --
 -- (3) @g '==' 'abg' (n 0) v'*' 'abg' (n 1) v'*' .. v'*' 'abg' (n (k-1)) v'*' 'abg' 0 '^' r@.
 --

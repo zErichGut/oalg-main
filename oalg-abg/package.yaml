@@ -1,5 +1,5 @@
 name:                oalg-abg
-version:             0.9.0.0
+version:             1.0.0.0
 github:              "zErichGut/oalg-abg"
 license:             BSD3
 author:              "Erich.Gut"
@@ -20,8 +20,8 @@ category:            Mathematics, Algebra, Category
 description:         Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
 
 dependencies:
-- base >= 4.7 && < 5
-- oalg-base >= 0.9
+- base >= 4.17 && < 5
+- oalg-base >= 1.1
 
 ghc-options:
 - -Wall

@@ -1,5 +1,12 @@
 
--- | Free abelian groups which are represented by 'Z'-matrices.
+-- |
+-- Module      : OAlg.Entity.AbelianGroup.Free
+-- Description : homomorphisms between free abelian groups
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- homomorphisms between free abelian groups which are represented by t'OAlg.Data.Number.Z'-matrices.
 module OAlg.Entity.AbelianGroup.Free
   ( module SNF
   , module Lim
