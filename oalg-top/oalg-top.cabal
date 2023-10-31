@@ -1,0 +1,55 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-top
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/zErichGut/oalg-top#readme>
+homepage:       https://github.com/zErichGut/oalg-top#readme
+bug-reports:    https://github.com/zErichGut/oalg-top/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-top
+
+library
+  exposed-modules:
+      OAlg.Entity.Simplex
+  other-modules:
+      Paths_oalg_top
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6
+    , oalg-abg >=1.0
+    , oalg-base >=1.1
+  default-language: Haskell2010
+
+test-suite oalg-top-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_top
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6
+    , oalg-abg >=1.0
+    , oalg-base >=1.1
+    , oalg-top
+  default-language: Haskell2010

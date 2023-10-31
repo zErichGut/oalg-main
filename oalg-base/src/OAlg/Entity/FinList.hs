@@ -61,6 +61,7 @@ deriving instance Show a => Show (FinList n a)
 deriving instance Eq a => Eq (FinList n a)
 deriving instance Foldable (FinList n)
 deriving instance Typeable (FinList n a)
+deriving instance Ord x => Ord (FinList n x)
 
 instance Functor (FinList n) where
   fmap _ Nil     = Nil

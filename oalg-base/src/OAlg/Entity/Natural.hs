@@ -172,6 +172,7 @@ type instance S n + (m :: N') = S (n+m)
 type instance n + 0 = n
 type instance n + 1 = S n
 type instance n + 2 = S (S n)
+type instance n + 3 = S (S (S n))
 
 ----------------------------------------
 -- (*) -

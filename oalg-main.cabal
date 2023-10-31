@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           oalg
+name:           oalg-main
 version:        0.1.0.0
 synopsis:       Algebraic structures on oriented entities.
 description:    Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
@@ -31,7 +31,7 @@ library
       OAlg
       OAlg.Proposition
   other-modules:
-      Paths_oalg
+      Paths_oalg_main
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Wno-identities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds
@@ -48,7 +48,7 @@ library
 executable oalg-exe
   main-is: Main.hs
   other-modules:
-      Paths_oalg
+      Paths_oalg_main
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Wno-identities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
@@ -56,9 +56,9 @@ executable oalg-exe
       array >=0.5.4.0
     , base >=4.7 && <5
     , deepseq >=1.4.4.0
-    , oalg
     , oalg-abg >=0.9
     , oalg-base >=0.9
+    , oalg-main
     , random >=1.2.0
     , time >=1.9.3
   default-language: Haskell2010
@@ -67,7 +67,7 @@ test-suite oalg-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_oalg
+      Paths_oalg_main
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Wno-identities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
@@ -75,9 +75,9 @@ test-suite oalg-test
       array >=0.5.4.0
     , base >=4.7 && <5
     , deepseq >=1.4.4.0
-    , oalg
     , oalg-abg >=0.9
     , oalg-base >=0.9
+    , oalg-main
     , random >=1.2.0
     , time >=1.9.3
   default-language: Haskell2010

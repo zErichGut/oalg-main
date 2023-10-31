@@ -17,7 +17,7 @@
 module OAlg.Entity.Sequence.Set
   ( 
     -- * Set
-    Set(..), setSpan, setxs, setSqc, setMap, isSubSet
+    Set(..), set, setSpan, setxs, setSqc, setMap, isSubSet
 
     -- * X
   , xSet
@@ -43,6 +43,18 @@ import OAlg.Prelude
 --  (2) @'lengthN' s '==' 'lengthN' xs@.
 newtype Set x = Set [x] deriving (Show,Eq,LengthN)
 
+relSet :: (Validable x, Ord x, Show x) => Set x -> Statement
+relSet (Set [])     = SValid
+relSet (Set (x:xs)) = valid x && vld (0::N) x xs where
+  vld _ _ []     = SValid
+  vld i x (y:xs) = And [ valid y
+                       , (x<y) :?> Params ["i":=show i,"(x,y)":=show (x,y)]
+                       , vld (succ i) y xs
+                       ]
+
+instance (Validable x, Ord x, Show x) => Validable (Set x) where
+  valid xs = Label "Set" :<=>: relSet xs
+{-
 relSet :: (Entity x, Ord x) => Set x -> Statement
 relSet (Set [])     = SValid
 relSet (Set (x:xs)) = valid x && vld (0::N) x xs where
@@ -54,8 +66,15 @@ relSet (Set (x:xs)) = valid x && vld (0::N) x xs where
 
 instance (Entity x, Ord x) => Validable (Set x) where
   valid xs = Label "Set" :<=>: relSet xs
-
+-}
 instance (Entity x, Ord x) => Entity (Set x)
+
+--------------------------------------------------------------------------------
+-- set -
+
+-- | makes a set from the given list.
+set :: Ord x => [x] -> Set x
+set = Set . amap1 head . group . sort
 
 --------------------------------------------------------------------------------
 -- setxs -
