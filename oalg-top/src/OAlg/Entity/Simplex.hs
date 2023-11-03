@@ -26,8 +26,9 @@ import Control.Monad (join)
 
 import Data.Type.Equality
 import Data.Typeable
-import Data.List (zip)
+import Data.List as L (zip,head,(++))
 import Data.Foldable (toList)
+import Data.Maybe
 
 import qualified Data.Map as M
 
@@ -120,7 +121,6 @@ isFace = error "nyi"
 
 data Complex n v where
   Vertices :: Set v -> Complex N0 v
-  -- Complex  :: Typeable n => Set (Simplex (n + 1) v) -> Complex n v -> Complex (n + 1) v
   Complex  :: Set (Simplex (n + 1) v) -> Complex n v -> Complex (n + 1) v
 
 deriving instance Show v => Show (Complex n v)
@@ -158,57 +158,171 @@ instance (Entity v, Ord v, Typeable n) => Entity (Complex n v)
 --------------------------------------------------------------------------------
 -- complex -
 
--- | generates a complex by the given simplices.
-complex :: (Ord v, Attestable n) => [Simplex n v] -> Complex n v
+-- | generates a complex by the given set of simplices.
+complex :: (Ord v, Attestable n) => Set (Simplex n v) -> Complex n v
 complex = cmplx attest where
-  cmplx :: Ord v => Any n -> [Simplex n v] -> Complex n v
-  cmplx W0 ss = Vertices $ set $ toList $ amap1 (\(Simplex (v:|_)) -> v)  ss
-  cmplx (SW n) ss = Complex (set ss) (cmplx n (amap1 faceSimplex $ join $ amap1 (faces') ss))
+  cmplx :: Ord v => Any n -> Set (Simplex n v) -> Complex n v
+  cmplx W0 (Set ss) = Vertices $ Set $ toList $ amap1 (\(Simplex (v:|_)) -> v)  ss
+  cmplx (SW n) ss@(Set ss')
+    = Complex ss (cmplx n (set $ amap1 faceSimplex $ join $ amap1 (faces') ss'))
+
 
 
 --------------------------------------------------------------------------------
 -- triangle -
 
-triangle :: Ord v => v -> v -> v -> Complex N2 v
-triangle a b c = complex [Simplex (a:|b:|c:|Nil)]
+triangle :: v -> v -> v -> Set (Simplex N2 v)
+triangle a b c = Set [Simplex (a:|b:|c:|Nil)]
 
 --------------------------------------------------------------------------------
 -- segment -
 
-segment :: Ord v => v -> v -> Complex N1 v
-segment a b = complex [Simplex (a:|b:|Nil)]
+segment :: v -> v -> Set (Simplex  N1 v)
+segment a b = Set [Simplex (a:|b:|Nil)]
 
+--------------------------------------------------------------------------------
+-- plane -
+
+pln :: [a] -> [b] -> [Simplex N2 (a,b)]
+pln (a0:a1:as) bs@(b0:b1:_)
+  = trn (a0,b0) (a1,b0) (a1,b1) : trn (a0,b0) (a1,b1) (a0,b1) : pln (a1:as) bs where
+    trn a b c = Simplex (a:|b:|c:|Nil)
+pln _ _           = []
+
+plane :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N2 (a,b))
+plane (Set as) (Set bs) = set $ pln as bs
+
+--------------------------------------------------------------------------------
+-- torus -
+
+torus :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N2 (a,b))
+torus (Set as) (Set bs) = set $ pln (join [as,[L.head as]]) (join [bs,[L.head bs]]) 
+
+interior :: Complex (n+1) v -> Complex n v
+interior (Complex _ c) = c
+
+--------------------------------------------------------------------------------
+-- complexEmpty -
+
+setEmpty :: Set x
+setEmpty = Set []
+
+complexEmpty :: Attestable n => Complex n v
+complexEmpty = ce attest where
+  ce :: Any n -> Complex n v
+  ce W0 = Vertices setEmpty
+  ce (SW n) = Complex setEmpty (ce n)
+
+--------------------------------------------------------------------------------
+-- (<++) -
+
+infixl 5 <++
+
+(<++) :: Ord v => Complex n v -> Set (Simplex n v) -> Complex n v
+Vertices (Set vs) <++ Set ss
+  = Vertices $ set $ (vs L.++ (toList $ amap1 (\(Simplex (v:|_)) -> v)  ss))
+Complex (Set ss) c <++ Set ss'
+  = Complex (set ss'') ((<++) c (set $ fs)) where
+    ss'' = ss L.++ ss'
+    fs   = amap1 faceSimplex $ join $ amap1 faces' ss''
+
+
+trn a b c = Set [Simplex (a:|b:|c:|Nil)]
+
+--------------------------------------------------------------------------------
+-- frotify -
+
+fortify :: Ord v => Complex n v -> Complex n v
+fortify c = c <++ (Set [])
 
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
-newtype ChainComplex n a = ChainComplex (Diagram (Chain To) (n+3) (n+2) a) deriving (Show,Eq)
+newtype ChainComplex t n a = ChainComplex (Diagram (Chain t) (n+3) (n+2) a) deriving (Show,Eq)
 
-instance Distributive a => Validable (ChainComplex n a) where
-  valid c@(ChainComplex ds) = valid ds && vldZeros 0 c where
+--------------------------------------------------------------------------------
+-- ccMap -
+
+ccMap :: Hom Dst h => h a b -> ChainComplex t n a -> ChainComplex t n b
+ccMap h (ChainComplex c) = ChainComplex (dgMap h c)
+
+
+--------------------------------------------------------------------------------
+-- ccTail -
+
+ccTail :: Oriented a => ChainComplex t (n+1) a -> ChainComplex t n a
+ccTail (ChainComplex c) = ChainComplex $ case c of
+  DiagramChainTo _ (d:|ds)   -> DiagramChainTo (start d) ds
+  DiagramChainFrom _ (d:|ds) -> DiagramChainFrom (end d) ds
+
+--------------------------------------------------------------------------------
+-- ChainComplex - Entity -
+
+instance Distributive a => Validable (ChainComplex t n a) where
+  valid (ChainComplex ds) = valid ds && vldZeros ds where
     
-    vldZeros :: Distributive a => N -> ChainComplex n a -> Statement
-    vldZeros i c@(ChainComplex (DiagramChainTo _ (_:|_:|Nil))) = vldZero i c
-    vldZeros i c@(ChainComplex (DiagramChainTo _ (_:|_:|_:|_)))
-      = vldZero i c && vldZeros (succ i) (chainComplexTail c)
+    vldZeros :: Distributive a => Diagram (Chain t) (n+3) (n+2) a -> Statement
+    vldZeros d@(DiagramChainTo _ _) = vldZerosTo 0 d
+    vldZeros d@(DiagramChainFrom _ _) = vldZerosTo 0 (coDiagram d)
 
-    vldZero :: Distributive a => N -> ChainComplex n a -> Statement
-    vldZero i (ChainComplex (DiagramChainTo _ (f:|g:|_)))
-      = Label (show i) :<=>: (isZero (f*g))
+    vldZerosTo :: Distributive a => N -> Diagram (Chain To) (n+3) (n+2) a -> Statement
+    vldZerosTo i (DiagramChainTo _ (f:|g:|Nil)) = vldZeroTo i f g 
+    vldZerosTo i (DiagramChainTo _ (f:|g:|h:|ds))
+      = vldZeroTo i f g && vldZerosTo (succ i) (DiagramChainTo (end g) (g:|h:|ds))
+
+    vldZeroTo :: Distributive a => N -> a -> a -> Statement
+    vldZeroTo i f g = Label (show i) :<=>: (isZero (f*g))
           :?> Params ["i":=show i,"f":=show f,"g":=show g]
 
 --------------------------------------------------------------------------------
--- chainComplexTail -
+-- chainComplex -
 
-chainComplexTail :: Distributive a => ChainComplex (n+1) a -> ChainComplex n a
-chainComplexTail (ChainComplex (DiagramChainTo _ (_:|fs@(f:|_))))
-  = ChainComplex (DiagramChainTo (end f) fs)
+chainComplexZ :: Ord v => Complex n v -> ChainComplex From n (Matrix Z)
+chainComplexZ c = case chain c of
+  DiagramChainFrom n ds -> ChainComplex (DiagramChainFrom dZero (zero (dZero :> n) :| ds))
+  where
+
+    dZero = one ()
+
+    chain :: Ord v => Complex n v -> Diagram (Chain From) (n+2) (n+1) (Matrix Z)
+    chain (Vertices vs) = DiagramChainFrom n (zero (n :> dZero):|Nil) where n = dim () ^ lengthN vs
+    chain (Complex ss c) = case chain c of
+      DiagramChainFrom n ds -> DiagramChainFrom m (d:|ds) where
+        m = dim () ^ lengthN ss
+        d = Matrix n m (rcets $ rc (listN ss) (ltSimplices c))
+
+        rc :: (N ~ i, N ~ j, Ord v)
+          => [(Simplex (n+1) v,j)] -> M.Map (Simplex n v) i -> Row j (Col i Z)
+        rc ss f = Row $ PSequence $ amap1 (colj f) ss
+
+        colj :: (Ord i, Ord v) => M.Map (Simplex n v) i -> (Simplex (n+1) v,j) -> (Col i Z,j)
+        colj f (s,j) = (col f (faces' s),j)
+
+        col :: (Ord i, Ord v) => M.Map (Simplex n v) i -> [Face (n+1) v] -> Col i Z
+        col mf fs = colFilter (not.isZero) $ Col $ psequence (+) (alt `zip` amap1 (f mf) fs) where
+          f :: Ord v => M.Map (Simplex n v) i -> Face (n+1) v -> i
+          f m (Face s) = case M.lookup s m of
+            Just i -> i
+            _      -> error "inconsistent complex"
+  
+    alt :: [Z]
+    alt = alt' 1 where alt' i = i:alt' (negate i)
+
+
+chainComplex' :: (Hom Dst h, Ord v) => h (Matrix Z) a -> Complex n v -> ChainComplex From n a
+chainComplex' h c = ccMap h (chainComplexZ c)
+
+chainComplex :: Ord v => Complex n v -> ChainComplex From n AbHom
+chainComplex = chainComplex' FreeAbHom
 
 --------------------------------------------------------------------------------
--- homologies -
+-- homologyGroups -
 
-homology :: Distributive a => Kernels N1 a -> Cokernels N1 a -> ChainComplex n a -> Point a
-homology ker coker (ChainComplex (DiagramChainTo _ (f:|g:|_))) = tip $ universalCone hCoker where
+-- | the homology
+--
+-- __Pre__ @'end' g '==' 'start' f@
+homologyFrom :: Distributive a => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> Point a
+homologyFrom ker coker (ChainComplex (DiagramChainFrom _ (g:|f:|_))) = tip $ universalCone hCoker where
 
   -- image of g
   gCoker = limes coker (cokernelDiagram g)
@@ -217,67 +331,20 @@ homology ker coker (ChainComplex (DiagramChainTo _ (f:|g:|_))) = tip $ universal
   -- kernel of f
   fKer   = limes ker (kernelDiagram f)
 
-
   h      = universalFactor fKer (ConeKernel (diagram fKer) (kernelFactor $ universalCone gIm))
   hCoker = limes coker (cokernelDiagram h)
 
-homologies' :: Distributive a
-  => Kernels N1 a -> Cokernels N1 a -> ChainComplex n a -> FinList (n+1) (Point a)
-homologies' ker coker c@(ChainComplex (DiagramChainTo _ (_:|_:|Nil)))
-  = homology ker coker c:|Nil
-homologies' ker coker c@(ChainComplex (DiagramChainTo _ (_:|_:|_:|_)))
-  = homology ker coker c:|homologies' ker coker (chainComplexTail c)
-
-homologies :: ChainComplex n AbHom -> FinList (n+1) AbGroup
-homologies = homologies' abhKernels abhCokernels
-
---------------------------------------------------------------------------------
--- ccMap -
-
-ccMap :: Hom Dst h => h a b -> ChainComplex n a -> ChainComplex n b
-ccMap h (ChainComplex c) = ChainComplex (dgMap h c)
-
---------------------------------------------------------------------------------
--- chainComplex -
-
-chainComplexZ :: Complex n v -> ChainComplex n (Matrix Z)
-chainComplexZ c = ChainComplex (chain c) where
-
-  dZero :: Dim' Z
-  dZero = one ()
-  
-  chain :: Complex n v -> Diagram (Chain To) (n+3) (n+2) (Matrix Z)
-  chain = error "nyi"
-{-  
-  chain (Vertices vs) = DiagramChainTo dZero (zero (dvs :> dZero) :| zero (dZero :> dvs) :| Nil) where
-    dvs = dim () ^ lengthN vs
-
-  chain (Complex ss c) = error "nyi" 
--}
-chainComplex' :: Hom Dst h => h (Matrix Z) a -> Complex n v -> ChainComplex n a
-chainComplex' h c = ccMap h (chainComplexZ c)
-
-chainComplex :: Complex n v -> ChainComplex n AbHom
-chainComplex = chainComplex' FreeAbHom
+homologyGroups :: Ord v => Complex n v -> FinList (n+1) AbGroup
+homologyGroups = homologies abhKernels abhCokernels . chainComplex
 
 
---------------------------------------------------------------------------------
--- reverse -
-
-reverse :: Attestable n => FinList n a -> FinList n a
-reverse xs = let n = attest in rev n (prp1 n) xs Nil where
-  rev :: Any n -> n :~: (s + t) -> FinList s a -> FinList t a -> FinList n a
-  rev _ Refl Nil xs' = xs'
-  rev n r@Refl (x:|xs) xs' = rev n (prp2 n r) xs (x:|xs')
+homologies :: Distributive a
+  => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> FinList (n+1) (Point a)
+homologies ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|Nil)))
+  = homologyFrom ker coker c:|Nil
+homologies ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|_:|_)))
+  = homologyFrom ker coker c:|homologies ker coker (ccTail c)
 
 
-  prp1 :: Any n -> n :~: (n + N0)
-  prp1 = sym . prpAddNtrlR
 
-  prp2 :: Any n -> (s + 1) :~: t -> s :~: (t + 1)
-  prp2 = error "nyi"
-{-  
-  rev Nil ys = ys
-  rev (x:|xs) ys = rev xs (x:|ys)
--}
 
