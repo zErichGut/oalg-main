@@ -30,8 +30,6 @@ import Data.List as L (zip,head,(++))
 import Data.Foldable (toList)
 import Data.Maybe
 
-import qualified Data.Map as M
-
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
@@ -46,6 +44,7 @@ import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.Hom.Definition
+import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F hiding (zip) 
@@ -61,6 +60,7 @@ import OAlg.Entity.AbelianGroup.KernelsAndCokernels
 
 -- | @__n__@-dimensional simplex given by @n t'+' 1@ vertices in @__v__@.
 newtype Simplex n v = Simplex (FinList (n+1) v) deriving (Show,Eq,Ord)
+-- we relay on the fact that the ordering of simplices is derived!
 
 
 instance Validable v => Validable (Simplex n v) where
@@ -79,6 +79,12 @@ data Face n v where
 deriving instance Show v => Show (Face n v)
 deriving instance Eq x => Eq (Face n x)
 
+--------------------------------------------------------------------------------
+-- splHead -
+
+splHead :: Simplex n v -> v
+splHead (Simplex (v:|_)) = v
+        
 --------------------------------------------------------------------------------
 -- faceSimplex -
 
@@ -126,47 +132,94 @@ data Complex n v where
 deriving instance Show v => Show (Complex n v)
 deriving instance Eq v => Eq (Complex n v)
 
+--------------------------------------------------------------------------------
+-- cplIndex -
+
+cplIndex :: Ord v => Complex n v -> Simplex n v -> Maybe N
+cplIndex (Vertices (Set vs)) = setIndex $ Set $ amap1 vertex vs
+cplIndex (Complex ss _)      = setIndex ss
+
 --------------------------------------------------------------
--- ltSimplices -
-
-ltSimplices :: Ord v => Complex n v -> M.Map (Simplex n v) N
-ltSimplices (Vertices (Set vs)) = setIndex $ Set $ amap1 vertex vs
-ltSimplices (Complex s _)       = setIndex s
-
-
-setIndex :: Ord x => Set x -> M.Map x N
-setIndex (Set xs) = M.fromAscList (xs `zip` [0..])
+-- Complex - Entity -
 
 instance (Validable v, Ord v, Show v) => Validable (Complex n v) where
   valid (Vertices s)           = valid s
-  valid (Complex s@(Set ss) c) = valid s && valid c && vldSimplices 0 ss (ltSimplices c) where
+  valid (Complex s@(Set ss) c) = valid s && valid c && vldSimplices 0 ss (cplIndex c) where
 
     vldSimplices :: (Validable v, Ord v, Show v)
-      => N -> [Simplex (n + 1) v] -> M.Map (Simplex n v) N -> Statement
+      => N -> [Simplex (n + 1) v] -> (Simplex n v -> Maybe N) -> Statement
     vldSimplices _ [] _      = SValid
     vldSimplices i (s:ss) fs = vldFaces i 0 (faces s) fs && vldSimplices (succ i) ss fs
 
     vldFaces :: (Validable v, Ord v, Show v)
-      => N -> N -> FinList m (Face (n + 1) v) -> M.Map (Simplex n v) N -> Statement
+      => N -> N -> FinList m (Face (n + 1) v) -> (Simplex n v -> Maybe N) -> Statement
     vldFaces _ _ Nil _ = SValid
-    vldFaces i j (Face s:|ss) fs = case M.lookup s fs of
+    vldFaces i j (Face s:|ss) fs = case fs s of
       Just _  -> vldFaces i (succ j) ss fs
       Nothing -> False :?> Params ["index (simplex,face)":=show (i,j), "simplex":=show s]
 
 instance (Entity v, Ord v, Typeable n) => Entity (Complex n v)
 
 --------------------------------------------------------------------------------
+-- cplss -
+
+cplss :: Complex n v -> Set (Simplex n v)
+cplss (Vertices (Set vs)) = Set $ amap1 vertex vs
+cplss (Complex s _)       = s
+
+--------------------------------------------------------------------------------
+-- cplSucc -
+
+cplSucc :: Complex n v -> Complex (n+1) v
+cplSucc c = Complex setEmpty c
+
+--------------------------------------------------------------------------------
+-- cplPred -
+
+cplPred :: Complex (n+1) v -> Complex n v
+cplPred (Complex _ c) = c
+
+--------------------------------------------------------------------------------
+-- frotify -
+
+-- | fortifies a complex with possibly missing simplices to a valid complex.
+fortify :: Ord v => Complex n v -> Complex n v
+fortify c = c `ftfy` (Set []) where
+  ftfy :: Ord v => Complex n v -> Set (Simplex n v) -> Complex n v
+  Vertices (Set vs) `ftfy` Set ss
+    = Vertices $ set $ (vs L.++ (toList $ amap1 (\(Simplex (v:|_)) -> v)  ss))
+  Complex s c `ftfy` s'
+    = Complex s'' (c `ftfy` fs) where
+      s''@(Set xs'') = s `setUnion` s'
+      fs = set $ amap1 faceSimplex $ join $ amap1 faces' xs''
+  
+--------------------------------------------------------------------------------
+-- complexEmpty -
+
+complexEmpty :: Attestable n => Complex n v
+complexEmpty = ce attest where
+  ce :: Any n -> Complex n v
+  ce W0 = Vertices setEmpty
+  ce (SW n) = Complex setEmpty (ce n)
+
+--------------------------------------------------------------------------------
+-- (<+) -
+
+infixr 5 <+
+
+(<+) :: Ord v => Set (Simplex n v) -> Complex n v -> Complex n v
+Set xs <+ Vertices v
+  = Vertices (v `setUnion` (Set $ amap1 splHead xs))
+s'@(Set xs) <+ Complex s c
+  = Complex (s `setUnion` s') (fs <+ c) where
+    fs = set $ amap1 faceSimplex $ join $ amap1 faces' xs
+
+-------------------------------------------------------------------------------
 -- complex -
 
 -- | generates a complex by the given set of simplices.
 complex :: (Ord v, Attestable n) => Set (Simplex n v) -> Complex n v
-complex = cmplx attest where
-  cmplx :: Ord v => Any n -> Set (Simplex n v) -> Complex n v
-  cmplx W0 (Set ss) = Vertices $ Set $ toList $ amap1 (\(Simplex (v:|_)) -> v)  ss
-  cmplx (SW n) ss@(Set ss')
-    = Complex ss (cmplx n (set $ amap1 faceSimplex $ join $ amap1 (faces') ss'))
-
-
+complex s = s <+ complexEmpty
 
 --------------------------------------------------------------------------------
 -- triangle -
@@ -198,60 +251,22 @@ plane (Set as) (Set bs) = set $ pln as bs
 torus :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N2 (a,b))
 torus (Set as) (Set bs) = set $ pln (join [as,[L.head as]]) (join [bs,[L.head bs]]) 
 
-interior :: Complex (n+1) v -> Complex n v
-interior (Complex _ c) = c
-
---------------------------------------------------------------------------------
--- complexEmpty -
-
-setEmpty :: Set x
-setEmpty = Set []
-
-complexEmpty :: Attestable n => Complex n v
-complexEmpty = ce attest where
-  ce :: Any n -> Complex n v
-  ce W0 = Vertices setEmpty
-  ce (SW n) = Complex setEmpty (ce n)
-
---------------------------------------------------------------------------------
--- (<++) -
-
-infixl 5 <++
-
-(<++) :: Ord v => Complex n v -> Set (Simplex n v) -> Complex n v
-Vertices (Set vs) <++ Set ss
-  = Vertices $ set $ (vs L.++ (toList $ amap1 (\(Simplex (v:|_)) -> v)  ss))
-Complex (Set ss) c <++ Set ss'
-  = Complex (set ss'') ((<++) c (set $ fs)) where
-    ss'' = ss L.++ ss'
-    fs   = amap1 faceSimplex $ join $ amap1 faces' ss''
-
-
-trn a b c = Set [Simplex (a:|b:|c:|Nil)]
-
---------------------------------------------------------------------------------
--- frotify -
-
-fortify :: Ord v => Complex n v -> Complex n v
-fortify c = c <++ (Set [])
-
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
 newtype ChainComplex t n a = ChainComplex (Diagram (Chain t) (n+3) (n+2) a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- ccMap -
+-- ccplMap -
 
-ccMap :: Hom Dst h => h a b -> ChainComplex t n a -> ChainComplex t n b
-ccMap h (ChainComplex c) = ChainComplex (dgMap h c)
-
+ccplMap :: Hom Dst h => h a b -> ChainComplex t n a -> ChainComplex t n b
+ccplMap h (ChainComplex c) = ChainComplex (dgMap h c)
 
 --------------------------------------------------------------------------------
--- ccTail -
+-- ccplPred -
 
-ccTail :: Oriented a => ChainComplex t (n+1) a -> ChainComplex t n a
-ccTail (ChainComplex c) = ChainComplex $ case c of
+ccplPred :: Oriented a => ChainComplex t (n+1) a -> ChainComplex t n a
+ccplPred (ChainComplex c) = ChainComplex $ case c of
   DiagramChainTo _ (d:|ds)   -> DiagramChainTo (start d) ds
   DiagramChainFrom _ (d:|ds) -> DiagramChainFrom (end d) ds
 
@@ -275,7 +290,7 @@ instance Distributive a => Validable (ChainComplex t n a) where
           :?> Params ["i":=show i,"f":=show f,"g":=show g]
 
 --------------------------------------------------------------------------------
--- chainComplex -
+-- chainComplexZ -
 
 chainComplexZ :: Ord v => Complex n v -> ChainComplex From n (Matrix Z)
 chainComplexZ c = case chain c of
@@ -289,19 +304,19 @@ chainComplexZ c = case chain c of
     chain (Complex ss c) = case chain c of
       DiagramChainFrom n ds -> DiagramChainFrom m (d:|ds) where
         m = dim () ^ lengthN ss
-        d = Matrix n m (rcets $ rc (listN ss) (ltSimplices c))
+        d = Matrix n m (rcets $ rc (listN ss) (cplIndex c))
 
-        rc :: (N ~ i, N ~ j, Ord v)
-          => [(Simplex (n+1) v,j)] -> M.Map (Simplex n v) i -> Row j (Col i Z)
+        rc :: (N ~ i, N ~ j)
+          => [(Simplex (n+1) v,j)] -> (Simplex n v -> Maybe i) -> Row j (Col i Z)
         rc ss f = Row $ PSequence $ amap1 (colj f) ss
 
-        colj :: (Ord i, Ord v) => M.Map (Simplex n v) i -> (Simplex (n+1) v,j) -> (Col i Z,j)
+        colj :: Ord i => (Simplex n v -> Maybe i) -> (Simplex (n+1) v,j) -> (Col i Z,j)
         colj f (s,j) = (col f (faces' s),j)
 
-        col :: (Ord i, Ord v) => M.Map (Simplex n v) i -> [Face (n+1) v] -> Col i Z
+        col :: Ord i => (Simplex n v -> Maybe i) -> [Face (n+1) v] -> Col i Z
         col mf fs = colFilter (not.isZero) $ Col $ psequence (+) (alt `zip` amap1 (f mf) fs) where
-          f :: Ord v => M.Map (Simplex n v) i -> Face (n+1) v -> i
-          f m (Face s) = case M.lookup s m of
+          f :: (Simplex n v -> Maybe i) -> Face (n+1) v -> i
+          f m (Face s) = case m s of
             Just i -> i
             _      -> error "inconsistent complex"
   
@@ -309,14 +324,17 @@ chainComplexZ c = case chain c of
     alt = alt' 1 where alt' i = i:alt' (negate i)
 
 
+--------------------------------------------------------------------------------
+-- chainComplex -
+
 chainComplex' :: (Hom Dst h, Ord v) => h (Matrix Z) a -> Complex n v -> ChainComplex From n a
-chainComplex' h c = ccMap h (chainComplexZ c)
+chainComplex' h c = ccplMap h (chainComplexZ c)
 
 chainComplex :: Ord v => Complex n v -> ChainComplex From n AbHom
 chainComplex = chainComplex' FreeAbHom
 
 --------------------------------------------------------------------------------
--- homologyGroups -
+-- homologyFrom -
 
 -- | the homology
 --
@@ -334,16 +352,21 @@ homologyFrom ker coker (ChainComplex (DiagramChainFrom _ (g:|f:|_))) = tip $ uni
   h      = universalFactor fKer (ConeKernel (diagram fKer) (kernelFactor $ universalCone gIm))
   hCoker = limes coker (cokernelDiagram h)
 
-homologyGroups :: Ord v => Complex n v -> FinList (n+1) AbGroup
-homologyGroups = homologies abhKernels abhCokernels . chainComplex
-
+--------------------------------------------------------------------------------
+-- homologies -
 
 homologies :: Distributive a
   => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> FinList (n+1) (Point a)
 homologies ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|Nil)))
   = homologyFrom ker coker c:|Nil
 homologies ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|_:|_)))
-  = homologyFrom ker coker c:|homologies ker coker (ccTail c)
+  = homologyFrom ker coker c:|homologies ker coker (ccplPred c)
+
+-----------------------------------------------------------------------------------------
+-- homologyGroups -
+
+homologyGroups :: Ord v => Complex n v -> FinList (n+1) AbGroup
+homologyGroups = homologies abhKernels abhCokernels . chainComplex
 
 
 

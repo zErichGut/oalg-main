@@ -19,16 +19,29 @@ module OAlg.Entity.Sequence.Set
     -- * Set
     Set(..), set, setSpan, setxs, setSqc, setMap, isSubSet
 
+    -- * Operations
+  , setEmpty, setUnion
+
+    -- * Lookup
+  , setIndex 
+
     -- * X
   , xSet
+
+    -- * Propositions
+  , prpSetUnion
 
   ) where
 
 import Control.Monad
 
-import Data.List (head,sort,group,map,filter)
+import Data.List (head,sort,group,map,filter,zip)
 
 import OAlg.Prelude
+
+import OAlg.Data.Tree
+
+import OAlg.Structure.Number
 
 --------------------------------------------------------------------------------
 -- Set -
@@ -54,19 +67,7 @@ relSet (Set (x:xs)) = valid x && vld (0::N) x xs where
 
 instance (Validable x, Ord x, Show x) => Validable (Set x) where
   valid xs = Label "Set" :<=>: relSet xs
-{-
-relSet :: (Entity x, Ord x) => Set x -> Statement
-relSet (Set [])     = SValid
-relSet (Set (x:xs)) = valid x && vld (0::N) x xs where
-  vld _ _ []     = SValid
-  vld i x (y:xs) = And [ valid y
-                       , (x<y) :?> Params ["i":=show i,"(x,y)":=show (x,y)]
-                       , vld (succ i) y xs
-                       ]
 
-instance (Entity x, Ord x) => Validable (Set x) where
-  valid xs = Label "Set" :<=>: relSet xs
--}
 instance (Entity x, Ord x) => Entity (Set x)
 
 --------------------------------------------------------------------------------
@@ -115,13 +116,24 @@ setSqc mx (Set is)
   $ map mx is
 
 --------------------------------------------------------------------------------
--- xSet -
+-- setEmpty -
 
--- | random variable of sets with maximal the given length.
-xSet :: Ord x => N -> X x -> X (Set x)
-xSet n xx = do
-  xs <- xTakeN n xx
-  return $ Set $ map head $ group $ sort xs
+-- | the empty set.
+setEmpty :: Set x
+setEmpty = Set []
+
+--------------------------------------------------------------------------------
+-- setUnion -
+
+-- | the union of two sets.
+setUnion :: Ord x => Set x -> Set x -> Set x
+setUnion (Set xs) (Set ys) = Set $ un xs ys where
+  un [] ys = ys
+  un xs [] = xs
+  un xs@(x:xs') ys@(y:ys') = case x `compare` y of
+    LT -> x:un xs' ys
+    EQ -> x:un xs' ys'
+    GT -> y:un xs  ys'
 
 --------------------------------------------------------------------------------
 -- isSubSet -
@@ -137,7 +149,53 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
     GT -> sbs xs ys'
 
 --------------------------------------------------------------------------------
+-- setIndex -
+
+-- | the index of an element, where the elements of the given set are indexed from @0@.
+--
+--  __Examples__
+--
+-- >>> setIndex (Set ['a'..'x']) 'c'
+-- Just 2
+setIndex :: Ord x => Set x -> x -> Maybe N
+setIndex (Set []) = const Nothing
+setIndex (Set xs) = \x -> let (x',i) = lookup xs' x in if x' == x then Just i else Nothing
+  where
+    xs' = lt (xs `zip` [0..])
+
+    lt :: Ord x => [(x,N)] -> Tree x (x,N)
+    lt [xi] = Leaf xi
+    lt xis  = Node (fst $ head xisR) (lt xisL) (lt xisR) where
+      (xisL,xisR) = splitAtN (lengthN xis `div` 2) xis
+
+--------------------------------------------------------------------------------
 -- Set - POrd -
 
 instance Ord x => POrd (Set x) where
   (<<=) = isSubSet  
+
+--------------------------------------------------------------------------------
+-- xSet -
+
+-- | random variable of sets with maximal the given length.
+xSet :: Ord x => N -> X x -> X (Set x)
+xSet n xx = do
+  xs <- xTakeN n xx
+  return $ Set $ map head $ group $ sort xs
+
+
+--------------------------------------------------------------------------------
+-- prpSetUnion -
+
+-- | validity for the union operator of sets.
+prpSetUnion :: (Ord x, Show x) => X (Set x) -> Statement
+prpSetUnion x = Prp "SetUnion" :<=>:
+  Forall xy (\(x,y)
+             -> let xy = x `setUnion` y in
+                  And [ Label "x"
+                        :<=>: (x `isSubSet` xy) :?> Params ["x":=show x, "xy":=show xy]
+                      , Label "y"
+                        :<=>: (y `isSubSet` xy) :?> Params ["y":=show y, "xy":=show xy]
+                      ]
+            ) 
+  where xy = xTupple2 x x

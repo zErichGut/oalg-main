@@ -12,7 +12,7 @@
 -- basic number types.
 module OAlg.Data.Number
   ( -- * Natural Numbers
-    N, (>-), LengthN(..), takeN
+    N, (>-), LengthN(..), takeN, splitAtN
 
     -- * Integers
   , Z(), Integer, Int, modInt, divInt
@@ -46,15 +46,12 @@ enum :: (Ord i, Enum i) => i -> i -> [i]
 enum i h | h < i = []
 enum i h         = i : enum (succ i) h
 
-
-
 --------------------------------------------------------------------------------
 -- divInt -
 
 -- | division for 'Int'
 divInt :: Int -> Int -> Int
 divInt = div
-
 
 --------------------------------------------------------------------------------
 -- modInt -
@@ -80,6 +77,15 @@ takeN :: N -> [a] -> [a]
 takeN (N n) xs = tk n xs where
   tk i (x:xs) | 0 < i = x : tk (i-1) xs
   tk _ _              = []
+
+--------------------------------------------------------------------------------
+-- splitAtN -
+
+-- | splits a list in left and right part according to the given number.
+splitAtN :: N -> [x] -> ([x],[x])
+splitAtN _ []     = ([],[])
+splitAtN 0 xs     = ([],xs)
+splitAtN n (x:xs) = (x:xs',xs'') where (xs',xs'') = splitAtN (pred n) xs
 
 --------------------------------------------------------------------------------
 -- LengthN -
