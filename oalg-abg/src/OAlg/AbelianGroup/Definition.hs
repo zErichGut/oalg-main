@@ -9,14 +9,14 @@
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
 -- |
--- Module      : OAlg.Entity.AbelianGroup.Definition
+-- Module      : OAlg.AbelianGroup.Definition
 -- Description : homomorphisms between finitely generated abelian groups
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- homomorphisms between finitely generated abelian groups.
-module OAlg.Entity.AbelianGroup.Definition
+module OAlg.AbelianGroup.Definition
   ( -- * Abelian Group
     AbGroup(..), abg, isSmithNormal
   , abgDim
@@ -93,8 +93,8 @@ import OAlg.Entity.Slice
 
 import OAlg.Data.Generator
 
-import OAlg.Entity.AbelianGroup.ZMod
-import OAlg.Entity.AbelianGroup.Euclid
+import OAlg.AbelianGroup.ZMod
+import OAlg.AbelianGroup.Euclid
 
 --------------------------------------------------------------------------------
 -- AbGroup -
@@ -114,7 +114,7 @@ import OAlg.Entity.AbelianGroup.Euclid
 --
 -- __Theorem__ Every finitely generated abelian group is isomorphic to a group in
 -- smith normal form. This isomorphism is given by
--- 'OAlg.Entity.AbelianGroup.KernelsAndCokernels.isoSmithNormal'.
+-- 'OAlg.AbelianGroup.KernelsAndCokernels.isoSmithNormal'.
 --
 --  __Examples__ Finitely generated abelian groups constructed via 'abg' and its
 --  multiplicative structure:
@@ -175,7 +175,7 @@ import OAlg.Entity.AbelianGroup.Euclid
 -- True
 --
 -- __Examples__ The associated isomorphism in 'AbHom' of a finitely generated abelian group
--- given by 'OAlg.Entity.AbelianGroup.KernelsAndCokernels.isoSmithNormal'.
+-- given by 'OAlg.AbelianGroup.KernelsAndCokernels.isoSmithNormal'.
 --
 -- >>> end (isoSmithNormal (abg 3 * abg 5))
 -- AbGroup[Z/15]

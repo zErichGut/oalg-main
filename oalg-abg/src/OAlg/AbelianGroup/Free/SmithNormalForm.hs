@@ -7,14 +7,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 -- |
--- Module      : OAlg.Entity.AbelianGroup.Free.SmithNormalForm
+-- Module      : OAlg.AbelianGroup.Free.SmithNormalForm
 -- Description : diagonal and Smith Normal Form for matrices over integers
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- diagonal and Smith Normal Form for 'Z'-matrices.
-module OAlg.Entity.AbelianGroup.Free.SmithNormalForm
+module OAlg.AbelianGroup.Free.SmithNormalForm
   (
     -- * Diagonal Form
     zmxDiagonalForm
@@ -49,7 +49,7 @@ import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence.Permutation
 import OAlg.Entity.Sequence.PSequence
 
-import OAlg.Entity.AbelianGroup.Euclid
+import OAlg.AbelianGroup.Euclid
 
 --------------------------------------------------------------------------------
 -- crDiagonalForm -

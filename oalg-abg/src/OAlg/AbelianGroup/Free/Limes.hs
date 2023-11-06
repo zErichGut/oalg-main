@@ -6,14 +6,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 -- |
--- Module      : OAlg.Entity.AbelianGroup.Free.Limes
+-- Module      : OAlg.AbelianGroup.Free.Limes
 -- Description : limits for matrices over integers.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- limits for 'Z'-matrices.
-module OAlg.Entity.AbelianGroup.Free.Limes
+module OAlg.AbelianGroup.Free.Limes
   ( -- * Projective
     zmxKernels
   , zmxPullbacks
@@ -39,7 +39,7 @@ import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.PullbacksAndPushouts
 
-import OAlg.Entity.AbelianGroup.Free.SmithNormalForm
+import OAlg.AbelianGroup.Free.SmithNormalForm
 
 --------------------------------------------------------------------------------
 -- zmxKernel -

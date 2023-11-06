@@ -11,5 +11,5 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Exponential
 
 -- oalg-abg
-import OAlg.Entity.AbelianGroup.Definition
-import OAlg.Entity.AbelianGroup.KernelsAndCokernels
+import OAlg.AbelianGroup.Definition
+import OAlg.AbelianGroup.KernelsAndCokernels

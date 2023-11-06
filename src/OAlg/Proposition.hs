@@ -16,7 +16,9 @@ import OAlg.Entity.Product
 import OAlg.Entity.Diagram.Proposition
 import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence
-import OAlg.Entity.AbelianGroup.Proposition
+
+
+import OAlg.AbelianGroup.Proposition
 
 --------------------------------------------------------------------------------
 -- prpOAlgBase -

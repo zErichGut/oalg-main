@@ -6,7 +6,7 @@ import Control.Monad
 import Data.List((++))
 
 import OAlg.Prelude
-import OAlg.Entity.AbelianGroup.Proposition
+import OAlg.AbelianGroup.Proposition
 
 --------------------------------------------------------------------------------
 -- main -

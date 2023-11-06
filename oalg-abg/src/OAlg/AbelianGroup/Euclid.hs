@@ -2,14 +2,14 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -- |
--- Module      : OAlg.Entity.AbelianGroup.Euclid
+-- Module      : OAlg.AbelianGroup.Euclid
 -- Description : basic algorithms for integers
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- basic algorithms for the integers 'Z'.
-module OAlg.Entity.AbelianGroup.Euclid
+module OAlg.AbelianGroup.Euclid
   ( gcd, gcds, lcm, lcms, euclid, mod0, (//)
   )
   where

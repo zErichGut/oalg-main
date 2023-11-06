@@ -9,14 +9,14 @@
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
 -- |
--- Module      : OAlg.Entity.AbelianGroup.KernelsAndCokernels
+-- Module      : OAlg.AbelianGroup.KernelsAndCokernels
 -- Description : kernels and cokernels for homomorphisms between finitely generated abelian groups
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
-module OAlg.Entity.AbelianGroup.KernelsAndCokernels
+module OAlg.AbelianGroup.KernelsAndCokernels
   (
     -- * Kernels
     abhKernels
@@ -67,10 +67,10 @@ import OAlg.Entity.Matrix as M
 import OAlg.Entity.Slice
 import OAlg.Entity.Product (fromWord)
 
-import OAlg.Entity.AbelianGroup.Definition
-import OAlg.Entity.AbelianGroup.ZMod
-import OAlg.Entity.AbelianGroup.Euclid
-import OAlg.Entity.AbelianGroup.Free
+import OAlg.AbelianGroup.Definition
+import OAlg.AbelianGroup.ZMod
+import OAlg.AbelianGroup.Euclid
+import OAlg.AbelianGroup.Free
 
 --------------------------------------------------------------------------------
 -- abhCokernelFree -

@@ -27,14 +27,14 @@ source-repository head
 
 library
   exposed-modules:
-      OAlg.Entity.AbelianGroup.Definition
-      OAlg.Entity.AbelianGroup.Euclid
-      OAlg.Entity.AbelianGroup.Free
-      OAlg.Entity.AbelianGroup.Free.Limes
-      OAlg.Entity.AbelianGroup.Free.SmithNormalForm
-      OAlg.Entity.AbelianGroup.KernelsAndCokernels
-      OAlg.Entity.AbelianGroup.Proposition
-      OAlg.Entity.AbelianGroup.ZMod
+      OAlg.AbelianGroup.Definition
+      OAlg.AbelianGroup.Euclid
+      OAlg.AbelianGroup.Free
+      OAlg.AbelianGroup.Free.Limes
+      OAlg.AbelianGroup.Free.SmithNormalForm
+      OAlg.AbelianGroup.KernelsAndCokernels
+      OAlg.AbelianGroup.Proposition
+      OAlg.AbelianGroup.ZMod
   other-modules:
       Paths_oalg_abg
   hs-source-dirs:

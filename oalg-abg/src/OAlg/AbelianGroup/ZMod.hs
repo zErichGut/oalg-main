@@ -9,7 +9,7 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.Entity.AbelianGroup.ZMod
+-- Module      : OAlg.AbelianGroup.ZMod
 -- Description : homomorphisms between cyclic groups
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
@@ -21,7 +21,7 @@
 -- Such a group @G@ is obviously abelian and isomorphic to @'Z'/n'Z'@ for some @n :: 'N'@,
 -- which is called its __/order/__. The group homomorphisms between cyclic groups form a
 -- 'Z'-algebraic structure which is presented here.
-module OAlg.Entity.AbelianGroup.ZMod
+module OAlg.AbelianGroup.ZMod
   (
     
     -- * Cyclic Group
@@ -68,7 +68,7 @@ import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
 import OAlg.Structure.Algebraic
 
-import OAlg.Entity.AbelianGroup.Euclid
+import OAlg.AbelianGroup.Euclid
 import OAlg.Entity.Product
 
 --------------------------------------------------------------------------------

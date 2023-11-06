@@ -25,7 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      OAlg.Entity.Simplex
+      OAlg.Homology.ChainComplex
+      OAlg.Homology.Complex
+      OAlg.Homology.Definition
+      OAlg.Homology.Simplex
   other-modules:
       Paths_oalg_top
   hs-source-dirs:
