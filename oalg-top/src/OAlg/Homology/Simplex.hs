@@ -24,8 +24,9 @@ module OAlg.Homology.Simplex
 
     -- ** Construction
   , vertex, (<:)
+  , simplex
 
-    -- * FAce
+    -- * Face
   , Face(..), fcSimplex
   
   ) where
@@ -105,4 +106,14 @@ faces' = toList . faces
 
 isFace :: Face n v -> Simplex n v -> Bool
 isFace = error "nyi"
+
+--------------------------------------------------------------------------------
+-- simplex -
+
+simplex :: Enum v => Any n -> v -> Simplex n v
+simplex n v = Simplex $ spl n v where
+  spl :: Enum v => Any n -> v -> FinList (n+1) v
+  spl W0 v = v :| Nil
+  spl (SW n) v = v :| spl n (succ v) 
+
 

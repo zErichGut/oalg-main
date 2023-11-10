@@ -18,11 +18,12 @@
 -- definition of 'Complex'.
 module OAlg.Homology.Complex
   ( -- * Complex
-    Complex(..), cplss, cplSucc, cplPred
+    Complex(..), cplDim, cplss, cplSucc, cplPred
   , cplIndex
 
     -- ** Construction
   , complexEmpty, (<+), complex
+  , SomeComplex(..)
 
     -- * Examples
     -- ** Dimension 1
@@ -30,6 +31,10 @@ module OAlg.Homology.Complex
 
     -- ** Dimension 2
   , triangle, plane, torus
+  , kleinBottle
+
+    -- ** Dimension n
+  , sphere
   ) where
 
 import Control.Monad (join)
@@ -40,6 +45,10 @@ import Data.Foldable (toList)
 import Data.Maybe
 
 import OAlg.Prelude
+
+import OAlg.Data.Symbol
+
+import OAlg.Structure.Additive
 
 import OAlg.Hom.Distributive ()
 
@@ -58,6 +67,14 @@ data Complex n v where
 
 deriving instance Show v => Show (Complex n v)
 deriving instance Eq v => Eq (Complex n v)
+
+--------------------------------------------------------------------------------
+-- cplDim -
+
+-- | dimension of a complex.
+cplDim :: Complex n v -> N
+cplDim (Vertices _)  = 0
+cplDim (Complex _ c) = 1 + cplDim c
 
 --------------------------------------------------------------------------------
 -- cplIndex -
@@ -150,10 +167,19 @@ complex :: (Ord v, Attestable n) => Set (Simplex n v) -> Complex n v
 complex s = s <+ complexEmpty
 
 --------------------------------------------------------------------------------
+-- SomeComplex -
+
+data SomeComplex v where
+  SomeComplex :: Complex n v -> SomeComplex v
+  
+--------------------------------------------------------------------------------
 -- triangle -
 
+trn :: v -> v -> v -> Simplex N2 v
+trn a b c = Simplex (a:|b:|c:|Nil)
+
 triangle :: v -> v -> v -> Set (Simplex N2 v)
-triangle a b c = Set [Simplex (a:|b:|c:|Nil)]
+triangle a b c = Set [trn a b c]
 
 --------------------------------------------------------------------------------
 -- segment -
@@ -165,10 +191,12 @@ segment a b = Set [Simplex (a:|b:|Nil)]
 -- plane -
 
 pln :: [a] -> [b] -> [Simplex N2 (a,b)]
-pln (a0:a1:as) bs@(b0:b1:_)
-  = trn (a0,b0) (a1,b0) (a1,b1) : trn (a0,b0) (a1,b1) (a0,b1) : pln (a1:as) bs where
-    trn a b c = Simplex (a:|b:|c:|Nil)
-pln _ _           = []
+pln as bs = plnas as bs where
+  
+  plnas (a0:a1:as') bs@(b0:b1:_)
+    = trn (a0,b0) (a1,b0) (a1,b1) : trn (a0,b0) (a0,b1) (a1,b1) : plnas (a1:as') bs
+  plnas [_] (_:b1:bs) = plnas as (b1:bs)
+  plnas _ _           = []
 
 plane :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N2 (a,b))
 plane (Set as) (Set bs) = set $ pln as bs
@@ -179,3 +207,26 @@ plane (Set as) (Set bs) = set $ pln as bs
 torus :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N2 (a,b))
 torus (Set as) (Set bs) = set $ pln (join [as,[L.head as]]) (join [bs,[L.head bs]]) 
 
+--------------------------------------------------------------------------------
+-- sphere -
+
+sphere :: (Enum v, Ord v) => Any n -> v -> Set (Simplex n v)
+sphere n v = set $ amap1 fcSimplex $ faces' $ simplex (SW n) v
+
+--------------------------------------------------------------------------------
+-- kleinBottle -
+
+kleinBottle :: Set (Simplex N2 Symbol)
+kleinBottle = set
+  [ trn A F D, trn A F B
+  , trn F B C, trn F G C
+  , trn G C A, trn G E A
+
+  , trn D E H, trn F D H
+  , trn F H I, trn F G I
+  , trn G I D, trn G D E
+
+  , trn E A B, trn E H B
+  , trn H B C, trn H C I
+  , trn C I A, trn I A D
+  ]

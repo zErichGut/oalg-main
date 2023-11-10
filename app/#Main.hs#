@@ -43,7 +43,7 @@ getFlag ss = return (Nothing,ss)
 -- | puts the help to 'stdout'.
 putHelp :: IO ()
 putHelp = do
-  putStrLn "oalg - Some Homology Groups"
+  putStrLn "oalg - Homology Groups for some Complexes"
   putStrLn ""
   putStrLn "usage: oalg [-h|-c|--help]"
   putStrLn "            (simplex N|sphere N|kleinBottle|torus)"
