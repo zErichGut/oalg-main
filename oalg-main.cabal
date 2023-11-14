@@ -5,10 +5,10 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           oalg-main
-version:        0.1.0.0
-synopsis:       Algebraic structures on oriented entities.
-description:    Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
-category:       Algebra, Category Theory
+version:        1.0.0.0
+synopsis:       Homology Groups for some Complexes.
+description:    Simplical homology over simplices as finite list of vertices. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
+category:       Algebra, Simplical Homology, Category Theory
 homepage:       https://github.com/zErichGut/oalg-main#readme
 bug-reports:    https://github.com/zErichGut/oalg-main/issues
 author:         Erich.Gut

@@ -14,7 +14,18 @@ import Control.Exception
 
 import Lib
 
-import OAlg.Entity.Natural
+import OAlg.Entity.Natural hiding ((++))
+
+--------------------------------------------------------------------------------
+-- Flag' -
+
+data Flag' = Flag Flag | Help | Version deriving (Show)
+
+--------------------------------------------------------------------------------
+-- version -
+
+version :: String
+version = "1.0"
 
 --------------------------------------------------------------------------------
 -- someExcp -
@@ -27,27 +38,54 @@ someExcp x _ = return x
 -- getFlag -
 
 -- | gets a flag from the list of arguments.
-getFlag :: [String] -> IO (Maybe Flag,[String])
+getFlag :: [String] -> IO (Flag',[String])
 getFlag (fs@('-':_):ss) = case fs of
-  "--help" -> return (Nothing,ss)
-  _        -> do
+  "--help"    -> return (Help,ss)
+  "--version" -> return (Version,ss)
+  _           -> do
     f <- readFlag fs
-    return (Just f,ss)
-    `catch` someExcp (Nothing,ss)
+    return (Flag f,ss)
+    `catch` someExcp (Help,ss)
     
-getFlag ss = return (Nothing,ss)
+getFlag ss@(_:_) = return (Flag Homlgy,ss)
+getFlag ss       = return (Help,ss)
 
+--------------------------------------------------------------------------------
+-- putVersion -
+
+putVersion :: IO ()
+putVersion = putStrLn ("version: " ++ version)
 --------------------------------------------------------------------------------
 -- putHelp -
 
 -- | puts the help to 'stdout'.
 putHelp :: IO ()
 putHelp = do
-  putStrLn "oalg - Some Homology Groups"
+  putStrLn "oalg - Homology Groups for some Complexes"
+  putVersion
   putStrLn ""
-  putStrLn "usage: oalg [-h|-c|--help]"
-  putStrLn "            (simplex N|sphere N|kleinBottle|torus)"
-
+  putStrLn "usage: oalg [-h|-c|--help|--version]"
+  putStrLn "            (simplex N|sphere N|kleinBottle|torus,moebiusStrip|"
+  putStrLn "             projectivePlane)"
+  putStrLn ""
+  putStrLn "Aviable options:"
+  putStrLn "  -h                     Show the homology groups."
+  putStrLn "  -c                     Show the carinality of the simplex-sets."
+  putStrLn "  --help                 Show this help text."
+  putStrLn "  --version              Show the version."
+  putStrLn ""
+  putStrLn "Aviable complexes:"
+  putStrLn "  simplex N              Simplex of dimension N."
+  putStrLn "  sphere N               Sphere of dimension N."
+  putStrLn "  kleineBottle           Klein Bottle."
+  putStrLn "  torus                  Torus of dimension 2."
+  putStrLn "  moebiusStrip           Moebius Strip."
+  putStrLn ""
+  putStrLn "Examples:"
+  putStrLn "  oalg-exe kleinBottle   Show the homology groups of the Klein Bottle.."
+  putStrLn "  oalg-exe -h torus      Show the homology groups of a 2 dimensional torus."
+  putStrLn "  oalg-exe -c sphere 7   Show the cardinality of the simplex-sets of a"
+  putStrLn "                         7 dimensional sphere."
   
 --------------------------------------------------------------------------------
 -- main -
@@ -56,22 +94,23 @@ putHelp = do
 main :: IO ()
 main = do
   args <- getArgs
-  (mf,args') <- getFlag args
-  case mf of
-    Nothing -> putHelp
-    Just f  -> case args' of      
-      "simplex":sd:_ -> do
+  (f',args') <- getFlag args
+  case f' of
+    Help                  -> putHelp
+    Version               -> putVersion
+    Flag f                -> case args' of      
+      "simplex":sd:_      -> do
         d <- readN sd
         case someNatural d of
-          SomeNatural d' -> putSimplex f d'
+          SomeNatural d'  -> putSimplex f d'
       "sphere":sd:_ -> do
         d <- readN sd
         case someNatural d of
-          SomeNatural d' -> putSphere f d'
-      "kleinBottle":_ -> do
-        putKleinBottle f
-      "torus":_ -> do
-        putTorus2 f
+          SomeNatural d'  -> putSphere f d'
+      "kleinBottle":_     -> putKleinBottle f
+      "torus":_           -> putTorus2 f
+      "moebiusStrip":_    -> putMoebiusStrip f
+      "projectivePlane":_ -> putProjectivePlane f
       _ -> putHelp
    `catch` (\e -> case e of
                     SomeException _ -> putHelp

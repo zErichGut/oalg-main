@@ -30,8 +30,11 @@ module OAlg.Homology.Complex
   , segment
 
     -- ** Dimension 2
-  , triangle, plane, torus
-  , kleinBottle
+  , triangle, plane, torus, torus2
+  , kleinBottle, moebiusStrip
+  , projectivePlane
+
+  , dh0, dh1, dh2
 
     -- ** Dimension n
   , sphere
@@ -175,9 +178,65 @@ data SomeComplex v where
 --------------------------------------------------------------------------------
 -- triangle -
 
+-- | triangle given by the three points.
 trn :: v -> v -> v -> Simplex N2 v
 trn a b c = Simplex (a:|b:|c:|Nil)
 
+-- | the square devided into two simplices.
+--
+-- @
+--    c ---> d
+--    ^    ^ ^
+--    |   /  |
+--    |  /   | 
+--    | /    |
+--    a ---> b
+-- @
+ru :: v -> v -> v -> v -> [Simplex N2 v]
+ru a b c d = [trn a c d, trn a b d]
+
+-- | the square devided into two simplices.
+--
+-- @
+--    c ---> d
+--    ^    ^ |
+--    |   /  |
+--    |  /   | 
+--    | /    v
+--    a ---> b
+-- @
+rd :: v -> v -> v -> v -> [Simplex N2 v]
+rd a b c d = [trn a c d, trn a d b]
+
+-- | the square devided into two simplices.
+--
+-- @
+--    c <--- d
+--    ^    ^ ^
+--    |   /  |
+--    |  /   | 
+--    | /    |
+--    a ---> b
+-- @
+lu :: v -> v -> v -> v -> [Simplex N2 v]
+lu a b c d = [trn a d c, trn a b d]
+
+-- | the square devided into two simplices.
+--
+-- @
+--    c <--- d
+--    ^    ^ |
+--    |   /  |
+--    |  /   | 
+--    | /    v
+--    a ---> b
+-- @
+ld :: v -> v -> v -> v -> [Simplex N2 v]
+ld a b c d = [trn a d c, trn a d b]
+
+
+
+-- | the simplex-set of the triangle given by the tree points.
 triangle :: v -> v -> v -> Set (Simplex N2 v)
 triangle a b c = Set [trn a b c]
 
@@ -214,19 +273,58 @@ sphere :: (Enum v, Ord v) => Any n -> v -> Set (Simplex n v)
 sphere n v = set $ amap1 fcSimplex $ faces' $ simplex (SW n) v
 
 --------------------------------------------------------------------------------
+-- torus2 -
+
+torus2 :: Set (Simplex N2 Symbol)
+torus2 = set $ join
+  [ ru A B D F, ru B C F G, ru C A G D
+  , ru D F E H, ru F G H I, ru G D I E
+  , ru E H A B, ru H I B C, ru I E C A
+  ]
+
+--------------------------------------------------------------------------------
+-- projectivePlane -
+
+projectivePlane :: Set (Simplex N2 Symbol)
+projectivePlane = set $ join
+  [ ru V A C E, ru A B E F, rd B W F D
+  , ru C E D G, ru E F G H, rd F D H C
+  , lu D G W B, lu G H B A, ld H C A V
+  ]
+
+--------------------------------------------------------------------------------
 -- kleinBottle -
 
 kleinBottle :: Set (Simplex N2 Symbol)
-kleinBottle = set
-  [ trn A F D, trn A F B
-  , trn F B C, trn F G C
-  , trn G C A, trn G E A
+kleinBottle = set $ join
+  [ ru A B D F, ru B C F G, rd C A G E
+  , ru D F E H, ru F G H I, rd G E I D
+  , ru E H A B, ru H I B C, rd I D C A
+  ]
 
-  , trn D E H, trn F D H
-  , trn F H I, trn F G I
-  , trn G I D, trn G D E
+--------------------------------------------------------------------------------
+-- moebiusStrip -
 
-  , trn E A B, trn E H B
-  , trn H B C, trn H C I
-  , trn C I A, trn I A D
+moebiusStrip :: Set (Simplex N2 Symbol)
+moebiusStrip = set $ join
+  [ ru A B E F, ru B C F G, ru C D G H
+  , ru E F I J, ru F G J K, ru G H K L
+  , lu I J D C, lu J K C B, lu K L B A
+  ]
+
+--------------------------------------------------------------------------------
+-- dunceHat -
+
+dh0 :: Set (Simplex N2 Symbol)
+dh0 = Set [trn A A A]
+
+dh1 :: Set (Simplex N2 Symbol)
+dh1 = set [trn A B B, trn B B B, trn B A B, trn B B A]
+
+dh2 :: Set (Simplex N2 Symbol)
+dh2 = set
+  [ trn A B C, trn B C D, trn B A D
+  , trn A C B, trn C E B, trn E B A
+  , trn A D B, trn D B E, trn B E A
+  , trn C D E
   ]

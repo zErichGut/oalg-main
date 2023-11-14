@@ -31,6 +31,7 @@ module OAlg.Homology.Simplex
   
   ) where
 
+import Control.Monad (Functor(..))
 
 import Data.Typeable
 import Data.Foldable (toList)
@@ -44,7 +45,7 @@ import OAlg.Entity.FinList as F hiding (zip)
 -- Simplex - 
 
 -- | @__n__@-dimensional simplex given by @n t'+' 1@ vertices in @__v__@.
-newtype Simplex n v = Simplex (FinList (n+1) v) deriving (Show,Eq,Ord)
+newtype Simplex n v = Simplex (FinList (n+1) v) deriving (Show,Eq,Ord,Functor)
 -- we relay on the fact that the ordering of simplices is derived!
 
 
@@ -115,5 +116,6 @@ simplex n v = Simplex $ spl n v where
   spl :: Enum v => Any n -> v -> FinList (n+1) v
   spl W0 v = v :| Nil
   spl (SW n) v = v :| spl n (succ v) 
+
 
 

@@ -15,8 +15,8 @@ module Lib
     ( readN
     , Flag(..), readFlag
 
-    , putSimplex, putSphere, putKleinBottle, putTorus2
-    
+    , putSimplex, putSphere, putKleinBottle, putTorus2, putMoebiusStrip
+    , putProjectivePlane
     ) where
 
 import Control.Monad
@@ -125,7 +125,7 @@ putComplex :: Attestable n
   -> Any n -> IO ()
 putComplex n c put d
   | n < lengthN d = do
-      putStr "very time consuming! proceed? (yes,N): "
+      putStr ("very time consuming for " ++ show n ++ " < N! proceed? (yes,N): ")
       hFlush stdout
       s <- hGetLine stdin
       case s of
@@ -166,7 +166,6 @@ putSimplex f d = case f of
 -- | puts the Klein Bottle according to the given flag to 'stdout'.
 putKleinBottle :: Flag -> IO ()
 putKleinBottle f = do
-  putStrLn "Klein Bottle"
   case f of
     Homlgy -> putHomologyGroups c
     Card   -> putCardinality c
@@ -178,9 +177,25 @@ putKleinBottle f = do
 -- | puts the torus of dimension @2@ and according to the given flag to 'stdout'.
 putTorus2 :: Flag -> IO ()
 putTorus2 f = do
-  putStrLn "2-dimensional torus"
   case f of
     Homlgy -> putHomologyGroups c
     Card   -> putCardinality c
   where c = complex $ torus (Set [A,B]) (Set [A,B])
 
+--------------------------------------------------------------------------------
+-- putMoebiusStrip -
+
+putMoebiusStrip :: Flag -> IO ()
+putMoebiusStrip f = case f of
+  Homlgy -> putHomologyGroups c
+  Card   -> putCardinality c
+  where c = complex $ moebiusStrip
+
+--------------------------------------------------------------------------------
+-- putProjectivePlane -
+
+putProjectivePlane :: Flag -> IO ()
+putProjectivePlane f = case f of
+  Homlgy -> putHomologyGroups c
+  Card   -> putCardinality c
+  where c = complex $ projectivePlane

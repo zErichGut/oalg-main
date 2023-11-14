@@ -1,5 +1,5 @@
 name:                oalg-main
-version:             0.1.0.0
+version:             1.0.0.0
 github:              "zErichGut/oalg-main"
 license:             BSD3
 author:              "Erich.Gut"
@@ -11,13 +11,13 @@ extra-source-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:            Algebraic structures on oriented entities.
-category:            Algebra, Category Theory
+synopsis:            Homology Groups for some Complexes.
+category:            Algebra, Simplical Homology, Category Theory
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Computaional algebra based on category theory. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
+description:         Simplical homology over simplices as finite list of vertices. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
 
 dependencies:
 - base >= 4.7 && < 5
