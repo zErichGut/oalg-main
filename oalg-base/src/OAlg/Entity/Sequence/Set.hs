@@ -35,6 +35,7 @@ module OAlg.Entity.Sequence.Set
 
 import Control.Monad
 
+import Data.Foldable
 import Data.List (head,sort,group,map,filter,zip)
 
 import OAlg.Prelude
@@ -54,7 +55,7 @@ import OAlg.Structure.Number
 --  (1) For all @..x':'y..@ in @xs@ holds: @x '<' y@.
 --
 --  (2) @'lengthN' s '==' 'lengthN' xs@.
-newtype Set x = Set [x] deriving (Show,Eq,LengthN)
+newtype Set x = Set [x] deriving (Show,Eq,LengthN,Foldable)
 
 relSet :: (Validable x, Ord x, Show x) => Set x -> Statement
 relSet (Set [])     = SValid

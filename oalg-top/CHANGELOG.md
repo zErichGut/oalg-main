@@ -8,4 +8,10 @@ and this project adheres to the
 
 ## Unreleased
 
-## 0.1.0.0 - YYYY-MM-DD
+## [0.2.0.0] - 2023-11-19
+
+	### Added
+	- The class Simplical.
+
+	### Changed
+	- Making the type for Complexe more generic.

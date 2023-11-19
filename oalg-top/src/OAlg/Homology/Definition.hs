@@ -86,7 +86,7 @@ homology ker coker = Homology . hmlgy ker coker where
 -----------------------------------------------------------------------------------------
 -- homologyGroups -
 
-homologyGroups :: Ord v => Complex n v -> Homology n AbHom
+homologyGroups :: Simplical s x => Complex s n x -> Homology n AbHom
 homologyGroups = homology abhKernels abhCokernels . chainComplex
 
 

@@ -8,4 +8,8 @@ and this project adheres to the
 
 ## Unreleased
 
-## 0.1.0.0 - YYYY-MM-DD
+## [1.1.1.0[ - 2023-11-19
+
+	### Added
+	- type for ordered structures.
+	- Foldable for sets.

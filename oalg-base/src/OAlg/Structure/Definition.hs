@@ -26,8 +26,8 @@ module OAlg.Structure.Definition
   , Transformable(..), Transformable1(..), TransformableOp
   , ForgetfulTyp
 
-    -- * Typeable
-  , Typ   
+    -- * Some Structure Types
+  , Typ, Ord'   
 
   ) where
 
@@ -37,6 +37,7 @@ import Data.Type.Equality
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.Ord
 import OAlg.Data.Singular
 import OAlg.Data.Maybe
 import OAlg.Data.Opposite
@@ -75,6 +76,14 @@ type instance Structure Typ x = Typeable x
 -- Type -
 
 type instance Structure Type x = ()
+
+--------------------------------------------------------------------------------
+-- Ord' -
+
+-- | type for ordered structures.
+data Ord'
+
+type instance Structure Ord' x = Ord x
 
 --------------------------------------------------------------------------------
 -- Transformable -

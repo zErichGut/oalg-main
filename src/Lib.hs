@@ -38,7 +38,6 @@ import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Definition as H
 import OAlg.Homology.Complex
-import OAlg.Homology.Simplex
 
 --------------------------------------------------------------------------------
 -- Flag -
@@ -79,7 +78,7 @@ readN s = do
 -- putHomologyGroups -
 
 -- | puts the homology groups of the given complex to 'stdout'.
-putHomologyGroups :: Ord v => Complex n v -> IO ()
+putHomologyGroups :: Simplical s x => Complex s n x -> IO ()
 putHomologyGroups c = do
   putStrLn "homology groups:"  
   putH (cplDim c) (toList hs)
@@ -98,7 +97,7 @@ putHomologyGroups c = do
 -- putCardinality -
 
 -- | puts the cardinality of the simplex-sets of the given complex to 'stdout'.
-putCardinality :: Complex n v -> IO ()
+putCardinality :: Complex s n x -> IO ()
 putCardinality c = do
   putStrLn "cardinality of simplex-sets:"
   putCard (cplDim c) c
@@ -107,7 +106,7 @@ putCardinality c = do
     putC :: N -> N -> IO ()
     putC d n = putStrLn ("C " ++ show d ++ ": " ++ show n)
   
-    putCard :: N -> Complex n v -> IO ()
+    putCard :: N -> Complex s n x -> IO ()
     putCard d (Vertices vs) = putC d (lengthN vs)
     putCard d (Complex ss c) = do
       putC d (lengthN ss)
@@ -120,8 +119,8 @@ putCardinality c = do
 -- | puts a complex to 'stdout' according to the given parameters.
 putComplex :: Attestable n
   => N
-  -> (forall n . Attestable n => Any n -> Complex n v)
-  -> (forall n . Complex n v -> IO ())
+  -> (forall n . Attestable n => Any n -> Complex s n x)
+  -> (forall n . Complex s n x -> IO ())
   -> Any n -> IO ()
 putComplex n c put d
   | n < lengthN d = do
@@ -145,7 +144,7 @@ putSphere f d = case f of
   Homlgy -> putComplex 7 sphr putHomologyGroups d
   Card   -> putComplex 18 sphr putCardinality d
   where
-    sphr :: Attestable n => Any n -> Complex n N
+    sphr :: Attestable n => Any n -> Complex Simplex n N
     sphr d = complex $ sphere d (0::N)
 
 --------------------------------------------------------------------------------
@@ -157,7 +156,7 @@ putSimplex f d = case f of
   Homlgy -> putComplex 8 splx putHomologyGroups d
   Card   -> putComplex 19 splx putCardinality d
   where
-    splx :: Attestable n => Any n -> Complex n N
+    splx :: Attestable n => Any n -> Complex Simplex n N
     splx d = complex $ Set [simplex d (0::N)]
     
 --------------------------------------------------------------------------------

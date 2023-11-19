@@ -1,10 +1,11 @@
 name:                oalg-top
-version:             0.1.0.0
+version:             0.2.0.0
 github:              "zErichGut/oalg-top"
 license:             BSD3
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
 copyright:           "(c) Erich Gut"
+status:              experimental
 
 extra-source-files:
 - README.md
@@ -22,7 +23,7 @@ description:         Please see the README on GitHub at <https://github.com/zEri
 dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6
-- oalg-base >= 1.1
+- oalg-base >= 1.1.1
 - oalg-abg >= 1.0
 
 ghc-options:
