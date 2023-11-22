@@ -26,8 +26,8 @@ module OAlg.Structure.Fibred.Definition
     -- * Fibred Oriented
   , FibredOriented, FbrOrt, ForgetfulFbrOrt
 
-    -- * Ordered Root
-  , OrdRoot
+    -- * Spezial classes
+  , OrdRoot, TotalRoot
 
     -- * Sheaf
   , Sheaf(..)
@@ -42,6 +42,7 @@ import Data.Foldable
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
+import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented.Definition
@@ -58,8 +59,7 @@ import OAlg.Structure.Multiplicative.Definition
 -- (1) On should accept the @default@ for 'root' only for 'FibredOriented' structures!
 --
 -- (2) For 'OAlg.Structure.Distributive.Definition.Distributive' structures the only thing to be
--- implemented is the 'Root' type and should be defined as @'Root' d = 'Orientation' p@ where
--- @p = 'Point' d@ (see the default implementation of 'root').
+-- implemented is the 'Root' type and should be defined as @'Root' d = 'Orientation' p@ where-- @p = 'Point' d@ (see the default implementation of 'root').
 class (Entity f, Entity (Root f)) => Fibred f where
   -- | the type of roots.
   type Root f
@@ -128,6 +128,12 @@ instance FibredOriented f => FibredOriented (Op f)
 --
 --  __Note__ Helper class to circumvent undecidable instances.
 class Ord (Root f) => OrdRoot f
+
+--------------------------------------------------------------------------------
+-- TotalRoot -
+
+-- | type where the associated root type is a singleton.
+class Singleton (Root f) => TotalRoot f
 
 --------------------------------------------------------------------------------
 -- Sheaf -
