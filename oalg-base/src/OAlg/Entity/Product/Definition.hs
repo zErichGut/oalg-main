@@ -284,7 +284,7 @@ newtype Word r a = Word [(a,r)] deriving (Show,Eq,Validable)
 --------------------------------------------------------------------------------
 -- fromWord -
 
--- | the underlying list of @a@'s with there exponent.
+-- | the underlying list of @a@'s with their exponent.
 fromWord :: Word r a -> [(a,r)]
 fromWord (Word ars) = ars
 

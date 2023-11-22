@@ -6,10 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
-## Unreleased
+## [Unreleased]
 
-## [1.1.1.0[ - 2023-11-19
+## [1.1.1.0] - 2023-11-19
 
-	### Added
+	### [Added]
 	- type for ordered structures.
 	- Foldable for sets.
+
+## [1.1.2.0] - 2023-11-22
+
+	### [Added]
+	- free sums.
