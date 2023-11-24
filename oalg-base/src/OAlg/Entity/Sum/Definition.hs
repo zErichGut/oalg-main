@@ -18,11 +18,12 @@
 module OAlg.Entity.Sum.Definition
   (
     -- * Sum
-    Sum(), smwrd
+    Sum(), smwrd, smJoin, nSum, zSum, smMap
 
     -- * Form
   , SumForm(..), smfLength, smfwrd, wrdsmf
   , fromWord, wrdAggr, wrdSort, wrdSclFilter, Word(..)
+  , smfMap, smfJoin
 
     -- **
   , smfReduce
@@ -37,6 +38,7 @@ import OAlg.Prelude
 import OAlg.Data.Canonical
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
+import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Fibred.Definition
@@ -45,6 +47,9 @@ import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Ring.Definition
 import OAlg.Structure.Number
 import OAlg.Structure.Vectorial
+
+import OAlg.Hom.Definition
+import OAlg.Hom.Fibred
 
 --------------------------------------------------------------------------------
 -- SumForm -
@@ -107,7 +112,29 @@ instance Foldable (SumForm N) where
   foldMap _ (0:! _)  = mempty
   foldMap f (n:!a)   = foldMap f a <> foldMap f (pred n :! a)
   foldMap f (a :+ b) = foldMap f a <> foldMap f b
-  
+
+--------------------------------------------------------------------------------
+-- smfSum -
+
+smfSum :: (Root x -> y) -> (r -> y -> y) -> (y -> y -> y) -> (x -> y) -> SumForm r x -> y
+smfSum z (!) (+) f s = sm s where
+  sm (Zero e) = z e
+  sm (S x)    = f x
+  sm (r :! a) = r ! sm a
+  sm (a :+ b) = sm a + sm b
+
+--------------------------------------------------------------------------------
+-- smfJoin -
+
+smfJoin :: SumForm r (SumForm r a) -> SumForm r a
+smfJoin = smfSum Zero (:!) (:+) id
+
+--------------------------------------------------------------------------------
+-- smfMap -
+
+smfMap :: Singleton (Root y) => (x -> y) -> SumForm r x -> SumForm r y
+smfMap f = smfSum (const ( Zero unit)) (:!) (:+) (S . f)
+
 --------------------------------------------------------------------------------
 -- smfLength -
 
@@ -244,3 +271,29 @@ instance (Fibred a, Ord a, Semiring r, Commutative r) => Vectorial (Sum r a) whe
 
 smwrd :: Semiring r => Sum r a -> Word r a
 smwrd = restrict smfwrd
+
+--------------------------------------------------------------------------------
+-- smJoin -
+
+smJoin :: (Semiring r, Commutative r, Fibred a, Ord a) => Sum r (Sum r a) -> Sum r a
+smJoin = make . smfJoin . restrict (smfSum Zero (:!) (:+) (S . form))
+
+--------------------------------------------------------------------------------
+-- smMap -
+
+smMap :: (Singleton (Root y), Fibred y, Ord y, Semiring r, Commutative r)
+  => (x -> y) -> Sum r x -> Sum r y
+smMap f (Sum s) = make (smfMap f s)
+
+--------------------------------------------------------------------------------
+-- nSum -
+
+nSum :: (Hom Fbr h,Additive x) => h a x -> Sum N a -> x
+nSum h = restrict (smfSum (zero . rmap h) ntimes (+) (amap h))
+
+--------------------------------------------------------------------------------
+-- zSum -
+
+zSum :: (Hom Fbr h,Abelian x) => h a x -> Sum Z a -> x
+zSum h = restrict (smfSum (zero . rmap h) ztimes (+) (amap h))
+

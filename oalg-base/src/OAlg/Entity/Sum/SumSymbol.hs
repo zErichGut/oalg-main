@@ -14,7 +14,7 @@
 -- free sums over symbols.
 module OAlg.Entity.Sum.SumSymbol
   ( -- * SumSymbol
-    SumSymbol(..), ssywrd, sumSymbol, sy
+    SumSymbol(..), ssywrd, sumSymbol, sy, ssMap, ssJoin
 
     -- * U
   , U(..)
@@ -78,7 +78,7 @@ instance (Semiring r, Show a) => Show (SumSymbol r a) where
 instance (Semiring r, Commutative r, Entity a) => Entity (SumSymbol r a)
 
 --------------------------------------------------------------------------------
--- SumSymbol - Abelian -
+-- SumSymbol - Fibred - Vectorial -
 
 instance (Semiring r, Commutative r, Entity a) => Fibred (SumSymbol r a) where
   type Root (SumSymbol r a) = ()
@@ -87,7 +87,7 @@ instance (Semiring r, Commutative r, Entity a) => Fibred (SumSymbol r a) where
 instance (Semiring r, Commutative r, Entity a, Ord a) => Vectorial (SumSymbol r a) where
   type Scalar (SumSymbol r a) = r
   r ! (SumSymbol a) = SumSymbol (r ! a)
-  
+
 --------------------------------------------------------------------------------
 -- sumSymbol -
 
@@ -99,4 +99,20 @@ sumSymbol xs = SumSymbol $ make $ foldr (:+) (Zero ()) $ map (\(r,a) -> r :! (S 
 
 sy :: (Semiring r, Commutative r, Entity a, Ord a) => a -> SumSymbol r a
 sy a = sumSymbol [(rOne,a)]
+
+--------------------------------------------------------------------------------
+-- ssMap -
+
+ssMap :: (Semiring r, Commutative r, Entity y, Ord y) => (x -> y) -> SumSymbol r x -> SumSymbol r y
+ssMap f (SumSymbol s) = SumSymbol (smMap f' s) where
+  f' (U x) = U (f x)
+
+--------------------------------------------------------------------------------
+-- ssJoin -
+
+ssJoin :: (Semiring r, Commutative r, Entity x, Ord x)
+  => SumSymbol r (SumSymbol r x) -> SumSymbol r x
+ssJoin (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap f $ form s where
+  f :: U (SumSymbol r x) -> SumForm r (U x)
+  f (U (SumSymbol s)) = form s
 

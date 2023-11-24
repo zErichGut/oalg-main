@@ -67,9 +67,7 @@ import OAlg.Hom.Distributive ()
 import OAlg.Entity.Natural as Nat hiding ((++))
 import OAlg.Entity.FinList as F hiding (zip,(++)) 
 import OAlg.Entity.Sequence
-
--- import OAlg.Homology.Simpl
-
+import OAlg.Entity.Sum as Sum hiding (S)
 
 --------------------------------------------------------------------------------
 -- Face -
@@ -223,7 +221,26 @@ cplEmpty = ce attest where
 complex :: (Simplical s x, Attestable n) => Set (s n x) -> Complex s n x
 complex s = s <+ cplEmpty
 
-  
+--------------------------------------------------------------------------------
+-- Chain -
+
+type Chain s (n :: N') x = SumSymbol Z (s n x)
+
+--------------------------------------------------------------------------------
+-- ch -
+
+chOrd :: Entity (s n x) => Struct Ord' (s n x) -> s n x -> Chain s n x
+chOrd Struct = Sum.sy
+
+ch :: (Simplical s x, Entity (s n x)) => s n x -> Chain s n x
+ch = chOrd sord
+
+--------------------------------------------------------------------------------
+-- boundary -
+
+boundary :: Simplical s x => Chain s (n+1) x -> Chain s n x
+boundary = error "nyi"
+
 --------------------------------------------------------------------------------
 -- Simplex -
 
@@ -248,123 +265,6 @@ simplex n v = Simplex $ spl n v where
   spl :: Enum v => Any n -> v -> FinList (n+1) v
   spl W0 v = v :| Nil
   spl (SW n) v = v :| spl n (succ v) 
-
-{-
---------------------------------------------------------------------------------
--- Complex -
-
-data Complex n v where
-  Vertices :: Set v -> Complex N0 v
-  Complex  :: Set (Simplex (n + 1) v) -> Complex n v -> Complex (n + 1) v
-
-deriving instance Show v => Show (Complex n v)
-deriving instance Eq v => Eq (Complex n v)
-
---------------------------------------------------------------------------------
--- cplDim -
-
--- | dimension of a complex.
-cplDim :: Complex n v -> N
-cplDim (Vertices _)  = 0
-cplDim (Complex _ c) = 1 + cplDim c
-
---------------------------------------------------------------------------------
--- cplIndex -
-
-cplIndex :: Ord v => Complex n v -> Simplex n v -> Maybe N
-cplIndex (Vertices (Set vs)) = setIndex $ Set $ amap1 vertex vs
-cplIndex (Complex ss _)      = setIndex ss
-
-
---------------------------------------------------------------
--- Complex - Entity -
-
-instance (Validable v, Ord v, Show v) => Validable (Complex n v) where
-  valid (Vertices s)           = valid s
-  valid (Complex s@(Set ss) c) = valid s && valid c && vldSimplices 0 ss (cplIndex c) where
-
-    vldSimplices :: (Validable v, Ord v, Show v)
-      => N -> [Simplex (n + 1) v] -> (Simplex n v -> Maybe N) -> Statement
-    vldSimplices _ [] _      = SValid
-    vldSimplices i (s:ss) fs = vldFaces i 0 (faces s) fs && vldSimplices (succ i) ss fs
-
-    vldFaces :: (Validable v, Ord v, Show v)
-      => N -> N -> FinList m (Face (n + 1) v) -> (Simplex n v -> Maybe N) -> Statement
-    vldFaces _ _ Nil _ = SValid
-    vldFaces i j (Face s:|ss) fs = case fs s of
-      Just _  -> vldFaces i (succ j) ss fs
-      Nothing -> False :?> Params ["index (simplex,face)":=show (i,j), "simplex":=show s]
-
-instance (Entity v, Ord v, Typeable n) => Entity (Complex n v)
-
---------------------------------------------------------------------------------
--- cplss -
-
-cplss :: Complex n v -> Set (Simplex n v)
-cplss (Vertices (Set vs)) = Set $ amap1 vertex vs
-cplss (Complex s _)       = s
-
---------------------------------------------------------------------------------
--- cplSucc -
-
-cplSucc :: Complex n v -> Complex (n+1) v
-cplSucc c = Complex setEmpty c
-
---------------------------------------------------------------------------------
--- cplPred -
-
-cplPred :: Complex (n+1) v -> Complex n v
-cplPred (Complex _ c) = c
-
---------------------------------------------------------------------------------
--- frotify -
-
--- | fortifies a complex with possibly missing simplices to a valid complex.
-fortify :: Ord v => Complex n v -> Complex n v
-fortify c = c `ftfy` (Set []) where
-  ftfy :: Ord v => Complex n v -> Set (Simplex n v) -> Complex n v
-  Vertices (Set vs) `ftfy` Set ss
-    = Vertices $ set $ (vs L.++ (toList $ amap1 (\(Simplex (v:|_)) -> v)  ss))
-  Complex s c `ftfy` s'
-    = Complex s'' (c `ftfy` fs) where
-      s''@(Set xs'') = s `setUnion` s'
-      fs = set $ amap1 fcSimplex $ join $ amap1 faces' xs''
-  
---------------------------------------------------------------------------------
--- complexEmpty -
-
-complexEmpty :: Attestable n => Complex n v
-complexEmpty = ce attest where
-  ce :: Any n -> Complex n v
-  ce W0 = Vertices setEmpty
-  ce (SW n) = Complex setEmpty (ce n)
-
---------------------------------------------------------------------------------
--- (<+) -
-
-infixr 5 <+
-
-(<+) :: Ord v => Set (Simplex n v) -> Complex n v -> Complex n v
-Set xs <+ Vertices v
-  = Vertices (v `setUnion` (Set $ amap1 splHead xs))
-s'@(Set xs) <+ Complex s c
-  = Complex (s `setUnion` s') (fs <+ c) where
-    fs = set $ amap1 fcSimplex $ join $ amap1 faces' xs
-
--------------------------------------------------------------------------------
--- complex -
-
--- | generates a complex by the given set of simplices.
-complex :: (Ord v, Attestable n) => Set (Simplex n v) -> Complex n v
-complex s = s <+ complexEmpty
-
---------------------------------------------------------------------------------
--- SomeComplex -
-
-data SomeComplex v where
-  SomeComplex :: Complex n v -> SomeComplex v
-
--}
 
 --------------------------------------------------------------------------------
 -- triangle -
