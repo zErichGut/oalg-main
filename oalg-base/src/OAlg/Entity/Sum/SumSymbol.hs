@@ -14,7 +14,7 @@
 -- free sums over symbols.
 module OAlg.Entity.Sum.SumSymbol
   ( -- * SumSymbol
-    SumSymbol(..), ssywrd, sumSymbol, sy, ssMap, ssJoin
+    SumSymbol(..), ssywrd, sumSymbol, sy, ssMap, ssSum, ssJoin
 
     -- * U
   , U(..)
@@ -106,6 +106,14 @@ sy a = sumSymbol [(rOne,a)]
 ssMap :: (Semiring r, Commutative r, Entity y, Ord y) => (x -> y) -> SumSymbol r x -> SumSymbol r y
 ssMap f (SumSymbol s) = SumSymbol (smMap f' s) where
   f' (U x) = U (f x)
+
+--------------------------------------------------------------------------------
+-- ssSum -
+
+ssSum :: (Ring r, Commutative r, Entity y, Ord y) => (x -> Word r y) -> SumSymbol r x -> SumSymbol r y
+ssSum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s where
+  f' :: Semiring r => (x -> Word r y) -> U x -> SumForm r (U y)
+  f' f (U x) = wrdsmf () $ Word $ amap1 (\(r,y) -> (r,U y)) $ fromWord $ f x
 
 --------------------------------------------------------------------------------
 -- ssJoin -

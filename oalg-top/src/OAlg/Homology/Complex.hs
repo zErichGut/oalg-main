@@ -51,8 +51,9 @@ module OAlg.Homology.Complex
 
 import Control.Monad (join)
 
+import Data.Kind
 import Data.Typeable
-import Data.List as L (head)
+import Data.List as L (head,zip)
 import Data.Foldable (toList)
 import Data.Maybe
 
@@ -61,6 +62,8 @@ import OAlg.Prelude
 import OAlg.Data.Symbol hiding (S)
 
 import OAlg.Structure.Additive
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Ring
 
 import OAlg.Hom.Distributive ()
 
@@ -224,22 +227,38 @@ complex s = s <+ cplEmpty
 --------------------------------------------------------------------------------
 -- Chain -
 
-type Chain s (n :: N') x = SumSymbol Z (s n x)
+type Chain r s (n :: N') x = SumSymbol r (s n x)
 
 --------------------------------------------------------------------------------
 -- ch -
 
-chOrd :: Entity (s n x) => Struct Ord' (s n x) -> s n x -> Chain s n x
+chOrd :: (Ring r, Commutative r, Entity (s n x)) => Struct Ord' (s n x) -> s n x -> Chain r s n x
 chOrd Struct = Sum.sy
 
-ch :: (Simplical s x, Entity (s n x)) => s n x -> Chain s n x
+ch :: (Simplical s x, Ring r, Commutative r, Entity (s n x)) => s n x -> Chain r s n x
 ch = chOrd sord
 
 --------------------------------------------------------------------------------
+-- rAlt -
+
+rAlt :: Ring r => [r]
+rAlt = za rOne where za i = i:za (negate i)
+
+-------------------------------------------------------------------------------
 -- boundary -
 
-boundary :: Simplical s x => Chain s (n+1) x -> Chain s n x
-boundary = error "nyi"
+boundaryOrd :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
+  => Struct Ord' (s n x) -> Chain r s (n+1) x -> Chain r s n x
+boundaryOrd Struct c = ssSum (f rAlt) c where
+  f :: Simplical s x => [r] -> s (n+1) x -> Word r (s n x)
+  f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
+ 
+  f' :: forall r (s :: N' -> Type -> Type) (n :: N') x . [r] -> [s n x] -> Word r (s n x)
+  f' rs sns = Word (rs `zip` sns) 
+            
+boundary :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
+  => Chain r s (n+1) x -> Chain r s n x
+boundary = boundaryOrd sord
 
 --------------------------------------------------------------------------------
 -- Simplex -
