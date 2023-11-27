@@ -18,3 +18,7 @@ and this project adheres to the
 
 	### [Added]
 	- free sums.
+
+## [1.1.3.0] - 2023-11-27
+	### [Change]
+	- interface of free sums. Replacing Word by LinearCombination.

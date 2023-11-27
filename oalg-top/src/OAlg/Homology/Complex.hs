@@ -27,6 +27,10 @@ module OAlg.Homology.Complex
   , cplEmpty, (<+), complex
   -- , SomeComplex(..)
 
+
+  -- * Boundary
+  , boundary, ch, Chain
+  
     -- * Simplical
   , Simplical(..), Face(..), fcSimplex
 
@@ -250,11 +254,11 @@ rAlt = za rOne where za i = i:za (negate i)
 boundaryOrd :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
   => Struct Ord' (s n x) -> Chain r s (n+1) x -> Chain r s n x
 boundaryOrd Struct c = ssSum (f rAlt) c where
-  f :: Simplical s x => [r] -> s (n+1) x -> Word r (s n x)
+  f :: Simplical s x => [r] -> s (n+1) x -> LinearCombination r (s n x)
   f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
  
-  f' :: forall r (s :: N' -> Type -> Type) (n :: N') x . [r] -> [s n x] -> Word r (s n x)
-  f' rs sns = Word (rs `zip` sns) 
+  f' :: forall r (s :: N' -> Type -> Type) (n :: N') x . [r] -> [s n x] -> LinearCombination r (s n x)
+  f' rs sns = LinearCombination (rs `zip` sns) 
             
 boundary :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
   => Chain r s (n+1) x -> Chain r s n x

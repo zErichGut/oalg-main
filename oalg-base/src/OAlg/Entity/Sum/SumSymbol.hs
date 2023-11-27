@@ -14,10 +14,10 @@
 -- free sums over symbols.
 module OAlg.Entity.Sum.SumSymbol
   ( -- * SumSymbol
-    SumSymbol(..), ssywrd, sumSymbol, sy, ssMap, ssSum, ssJoin
+    SumSymbol(..), ssylc, sumSymbol, sy, ssMap, ssSum, ssJoin
 
-    -- * U
-  , U(..)
+    -- * R
+  , R(..)
   
   ) where
 
@@ -39,35 +39,35 @@ import OAlg.Structure.Vectorial
 import OAlg.Entity.Sum.Definition
 
 --------------------------------------------------------------------------------
--- U -
+-- R -
 
 -- | adjoining the root @()@.
-newtype U a = U a deriving (Show,Eq,Ord,Validable)
+newtype R a = R a deriving (Show,Eq,Ord,Validable)
 
-instance Entity a => Entity (U a)
+instance Entity a => Entity (R a)
 
-instance Entity a => Fibred (U a) where
-  type Root (U a) = ()
+instance Entity a => Fibred (R a) where
+  type Root (R a) = ()
   root _ = ()
 
-instance OrdRoot (U a)
+instance OrdRoot (R a)
 
 --------------------------------------------------------------------------------
 -- SumSymbol -
 
-newtype SumSymbol r a = SumSymbol (Sum r (U a)) deriving (Eq,Ord,Validable,Additive,Abelian)
+newtype SumSymbol r a = SumSymbol (Sum r (R a)) deriving (Eq,Ord,Validable,Additive,Abelian)
 
 --------------------------------------------------------------------------------
--- ssywrd -
+-- ssylc -
 
-ssywrd :: Semiring r => SumSymbol r a -> Word r a
-ssywrd (SumSymbol s) = Word $ map (\(r,U a) -> (r,a)) $ fromWord $ smwrd s
+ssylc :: Semiring r => SumSymbol r a -> LinearCombination r a
+ssylc (SumSymbol s) = LinearCombination $ map (\(r,R a) -> (r,a)) $ fromLinComb $ smlc s
 
 --------------------------------------------------------------------------------
 -- SumSymbol - Entity -
 
 ssyShow :: (Semiring r, Show a) => SumSymbol r a -> String
-ssyShow s = shws $ fromWord $ ssywrd s where
+ssyShow s = shws $ fromLinComb $ ssylc s where
   shws ss = join $ tween "+" $ map shw ss
   shw (r,a) | r == rOne = show a
             | otherwise = show r ++ "!" ++ show a
@@ -92,7 +92,7 @@ instance (Semiring r, Commutative r, Entity a, Ord a) => Vectorial (SumSymbol r 
 -- sumSymbol -
 
 sumSymbol :: (Semiring r, Commutative r, Entity a, Ord a) => [(r,a)] -> SumSymbol r a
-sumSymbol xs = SumSymbol $ make $ foldr (:+) (Zero ()) $ map (\(r,a) -> r :! (S $ U a)) xs
+sumSymbol xs = SumSymbol $ make $ foldr (:+) (Zero ()) $ map (\(r,a) -> r :! (S $ R a)) xs
 
 --------------------------------------------------------------------------------
 -- sy -
@@ -105,15 +105,16 @@ sy a = sumSymbol [(rOne,a)]
 
 ssMap :: (Semiring r, Commutative r, Entity y, Ord y) => (x -> y) -> SumSymbol r x -> SumSymbol r y
 ssMap f (SumSymbol s) = SumSymbol (smMap f' s) where
-  f' (U x) = U (f x)
+  f' (R x) = R (f x)
 
 --------------------------------------------------------------------------------
 -- ssSum -
 
-ssSum :: (Ring r, Commutative r, Entity y, Ord y) => (x -> Word r y) -> SumSymbol r x -> SumSymbol r y
+ssSum :: (Ring r, Commutative r, Entity y, Ord y)
+  => (x -> LinearCombination r y) -> SumSymbol r x -> SumSymbol r y
 ssSum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s where
-  f' :: Semiring r => (x -> Word r y) -> U x -> SumForm r (U y)
-  f' f (U x) = wrdsmf () $ Word $ amap1 (\(r,y) -> (r,U y)) $ fromWord $ f x
+  f' :: Semiring r => (x -> LinearCombination r y) -> R x -> SumForm r (R y)
+  f' f (R x) = lcsmf () $ LinearCombination $ amap1 (\(r,y) -> (r,R y)) $ fromLinComb $ f x
 
 --------------------------------------------------------------------------------
 -- ssJoin -
@@ -121,6 +122,9 @@ ssSum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s wher
 ssJoin :: (Semiring r, Commutative r, Entity x, Ord x)
   => SumSymbol r (SumSymbol r x) -> SumSymbol r x
 ssJoin (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap f $ form s where
-  f :: U (SumSymbol r x) -> SumForm r (U x)
-  f (U (SumSymbol s)) = form s
+  f :: R (SumSymbol r x) -> SumForm r (R x)
+  f (R (SumSymbol s)) = form s
 
+
+
+  

@@ -44,17 +44,17 @@ import OAlg.Hom.Distributive ()
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F hiding (zip) 
 import OAlg.Entity.Sequence
-import OAlg.Entity.Diagram
+import OAlg.Entity.Diagram as D
 import OAlg.Entity.Matrix
 
 import OAlg.AbelianGroup.Definition
 
-import OAlg.Homology.Complex
+import OAlg.Homology.Complex hiding (Chain)
 
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
-newtype ChainComplex t n a = ChainComplex (Diagram (Chain t) (n+3) (n+2) a) deriving (Show,Eq)
+newtype ChainComplex t n a = ChainComplex (Diagram (D.Chain t) (n+3) (n+2) a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
 -- ccplMap -

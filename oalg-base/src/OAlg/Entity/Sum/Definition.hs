@@ -18,15 +18,15 @@
 module OAlg.Entity.Sum.Definition
   (
     -- * Sum
-    Sum(), smwrd, smJoin, nSum, zSum, smMap
+    Sum(), smlc, smJoin, nSum, zSum, smMap
 
     -- * Form
-  , SumForm(..), smfLength, smfwrd, wrdsmf
-  , fromWord, wrdAggr, wrdSort, wrdSclFilter, Word(..)
-  , smfMap, smfJoin
+  , SumForm(..), smfLength, smflc, lcsmf
+  , smfMap, smfJoin, smfReduce
 
-    -- **
-  , smfReduce
+    -- * Linear Combination
+  , LinearCombination(..), fromLinComb, lcAggr, lcSort, lcSclFilter
+
   ) where
 
 import Data.List (map,groupBy,(++),filter)
@@ -151,49 +151,51 @@ instance LengthN (SumForm N a) where
   lengthN = smfLength
 
 --------------------------------------------------------------------------------
--- Word -
+-- LinearCombination -
 
 -- | list of symbols in @__a__@ together with a scalar in @__r__@.
-newtype Word r a = Word [(r,a)] deriving (Show,Eq,Validable)
+--
+-- __Note__ 'valid' linear combinations must not sorted according to the second component!
+newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Validable)
 
-instance (Entity a, Entity r) => Entity (Word r a)
+instance (Entity a, Entity r) => Entity (LinearCombination r a)
 
 --------------------------------------------------------------------------------
--- fromWord -
+-- fromLinComb -
 
 -- | the underlying list of symbols with their scalar.
-fromWord :: Word r a -> [(r,a)]
-fromWord (Word as) = as
+fromLinComb :: LinearCombination r a -> [(r,a)]
+fromLinComb (LinearCombination as) = as
 
 --------------------------------------------------------------------------------
--- wrdAggr -
+-- lcAggr -
 
 -- | aggregating words with same symbols.
-wrdAggr :: (Eq a, Semiring r) => Word r a -> Word r a
-wrdAggr = Word . map aggr . groupBy (<=>) . fromWord where
+lcAggr :: (Eq a, Semiring r) => LinearCombination r a -> LinearCombination r a
+lcAggr = LinearCombination . map aggr . groupBy (<=>) . fromLinComb where
   a <=> b = snd a == snd b
   aggr as@((_,a):_) = (foldr (+) rZero $ map fst as,a)
 
 --------------------------------------------------------------------------------
--- wrdSort -
+-- lcSort -
 
 -- | sorting a word according to its symbols.
-wrdSort :: Ord a => Word r a -> Word r a
-wrdSort (Word as) = Word (sortSnd as)
+lcSort :: Ord a => LinearCombination r a -> LinearCombination r a
+lcSort (LinearCombination as) = LinearCombination (sortSnd as)
 
 --------------------------------------------------------------------------------
--- wrdSclFilter -
+-- lcSclFilter -
 
 -- | filtering a word according to the scalars.
-wrdSclFilter :: (r -> Bool) -> Word r a -> Word r a
-wrdSclFilter p (Word ws) = Word $ filter (p . fst) ws
+lcSclFilter :: (r -> Bool) -> LinearCombination r a -> LinearCombination r a
+lcSclFilter p (LinearCombination ws) = LinearCombination $ filter (p . fst) ws
 
 --------------------------------------------------------------------------------
--- smfwrd -
+-- smflc -
 
 -- | transforming a sum form to its corresponding word.
-smfwrd :: Semiring r => SumForm r a -> Word r a
-smfwrd sf = Word (tow sf) where
+smflc :: Semiring r => SumForm r a -> LinearCombination r a
+smflc sf = LinearCombination (tow sf) where
   tow sf = case sf of
     Zero _        -> []
     S a           -> [(rOne,a)]
@@ -203,11 +205,11 @@ smfwrd sf = Word (tow sf) where
     a :+ b        -> tow a ++ tow b
                    
 --------------------------------------------------------------------------------
--- wrdsmf -
+-- lcsmf -
 
 -- | transforming a word to its corresponding sum form.
-wrdsmf :: Semiring r => Root a -> Word r a -> SumForm r a
-wrdsmf e (Word ws) = smf e ws where
+lcsmf :: Semiring r => Root a -> LinearCombination r a -> SumForm r a
+lcsmf e (LinearCombination ws) = smf e ws where
   smf e ws = case ws of
     []      -> Zero e
     [(r,a)] -> if r == rOne then S a else (r :! S a)
@@ -218,7 +220,7 @@ wrdsmf e (Word ws) = smf e ws where
 
 -- | reducing a sum form to its canonical form,
 smfReduce :: (Fibred a, Ord a, Semiring r, Commutative r) => SumForm r a -> SumForm r a
-smfReduce sf = wrdsmf (root sf) $ wrdSclFilter (not . isZero) $ wrdAggr $ wrdSort $ smfwrd sf
+smfReduce sf = lcsmf (root sf) $ lcSclFilter (not . isZero) $ lcAggr $ lcSort $ smflc sf
 
 instance (Fibred a, Ord a, Semiring r, Commutative r) => Reducible (SumForm r a) where
   reduce = smfReduce
@@ -267,10 +269,10 @@ instance (Fibred a, Ord a, Semiring r, Commutative r) => Vectorial (Sum r a) whe
   r ! (Sum a) = make (r :! a)
   
 --------------------------------------------------------------------------------
--- smwrd -
+-- smlc -
 
-smwrd :: Semiring r => Sum r a -> Word r a
-smwrd = restrict smfwrd
+smlc :: Semiring r => Sum r a -> LinearCombination r a
+smlc = restrict smflc
 
 --------------------------------------------------------------------------------
 -- smJoin -

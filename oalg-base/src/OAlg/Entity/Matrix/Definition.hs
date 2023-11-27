@@ -75,6 +75,7 @@ import OAlg.Structure.Exponential
 import OAlg.Structure.Number
 
 import OAlg.Entity.Product
+-- import OAlg.Entity.Sum
 import OAlg.Entity.Sequence hiding (span)
 
 import OAlg.Hom.Oriented
