@@ -83,7 +83,7 @@ cplDim (Complex _ c) = 1 + cplDim c
 -- cplOrd -
 
 cplOrd :: Simplical s x => Complex s n x -> Struct Ord' (s n x)
-cplOrd _ = sord
+cplOrd _ = sOrd
 
 --------------------------------------------------------------------------------
 -- cplSet -
@@ -287,7 +287,7 @@ torus (Set as) (Set bs) = set $ pln (join [as,[L.head as]]) (join [bs,[L.head bs
 --------------------------------------------------------------------------------
 -- sphere -
 
-sphere :: (Enum v, Ord v) => Any n -> v -> Set (Simplex n v)
+sphere :: (Enum v, Ord v, Entity v) => Any n -> v -> Set (Simplex n v)
 sphere n v = set $ amap1 fcSimplex $ toList $ faces $ simplex (SW n) v
 
 --------------------------------------------------------------------------------
