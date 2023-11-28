@@ -49,7 +49,9 @@ import OAlg.Entity.Matrix
 
 import OAlg.AbelianGroup.Definition
 
-import OAlg.Homology.Complex hiding (Chain)
+import OAlg.Homology.Simplical
+import OAlg.Homology.Complex
+
 
 --------------------------------------------------------------------------------
 -- ChainComplex -

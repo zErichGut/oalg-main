@@ -39,6 +39,7 @@ import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 
 
+import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 

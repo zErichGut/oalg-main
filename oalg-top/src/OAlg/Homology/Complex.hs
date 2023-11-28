@@ -27,16 +27,6 @@ module OAlg.Homology.Complex
   , cplEmpty, (<+), complex
   -- , SomeComplex(..)
 
-
-  -- * Boundary
-  , boundary, ch, Chain
-  
-    -- * Simplical
-  , Simplical(..), Face(..), fcSimplex
-
-    -- * Simplex
-  , Simplex(..), simplex
-
     -- * Examples
     -- ** Dimension 1
   , segment
@@ -55,9 +45,8 @@ module OAlg.Homology.Complex
 
 import Control.Monad (join)
 
-import Data.Kind
 import Data.Typeable
-import Data.List as L (head,zip)
+import Data.List as L (head)
 import Data.Foldable (toList)
 import Data.Maybe
 
@@ -66,38 +55,14 @@ import OAlg.Prelude
 import OAlg.Data.Symbol hiding (S)
 
 import OAlg.Structure.Additive
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Ring
 
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Natural as Nat hiding ((++))
 import OAlg.Entity.FinList as F hiding (zip,(++)) 
 import OAlg.Entity.Sequence
-import OAlg.Entity.Sum as Sum hiding (S)
 
---------------------------------------------------------------------------------
--- Face -
-
-data Face s n x where
-  EmptyFace :: Face s N0 x
-  Face      :: s n x -> Face s (n+1) x
-
-instance Show (Face s N0 x) where show EmptyFace = "EmptyFace"
-deriving instance Show (s n x) => Show (Face s (S n) x)
-
---------------------------------------------------------------------------------
--- fcSimplex -
-
-fcSimplex :: Face s (n+1) x -> s n x
-fcSimplex (Face s) = s
-
---------------------------------------------------------------------------------
--- Simplical -
-
-class Simplical s x where
-  sord :: Struct Ord' (s n x)
-  faces :: s n x -> FinList (n+1) (Face s n x)
+import OAlg.Homology.Simplical
 
 --------------------------------------------------------------------------------
 -- Complex -
@@ -227,67 +192,6 @@ cplEmpty = ce attest where
 -- | generates a complex by the given set of simplices.
 complex :: (Simplical s x, Attestable n) => Set (s n x) -> Complex s n x
 complex s = s <+ cplEmpty
-
---------------------------------------------------------------------------------
--- Chain -
-
-type Chain r s (n :: N') x = SumSymbol r (s n x)
-
---------------------------------------------------------------------------------
--- ch -
-
-chOrd :: (Ring r, Commutative r, Entity (s n x)) => Struct Ord' (s n x) -> s n x -> Chain r s n x
-chOrd Struct = Sum.sy
-
-ch :: (Simplical s x, Ring r, Commutative r, Entity (s n x)) => s n x -> Chain r s n x
-ch = chOrd sord
-
---------------------------------------------------------------------------------
--- rAlt -
-
-rAlt :: Ring r => [r]
-rAlt = za rOne where za i = i:za (negate i)
-
--------------------------------------------------------------------------------
--- boundary -
-
-boundaryOrd :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
-  => Struct Ord' (s n x) -> Chain r s (n+1) x -> Chain r s n x
-boundaryOrd Struct c = ssSum (f rAlt) c where
-  f :: Simplical s x => [r] -> s (n+1) x -> LinearCombination r (s n x)
-  f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
- 
-  f' :: forall r (s :: N' -> Type -> Type) (n :: N') x . [r] -> [s n x] -> LinearCombination r (s n x)
-  f' rs sns = LinearCombination (rs `zip` sns) 
-            
-boundary :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
-  => Chain r s (n+1) x -> Chain r s n x
-boundary = boundaryOrd sord
-
---------------------------------------------------------------------------------
--- Simplex -
-
-newtype Simplex n x = Simplex (FinList (n+1) x) deriving (Show,Eq,Ord,Validable,Entity)
-
-
-(<:) :: x -> Face Simplex n x -> Face Simplex (n+1) x
-x <: EmptyFace = Face (Simplex (x:|Nil))
-x <: (Face (Simplex xs)) = Face (Simplex (x:|xs))
-
-
-instance Ord x => Simplical Simplex x where
-  sord = Struct
-  faces (Simplex (_:|Nil))       = EmptyFace:|Nil
-  faces (Simplex (x:|xs@(_:|_))) = Face (Simplex xs) :| amap1 (x<:) (faces (Simplex xs))
-
---------------------------------------------------------------------------------
--- simplex -
-
-simplex :: Enum v => Any n -> v -> Simplex n v
-simplex n v = Simplex $ spl n v where
-  spl :: Enum v => Any n -> v -> FinList (n+1) v
-  spl W0 v = v :| Nil
-  spl (SW n) v = v :| spl n (succ v) 
 
 --------------------------------------------------------------------------------
 -- triangle -
