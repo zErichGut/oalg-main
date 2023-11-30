@@ -50,8 +50,8 @@ import OAlg.Entity.Matrix
 import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Simplical
+import OAlg.Homology.Chain as C
 import OAlg.Homology.Complex
-
 
 --------------------------------------------------------------------------------
 -- ChainComplex -
@@ -78,11 +78,11 @@ ccplPred (ChainComplex c) = ChainComplex $ case c of
 instance Distributive a => Validable (ChainComplex t n a) where
   valid (ChainComplex ds) = valid ds && vldZeros ds where
     
-    vldZeros :: Distributive a => Diagram (Chain t) (n+3) (n+2) a -> Statement
+    vldZeros :: Distributive a => Diagram (D.Chain t) (n+3) (n+2) a -> Statement
     vldZeros d@(DiagramChainTo _ _) = vldZerosTo 0 d
     vldZeros d@(DiagramChainFrom _ _) = vldZerosTo 0 (coDiagram d)
 
-    vldZerosTo :: Distributive a => N -> Diagram (Chain To) (n+3) (n+2) a -> Statement
+    vldZerosTo :: Distributive a => N -> Diagram (D.Chain To) (n+3) (n+2) a -> Statement
     vldZerosTo i (DiagramChainTo _ (f:|g:|Nil)) = vldZeroTo i f g 
     vldZerosTo i (DiagramChainTo _ (f:|g:|h:|ds))
       = vldZeroTo i f g && vldZerosTo (succ i) (DiagramChainTo (end g) (g:|h:|ds))
@@ -101,7 +101,7 @@ chainComplexZ c = case chain c of
 
     dZero = one ()
 
-    chain :: Simplical s x => Complex s n x -> Diagram (Chain From) (n+2) (n+1) (Matrix Z)
+    chain :: Simplical s x => Complex s n x -> Diagram (D.Chain From) (n+2) (n+1) (Matrix Z)
     chain (Vertices s) = DiagramChainFrom n (zero (n :> dZero):|Nil) where n = dim () ^ lengthN s
     chain (Complex ss c) = case chain c of
       DiagramChainFrom n ds -> DiagramChainFrom m (d:|ds) where

@@ -34,6 +34,9 @@ module OAlg.Entity.Matrix.Definition
   , matrix, matrixTtl, matrixBlc
   , diagonal, diagonal'
 
+    -- ** Representation
+  , repMatrix, Representable(..)
+
     -- * Duality
   , coMatrix, coMatrixInv, mtxFromOpOp
 
@@ -53,7 +56,7 @@ import Control.Monad
 
 import Data.Typeable
 import Data.Foldable
-import Data.List (map,repeat,zip,span)
+import Data.List (map,repeat,zip,span,(++)) 
 
 import OAlg.Prelude
 
@@ -70,12 +73,13 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Number
 
 import OAlg.Entity.Product
--- import OAlg.Entity.Sum
+import OAlg.Entity.Sum as Sum
 import OAlg.Entity.Sequence hiding (span)
 
 import OAlg.Hom.Oriented
@@ -479,6 +483,76 @@ instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s, Typeable s)
 -- | the contravariant isomorphism from @'Matrix' __x__@ to @'Matrix' ('Op' __x__)@.
 isoCoMatrixDst :: Distributive x => IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
 isoCoMatrixDst = make (ToOp1 :. IdPath Struct)
+
+--------------------------------------------------------------------------------
+-- Representable -
+
+-- | Predicate for a @__r__@-linear homomorphisms between the free sums @'SumSymbol' __r__ __x__@
+-- and @'SumSymbol' __r__ __y__@ /representable/ for the given symbol sets.
+--
+-- __Property__ Let @h@ be a @__r__@-linear homomorphism between the free sums
+-- @'SumSymbol' __r__ __x__@ and @'SumSymbol' __r__ __y__@ and @xs@ and @ys@ 'Set's of symbols, then
+-- holds: If for each @x@ in @xs@ the associated 'LinearCombination' of @h '$' x@ is representable
+-- in @ys@, i.e. all symbols in @h '$' x@ are elements of @ys@, then @'Representable' h xs ys@ is 'valid'.
+data Representable r h x y where
+  Representable :: (Hom (Vec r) h, Entity x, Ord x, Entity y, Ord y)
+    => h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y
+    -> Representable r h (SumSymbol r x) (SumSymbol r y)
+
+instance Show (Representable r h x y) where
+  show (Representable h xs ys)
+    = "Representable " ++ show2 h ++ " (" ++ show xs ++ ") (" ++ show ys ++ ")"
+
+instance Validable (Representable r h x y) where
+  valid (Representable h xs ys) = Label "Representable"
+    :<=>: vldsVec (tauHom (homomorphous h)) h xs ys where
+
+    vldsVec :: (Hom (Vec r) h, Entity x, Ord x, Ord y)
+      => Homomorphous (Vec r) (SumSymbol r x) (SumSymbol r y)
+      -> h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y -> Statement
+    vldsVec (Struct :>: _) h xs ys = vlds h (listN xs) ys
+
+    vlds :: (Semiring r, Commutative r, Hom (Vec r) h, Entity x, Ord x, Ord y)
+      => h (SumSymbol r x) (SumSymbol r y) -> [(x,N)] -> Set y -> Statement
+    vlds _ [] _           = SValid
+    vlds h ((x,j):xjs) ys = vld j (ssylc $ h $ Sum.sy x) ys && vlds h xjs ys
+
+    vld :: Ord y => N -> LinearCombination r y -> Set y -> Statement
+    vld j l ys = ((Set $ amap1 snd $ lcs l) `isSubSet` ys)
+      :?> Params ["j":=show j]
+
+--------------------------------------------------------------------------------
+-- repMatrix -
+
+repMatricVec :: (Hom (Vec r) h, Entity x, Ord x, Ord y)
+  => Homomorphous (Vec r) (SumSymbol r x) (SumSymbol r y)
+  -> h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y -> Matrix r
+repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
+  r   = dim unit ^ lengthN ys
+  c   = dim unit ^ lengthN xs
+  ets = rcets $ rowFilter (not.colIsEmpty) $ rc (amap h) (setIndex ys) (listN xs)
+
+  rc :: (Semiring r, Commutative r, Entity x, Ord x)
+    => (SumSymbol r x -> SumSymbol r y) -> (y -> Maybe N) -> [(x,N)] -> Row N (Col N r)
+  rc h iy = Row . PSequence . cls h iy 
+    
+  cls :: (Semiring r, Commutative r, Entity x, Ord x)
+    => (SumSymbol r x -> SumSymbol r y) -> (y -> Maybe N) -> [(x,j)] -> [(Col N r,j)]
+  cls _ _ []           = []
+  cls h iy ((x,j):xjs) = (cl iy (h $ Sum.sy x),j):cls h iy xjs
+
+  cl :: Semiring r => (y -> Maybe N) -> SumSymbol r y -> Col N r
+  cl iy sy
+    = Col
+    $ PSequence
+    $ sortSnd
+    $ amap1 (\(r,y) -> (r,fromJust $ iy y))
+    $ lcs
+    $ ssylc sy
+
+
+repMatrix :: Representable r h x y -> Matrix r
+repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs ys
 
 --------------------------------------------------------------------------------
 -- xMatrixRL -

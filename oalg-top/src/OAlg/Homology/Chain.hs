@@ -19,7 +19,7 @@
 -- 'boundary' of a 'Chain'.
 module OAlg.Homology.Chain
   (  -- * Boundary
-    boundary
+    HomBoundary(..), hbdEnt, hbdOrd, homBoundary
 
     -- * Chain
   , Chain, ch
@@ -27,6 +27,7 @@ module OAlg.Homology.Chain
 
   ) where
 
+import Data.Typeable
 import Data.Kind
 
 import Data.List as L (zip)
@@ -34,12 +35,14 @@ import Data.Foldable
 
 import OAlg.Prelude
 
+import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
 
-import OAlg.Hom.Definition
+import OAlg.Hom.Fibred
+import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
 
 import OAlg.Entity.Natural
@@ -70,57 +73,73 @@ rAlt :: Ring r => [r]
 rAlt = za rOne where za i = i:za (negate i)
 
 -------------------------------------------------------------------------------
--- boundary -
+-- homBoundary -
 
-boundaryOrd :: (Simplical s x, Ring r, Commutative r)
+homBoundaryOrd :: (Simplical s x, Ring r, Commutative r)
   => Struct Ord' (s n x) -> Struct Ent (s n x) -> Chain r s (n+1) x -> Chain r s n x
-boundaryOrd Struct Struct c = ssSum (f rAlt) c where
+homBoundaryOrd Struct Struct c = ssSum (f rAlt) c where
   f :: Simplical s x => [r] -> s (n+1) x -> LinearCombination r (s n x)
   f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
  
   f' :: forall r (s :: N' -> Type -> Type) (n :: N') x . [r] -> [s n x] -> LinearCombination r (s n x)
   f' rs sns = LinearCombination (rs `zip` sns) 
             
-boundary :: (Simplical s x, Ring r, Commutative r, Attestable n)
+homBoundary :: (Simplical s x, Ring r, Commutative r, Attestable n)
   => Chain r s (n+1) x -> Chain r s n x
-boundary = boundaryOrd sOrd sEnt
+homBoundary = homBoundaryOrd sOrd sEnt
 
 --------------------------------------------------------------------------------
--- Boundary -
+-- HomBoundary -
 
-data Boundary r s x y where
-  Boundary :: (Simplical s x, Attestable n) 
-    => Boundary r s (Chain r s (n+1) x) (Chain r s n x)
+data HomBoundary r s x y where
+  HomBoundary :: (Simplical s x, Attestable n) 
+    => HomBoundary r s (Chain r s (n+1) x) (Chain r s n x)
 
-bdOrd :: Boundary r s (Chain r s (n+1) x) (Chain r s n x)
+--------------------------------------------------------------------------------
+-- HomBoundary - Entity -
+
+deriving instance Show (HomBoundary r s x y)
+instance Show2 (HomBoundary r s)
+
+deriving instance Eq (HomBoundary r s x y)
+instance Eq2 (HomBoundary r s)
+
+instance Validable (HomBoundary r s x y) where
+  valid HomBoundary = SValid
+instance Validable2 (HomBoundary r s)
+
+instance (Typeable r, Typeable s, Typeable x, Typeable y) => Entity (HomBoundary r s x y)
+instance (Typeable r, Typeable s) => Entity2 (HomBoundary r s)
+
+--------------------------------------------------------------------------------
+-- HomBoundary - HomVectorial -
+
+hbdOrd :: HomBoundary r s (Chain r s (n+1) x) (Chain r s n x)
   -> Homomorphous Ord' (s (n+1) x) (s n x)
-bdOrd Boundary = sOrd :>: sOrd
+hbdOrd HomBoundary = sOrd :>: sOrd
 
-bdEnt :: Boundary r s (Chain r s (n+1) x) (Chain r s n x)
+hbdEnt :: HomBoundary r s (Chain r s (n+1) x) (Chain r s n x)
   -> Homomorphous Ent (s (n+1) x) (s n x)
-bdEnt Boundary = sEnt :>: sEnt
+hbdEnt HomBoundary = sEnt :>: sEnt
 
-instance (Ring r, Commutative r) => Morphism (Boundary r s) where
-  type ObjectClass (Boundary r s) = Vec r
-  homomorphous d@Boundary = case (bdOrd d,bdEnt d) of
+instance (Ring r, Commutative r) => Morphism (HomBoundary r s) where
+  type ObjectClass (HomBoundary r s) = Vec r
+  homomorphous d@HomBoundary = case (hbdOrd d,hbdEnt d) of
     (Struct :>: Struct,Struct :>: Struct) -> Struct :>: Struct
+
+
+instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) Typ
+instance (Ring r, Commutative r) => EmbeddableMorphismTyp (HomBoundary r s) 
+instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) Fbr
+instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) Add
+instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) (Vec r)
+
+instance (Ring r, Commutative r) => Applicative (HomBoundary r s) where
+  amap HomBoundary = homBoundary
   
--- instance HomVectorial r (Boundary r s)
+instance (Ring r, Commutative r, Typeable s) => HomFibred (HomBoundary r s) where
+  rmap HomBoundary _ = ()
+instance (Ring r, Commutative r, Typeable s) => HomAdditive (HomBoundary r s)
+instance (Ring r, Commutative r, Typeable s) => HomVectorial r (HomBoundary r s)
 
---------------------------------------------------------------------------------
--- boundaryMatrix -
 
--- | representing the 'boundary' operator as a matrix.
---
--- __Property__ Let @m = 'boudaryMatrix' sn' sn@ then holds:
--- If for all @s@ in @sn'@ holds that @'boundary' ('ch' s)@ is a linear combination with elements
--- in @sn@, then @m@ is 'valid'.
-boundaryMatrix :: (Simplical s x, Ring r, Commutative r, Entity (s n x))
-  => Set (s (n+1) x) -> Set (s n x) -> Matrix r
-boundaryMatrix = error "nyi"
-
---------------------------------------------------------------------------------
--- repMatrix -
-
-repMatrix :: Hom (Vec r) h => h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y -> Matrix r
-repMatrix = error "nyi"

@@ -25,7 +25,7 @@ module OAlg.Entity.Sum.Definition
   , smfMap, smfJoin, smfReduce
 
     -- * Linear Combination
-  , LinearCombination(..), fromLinComb, lcAggr, lcSort, lcSclFilter
+  , LinearCombination(..), lcs, lcAggr, lcSort, lcSclFilter
 
   ) where
 
@@ -74,8 +74,6 @@ deriving instance ( Fibred a, Entity r
                   , OrdRoot a, Ord r, Ord a
                   ) => Ord (SumForm r a)
 
-s :: a -> SumForm Z a
-s = S
 --------------------------------------------------------------------------------
 -- SumForm - Entity -
 
@@ -161,25 +159,25 @@ newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Vali
 instance (Entity a, Entity r) => Entity (LinearCombination r a)
 
 --------------------------------------------------------------------------------
--- fromLinComb -
+-- lcs -
 
 -- | the underlying list of symbols with their scalar.
-fromLinComb :: LinearCombination r a -> [(r,a)]
-fromLinComb (LinearCombination as) = as
+lcs :: LinearCombination r a -> [(r,a)]
+lcs (LinearCombination as) = as
 
 --------------------------------------------------------------------------------
 -- lcAggr -
 
--- | aggregating words with same symbols.
+-- | aggregating linear combinations with same symbols.
 lcAggr :: (Eq a, Semiring r) => LinearCombination r a -> LinearCombination r a
-lcAggr = LinearCombination . map aggr . groupBy (<=>) . fromLinComb where
+lcAggr = LinearCombination . map aggr . groupBy (<=>) . lcs where
   a <=> b = snd a == snd b
   aggr as@((_,a):_) = (foldr (+) rZero $ map fst as,a)
 
 --------------------------------------------------------------------------------
 -- lcSort -
 
--- | sorting a word according to its symbols.
+-- | sorting a linear combination according to its symbols.
 lcSort :: Ord a => LinearCombination r a -> LinearCombination r a
 lcSort (LinearCombination as) = LinearCombination (sortSnd as)
 
@@ -193,7 +191,7 @@ lcSclFilter p (LinearCombination ws) = LinearCombination $ filter (p . fst) ws
 --------------------------------------------------------------------------------
 -- smflc -
 
--- | transforming a sum form to its corresponding word.
+-- | transforming a sum form to its corresponding linear combination..
 smflc :: Semiring r => SumForm r a -> LinearCombination r a
 smflc sf = LinearCombination (tow sf) where
   tow sf = case sf of

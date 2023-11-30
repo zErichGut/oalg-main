@@ -61,13 +61,13 @@ newtype SumSymbol r a = SumSymbol (Sum r (R a)) deriving (Eq,Ord,Validable,Addit
 -- ssylc -
 
 ssylc :: Semiring r => SumSymbol r a -> LinearCombination r a
-ssylc (SumSymbol s) = LinearCombination $ map (\(r,R a) -> (r,a)) $ fromLinComb $ smlc s
+ssylc (SumSymbol s) = LinearCombination $ map (\(r,R a) -> (r,a)) $ lcs $ smlc s
 
 --------------------------------------------------------------------------------
 -- SumSymbol - Entity -
 
 ssyShow :: (Semiring r, Show a) => SumSymbol r a -> String
-ssyShow s = shws $ fromLinComb $ ssylc s where
+ssyShow s = shws $ lcs $ ssylc s where
   shws ss = join $ tween "+" $ map shw ss
   shw (r,a) | r == rOne = show a
             | otherwise = show r ++ "!" ++ show a
@@ -114,7 +114,7 @@ ssSum :: (Ring r, Commutative r, Entity y, Ord y)
   => (x -> LinearCombination r y) -> SumSymbol r x -> SumSymbol r y
 ssSum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s where
   f' :: Semiring r => (x -> LinearCombination r y) -> R x -> SumForm r (R y)
-  f' f (R x) = lcsmf () $ LinearCombination $ amap1 (\(r,y) -> (r,R y)) $ fromLinComb $ f x
+  f' f (R x) = lcsmf () $ LinearCombination $ amap1 (\(r,y) -> (r,R y)) $ lcs $ f x
 
 --------------------------------------------------------------------------------
 -- ssJoin -

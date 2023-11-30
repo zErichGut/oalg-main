@@ -37,6 +37,7 @@ import OAlg.Entity.Sequence
 import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Definition as H
+import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 
 --------------------------------------------------------------------------------

@@ -21,7 +21,7 @@ module OAlg.Homology.Complex
 
     -- * Complex
     Complex(..), cplDim, cplSet, cplSucc, cplPred
-  , cplIndex
+  , cplIndex, cplHomBoundary, cplHomBoundary'
 
     -- ** Construction
   , cplEmpty, (<+), complex
@@ -55,14 +55,18 @@ import OAlg.Prelude
 import OAlg.Data.Symbol hiding (S)
 
 import OAlg.Structure.Additive
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Ring
 
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Natural as Nat hiding ((++))
 import OAlg.Entity.FinList as F hiding (zip,(++)) 
 import OAlg.Entity.Sequence
+import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplical
+import OAlg.Homology.Chain
 
 --------------------------------------------------------------------------------
 -- Complex -
@@ -192,6 +196,22 @@ cplEmpty = ce attest where
 -- | generates a complex by the given set of simplices.
 complex :: (Simplical s x, Attestable n) => Set (s n x) -> Complex s n x
 complex s = s <+ cplEmpty
+
+--------------------------------------------------------------------------------
+-- cplHomBoundary -
+
+cplHomBoundary :: (Ring r, Commutative r, Simplical s x, Typeable s, Attestable n)
+  => Complex s (n+1) x -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
+cplHomBoundary (Complex sn' c) = bm HomBoundary sn' (cplSet c) where
+  bm :: (Ring r, Commutative r, Typeable s)
+    => HomBoundary r s (Chain r s (n+1) x) (Chain r s n x) -> Set (s (n+1) x) -> Set (s n x)
+    -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
+  bm b@HomBoundary sn' sn = case (hbdEnt b,hbdOrd b) of
+    (Struct :>: Struct, Struct :>: Struct) -> Representable b sn' sn
+
+cplHomBoundary' :: (Ring r, Commutative r, Simplical s x, Typeable s, Attestable n)
+  => p r -> Complex s (n+1) x -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
+cplHomBoundary' _ = cplHomBoundary
 
 --------------------------------------------------------------------------------
 -- triangle -
