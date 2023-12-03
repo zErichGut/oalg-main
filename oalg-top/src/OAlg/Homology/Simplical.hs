@@ -11,7 +11,7 @@
 
 -- |
 -- Module      : OAlg.Homology.Simplical
--- Description : Simplical structures admitting a face operator.
+-- Description : simplical structures admitting a face operator.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
@@ -26,6 +26,8 @@ module OAlg.Homology.Simplical
   , Simplex(..), simplex
 
   ) where
+
+import Data.Typeable
 
 import OAlg.Prelude
 
@@ -51,7 +53,7 @@ fcSimplex (Face s) = s
 --------------------------------------------------------------------------------
 -- Simplical -
 
-class Simplical s x where
+class Typeable s => Simplical s x where
   sOrd :: Struct Ord' (s n x)
   sEnt :: Attestable n => Struct Ent (s n x)
   faces :: s n x -> FinList (n+1) (Face s n x)

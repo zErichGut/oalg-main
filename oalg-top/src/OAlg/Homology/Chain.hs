@@ -11,7 +11,7 @@
 
 -- |
 -- Module      : OAlg.Homology.Chain
--- Description : Boundary of chains.
+-- Description : boundary of chains.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
@@ -46,8 +46,6 @@ import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
 
 import OAlg.Entity.Natural
-import OAlg.Entity.Matrix
-import OAlg.Entity.Sequence
 import OAlg.Entity.Sum as Sum hiding (S)
 
 import OAlg.Homology.Simplical
@@ -60,11 +58,12 @@ type Chain r s (n :: N') x = SumSymbol r (s n x)
 --------------------------------------------------------------------------------
 -- ch -
 
-chOrd :: (Ring r, Commutative r, Entity (s n x)) => Struct Ord' (s n x) -> s n x -> Chain r s n x
-chOrd Struct = Sum.sy
+chStruct :: (Ring r, Commutative r)
+  => Struct Ent (s n x) -> Struct Ord' (s n x) -> s n x -> Chain r s n x
+chStruct Struct Struct = Sum.sy
 
-ch :: (Simplical s x, Ring r, Commutative r, Entity (s n x)) => s n x -> Chain r s n x
-ch = chOrd sOrd
+ch :: (Simplical s x, Ring r, Commutative r, Attestable n) => s n x -> Chain r s n x
+ch = chStruct sEnt sOrd
 
 --------------------------------------------------------------------------------
 -- rAlt -

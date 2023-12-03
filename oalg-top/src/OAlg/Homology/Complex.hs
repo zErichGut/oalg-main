@@ -155,14 +155,14 @@ instance ( Simplical s x
          , Show (s N0 x)
          , Eq (s N0 x)
          , Validable (s N0 x)
-         , Typeable s, Typeable x
+         , Typeable x
          ) => Entity (Complex s N0 x)
          
 instance ( Simplical s x
          , Show (s (S n) x), Show (s n x), Show (Complex s n x)
          , Eq (s (S n) x), Eq (Complex s n x)
          , Validable (s (S n) x), Validable (Complex s n x)
-         , Typeable s, Typeable x, Typeable n
+         , Typeable x, Typeable n
          ) => Entity (Complex s (S n) x)
 
 --------------------------------------------------------------------------------
@@ -200,7 +200,7 @@ complex s = s <+ cplEmpty
 --------------------------------------------------------------------------------
 -- cplHomBoundary -
 
-cplHomBoundary :: (Ring r, Commutative r, Simplical s x, Typeable s, Attestable n)
+cplHomBoundary :: (Ring r, Commutative r, Simplical s x, Attestable n)
   => Complex s (n+1) x -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
 cplHomBoundary (Complex sn' c) = bm HomBoundary sn' (cplSet c) where
   bm :: (Ring r, Commutative r, Typeable s)
@@ -209,7 +209,7 @@ cplHomBoundary (Complex sn' c) = bm HomBoundary sn' (cplSet c) where
   bm b@HomBoundary sn' sn = case (hbdEnt b,hbdOrd b) of
     (Struct :>: Struct, Struct :>: Struct) -> Representable b sn' sn
 
-cplHomBoundary' :: (Ring r, Commutative r, Simplical s x, Typeable s, Attestable n)
+cplHomBoundary' :: (Ring r, Commutative r, Simplical s x, Attestable n)
   => p r -> Complex s (n+1) x -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
 cplHomBoundary' _ = cplHomBoundary
 
