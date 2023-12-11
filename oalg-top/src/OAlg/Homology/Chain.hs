@@ -76,7 +76,7 @@ rAlt = za rOne where za i = i:za (negate i)
 
 homBoundaryOrd :: (Simplical s x, Ring r, Commutative r)
   => Struct Ord' (s n x) -> Struct Ent (s n x) -> Chain r s (n+1) x -> Chain r s n x
-homBoundaryOrd Struct Struct c = ssSum (f rAlt) c where
+homBoundaryOrd Struct Struct c = ssySum (f rAlt) c where
   f :: Simplical s x => [r] -> s (n+1) x -> LinearCombination r (s n x)
   f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
  

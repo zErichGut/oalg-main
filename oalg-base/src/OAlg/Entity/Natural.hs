@@ -40,7 +40,7 @@ module OAlg.Entity.Natural
      N'(..), toN', type (+), type (*)
 
     -- * Attest
-  , Attestable(..), nValue, W(..), cmpW, (++), (**), W'(..), toW'
+  , Attestable(..), Ats(..), nValue, W(..), cmpW, (++), (**), W'(..), toW'
   , SomeNatural(..), succSomeNatural, someNatural, naturals
 
     -- * Induction
@@ -316,6 +316,12 @@ instance Attestable N0 where
 
 instance Attestable n => Attestable (S n) where
   attest = SW attest
+
+--------------------------------------------------------------------------------
+-- Ats -
+
+-- | witness of being attestable.
+data Ats n where Ats :: Attestable n => Ats n
 
 --------------------------------------------------------------------------------
 -- nValue -

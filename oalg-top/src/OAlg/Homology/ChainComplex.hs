@@ -88,19 +88,6 @@ instance Distributive a => Validable (ChainComplex t n a) where
 --------------------------------------------------------------------------------
 -- chainComplexZ -
 
-data I n where
-  I0 :: I N0
-  I :: Attestable (n+1) => I n -> I (n+1)
-
-
-ii :: Any n -> I n
-ii W0 = I0
-ii (SW n) = let n' = ii n in case n' of
-  I _ -> I n'
-  I0  -> I n'
-
-data Ats n where Ats :: Attestable n => Ats n
-
 chainComplexZ :: Simplical s x => Complex s n x -> ChainComplex From n (Matrix Z)
 chainComplexZ c = case chain c of
   (_,DiagramChainFrom n ds) -> ChainComplex (DiagramChainFrom dZero (zero (dZero :> n) :| ds))

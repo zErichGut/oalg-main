@@ -153,7 +153,7 @@ instance LengthN (SumForm N a) where
 
 -- | list of symbols in @__a__@ together with a scalar in @__r__@.
 --
--- __Note__ 'valid' linear combinations must not sorted according to the second component!
+-- __Note__ 'valid' linear combinations must not be sorted according to the second component!
 newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Validable)
 
 instance (Entity a, Entity r) => Entity (LinearCombination r a)
@@ -269,6 +269,9 @@ instance (Fibred a, Ord a, Semiring r, Commutative r) => Vectorial (Sum r a) whe
 --------------------------------------------------------------------------------
 -- smlc -
 
+-- | the associated linear combination.
+--
+-- __Note__ The associated linear combination of a sum is sorted according to the second component!
 smlc :: Semiring r => Sum r a -> LinearCombination r a
 smlc = restrict smflc
 

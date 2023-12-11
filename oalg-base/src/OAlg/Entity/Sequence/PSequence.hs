@@ -25,6 +25,7 @@ module OAlg.Entity.Sequence.PSequence
   , psqFilter
   , psqSplitWhile
   , psqInterlace
+  , psqCompose
   , psqAppend
   , psqShear
   , psqSwap
@@ -250,6 +251,26 @@ psqInterlace (+) xz yz (PSequence xis) (PSequence yjs) = PSequence (zks xis yjs)
     LT -> (xz x,i) : zks xis ((y,j):yjs)
     EQ -> (x + y,i) : zks xis yjs
     GT -> (yz y,j) : zks ((x,i):xis) yjs
+
+--------------------------------------------------------------------------------
+-- psqCompose -
+
+-- | composition of the two partially defined sequences.
+--
+-- __Property__ Let @f@ be in @'PSequence' __i__ __x__@ and @g@ be in @'PSequence' __j__ __i__@ then
+-- @f '`psqCompose`' g@ is given by @'join' '.' 'fmap' (('??') f) '.' ('??') g@.
+psqCompose :: (Ord i, Ord j) => PSequence i x -> PSequence j i -> PSequence j x
+psqCompose (PSequence xis) (PSequence ijs)
+  = psqMap fromJust $ PSequence $ sortSnd $ cmp xis (sortFst ijs) where
+  
+  cmp [] _  = []
+  cmp _ []  = []
+  cmp xis@((x,i):xis') ijs@((i',j):ijs') = case i `compare` i' of
+    LT -> cmp xis' ijs
+    EQ -> (Just x,j):cmp xis' ijs'
+    GT -> cmp xis ijs'
+
+-- cmp :: (i -> Maybe x)  (j -> Maybe i) -> i -> Maybe x
 
 --------------------------------------------------------------------------------
 -- psqSplitWhile -

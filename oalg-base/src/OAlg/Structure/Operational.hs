@@ -37,7 +37,7 @@ import OAlg.Structure.Multiplicative.Definition
 --------------------------------------------------------------------------------
 -- Opr -
 
--- | right operation of @__f__@ on @__x__@. This class is rather a technical because on this
+-- | right operation of @__f__@ on @__x__@. This class is rather technical, because on this
 -- abstract level it is not possible to define the exact behavior of the operation, i.e.
 -- for which values @f@ and @x@ the expression @x '<*' f@ is 'valid'. For a precise
 -- definition see for example 'TotalOpr' or 'OrientedOpr' where the behavior can
@@ -95,7 +95,7 @@ class (Opr f x, Multiplicative f, Oriented x) => OrientedOpr f x
 --------------------------------------------------------------------------------
 -- Opl -
 
--- | left operation of @__f__@ on @__x__@. This class is rather a technical because on this
+-- | left operation of @__f__@ on @__x__@. This class is rather technical, because on this
 -- abstract level it is not possible to define the exact behavior of the operation, i.e.
 -- for which values @f@ and @x@ the expression @f '*>' x@ is 'valid'. For a precise
 -- definition see for example 'TotalOpl' or 'OrientedOpl' where the behavior can

@@ -140,7 +140,7 @@ class Singleton (Root f) => TotalRoot f
 
 -- | a list in a 'Fibred' structure having all the same 'root'.
 --
--- __Definition__ Let __@f@__ be a 'Fibred' structure and @s = 'Sheaf' r [t 0..t (n-1)]@ a
+-- __Definition__ Let __@f@__ be a 'Fibred' structure and @s = 'Sheaf' r [t 0 .. t (n-1)]@ a
 -- sheaf in __@'Sheaf' f@__, then @s@ is 'valid' if and only if
 --
 -- (1) @r@ is 'valid' and @t i@ are valid for all @i = 0..n-1@.
