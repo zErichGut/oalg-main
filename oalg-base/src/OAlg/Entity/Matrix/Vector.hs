@@ -271,20 +271,24 @@ instance Validable (Representable r h x y) where
       :?> Params ["j":=show j]
 
 --------------------------------------------------------------------------------
+-- vecrc -
+
+-- | a vector as a row with one column at @0@.
+vecrc :: Vector r -> Row N (Col N r)
+vecrc (Vector (PSequence []))  = rowEmpty
+vecrc (Vector v)               = Row $ PSequence [(Col v,0)]
+
+--------------------------------------------------------------------------------
 -- mtxOplVec -
 
+-- | applying a matrix from the left.
 mtxOplVec :: Semiring r => Matrix r -> ColVec r -> ColVec r
 mtxOplVec m c@(ColVec _ v)
   | start m /= end c = throw NotApplicable
-  | otherwise        = ColVec (lengthN $ end m) (crvec (mtxColRow m `etsMlt` v')) where
-    v' = Row $ case vecpsq v of
-           PSequence [] -> PSequence []
-           s            -> PSequence [(Col s,0)]
+  | otherwise        = ColVec (lengthN $ end m) (crvec (mtxColRow m `etsMlt` vecrc v)) where
 
-    crvec :: Semiring r => Col N (Row N r) -> Vector r
-    crvec cl = case colxs cl of
-      []           -> zero ()
-      (Row rw,_):_ -> Vector rw 
+    crvec :: Col N (Row N r) -> Vector r
+    crvec cl = case crHeadColAt 0 cl of Col v -> Vector v
 
 --------------------------------------------------------------------------------
 -- repMatrix -
@@ -324,85 +328,3 @@ repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
 -- in @xs@ (see definition in 'Representable'), then holds: @h '$' x '==' ...@.
 repMatrix :: Representable r h x y -> Matrix r
 repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs ys
-
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- Vector - Operational -
-
-instance (Semiring r, Typeable s) => Oriented (Vector r) where
-  type Point (Vector r) = Dim' r
-  orientation (Vector n _)     = d :> d^n where d = dim unit
-  orientation v@(Covector _ _) = opposite $ orientation $ coVectorFrom v 
-
--}
-
-{-
-instance (Semiring r, Typeable s) => Fibred (Vector r) where
-  type Root (Vector r) = Orientation (Dim r (Point r))
-
--}
-
-
-
-
-
-{-
-instance Semiring r => Additive (Vector r) where
-  zero _ = Vector psqEmpty
-  Vector v + Vector w = Vector $ psqFilter (not . isZero) $ psqInterlace (+) id id v w
-  ntimes n (Vector v) = Vector $ psqFilter (not . isZero) $ psqMap (ntimes n) v
-
-instance (Semiring r, Abelian r) => Abelian (Vector r) where
-  negate (Vector v) = Vector $ psqMap negate v
-  ztimes z (Vector v) = Vector $ psqFilter (not . isZero) $ psqMap (ztimes z) v
-
-instance (Semiring r, Commutative r) => Vectorial (Vector r) where
-  type Scalar (Vector r) = r
-  r ! (Vector v) = Vector $ psqFilter (not . isZero) $ psqMap (r*) v
-
-instance (Semiring r, Commutative r) => Euclidean (Vector r) where
-  Vector v <!> Vector w 
-    = foldl (+) rZero
-    $ map fst
-    $ psqxs
-    $ psqInterlace (*) (const rZero) (const rZero) v w
-
---------------------------------------------------------------------------------
--- vecpsq -
-
--- | the underlying partially defined sequence.
-vecpsq :: Vector r -> PSequence N r
-vecpsq (Vector v) = v
-
---------------------------------------------------------------------------------
--- ssycfs -
-
--- | the associated coefficients of a free sum of symbols according to the given set of symbols.
---
--- __Property__ Let @s = s 0 '<' s 1 '<' ..@ be in @'Set' __a__@ and @x@ in
--- @'SumSymbol' __r__ __a__@ then holds:
--- @'ssyprj' s x '==' 'cf' r 0 '!' 'sy' (s 0) '+' 'cf' r  1 '!' 'sy' (s 1) '+' ..@ where
--- @r = 'ssycfs' s x@, 
-ssycfs :: (Semiring r, Ord a) => Set a -> SumSymbol r a -> Vector r
-ssycfs s x = Vector $ psqCompose (PSequence $ lcs $ ssylc x) (PSequence $ listN s)
-                               -- :: PSequence a r            :: PSequence N a
-             
---------------------------------------------------------------------------------
--- cfsssy -
-
--- | the associated free sum of symbols according to the given set of symbols and coefficients.
---
--- __Property__ Let @s = s 0 '<' s 1 '<' ..@ be in @'Set' __a__@ and
--- @r@ be in @'Vector' __r__@ then holds:
--- @'cfsssy' s r '==' 'cf' r 0 '!' 'sy' (s 0) '+' 'cf' r  1 '!' 'sy' (s 1) '+' ..@.
-cfsssy :: (Semiring r, Commutative r, Entity a, Ord a) => Set a -> Vector r -> SumSymbol r a
-cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) -> (i,a)) $ listN s)
-                             -- :: PSequence i r    :: PSeqeunce a i
-                             -- :: PSequence a r
-
--}
-

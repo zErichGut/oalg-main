@@ -613,7 +613,8 @@ crHeadColAt j rws
   $ map (\((a,_),i) -> (a,i))
   $ filter ((j==).snd.fst)
   $ colxs
-  $ fmap rowHead rws
+  $ fmap rowHead
+  $ colFilter (not . rowIsEmpty)  rws
 
 --------------------------------------------------------------------------------
 -- crHeadRowAt -
