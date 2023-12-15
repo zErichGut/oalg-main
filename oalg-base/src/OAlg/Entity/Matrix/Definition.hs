@@ -53,7 +53,7 @@ import Control.Monad
 
 import Data.Typeable
 import Data.Foldable
-import Data.List (map,repeat,zip,span,(++)) 
+import Data.List (map,repeat,zip,span) 
 
 import OAlg.Prelude
 
@@ -70,13 +70,11 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
-import OAlg.Structure.Ring
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Number
 
 import OAlg.Entity.Product
-import OAlg.Entity.Sum as Sum
 import OAlg.Entity.Sequence hiding (span)
 
 import OAlg.Hom.Oriented

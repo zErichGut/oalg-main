@@ -17,6 +17,7 @@ module OAlg.Entity.Matrix
   , module GL
   , module Trf
   , module Prp
+  , module Vec
   ) where
 
 import OAlg.Entity.Matrix.Dim as Dim
@@ -26,3 +27,4 @@ import OAlg.Entity.Matrix.ProductsAndSums as PS
 import OAlg.Entity.Matrix.GeneralLinearGroup as GL
 import OAlg.Entity.Matrix.Transformation as Trf
 import OAlg.Entity.Matrix.Proposition as Prp
+import OAlg.Entity.Matrix.Vector as Vec

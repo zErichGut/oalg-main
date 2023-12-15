@@ -3,6 +3,7 @@
 {-# LANGUAGE
     TypeFamilies
   , GADTs
+  , MultiParamTypeClasses
 #-}
 
 
@@ -17,16 +18,20 @@
 -- 'Vector's with coefficients, lying in a 'Semiring'.
 module OAlg.Entity.Matrix.Vector
   ( -- * Vector
-    Vector(..), vecpsq, cf, cfsssy, ssycfs
+    Vector(..), vecpsq, cf, cfsssy, ssycfs, vecRowCol
 
-    -- ** Representation
+    -- * ColVec
+  , ColVec(..), cvcfs, mtxOplColVec
+
+    -- * Representation
   , repMatrix, Representable(..)
+  
 
   ) where
 
 import Data.Typeable
 
-import Data.List (map,repeat,zip,(++))
+import Data.List (map,(++))
 import Data.Foldable
 
 import OAlg.Prelude
@@ -39,6 +44,7 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
+import OAlg.Structure.Operational
 import OAlg.Structure.Exponential
 import OAlg.Structure.Vectorial
 
@@ -162,7 +168,6 @@ cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) 
                              -- :: PSequence i r    :: PSeqeunce a i
                              -- :: PSequence a r
 
-
 --------------------------------------------------------------------------------
 -- ColVec -
 
@@ -177,6 +182,12 @@ cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) 
 --
 -- (3) For all @(r,i)@ in @v@ holds: @i '<' n@
 data ColVec r = ColVec N (Vector r) deriving (Show,Eq,Ord)
+
+--------------------------------------------------------------------------------
+-- cvcfs -
+
+cvcfs :: ColVec r -> Vector r
+cvcfs (ColVec _ v) = v
 
 --------------------------------------------------------------------------------
 -- ColVec - Entity -
@@ -228,6 +239,33 @@ instance Semiring r => Oriented (ColVec r) where
   orientation (ColVec n _) = u :> u ^ n where u = dim unit
 
 --------------------------------------------------------------------------------
+-- vecRowCol -
+
+-- | a vector as a row with one column at @0@.
+vecRowCol :: Vector r -> Row N (Col N r)
+vecRowCol (Vector (PSequence []))  = rowEmpty
+vecRowCol (Vector v)               = Row $ PSequence [(Col v,0)]
+
+--------------------------------------------------------------------------------
+-- mtxOplColVec -
+
+-- | applying a matrix from the left.
+mtxOplColVec :: Semiring r => Matrix r -> ColVec r -> ColVec r
+mtxOplColVec m c@(ColVec _ v)
+  | start m /= end c = throw NotApplicable
+  | otherwise        = ColVec (lengthN $ end m) (crvec (mtxColRow m `etsMlt` vecRowCol v)) where
+
+    crvec :: Col N (Row N r) -> Vector r
+    crvec cl = case crHeadColAt 0 cl of Col v -> Vector v
+
+--------------------------------------------------------------------------------
+-- ColVec - OrientedOpl -
+
+instance Semiring r => Opl (Matrix r) (ColVec r) where (*>) = mtxOplColVec
+
+instance Semiring r => OrientedOpl (Matrix r) (ColVec r)
+  
+--------------------------------------------------------------------------------
 -- Representable -
 
 -- | Predicate for a @__r__@-linear homomorphisms between the free sums @'SumSymbol' __r__ __x__@
@@ -271,26 +309,6 @@ instance Validable (Representable r h x y) where
       :?> Params ["j":=show j]
 
 --------------------------------------------------------------------------------
--- vecrc -
-
--- | a vector as a row with one column at @0@.
-vecrc :: Vector r -> Row N (Col N r)
-vecrc (Vector (PSequence []))  = rowEmpty
-vecrc (Vector v)               = Row $ PSequence [(Col v,0)]
-
---------------------------------------------------------------------------------
--- mtxOplVec -
-
--- | applying a matrix from the left.
-mtxOplVec :: Semiring r => Matrix r -> ColVec r -> ColVec r
-mtxOplVec m c@(ColVec _ v)
-  | start m /= end c = throw NotApplicable
-  | otherwise        = ColVec (lengthN $ end m) (crvec (mtxColRow m `etsMlt` vecrc v)) where
-
-    crvec :: Col N (Row N r) -> Vector r
-    crvec cl = case crHeadColAt 0 cl of Col v -> Vector v
-
---------------------------------------------------------------------------------
 -- repMatrix -
 
 repMatricVec :: (Hom (Vec r) h, Entity x, Ord x, Ord y)
@@ -322,9 +340,12 @@ repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
 
 -- | the associated representation matrix of the given @__r__@-homomorphism and the two symbol set.
 --
--- __Property__ Let @m = 'repMatrix' ('Representable' h xs ys)@ be in
--- @'Representable' __r__ __h__ ('SumSymbol' __r__ __x__) ('SumSymbol' __r__ __y__)@ and @x@ be in
--- @'SumSymbol' __r__ __x__@ such that the associated 'LinearCombination' @'smlc' x@ is representable
--- in @xs@ (see definition in 'Representable'), then holds: @h '$' x '==' ...@.
+-- __Property__ Let @xs@ be a set of symbols in @__x__@, @ys@ be a set of symbols in @__y__@ and
+-- @h@ a @r@-linear homomorphism from @'SumSymbol' __r__ __x__@ to @'SumSymbol' __r__ __y__@ such
+-- that @h@ is repesentable for @xs@ and @ys@. Let @h' = 'repMatrix' ('Representable' h xs ys)@ be
+-- the representation matric of @h@, then holds:
+-- @'ssycfs' ys (h '$' x) '==' 'cvcfs' (h' '*>' x')@ where @x' = 'ColVec' n ('ssycfs' xs x)@
+-- , @n = 'lengthN' xs@.
 repMatrix :: Representable r h x y -> Matrix r
 repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs ys
+
