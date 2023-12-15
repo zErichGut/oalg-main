@@ -25,9 +25,15 @@ module OAlg.Entity.Matrix.Vector
 
     -- * Representation
   , repMatrix, Representable(..)
-  
 
+    -- * Propostion
+  , prpRepMatrix
+
+    -- * X
+  , xVecMax, xColVec
   ) where
+
+import Control.Monad
 
 import Data.Typeable
 
@@ -180,7 +186,7 @@ cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) 
 --
 -- (2) @v@ is 'valid'.
 --
--- (3) For all @(r,i)@ in @v@ holds: @i '<' n@
+-- (3) For all @(_,i)@ in @v@ holds: @i '<' n@
 data ColVec r = ColVec N (Vector r) deriving (Show,Eq,Ord)
 
 --------------------------------------------------------------------------------
@@ -340,12 +346,49 @@ repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
 
 -- | the associated representation matrix of the given @__r__@-homomorphism and the two symbol set.
 --
--- __Property__ Let @xs@ be a set of symbols in @__x__@, @ys@ be a set of symbols in @__y__@ and
--- @h@ a @r@-linear homomorphism from @'SumSymbol' __r__ __x__@ to @'SumSymbol' __r__ __y__@ such
--- that @h@ is repesentable for @xs@ and @ys@. Let @h' = 'repMatrix' ('Representable' h xs ys)@ be
--- the representation matric of @h@, then holds:
--- @'ssycfs' ys (h '$' x) '==' 'cvcfs' (h' '*>' x')@ where @x' = 'ColVec' n ('ssycfs' xs x)@
--- , @n = 'lengthN' xs@.
+-- __Property__ Let @__r__@ be a 'Commutative' 'Semiring', @xs@ be a set of symbols in @__x__@,
+-- @ys@ be a set of symbols in @__y__@ and @h@ a @__r__@-linear homomorphism from
+-- @'SumSymbol' __r__ __x__@ to @'SumSymbol' __r__ __y__@ such that @h@ is representable for @xs@ and
+-- @ys@. Let @h' = 'repMatrix' ('Representable' h xs ys)@ be the representation matrix of @h@, then
+-- holds: For all @c@ in @'ColVec' r@ with @'root' c '==' 'lengthN' xs@ holds:
+-- @('cfsssy' ys '$' 'cvcfs' '$' (h' '*>' c)) '==' (h '$' 'cfsssy' xs '$' 'cvcfs' c)@.
 repMatrix :: Representable r h x y -> Matrix r
 repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs ys
+
+--------------------------------------------------------------------------------
+-- xVecMax -
+
+-- | random variable of @'Vector' __r__@ where all indices are smaller then the given @n@.
+--
+-- __Property__ Let @n@ be in 'N' and @xr@ be in @'X' __r__@ then holds:
+-- For all @(_,i)@ in the range of @'xVecMax' n xr@ holds: @i '<=' n@.
+xVecMax :: Semiring r => N -> X r -> X (Vector r)
+xVecMax n xr = amap1 vector $ xri 5 where
+  xri m = xTakeB 0 (m*n) $ xTupple2 xr (xNB 0 n)
+
+dstVecMax :: Semiring r => Int -> N -> X r -> IO ()
+dstVecMax d n xr = getOmega >>= putDistribution d (amap1 (lengthN . vecpsq) $ xVecMax n xr)
+
+--------------------------------------------------------------------------------
+-- xColVec -
+
+-- | random variable of @'ColVec' __r__@ with the given length.
+--
+-- __Property__ Let @n@ be in 'N' and @xr@ be in @'X' __r__@ then holds:
+-- For all @c@ in the range of @'xColVec' n@ holds: @'root' c '==' n@.
+xColVec :: Semiring r => N -> X r -> X (ColVec r)
+xColVec 0 _ = return (ColVec 0 $ vector [])
+xColVec n xr = amap1 (ColVec n) $ xVecMax (pred n) xr
+
+--------------------------------------------------------------------------------
+-- prpRepMatrix -
+
+-- | validity of 'repMatrix'.
+prpRepMatrix :: (Semiring r, Commutative r) => Representable r h x y -> X r -> Statement
+prpRepMatrix rep@(Representable h xs ys) xr = Prp "repMatrix" :<=>:
+  Forall (xColVec (lengthN xs) xr)
+    (\c -> let h' = repMatrix rep in
+            ((cfsssy ys $ cvcfs $ (h' *> c)) == (h $ cfsssy xs $ cvcfs c))
+            :?> Params ["rep":=show rep, "c":=show c]
+    )
 
