@@ -126,7 +126,7 @@ ssyMap f (SumSymbol s) = SumSymbol (smMap f' s) where
 --------------------------------------------------------------------------------
 -- ssySum -
 
-ssySum :: (Ring r, Commutative r, Entity y, Ord y)
+ssySum :: (Semiring r, Commutative r, Entity y, Ord y)
   => (x -> LinearCombination r y) -> SumSymbol r x -> SumSymbol r y
 ssySum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s where
   f' :: Semiring r => (x -> LinearCombination r y) -> R x -> SumForm r (R y)

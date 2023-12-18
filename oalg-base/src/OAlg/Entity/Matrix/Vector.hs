@@ -2,8 +2,10 @@
 
 {-# LANGUAGE
     TypeFamilies
+  , FlexibleInstances
   , GADTs
   , MultiParamTypeClasses
+  , StandaloneDeriving
 #-}
 
 
@@ -18,19 +20,19 @@
 -- 'Vector's with coefficients, lying in a 'Semiring'.
 module OAlg.Entity.Matrix.Vector
   ( -- * Vector
-    Vector(..), vecpsq, cf, cfsssy, ssycfs, vecRowCol
+    Vector(..), vecpsq, cf, cfsssy, ssycfs, vecrc, vecAppl
 
-    -- * ColVec
-  , ColVec(..), cvcfs, mtxOplColVec
-
+    -- * Hom
+  , HomSymbol(..), mtxHomSymbol
+  
     -- * Representation
-  , repMatrix, Representable(..)
+  , repMatrix, Representable(..), mtxRepresentable
 
     -- * Propostion
   , prpRepMatrix
 
     -- * X
-  , xVecMax, xColVec
+  , xVecN
   ) where
 
 import Control.Monad
@@ -44,13 +46,10 @@ import OAlg.Prelude
 
 import OAlg.Data.Singleton
 
-import OAlg.Structure.Exception
-import OAlg.Structure.Oriented
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
-import OAlg.Structure.Operational
 import OAlg.Structure.Exponential
 import OAlg.Structure.Vectorial
 
@@ -62,6 +61,9 @@ import OAlg.Entity.Matrix.Entries
 import OAlg.Entity.Matrix.Definition
 
 import OAlg.Hom.Definition
+import OAlg.Hom.Fibred
+import OAlg.Hom.Additive
+import OAlg.Hom.Vectorial
 
 --------------------------------------------------------------------------------
 -- Vector -
@@ -175,102 +177,89 @@ cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) 
                              -- :: PSequence a r
 
 --------------------------------------------------------------------------------
--- ColVec -
-
--- | a vector as a column to a given dimension.
---
--- __Definition__ Let @c = 'ColVec' n v@ be in @'ColVec' __r__@ for a 'Semiring' @__r__@, then
--- @v@ is 'valid' iff
---
--- (1) @n@ is 'valid'.
---
--- (2) @v@ is 'valid'.
---
--- (3) For all @(_,i)@ in @v@ holds: @i '<' n@
-data ColVec r = ColVec N (Vector r) deriving (Show,Eq,Ord)
-
---------------------------------------------------------------------------------
--- cvcfs -
-
-cvcfs :: ColVec r -> Vector r
-cvcfs (ColVec _ v) = v
-
---------------------------------------------------------------------------------
--- ColVec - Entity -
-
-instance Semiring r => Validable (ColVec r) where
-  valid (ColVec n v) = (Label $ show $ typeOf v) :<=>:
-    And [ Label "1" :<=>: valid n
-        , Label "2" :<=>: valid v
-        , Label "3" :<=>: foldl (vldxs n) SValid (psqxs $ vecpsq v)
-        ] where
-    vldxs n s (_,i) = s && ((i < n) :?> Params ["n":=show n, "i":=show i])
-
-instance Semiring r => Entity (ColVec r)
-
---------------------------------------------------------------------------------
--- ColVec - Euclidean -
-
-instance Semiring r => Fibred (ColVec r) where
-  type Root (ColVec r) = N
-  root (ColVec n _) = n
-
-instance Semiring r => Additive (ColVec r) where
-  zero n = ColVec n (zero ())
-  
-  ColVec n v + ColVec m w
-    | n /= m    = throw NotAddable
-    | otherwise = ColVec n (v+w)
-    
-  ntimes x (ColVec n v) = ColVec n (ntimes x v)
-
-instance Ring r => Abelian (ColVec r) where
-  negate (ColVec n v) = ColVec n (negate v)
-  ztimes x (ColVec n v) = ColVec n (ztimes x v)
-
-instance (Semiring r, Commutative r) => Vectorial (ColVec r) where
-  type Scalar (ColVec r) = r
-  r ! (ColVec n v) = ColVec n (r!v)
-
-instance (Semiring r, Commutative r) => Euclidean (ColVec r) where
-  ColVec n v <!> ColVec m w
-    | n /= m    = throw UndefinedScalarproduct
-    | otherwise = v <!> w 
-  
---------------------------------------------------------------------------------
--- ColVec - Oriented -
-
-instance Semiring r => Oriented (ColVec r) where
-  type Point (ColVec r) = Dim' r
-  orientation (ColVec n _) = u :> u ^ n where u = dim unit
-
---------------------------------------------------------------------------------
--- vecRowCol -
+-- vecrc -
 
 -- | a vector as a row with one column at @0@.
-vecRowCol :: Vector r -> Row N (Col N r)
-vecRowCol (Vector (PSequence []))  = rowEmpty
-vecRowCol (Vector v)               = Row $ PSequence [(Col v,0)]
+vecrc :: Vector r -> Row N (Col N r)
+vecrc (Vector (PSequence []))  = rowEmpty
+vecrc (Vector v)               = Row $ PSequence [(Col v,0)]
 
 --------------------------------------------------------------------------------
--- mtxOplColVec -
+-- vecAppl -
 
 -- | applying a matrix from the left.
-mtxOplColVec :: Semiring r => Matrix r -> ColVec r -> ColVec r
-mtxOplColVec m c@(ColVec _ v)
-  | start m /= end c = throw NotApplicable
-  | otherwise        = ColVec (lengthN $ end m) (crvec (mtxColRow m `etsMlt` vecRowCol v)) where
+vecAppl :: Semiring r => Matrix r -> Vector r -> Vector r
+vecAppl m v = crvec (mtxColRow m `etsMlt` vecrc v) where
 
     crvec :: Col N (Row N r) -> Vector r
     crvec cl = case crHeadColAt 0 cl of Col v -> Vector v
 
 --------------------------------------------------------------------------------
--- ColVec - OrientedOpl -
+-- HomSymbol -
 
-instance Semiring r => Opl (Matrix r) (ColVec r) where (*>) = mtxOplColVec
+data HomSymbol r x y where
+  HomSymbol :: (Entity x, Ord x, Entity y, Ord y)
+    => PSequence x (LinearCombination r y) -> HomSymbol r (SumSymbol r x) (SumSymbol r y)
+  Cfs :: (Entity x, Ord x) => Set x -> HomSymbol r (SumSymbol r x) (Vector r)
+  Ssy :: (Entity x, Ord x) => Set x -> HomSymbol r (Vector r) (SumSymbol r x)
+  HomMatrix :: Matrix r -> HomSymbol r (Vector r) (Vector r)
 
-instance Semiring r => OrientedOpl (Matrix r) (ColVec r)
+--------------------------------------------------------------------------------
+-- HomSymbol - Entity -
+
+deriving instance Semiring r => Show (HomSymbol r x y)
+instance Semiring r => Show2 (HomSymbol r) 
+
+deriving instance Semiring r => Eq (HomSymbol r x y)
+instance Semiring r => Eq2 (HomSymbol r)
+
+instance Semiring r => Validable (HomSymbol r x y) where
+  valid h = case h of
+    HomSymbol lcs -> Label "HomSymbol" :<=>: valid lcs
+    Cfs xs        -> Label "Cfs" :<=>: valid xs
+    Ssy xs        -> Label "Ssy" :<=>: valid xs
+    HomMatrix m   -> Label "HomMatrix" :<=>: valid m
+instance Semiring r => Validable2 (HomSymbol r)
+
+instance (Semiring r, Typeable x, Typeable y) => Entity (HomSymbol r x y)
+instance Semiring r => Entity2 (HomSymbol r)
+
+--------------------------------------------------------------------------------
+-- HomSymbol - HomVectorial -
+
+instance (Semiring r, Commutative r) => Applicative (HomSymbol r) where
+  amap (HomSymbol lcs) s = ssySum f s where
+    f x = case lcs ?? x of
+      Just lc -> lc
+      Nothing -> LinearCombination []
+  amap (Cfs xs) s = ssycfs xs s
+  amap (Ssy xs) v = cfsssy xs v
+  amap (HomMatrix m) v = vecAppl m v
+
+instance (Semiring r, Commutative r) => Morphism (HomSymbol r) where
+  type ObjectClass (HomSymbol r) = Vec r
+  homomorphous m = case m of
+    HomSymbol _ -> Struct :>: Struct
+    Cfs _       -> Struct :>: Struct
+    Ssy _       -> Struct :>: Struct
+    HomMatrix _ -> Struct :>: Struct
   
+
+instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) Fbr
+instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) Typ
+instance (Semiring r, Commutative r) => EmbeddableMorphismTyp (HomSymbol r) 
+instance (Semiring r, Commutative r) => HomFibred (HomSymbol r) where
+  rmap (HomSymbol _) = const ()
+  rmap (Cfs _)       = const ()
+  rmap (Ssy _)       = const ()
+  rmap (HomMatrix _) = const ()
+
+instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) Add
+instance (Semiring r, Commutative r) => HomAdditive (HomSymbol r)
+
+instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) (Vec r)
+instance (Semiring r, Commutative r) => HomVectorial r (HomSymbol r)
+
 --------------------------------------------------------------------------------
 -- Representable -
 
@@ -346,49 +335,60 @@ repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
 
 -- | the associated representation matrix of the given @__r__@-homomorphism and the two symbol set.
 --
--- __Property__ Let @__r__@ be a 'Commutative' 'Semiring', @xs@ be a set of symbols in @__x__@,
--- @ys@ be a set of symbols in @__y__@ and @h@ a @__r__@-linear homomorphism from
--- @'SumSymbol' __r__ __x__@ to @'SumSymbol' __r__ __y__@ such that @h@ is representable for @xs@ and
--- @ys@. Let @h' = 'repMatrix' ('Representable' h xs ys)@ be the representation matrix of @h@, then
--- holds: For all @c@ in @'ColVec' r@ with @'root' c '==' 'lengthN' xs@ holds:
--- @('cfsssy' ys '$' 'cvcfs' '$' (h' '*>' c)) '==' (h '$' 'cfsssy' xs '$' 'cvcfs' c)@.
+-- __Property__ Let @p = 'Representable' h xs ys@ be in @'Representable' __r__ __h__ __x__ __y__@
+-- for a 'Commutative' 'Semiring' @__r__@, then holds:
+-- For all @v@ in @'Vector' __r__@ holds: @('Ssy' ys '$' h' '$' v) '==' (h '$' 'Ssy' xs '$' v)@
+-- where @h' = 'HomMatrix' ('repMatrix' p)@.
 repMatrix :: Representable r h x y -> Matrix r
 repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs ys
 
 --------------------------------------------------------------------------------
--- xVecMax -
+-- mtxHomSymbol -
 
--- | random variable of @'Vector' __r__@ where all indices are smaller then the given @n@.
---
--- __Property__ Let @n@ be in 'N' and @xr@ be in @'X' __r__@ then holds:
--- For all @(_,i)@ in the range of @'xVecMax' n xr@ holds: @i '<=' n@.
-xVecMax :: Semiring r => N -> X r -> X (Vector r)
-xVecMax n xr = amap1 vector $ xri 5 where
-  xri m = xTakeB 0 (m*n) $ xTupple2 xr (xNB 0 n)
+-- | the associated @__r__@-linear homomorphism.
+mtxHomSymbol :: Matrix r -> HomSymbol r (SumSymbol r N) (SumSymbol r N)
+mtxHomSymbol m = HomSymbol $ d m where
+  d :: Matrix r -> PSequence N (LinearCombination r N)
+  d = PSequence . amap1 (\(c,j) -> (collc c,j)) . rowxs . etsrc . mtxxs
 
-dstVecMax :: Semiring r => Int -> N -> X r -> IO ()
-dstVecMax d n xr = getOmega >>= putDistribution d (amap1 (lengthN . vecpsq) $ xVecMax n xr)
+  collc :: Col N r -> LinearCombination r N
+  collc = LinearCombination . colxs
+  
 
 --------------------------------------------------------------------------------
--- xColVec -
+-- mtxRepresentable -
 
--- | random variable of @'ColVec' __r__@ with the given length.
+-- | the associated representation of a matrix.
+mtxRepresentable :: (Semiring r, Commutative r)
+  => Matrix r -> Representable r (HomSymbol r) (SumSymbol r N) (SumSymbol r N)
+mtxRepresentable m = Representable (mtxHomSymbol m) (Set [0..c]) (Set [0..r]) where
+  c = lengthN $ fromDim $ cols m
+  r = lengthN $ fromDim $ rows m
+
+--------------------------------------------------------------------------------
+-- xVecN -
+
+-- | random variable of @'Vector' __r__@ where all indices are strict smaller then the given bound.
 --
 -- __Property__ Let @n@ be in 'N' and @xr@ be in @'X' __r__@ then holds:
--- For all @c@ in the range of @'xColVec' n@ holds: @'root' c '==' n@.
-xColVec :: Semiring r => N -> X r -> X (ColVec r)
-xColVec 0 _ = return (ColVec 0 $ vector [])
-xColVec n xr = amap1 (ColVec n) $ xVecMax (pred n) xr
+-- For all @(_,i)@ in the range of @'xVecN' n xr@ holds: @i '<' n@.
+xVecN :: Semiring r => N -> X r -> X (Vector r)
+xVecN 0 _  = return $ vector []
+xVecN n xr = amap1 vector $ xri 5 where
+  xri m = xTakeB 0 (m*n) $ xTupple2 xr (xNB 0 (pred n))
+
+dstVecMax :: Semiring r => Int -> N -> X r -> IO ()
+dstVecMax d n xr = getOmega >>= putDistribution d (amap1 (lengthN . vecpsq) $ xVecN n xr)
 
 --------------------------------------------------------------------------------
 -- prpRepMatrix -
 
 -- | validity of 'repMatrix'.
-prpRepMatrix :: (Semiring r, Commutative r) => Representable r h x y -> X r -> Statement
-prpRepMatrix rep@(Representable h xs ys) xr = Prp "repMatrix" :<=>:
-  Forall (xColVec (lengthN xs) xr)
-    (\c -> let h' = repMatrix rep in
-            ((cfsssy ys $ cvcfs $ (h' *> c)) == (h $ cfsssy xs $ cvcfs c))
-            :?> Params ["rep":=show rep, "c":=show c]
+prpRepMatrix :: (Semiring r, Commutative r) => Representable r h x y -> X (Vector r) -> Statement
+prpRepMatrix p@(Representable h xs ys) xv = Prp "repMatrix" :<=>:
+  Forall xv
+    (\v -> ((Ssy ys $ h' $ v) == (h $ Ssy xs $ v))
+             :?> Params ["p":=show p,"h'":=show h',"v":=show v]
     )
+  where h' = HomMatrix $ repMatrix p
 
