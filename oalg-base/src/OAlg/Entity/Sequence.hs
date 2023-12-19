@@ -30,6 +30,6 @@ module OAlg.Entity.Sequence
 import OAlg.Entity.Sequence.Set as S
 import OAlg.Entity.Sequence.Graph as G
 import OAlg.Entity.Sequence.Definition as D
-import OAlg.Entity.Sequence.ProductSymbol as C
+import OAlg.Entity.Sequence.CSequence as C
 import OAlg.Entity.Sequence.PSequence as P
 import OAlg.Entity.Sequence.Permutation as Prm

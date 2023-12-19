@@ -104,12 +104,13 @@ library
       OAlg.Entity.Natural
       OAlg.Entity.Product
       OAlg.Entity.Product.Definition
+      OAlg.Entity.Product.ProductSymbol
       OAlg.Entity.Product.Proposition
       OAlg.Entity.Sequence
+      OAlg.Entity.Sequence.CSequence
       OAlg.Entity.Sequence.Definition
       OAlg.Entity.Sequence.Graph
       OAlg.Entity.Sequence.Permutation
-      OAlg.Entity.Sequence.ProductSymbol
       OAlg.Entity.Sequence.PSequence
       OAlg.Entity.Sequence.Set
       OAlg.Entity.Slice

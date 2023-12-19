@@ -15,7 +15,7 @@
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- free products of symbols in @__x__@ with index type 'N'.
-module OAlg.Entity.Sequence.ProductSymbol
+module OAlg.Entity.Product.ProductSymbol
   (
     -- * ProductSymbol
     ProductSymbol(..), sy, psyShow
@@ -45,7 +45,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Exponential
 
-import OAlg.Entity.Product
+import OAlg.Entity.Product.Definition
 import OAlg.Entity.Sequence.Definition
 import OAlg.Entity.Sequence.Set
 

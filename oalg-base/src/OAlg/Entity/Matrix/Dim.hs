@@ -43,7 +43,7 @@ import OAlg.Entity.Product (Word(..))
 -- Dim -
 
 -- | dimension of @__x__@ as a complete sequence of @'Point' __x__@. 
-data Dim x p where Dim :: ProductSymbol (Point x) -> Dim x (Point x)
+data Dim x p where Dim :: CSequence (Point x) -> Dim x (Point x)
 
 instance LengthN (Dim x p) where
   lengthN (Dim ps) = lengthN ps

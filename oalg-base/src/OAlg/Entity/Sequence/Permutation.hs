@@ -53,7 +53,7 @@ import OAlg.Entity.Product
 
 import OAlg.Entity.Sequence.Definition
 import OAlg.Entity.Sequence.PSequence
-import OAlg.Entity.Sequence.ProductSymbol
+import OAlg.Entity.Sequence.CSequence
 import OAlg.Entity.Sequence.Set
 
 import OAlg.Structure.Oriented
@@ -153,7 +153,7 @@ type I = N
 type WordN x = [(x,N)]
 
 -- | permutes the product symbol by the given permeation form.
-pmfOprPsy :: Entity x => ProductSymbol x -> PermutationForm N -> ProductSymbol x
+pmfOprPsy :: Entity x => CSequence x -> PermutationForm N -> CSequence x
 pmfOprPsy (ProductSymbol xjs) p = xis where
   xis = make $ wrdprf () $ Word $ opr (span (Just (0::N)) p) 0 (fromWord $ prwrd xjs) p
 
@@ -208,8 +208,8 @@ pmfLst wcmp w xs = (map fst $ psqxs $ xs',p) where
 -- | orders the product symbol according to the given ordering an delivers the resulting
 -- permutation form.
 pmfPsy :: Entity x
-  => (w -> w -> Ordering) -> (x -> w) -> ProductSymbol x
-  -> (ProductSymbol x,PermutationForm N)
+  => (w -> w -> Ordering) -> (x -> w) -> CSequence x
+  -> (CSequence x,PermutationForm N)
 pmfPsy wcmp w xs = (productSymbol xs',p) where
   (xs',p) = pmfLst wcmp w (toList xs)
 
@@ -263,8 +263,8 @@ instance Eq i => Reducible (PermutationForm i) where
 -- @'sqcIndexMap' is ('pmt' p) xs@, where @is@ is the image of the support of @xs@
 -- under the inverse of @p@.
 --
--- [ProductSymbol] Let @xs@ be in @'ProductSymbol' __x__@ with
--- @'ConstructableSequence' 'ProductSymbol' 'N' __x__@ and @p@ a permutation in
+-- [CSequence] Let @xs@ be in @'CSequence' __x__@ with
+-- @'ConstructableSequence' 'CSequence' 'N' __x__@ and @p@ a permutation in
 -- @'Permutation' 'N'@, then @xs '<*' p@ is given by
 -- @'sqcIndexMap' is ('pmt' p) xs@, where @is@ is the image of the support of @xs@
 -- under the inverse of @p@.
@@ -442,14 +442,14 @@ instance Entity x => PermutableSequence [] N x where
   permuteBy _ wcmp w xs = (xs',make p) where (xs',p) = pmfLst wcmp w xs
 
 --------------------------------------------------------------------------------
--- ProductSymbol - PermutableSequence -
+-- CSequence - PermutableSequence -
 
-instance Entity x => Opr (Permutation N) (ProductSymbol x) where
+instance Entity x => Opr (Permutation N) (CSequence x) where
   xs <* p = pmfOprPsy xs (form p)
 
-instance Entity x => TotalOpr (Permutation N) (ProductSymbol x)
+instance Entity x => TotalOpr (Permutation N) (CSequence x)
 
-instance Entity x => PermutableSequence ProductSymbol N x where
+instance Entity x => PermutableSequence CSequence N x where
   permuteBy _ wcmp w xs = (xs',make p) where (xs',p) = pmfPsy wcmp w xs
 
 --------------------------------------------------------------------------------
@@ -549,8 +549,8 @@ relOprPermutationPsq xxs xp = Label "PSequence"
 -- relOprPermutationPsy -
 
 relOprPermutationPsy :: Entity x
-  => X (ProductSymbol x) -> X (Permutation N) -> Statement
-relOprPermutationPsy xxs xp = Label "ProductSymbol"
+  => X (CSequence x) -> X (Permutation N) -> Statement
+relOprPermutationPsy xxs xp = Label "CSequence"
   :<=>: Forall (xTupple2 xxs xp) (uncurry (relOprPermutation nProxy))
 
 --------------------------------------------------------------------------------
@@ -566,7 +566,7 @@ prpOprPermutation = Prp "OprPermutation"
     xxs  = xNB 0 20 >>= \n -> xTakeN n (xStandard :: X Symbol)
 
   prpPsy = relOprPermutationPsy xxs (xp 40 100) where
-    xxs = xProductSymbol 20 (xStandard :: X Symbol)
+    xxs = xCSequence 20 (xStandard :: X Symbol)
     
   prpPsq = relOprPermutationPsq xxs (xp 40 300) where
     xxs = xPSequence 20 40 (xStandard :: X Symbol) (xNB 0 200)
@@ -636,6 +636,6 @@ prpPermutation = Prp "Permutation" :<=>:
       ] where
   xxs = xNB 0 10 >>= \n -> xTakeN n (xNB 0 20)
   xpxs = xPSequence 20 40 (xStandard :: X Symbol) (xNB 0 200)
-  xpsy = xProductSymbol 20 (xStandard :: X Symbol)
+  xpsy = xCSequence 20 (xStandard :: X Symbol)
 
 

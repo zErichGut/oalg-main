@@ -20,10 +20,12 @@
 -- 'OAlg.Structure.Number.Definition.Number'.
 module OAlg.Entity.Product
   ( module Def
+  , module Prd
   , module Prp
   )
   where
 
 import OAlg.Entity.Product.Definition as Def
+import OAlg.Entity.Product.ProductSymbol as Prd
 import OAlg.Entity.Product.Proposition as Prp
 

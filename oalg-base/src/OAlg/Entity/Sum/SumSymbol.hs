@@ -11,7 +11,7 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- free sums over symbols.
+-- free sums with symbols in @__a__@.
 module OAlg.Entity.Sum.SumSymbol
   ( -- * SumSymbol
     SumSymbol(..), ssypsq, ssylc, sumSymbol, sy, ssyMap, ssySum, ssyJoin
