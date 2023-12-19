@@ -42,6 +42,7 @@ prpOAlgBase = Prp "OAlgBase"
             , Label "Limes"   :<=>: prpLimitsOrntSymbol
             , Label "Permutation" :<=>: prpPermutation
             , Label "Matrix"  :<=>: prpMatrixZ
+            , Label "Vector"  :<=>: prpRepMatrixZ 8 15
             ]
 
 --------------------------------------------------------------------------------

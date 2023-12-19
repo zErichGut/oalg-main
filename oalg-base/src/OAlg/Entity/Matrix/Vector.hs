@@ -8,8 +8,6 @@
   , StandaloneDeriving
 #-}
 
-
-
 -- |
 -- Module      : OAlg.Entity.Matrix.Vector
 -- Description : vectors with coefficients lying in a semi rings.
@@ -29,7 +27,7 @@ module OAlg.Entity.Matrix.Vector
   , repMatrix, Representable(..), mtxRepresentable
 
     -- * Propostion
-  , prpRepMatrix
+  , prpRepMatrix, prpRepMatrixZ
 
     -- * X
   , xVecN
@@ -45,9 +43,11 @@ import Data.Foldable
 import OAlg.Prelude
 
 import OAlg.Data.Singleton
+-- import OAlg.Data.Ord
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
 import OAlg.Structure.Exponential
@@ -337,8 +337,11 @@ repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
 --
 -- __Property__ Let @p = 'Representable' h xs ys@ be in @'Representable' __r__ __h__ __x__ __y__@
 -- for a 'Commutative' 'Semiring' @__r__@, then holds:
--- For all @v@ in @'Vector' __r__@ holds: @('Ssy' ys '$' h' '$' v) '==' (h '$' 'Ssy' xs '$' v)@
--- where @h' = 'HomMatrix' ('repMatrix' p)@.
+-- For all @v@ in @'Vector' __r__@ holds: Let @h' = 'HomMatrix' ('repMatrix' p)@ in
+--
+-- (1) For all @(_,i)@ in @h' '$' v@ holds: @i '<' 'lengthN' ys@.
+--
+-- (2) @('Ssy' ys '$' h' '$' v) '==' (h '$' 'Ssy' xs '$' v)@.
 repMatrix :: Representable r h x y -> Matrix r
 repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs ys
 
@@ -349,12 +352,11 @@ repMatrix (Representable h xs ys) = repMatricVec (tauHom (homomorphous h)) h xs 
 mtxHomSymbol :: Matrix r -> HomSymbol r (SumSymbol r N) (SumSymbol r N)
 mtxHomSymbol m = HomSymbol $ d m where
   d :: Matrix r -> PSequence N (LinearCombination r N)
-  d = PSequence . amap1 (\(c,j) -> (collc c,j)) . rowxs . etsrc . mtxxs
+  d = PSequence . rowxs . amap1 collc . etsrc . mtxxs
 
   collc :: Col N r -> LinearCombination r N
   collc = LinearCombination . colxs
   
-
 --------------------------------------------------------------------------------
 -- mtxRepresentable -
 
@@ -383,12 +385,26 @@ dstVecMax d n xr = getOmega >>= putDistribution d (amap1 (lengthN . vecpsq) $ xV
 --------------------------------------------------------------------------------
 -- prpRepMatrix -
 
--- | validity of 'repMatrix'.
-prpRepMatrix :: (Semiring r, Commutative r) => Representable r h x y -> X (Vector r) -> Statement
-prpRepMatrix p@(Representable h xs ys) xv = Prp "repMatrix" :<=>:
-  Forall xv
-    (\v -> ((Ssy ys $ h' $ v) == (h $ Ssy xs $ v))
-             :?> Params ["p":=show p,"h'":=show h',"v":=show v]
-    )
+-- | validity of 'repMatrix' for the given vector.
+prpRepMatrix :: (Semiring r, Commutative r) => Representable r h x y -> Vector r -> Statement
+prpRepMatrix p@(Representable h xs ys) v = Prp "RepMatrix" :<=>:
+  And [ Label "1" :<=>: (mi < (It $ lengthN ys))
+          :?> Params ["h' $ v":=show w,"max index":=show mi]
+      , Label "2" :<=>: ((Ssy ys $ w) == (h $ Ssy xs $ v))
+          :?> Params ["p":=show p,"h'":=show h',"v":=show v]
+      ]
   where h' = HomMatrix $ repMatrix p
+        w  = h' $ v
+        mi = cmax $ amap1 snd $ psqxs $ vecpsq w
 
+--------------------------------------------------------------------------------
+-- prpRepMatrixZ -
+
+-- | validity of 'repMatrix' for 'Z'-matrices with the given row and column numbers.
+prpRepMatrixZ :: N -> N -> Statement
+prpRepMatrixZ n m = Forall xrv (uncurry prpRepMatrix) where
+  xrv = xTupple2 xr xv
+  xr  = amap1 mtxRepresentable $ xoArrow xodZ (c :> r)
+  c   = dim () ^ m
+  r   = dim () ^ n
+  xv  = xVecN m (xZB (-100) 100) 
