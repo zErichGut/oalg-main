@@ -41,7 +41,7 @@ module OAlg.Limes.KernelsAndCokernels
   , cokernelsOrnt
 
     -- * Duality
-  , cokrnLimesDuality
+  , krnLimesDuality, cokrnLimesDuality
 
     -- * Proposition
   , prpIsKernel, prpIsCokernel
@@ -229,10 +229,18 @@ cokrnLimitsDuality = LimitsDuality ConeStructDst Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- cokrnLimesDuality -
 
--- | duality between kernels and cokernels.
+-- | duality between 'Cokernel' to 'Kernel'.
 cokrnLimesDuality :: Distributive a
   => LimesDuality Dst (Cokernel n) (Kernel n) a
 cokrnLimesDuality = LimesDuality ConeStructDst Refl Refl Refl Refl
+
+--------------------------------------------------------------------------------
+-- krnLimesDuality -
+
+-- | duality from 'Kernel' to 'Cokernel'.
+krnLimesDuality :: Distributive a
+  => LimesDuality Dst (Kernel n) (Cokernel n) a
+krnLimesDuality = LimesDuality ConeStructDst Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokernels -

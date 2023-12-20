@@ -1,13 +1,16 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs, StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
-
-{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
+{-# LANGUAGE
+    TypeFamilies
+  , MultiParamTypeClasses
+  , FlexibleInstances
+  , FlexibleContexts
+  , GADTs
+  , StandaloneDeriving
+  , TypeOperators
+  , DataKinds
+#-}
 
 -- |
 -- Module      : OAlg.Limes.Definition
@@ -23,6 +26,7 @@ module OAlg.Limes.Definition
     Limes(..)
   , universalPoint
   , universalCone
+  , universalShell
   , universalFactor
   , diagram, lmDiagramTypeRefl
   , eligibleCone
@@ -51,6 +55,7 @@ import Data.List as L ((++))
 import OAlg.Prelude
 
 import OAlg.Entity.Diagram
+import OAlg.Entity.FinList
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -140,6 +145,13 @@ universalCone (LimesInjective l _)  = l
 -- | the universal point of a limes, i.e. the tip of the universal cone.
 universalPoint :: Limes s p t n m a -> Point a
 universalPoint = tip . universalCone
+
+--------------------------------------------------------------------------------
+-- universalShell -
+
+-- | the shell of the universal cone.
+universalShell :: Limes s p t n m a -> FinList n a
+universalShell = shell . universalCone
 
 --------------------------------------------------------------------------------
 -- diagram -

@@ -10,17 +10,17 @@ and this project adheres to the
 
 ## [1.1.1.0] - 2023-11-19
 
-	### [Added]
+	Added
 	- type for ordered structures.
 	- Foldable for sets.
 
 ## [1.1.2.0] - 2023-11-22
 
-	### [Added]
+	Added
 	- free sums.
 
 ## [1.1.3.0] - 2023-11-27
-	### [Change]
+	Change
 	- interface of free sums. Replacing Word by LinearCombination.
 
 ## [1.1.4.0] - 2023-12-19
@@ -30,4 +30,3 @@ and this project adheres to the
 
 	Change
 	- OAlg.Entity.Sequence.ProductSymbol moved OAlg.Entity.Product.ProductSymbol
-	
