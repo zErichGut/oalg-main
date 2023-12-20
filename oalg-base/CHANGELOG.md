@@ -22,3 +22,12 @@ and this project adheres to the
 ## [1.1.3.0] - 2023-11-27
 	### [Change]
 	- interface of free sums. Replacing Word by LinearCombination.
+
+## [1.1.4.0] - 2023-12-19
+	Added
+	- OAlg.Entity.Matrix.Vector
+	- OAlg.Entity.Sequence.CSequence
+
+	Change
+	- OAlg.Entity.Sequence.ProductSymbol moved OAlg.Entity.Product.ProductSymbol
+	
