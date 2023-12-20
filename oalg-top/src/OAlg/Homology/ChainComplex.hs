@@ -1,12 +1,17 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies, TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE
+    TypeFamilies
+  , TypeOperators
+  , MultiParamTypeClasses
+  , FlexibleInstances
+  , FlexibleContexts
+  ,  GADTs
+  , StandaloneDeriving
+  , GeneralizedNewtypeDeriving
+  , DataKinds
+#-}
 
 -- |
 -- Module      : OAlg.Homology.ChainComplex
