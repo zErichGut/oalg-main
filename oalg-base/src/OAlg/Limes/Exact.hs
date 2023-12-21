@@ -5,22 +5,26 @@
     TypeFamilies
   , TypeOperators
   , DataKinds
+  , RankNTypes
 #-}
 
 -- |
 -- Module      : OAlg.Limes.Exact
--- Description : exact chain diagrams
+-- Description : exact sequence.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- exact chain diagrams.
+-- exact sequence.
 module OAlg.Limes.Exact
-  ( -- * Short Exact
+  (
+{-
+    -- * Short Exact
     ShortExact(..), isKernel, isCokernel
 
     -- * Duality
   , coShortExact
+-}
   ) where
 
 import Data.Typeable
@@ -32,9 +36,48 @@ import OAlg.Structure.Distributive
 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
+import OAlg.Entity.Diagram
 
 import OAlg.Limes.Definition
 import OAlg.Limes.KernelsAndCokernels
+
+--------------------------------------------------------------------------------
+-- ChainSequence -
+
+-- | chain diagram in a 'Distributive' structure where the composition of consecutive factors
+-- are equal to 'zero'.
+newtype ChainSequence t n a = ChainSequence (Diagram (Chain t) (n+1) n a) deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- ChainSequence - Duality -
+
+coChain :: ChainSequence t n a ->  Dual (Chain t) :~: Chain (Dual t)
+coChain (ChainSequence d) = case d of
+  DiagramChainTo _ _   -> Refl
+  DiagramChainFrom _ _ -> Refl
+
+type instance Dual (ChainSequence t n a) = ChainSequence (Dual t) n (Op a)
+
+coChainSequence :: ChainSequence t n a -> Dual (ChainSequence t n a)
+coChainSequence s@(ChainSequence d)
+  = case coChain s of Refl -> ChainSequence $ coDiagram d
+
+--------------------------------------------------------------------------------
+-- kerChain -
+
+-- | the associated chain diagram of a kernel.
+kerChain :: Oriented a => Kernel N1 a -> ChainSequence To N2 a
+kerChain k = ChainSequence $ DiagramChainTo (end d) (d:|s:|Nil) where
+  d = head $ dgArrows $ diagram k
+  s = head $ universalShell k
+
+--------------------------------------------------------------------------------
+-- cokerChain -
+
+cokerChain :: Oriented a => Cokernel N1 a -> ChainSequence From N2 a
+cokerChain c = ChainSequence $ DiagramChainFrom (start d) (d:|s:|Nil) where
+  d = head $ dgArrows $ diagram c
+  s = head $ universalShell c
 
 --------------------------------------------------------------------------------
 -- ShortExact -
@@ -49,18 +92,28 @@ import OAlg.Limes.KernelsAndCokernels
 -- (2) A cokernel @c@ in @'Cokernel' 'N1' __a__@ is called a __/cokernel of/__ @a@ iff
 -- @'diagram' c '==' 'cokernelDiagram' a@.
 --
--- __Defintion__ Let @e = 'ShortExact' k c@ be in @'ShortExact' __a__@ for a 'Distributive' structure
--- @__a__@, then @e@ is 'valid' iff
+-- __Defintion__ Let @e = 'ShortExact' d ker coker@ be in @'ShortExact' __t__ __a__@ for a
+-- 'Distributive' structure @__a__@, then @e@ is 'valid' iff
 --
--- (1) @k@ is 'valid'.
+-- (1) @d@ is 'valid'.
 --
--- (2) @c@ is 'valid'.
+-- (2) @ker@ is 'valid'.
 --
--- (3) @k@ is a kernel for @'head' ('universalShell' c)@.
+-- (3) @coker@ is 'valid'.
 --
--- (4) @c@ is a cokernel for @'head' ('universalShell' k)@.
-data ShortExact a = ShortExact (Kernel N1 a) (Cokernel N1 a) deriving (Show,Eq)
+-- (4) If @d@ matches @'DiagramChainTo' _ (f ':|' g ':|' 'Nil')@ then holds:
+--
+--     (1) @'diagram' ker '==' f@ and @'head' ('universalShell' ker) '==' g@.
+--
+-- (4) @'diagram' coker '==' f@ and @'head' ('universalShell' coker) '==' g@.
+data ShortExact t a
+  = ShortExact (Diagram (Chain t) N3 N2 a) (Kernel N1 a) (Cokernel N1 a) deriving (Show,Eq)
 
+{-
+--------------------------------------------------------------------------------
+-- sexChainTo -
+
+sexChainTo :: ShortExaxt 
 --------------------------------------------------------------------------------
 -- ShortExact - Duality -
 
@@ -101,4 +154,7 @@ instance (Distributive a, XStandardOrtSiteTo a, XStandardOrtSiteFrom a)
 --------------------------------------------------------------------------------
 -- Exact -
 
+-- | exact sequence.
 newtype Exact n a = Exact (FinList (n+1) (ShortExact a)) deriving (Show,Eq)
+
+-}
