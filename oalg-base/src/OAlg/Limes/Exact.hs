@@ -32,6 +32,8 @@ import Data.Typeable
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Entity.Natural
@@ -46,6 +48,17 @@ import OAlg.Limes.KernelsAndCokernels
 
 -- | chain diagram in a 'Distributive' structure where the composition of consecutive factors
 -- are equal to 'zero'.
+--
+-- __Definition__ Let @s = 'ChainSequence' d@ be in @'ChainSequence' __t__ __n__ __a__@ withhin a
+-- 'Distributive' structure @__a__@, then @s@ is 'valid' iff
+--
+-- (1) @d@ is 'valid'.
+--
+-- (2) If @d@ matches @'DiagramFrom' s ds@ then holds: @'isZero' (d (i+1) '*' d i)@ for all
+-- @.. d i ':|' d (i+1) ..@ in @ds@.
+--
+-- (3) If @d@ matches @'DiagramTo' s ds@ then holds: @'isZero' (d i '*' d (i+1))@ for all
+-- @.. d i ':|' d (i+1) ..@ in @ds@.
 newtype ChainSequence t n a = ChainSequence (Diagram (Chain t) (n+1) n a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
@@ -63,19 +76,40 @@ coChainSequence s@(ChainSequence d)
   = case coChain s of Refl -> ChainSequence $ coDiagram d
 
 --------------------------------------------------------------------------------
+-- ChainSequence - Entity -
+
+instance Distributive a => Validable (ChainSequence t n a) where
+  valid (ChainSequence d) = Label "ChainSequence" :<=>:
+    And [ Label "1" :<=>: valid d
+        , vldZero d
+        ] where
+
+    vldZero :: Distributive a => Diagram (Chain t) (n+1) n a -> Statement
+    vldZero (DiagramChainFrom _ ds) = Label "2" :<=>: vldZeroFrom 0 ds
+    vldZero d@(DiagramChainTo _ _)  = Label "3" :<=>: vldZero $ coDiagram d
+
+    vldZeroFrom :: Distributive a => N -> FinList n a -> Statement
+    vldZeroFrom _ Nil      = SValid
+    vldZeroFrom _ (_:|Nil) = SValid
+    vldZeroFrom i (di:|di':|ds)
+      = And [ (isZero (di'*di)) :?> Params ["i":=show i,"d i":=show di,"d (i+1)":=show di']
+            , vldZeroFrom (succ i) (di':|ds)
+            ]
+              
+--------------------------------------------------------------------------------
 -- kerChain -
 
 -- | the associated chain diagram of a kernel.
-kerChain :: Oriented a => Kernel N1 a -> ChainSequence To N2 a
-kerChain k = ChainSequence $ DiagramChainTo (end d) (d:|s:|Nil) where
+kerChain :: Oriented a => Kernel N1 a -> ChainSequence From N2 a
+kerChain k = ChainSequence $ DiagramChainFrom (start s) (s:|d:|Nil) where
   d = head $ dgArrows $ diagram k
   s = head $ universalShell k
 
 --------------------------------------------------------------------------------
 -- cokerChain -
 
-cokerChain :: Oriented a => Cokernel N1 a -> ChainSequence From N2 a
-cokerChain c = ChainSequence $ DiagramChainFrom (start d) (d:|s:|Nil) where
+cokerChain :: Oriented a => Cokernel N1 a -> ChainSequence To N2 a
+cokerChain c = ChainSequence $ DiagramChainTo (end s) (s:|d:|Nil) where
   d = head $ dgArrows $ diagram c
   s = head $ universalShell c
 
