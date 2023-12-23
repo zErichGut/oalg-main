@@ -37,19 +37,33 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Entity.Natural
-import OAlg.Entity.FinList
+import OAlg.Entity.FinList as F
 import OAlg.Entity.Diagram
 
 import OAlg.Limes.Definition
 import OAlg.Limes.KernelsAndCokernels
 
+{-
 --------------------------------------------------------------------------------
--- ChainSequence -
+-- chainTo -
+
+chainTo :: (Oriented a, Typeable n) => Diagram (Chain t) (n+1) n a -> Diagram (Chain To) (n+1) n a
+chainTo d = case d of
+  DiagramChainTo _ _    -> d
+  DiagramChainFrom _ ds -> DiagramChainTo (end d) ds
+
+rev :: FinList n x -> FinList n x
+rev Nil = Nil
+rev (x:|xs) = rev xs F.++ (x:|Nil)
+-}
+
+--------------------------------------------------------------------------------
+-- ConsZero -
 
 -- | chain diagram in a 'Distributive' structure where the composition of consecutive factors
 -- are equal to 'zero'.
 --
--- __Definition__ Let @s = 'ChainSequence' d@ be in @'ChainSequence' __t__ __n__ __a__@ withhin a
+-- __Definition__ Let @s = 'ConsZero' d@ be in @'ConsZero' __t__ __n__ __a__@ withhin a
 -- 'Distributive' structure @__a__@, then @s@ is 'valid' iff
 --
 -- (1) @d@ is 'valid'.
@@ -59,27 +73,27 @@ import OAlg.Limes.KernelsAndCokernels
 --
 -- (3) If @d@ matches @'DiagramTo' s ds@ then holds: @'isZero' (d i '*' d (i+1))@ for all
 -- @.. d i ':|' d (i+1) ..@ in @ds@.
-newtype ChainSequence t n a = ChainSequence (Diagram (Chain t) (n+1) n a) deriving (Show,Eq)
+newtype ConsZero t n a = ConsZero (Diagram (Chain t) (n+1) n a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- ChainSequence - Duality -
+-- ConsZero - Duality -
 
-coChain :: ChainSequence t n a ->  Dual (Chain t) :~: Chain (Dual t)
-coChain (ChainSequence d) = case d of
+coChain :: ConsZero t n a ->  Dual (Chain t) :~: Chain (Dual t)
+coChain (ConsZero d) = case d of
   DiagramChainTo _ _   -> Refl
   DiagramChainFrom _ _ -> Refl
 
-type instance Dual (ChainSequence t n a) = ChainSequence (Dual t) n (Op a)
+type instance Dual (ConsZero t n a) = ConsZero (Dual t) n (Op a)
 
-coChainSequence :: ChainSequence t n a -> Dual (ChainSequence t n a)
-coChainSequence s@(ChainSequence d)
-  = case coChain s of Refl -> ChainSequence $ coDiagram d
+coConsZero :: ConsZero t n a -> Dual (ConsZero t n a)
+coConsZero s@(ConsZero d)
+  = case coChain s of Refl -> ConsZero $ coDiagram d
 
 --------------------------------------------------------------------------------
--- ChainSequence - Entity -
+-- ConsZero - Entity -
 
-instance Distributive a => Validable (ChainSequence t n a) where
-  valid (ChainSequence d) = Label "ChainSequence" :<=>:
+instance Distributive a => Validable (ConsZero t n a) where
+  valid (ConsZero d) = Label "ConsZero" :<=>:
     And [ Label "1" :<=>: valid d
         , vldZero d
         ] where
@@ -95,21 +109,27 @@ instance Distributive a => Validable (ChainSequence t n a) where
       = And [ (isZero (di'*di)) :?> Params ["i":=show i,"d i":=show di,"d (i+1)":=show di']
             , vldZeroFrom (succ i) (di':|ds)
             ]
-              
---------------------------------------------------------------------------------
--- kerChain -
 
--- | the associated chain diagram of a kernel.
-kerChain :: Oriented a => Kernel N1 a -> ChainSequence From N2 a
-kerChain k = ChainSequence $ DiagramChainFrom (start s) (s:|d:|Nil) where
+--------------------------------------------------------------------------------
+-- kerChainFrom -
+
+-- | the associated consecutive zero chain diagram of a kernel.
+kerChainFrom :: Oriented a => Kernel N1 a -> ConsZero From N2 a
+kerChainFrom k = ConsZero $ DiagramChainFrom (start s) (s:|d:|Nil) where
+  d = head $ dgArrows $ diagram k
+  s = head $ universalShell k
+
+kerChainTo :: Oriented a => Kernel N1 a -> ConsZero To N2 a
+kerChainTo k = ConsZero $ DiagramChainTo (end d) (d:|s:|Nil) where
   d = head $ dgArrows $ diagram k
   s = head $ universalShell k
 
 --------------------------------------------------------------------------------
 -- cokerChain -
 
-cokerChain :: Oriented a => Cokernel N1 a -> ChainSequence To N2 a
-cokerChain c = ChainSequence $ DiagramChainTo (end s) (s:|d:|Nil) where
+-- | the associated consecutive zero chain diagram of a cokernel.
+cokerChain :: Oriented a => Cokernel N1 a -> ConsZero To N2 a
+cokerChain c = ConsZero $ DiagramChainTo (end s) (s:|d:|Nil) where
   d = head $ dgArrows $ diagram c
   s = head $ universalShell c
 
@@ -135,9 +155,9 @@ cokerChain c = ChainSequence $ DiagramChainTo (end s) (s:|d:|Nil) where
 --
 -- (3) @coker@ is 'valid'.
 --
--- (4) If @d@ matches @'DiagramChainTo' _ (f ':|' g ':|' 'Nil')@ then holds:
+-- (4) If @d@ matches @'DiagramChainTo' _ _@ then holds:
 --
---     (1) @'diagram' ker '==' f@ and @'head' ('universalShell' ker) '==' g@.
+--     (1) @'kerChain' ker '==' 
 --
 -- (4) @'diagram' coker '==' f@ and @'head' ('universalShell' coker) '==' g@.
 data ShortExact t a

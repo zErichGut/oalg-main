@@ -390,6 +390,23 @@ chnFromStart :: Diagram (Chain From) n m a -> Point a
 chnFromStart (DiagramChainFrom s _) = s
 
 --------------------------------------------------------------------------------
+-- chnFromEnd -
+
+chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
+chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ coDiagram d
+
+--------------------------------------------------------------------------------
+-- Diagram (Chain t) - Oriented -
+
+instance (Oriented a, Typeable t, Typeable n, Typeable m) => Oriented (Diagram (Chain t) n m a) where
+  type Point (Diagram (Chain t) n m a) = Point a
+  start (DiagramChainFrom s _) = s
+  start d@(DiagramChainTo _ _) = chnToStart d
+
+  end d@(DiagramChainFrom _ _) = chnFromEnd d
+  end (DiagramChainTo e _)     = e
+
+--------------------------------------------------------------------------------
 -- dgPrlAdjZero -
 
 -- | adjoins a 'zero' arrow as the first parallel arrow.
