@@ -1,4 +1,4 @@
-#oalg-main
+# oalg-main
 
 Project for solving algebraic problems with the following packages:
 
