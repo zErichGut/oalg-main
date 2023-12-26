@@ -1,6 +1,7 @@
 A package for solving algebraic problems purely written in Haskell.
 
-First of all we define [entities](https://github.com/zErichGut/oalg-main/blob/main/oalg-base/src/OAlg/Entity/Definition.hs). Based on them and since we look at algebra through the lens of
+First of all we define [entities](https://github.com/zErichGut/oalg-main/blob/main/oalg-base/src/OAlg/Entity/Definition.hs).
+Based on them and since we look at algebra through the lens of
 categories, we define oriented structures on which, by means of a suitable partially defined
 multiplication, multiplicative structures are defined. If one provides such a multiplicative structure
 with a matching additive structure, one obtains distributive structures on which matrices are build.

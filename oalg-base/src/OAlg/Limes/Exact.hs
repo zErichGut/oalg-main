@@ -44,6 +44,10 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
+import OAlg.Hom.Distributive
+
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
 import OAlg.Entity.Diagram
@@ -71,6 +75,12 @@ import OAlg.Limes.KernelsAndCokernels
 newtype ZeroCons t n a = ZeroCons (Diagram (Chain t) (n+1) n a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
+-- zcMap -
+
+zcMap :: Hom Dst h => h a b -> ZeroCons t n a -> ZeroCons t n b
+zcMap h (ZeroCons d) = ZeroCons $ dgMap h d
+
+--------------------------------------------------------------------------------
 -- ZeroCons - Duality -
 
 coChain :: ZeroCons t n a ->  Dual (Chain t) :~: Chain (Dual t)
@@ -83,6 +93,13 @@ type instance Dual (ZeroCons t n a) = ZeroCons (Dual t) n (Op a)
 coZeroCons :: ZeroCons t n a -> Dual (ZeroCons t n a)
 coZeroCons s@(ZeroCons d)
   = case coChain s of Refl -> ZeroCons $ coDiagram d
+
+zeroConsFromOpOp :: Distributive a
+  => t :~: Dual (Dual t) -> Dual (Dual (ZeroCons t n a)) -> ZeroCons t n a
+zeroConsFromOpOp Refl (ZeroCons d) = ZeroCons $ dgFromOpOp d
+
+coZeroConsInv :: Distributive a => t :~: Dual (Dual t) -> Dual (ZeroCons t n a) -> ZeroCons t n a
+coZeroConsInv rt = zeroConsFromOpOp rt . coZeroCons
 
 --------------------------------------------------------------------------------
 -- ZeroCons - Entity -
@@ -174,6 +191,15 @@ data ShortExact t a
   = ShortExact (ZeroCons t N2 a) (Kernel N1 a) (Cokernel N1 a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
+-- seqMap -
+
+secMap :: IsoOrt Dst h => h a b -> ShortExact t a -> ShortExact t b
+secMap h (ShortExact d k c)  = ShortExact d' k' c' where
+  d' = zcMap h d
+  k' = lmMap h k
+  c' = lmMap h c
+
+--------------------------------------------------------------------------------
 -- ShortExact - Duality -
 
 type instance Dual (ShortExact t a) = ShortExact (Dual t) (Op a)
@@ -181,7 +207,13 @@ type instance Dual (ShortExact t a) = ShortExact (Dual t) (Op a)
 coShortExact :: Distributive a => ShortExact t a -> Dual (ShortExact t a)
 coShortExact (ShortExact d k c)
   = ShortExact (coZeroCons d) (lmToOp cokrnLimesDuality c) (lmToOp krnLimesDuality k)
-  
+
+secFromOpOp :: Distributive a => ShortExact t (Op (Op a)) -> ShortExact t a
+secFromOpOp = secMap isoFromOpOpDst
+
+coShortExactInv :: Distributive a => t :~: Dual (Dual t) -> Dual (ShortExact t a) -> ShortExact t a
+coShortExactInv Refl = secFromOpOp . coShortExact
+
 --------------------------------------------------------------------------------
 -- ShortExact - Entity -
 
