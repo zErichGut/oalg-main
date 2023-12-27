@@ -4,6 +4,8 @@
 {-# LANGUAGE
     TypeFamilies
   , TypeOperators
+  , GADTs
+  , StandaloneDeriving
   , DataKinds
   , RankNTypes
 #-}
@@ -18,6 +20,8 @@
 -- exact sequence.
 module OAlg.Limes.Exact
   (
+
+{-    
     -- * Short Exact
     ShortExact(..)
 
@@ -32,7 +36,7 @@ module OAlg.Limes.Exact
 
     -- ** Duality
   , coZeroCons
-  
+-}  
   ) where
 
 import Data.Typeable
@@ -56,23 +60,28 @@ import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
 
+
 --------------------------------------------------------------------------------
 -- ZeroCons -
 
--- | chain diagram within a 'Distributive' structure where the composition of
--- consecutive factors are equal to 'zero'.
+-- | chain diagram according to the given 'Site' @__t__@ and the number of points @__n__@ within a
+-- 'Distributive' structure @__a__@ where the composition of consecutive factors are equal to 'zero'.
 --
--- __Definition__ Let @s = 'ZeroCons' d@ be in @'ZeroCons' __t__ __n__ __a__@ within a
+-- __Definition__ Let @s = 'ZeroCons' d@ be in @'ZeroCons' __t__ (__n__ '+' 3) __a__@ within a
 -- 'Distributive' structure @__a__@, then @s@ is 'valid' iff
 --
 -- (1) @d@ is 'valid'.
 --
--- (2) If @d@ matches @'DiagramChainFrom' s ds@ then holds: @'isZero' (d (i+1) '*' d i)@ for all
+-- (2) If @d@ matches @'DiagramChainTo' s ds@ then holds: @'isZero' (d i '*' d (i+1))@ for all
 -- @.. d i ':|' d (i+1) ..@ in @ds@.
 --
--- (3) If @d@ matches @'DiagramChainTo' s ds@ then holds: @'isZero' (d i '*' d (i+1))@ for all
+-- (3) If @d@ matches @'DiagramChainFrom' s ds@ then holds: @'isZero' (d (i+1) '*' d i)@ for all
 -- @.. d i ':|' d (i+1) ..@ in @ds@.
-newtype ZeroCons t n a = ZeroCons (Diagram (Chain t) (n+1) n a) deriving (Show,Eq)
+data ZeroCons t n a where
+  ZeroCons :: Attestable n => Diagram (Chain t) (n+3) (n+2) a -> ZeroCons t (n+3) a
+
+deriving instance Oriented a => Show (ZeroCons t n a)
+deriving instance Oriented a => Eq (ZeroCons t n a)
 
 --------------------------------------------------------------------------------
 -- zcMap -
@@ -95,11 +104,12 @@ coZeroCons s@(ZeroCons d)
   = case coChain s of Refl -> ZeroCons $ coDiagram d
 
 zeroConsFromOpOp :: Distributive a
-  => t :~: Dual (Dual t) -> Dual (Dual (ZeroCons t n a)) -> ZeroCons t n a
-zeroConsFromOpOp Refl (ZeroCons d) = ZeroCons $ dgFromOpOp d
+  => ZeroCons t n (Op (Op a)) -> ZeroCons t n a
+zeroConsFromOpOp (ZeroCons d) = ZeroCons $ dgFromOpOp d
 
 coZeroConsInv :: Distributive a => t :~: Dual (Dual t) -> Dual (ZeroCons t n a) -> ZeroCons t n a
-coZeroConsInv rt = zeroConsFromOpOp rt . coZeroCons
+coZeroConsInv Refl = zeroConsFromOpOp . coZeroCons
+
 
 --------------------------------------------------------------------------------
 -- ZeroCons - Entity -
@@ -107,20 +117,21 @@ coZeroConsInv rt = zeroConsFromOpOp rt . coZeroCons
 instance Distributive a => Validable (ZeroCons t n a) where
   valid (ZeroCons d) = Label "ZeroCons" :<=>:
     And [ Label "1" :<=>: valid d
-        , vldZero d
+        , vldZeroCons d
         ] where
 
-    vldZero :: Distributive a => Diagram (Chain t) (n+1) n a -> Statement
-    vldZero (DiagramChainFrom _ ds) = Label "2" :<=>: vldZeroFrom 0 ds
-    vldZero d@(DiagramChainTo _ _)  = Label "3" :<=>: vldZero $ coDiagram d
+    vldZeroCons :: Distributive a => Diagram (Chain t) (n+3) (n+2) a -> Statement
+    vldZeroCons (DiagramChainTo _ ds)    = Label "2" :<=>: vldZeroConsTo 0 ds
+    vldZeroCons d@(DiagramChainFrom _ _) = Label "3" :<=>: vldZeroCons $ coDiagram d
 
-    vldZeroFrom :: Distributive a => N -> FinList n a -> Statement
-    vldZeroFrom _ Nil      = SValid
-    vldZeroFrom _ (_:|Nil) = SValid
-    vldZeroFrom i (di:|di':|ds)
-      = And [ (isZero (di'*di)) :?> Params ["i":=show i,"d i":=show di,"d (i+1)":=show di']
-            , vldZeroFrom (succ i) (di':|ds)
-            ]
+    vldZeroConsTo :: Distributive a => N -> FinList (n+2) a -> Statement
+    vldZeroConsTo i (di:|di':|ds) = vldZeroConsTo2 i di di' && case ds of
+      Nil  -> SValid
+      _:|_ -> vldZeroConsTo (succ i) (di':|ds)
+
+    vldZeroConsTo2 :: Distributive a => N -> a -> a -> Statement
+    vldZeroConsTo2 i di di' = (isZero (di*di'))
+      :?> Params ["i":=show i,"d i":=show di,"d (i+1)":=show di']
 
 instance (Distributive a, Typeable t, Typeable n) => Entity (ZeroCons t n a)
 
@@ -132,16 +143,17 @@ instance (Distributive a, Typeable t, Typeable n) => Oriented (ZeroCons t n a) w
   orientation (ZeroCons d) = orientation d
   
 --------------------------------------------------------------------------------
--- kerChainFrom -
+-- kerChain -
 
--- | the associated consecutive zero chain diagram of a kernel.
-kerChainFrom :: Oriented a => Kernel N1 a -> ZeroCons From N2 a
-kerChainFrom k = ZeroCons $ DiagramChainFrom (start s) (s:|d:|Nil) where
+kerChainTo :: Oriented a => Kernel N1 a -> ZeroCons To N3 a
+kerChainTo k = ZeroCons $ DiagramChainTo (end d) (d:|s:|Nil) where
   d = head $ dgArrows $ diagram k
   s = head $ universalShell k
 
-kerChainTo :: Oriented a => Kernel N1 a -> ZeroCons To N2 a
-kerChainTo k = ZeroCons $ DiagramChainTo (end d) (d:|s:|Nil) where
+
+-- | the associated consecutive zero chain diagram of a kernel.
+kerChainFrom :: Oriented a => Kernel N1 a -> ZeroCons From N3 a
+kerChainFrom k = ZeroCons $ DiagramChainFrom (start s) (s:|d:|Nil) where
   d = head $ dgArrows $ diagram k
   s = head $ universalShell k
 
@@ -149,7 +161,7 @@ kerChainTo k = ZeroCons $ DiagramChainTo (end d) (d:|s:|Nil) where
 -- cokerChainTo -
 
 -- | the associated consecutive zero chain diagram of a cokernel.
-cokerChainTo :: Oriented a => Cokernel N1 a -> ZeroCons To N2 a
+cokerChainTo :: Oriented a => Cokernel N1 a -> ZeroCons To N3 a
 cokerChainTo c = ZeroCons $ DiagramChainTo (end s) (s:|d:|Nil) where
   d = head $ dgArrows $ diagram c
   s = head $ universalShell c
@@ -157,7 +169,7 @@ cokerChainTo c = ZeroCons $ DiagramChainTo (end s) (s:|d:|Nil) where
 --------------------------------------------------------------------------------
 -- cokerChainFrom -
 
-cokerChainFrom :: Oriented a => Cokernel N1 a -> ZeroCons From N2 a
+cokerChainFrom :: Oriented a => Cokernel N1 a -> ZeroCons From N3 a
 cokerChainFrom c = ZeroCons $ DiagramChainFrom (start d) (d:|s:|Nil) where
   d = head $ dgArrows $ diagram c
   s = head $ universalShell c
@@ -188,7 +200,7 @@ cokerChainFrom c = ZeroCons $ DiagramChainFrom (start d) (d:|s:|Nil) where
 --
 --     (2) @d '==' 'cokerChainFrom' c@.
 data ShortExact t a
-  = ShortExact (ZeroCons t N2 a) (Kernel N1 a) (Cokernel N1 a) deriving (Show,Eq)
+  = ShortExact (ZeroCons t N3 a) (Kernel N1 a) (Cokernel N1 a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
 -- seqMap -
@@ -198,7 +210,7 @@ secMap h (ShortExact d k c)  = ShortExact d' k' c' where
   d' = zcMap h d
   k' = lmMap h k
   c' = lmMap h c
-
+  
 --------------------------------------------------------------------------------
 -- ShortExact - Duality -
 
@@ -214,6 +226,7 @@ secFromOpOp = secMap isoFromOpOpDst
 coShortExactInv :: Distributive a => t :~: Dual (Dual t) -> Dual (ShortExact t a) -> ShortExact t a
 coShortExactInv Refl = secFromOpOp . coShortExact
 
+{-
 --------------------------------------------------------------------------------
 -- ShortExact - Entity -
 
@@ -254,7 +267,6 @@ instance (Distributive a, XStandardOrtSiteTo a, XStandardOrtSiteFrom a, Typeable
 --------------------------------------------------------------------------------
 -- secOrntTo -
 
-
 -- | short exact sequence for the given points.
 secOrntTo :: Entity p => p -> p -> p -> ShortExact To (Orientation p)
 secOrntTo a b c = ShortExact d ker coker where
@@ -273,58 +285,20 @@ secOrntFrom a b c = ShortExact d ker coker where
   coker = limes (cokernelsOrnt c) (cokernelDiagram (a:>b))
 
 
-
-
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- sexChainTo -
-
-sexChainTo :: ShortExaxt 
---------------------------------------------------------------------------------
--- ShortExact - Duality -
-
-type instance Dual (ShortExact a) = ShortExact (Op a)
-
--- | the co short exact chain.
-coShortExact :: Distributive a => ShortExact a -> Dual (ShortExact a)
-coShortExact (ShortExact k c)
-  = ShortExact (lmToOp cokrnLimesDuality c) (lmToOp krnLimesDuality k)
-
---------------------------------------------------------------------------------
--- isKernel -
-
--- | predicate for being a kernel according to the definition at 'ShortExact'.
-isKernel :: Oriented a => a -> Kernel N1 a -> Bool
-isKernel a k = diagram k == kernelDiagram a
-
---------------------------------------------------------------------------------
--- isCokernel -
-
--- | predicate for being a cokernel according to the definition at 'ShortExact'.
-isCokernel :: Oriented a => a -> Cokernel N1 a -> Bool
-isCokernel a c = diagram c == cokernelDiagram a
-
---------------------------------------------------------------------------------
--- ShortExact - Entity -
-
-instance (Distributive a, XStandardOrtSiteTo a, XStandardOrtSiteFrom a)
-  => Validable (ShortExact a) where
-  valid s@(ShortExact k c) = (Label $ show $ typeOf s) :<=>:
-    And [ Label "1" :<=>: valid k
-        , Label "2" :<=>: valid c
-        , Label "3" :<=>: isKernel (head $ universalShell c) k :?> prms
-        , Label "4" :<=>: isCokernel (head $ universalShell k) c :?> prms
-        ]
-    where prms = Params ["k":=show k,"c":=show c]
-
 --------------------------------------------------------------------------------
 -- Exact -
 
--- | exact sequence.
-newtype Exact n a = Exact (FinList (n+1) (ShortExact a)) deriving (Show,Eq)
+newtype Exact t n a = Exact (Diagram (Chain t) (n+2) (n+1) (ShortExact t a))
+  deriving (Show,Eq,Validable,Entity)
 
+{-
+--------------------------------------------------------------------------------
+-- excZeroCons -
+
+-- | the associated chain diagram of consecutive zero factors.
+excZeroCons :: Distributive a => Exact t n a -> ZeroCons t (n+2) a
+excZeroCons (Exact (DiagramChainTo e es)) = error "nyi" -- ZeroCons $ DiagramChainTo e $ chainTo es where
+  -- chainTo :: FinList
+-}
+  
 -}
