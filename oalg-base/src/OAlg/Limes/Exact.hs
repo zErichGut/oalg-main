@@ -84,6 +84,10 @@ deriving instance Oriented a => Show (ZeroCons t n a)
 deriving instance Oriented a => Eq (ZeroCons t n a)
 
 --------------------------------------------------------------------------------
+-- zcDiagram -
+
+
+--------------------------------------------------------------------------------
 -- zcMap -
 
 zcMap :: Hom Dst h => h a b -> ZeroCons t n a -> ZeroCons t n b
@@ -203,6 +207,12 @@ data ShortExact t a
   = ShortExact (ZeroCons t N3 a) (Kernel N1 a) (Cokernel N1 a) deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
+-- secZeroCons -
+
+secZeroCons :: ShortExact t a -> ZeroCons t N3 a
+secZeroCons (ShortExact d _ _) = d
+
+--------------------------------------------------------------------------------
 -- seqMap -
 
 secMap :: IsoOrt Dst h => h a b -> ShortExact t a -> ShortExact t b
@@ -226,7 +236,7 @@ secFromOpOp = secMap isoFromOpOpDst
 coShortExactInv :: Distributive a => t :~: Dual (Dual t) -> Dual (ShortExact t a) -> ShortExact t a
 coShortExactInv Refl = secFromOpOp . coShortExact
 
-{-
+
 --------------------------------------------------------------------------------
 -- ShortExact - Entity -
 
@@ -245,7 +255,7 @@ instance (Distributive a, XStandardOrtSiteTo a, XStandardOrtSiteFrom a, Typeable
       ZeroCons (DiagramChainFrom _ _) -> Label "5"
         :<=>: vldDgmEqTo d' k' c' where ShortExact d' k' c' = coShortExact s
 
-    vldDgmEqTo :: Oriented a => ZeroCons To N2 a -> Kernel N1 a -> Cokernel N1 a -> Statement
+    vldDgmEqTo :: Oriented a => ZeroCons To N3 a -> Kernel N1 a -> Cokernel N1 a -> Statement
     vldDgmEqTo d k c
       = And [ Label "1" :<=>: (d == kerChainTo k) :?> prms
             , Label "2" :<=>: (d == cokerChainTo c) :?> prms
@@ -288,17 +298,39 @@ secOrntFrom a b c = ShortExact d ker coker where
 --------------------------------------------------------------------------------
 -- Exact -
 
-newtype Exact t n a = Exact (Diagram (Chain t) (n+2) (n+1) (ShortExact t a))
-  deriving (Show,Eq,Validable,Entity)
+data Exact t n a where
+  Exact :: Attestable n => Diagram (Chain t) (n+2) (n+1) (ShortExact t a) -> Exact t (n+3) a
 
-{-
+-- deriving (Show,Eq,Validable,Entity)
+
+--------------------------------------------------------------------------------
+-- Exact - Duality -
+
+type instance Dual (Exact t n a) = Exact (Dual t) n (Op a)
+
+coExact :: Exact t n a -> Dual (Exact t n a)
+coExact (Exact d) = Exact $ ff $ coDiagram d
+
+ff :: Diagram (Dual (Chain t)) n m (Op (ShortExact t a))
+   -> Diagram (Chain (Dual t)) n m (Dual (ShortExact t a)) 
+ff = error "nyi"
+
+excFromOpOp :: Exact t n (Op (Op a)) -> Exact t n a
+excFromOpOp = error "nyi"
+
+coExactInv :: t :~: Dual (Dual t) -> Dual (Exact t n a) -> Exact t n a
+coExactInv Refl = excFromOpOp . coExact
+
 --------------------------------------------------------------------------------
 -- excZeroCons -
 
 -- | the associated chain diagram of consecutive zero factors.
-excZeroCons :: Distributive a => Exact t n a -> ZeroCons t (n+2) a
-excZeroCons (Exact (DiagramChainTo e es)) = error "nyi" -- ZeroCons $ DiagramChainTo e $ chainTo es where
-  -- chainTo :: FinList
--}
-  
--}
+excZeroCons :: Distributive a => Exact t n a -> ZeroCons t n a
+excZeroCons (Exact (DiagramChainTo e es)) = ZeroCons $ DiagramChainTo e $ chainTo es where
+  chainTo :: Distributive a => FinList (n+1) (ShortExact t a) -> FinList (n+2) a
+  chainTo (ShortExact (ZeroCons d) _ _:|Nil)       = dgArrows d
+  chainTo (ShortExact (ZeroCons d) _ _:|ds@(_:|_)) = case chainTo ds of
+    g:|gs -> case dgArrows d of f:|f':|_ -> f:|(f' * g):|gs
+excZeroCons e@(Exact (DiagramChainFrom _ _)) = coZeroConsInv Refl $ excZeroCons $ coExact e
+
+
