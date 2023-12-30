@@ -75,6 +75,7 @@ import OAlg.Entity.Diagram.Quiver
 data DiagramType
   = Empty
   | Discrete
+  | Arrow Direction
   | Chain Site
   | Parallel Direction
   | Star Site
@@ -86,6 +87,8 @@ data DiagramType
 
 type instance Dual 'Empty                   = 'Empty
 type instance Dual 'Discrete                = 'Discrete
+type instance Dual ('Arrow 'LeftToRight)    = 'Arrow 'RightToLeft
+type instance Dual ('Arrow 'RightToLeft)    = 'Arrow 'LeftToRight
 type instance Dual ('Chain 'From)           = 'Chain 'To
 type instance Dual ('Chain 'To)             = 'Chain 'From 
 type instance Dual ('Parallel 'LeftToRight) = 'Parallel 'RightToLeft
@@ -135,7 +138,9 @@ rt' Refl = Refl
 --   @pj '==' 'end' aij@ for all @aij@ in @aijs@ and @ps = p0..pn-1@.
 data Diagram t n m a where
   DiagramEmpty      :: Diagram 'Empty N0 N0 a
-  DiagramDiscrete   :: FinList n (Point a) -> Diagram Discrete n N0 a  
+  DiagramDiscrete   :: FinList n (Point a) -> Diagram Discrete n N0 a
+  DiagramArrowLR    :: a -> Diagram (Arrow LeftToRight) N2 N1 a
+  DiagramArrowRL    :: a -> Diagram (Arrow RightToLeft) N2 N1 a
   DiagramChainTo    :: Point a -> FinList m a -> Diagram (Chain To) (m+1) m a  
   DiagramChainFrom  :: Point a -> FinList m a -> Diagram (Chain From) (m+1) m a  
   DiagramParallelLR :: Point a -> Point a -> FinList m a

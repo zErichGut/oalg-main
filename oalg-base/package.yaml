@@ -46,7 +46,7 @@ ghc-options:
 - -Wno-name-shadowing
 - -Wno-unused-top-binds
 - -Wno-incomplete-uni-patterns
-- -Wno-incomplete-patterns
+# - -Wno-incomplete-patterns
 - -Wno-identities
 
 
