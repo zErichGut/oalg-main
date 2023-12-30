@@ -163,6 +163,8 @@ dgPoints :: Oriented a => Diagram t n m a -> FinList n (Point a)
 dgPoints d = case d of
   DiagramEmpty            -> Nil
   DiagramDiscrete ps      -> ps
+  DiagramArrowLR a        -> start a :| end a :| Nil
+  DiagramArrowRL a        -> end a :| start a :| Nil
   DiagramChainTo e as     -> e:|fmap start as
   DiagramChainFrom s as   -> s:|fmap end as
   DiagramParallelLR p q _ -> p :| q :| Nil
@@ -179,6 +181,8 @@ dgArrows :: Diagram t n m a -> FinList m a
 dgArrows d = case d of
   DiagramEmpty             -> Nil
   DiagramDiscrete _        -> Nil
+  DiagramArrowLR a         -> a :| Nil
+  DiagramArrowRL a         -> a :| Nil
   DiagramChainTo _ as      -> as
   DiagramChainFrom _ as    -> as
   DiagramParallelLR _ _ as -> as
@@ -203,6 +207,8 @@ dgMap :: Hom Ort h => h a b -> Diagram t n m a -> Diagram t n m b
 dgMap h d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (fmap fp ps)
+  DiagramArrowLR a         -> DiagramArrowLR (amap h a)
+  DiagramArrowRL a         -> DiagramArrowRL (amap h a)
   DiagramChainTo e as      -> DiagramChainTo (fp e) (fmap f as)
   DiagramChainFrom s as    -> DiagramChainFrom  (fp s) (fmap f as)
   DiagramParallelLR l r as -> DiagramParallelLR (fp l) (fp r) (fmap f as)
@@ -233,6 +239,8 @@ coDiagram :: Diagram t n m a -> Dual (Diagram t n m a)
 coDiagram d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete ps
+  DiagramArrowLR a         -> DiagramArrowRL (Op a)
+  DiagramArrowRL a         -> DiagramArrowLR (Op a)
   DiagramChainTo e as      -> DiagramChainFrom e (fmap Op as)
   DiagramChainFrom s as    -> DiagramChainTo s (fmap Op as)
   DiagramParallelLR l r as -> DiagramParallelRL l r (fmap Op as)
@@ -246,7 +254,7 @@ coDiagram d = case d of
 
 -- | from @'Op' '.' 'Op'@.
 dgFromOpOp :: Oriented a => Diagram t n m (Op (Op a)) -> Diagram t n m a
-dgFromOpOp = dgMap isoFromOpOpOrt 
+dgFromOpOp = dgMap isoFromOpOpOrt
 
 --------------------------------------------------------------------------------
 -- coDiagramInv -
@@ -287,7 +295,8 @@ dgFromOp (DiagramDuality Refl Refl rt) = coDiagramInv rt
 instance Oriented a => Validable (Diagram t n m a) where
   valid d = case d of
     DiagramEmpty -> SValid
-    DiagramDiscrete ps -> valid ps
+    DiagramDiscrete ps  -> valid ps
+    DiagramArrowLR a    -> valid a   
     DiagramChainTo e as -> valid e && vld 0 e as where
       vld :: Oriented a => N -> Point a -> FinList m a -> Statement
       vld _ _ Nil     = SValid
@@ -353,7 +362,22 @@ instance (Oriented a, Typeable d, Typeable n, Typeable m)
   type Point (Diagram (Parallel d) n m a) = Point a
   orientation (DiagramParallelLR l r _) = l:>r
   orientation (DiagramParallelRL l r _) = r:>l
+
+instance (Oriented a, Typeable d, Typeable n, Typeable m)
+  => Oriented (Diagram (Arrow d) n m a) where
+  type Point (Diagram (Arrow d) n m a) = Point a
+  orientation (DiagramArrowLR a) = orientation a
+  orientation (DiagramArrowRL a) = orientation a
   
+instance (Oriented a, Typeable t, Typeable n, Typeable m)
+  => Oriented (Diagram (Chain t) n m a) where
+  type Point (Diagram (Chain t) n m a) = Point a
+  start (DiagramChainFrom s _) = s
+  start d@(DiagramChainTo _ _) = chnToStart d
+
+  end d@(DiagramChainFrom _ _) = chnFromEnd d
+  end (DiagramChainTo e _)     = e
+
 --------------------------------------------------------------------------------
 -- dgQuiver -
 
@@ -361,6 +385,7 @@ instance (Oriented a, Typeable d, Typeable n, Typeable m)
 dgQuiver :: Diagram t n m a -> Quiver n m
 dgQuiver DiagramEmpty = Quiver W0 Nil
 dgQuiver (DiagramDiscrete ps) = Quiver (toW ps) Nil
+dgQuiver (DiagramArrowLR _) = Quiver attest ((0:>1):|Nil)
 dgQuiver (DiagramChainTo _ as) = Quiver (SW (toW os)) os where
   os = chnTo 0 as
   chnTo :: N -> FinList m x -> FinList m (Orientation N)
@@ -399,17 +424,6 @@ chnFromStart (DiagramChainFrom s _) = s
 
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
 chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ coDiagram d
-
---------------------------------------------------------------------------------
--- Diagram (Chain t) - Oriented -
-
-instance (Oriented a, Typeable t, Typeable n, Typeable m) => Oriented (Diagram (Chain t) n m a) where
-  type Point (Diagram (Chain t) n m a) = Point a
-  start (DiagramChainFrom s _) = s
-  start d@(DiagramChainTo _ _) = chnToStart d
-
-  end d@(DiagramChainFrom _ _) = chnFromEnd d
-  end (DiagramChainTo e _)     = e
 
 --------------------------------------------------------------------------------
 -- dgPrlAdjZero -
@@ -455,6 +469,8 @@ dgType :: Diagram t n m a -> DiagramType
 dgType d = case d of
   DiagramEmpty            -> Empty
   DiagramDiscrete _       -> Discrete
+  DiagramArrowLR _        -> Arrow LeftToRight
+  DiagramArrowRL _        -> Arrow RightToLeft
   DiagramChainTo _ _      -> Chain To
   DiagramChainFrom _ _    -> Chain From
   DiagramParallelLR _ _ _ -> Parallel LeftToRight
@@ -471,6 +487,8 @@ dgTypeRefl :: Diagram t n m a -> Dual (Dual t) :~: t
 dgTypeRefl d = case d of
   DiagramEmpty            -> Refl
   DiagramDiscrete _       -> Refl
+  DiagramArrowLR _        -> Refl
+  DiagramArrowRL _        -> Refl
   DiagramChainTo _ _      -> Refl
   DiagramChainFrom _ _    -> Refl
   DiagramParallelLR _ _ _ -> Refl
@@ -486,6 +504,8 @@ dgTypeRefl d = case d of
 data XDiagram t n m a where
   XDiagramEmpty      :: XDiagram 'Empty N0 N0 a
   XDiagramDiscrete   :: Any n -> X (Point a) -> XDiagram Discrete n N0 a
+  XDiagramArrowLR    :: XOrtOrientation a -> XDiagram (Arrow LeftToRight) N2 N1 a
+  XDiagramArrowRL    :: XOrtOrientation a -> XDiagram (Arrow RightToLeft) N2 N1 a
   XDiagramChainTo    :: Any m -> XOrtSite To a -> XDiagram (Chain To) (m+1) m a  
   XDiagramChainFrom  :: Any m -> XOrtSite From a -> XDiagram (Chain From) (m+1) m a
   XDiagramParallelLR :: Any m -> XOrtOrientation a
@@ -505,6 +525,8 @@ coXDiagram :: XDiagram t n m a -> Dual (XDiagram t n m a)
 coXDiagram xd = case xd of
   XDiagramEmpty           -> XDiagramEmpty
   XDiagramDiscrete n xp   -> XDiagramDiscrete n xp
+  XDiagramArrowLR xo      -> XDiagramArrowRL (coXOrtOrientation xo)
+  XDiagramArrowRL xo      -> XDiagramArrowLR (coXOrtOrientation xo)
   XDiagramChainTo m xe    -> XDiagramChainFrom m (coXOrtSite xe)
   XDiagramChainFrom m xs  -> XDiagramChainTo m (coXOrtSite xs)
   XDiagramParallelLR m xo -> XDiagramParallelRL m (coXOrtOrientation xo)
@@ -522,6 +544,13 @@ xDiscrete pa (SW n') xp = do
   DiagramDiscrete ps <- xDiscrete pa n' xp
   p <- xp
   return (DiagramDiscrete (p:|ps))
+
+xArrow :: Oriented a => XOrtOrientation a -> X (Diagram (Arrow LeftToRight) N2 N1 a)
+xArrow xo = do
+  l <- xoPoint xo
+  r <- xoPoint xo
+  a <- xoArrow xo (l:>r)
+  return $ DiagramArrowLR a
 
 xChain :: Oriented a => Any m -> XOrtSite To a -> X (Diagram (Chain To) (m+1) m a)
 xChain m xe@(XEnd xp _) = do
@@ -563,6 +592,7 @@ xDiagram :: Oriented a => Dual (Dual t) :~: t
 xDiagram rt xd = case xd of
   XDiagramEmpty           -> return DiagramEmpty
   XDiagramDiscrete n xp   -> xDiscrete xd n xp
+  XDiagramArrowLR xo      -> xArrow xo
   XDiagramChainTo m xs    -> xChain m xs
   XDiagramParallelLR m xo -> xParallel m xo
   XDiagramSink m xe       -> xSink m xe
@@ -575,10 +605,17 @@ xDiagram rt xd = case xd of
 instance (Oriented a, n ~ N0, m ~ N0) => XStandard (Diagram 'Empty n m a) where
   xStandard = xDiagram Refl XDiagramEmpty
 
-
 instance (Oriented a, m ~ N0, XStandardPoint a, Attestable n)
   => XStandard (Diagram Discrete n m a) where
   xStandard = xDiagram Refl (XDiagramDiscrete n xStandard) where n = attest
+
+instance (Oriented a, n ~ N2, m ~ N1, XStandardOrtOrientation a)
+  => XStandard (Diagram (Arrow LeftToRight) n m a) where
+  xStandard = xDiagram Refl (XDiagramArrowLR xStandardOrtOrientation)
+
+instance (Oriented a, n ~ N2, m ~ N1, XStandardOrtOrientation a)
+  => XStandard (Diagram (Arrow RightToLeft) n m a) where
+  xStandard = xDiagram Refl (XDiagramArrowRL xStandardOrtOrientation)
 
 instance (Oriented a, XStandardOrtSite To a, Attestable m)
   => XStandard (Diagram (Chain To) (S m) m a) where
@@ -665,6 +702,8 @@ xSomeDiagram xn xTo xFrom xO = do
     -> [X (SomeDiagram a)]
   xsd n xTo xFrom xO
     = [ xDiscrete n xp
+      , xArrowLR xO
+      , xArrowRL xO
       , xChainTo n xTo
       , xChainFrom n xFrom
       , xParallelLR n xO
@@ -678,6 +717,12 @@ xSomeDiagram xn xTo xFrom xO = do
   xDiscrete n xp
     = amap1 SomeDiagram $ xDiagram Refl (XDiagramDiscrete n xp)
 
+  xArrowLR :: Oriented a => XOrtOrientation a -> X (SomeDiagram a)
+  xArrowLR xO = amap1 SomeDiagram $ xDiagram Refl (XDiagramArrowLR xO)
+
+  xArrowRL :: Oriented a => XOrtOrientation a -> X (SomeDiagram a)
+  xArrowRL xO = amap1 coSomeDiagramInv $ xArrowLR (coXOrtOrientation xO)
+  
   xChainTo :: Oriented a => Any n -> XOrtSite To a -> X (SomeDiagram a)
   xChainTo n xTo
     = amap1 SomeDiagram $ xDiagram Refl (XDiagramChainTo n xTo)
