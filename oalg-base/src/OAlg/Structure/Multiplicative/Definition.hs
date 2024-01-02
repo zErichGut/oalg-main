@@ -46,6 +46,7 @@ import qualified Prelude as A
 import Control.Monad
 import Control.Exception
 
+import Data.Typeable
 import Data.List(repeat)
 import Data.Foldable
 
@@ -375,6 +376,47 @@ instance TransposableMultiplicative c => Transposable (Inv c) where
 
 instance TransposableMultiplicative c => TransposableOriented (Inv c)
 instance TransposableMultiplicative c => TransposableMultiplicative (Inv c)
+
+--------------------------------------------------------------------------------
+-- epimorph - monomorph -
+
+-- | predicate for two entities to be equal.
+data Equal a = Equal a a deriving (Show,Eq)
+
+instance Entity a => Validable (Equal a) where
+  valid (Equal x y) = (Label $ show $ typeOf x) :<=>:
+    (x == y) :?> Params ["x":=show x,"y":=show y]
+
+instance Entity a => Entity (Equal a)
+
+-- | predicate for a epimorphic diagram.
+--
+-- __Defintion__ Let @d = 'DiagramEpimorph' f x y@ be in @'DiagramEpipmorph' __a__@ for a
+-- 'Multiplicative' structure @__c__@, then @d@ is 'valid' iff
+--
+-- (1) @'orientation' x '==' 'orientation' y@.
+--
+-- (2) @'end' f '==' 'start' x@.
+--
+-- (3) @x '*' f '==' y '*' f@.
+data DiagramEpimorph c
+  = DiagramEpimorph c c c
+  deriving (Show,Eq)
+
+instance Multiplicative c => Validable (DiagramEpimorph c) where
+  valid = error "nyi"
+
+-- | predicate for epimorph factors.
+--
+-- __Defintion__ Let @e = 'Epimorph' f@ be in @'Epimorph' __c__@ for a 'Multiplicative' structure
+-- @__c__@, then @e@ if 'valid' iff
+-- For all @d = 'DiagramEpimorph' f' x y@ in @'DiagramEpimorph' __c__@ with @f '==' f'@ holds:
+-- @x '==' y@.
+data Epimorph c = Epimorph c
+  
+epiEqual :: Multiplicative c => Epimorph c -> DiagramEpimorph c -> Equal c
+epiEqual (Epimorph f) (DiagramEpimorph f' x y)
+  | f == f' = Equal x y
 
 --------------------------------------------------------------------------------
 -- Mlt -
