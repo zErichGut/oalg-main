@@ -12,6 +12,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 
+
 -- |
 -- Module      : OAlg.Hom.Oriented.Definition
 -- Description : definition of homomorphisms between oriented structures
@@ -158,6 +159,7 @@ type IsoOriented h = (FunctorialHomOriented h, Cayleyan2 h)
 
 --------------------------------------------------------------------------------
 -- IdHom -
+
 
 -- | identity morphism.
 data IdHom s a b where

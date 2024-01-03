@@ -1,10 +1,12 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE  GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE
+    TypeFamilies
+  , EmptyDataDeriving
+  , StandaloneDeriving
+  , GeneralizedNewtypeDeriving
+#-}
 
 -- |
 -- Module      : OAlg.Entity.Definition
@@ -39,6 +41,7 @@ import Prelude (Ord(..),undefined)
 import Data.Typeable
 
 import OAlg.Category.Definition
+
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
