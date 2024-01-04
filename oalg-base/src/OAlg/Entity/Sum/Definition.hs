@@ -124,12 +124,14 @@ smfSum z (!) (+) f s = sm s where
 --------------------------------------------------------------------------------
 -- smfJoin -
 
+-- | joining a sum form of sum forms.
 smfJoin :: SumForm r (SumForm r a) -> SumForm r a
 smfJoin = smfSum Zero (:!) (:+) id
 
 --------------------------------------------------------------------------------
 -- smfMap -
 
+-- | mapping of sum forms.
 smfMap :: Singleton (Root y) => (x -> y) -> SumForm r x -> SumForm r y
 smfMap f = smfSum (const ( Zero unit)) (:!) (:+) (S . f)
 
@@ -278,12 +280,14 @@ smlc = restrict smflc
 --------------------------------------------------------------------------------
 -- smJoin -
 
+-- | joining a sum of sums.
 smJoin :: (Semiring r, Commutative r, Fibred a, Ord a) => Sum r (Sum r a) -> Sum r a
 smJoin = make . smfJoin . restrict (smfSum Zero (:!) (:+) (S . form))
 
 --------------------------------------------------------------------------------
 -- smMap -
 
+-- | additive homomorphism to a totally defined sum.
 smMap :: (Singleton (Root y), Fibred y, Ord y, Semiring r, Commutative r)
   => (x -> y) -> Sum r x -> Sum r y
 smMap f (Sum s) = make (smfMap f s)
@@ -291,12 +295,14 @@ smMap f (Sum s) = make (smfMap f s)
 --------------------------------------------------------------------------------
 -- nSum -
 
+-- | additive homomorphism for sums over 'N'.
 nSum :: (Hom Fbr h,Additive x) => h a x -> Sum N a -> x
 nSum h = restrict (smfSum (zero . rmap h) ntimes (+) (amap h))
 
 --------------------------------------------------------------------------------
 -- zSum -
 
+-- | additive homomorphism for sums over 'Z'.
 zSum :: (Hom Fbr h,Abelian x) => h a x -> Sum Z a -> x
 zSum h = restrict (smfSum (zero . rmap h) ztimes (+) (amap h))
 

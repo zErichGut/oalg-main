@@ -57,11 +57,13 @@ instance OrdRoot (R a)
 --------------------------------------------------------------------------------
 -- SumSymbol -
 
+-- | free sum with symbols in @__a__@.
 newtype SumSymbol r a = SumSymbol (Sum r (R a)) deriving (Eq,Ord,Validable,Additive,Abelian)
 
 --------------------------------------------------------------------------------
 -- ssylc -
 
+-- | the underlying linear combination.
 ssylc :: Semiring r => SumSymbol r a -> LinearCombination r a
 ssylc (SumSymbol s) = LinearCombination $ map (\(r,R a) -> (r,a)) $ lcs $ smlc s
 
@@ -107,18 +109,21 @@ instance (Semiring r, Commutative r, Entity a, Ord a) => Euclidean (SumSymbol r 
 --------------------------------------------------------------------------------
 -- sumSymbol -
 
+-- | the induced free sum given by a list of scalars and symbols.
 sumSymbol :: (Semiring r, Commutative r, Entity a, Ord a) => [(r,a)] -> SumSymbol r a
 sumSymbol xs = SumSymbol $ make $ foldr (:+) (Zero ()) $ map (\(r,a) -> r :! (S $ R a)) xs
 
 --------------------------------------------------------------------------------
 -- sy -
 
+-- | the induced free sum given by the symbol.
 sy :: (Semiring r, Commutative r, Entity a, Ord a) => a -> SumSymbol r a
 sy a = sumSymbol [(rOne,a)]
 
 --------------------------------------------------------------------------------
 -- ssyMap -
 
+-- | mapping of free sums
 ssyMap :: (Semiring r, Commutative r, Entity y, Ord y) => (x -> y) -> SumSymbol r x -> SumSymbol r y
 ssyMap f (SumSymbol s) = SumSymbol (smMap f' s) where
   f' (R x) = R (f x)
@@ -126,6 +131,8 @@ ssyMap f (SumSymbol s) = SumSymbol (smMap f' s) where
 --------------------------------------------------------------------------------
 -- ssySum -
 
+-- | additive homomorphism given by a mapping of a symbol in @__x__@ to a linear combination of
+-- @__y__@.
 ssySum :: (Semiring r, Commutative r, Entity y, Ord y)
   => (x -> LinearCombination r y) -> SumSymbol r x -> SumSymbol r y
 ssySum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s where
@@ -135,6 +142,7 @@ ssySum f (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap (f' f) $ form s whe
 --------------------------------------------------------------------------------
 -- ssyJoin -
 
+-- | joining a free sum of free sums to a free sum.
 ssyJoin :: (Semiring r, Commutative r, Entity x, Ord x)
   => SumSymbol r (SumSymbol r x) -> SumSymbol r x
 ssyJoin (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap f $ form s where
@@ -151,7 +159,7 @@ ssyJoin (SumSymbol s) = SumSymbol $ make $ smfJoin $ smfMap f $ form s where
 -- are elements of @s@.
 --
 -- __Property__ Let @s@ be a set of symbols in @__a__@ and @x@ be representable in
--- @'SumSymbol' __r__ __a__@ according to @s@, then @'sstprj' x '==' x@.
+-- @'SumSymbol' __r__ __a__@ according to @s@, then @'ssyprj' x '==' x@.
 --
 -- __Examples__ 
 --
