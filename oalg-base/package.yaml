@@ -19,7 +19,7 @@ category:            Mathematics, Algebra, Category
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:
-  Basic definition of algebraic structures on oriented entities.
+  Basic definition of algebraic structures on oriented [entities]("OAlg.Entity.Definition").
 
 
   Please see also the README on GitHub at <https://github.com/zErichGut/oalg-main/blob/main/oalg-base/README.md>

@@ -1,13 +1,19 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-import Control.Monad
+-- |
+-- Module      : OAlg.Proposition
+-- Description : validation of this package.
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+--
+-- validation of this package.
+module OAlg.Proposition
+  ( prpOAlgBase
+  ) where
 
-import Data.List((++))
-
-import OAlg.Proposition
 import OAlg.Prelude
-{-
 import OAlg.Structure.Proposition
 import OAlg.Hom.Proposition
 import OAlg.Limes.Proposition
@@ -46,19 +52,4 @@ prpOAlgBase = Prp "OAlgBase"
             , Label "Matrix"  :<=>: prpMatrixZ
             , Label "Vector"  :<=>: prpRepMatrixZ 8 15
             ]
--}
---------------------------------------------------------------------------------
--- main -
 
-main :: IO ()
-main = do
-  b <- validateStatistics Sparse prpOAlgBase
-
-  putStrLn ""
-  putStrLn "***************************"
-  putStrLn ("Result     " ++ show b)
-  putStrLn "***************************"
-  putStrLn ""
-  if b < ProbablyValid
-    then error (show b)
-    else return ()

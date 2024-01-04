@@ -7,7 +7,7 @@ cabal-version: 1.12
 name:           oalg-base
 version:        1.1.4.0
 synopsis:       Algebraic structures on oriented entities and limits as a tool kit to solve algebraic problems.
-description:    Basic definition of algebraic structures on oriented entities.
+description:    Basic definition of algebraic structures on oriented [entities]("OAlg.Entity.Definition").
                 .
                 Please see also the README on GitHub at <https://github.com/zErichGut/oalg-main/blob/main/oalg-base/README.md>
 category:       Mathematics, Algebra, Category
@@ -125,7 +125,6 @@ library
       OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Definition
       OAlg.Limes.EqualizersAndCoequalizers
-      OAlg.Limes.Exact
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
       OAlg.Limes.MinimaAndMaxima
@@ -135,6 +134,7 @@ library
       OAlg.Limes.PullbacksAndPushouts
       OAlg.Limes.TerminalAndInitialPoint
       OAlg.Prelude
+      OAlg.Proposition
       OAlg.Structure.Additive
       OAlg.Structure.Additive.Definition
       OAlg.Structure.Additive.Proposition
