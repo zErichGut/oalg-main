@@ -1,0 +1,707 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Module      : OAlg.Entity.Sequence.Set</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Description : sets of ordered entities</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- sets of ordered entities.</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Entity.Sequence.Set</span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">(</span><span> </span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Set</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier">Set</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#set"><span class="hs-identifier">set</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setSpan"><span class="hs-identifier">setSpan</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setxs"><span class="hs-identifier">setxs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setSqc"><span class="hs-identifier">setSqc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setMap"><span class="hs-identifier">setMap</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#isSubSet"><span class="hs-identifier">isSubSet</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Operations</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setEmpty"><span class="hs-identifier">setEmpty</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setUnion"><span class="hs-identifier">setUnion</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Lookup</span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setIndex"><span class="hs-identifier">setIndex</span></a></span><span> </span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-comment">-- * X</span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#xSet"><span class="hs-identifier">xSet</span></a></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Propositions</span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#prpSetUnion"><span class="hs-identifier">prpSetUnion</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">head</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">sort</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">group</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">map</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">filter</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">zip</span></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Tree.html"><span class="hs-identifier">OAlg.Data.Tree</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Number.html"><span class="hs-identifier">OAlg.Structure.Number</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- Set -</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- | set of ordered entities in @__x__@.</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--  __Property__ Let @s = 'Set' xs@ be in @'Set' __x__@ for a ordered 'Entity' type @__x__@,</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--  then holds:</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--</span><span>
+</span><span id="line-55"></span><span class="hs-comment">--  (1) For all @..x':'y..@ in @xs@ holds: @x '&lt;' y@.</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--  (2) @'lengthN' s '==' 'lengthN' xs@.</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">newtype</span><span> </span><span id="Set"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span></span><span> </span><span id="local-6989586621679378789"><span class="annot"><a href="#local-6989586621679378789"><span class="hs-identifier hs-type">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Set"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679378789"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679378884"><span id="local-6989586621679378890"><span id="local-6989586621679378894"><span class="annot"><span class="annottext">Int -&gt; Set x -&gt; ShowS
+[Set x] -&gt; ShowS
+Set x -&gt; String
+(Int -&gt; Set x -&gt; ShowS)
+-&gt; (Set x -&gt; String) -&gt; ([Set x] -&gt; ShowS) -&gt; Show (Set x)
+forall x. Show x =&gt; Int -&gt; Set x -&gt; ShowS
+forall x. Show x =&gt; [Set x] -&gt; ShowS
+forall x. Show x =&gt; Set x -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall x. Show x =&gt; Int -&gt; Set x -&gt; ShowS
+showsPrec :: Int -&gt; Set x -&gt; ShowS
+$cshow :: forall x. Show x =&gt; Set x -&gt; String
+show :: Set x -&gt; String
+$cshowList :: forall x. Show x =&gt; [Set x] -&gt; ShowS
+showList :: [Set x] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679378899"><span id="local-6989586621679378904"><span class="annot"><span class="annottext">Set x -&gt; Set x -&gt; Bool
+(Set x -&gt; Set x -&gt; Bool) -&gt; (Set x -&gt; Set x -&gt; Bool) -&gt; Eq (Set x)
+forall x. Eq x =&gt; Set x -&gt; Set x -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall x. Eq x =&gt; Set x -&gt; Set x -&gt; Bool
+== :: Set x -&gt; Set x -&gt; Bool
+$c/= :: forall x. Eq x =&gt; Set x -&gt; Set x -&gt; Bool
+/= :: Set x -&gt; Set x -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679378910"><span class="annot"><span class="annottext">Set x -&gt; N
+(Set x -&gt; N) -&gt; LengthN (Set x)
+forall x. Set x -&gt; N
+forall x. (x -&gt; N) -&gt; LengthN x
+$clengthN :: forall x. Set x -&gt; N
+lengthN :: Set x -&gt; N
+</span><a href="OAlg.Data.Number.html#LengthN"><span class="hs-identifier hs-var hs-var hs-var hs-var">LengthN</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679378919"><span id="local-6989586621679378928"><span id="local-6989586621679378936"><span id="local-6989586621679378942"><span id="local-6989586621679378946"><span id="local-6989586621679378950"><span id="local-6989586621679378954"><span id="local-6989586621679378958"><span id="local-6989586621679378962"><span id="local-6989586621679378966"><span id="local-6989586621679378970"><span id="local-6989586621679378974"><span id="local-6989586621679378980"><span id="local-6989586621679378988"><span id="local-6989586621679378996"><span id="local-6989586621679379004"><span id="local-6989586621679379012"><span class="annot"><span class="annottext">(forall m. Monoid m =&gt; Set m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a)
+-&gt; (forall a. Set a -&gt; [a])
+-&gt; (forall a. Set a -&gt; Bool)
+-&gt; (forall a. Set a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Set a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Set a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Set a -&gt; a)
+-&gt; (forall a. Num a =&gt; Set a -&gt; a)
+-&gt; (forall a. Num a =&gt; Set a -&gt; a)
+-&gt; Foldable Set
+forall a. Eq a =&gt; a -&gt; Set a -&gt; Bool
+forall a. Num a =&gt; Set a -&gt; a
+forall a. Ord a =&gt; Set a -&gt; a
+forall m. Monoid m =&gt; Set m -&gt; m
+forall a. Set a -&gt; Bool
+forall a. Set a -&gt; Int
+forall a. Set a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+$cfold :: forall m. Monoid m =&gt; Set m -&gt; m
+fold :: forall m. Monoid m =&gt; Set m -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m
+foldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m
+foldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Set a -&gt; m
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b
+foldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b
+foldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Set a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b
+foldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b
+foldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Set a -&gt; b
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a
+foldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a
+foldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Set a -&gt; a
+$ctoList :: forall a. Set a -&gt; [a]
+toList :: forall a. Set a -&gt; [a]
+$cnull :: forall a. Set a -&gt; Bool
+null :: forall a. Set a -&gt; Bool
+$clength :: forall a. Set a -&gt; Int
+length :: forall a. Set a -&gt; Int
+$celem :: forall a. Eq a =&gt; a -&gt; Set a -&gt; Bool
+elem :: forall a. Eq a =&gt; a -&gt; Set a -&gt; Bool
+$cmaximum :: forall a. Ord a =&gt; Set a -&gt; a
+maximum :: forall a. Ord a =&gt; Set a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Set a -&gt; a
+minimum :: forall a. Ord a =&gt; Set a -&gt; a
+$csum :: forall a. Num a =&gt; Set a -&gt; a
+sum :: forall a. Num a =&gt; Set a -&gt; a
+$cproduct :: forall a. Num a =&gt; Set a -&gt; a
+product :: forall a. Num a =&gt; Set a -&gt; a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span id="local-6989586621679378761"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#relSet"><span class="hs-identifier hs-type">relSet</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-type">Validable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378761"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378761"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679378761"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378761"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span><span>
+</span><span id="line-61"></span><span id="relSet"><span class="annot"><span class="annottext">relSet :: forall x. (Validable x, Ord x, Show x) =&gt; Set x -&gt; Statement
+</span><a href="OAlg.Entity.Sequence.Set.html#relSet"><span class="hs-identifier hs-var hs-var">relSet</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Data.Statement.Definition.html#SValid"><span class="hs-identifier hs-var">SValid</span></a></span><span>
+</span><span id="line-62"></span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#relSet"><span class="hs-identifier hs-var">relSet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679379036"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379036"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379037"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379037"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379036"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Statement -&gt; Statement
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">N -&gt; x -&gt; [x] -&gt; Statement
+forall {t} {t}.
+(Validable t, Ord t, Show t, Show t, Enum t) =&gt;
+t -&gt; t -&gt; [t] -&gt; Statement
+</span><a href="#local-6989586621679379040"><span class="hs-identifier hs-var">vld</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span class="hs-glyph">::</span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379036"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379037"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679379040"><span class="annot"><span class="annottext">vld :: t -&gt; t -&gt; [t] -&gt; Statement
+</span><a href="#local-6989586621679379040"><span class="hs-identifier hs-var hs-var">vld</span></a></span></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Data.Statement.Definition.html#SValid"><span class="hs-identifier hs-var">SValid</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><a href="#local-6989586621679379040"><span class="hs-identifier hs-var">vld</span></a></span><span> </span><span id="local-6989586621679379057"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379057"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679379058"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379058"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679379059"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379059"><span class="hs-identifier hs-var">y</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379060"><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679379060"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">t -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379059"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-65"></span><span>                       </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379058"><span class="hs-identifier hs-var">x</span></a></span><span class="annot"><span class="annottext">t -&gt; t -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379059"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Message -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3F%3E"><span class="hs-operator hs-var">:?&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">[Parameter] -&gt; Message
+</span><a href="OAlg.Data.Statement.Definition.html#Params"><span class="hs-identifier hs-var">Params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;i&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">t -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379057"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;(x,y)&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">(t, t) -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379058"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379059"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-66"></span><span>                       </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">t -&gt; t -&gt; [t] -&gt; Statement
+</span><a href="#local-6989586621679379040"><span class="hs-identifier hs-var">vld</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t -&gt; t
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379057"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379059"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679379060"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-67"></span><span>                       </span><span class="hs-special">]</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679378777"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-type">Validable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378777"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378777"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679378777"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-type">Validable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378777"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621679379076"><span class="annot"><span class="annottext">valid :: Set x -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var hs-var hs-var hs-var">valid</span></a></span></span><span> </span><span id="local-6989586621679379077"><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379077"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Set&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Set x -&gt; Statement
+forall x. (Validable x, Ord x, Show x) =&gt; Set x -&gt; Statement
+</span><a href="OAlg.Entity.Sequence.Set.html#relSet"><span class="hs-identifier hs-var">relSet</span></a></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379077"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679378782"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378782"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378782"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378782"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- set -</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="annot"><span class="hs-comment">-- | makes a set from the given list.</span></span><span>
+</span><span id="line-78"></span><span id="local-6989586621679378783"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#set"><span class="hs-identifier hs-type">set</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378783"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679378783"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378783"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-79"></span><span id="set"><span class="annot"><span class="annottext">set :: forall x. Ord x =&gt; [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#set"><span class="hs-identifier hs-var hs-var">set</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[x] -&gt; Set x
+forall x. [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; Set x) -&gt; ([x] -&gt; [x]) -&gt; [x] -&gt; Set x
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; x) -&gt; [[x]] -&gt; [x]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (h :: * -&gt; * -&gt; *) (f :: * -&gt; *) a b.
+Applicative1 h f =&gt;
+h a b -&gt; f a -&gt; f b
+</span><a href="OAlg.Category.Applicative.html#amap1"><span class="hs-identifier hs-var">amap1</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; x
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">([[x]] -&gt; [x]) -&gt; ([x] -&gt; [[x]]) -&gt; [x] -&gt; [x]
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [[x]]
+forall a. Eq a =&gt; [a] -&gt; [[a]]
+</span><span class="hs-identifier hs-var">group</span></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; [[x]]) -&gt; ([x] -&gt; [x]) -&gt; [x] -&gt; [[x]]
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [x]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- setxs -</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="annot"><span class="hs-comment">-- | the elements of a set.</span></span><span>
+</span><span id="line-85"></span><span id="local-6989586621679379117"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setxs"><span class="hs-identifier hs-type">setxs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679379117"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679379117"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-86"></span><span id="setxs"><span class="annot"><span class="annottext">setxs :: forall a. Set a -&gt; [a]
+</span><a href="OAlg.Entity.Sequence.Set.html#setxs"><span class="hs-identifier hs-var hs-var">setxs</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379118"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379118"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379118"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- setSpan -</span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="annot"><span class="hs-comment">-- | the span of a set.</span></span><span>
+</span><span id="line-92"></span><span id="local-6989586621679378802"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setSpan"><span class="hs-identifier hs-type">setSpan</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378802"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Ord.html#Span"><span class="hs-identifier hs-type">Span</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378802"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-93"></span><span id="setSpan"><span class="annot"><span class="annottext">setSpan :: forall x. Set x -&gt; Span x
+</span><a href="OAlg.Entity.Sequence.Set.html#setSpan"><span class="hs-identifier hs-var hs-var">setSpan</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Closer x
+forall x. Closer x
+</span><a href="OAlg.Data.Ord.html#PosInf"><span class="hs-identifier hs-var">PosInf</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Closer x
+forall x. Closer x
+</span><a href="OAlg.Data.Ord.html#NegInf"><span class="hs-identifier hs-var">NegInf</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setSpan"><span class="hs-identifier hs-var">setSpan</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679379121"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379121"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379122"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379122"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">x -&gt; Closer x
+forall x. x -&gt; Closer x
+</span><a href="OAlg.Data.Ord.html#It"><span class="hs-identifier hs-var">It</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379121"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">x -&gt; [x] -&gt; Closer x
+forall {t}. t -&gt; [t] -&gt; Closer t
+</span><a href="#local-6989586621679379124"><span class="hs-identifier hs-var">last</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379121"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379122"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621679379124"><span class="annot"><span class="annottext">last :: t -&gt; [t] -&gt; Closer t
+</span><a href="#local-6989586621679379124"><span class="hs-identifier hs-var hs-var">last</span></a></span></span><span> </span><span id="local-6989586621679379125"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379125"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">t -&gt; Closer t
+forall x. x -&gt; Closer x
+</span><a href="OAlg.Data.Ord.html#It"><span class="hs-identifier hs-var">It</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379125"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-96"></span><span>  </span><span class="annot"><a href="#local-6989586621679379124"><span class="hs-identifier hs-var">last</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679379126"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379126"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379127"><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679379127"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">t -&gt; [t] -&gt; Closer t
+</span><a href="#local-6989586621679379124"><span class="hs-identifier hs-var">last</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679379126"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[t]
+</span><a href="#local-6989586621679379127"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- setMap -</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- | mapping of sets.</span><span>
+</span><span id="line-102"></span><span class="hs-comment">--</span><span>
+</span><span id="line-103"></span><span class="hs-comment">--  __Note__ This works only for finite sets!</span><span>
+</span><span id="line-104"></span><span id="local-6989586621679378808"><span id="local-6989586621679378809"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setMap"><span class="hs-identifier hs-type">setMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378808"><span class="hs-identifier hs-type">y</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679378809"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679378808"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378809"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378808"><span class="hs-identifier hs-type">y</span></a></span></span></span><span>
+</span><span id="line-105"></span><span id="setMap"><span class="annot"><span class="annottext">setMap :: forall y x. Ord y =&gt; (x -&gt; y) -&gt; Set x -&gt; Set y
+</span><a href="OAlg.Entity.Sequence.Set.html#setMap"><span class="hs-identifier hs-var hs-var">setMap</span></a></span></span><span> </span><span id="local-6989586621679379133"><span class="annot"><span class="annottext">x -&gt; y
+</span><a href="#local-6989586621679379133"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379134"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379134"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[y] -&gt; Set y
+forall x. [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span><span> </span><span class="annot"><span class="annottext">([y] -&gt; Set y) -&gt; [y] -&gt; Set y
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[y] -&gt; [y]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="annot"><span class="annottext">([y] -&gt; [y]) -&gt; [y] -&gt; [y]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(x -&gt; y) -&gt; [x] -&gt; [y]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">x -&gt; y
+</span><a href="#local-6989586621679379133"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379134"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- setSqc -</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="annot"><span class="hs-comment">-- | mapping a set.</span></span><span>
+</span><span id="line-111"></span><span id="local-6989586621679378816"><span id="local-6989586621679378817"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setSqc"><span class="hs-identifier hs-type">setSqc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378816"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679378817"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679378816"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378817"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378816"><span class="hs-identifier hs-type">x</span></a></span></span></span><span>
+</span><span id="line-112"></span><span id="setSqc"><span class="annot"><span class="annottext">setSqc :: forall x i. Ord x =&gt; (i -&gt; Maybe x) -&gt; Set i -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#setSqc"><span class="hs-identifier hs-var hs-var">setSqc</span></a></span></span><span> </span><span id="local-6989586621679379144"><span class="annot"><span class="annottext">i -&gt; Maybe x
+</span><a href="#local-6989586621679379144"><span class="hs-identifier hs-var">mx</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379145"><span class="annot"><span class="annottext">[i]
+</span><a href="#local-6989586621679379145"><span class="hs-identifier hs-var">is</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-113"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[x] -&gt; Set x
+forall x. [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span><span>
+</span><span id="line-114"></span><span>  </span><span class="annot"><span class="annottext">([x] -&gt; Set x) -&gt; [x] -&gt; Set x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [x]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span>
+</span><span id="line-115"></span><span>  </span><span class="annot"><span class="annottext">([x] -&gt; [x]) -&gt; [x] -&gt; [x]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe x -&gt; x) -&gt; [Maybe x] -&gt; [x]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Maybe x -&gt; x
+forall a. HasCallStack =&gt; Maybe a -&gt; a
+</span><span class="hs-identifier hs-var">fromJust</span></span><span>
+</span><span id="line-116"></span><span>  </span><span class="annot"><span class="annottext">([Maybe x] -&gt; [x]) -&gt; [Maybe x] -&gt; [x]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe x -&gt; Bool) -&gt; [Maybe x] -&gt; [Maybe x]
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">filter</span></span><span> </span><span class="annot"><span class="annottext">Maybe x -&gt; Bool
+forall a. Maybe a -&gt; Bool
+</span><span class="hs-identifier hs-var">isJust</span></span><span>
+</span><span id="line-117"></span><span>  </span><span class="annot"><span class="annottext">([Maybe x] -&gt; [Maybe x]) -&gt; [Maybe x] -&gt; [Maybe x]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(i -&gt; Maybe x) -&gt; [i] -&gt; [Maybe x]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">i -&gt; Maybe x
+</span><a href="#local-6989586621679379144"><span class="hs-identifier hs-var">mx</span></a></span><span> </span><span class="annot"><span class="annottext">[i]
+</span><a href="#local-6989586621679379145"><span class="hs-identifier hs-var">is</span></a></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- setEmpty -</span><span>
+</span><span id="line-121"></span><span>
+</span><span id="line-122"></span><span class="annot"><span class="hs-comment">-- | the empty set.</span></span><span>
+</span><span id="line-123"></span><span id="local-6989586621679378823"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setEmpty"><span class="hs-identifier hs-type">setEmpty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378823"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-124"></span><span id="setEmpty"><span class="annot"><span class="annottext">setEmpty :: forall x. Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#setEmpty"><span class="hs-identifier hs-var hs-var">setEmpty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[x] -&gt; Set x
+forall x. [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- setUnion -</span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="annot"><span class="hs-comment">-- | the union of two sets.</span></span><span>
+</span><span id="line-130"></span><span id="local-6989586621679378826"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setUnion"><span class="hs-identifier hs-type">setUnion</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378826"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378826"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378826"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378826"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-131"></span><span id="setUnion"><span class="annot"><span class="annottext">setUnion :: forall x. Ord x =&gt; Set x -&gt; Set x -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#setUnion"><span class="hs-identifier hs-var hs-var">setUnion</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379151"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379151"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379152"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379152"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[x] -&gt; Set x
+forall x. [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; Set x) -&gt; [x] -&gt; Set x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [x] -&gt; [x]
+forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679379153"><span class="hs-identifier hs-var">un</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379151"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379152"><span class="hs-identifier hs-var">ys</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-132"></span><span>  </span><span id="local-6989586621679379153"><span class="annot"><span class="annottext">un :: [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679379153"><span class="hs-identifier hs-var hs-var">un</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679379158"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379158"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379158"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-133"></span><span>  </span><span class="annot"><a href="#local-6989586621679379153"><span class="hs-identifier hs-var">un</span></a></span><span> </span><span id="local-6989586621679379159"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379159"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379159"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-134"></span><span>  </span><span class="annot"><a href="#local-6989586621679379153"><span class="hs-identifier hs-var">un</span></a></span><span> </span><span id="local-6989586621679379160"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621679379160"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679379161"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379161"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379162"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379162"><span class="hs-identifier hs-var">xs'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679379163"><span class="annot"><span class="annottext">ys :: [a]
+</span><a href="#local-6989586621679379163"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679379164"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379164"><span class="hs-identifier hs-var">y</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379165"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379165"><span class="hs-identifier hs-var">ys'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379161"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-operator hs-var">`compare`</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379164"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-135"></span><span>    </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379161"><span class="hs-identifier hs-var">x</span></a></span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679379153"><span class="hs-identifier hs-var">un</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379162"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379163"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379161"><span class="hs-identifier hs-var">x</span></a></span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679379153"><span class="hs-identifier hs-var">un</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379162"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379165"><span class="hs-identifier hs-var">ys'</span></a></span><span>
+</span><span id="line-137"></span><span>    </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379164"><span class="hs-identifier hs-var">y</span></a></span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679379153"><span class="hs-identifier hs-var">un</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379160"><span class="hs-identifier hs-var">xs</span></a></span><span>  </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379165"><span class="hs-identifier hs-var">ys'</span></a></span><span>
+</span><span id="line-138"></span><span>
+</span><span id="line-139"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- isSubSet -</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="annot"><span class="hs-comment">-- | checks for being a sub set.</span></span><span>
+</span><span id="line-143"></span><span id="local-6989586621679378829"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#isSubSet"><span class="hs-identifier hs-type">isSubSet</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378829"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378829"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378829"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-144"></span><span id="isSubSet"><span class="annot"><span class="annottext">isSubSet :: forall x. Ord x =&gt; Set x -&gt; Set x -&gt; Bool
+</span><a href="OAlg.Entity.Sequence.Set.html#isSubSet"><span class="hs-identifier hs-var hs-var">isSubSet</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379169"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379169"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379170"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379170"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [x] -&gt; Bool
+forall {a}. Ord a =&gt; [a] -&gt; [a] -&gt; Bool
+</span><a href="#local-6989586621679379171"><span class="hs-identifier hs-var">sbs</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379169"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379170"><span class="hs-identifier hs-var">ys</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-145"></span><span>  </span><span id="local-6989586621679379171"><span class="annot"><span class="annottext">sbs :: [a] -&gt; [a] -&gt; Bool
+</span><a href="#local-6989586621679379171"><span class="hs-identifier hs-var hs-var">sbs</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[a]
+</span><span class="hs-identifier">_</span></span><span>             </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-146"></span><span>  </span><span class="annot"><a href="#local-6989586621679379171"><span class="hs-identifier hs-var">sbs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>             </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-147"></span><span>  </span><span class="annot"><a href="#local-6989586621679379171"><span class="hs-identifier hs-var">sbs</span></a></span><span> </span><span id="local-6989586621679379176"><span class="annot"><span class="annottext">xs :: [a]
+</span><a href="#local-6989586621679379176"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679379177"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379177"><span class="hs-identifier hs-var">x</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379178"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379178"><span class="hs-identifier hs-var">xs'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679379179"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379179"><span class="hs-identifier hs-var">y</span></a></span></span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span id="local-6989586621679379180"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379180"><span class="hs-identifier hs-var">ys'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379177"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Ordering
+forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
+</span><span class="hs-operator hs-var">`compare`</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679379179"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-148"></span><span>    </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">LT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-149"></span><span>    </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; Bool
+</span><a href="#local-6989586621679379171"><span class="hs-identifier hs-var">sbs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379178"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379180"><span class="hs-identifier hs-var">ys'</span></a></span><span>
+</span><span id="line-150"></span><span>    </span><span class="annot"><span class="annottext">Ordering
+</span><span class="hs-identifier hs-var">GT</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; [a] -&gt; Bool
+</span><a href="#local-6989586621679379171"><span class="hs-identifier hs-var">sbs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379176"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679379180"><span class="hs-identifier hs-var">ys'</span></a></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- setIndex -</span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- | the index of an element, where the elements of the given set are indexed from @0@.</span><span>
+</span><span id="line-156"></span><span class="hs-comment">--</span><span>
+</span><span id="line-157"></span><span class="hs-comment">--  __Examples__</span><span>
+</span><span id="line-158"></span><span class="hs-comment">--</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- &gt;&gt;&gt; setIndex (Set ['a'..'x']) 'c'</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- Just 2</span><span>
+</span><span id="line-161"></span><span id="local-6989586621679378832"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setIndex"><span class="hs-identifier hs-type">setIndex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378832"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378832"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679378832"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span></span><span>
+</span><span id="line-162"></span><span id="setIndex"><span class="annot"><span class="annottext">setIndex :: forall x. Ord x =&gt; Set x -&gt; x -&gt; Maybe N
+</span><a href="OAlg.Entity.Sequence.Set.html#setIndex"><span class="hs-identifier hs-var hs-var">setIndex</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe N -&gt; x -&gt; Maybe N
+forall b a. b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Definition.html#const"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe N
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-163"></span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#setIndex"><span class="hs-identifier hs-var">setIndex</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span id="local-6989586621679379189"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379189"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679379190"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379190"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679379191"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379191"><span class="hs-identifier hs-var">x'</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679379192"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679379192"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Tree x (x, N) -&gt; x -&gt; (x, N)
+forall i x. Ord i =&gt; Tree i x -&gt; i -&gt; x
+</span><a href="OAlg.Data.Tree.html#lookup"><span class="hs-identifier hs-var">lookup</span></a></span><span> </span><span class="annot"><span class="annottext">Tree x (x, N)
+</span><a href="#local-6989586621679379194"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379190"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379191"><span class="hs-identifier hs-var">x'</span></a></span><span> </span><span class="annot"><span class="annottext">x -&gt; x -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679379190"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">N -&gt; Maybe N
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679379192"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe N
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-164"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-165"></span><span>    </span><span id="local-6989586621679379194"><span class="annot"><span class="annottext">xs' :: Tree x (x, N)
+</span><a href="#local-6989586621679379194"><span class="hs-identifier hs-var hs-var">xs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(x, N)] -&gt; Tree x (x, N)
+forall x. Ord x =&gt; [(x, N)] -&gt; Tree x (x, N)
+</span><a href="#local-6989586621679379195"><span class="hs-identifier hs-var">lt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379189"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [N] -&gt; [(x, N)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-operator hs-var">`zip`</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span class="hs-glyph">..</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span>    </span><span id="local-6989586621679378839"><span class="annot"><a href="#local-6989586621679379195"><span class="hs-identifier hs-type">lt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378839"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679378839"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Tree.html#Tree"><span class="hs-identifier hs-type">Tree</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378839"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679378839"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-168"></span><span>    </span><span id="local-6989586621679379195"><span class="annot"><span class="annottext">lt :: forall x. Ord x =&gt; [(x, N)] -&gt; Tree x (x, N)
+</span><a href="#local-6989586621679379195"><span class="hs-identifier hs-var hs-var">lt</span></a></span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679379206"><span class="annot"><span class="annottext">(x, N)
+</span><a href="#local-6989586621679379206"><span class="hs-identifier hs-var">xi</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(x, N) -&gt; Tree x (x, N)
+forall i x. x -&gt; Tree i x
+</span><a href="OAlg.Data.Tree.html#Leaf"><span class="hs-identifier hs-var">Leaf</span></a></span><span> </span><span class="annot"><span class="annottext">(x, N)
+</span><a href="#local-6989586621679379206"><span class="hs-identifier hs-var">xi</span></a></span><span>
+</span><span id="line-169"></span><span>    </span><span class="annot"><a href="#local-6989586621679379195"><span class="hs-identifier hs-var">lt</span></a></span><span> </span><span id="local-6989586621679379208"><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379208"><span class="hs-identifier hs-var">xis</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; Tree x (x, N) -&gt; Tree x (x, N) -&gt; Tree x (x, N)
+forall i x. i -&gt; Tree i x -&gt; Tree i x -&gt; Tree i x
+</span><a href="OAlg.Data.Tree.html#Node"><span class="hs-identifier hs-var">Node</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(x, N) -&gt; x
+forall a b. (a, b) -&gt; a
+</span><a href="OAlg.Category.Definition.html#fst"><span class="hs-identifier hs-var">fst</span></a></span><span> </span><span class="annot"><span class="annottext">((x, N) -&gt; x) -&gt; (x, N) -&gt; x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[(x, N)] -&gt; (x, N)
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379211"><span class="hs-identifier hs-var">xisR</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(x, N)] -&gt; Tree x (x, N)
+forall x. Ord x =&gt; [(x, N)] -&gt; Tree x (x, N)
+</span><a href="#local-6989586621679379195"><span class="hs-identifier hs-var">lt</span></a></span><span> </span><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379212"><span class="hs-identifier hs-var">xisL</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(x, N)] -&gt; Tree x (x, N)
+forall x. Ord x =&gt; [(x, N)] -&gt; Tree x (x, N)
+</span><a href="#local-6989586621679379195"><span class="hs-identifier hs-var">lt</span></a></span><span> </span><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379211"><span class="hs-identifier hs-var">xisR</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-170"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679379212"><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379212"><span class="hs-identifier hs-var">xisL</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679379211"><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379211"><span class="hs-identifier hs-var">xisR</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">N -&gt; [(x, N)] -&gt; ([(x, N)], [(x, N)])
+forall x. N -&gt; [x] -&gt; ([x], [x])
+</span><a href="OAlg.Data.Number.html#splitAtN"><span class="hs-identifier hs-var">splitAtN</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(x, N)] -&gt; N
+forall x. LengthN x =&gt; x -&gt; N
+</span><a href="OAlg.Data.Number.html#lengthN"><span class="hs-identifier hs-var">lengthN</span></a></span><span> </span><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379208"><span class="hs-identifier hs-var">xis</span></a></span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><a href="OAlg.Structure.Number.Definition.html#div"><span class="hs-operator hs-var">`div`</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(x, N)]
+</span><a href="#local-6989586621679379208"><span class="hs-identifier hs-var">xis</span></a></span><span>
+</span><span id="line-171"></span><span>
+</span><span id="line-172"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- Set - POrd -</span><span>
+</span><span id="line-174"></span><span>
+</span><span id="line-175"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679378853"><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378853"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Ord.html#POrd"><span class="hs-identifier hs-type">POrd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378853"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-176"></span><span>  </span><span id="local-6989586621679379223"><span class="annot"><span class="annottext">&lt;&lt;= :: Set x -&gt; Set x -&gt; Bool
+</span><a href="#local-6989586621679379223"><span class="hs-operator hs-var hs-var hs-var hs-var">(&lt;&lt;=)</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set x -&gt; Set x -&gt; Bool
+forall x. Ord x =&gt; Set x -&gt; Set x -&gt; Bool
+</span><a href="OAlg.Entity.Sequence.Set.html#isSubSet"><span class="hs-identifier hs-var">isSubSet</span></a></span><span>  </span><span>
+</span><span id="line-177"></span><span>
+</span><span id="line-178"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-179"></span><span class="hs-comment">-- xSet -</span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span class="annot"><span class="hs-comment">-- | random variable of sets with maximal the given length.</span></span><span>
+</span><span id="line-182"></span><span id="local-6989586621679378854"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#xSet"><span class="hs-identifier hs-type">xSet</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378854"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378854"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378854"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-183"></span><span id="xSet"><span class="annot"><span class="annottext">xSet :: forall x. Ord x =&gt; N -&gt; X x -&gt; X (Set x)
+</span><a href="OAlg.Entity.Sequence.Set.html#xSet"><span class="hs-identifier hs-var hs-var">xSet</span></a></span></span><span> </span><span id="local-6989586621679379238"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679379238"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679379239"><span class="annot"><span class="annottext">X x
+</span><a href="#local-6989586621679379239"><span class="hs-identifier hs-var">xx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-184"></span><span>  </span><span id="local-6989586621679379240"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379240"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">N -&gt; X x -&gt; X [x]
+forall x. N -&gt; X x -&gt; X [x]
+</span><a href="OAlg.Data.X.html#xTakeN"><span class="hs-identifier hs-var">xTakeN</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679379238"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">X x
+</span><a href="#local-6989586621679379239"><span class="hs-identifier hs-var">xx</span></a></span><span>
+</span><span id="line-185"></span><span>  </span><span class="annot"><span class="annottext">Set x -&gt; X (Set x)
+forall a. a -&gt; X a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Set x -&gt; X (Set x)) -&gt; Set x -&gt; X (Set x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; Set x
+forall x. [x] -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-var">Set</span></a></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; Set x) -&gt; [x] -&gt; Set x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; x) -&gt; [[x]] -&gt; [x]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; x
+forall a. HasCallStack =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">head</span></span><span> </span><span class="annot"><span class="annottext">([[x]] -&gt; [x]) -&gt; [[x]] -&gt; [x]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [[x]]
+forall a. Eq a =&gt; [a] -&gt; [[a]]
+</span><span class="hs-identifier hs-var">group</span></span><span> </span><span class="annot"><span class="annottext">([x] -&gt; [[x]]) -&gt; [x] -&gt; [[x]]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[x] -&gt; [x]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679379240"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-186"></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-189"></span><span class="hs-comment">-- prpSetUnion -</span><span>
+</span><span id="line-190"></span><span>
+</span><span id="line-191"></span><span class="annot"><span class="hs-comment">-- | validity for the union operator of sets.</span></span><span>
+</span><span id="line-192"></span><span id="local-6989586621679378860"><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#prpSetUnion"><span class="hs-identifier hs-type">prpSetUnion</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679378860"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679378860"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679378860"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span><span>
+</span><span id="line-193"></span><span id="prpSetUnion"><span class="annot"><span class="annottext">prpSetUnion :: forall x. (Ord x, Show x) =&gt; X (Set x) -&gt; Statement
+</span><a href="OAlg.Entity.Sequence.Set.html#prpSetUnion"><span class="hs-identifier hs-var hs-var">prpSetUnion</span></a></span></span><span> </span><span id="local-6989586621679379251"><span class="annot"><span class="annottext">X (Set x)
+</span><a href="#local-6989586621679379251"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;SetUnion&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-194"></span><span>  </span><span class="annot"><span class="annottext">X (Set x, Set x) -&gt; ((Set x, Set x) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (Set x, Set x)
+</span><a href="#local-6989586621679379254"><span class="hs-identifier hs-var">xy</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679379255"><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379255"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679379256"><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379256"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-195"></span><span>             </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679379257"><span class="annot"><span class="annottext">xy :: Set x
+</span><a href="#local-6989586621679379257"><span class="hs-identifier hs-var hs-var">xy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379255"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set x -&gt; Set x -&gt; Set x
+forall x. Ord x =&gt; Set x -&gt; Set x -&gt; Set x
+</span><a href="OAlg.Entity.Sequence.Set.html#setUnion"><span class="hs-operator hs-var">`setUnion`</span></a></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379256"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">in</span><span>
+</span><span id="line-196"></span><span>                  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;x&quot;</span></span><span>
+</span><span id="line-197"></span><span>                        </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379255"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Set x -&gt; Set x -&gt; Bool
+forall x. Ord x =&gt; Set x -&gt; Set x -&gt; Bool
+</span><a href="OAlg.Entity.Sequence.Set.html#isSubSet"><span class="hs-operator hs-var">`isSubSet`</span></a></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379257"><span class="hs-identifier hs-var">xy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Message -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3F%3E"><span class="hs-operator hs-var">:?&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">[Parameter] -&gt; Message
+</span><a href="OAlg.Data.Statement.Definition.html#Params"><span class="hs-identifier hs-var">Params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;x&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">Set x -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379255"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;xy&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">Set x -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379257"><span class="hs-identifier hs-var">xy</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-198"></span><span>                      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;y&quot;</span></span><span>
+</span><span id="line-199"></span><span>                        </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379256"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Set x -&gt; Set x -&gt; Bool
+forall x. Ord x =&gt; Set x -&gt; Set x -&gt; Bool
+</span><a href="OAlg.Entity.Sequence.Set.html#isSubSet"><span class="hs-operator hs-var">`isSubSet`</span></a></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379257"><span class="hs-identifier hs-var">xy</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Message -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3F%3E"><span class="hs-operator hs-var">:?&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">[Parameter] -&gt; Message
+</span><a href="OAlg.Data.Statement.Definition.html#Params"><span class="hs-identifier hs-var">Params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;y&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">Set x -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379256"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;xy&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">Set x -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Set x
+</span><a href="#local-6989586621679379257"><span class="hs-identifier hs-var">xy</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-200"></span><span>                      </span><span class="hs-special">]</span><span>
+</span><span id="line-201"></span><span>            </span><span class="hs-special">)</span><span> </span><span>
+</span><span id="line-202"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679379254"><span class="annot"><span class="annottext">xy :: X (Set x, Set x)
+</span><a href="#local-6989586621679379254"><span class="hs-identifier hs-var hs-var">xy</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X (Set x) -&gt; X (Set x) -&gt; X (Set x, Set x)
+forall a b. X a -&gt; X b -&gt; X (a, b)
+</span><a href="OAlg.Data.X.html#xTupple2"><span class="hs-identifier hs-var">xTupple2</span></a></span><span> </span><span class="annot"><span class="annottext">X (Set x)
+</span><a href="#local-6989586621679379251"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">X (Set x)
+</span><a href="#local-6989586621679379251"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-203"></span></pre></body></html>

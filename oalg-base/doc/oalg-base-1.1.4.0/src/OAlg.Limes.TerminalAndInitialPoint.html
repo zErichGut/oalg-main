@@ -1,0 +1,482 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE GADTs, StandaloneDeriving #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Module      : OAlg.Limes.TerminalAndInitialPoint</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Description : terminal and initial point</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- terminal and initial point within a 'Multiplicative' structure, i.e. limits of</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Limes.TerminalAndInitialPoint</span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Terminal</span></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Terminals"><span class="hs-identifier">Terminals</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalPoint"><span class="hs-identifier">TerminalPoint</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalCone"><span class="hs-identifier">TerminalCone</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalDiagram"><span class="hs-identifier">TerminalDiagram</span></a></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagram"><span class="hs-identifier">trmDiagram</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmCone"><span class="hs-identifier">trmCone</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Orientation</span></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#terminalPointOrnt"><span class="hs-identifier">terminalPointOrnt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmsOrnt"><span class="hs-identifier">trmsOrnt</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Initial</span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Initials"><span class="hs-identifier">Initials</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialPoint"><span class="hs-identifier">InitialPoint</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialCone"><span class="hs-identifier">InitialCone</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialDiagram"><span class="hs-identifier">InitialDiagram</span></a></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagram"><span class="hs-identifier">intDiagram</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intCone"><span class="hs-identifier">intCone</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Orientation</span></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#initialPointOrnt"><span class="hs-identifier">initialPointOrnt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intsOrnt"><span class="hs-identifier">intsOrnt</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Duality</span></span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Terminal</span></span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagramDuality"><span class="hs-identifier">trmDiagramDuality</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmConeDuality"><span class="hs-identifier">trmConeDuality</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmLimesDuality"><span class="hs-identifier">trmLimesDuality</span></a></span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmLimitsDuality"><span class="hs-identifier">trmLimitsDuality</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Initial</span></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagramDuality"><span class="hs-identifier">intDiagramDuality</span></a></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intConeDuality"><span class="hs-identifier">intConeDuality</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intLimesDuality"><span class="hs-identifier">intLimesDuality</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intLimitsDuality"><span class="hs-identifier">intLimitsDuality</span></a></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Typeable</span></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html"><span class="hs-identifier">OAlg.Entity.Natural</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B%2B"><span class="hs-operator">(++)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html"><span class="hs-identifier">OAlg.Entity.FinList</span></a></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.html"><span class="hs-identifier">OAlg.Entity.Diagram</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">D</span></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html"><span class="hs-identifier">OAlg.Limes.Cone.Definition</span></a></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html"><span class="hs-identifier">OAlg.Limes.Definition</span></a></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html"><span class="hs-identifier">OAlg.Limes.Limits</span></a></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- Terminal -</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="annot"><span class="hs-comment">-- | 'Diagram' for a terminal point.</span></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">type</span><span> </span><span id="TerminalDiagram"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalDiagram"><span class="hs-identifier hs-var">TerminalDiagram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="annot"><span class="hs-comment">-- | 'Cone' for a terminal point.</span></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">type</span><span> </span><span id="TerminalCone"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalCone"><span class="hs-identifier hs-var">TerminalCone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#Cone"><span class="hs-identifier hs-type">Cone</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="annot"><span class="hs-comment">-- | terminal point as 'Limes'.</span></span><span>
+</span><span id="line-78"></span><span class="hs-keyword">type</span><span> </span><span id="TerminalPoint"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalPoint"><span class="hs-identifier hs-var">TerminalPoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="annot"><span class="hs-comment">-- | terminal point within a 'Multiplicative' structure.</span></span><span>
+</span><span id="line-81"></span><span class="hs-keyword">type</span><span> </span><span id="Terminals"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Terminals"><span class="hs-identifier hs-var">Terminals</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- trmDiagram -</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="annot"><span class="hs-comment">-- | the terminal diagram.</span></span><span>
+</span><span id="line-87"></span><span id="local-6989586621679408727"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagram"><span class="hs-identifier hs-type">trmDiagram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalDiagram"><span class="hs-identifier hs-type">TerminalDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408727"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-88"></span><span id="trmDiagram"><span class="annot"><span class="annottext">trmDiagram :: forall a. TerminalDiagram a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagram"><span class="hs-identifier hs-var hs-var">trmDiagram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 a
+forall a. TerminalDiagram a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramEmpty"><span class="hs-identifier hs-var">DiagramEmpty</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- trmCone -</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><span class="hs-comment">-- | the terminal cone of a given point.</span></span><span>
+</span><span id="line-94"></span><span id="local-6989586621679408733"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmCone"><span class="hs-identifier hs-type">trmCone</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408733"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408733"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalCone"><span class="hs-identifier hs-type">TerminalCone</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408733"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-95"></span><span id="trmCone"><span class="annot"><span class="annottext">trmCone :: forall a. Multiplicative a =&gt; Point a -&gt; TerminalCone a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmCone"><span class="hs-identifier hs-var hs-var">trmCone</span></a></span></span><span> </span><span id="local-6989586621679408868"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679408868"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 a
+-&gt; Point a
+-&gt; FinList 'N0 a
+-&gt; Cone Mlt 'Projective 'Empty 'N0 'N0 a
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Multiplicative a =&gt;
+Diagram t n m a
+-&gt; Point a -&gt; FinList n a -&gt; Cone Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-var">ConeProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 a
+forall a. TerminalDiagram a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramEmpty"><span class="hs-identifier hs-var">DiagramEmpty</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679408868"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">FinList 'N0 a
+forall a. FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- trmPoinitialPointOrnt -</span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span class="annot"><span class="hs-comment">-- | the terminal limes of a given point @p@.</span></span><span>
+</span><span id="line-101"></span><span id="local-6989586621679408749"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#terminalPointOrnt"><span class="hs-identifier hs-type">terminalPointOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408749"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408749"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalPoint"><span class="hs-identifier hs-type">TerminalPoint</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408749"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-102"></span><span id="terminalPointOrnt"><span class="annot"><span class="annottext">terminalPointOrnt :: forall p. Entity p =&gt; p -&gt; TerminalPoint (Orientation p)
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#terminalPointOrnt"><span class="hs-identifier hs-var hs-var">terminalPointOrnt</span></a></span></span><span> </span><span id="local-6989586621679408874"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679408874"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p
+-&gt; Diagram 'Empty 'N0 'N0 (Orientation p)
+-&gt; Limes Mlt 'Projective 'Empty 'N0 'N0 (Orientation p)
+forall p a (t :: DiagramType) (n :: N') (m :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; Diagram t n m a -&gt; Limes Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#lmToPrjOrnt"><span class="hs-identifier hs-var">lmToPrjOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679408874"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 (Orientation p)
+forall a. TerminalDiagram a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagram"><span class="hs-identifier hs-var">trmDiagram</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="annot"><span class="hs-comment">-- | terminals for 'Orientation'.</span></span><span>
+</span><span id="line-105"></span><span id="local-6989586621679408760"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmsOrnt"><span class="hs-identifier hs-type">trmsOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408760"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408760"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Terminals"><span class="hs-identifier hs-type">Terminals</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408760"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-106"></span><span id="trmsOrnt"><span class="annot"><span class="annottext">trmsOrnt :: forall p. Entity p =&gt; p -&gt; Terminals (Orientation p)
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmsOrnt"><span class="hs-identifier hs-var hs-var">trmsOrnt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p -&gt; Limits Mlt 'Projective 'Empty 'N0 'N0 (Orientation p)
+forall p (t :: DiagramType) (n :: N') (m :: N').
+Entity p =&gt;
+p -&gt; Limits Mlt 'Projective t n m (Orientation p)
+</span><a href="OAlg.Limes.Limits.html#lmsToPrjOrnt"><span class="hs-identifier hs-var">lmsToPrjOrnt</span></a></span><span> </span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-109"></span><span class="hs-comment">-- Initial -</span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="annot"><span class="hs-comment">-- | 'Diagram' for a initial point.</span></span><span>
+</span><span id="line-112"></span><span class="hs-keyword">type</span><span> </span><span id="InitialDiagram"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialDiagram"><span class="hs-identifier hs-var">InitialDiagram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="annot"><span class="hs-comment">-- | 'Cone' for a initial point.</span></span><span>
+</span><span id="line-115"></span><span class="hs-keyword">type</span><span> </span><span id="InitialCone"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialCone"><span class="hs-identifier hs-var">InitialCone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#Cone"><span class="hs-identifier hs-type">Cone</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span class="annot"><span class="hs-comment">-- | initial point as 'Limes'.</span></span><span>
+</span><span id="line-118"></span><span class="hs-keyword">type</span><span> </span><span id="InitialPoint"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialPoint"><span class="hs-identifier hs-var">InitialPoint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="annot"><span class="hs-comment">-- | initial point within a 'Multiplicative' structure.</span></span><span>
+</span><span id="line-121"></span><span class="hs-keyword">type</span><span> </span><span id="Initials"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Initials"><span class="hs-identifier hs-var">Initials</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">'</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Empty"><span class="hs-identifier hs-type">Empty</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- Duality - Terminal -</span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="annot"><span class="hs-comment">-- | terminal 'Diagram' duality.</span></span><span>
+</span><span id="line-127"></span><span id="local-6989586621679408768"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagramDuality"><span class="hs-identifier hs-type">trmDiagramDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Oriented"><span class="hs-identifier hs-type">Oriented</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408768"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramDuality"><span class="hs-identifier hs-type">DiagramDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalDiagram"><span class="hs-identifier hs-type">TerminalDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialDiagram"><span class="hs-identifier hs-type">InitialDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408768"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-128"></span><span id="trmDiagramDuality"><span class="annot"><span class="annottext">trmDiagramDuality :: forall a.
+Oriented a =&gt;
+DiagramDuality TerminalDiagram TerminalDiagram a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmDiagramDuality"><span class="hs-identifier hs-var hs-var">trmDiagramDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TerminalDiagram a :~: TerminalDiagram a)
+-&gt; (InitialDiagram (Op a) :~: Dual (TerminalDiagram a))
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; DiagramDuality TerminalDiagram TerminalDiagram a
+forall a (f :: * -&gt; *) (t :: DiagramType) (n :: N') (m :: N')
+       (g :: * -&gt; *).
+Oriented a =&gt;
+(f a :~: Diagram t n m a)
+-&gt; (g (Op a) :~: Dual (Diagram t n m a))
+-&gt; (Dual (Dual t) :~: t)
+-&gt; DiagramDuality f g a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramDuality"><span class="hs-identifier hs-var">DiagramDuality</span></a></span><span> </span><span class="annot"><span class="annottext">TerminalDiagram a :~: TerminalDiagram a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">InitialDiagram (Op a) :~: Dual (TerminalDiagram a)
+InitialDiagram (Op a) :~: InitialDiagram (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span class="annot"><span class="hs-comment">-- | terminal 'Cone' duality.</span></span><span>
+</span><span id="line-131"></span><span id="local-6989586621679408784"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmConeDuality"><span class="hs-identifier hs-type">trmConeDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408784"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-132"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeDuality"><span class="hs-identifier hs-type">ConeDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalCone"><span class="hs-identifier hs-type">TerminalCone</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialCone"><span class="hs-identifier hs-type">InitialCone</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408784"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-133"></span><span id="trmConeDuality"><span class="annot"><span class="annottext">trmConeDuality :: forall a.
+Multiplicative a =&gt;
+ConeDuality Mlt TerminalCone InitialCone a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmConeDuality"><span class="hs-identifier hs-var hs-var">trmConeDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (TerminalCone a :~: TerminalCone a)
+-&gt; (InitialCone (Op a) :~: Dual (TerminalCone a))
+-&gt; (Dual (Dual 'Projective) :~: 'Projective)
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; ConeDuality Mlt TerminalCone InitialCone a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Cone s p t n m a)
+-&gt; (g (Op a) :~: Dual (Cone s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; ConeDuality s f g a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeDuality"><span class="hs-identifier hs-var">ConeDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">TerminalCone a :~: TerminalCone a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">InitialCone (Op a) :~: Dual (TerminalCone a)
+InitialCone (Op a) :~: InitialCone (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Projective) :~: 'Projective
+'Projective :~: 'Projective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span class="annot"><span class="hs-comment">-- |  terminal 'Limes' duality.</span></span><span>
+</span><span id="line-136"></span><span id="local-6989586621679408799"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmLimesDuality"><span class="hs-identifier hs-type">trmLimesDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408799"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-137"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-type">LimesDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalPoint"><span class="hs-identifier hs-type">TerminalPoint</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialPoint"><span class="hs-identifier hs-type">InitialPoint</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408799"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-138"></span><span id="trmLimesDuality"><span class="annot"><span class="annottext">trmLimesDuality :: forall a.
+Multiplicative a =&gt;
+LimesDuality Mlt TerminalPoint InitialPoint a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmLimesDuality"><span class="hs-identifier hs-var hs-var">trmLimesDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (TerminalPoint a :~: TerminalPoint a)
+-&gt; (InitialPoint (Op a) :~: Dual (TerminalPoint a))
+-&gt; (Dual (Dual 'Projective) :~: 'Projective)
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; LimesDuality Mlt TerminalPoint InitialPoint a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limes s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limes s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimesDuality s f g a
+</span><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-var">LimesDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">TerminalPoint a :~: TerminalPoint a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">InitialPoint (Op a) :~: Dual (TerminalPoint a)
+InitialPoint (Op a) :~: InitialPoint (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Projective) :~: 'Projective
+'Projective :~: 'Projective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="annot"><span class="hs-comment">-- |  terminal 'Limits' duality.</span></span><span>
+</span><span id="line-141"></span><span id="local-6989586621679408811"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmLimitsDuality"><span class="hs-identifier hs-type">trmLimitsDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408811"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-142"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Terminals"><span class="hs-identifier hs-type">Terminals</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Initials"><span class="hs-identifier hs-type">Initials</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408811"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-143"></span><span id="trmLimitsDuality"><span class="annot"><span class="annottext">trmLimitsDuality :: forall a.
+Multiplicative a =&gt;
+LimitsDuality Mlt Terminals Initials a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#trmLimitsDuality"><span class="hs-identifier hs-var hs-var">trmLimitsDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (Terminals a :~: Terminals a)
+-&gt; (Initials (Op a) :~: Dual (Terminals a))
+-&gt; (Dual (Dual 'Projective) :~: 'Projective)
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; LimitsDuality Mlt Terminals Initials a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limits s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limits s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimitsDuality s f g a
+</span><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Terminals a :~: Terminals a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Initials (Op a) :~: Dual (Terminals a)
+Initials (Op a) :~: Initials (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Projective) :~: 'Projective
+'Projective :~: 'Projective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- Duality - Initial -</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="annot"><span class="hs-comment">-- | initial 'Diagram' duality.</span></span><span>
+</span><span id="line-149"></span><span id="local-6989586621679408894"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagramDuality"><span class="hs-identifier hs-type">intDiagramDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Oriented"><span class="hs-identifier hs-type">Oriented</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408894"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramDuality"><span class="hs-identifier hs-type">DiagramDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialDiagram"><span class="hs-identifier hs-type">InitialDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalDiagram"><span class="hs-identifier hs-type">TerminalDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408894"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-150"></span><span id="intDiagramDuality"><span class="annot"><span class="annottext">intDiagramDuality :: forall a.
+Oriented a =&gt;
+DiagramDuality TerminalDiagram TerminalDiagram a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagramDuality"><span class="hs-identifier hs-var hs-var">intDiagramDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(InitialDiagram a :~: InitialDiagram a)
+-&gt; (TerminalDiagram (Op a) :~: Dual (InitialDiagram a))
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; DiagramDuality TerminalDiagram TerminalDiagram a
+forall a (f :: * -&gt; *) (t :: DiagramType) (n :: N') (m :: N')
+       (g :: * -&gt; *).
+Oriented a =&gt;
+(f a :~: Diagram t n m a)
+-&gt; (g (Op a) :~: Dual (Diagram t n m a))
+-&gt; (Dual (Dual t) :~: t)
+-&gt; DiagramDuality f g a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramDuality"><span class="hs-identifier hs-var">DiagramDuality</span></a></span><span> </span><span class="annot"><span class="annottext">InitialDiagram a :~: InitialDiagram a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">TerminalDiagram (Op a) :~: Dual (InitialDiagram a)
+TerminalDiagram (Op a) :~: TerminalDiagram (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="annot"><span class="hs-comment">-- | initial 'Cone' duality.</span></span><span>
+</span><span id="line-153"></span><span id="local-6989586621679408824"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intConeDuality"><span class="hs-identifier hs-type">intConeDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408824"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-154"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeDuality"><span class="hs-identifier hs-type">ConeDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialCone"><span class="hs-identifier hs-type">InitialCone</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalCone"><span class="hs-identifier hs-type">TerminalCone</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408824"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-155"></span><span id="intConeDuality"><span class="annot"><span class="annottext">intConeDuality :: forall a.
+Multiplicative a =&gt;
+ConeDuality Mlt InitialCone TerminalCone a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intConeDuality"><span class="hs-identifier hs-var hs-var">intConeDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (InitialCone a :~: InitialCone a)
+-&gt; (TerminalCone (Op a) :~: Dual (InitialCone a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; ConeDuality Mlt InitialCone TerminalCone a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Cone s p t n m a)
+-&gt; (g (Op a) :~: Dual (Cone s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; ConeDuality s f g a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeDuality"><span class="hs-identifier hs-var">ConeDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">InitialCone a :~: InitialCone a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">TerminalCone (Op a) :~: Dual (InitialCone a)
+TerminalCone (Op a) :~: TerminalCone (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span class="annot"><span class="hs-comment">-- | initial 'Limes' duality.</span></span><span>
+</span><span id="line-158"></span><span id="local-6989586621679408827"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intLimesDuality"><span class="hs-identifier hs-type">intLimesDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408827"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-159"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-type">LimesDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialPoint"><span class="hs-identifier hs-type">InitialPoint</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#TerminalPoint"><span class="hs-identifier hs-type">TerminalPoint</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408827"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-160"></span><span id="intLimesDuality"><span class="annot"><span class="annottext">intLimesDuality :: forall a.
+Multiplicative a =&gt;
+LimesDuality Mlt InitialPoint TerminalPoint a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intLimesDuality"><span class="hs-identifier hs-var hs-var">intLimesDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (InitialPoint a :~: InitialPoint a)
+-&gt; (TerminalPoint (Op a) :~: Dual (InitialPoint a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; LimesDuality Mlt InitialPoint TerminalPoint a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limes s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limes s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimesDuality s f g a
+</span><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-var">LimesDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">InitialPoint a :~: InitialPoint a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">TerminalPoint (Op a) :~: Dual (InitialPoint a)
+TerminalPoint (Op a) :~: TerminalPoint (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span class="annot"><span class="hs-comment">-- | initial 'Limits' duality.</span></span><span>
+</span><span id="line-163"></span><span id="local-6989586621679408829"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intLimitsDuality"><span class="hs-identifier hs-type">intLimitsDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408829"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-164"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Initials"><span class="hs-identifier hs-type">Initials</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Terminals"><span class="hs-identifier hs-type">Terminals</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408829"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-165"></span><span id="intLimitsDuality"><span class="annot"><span class="annottext">intLimitsDuality :: forall a.
+Multiplicative a =&gt;
+LimitsDuality Mlt Initials Terminals a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intLimitsDuality"><span class="hs-identifier hs-var hs-var">intLimitsDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (Initials a :~: Initials a)
+-&gt; (Terminals (Op a) :~: Dual (Initials a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual 'Empty) :~: 'Empty)
+-&gt; LimitsDuality Mlt Initials Terminals a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limits s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limits s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimitsDuality s f g a
+</span><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Initials a :~: Initials a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Terminals (Op a) :~: Dual (Initials a)
+Terminals (Op a) :~: Terminals (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Empty) :~: 'Empty
+'Empty :~: 'Empty
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- intDiagram -</span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span class="annot"><span class="hs-comment">-- | the initial diagram.</span></span><span>
+</span><span id="line-171"></span><span id="local-6989586621679408903"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagram"><span class="hs-identifier hs-type">intDiagram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialDiagram"><span class="hs-identifier hs-type">InitialDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408903"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-172"></span><span id="intDiagram"><span class="annot"><span class="annottext">intDiagram :: forall a. TerminalDiagram a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagram"><span class="hs-identifier hs-var hs-var">intDiagram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 a
+forall a. TerminalDiagram a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramEmpty"><span class="hs-identifier hs-var">DiagramEmpty</span></a></span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-175"></span><span class="hs-comment">-- intCone -</span><span>
+</span><span id="line-176"></span><span>
+</span><span id="line-177"></span><span class="annot"><span class="hs-comment">-- | the initial cone of a given point.</span></span><span>
+</span><span id="line-178"></span><span id="local-6989586621679408832"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intCone"><span class="hs-identifier hs-type">intCone</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408832"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408832"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialCone"><span class="hs-identifier hs-type">InitialCone</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408832"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-179"></span><span id="intCone"><span class="annot"><span class="annottext">intCone :: forall a. Multiplicative a =&gt; Point a -&gt; InitialCone a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intCone"><span class="hs-identifier hs-var hs-var">intCone</span></a></span></span><span> </span><span id="local-6989586621679408906"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679408906"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 a
+-&gt; Point a -&gt; FinList 'N0 a -&gt; Cone Mlt 'Injective 'Empty 'N0 'N0 a
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Multiplicative a =&gt;
+Diagram t n m a
+-&gt; Point a -&gt; FinList n a -&gt; Cone Mlt 'Injective t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeInjective"><span class="hs-identifier hs-var">ConeInjective</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 a
+forall a. TerminalDiagram a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramEmpty"><span class="hs-identifier hs-var">DiagramEmpty</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679408906"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">FinList 'N0 a
+forall a. FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-182"></span><span class="hs-comment">-- initialPointOrnt -</span><span>
+</span><span id="line-183"></span><span>
+</span><span id="line-184"></span><span class="annot"><span class="hs-comment">-- | initial point for 'Orientation'.</span></span><span>
+</span><span id="line-185"></span><span id="local-6989586621679408834"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#initialPointOrnt"><span class="hs-identifier hs-type">initialPointOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408834"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408834"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialPoint"><span class="hs-identifier hs-type">InitialPoint</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408834"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-186"></span><span id="initialPointOrnt"><span class="annot"><span class="annottext">initialPointOrnt :: forall p. Entity p =&gt; p -&gt; InitialPoint (Orientation p)
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#initialPointOrnt"><span class="hs-identifier hs-var hs-var">initialPointOrnt</span></a></span></span><span> </span><span id="local-6989586621679408911"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679408911"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p
+-&gt; Diagram 'Empty 'N0 'N0 (Orientation p)
+-&gt; Limes Mlt 'Injective 'Empty 'N0 'N0 (Orientation p)
+forall p a (t :: DiagramType) (n :: N') (m :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; Diagram t n m a -&gt; Limes Mlt 'Injective t n m a
+</span><a href="OAlg.Limes.Definition.html#lmFromInjOrnt"><span class="hs-identifier hs-var">lmFromInjOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679408911"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram 'Empty 'N0 'N0 (Orientation p)
+forall a. TerminalDiagram a
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intDiagram"><span class="hs-identifier hs-var">intDiagram</span></a></span><span>
+</span><span id="line-187"></span><span>
+</span><span id="line-188"></span><span class="annot"><span class="hs-comment">-- | initials.</span></span><span>
+</span><span id="line-189"></span><span id="local-6989586621679408841"><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#intsOrnt"><span class="hs-identifier hs-type">intsOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408841"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408841"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#Initials"><span class="hs-identifier hs-type">Initials</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408841"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-190"></span><span id="intsOrnt"><span class="annot"><span class="annottext">intsOrnt :: forall p. Entity p =&gt; p -&gt; Initials (Orientation p)
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#intsOrnt"><span class="hs-identifier hs-var hs-var">intsOrnt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p -&gt; Limits Mlt 'Injective 'Empty 'N0 'N0 (Orientation p)
+forall p (t :: DiagramType) (n :: N') (m :: N').
+Entity p =&gt;
+p -&gt; Limits Mlt 'Injective t n m (Orientation p)
+</span><a href="OAlg.Limes.Limits.html#lmsFromInjOrnt"><span class="hs-identifier hs-var">lmsFromInjOrnt</span></a></span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span></pre></body></html>

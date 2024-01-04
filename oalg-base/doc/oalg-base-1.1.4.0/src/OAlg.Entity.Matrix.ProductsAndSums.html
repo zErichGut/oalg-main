@@ -1,0 +1,393 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Module      : OAlg.Entity.Matrix.ProductsAndSums</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Description : products and sums for matrices</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- 'Products' and 'Sums' for matrices.</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Entity.Matrix.ProductsAndSums</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxProducts"><span class="hs-identifier">mtxProducts</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxSums"><span class="hs-identifier">mtxSums</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.html"><span class="hs-identifier">OAlg.Structure.Additive</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.html"><span class="hs-identifier">OAlg.Structure.Distributive</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Hom.Oriented.html"><span class="hs-identifier">OAlg.Hom.Oriented</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html"><span class="hs-identifier">OAlg.Entity.FinList</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.html"><span class="hs-identifier">OAlg.Entity.Diagram</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.PSequence.html"><span class="hs-identifier">OAlg.Entity.Sequence.PSequence</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.html"><span class="hs-identifier">OAlg.Limes.Cone</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html"><span class="hs-identifier">OAlg.Limes.Definition</span></a></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html"><span class="hs-identifier">OAlg.Limes.Limits</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html"><span class="hs-identifier">OAlg.Limes.ProductsAndSums</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Dim.html"><span class="hs-identifier">OAlg.Entity.Matrix.Dim</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html"><span class="hs-identifier">OAlg.Entity.Matrix.Definition</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Entries.html"><span class="hs-identifier">OAlg.Entity.Matrix.Entries</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- mtxProducts -</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><span class="hs-comment">-- | products for matrices.</span></span><span>
+</span><span id="line-51"></span><span id="local-6989586621679414105"><span id="local-6989586621679414107"><span class="annot"><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxProducts"><span class="hs-identifier hs-type">mtxProducts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414105"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#Products"><span class="hs-identifier hs-type">Products</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414107"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414105"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-52"></span><span id="mtxProducts"><span class="annot"><span class="annottext">mtxProducts :: forall x (n :: N'). Distributive x =&gt; Products n (Matrix x)
+</span><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxProducts"><span class="hs-identifier hs-var hs-var">mtxProducts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram 'Discrete n N0 (Matrix x)
+ -&gt; Limes Mlt 'Projective 'Discrete n N0 (Matrix x))
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Matrix x)
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram 'Discrete n N0 (Matrix x)
+-&gt; Limes Mlt 'Projective 'Discrete n N0 (Matrix x)
+forall x (n :: N').
+Distributive x =&gt;
+ProductDiagram n (Matrix x) -&gt; Product n (Matrix x)
+</span><a href="#local-6989586621679414282"><span class="hs-identifier hs-var">prd</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-53"></span><span>  </span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679414127"><span id="local-6989586621679414128"><span class="annot"><a href="#local-6989586621679414282"><span class="hs-identifier hs-type">prd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414127"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#ProductDiagram"><span class="hs-identifier hs-type">ProductDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414128"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414127"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#Product"><span class="hs-identifier hs-type">Product</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414128"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414127"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621679414282"><span class="annot"><span class="annottext">prd :: forall x (n :: N').
+Distributive x =&gt;
+ProductDiagram n (Matrix x) -&gt; Product n (Matrix x)
+</span><a href="#local-6989586621679414282"><span class="hs-identifier hs-var hs-var">prd</span></a></span></span><span> </span><span id="local-6989586621679414314"><span class="annot"><span class="annottext">ProductDiagram n (Matrix x)
+</span><a href="#local-6989586621679414314"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective 'Discrete n N0 (Matrix x)
+-&gt; (Cone Mlt 'Projective 'Discrete n N0 (Matrix x) -&gt; Matrix x)
+-&gt; Limes Mlt 'Projective 'Discrete n N0 (Matrix x)
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective 'Discrete n N0 (Matrix x)
+</span><a href="#local-6989586621679414316"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective 'Discrete n N0 (Matrix x) -&gt; Matrix x
+forall {n :: N'}. ProductCone n (Matrix x) -&gt; Matrix x
+</span><a href="#local-6989586621679414317"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-56"></span><span>    </span><span id="local-6989586621679414316"><span class="annot"><span class="annottext">l :: Cone Mlt 'Projective 'Discrete n N0 (Matrix x)
+</span><a href="#local-6989586621679414316"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ProductDiagram n (Matrix x)
+-&gt; Cone Mlt 'Projective 'Discrete n N0 (Matrix x)
+forall x (n :: N').
+Distributive x =&gt;
+ProductDiagram n (Matrix x) -&gt; ProductCone n (Matrix x)
+</span><a href="#local-6989586621679414318"><span class="hs-identifier hs-var">lim</span></a></span><span> </span><span class="annot"><span class="annottext">ProductDiagram n (Matrix x)
+</span><a href="#local-6989586621679414314"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span id="local-6989586621679414317"><span class="annot"><span class="annottext">u :: ProductCone n (Matrix x) -&gt; Matrix x
+</span><a href="#local-6989586621679414317"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ProductCone n (Matrix x) -&gt; Matrix x
+forall x (n :: N').
+Distributive x =&gt;
+ProductCone n (Matrix x) -&gt; Matrix x
+</span><a href="#local-6989586621679414383"><span class="hs-identifier hs-var">univ</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679414156"><span id="local-6989586621679414157"><span class="annot"><a href="#local-6989586621679414318"><span class="hs-identifier hs-type">lim</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414156"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#ProductDiagram"><span class="hs-identifier hs-type">ProductDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414157"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414156"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#ProductCone"><span class="hs-identifier hs-type">ProductCone</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414157"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414156"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-60"></span><span>  </span><span id="local-6989586621679414318"><span class="annot"><span class="annottext">lim :: forall x (n :: N').
+Distributive x =&gt;
+ProductDiagram n (Matrix x) -&gt; ProductCone n (Matrix x)
+</span><a href="#local-6989586621679414318"><span class="hs-identifier hs-var hs-var">lim</span></a></span></span><span> </span><span id="local-6989586621679414389"><span class="annot"><span class="annottext">d :: ProductDiagram n (Matrix x)
+</span><a href="#local-6989586621679414389"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramDiscrete"><span class="hs-identifier hs-type">DiagramDiscrete</span></a></span><span> </span><span id="local-6989586621679414408"><span class="annot"><span class="annottext">FinList n (Point (Matrix x))
+</span><a href="#local-6989586621679414408"><span class="hs-identifier hs-var">ps</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ProductDiagram n (Matrix x)
+-&gt; Point (Matrix x)
+-&gt; FinList n (Matrix x)
+-&gt; Cone Mlt 'Projective 'Discrete n N0 (Matrix x)
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Multiplicative a =&gt;
+Diagram t n m a
+-&gt; Point a -&gt; FinList n a -&gt; Cone Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-var">ConeProjective</span></a></span><span> </span><span class="annot"><span class="annottext">ProductDiagram n (Matrix x)
+</span><a href="#local-6989586621679414389"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Point (Matrix x)
+Dim x (Point x)
+</span><a href="#local-6989586621679414410"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N
+-&gt; Dim x (Point x)
+-&gt; FinList n (Dim x (Point x))
+-&gt; FinList n (Matrix x)
+forall x (n :: N').
+Distributive x =&gt;
+N
+-&gt; Dim x (Point x)
+-&gt; FinList n (Dim x (Point x))
+-&gt; FinList n (Matrix x)
+</span><a href="#local-6989586621679414411"><span class="hs-identifier hs-var">prjs</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414410"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n (Point (Matrix x))
+FinList n (Dim x (Point x))
+</span><a href="#local-6989586621679414408"><span class="hs-identifier hs-var">ps</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-61"></span><span>    </span><span id="local-6989586621679414410"><span class="annot"><span class="annottext">l :: Dim x (Point x)
+</span><a href="#local-6989586621679414410"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Dim' (Matrix x) -&gt; Dim x (Point x)
+Dim (Matrix x) (Dim x (Point x)) -&gt; Dim x (Point x)
+forall x. Oriented x =&gt; Dim' (Matrix x) -&gt; Dim' x
+</span><a href="OAlg.Entity.Matrix.Definition.html#mtxJoinDim"><span class="hs-identifier hs-var">mtxJoinDim</span></a></span><span> </span><span class="annot"><span class="annottext">(Dim (Matrix x) (Dim x (Point x)) -&gt; Dim x (Point x))
+-&gt; Dim (Matrix x) (Dim x (Point x)) -&gt; Dim x (Point x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[Point (Matrix x)] -&gt; Dim' (Matrix x)
+[Dim x (Point x)] -&gt; Dim (Matrix x) (Dim x (Point x))
+forall p x. (Entity p, p ~ Point x) =&gt; [p] -&gt; Dim x p
+</span><a href="OAlg.Entity.Matrix.Dim.html#productDim"><span class="hs-identifier hs-var">productDim</span></a></span><span> </span><span class="annot"><span class="annottext">([Dim x (Point x)] -&gt; Dim (Matrix x) (Dim x (Point x)))
+-&gt; [Dim x (Point x)] -&gt; Dim (Matrix x) (Dim x (Point x))
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n (Dim x (Point x)) -&gt; [Dim x (Point x)]
+forall a. FinList n a -&gt; [a]
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
+</span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">FinList n (Point (Matrix x))
+FinList n (Dim x (Point x))
+</span><a href="#local-6989586621679414408"><span class="hs-identifier hs-var">ps</span></a></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679414178"><span id="local-6989586621679414179"><span class="annot"><a href="#local-6989586621679414411"><span class="hs-identifier hs-type">prjs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414178"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-64"></span><span>      </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Dim.html#Dim"><span class="hs-identifier hs-type">Dim</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414178"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414178"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html#FinList"><span class="hs-identifier hs-type">FinList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414179"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Dim.html#Dim"><span class="hs-identifier hs-type">Dim</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414178"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414178"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html#FinList"><span class="hs-identifier hs-type">FinList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414179"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414178"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-65"></span><span>    </span><span id="local-6989586621679414411"><span class="annot"><span class="annottext">prjs :: forall x (n :: N').
+Distributive x =&gt;
+N
+-&gt; Dim x (Point x)
+-&gt; FinList n (Dim x (Point x))
+-&gt; FinList n (Matrix x)
+</span><a href="#local-6989586621679414411"><span class="hs-identifier hs-var hs-var">prjs</span></a></span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">FinList n (Dim x (Point x))
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinList n (Matrix x)
+FinList N0 (Matrix x)
+forall a. FinList N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679414411"><span class="hs-identifier hs-var">prjs</span></a></span><span> </span><span id="local-6989586621679414421"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414421"><span class="hs-identifier hs-var">j</span></a></span></span><span> </span><span id="local-6989586621679414422"><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414422"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679414432"><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414432"><span class="hs-identifier hs-var">r</span></a></span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span id="local-6989586621679414434"><span class="annot"><span class="annottext">FinList n1 (Dim x (Point x))
+</span><a href="#local-6989586621679414434"><span class="hs-identifier hs-var">rs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">N -&gt; Dim x (Point x) -&gt; Dim x (Point x) -&gt; Matrix x
+forall {x}.
+(Additive x, Multiplicative x) =&gt;
+N -&gt; Dim x (Point x) -&gt; Dim x (Point x) -&gt; Matrix x
+</span><a href="#local-6989586621679414435"><span class="hs-identifier hs-var">prj</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414421"><span class="hs-identifier hs-var">j</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414422"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414432"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Matrix x -&gt; FinList n1 (Matrix x) -&gt; FinList (n1 + 1) (Matrix x)
+forall a (n1 :: N'). a -&gt; FinList n1 a -&gt; FinList (n1 + 1) a
+</span><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-var">:|</span></a></span><span> </span><span class="annot"><span class="annottext">N
+-&gt; Dim x (Point x)
+-&gt; FinList n1 (Dim x (Point x))
+-&gt; FinList n1 (Matrix x)
+forall x (n :: N').
+Distributive x =&gt;
+N
+-&gt; Dim x (Point x)
+-&gt; FinList n (Dim x (Point x))
+-&gt; FinList n (Matrix x)
+</span><a href="#local-6989586621679414411"><span class="hs-identifier hs-var">prjs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414421"><span class="hs-identifier hs-var">j</span></a></span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+forall a. Additive a =&gt; a -&gt; a -&gt; a
+</span><a href="OAlg.Structure.Additive.Definition.html#%2B"><span class="hs-operator hs-var">+</span></a></span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414437"><span class="hs-identifier hs-var">rl</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414422"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n1 (Dim x (Point x))
+</span><a href="#local-6989586621679414434"><span class="hs-identifier hs-var">rs</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-67"></span><span>      </span><span id="local-6989586621679414437"><span class="annot"><span class="annottext">rl :: N
+</span><a href="#local-6989586621679414437"><span class="hs-identifier hs-var hs-var">rl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Dim x (Point x) -&gt; N
+forall x. LengthN x =&gt; x -&gt; N
+</span><a href="OAlg.Data.Number.html#lengthN"><span class="hs-identifier hs-var">lengthN</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414432"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span>    </span><span id="local-6989586621679414435"><span class="annot"><span class="annottext">prj :: N -&gt; Dim x (Point x) -&gt; Dim x (Point x) -&gt; Matrix x
+</span><a href="#local-6989586621679414435"><span class="hs-identifier hs-var hs-var">prj</span></a></span></span><span> </span><span id="local-6989586621679414491"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414491"><span class="hs-identifier hs-var">j</span></a></span></span><span> </span><span id="local-6989586621679414492"><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414492"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679414493"><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414493"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Dim x (Point x) -&gt; Dim x (Point x) -&gt; Entries N N x -&gt; Matrix x
+forall x. Dim' x -&gt; Dim' x -&gt; Entries N N x -&gt; Matrix x
+</span><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-var">Matrix</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414493"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414492"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Entries N N x
+</span><a href="#local-6989586621679414495"><span class="hs-identifier hs-var">os</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>      </span><span id="local-6989586621679414495"><span class="annot"><span class="annottext">os :: Entries N N x
+</span><a href="#local-6989586621679414495"><span class="hs-identifier hs-var hs-var">os</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Entries N N x -&gt; Entries N N x
+forall x i j. Additive x =&gt; Entries i j x -&gt; Entries i j x
+</span><a href="OAlg.Entity.Matrix.Entries.html#etsElimZeros"><span class="hs-identifier hs-var">etsElimZeros</span></a></span><span> </span><span class="annot"><span class="annottext">(Entries N N x -&gt; Entries N N x) -&gt; Entries N N x -&gt; Entries N N x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PSequence (N, N) x -&gt; Entries N N x
+forall i j x. PSequence (i, j) x -&gt; Entries i j x
+</span><a href="OAlg.Entity.Matrix.Entries.html#Entries"><span class="hs-identifier hs-var">Entries</span></a></span><span> </span><span class="annot"><span class="annottext">(PSequence (N, N) x -&gt; Entries N N x)
+-&gt; PSequence (N, N) x -&gt; Entries N N x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[(x, (N, N))] -&gt; PSequence (N, N) x
+forall i x. [(x, i)] -&gt; PSequence i x
+</span><a href="OAlg.Entity.Sequence.PSequence.html#PSequence"><span class="hs-identifier hs-var">PSequence</span></a></span><span> </span><span class="annot"><span class="annottext">([(x, (N, N))] -&gt; PSequence (N, N) x)
+-&gt; [(x, (N, N))] -&gt; PSequence (N, N) x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((Point x, N) -&gt; (x, (N, N))) -&gt; [(Point x, N)] -&gt; [(x, (N, N))]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679414499"><span class="annot"><span class="annottext">Point x
+</span><a href="#local-6989586621679414499"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679414500"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414500"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point x -&gt; x
+forall c. Multiplicative c =&gt; Point c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#one"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Point x
+</span><a href="#local-6989586621679414499"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span class="hs-special">(</span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414500"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414500"><span class="hs-identifier hs-var">i</span></a></span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+forall a. Additive a =&gt; a -&gt; a -&gt; a
+</span><a href="OAlg.Structure.Additive.Definition.html#%2B"><span class="hs-operator hs-var">+</span></a></span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414491"><span class="hs-identifier hs-var">j</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(Point x, N)] -&gt; [(x, (N, N))])
+-&gt; [(Point x, N)] -&gt; [(x, (N, N))]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x) -&gt; [(Point x, N)]
+forall p x. (p ~ Point x) =&gt; Dim x p -&gt; [(p, N)]
+</span><a href="OAlg.Entity.Matrix.Dim.html#dimxs"><span class="hs-identifier hs-var">dimxs</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414493"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span>  </span><span id="local-6989586621679414162"><span id="local-6989586621679414163"><span class="annot"><a href="#local-6989586621679414383"><span class="hs-identifier hs-type">univ</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414162"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#ProductCone"><span class="hs-identifier hs-type">ProductCone</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414163"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414162"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414162"><span class="hs-identifier hs-type">x</span></a></span></span></span><span>
+</span><span id="line-74"></span><span>  </span><span id="local-6989586621679414383"><span class="annot"><span class="annottext">univ :: forall x (n :: N').
+Distributive x =&gt;
+ProductCone n (Matrix x) -&gt; Matrix x
+</span><a href="#local-6989586621679414383"><span class="hs-identifier hs-var hs-var">univ</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-type">ConeProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram 'Discrete n N0 (Matrix x)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679414533"><span class="annot"><span class="annottext">Point (Matrix x)
+</span><a href="#local-6989586621679414533"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679414534"><span class="annot"><span class="annottext">FinList n (Matrix x)
+</span><a href="#local-6989586621679414534"><span class="hs-identifier hs-var">cs</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Matrix (Matrix x) -&gt; Matrix x
+forall x. Oriented x =&gt; Matrix (Matrix x) -&gt; Matrix x
+</span><a href="OAlg.Entity.Matrix.Definition.html#mtxJoin"><span class="hs-identifier hs-var">mtxJoin</span></a></span><span> </span><span class="annot"><span class="annottext">(Matrix (Matrix x) -&gt; Matrix x) -&gt; Matrix (Matrix x) -&gt; Matrix x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Dim' (Matrix x)
+-&gt; Dim' (Matrix x) -&gt; Entries N N (Matrix x) -&gt; Matrix (Matrix x)
+forall x. Dim' x -&gt; Dim' x -&gt; Entries N N x -&gt; Matrix x
+</span><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-var">Matrix</span></a></span><span> </span><span class="annot"><span class="annottext">Dim' (Matrix x)
+</span><a href="#local-6989586621679414536"><span class="hs-identifier hs-var">rw</span></a></span><span> </span><span class="annot"><span class="annottext">Dim' (Matrix x)
+</span><a href="#local-6989586621679414537"><span class="hs-identifier hs-var">cl</span></a></span><span> </span><span class="annot"><span class="annottext">(Entries N N (Matrix x) -&gt; Matrix (Matrix x))
+-&gt; Entries N N (Matrix x) -&gt; Matrix (Matrix x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Entries N N (Matrix x) -&gt; Entries N N (Matrix x)
+forall x i j. Additive x =&gt; Entries i j x -&gt; Entries i j x
+</span><a href="OAlg.Entity.Matrix.Entries.html#etsElimZeros"><span class="hs-identifier hs-var">etsElimZeros</span></a></span><span> </span><span class="annot"><span class="annottext">(Entries N N (Matrix x) -&gt; Entries N N (Matrix x))
+-&gt; Entries N N (Matrix x) -&gt; Entries N N (Matrix x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PSequence (N, N) (Matrix x) -&gt; Entries N N (Matrix x)
+forall i j x. PSequence (i, j) x -&gt; Entries i j x
+</span><a href="OAlg.Entity.Matrix.Entries.html#Entries"><span class="hs-identifier hs-var">Entries</span></a></span><span> </span><span class="annot"><span class="annottext">(PSequence (N, N) (Matrix x) -&gt; Entries N N (Matrix x))
+-&gt; PSequence (N, N) (Matrix x) -&gt; Entries N N (Matrix x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[(Matrix x, (N, N))] -&gt; PSequence (N, N) (Matrix x)
+forall i x. [(x, i)] -&gt; PSequence i x
+</span><a href="OAlg.Entity.Sequence.PSequence.html#PSequence"><span class="hs-identifier hs-var">PSequence</span></a></span><span> </span><span class="annot"><span class="annottext">([(Matrix x, (N, N))] -&gt; PSequence (N, N) (Matrix x))
+-&gt; [(Matrix x, (N, N))] -&gt; PSequence (N, N) (Matrix x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">N -&gt; FinList n (Matrix x) -&gt; [(Matrix x, (N, N))]
+forall x (n :: N').
+Distributive x =&gt;
+N -&gt; FinList n (Matrix x) -&gt; [(Matrix x, (N, N))]
+</span><a href="#local-6989586621679414538"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">FinList n (Matrix x)
+</span><a href="#local-6989586621679414534"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>      </span><span id="local-6989586621679414536"><span class="annot"><span class="annottext">rw :: Dim' (Matrix x)
+</span><a href="#local-6989586621679414536"><span class="hs-identifier hs-var hs-var">rw</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Point (Matrix x)] -&gt; Dim' (Matrix x)
+forall p x. (Entity p, p ~ Point x) =&gt; [p] -&gt; Dim x p
+</span><a href="OAlg.Entity.Matrix.Dim.html#productDim"><span class="hs-identifier hs-var">productDim</span></a></span><span> </span><span class="annot"><span class="annottext">([Point (Matrix x)] -&gt; Dim' (Matrix x))
+-&gt; [Point (Matrix x)] -&gt; Dim' (Matrix x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n (Point (Matrix x)) -&gt; [Point (Matrix x)]
+forall a. FinList n a -&gt; [a]
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; [a]
+</span><span class="hs-identifier hs-var">toList</span></span><span> </span><span class="annot"><span class="annottext">(FinList n (Point (Matrix x)) -&gt; [Point (Matrix x)])
+-&gt; FinList n (Point (Matrix x)) -&gt; [Point (Matrix x)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Matrix x -&gt; Point (Matrix x))
+-&gt; FinList n (Matrix x) -&gt; FinList n (Point (Matrix x))
+forall a b. (a -&gt; b) -&gt; FinList n a -&gt; FinList n b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">Matrix x -&gt; Point (Matrix x)
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#end"><span class="hs-identifier hs-var">end</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n (Matrix x)
+</span><a href="#local-6989586621679414534"><span class="hs-identifier hs-var">cs</span></a></span><span>
+</span><span id="line-77"></span><span>      </span><span id="local-6989586621679414537"><span class="annot"><span class="annottext">cl :: Dim' (Matrix x)
+</span><a href="#local-6989586621679414537"><span class="hs-identifier hs-var hs-var">cl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Point (Matrix x) -&gt; Dim' (Matrix x)
+forall p x. (Entity p, p ~ Point x) =&gt; p -&gt; Dim x p
+</span><a href="OAlg.Entity.Matrix.Dim.html#dim"><span class="hs-identifier hs-var">dim</span></a></span><span> </span><span class="annot"><span class="annottext">Point (Matrix x)
+</span><a href="#local-6989586621679414533"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-78"></span><span>      </span><span>
+</span><span id="line-79"></span><span>      </span><span id="local-6989586621679414223"><span id="local-6989586621679414224"><span class="annot"><a href="#local-6989586621679414538"><span class="hs-identifier hs-type">u</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414223"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html#FinList"><span class="hs-identifier hs-type">FinList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414224"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414223"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414223"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">,</span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-80"></span><span>      </span><span id="local-6989586621679414538"><span class="annot"><span class="annottext">u :: forall x (n :: N').
+Distributive x =&gt;
+N -&gt; FinList n (Matrix x) -&gt; [(Matrix x, (N, N))]
+</span><a href="#local-6989586621679414538"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">FinList n (Matrix x)
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-81"></span><span>      </span><span class="annot"><a href="#local-6989586621679414538"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span id="local-6989586621679414543"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414543"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679414549"><span class="annot"><span class="annottext">Matrix x
+</span><a href="#local-6989586621679414549"><span class="hs-identifier hs-var">c</span></a></span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span id="local-6989586621679414550"><span class="annot"><span class="annottext">FinList n1 (Matrix x)
+</span><a href="#local-6989586621679414550"><span class="hs-identifier hs-var">cs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Matrix x
+</span><a href="#local-6989586621679414549"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">,</span><span class="hs-special">(</span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414543"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Matrix x, (N, N)) -&gt; [(Matrix x, (N, N))] -&gt; [(Matrix x, (N, N))]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">N -&gt; FinList n1 (Matrix x) -&gt; [(Matrix x, (N, N))]
+forall x (n :: N').
+Distributive x =&gt;
+N -&gt; FinList n (Matrix x) -&gt; [(Matrix x, (N, N))]
+</span><a href="#local-6989586621679414538"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; N
+forall a. Enum a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679414543"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FinList n1 (Matrix x)
+</span><a href="#local-6989586621679414550"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span>
+</span><span id="line-82"></span><span>  </span><span>
+</span><span id="line-83"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- mtxSums -</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="annot"><span class="hs-comment">-- | sums for matrices.</span></span><span>
+</span><span id="line-87"></span><span id="local-6989586621679414235"><span id="local-6989586621679414236"><span class="annot"><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxSums"><span class="hs-identifier hs-type">mtxSums</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414235"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#Sums"><span class="hs-identifier hs-type">Sums</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414236"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414235"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-88"></span><span id="mtxSums"><span class="annot"><span class="annottext">mtxSums :: forall x (n :: N'). Distributive x =&gt; Sums n (Matrix x)
+</span><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxSums"><span class="hs-identifier hs-var hs-var">mtxSums</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LimitsDuality Mlt (Sums n) (Products n) (Matrix x)
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Op (Matrix x))
+-&gt; Limits Mlt 'Injective 'Discrete n N0 (Matrix x)
+forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; g (Op a) -&gt; f a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier hs-var">lmsFromOp</span></a></span><span> </span><span class="annot"><span class="annottext">LimitsDuality Mlt (Sums n) (Products n) (Matrix x)
+forall a (n :: N').
+Multiplicative a =&gt;
+LimitsDuality Mlt (Sums n) (Products n) a
+</span><a href="OAlg.Limes.ProductsAndSums.html#sumLimitsDuality"><span class="hs-identifier hs-var">sumLimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">(Limits Mlt 'Projective 'Discrete n N0 (Op (Matrix x))
+ -&gt; Limits Mlt 'Injective 'Discrete n N0 (Matrix x))
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Op (Matrix x))
+-&gt; Limits Mlt 'Injective 'Discrete n N0 (Matrix x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x))
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Matrix (Op x))
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Op (Matrix x))
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limits s p t n m a -&gt; Limits s p t n m b
+</span><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-var">lmsMap</span></a></span><span> </span><span class="annot"><span class="annottext">IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x))
+forall x.
+Distributive x =&gt;
+IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x))
+</span><a href="#local-6989586621679414577"><span class="hs-identifier hs-var">isoToOp</span></a></span><span> </span><span class="annot"><span class="annottext">(Limits Mlt 'Projective 'Discrete n N0 (Matrix (Op x))
+ -&gt; Limits Mlt 'Projective 'Discrete n N0 (Op (Matrix x)))
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Matrix (Op x))
+-&gt; Limits Mlt 'Projective 'Discrete n N0 (Op (Matrix x))
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Projective 'Discrete n N0 (Matrix (Op x))
+forall x (n :: N'). Distributive x =&gt; Products n (Matrix x)
+</span><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxProducts"><span class="hs-identifier hs-var">mtxProducts</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621679414271"><span class="annot"><a href="#local-6989586621679414577"><span class="hs-identifier hs-type">isoToOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414271"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Hom.Oriented.Definition.html#IsoOpMap"><span class="hs-identifier hs-type">IsoOpMap</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414271"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414271"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span> </span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621679414577"><span class="annot"><span class="annottext">isoToOp :: forall x.
+Distributive x =&gt;
+IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x))
+</span><a href="#local-6989586621679414577"><span class="hs-identifier hs-var hs-var">isoToOp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
+-&gt; IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x))
+forall x y. IsoOpMap Matrix Dst x y -&gt; IsoOpMap Matrix Dst y x
+forall (c :: * -&gt; * -&gt; *) x y. Cayleyan2 c =&gt; c x y -&gt; c y x
+</span><a href="OAlg.Category.Definition.html#invert2"><span class="hs-identifier hs-var">invert2</span></a></span><span> </span><span class="annot"><span class="annottext">IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
+forall x.
+Distributive x =&gt;
+IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
+</span><a href="OAlg.Entity.Matrix.Definition.html#isoCoMatrixDst"><span class="hs-identifier hs-var">isoCoMatrixDst</span></a></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span>  </span><span>
+</span><span id="line-93"></span><span>  </span><span>
+</span><span id="line-94"></span></pre></body></html>

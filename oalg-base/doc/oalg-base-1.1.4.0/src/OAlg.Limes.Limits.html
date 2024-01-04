@@ -1,0 +1,641 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Module      : OAlg.Limes.Limits</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Description : limits of diagrams</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Limes.Limits</span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Limits</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier">Limits</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier">limes</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier">lmsMap</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Duality</span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#lmsToOp"><span class="hs-identifier">lmsToOp</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier">lmsFromOp</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier">LimitsDuality</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#coLimits"><span class="hs-identifier">coLimits</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#coLimitsInv"><span class="hs-identifier">coLimitsInv</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#lmsFromOpOp"><span class="hs-identifier">lmsFromOpOp</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Construction</span></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#lmsToPrjOrnt"><span class="hs-identifier">lmsToPrjOrnt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#lmsFromInjOrnt"><span class="hs-identifier">lmsFromInjOrnt</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Proposition</span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#prpLimits"><span class="hs-identifier">prpLimits</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#prpLimitsDiagram"><span class="hs-identifier">prpLimitsDiagram</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Typeable</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.html"><span class="hs-identifier">OAlg.Structure.Distributive</span></a></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Hom.Oriented.html"><span class="hs-identifier">OAlg.Hom.Oriented</span></a></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Hom.Multiplicative.html"><span class="hs-identifier">OAlg.Hom.Multiplicative</span></a></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Hom.Distributive.html"><span class="hs-identifier">OAlg.Hom.Distributive</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.html"><span class="hs-identifier">OAlg.Entity.Diagram</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.html"><span class="hs-identifier">OAlg.Limes.Cone</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html"><span class="hs-identifier">OAlg.Limes.Definition</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- Limits -</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- | limes of a diagram, i.e. assigning to each diagram a limes over the given diagram.</span><span>
+</span><span id="line-58"></span><span class="hs-comment">--</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- __Property__ Let @lms@ be in @'Limits' __s__ __p__ __t__ __n__ __m__ __a__@</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- and @d@ in @'Diagram' __t__ __n__ __m__ __a__@ then holds:</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- @'diagram' ('limes' lms d) '==' d@.</span><span>
+</span><span id="line-62"></span><span class="hs-keyword">newtype</span><span> </span><span id="Limits"><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span></span><span> </span><span id="local-6989586621679408113"><span class="annot"><a href="#local-6989586621679408113"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679408114"><span class="annot"><a href="#local-6989586621679408114"><span class="hs-identifier hs-type">p</span></a></span></span><span> </span><span id="local-6989586621679408109"><span class="annot"><a href="#local-6989586621679408109"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679408110"><span class="annot"><a href="#local-6989586621679408110"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span id="local-6989586621679408111"><span class="annot"><a href="#local-6989586621679408111"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679408112"><span class="annot"><a href="#local-6989586621679408112"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Limits"><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408109"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408110"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408111"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408112"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408113"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408114"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408109"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408110"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408111"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408112"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- limes -</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="annot"><span class="hs-comment">-- | the limes over the given diagram.</span></span><span>
+</span><span id="line-69"></span><span id="local-6989586621679408070"><span id="local-6989586621679408071"><span id="local-6989586621679408072"><span id="local-6989586621679408073"><span id="local-6989586621679408074"><span id="local-6989586621679408075"><span class="annot"><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-type">limes</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408070"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408071"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408072"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408073"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408074"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408075"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408072"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408073"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408074"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408075"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408070"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408071"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408072"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408073"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408074"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408075"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-70"></span><span id="limes"><span class="annot"><span class="annottext">limes :: forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var hs-var">limes</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span id="local-6989586621679408437"><span class="annot"><span class="annottext">Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408437"><span class="hs-identifier hs-var">lm</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408437"><span class="hs-identifier hs-var">lm</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- lmsMap -</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="annot"><span class="hs-comment">-- | mapping of limits.</span></span><span>
+</span><span id="line-76"></span><span id="local-6989586621679408085"><span id="local-6989586621679408086"><span id="local-6989586621679408088"><span id="local-6989586621679408089"><span id="local-6989586621679408090"><span id="local-6989586621679408091"><span id="local-6989586621679408092"><span id="local-6989586621679408093"><span class="annot"><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-type">lmsMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Oriented.Definition.html#IsoOrt"><span class="hs-identifier hs-type">IsoOrt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408085"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408086"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408086"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408088"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408089"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408085"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408090"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408091"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408092"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408093"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408088"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408085"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408090"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408091"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408092"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408093"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408089"><span class="hs-identifier hs-type">b</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-78"></span><span id="lmsMap"><span class="annot"><span class="annottext">lmsMap :: forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limits s p t n m a -&gt; Limits s p t n m b
+</span><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-var hs-var">lmsMap</span></a></span></span><span> </span><span id="local-6989586621679408447"><span class="annot"><span class="annottext">h a b
+</span><a href="#local-6989586621679408447"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span id="local-6989586621679408448"><span class="annot"><span class="annottext">Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408448"><span class="hs-identifier hs-var">ls</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram t n m b -&gt; Limes s p t n m b) -&gt; Limits s p t n m b
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">h a b
+-&gt; (Diagram t n m a -&gt; Limes s p t n m a)
+-&gt; Diagram t n m b
+-&gt; Limes s p t n m b
+forall {s} {h :: * -&gt; * -&gt; *} {h :: * -&gt; * -&gt; *} {b} {a}
+       {t :: DiagramType} {n :: N'} {m :: N'} {p :: Perspective}
+       {t :: DiagramType} {n :: N'} {m :: N'}.
+(Hom s h, Cayleyan2 h, FunctorialHomOriented h, Applicative h) =&gt;
+h b a
+-&gt; h (Diagram t n m b) (Limes s p t n m b)
+-&gt; Diagram t n m a
+-&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408449"><span class="hs-identifier hs-var">ls'</span></a></span><span> </span><span class="annot"><span class="annottext">h a b
+</span><a href="#local-6989586621679408447"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408448"><span class="hs-identifier hs-var">ls</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679408449"><span class="annot"><span class="annottext">ls' :: h b a
+-&gt; h (Diagram t n m b) (Limes s p t n m b)
+-&gt; Diagram t n m a
+-&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408449"><span class="hs-identifier hs-var hs-var">ls'</span></a></span></span><span> </span><span id="local-6989586621679408531"><span class="annot"><span class="annottext">h b a
+</span><a href="#local-6989586621679408531"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679408532"><span class="annot"><span class="annottext">h (Diagram t n m b) (Limes s p t n m b)
+</span><a href="#local-6989586621679408532"><span class="hs-identifier hs-var">ls</span></a></span></span><span> </span><span id="local-6989586621679408533"><span class="annot"><span class="annottext">Diagram t n m a
+</span><a href="#local-6989586621679408533"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">h b a -&gt; Limes s p t n m b -&gt; Limes s p t n m a
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limes s p t n m a -&gt; Limes s p t n m b
+</span><a href="OAlg.Limes.Definition.html#lmMap"><span class="hs-identifier hs-var">lmMap</span></a></span><span> </span><span class="annot"><span class="annottext">h b a
+</span><a href="#local-6989586621679408531"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">(Limes s p t n m b -&gt; Limes s p t n m a)
+-&gt; Limes s p t n m b -&gt; Limes s p t n m a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">h (Diagram t n m b) (Limes s p t n m b)
+</span><a href="#local-6989586621679408532"><span class="hs-identifier hs-var">ls</span></a></span><span> </span><span class="annot"><span class="annottext">h (Diagram t n m b) (Limes s p t n m b)
+-&gt; Diagram t n m b -&gt; Limes s p t n m b
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">h a b -&gt; Diagram t n m a -&gt; Diagram t n m b
+forall (h :: * -&gt; * -&gt; *) a b (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Ort h =&gt;
+h a b -&gt; Diagram t n m a -&gt; Diagram t n m b
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgMap"><span class="hs-identifier hs-var">dgMap</span></a></span><span> </span><span class="annot"><span class="annottext">h a b
+</span><a href="#local-6989586621679408537"><span class="hs-identifier hs-var">h'</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a
+</span><a href="#local-6989586621679408533"><span class="hs-identifier hs-var">d'</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>    </span><span id="local-6989586621679408537"><span class="annot"><span class="annottext">h' :: h a b
+</span><a href="#local-6989586621679408537"><span class="hs-identifier hs-var hs-var">h'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">h b a -&gt; h a b
+forall x y. h x y -&gt; h y x
+forall (c :: * -&gt; * -&gt; *) x y. Cayleyan2 c =&gt; c x y -&gt; c y x
+</span><a href="OAlg.Category.Definition.html#invert2"><span class="hs-identifier hs-var">invert2</span></a></span><span> </span><span class="annot"><span class="annottext">h b a
+</span><a href="#local-6989586621679408531"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-83"></span><span class="hs-comment">-- Limits - Applicative1 -</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679408183"><span id="local-6989586621679408184"><span id="local-6989586621679408185"><span id="local-6989586621679408186"><span id="local-6989586621679408187"><span class="annot"><a href="OAlg.Hom.Multiplicative.Definition.html#IsoMultiplicative"><span class="hs-identifier hs-type">IsoMultiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408183"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Category.Applicative.html#Applicative1"><span class="hs-identifier hs-type">Applicative1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408183"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408184"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408185"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408186"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408187"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>  </span><span id="local-6989586621679408544"><span class="annot"><span class="annottext">amap1 :: forall a b. h a b -&gt; Limits Mlt p t n m a -&gt; Limits Mlt p t n m b
+</span><a href="#local-6989586621679408544"><span class="hs-identifier hs-var hs-var hs-var hs-var">amap1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">h a b -&gt; Limits Mlt p t n m a -&gt; Limits Mlt p t n m b
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limits s p t n m a -&gt; Limits s p t n m b
+</span><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-var">lmsMap</span></a></span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679408197"><span id="local-6989586621679408198"><span id="local-6989586621679408199"><span id="local-6989586621679408200"><span id="local-6989586621679408201"><span class="annot"><a href="OAlg.Hom.Distributive.html#IsoDistributive"><span class="hs-identifier hs-type">IsoDistributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408197"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Category.Applicative.html#Applicative1"><span class="hs-identifier hs-type">Applicative1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408197"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408198"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408199"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408200"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408201"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621679408550"><span class="annot"><span class="annottext">amap1 :: forall a b. h a b -&gt; Limits Dst p t n m a -&gt; Limits Dst p t n m b
+</span><a href="OAlg.Category.Applicative.html#amap1"><span class="hs-identifier hs-var hs-var hs-var hs-var">amap1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">h a b -&gt; Limits Dst p t n m a -&gt; Limits Dst p t n m b
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limits s p t n m a -&gt; Limits s p t n m b
+</span><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-var">lmsMap</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- Limits - Daul -</span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">type</span><span> </span><span class="hs-keyword">instance</span><span> </span><span id="Dual"><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-var">Dual</span></a></span></span><span> </span><span id="local-6989586621679408551"><span id="local-6989586621679408552"><span id="local-6989586621679408553"><span id="local-6989586621679408554"><span id="local-6989586621679408555"><span id="local-6989586621679408556"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408551"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408552"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408553"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408554"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408555"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408551"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408552"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408553"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679408554"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408555"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408556"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- coLimits -</span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span class="annot"><span class="hs-comment">-- | the co limits wit its inverse 'coLimitsInv'.</span></span><span>
+</span><span id="line-100"></span><span id="local-6989586621679408204"><span id="local-6989586621679408205"><span id="local-6989586621679408207"><span id="local-6989586621679408210"><span id="local-6989586621679408211"><span id="local-6989586621679408212"><span class="annot"><a href="OAlg.Limes.Limits.html#coLimits"><span class="hs-identifier hs-type">coLimits</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeStruct"><span class="hs-identifier hs-type">ConeStruct</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408204"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408205"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408207"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408207"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408210"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408210"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-101"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408204"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408207"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408210"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408211"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408212"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408205"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408204"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408207"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408210"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408211"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408212"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408205"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span></span><span>
+</span><span id="line-102"></span><span id="coLimits"><span class="annot"><span class="annottext">coLimits :: forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m a
+-&gt; Dual (Limits s p t n m a)
+</span><a href="OAlg.Limes.Limits.html#coLimits"><span class="hs-identifier hs-var hs-var">coLimits</span></a></span></span><span> </span><span id="local-6989586621679408557"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408557"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span id="local-6989586621679408558"><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408558"><span class="hs-identifier hs-var">rp</span></a></span></span><span> </span><span id="local-6989586621679408559"><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408559"><span class="hs-identifier hs-var">rt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span id="local-6989586621679408560"><span class="annot"><span class="annottext">Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408560"><span class="hs-identifier hs-var">lm</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram (Dual t) n m (Op a)
+ -&gt; Limes s (Dual p) (Dual t) n m (Op a))
+-&gt; Limits s (Dual p) (Dual t) n m (Op a)
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram (Dual t) n m (Op a) -&gt; Limes s (Dual p) (Dual t) n m (Op a)
+</span><a href="#local-6989586621679408561"><span class="hs-identifier hs-var">lm'</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-103"></span><span>  </span><span id="local-6989586621679408561"><span class="annot"><span class="annottext">lm' :: Diagram (Dual t) n m (Op a) -&gt; Limes s (Dual p) (Dual t) n m (Op a)
+</span><a href="#local-6989586621679408561"><span class="hs-identifier hs-var hs-var">lm'</span></a></span></span><span> </span><span id="local-6989586621679408562"><span class="annot"><span class="annottext">Diagram (Dual t) n m (Op a)
+</span><a href="#local-6989586621679408562"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a -&gt; Struct Mlt a
+forall s a. ConeStruct s a -&gt; Struct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnStructMlt"><span class="hs-identifier hs-var">cnStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408557"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-104"></span><span>    </span><span class="annot"><span class="annottext">Struct Mlt a
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limes s p t n m a
+-&gt; Dual (Limes s p t n m a)
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limes s p t n m a
+-&gt; Dual (Limes s p t n m a)
+</span><a href="OAlg.Limes.Definition.html#coLimes"><span class="hs-identifier hs-var">coLimes</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408557"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408558"><span class="hs-identifier hs-var">rp</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408559"><span class="hs-identifier hs-var">rt</span></a></span><span> </span><span class="annot"><span class="annottext">(Limes s p t n m a -&gt; Limes s (Dual p) (Dual t) n m (Op a))
+-&gt; Limes s p t n m a -&gt; Limes s (Dual p) (Dual t) n m (Op a)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="#local-6989586621679408560"><span class="hs-identifier hs-var">lm</span></a></span><span> </span><span class="annot"><span class="annottext">(Diagram t n m a -&gt; Limes s p t n m a)
+-&gt; Diagram t n m a -&gt; Limes s p t n m a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(Dual (Dual t) :~: t) -&gt; Dual (Diagram t n m a) -&gt; Diagram t n m a
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Oriented a =&gt;
+(Dual (Dual t) :~: t) -&gt; Dual (Diagram t n m a) -&gt; Diagram t n m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#coDiagramInv"><span class="hs-identifier hs-var">coDiagramInv</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408559"><span class="hs-identifier hs-var">rt</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Diagram t n m a)
+Diagram (Dual t) n m (Op a)
+</span><a href="#local-6989586621679408562"><span class="hs-identifier hs-var">d'</span></a></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- lmsFromOpOp -</span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="annot"><span class="hs-comment">-- | from the bidual.</span></span><span>
+</span><span id="line-110"></span><span id="local-6989586621679408236"><span id="local-6989586621679408237"><span id="local-6989586621679408238"><span id="local-6989586621679408239"><span id="local-6989586621679408240"><span id="local-6989586621679408241"><span class="annot"><a href="OAlg.Limes.Limits.html#lmsFromOpOp"><span class="hs-identifier hs-type">lmsFromOpOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeStruct"><span class="hs-identifier hs-type">ConeStruct</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408236"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408237"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408238"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408238"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408239"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408239"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-111"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408236"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408238"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408239"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408240"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408241"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408237"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408236"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408238"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408239"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408240"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408241"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408237"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-112"></span><span id="lmsFromOpOp"><span class="annot"><span class="annottext">lmsFromOpOp :: forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m (Op (Op a))
+-&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOpOp"><span class="hs-identifier hs-var hs-var">lmsFromOpOp</span></a></span></span><span> </span><span id="local-6989586621679408574"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408574"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408574"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-113"></span><span>  </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IsoOp Mlt (Op (Op a)) a
+-&gt; Limits s p t n m (Op (Op a)) -&gt; Limits s p t n m a
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limits s p t n m a -&gt; Limits s p t n m b
+</span><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-var">lmsMap</span></a></span><span> </span><span class="annot"><span class="annottext">IsoOp Mlt (Op (Op a)) a
+forall a. Multiplicative a =&gt; IsoOp Mlt (Op (Op a)) a
+</span><a href="OAlg.Hom.Multiplicative.Definition.html#isoFromOpOpMlt"><span class="hs-identifier hs-var">isoFromOpOpMlt</span></a></span><span>
+</span><span id="line-114"></span><span>  </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">IsoOp Dst (Op (Op a)) a
+-&gt; Limits s p t n m (Op (Op a)) -&gt; Limits s p t n m a
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+IsoOrt s h =&gt;
+h a b -&gt; Limits s p t n m a -&gt; Limits s p t n m b
+</span><a href="OAlg.Limes.Limits.html#lmsMap"><span class="hs-identifier hs-var">lmsMap</span></a></span><span> </span><span class="annot"><span class="annottext">IsoOp Dst (Op (Op a)) a
+forall a. Distributive a =&gt; IsoOp Dst (Op (Op a)) a
+</span><a href="OAlg.Hom.Distributive.html#isoFromOpOpDst"><span class="hs-identifier hs-var">isoFromOpOpDst</span></a></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- coLimitsInv -</span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="annot"><span class="hs-comment">-- | from the co limits, with its inverse of 'coLimits'.</span></span><span>
+</span><span id="line-120"></span><span id="local-6989586621679408263"><span id="local-6989586621679408264"><span id="local-6989586621679408265"><span id="local-6989586621679408266"><span id="local-6989586621679408267"><span id="local-6989586621679408268"><span class="annot"><a href="OAlg.Limes.Limits.html#coLimitsInv"><span class="hs-identifier hs-type">coLimitsInv</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeStruct"><span class="hs-identifier hs-type">ConeStruct</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408263"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408264"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-121"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408265"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408265"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408266"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408266"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-122"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408263"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408265"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408266"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408267"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408268"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408264"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408263"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408265"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408266"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408267"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408268"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408264"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-123"></span><span id="coLimitsInv"><span class="annot"><span class="annottext">coLimitsInv :: forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limits s p t n m a)
+-&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#coLimitsInv"><span class="hs-identifier hs-var hs-var">coLimitsInv</span></a></span></span><span> </span><span id="local-6989586621679408620"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408620"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span id="local-6989586621679408621"><span class="annot"><span class="annottext">rp :: Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408621"><span class="hs-identifier hs-var">rp</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span id="local-6989586621679408624"><span class="annot"><span class="annottext">rt :: Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408624"><span class="hs-identifier hs-var">rt</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span id="local-6989586621679408628"><span class="annot"><span class="annottext">Dual (Limits s p t n m a)
+</span><a href="#local-6989586621679408628"><span class="hs-identifier hs-var">lms'</span></a></span></span><span>
+</span><span id="line-124"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m (Op (Op a))
+-&gt; Limits s p t n m a
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m (Op (Op a))
+-&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOpOp"><span class="hs-identifier hs-var">lmsFromOpOp</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408620"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408621"><span class="hs-identifier hs-var">rp</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408624"><span class="hs-identifier hs-var">rt</span></a></span><span> </span><span class="annot"><span class="annottext">(Limits s p t n m (Op (Op a)) -&gt; Limits s p t n m a)
+-&gt; Limits s p t n m (Op (Op a)) -&gt; Limits s p t n m a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s (Op a)
+-&gt; (Dual (Dual (Dual p)) :~: Dual p)
+-&gt; (Dual (Dual (Dual t)) :~: Dual t)
+-&gt; Limits s (Dual p) (Dual t) n m (Op a)
+-&gt; Dual (Limits s (Dual p) (Dual t) n m (Op a))
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m a
+-&gt; Dual (Limits s p t n m a)
+</span><a href="OAlg.Limes.Limits.html#coLimits"><span class="hs-identifier hs-var">coLimits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ConeStruct s a -&gt; ConeStruct s (Op a)
+forall s a. ConeStruct s a -&gt; ConeStruct s (Op a)
+</span><a href="OAlg.Limes.Cone.Definition.html#cnStructOp"><span class="hs-identifier hs-var">cnStructOp</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408620"><span class="hs-identifier hs-var">cs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Dual p :~: Dual p
+Dual (Dual (Dual p)) :~: Dual p
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual t :~: Dual t
+Dual (Dual (Dual t)) :~: Dual t
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Limits s p t n m a)
+Limits s (Dual p) (Dual t) n m (Op a)
+</span><a href="#local-6989586621679408628"><span class="hs-identifier hs-var">lms'</span></a></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- LimitsDuality -</span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span class="annot"><span class="hs-comment">-- | 'Op'-duality between limits types.</span></span><span>
+</span><span id="line-130"></span><span class="hs-keyword">data</span><span> </span><span id="LimitsDuality"><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span></span><span> </span><span id="local-6989586621679408631"><span class="annot"><a href="#local-6989586621679408631"><span class="hs-identifier hs-type">s</span></a></span></span><span> </span><span id="local-6989586621679408632"><span class="annot"><a href="#local-6989586621679408632"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679408633"><span class="annot"><a href="#local-6989586621679408633"><span class="hs-identifier hs-type">g</span></a></span></span><span> </span><span id="local-6989586621679408634"><span class="annot"><a href="#local-6989586621679408634"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-131"></span><span>  </span><span id="local-6989586621679408635"><span id="local-6989586621679408636"><span id="local-6989586621679408637"><span id="local-6989586621679408638"><span id="local-6989586621679408639"><span id="local-6989586621679408640"><span id="local-6989586621679408641"><span id="local-6989586621679408642"><span id="LimitsDuality"><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeStruct"><span class="hs-identifier hs-type">ConeStruct</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408635"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408636"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-132"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408637"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408636"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408635"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408638"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408639"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408640"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408641"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408636"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408642"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408636"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408635"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408638"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408639"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408640"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408641"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408636"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408638"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408638"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408639"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679408639"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-135"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408635"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408637"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408642"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408636"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-138"></span><span class="hs-comment">-- lmsToOp -</span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="annot"><span class="hs-comment">-- | to @__g__ ('Op' __a__)@.</span></span><span>
+</span><span id="line-141"></span><span id="local-6989586621679408279"><span id="local-6989586621679408280"><span id="local-6989586621679408281"><span id="local-6989586621679408282"><span class="annot"><a href="OAlg.Limes.Limits.html#lmsToOp"><span class="hs-identifier hs-type">lmsToOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408279"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408280"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408281"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408280"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408282"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408281"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408282"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-142"></span><span id="lmsToOp"><span class="annot"><span class="annottext">lmsToOp :: forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; f a -&gt; g (Op a)
+</span><a href="OAlg.Limes.Limits.html#lmsToOp"><span class="hs-identifier hs-var hs-var">lmsToOp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span id="local-6989586621679408644"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408644"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span class="annot"><span class="annottext">f a :~: Limits s p t n m a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">g (Op a) :~: Dual (Limits s p t n m a)
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span id="local-6989586621679408652"><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408652"><span class="hs-identifier hs-var">rp</span></a></span></span><span> </span><span id="local-6989586621679408653"><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408653"><span class="hs-identifier hs-var">rt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m a
+-&gt; Dual (Limits s p t n m a)
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limits s p t n m a
+-&gt; Dual (Limits s p t n m a)
+</span><a href="OAlg.Limes.Limits.html#coLimits"><span class="hs-identifier hs-var">coLimits</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408644"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408652"><span class="hs-identifier hs-var">rp</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408653"><span class="hs-identifier hs-var">rt</span></a></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-145"></span><span class="hs-comment">-- lmsFromOp -</span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span class="annot"><span class="hs-comment">-- | from @__g__ ('Op' __a__)@.</span></span><span>
+</span><span id="line-148"></span><span id="local-6989586621679408292"><span id="local-6989586621679408293"><span id="local-6989586621679408294"><span id="local-6989586621679408295"><span class="annot"><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier hs-type">lmsFromOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408292"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408293"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408294"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408295"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408294"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-type">Op</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408295"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408293"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408295"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span><span>
+</span><span id="line-149"></span><span id="lmsFromOp"><span class="annot"><span class="annottext">lmsFromOp :: forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; g (Op a) -&gt; f a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier hs-var hs-var">lmsFromOp</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span id="local-6989586621679408654"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408654"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span class="annot"><span class="annottext">f a :~: Limits s p t n m a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">g (Op a) :~: Dual (Limits s p t n m a)
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span id="local-6989586621679408662"><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408662"><span class="hs-identifier hs-var">rp</span></a></span></span><span> </span><span id="local-6989586621679408663"><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408663"><span class="hs-identifier hs-var">rt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limits s p t n m a)
+-&gt; Limits s p t n m a
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limits s p t n m a)
+-&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#coLimitsInv"><span class="hs-identifier hs-var">coLimitsInv</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408654"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual p) :~: p
+</span><a href="#local-6989586621679408662"><span class="hs-identifier hs-var">rp</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679408663"><span class="hs-identifier hs-var">rt</span></a></span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- prpLimitsDiagram -</span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="annot"><span class="hs-comment">-- | validity according to 'Limits'.</span></span><span>
+</span><span id="line-155"></span><span id="local-6989586621679408304"><span id="local-6989586621679408305"><span id="local-6989586621679408306"><span id="local-6989586621679408308"><span id="local-6989586621679408309"><span id="local-6989586621679408310"><span class="annot"><a href="OAlg.Limes.Limits.html#prpLimitsDiagram"><span class="hs-identifier hs-type">prpLimitsDiagram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeStruct"><span class="hs-identifier hs-type">ConeStruct</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408304"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408305"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.EligibleFactor.html#XOrtPerspective"><span class="hs-identifier hs-type">XOrtPerspective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408306"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408305"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-156"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408304"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408306"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408308"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408309"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408310"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408305"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408308"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408309"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408310"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408305"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span>
+</span><span id="line-157"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-158"></span><span id="prpLimitsDiagram"><span class="annot"><span class="annottext">prpLimitsDiagram :: forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; XOrtPerspective p a
+-&gt; Limits s p t n m a
+-&gt; Diagram t n m a
+-&gt; Statement
+</span><a href="OAlg.Limes.Limits.html#prpLimitsDiagram"><span class="hs-identifier hs-var hs-var">prpLimitsDiagram</span></a></span></span><span> </span><span id="local-6989586621679408664"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408664"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span id="local-6989586621679408665"><span class="annot"><span class="annottext">XOrtPerspective p a
+</span><a href="#local-6989586621679408665"><span class="hs-identifier hs-var">xop</span></a></span></span><span> </span><span id="local-6989586621679408666"><span class="annot"><span class="annottext">Limits s p t n m a
+</span><a href="#local-6989586621679408666"><span class="hs-identifier hs-var">lms</span></a></span></span><span> </span><span id="local-6989586621679408667"><span class="annot"><span class="annottext">Diagram t n m a
+</span><a href="#local-6989586621679408667"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;LimesDiagram&quot;</span></span><span>
+</span><span id="line-159"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a -&gt; Struct Mlt a
+forall s a. ConeStruct s a -&gt; Struct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnStructMlt"><span class="hs-identifier hs-var">cnStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408664"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-160"></span><span>                </span><span class="annot"><span class="annottext">Struct Mlt a
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Limes s p t n m a -&gt; Diagram t n m a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limes s p t n m a -&gt; Diagram t n m a
+</span><a href="OAlg.Limes.Definition.html#diagram"><span class="hs-identifier hs-var">diagram</span></a></span><span> </span><span class="annot"><span class="annottext">Limes s p t n m a
+</span><a href="#local-6989586621679408680"><span class="hs-identifier hs-var">lm</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a -&gt; Diagram t n m a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a
+</span><a href="#local-6989586621679408667"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Message -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3F%3E"><span class="hs-operator hs-var">:?&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">[Parameter] -&gt; Message
+</span><a href="OAlg.Data.Statement.Definition.html#Params"><span class="hs-identifier hs-var">Params</span></a></span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;d&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">Diagram t n m a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a
+</span><a href="#local-6989586621679408667"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;lm&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">Limes s p t n m a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Limes s p t n m a
+</span><a href="#local-6989586621679408680"><span class="hs-identifier hs-var">lm</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-161"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+-&gt; XOrtPerspective p a -&gt; Limes s p t n m a -&gt; Statement
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; XOrtPerspective p a -&gt; Limes s p t n m a -&gt; Statement
+</span><a href="OAlg.Limes.Definition.html#relLimes"><span class="hs-identifier hs-var">relLimes</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408664"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtPerspective p a
+</span><a href="#local-6989586621679408665"><span class="hs-identifier hs-var">xop</span></a></span><span> </span><span class="annot"><span class="annottext">Limes s p t n m a
+</span><a href="#local-6989586621679408680"><span class="hs-identifier hs-var">lm</span></a></span><span>
+</span><span id="line-162"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679408680"><span class="annot"><span class="annottext">lm :: Limes s p t n m a
+</span><a href="#local-6989586621679408680"><span class="hs-identifier hs-var hs-var">lm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Limits s p t n m a
+</span><a href="#local-6989586621679408666"><span class="hs-identifier hs-var">lms</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m a
+</span><a href="#local-6989586621679408667"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-164"></span><span>
+</span><span id="line-165"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- prpLimits -</span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span class="annot"><span class="hs-comment">-- | validity according to 'Limits', relative to the given random variable for 'Diagram's. </span></span><span>
+</span><span id="line-169"></span><span id="local-6989586621679408349"><span id="local-6989586621679408350"><span id="local-6989586621679408351"><span id="local-6989586621679408352"><span id="local-6989586621679408353"><span id="local-6989586621679408354"><span class="annot"><a href="OAlg.Limes.Limits.html#prpLimits"><span class="hs-identifier hs-type">prpLimits</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeStruct"><span class="hs-identifier hs-type">ConeStruct</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408349"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408350"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408349"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408351"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408352"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408353"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408354"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408350"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-170"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408352"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408353"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408354"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408350"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.EligibleFactor.html#XOrtPerspective"><span class="hs-identifier hs-type">XOrtPerspective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408351"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408350"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-171"></span><span id="prpLimits"><span class="annot"><span class="annottext">prpLimits :: forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; Limits s p t n m a
+-&gt; X (Diagram t n m a)
+-&gt; XOrtPerspective p a
+-&gt; Statement
+</span><a href="OAlg.Limes.Limits.html#prpLimits"><span class="hs-identifier hs-var hs-var">prpLimits</span></a></span></span><span> </span><span id="local-6989586621679408686"><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408686"><span class="hs-identifier hs-var">cs</span></a></span></span><span> </span><span id="local-6989586621679408687"><span class="annot"><span class="annottext">Limits s p t n m a
+</span><a href="#local-6989586621679408687"><span class="hs-identifier hs-var">lms</span></a></span></span><span> </span><span id="local-6989586621679408688"><span class="annot"><span class="annottext">X (Diagram t n m a)
+</span><a href="#local-6989586621679408688"><span class="hs-identifier hs-var">xd</span></a></span></span><span> </span><span id="local-6989586621679408689"><span class="annot"><span class="annottext">XOrtPerspective p a
+</span><a href="#local-6989586621679408689"><span class="hs-identifier hs-var">xop</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Limits&quot;</span></span><span>
+</span><span id="line-172"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (Diagram t n m a) -&gt; (Diagram t n m a -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (Diagram t n m a)
+</span><a href="#local-6989586621679408688"><span class="hs-identifier hs-var">xd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ConeStruct s a
+-&gt; XOrtPerspective p a
+-&gt; Limits s p t n m a
+-&gt; Diagram t n m a
+-&gt; Statement
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; XOrtPerspective p a
+-&gt; Limits s p t n m a
+-&gt; Diagram t n m a
+-&gt; Statement
+</span><a href="OAlg.Limes.Limits.html#prpLimitsDiagram"><span class="hs-identifier hs-var">prpLimitsDiagram</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct s a
+</span><a href="#local-6989586621679408686"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtPerspective p a
+</span><a href="#local-6989586621679408689"><span class="hs-identifier hs-var">xop</span></a></span><span> </span><span class="annot"><span class="annottext">Limits s p t n m a
+</span><a href="#local-6989586621679408687"><span class="hs-identifier hs-var">lms</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span>
+</span><span id="line-175"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679408372"><span id="local-6989586621679408373"><span id="local-6989586621679408374"><span id="local-6989586621679408375"><span id="local-6989586621679408376"><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408372"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Validable.html#XStandard"><span class="hs-identifier hs-type">XStandard</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408373"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408374"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408375"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408372"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-176"></span><span>         </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.EligibleFactor.html#XStandardOrtPerspective"><span class="hs-identifier hs-type">XStandardOrtPerspective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408376"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408372"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-177"></span><span>         </span><span class="hs-special">)</span><span>
+</span><span id="line-178"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-type">Validable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408376"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408373"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408374"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408375"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408372"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-179"></span><span>  </span><span id="local-6989586621679408700"><span class="annot"><span class="annottext">valid :: Limits Mlt p t n m a -&gt; Statement
+</span><a href="#local-6989586621679408700"><span class="hs-identifier hs-var hs-var hs-var hs-var">valid</span></a></span></span><span> </span><span id="local-6989586621679408702"><span class="annot"><span class="annottext">Limits Mlt p t n m a
+</span><a href="#local-6989586621679408702"><span class="hs-identifier hs-var">lm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; Limits Mlt p t n m a
+-&gt; X (Diagram t n m a)
+-&gt; XOrtPerspective p a
+-&gt; Statement
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; Limits s p t n m a
+-&gt; X (Diagram t n m a)
+-&gt; XOrtPerspective p a
+-&gt; Statement
+</span><a href="OAlg.Limes.Limits.html#prpLimits"><span class="hs-identifier hs-var">prpLimits</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Mlt p t n m a
+</span><a href="#local-6989586621679408702"><span class="hs-identifier hs-var">lm</span></a></span><span> </span><span class="annot"><span class="annottext">X (Diagram t n m a)
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtPerspective p a
+forall (p :: Perspective) a.
+XStandardOrtPerspective p a =&gt;
+XOrtPerspective p a
+</span><a href="OAlg.Limes.Cone.EligibleFactor.html#xStandardOrtPerspective"><span class="hs-identifier hs-var">xStandardOrtPerspective</span></a></span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679408386"><span id="local-6989586621679408387"><span id="local-6989586621679408388"><span id="local-6989586621679408389"><span id="local-6989586621679408390"><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408386"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Validable.html#XStandard"><span class="hs-identifier hs-type">XStandard</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408387"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408388"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408389"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408386"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-182"></span><span>         </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.EligibleFactor.html#XStandardOrtPerspective"><span class="hs-identifier hs-type">XStandardOrtPerspective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408390"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408386"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-183"></span><span>         </span><span class="hs-special">)</span><span>
+</span><span id="line-184"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-type">Validable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408390"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408387"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408388"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408389"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408386"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-185"></span><span>  </span><span id="local-6989586621679408713"><span class="annot"><span class="annottext">valid :: Limits Dst p t n m a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var hs-var hs-var hs-var">valid</span></a></span></span><span> </span><span id="local-6989586621679408714"><span class="annot"><span class="annottext">Limits Dst p t n m a
+</span><a href="#local-6989586621679408714"><span class="hs-identifier hs-var">lm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+-&gt; Limits Dst p t n m a
+-&gt; X (Diagram t n m a)
+-&gt; XOrtPerspective p a
+-&gt; Statement
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; Limits s p t n m a
+-&gt; X (Diagram t n m a)
+-&gt; XOrtPerspective p a
+-&gt; Statement
+</span><a href="OAlg.Limes.Limits.html#prpLimits"><span class="hs-identifier hs-var">prpLimits</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+forall a. Distributive a =&gt; ConeStruct Dst a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Dst p t n m a
+</span><a href="#local-6989586621679408714"><span class="hs-identifier hs-var">lm</span></a></span><span> </span><span class="annot"><span class="annottext">X (Diagram t n m a)
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtPerspective p a
+forall (p :: Perspective) a.
+XStandardOrtPerspective p a =&gt;
+XOrtPerspective p a
+</span><a href="OAlg.Limes.Cone.EligibleFactor.html#xStandardOrtPerspective"><span class="hs-identifier hs-var">xStandardOrtPerspective</span></a></span><span>
+</span><span id="line-186"></span><span>
+</span><span id="line-187"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-188"></span><span class="hs-comment">-- lmsToPrjOrnt -</span><span>
+</span><span id="line-189"></span><span>
+</span><span id="line-190"></span><span class="annot"><span class="hs-comment">-- | projective limits for @'Orientation' __p__@.</span></span><span>
+</span><span id="line-191"></span><span id="local-6989586621679408391"><span id="local-6989586621679408394"><span id="local-6989586621679408395"><span id="local-6989586621679408396"><span class="annot"><a href="OAlg.Limes.Limits.html#lmsToPrjOrnt"><span class="hs-identifier hs-type">lmsToPrjOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408391"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408391"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408394"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408395"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408396"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408391"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-192"></span><span id="lmsToPrjOrnt"><span class="annot"><span class="annottext">lmsToPrjOrnt :: forall p (t :: DiagramType) (n :: N') (m :: N').
+Entity p =&gt;
+p -&gt; Limits Mlt 'Projective t n m (Orientation p)
+</span><a href="OAlg.Limes.Limits.html#lmsToPrjOrnt"><span class="hs-identifier hs-var hs-var">lmsToPrjOrnt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram t n m (Orientation p)
+ -&gt; Limes Mlt 'Projective t n m (Orientation p))
+-&gt; Limits Mlt 'Projective t n m (Orientation p)
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">((Diagram t n m (Orientation p)
+  -&gt; Limes Mlt 'Projective t n m (Orientation p))
+ -&gt; Limits Mlt 'Projective t n m (Orientation p))
+-&gt; (p
+    -&gt; Diagram t n m (Orientation p)
+    -&gt; Limes Mlt 'Projective t n m (Orientation p))
+-&gt; p
+-&gt; Limits Mlt 'Projective t n m (Orientation p)
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">p
+-&gt; Diagram t n m (Orientation p)
+-&gt; Limes Mlt 'Projective t n m (Orientation p)
+forall p a (t :: DiagramType) (n :: N') (m :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; Diagram t n m a -&gt; Limes Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#lmToPrjOrnt"><span class="hs-identifier hs-var">lmToPrjOrnt</span></a></span><span>
+</span><span id="line-193"></span><span>  </span><span>
+</span><span id="line-194"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-195"></span><span class="hs-comment">-- lmsFromInjOrnt -</span><span>
+</span><span id="line-196"></span><span>
+</span><span id="line-197"></span><span class="annot"><span class="hs-comment">-- | injective limits for @'Orientation' __p__@.</span></span><span>
+</span><span id="line-198"></span><span id="local-6989586621679408410"><span id="local-6989586621679408412"><span id="local-6989586621679408413"><span id="local-6989586621679408414"><span class="annot"><a href="OAlg.Limes.Limits.html#lmsFromInjOrnt"><span class="hs-identifier hs-type">lmsFromInjOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408410"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679408410"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408412"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408413"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408414"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408410"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-199"></span><span id="lmsFromInjOrnt"><span class="annot"><span class="annottext">lmsFromInjOrnt :: forall p (t :: DiagramType) (n :: N') (m :: N').
+Entity p =&gt;
+p -&gt; Limits Mlt 'Injective t n m (Orientation p)
+</span><a href="OAlg.Limes.Limits.html#lmsFromInjOrnt"><span class="hs-identifier hs-var hs-var">lmsFromInjOrnt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram t n m (Orientation p)
+ -&gt; Limes Mlt 'Injective t n m (Orientation p))
+-&gt; Limits Mlt 'Injective t n m (Orientation p)
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">((Diagram t n m (Orientation p)
+  -&gt; Limes Mlt 'Injective t n m (Orientation p))
+ -&gt; Limits Mlt 'Injective t n m (Orientation p))
+-&gt; (p
+    -&gt; Diagram t n m (Orientation p)
+    -&gt; Limes Mlt 'Injective t n m (Orientation p))
+-&gt; p
+-&gt; Limits Mlt 'Injective t n m (Orientation p)
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">p
+-&gt; Diagram t n m (Orientation p)
+-&gt; Limes Mlt 'Injective t n m (Orientation p)
+forall p a (t :: DiagramType) (n :: N') (m :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; Diagram t n m a -&gt; Limes Mlt 'Injective t n m a
+</span><a href="OAlg.Limes.Definition.html#lmFromInjOrnt"><span class="hs-identifier hs-var">lmFromInjOrnt</span></a></span><span>  </span><span>
+</span><span id="line-200"></span><span>
+</span><span id="line-201"></span></pre></body></html>

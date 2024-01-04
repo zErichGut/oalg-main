@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Module      : OAlg.Limes.MinimaAndMaxima</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Description : minima and maxima</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- minima and maxima within a 'Multiplicative' structure, i.e. limits of @'Diagram' ('Chain' __t__)@.</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Limes.MinimaAndMaxima</span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Minima</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minima"><span class="hs-identifier">Minima</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minimum"><span class="hs-identifier">Minimum</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MinimumCone"><span class="hs-identifier">MinimumCone</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MinimumDiagram"><span class="hs-identifier">MinimumDiagram</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#minimaTo"><span class="hs-identifier">minimaTo</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#minimaFrom"><span class="hs-identifier">minimaFrom</span></a></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Maxima</span></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier">Maxima</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maximum"><span class="hs-identifier">Maximum</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MaximumCone"><span class="hs-identifier">MaximumCone</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MaximumDiagram"><span class="hs-identifier">MaximumDiagram</span></a></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo"><span class="hs-identifier">maximaTo</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo%27"><span class="hs-identifier">maximaTo'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom"><span class="hs-identifier">maximaFrom</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom%27"><span class="hs-identifier">maximaFrom'</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Duality</span></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityTo"><span class="hs-identifier">maxLimitsDualityTo</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityFrom"><span class="hs-identifier">maxLimitsDualityFrom</span></a></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Typeable</span></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html"><span class="hs-identifier">OAlg.Entity.Natural</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.html"><span class="hs-identifier">OAlg.Entity.Diagram</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.html"><span class="hs-identifier">OAlg.Limes.Cone</span></a></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html"><span class="hs-identifier">OAlg.Limes.Definition</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html"><span class="hs-identifier">OAlg.Limes.Limits</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- Minima -</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="annot"><span class="hs-comment">-- | 'Diagram' for a minimum.</span></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">type</span><span> </span><span id="MinimumDiagram"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MinimumDiagram"><span class="hs-identifier hs-var">MinimumDiagram</span></a></span></span><span> </span><span id="local-6989586621679409054"><span class="annot"><a href="#local-6989586621679409054"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409055"><span class="annot"><a href="#local-6989586621679409055"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409054"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409055"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409055"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><span class="hs-comment">-- | 'Cone' for a minimum.</span></span><span>
+</span><span id="line-54"></span><span class="hs-keyword">type</span><span> </span><span id="MinimumCone"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MinimumCone"><span class="hs-identifier hs-var">MinimumCone</span></a></span></span><span> </span><span id="local-6989586621679409056"><span class="annot"><a href="#local-6989586621679409056"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409057"><span class="annot"><a href="#local-6989586621679409057"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#Cone"><span class="hs-identifier hs-type">Cone</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409056"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409057"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409057"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span class="annot"><span class="hs-comment">-- | minimum as 'Limes'.</span></span><span>
+</span><span id="line-57"></span><span class="hs-keyword">type</span><span> </span><span id="Minimum"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minimum"><span class="hs-identifier hs-var">Minimum</span></a></span></span><span> </span><span id="local-6989586621679409058"><span class="annot"><a href="#local-6989586621679409058"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409059"><span class="annot"><a href="#local-6989586621679409059"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409058"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409059"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409059"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="annot"><span class="hs-comment">-- | minima for a 'Multiplicative' structure.</span></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">type</span><span> </span><span id="Minima"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minima"><span class="hs-identifier hs-var">Minima</span></a></span></span><span> </span><span id="local-6989586621679409060"><span class="annot"><a href="#local-6989586621679409060"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409061"><span class="annot"><a href="#local-6989586621679409061"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409060"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409061"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409061"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- minima -</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><span class="hs-comment">-- | minima according to @'Chain' 'To'@.</span></span><span>
+</span><span id="line-66"></span><span id="local-6989586621679408917"><span id="local-6989586621679408920"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#minimaTo"><span class="hs-identifier hs-type">minimaTo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408917"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minima"><span class="hs-identifier hs-type">Minima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408920"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408917"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-67"></span><span id="minimaTo"><span class="annot"><span class="annottext">minimaTo :: forall a (n :: N'). Multiplicative a =&gt; Minima 'To n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#minimaTo"><span class="hs-identifier hs-var hs-var">minimaTo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Chain 'To) ('S n) n a
+ -&gt; Limes Mlt 'Projective ('Chain 'To) ('S n) n a)
+-&gt; Limits Mlt 'Projective ('Chain 'To) ('S n) n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">MinimumDiagram 'To n a -&gt; Minimum 'To n a
+Diagram ('Chain 'To) ('S n) n a
+-&gt; Limes Mlt 'Projective ('Chain 'To) ('S n) n a
+forall a (n :: N').
+Multiplicative a =&gt;
+MinimumDiagram 'To n a -&gt; Minimum 'To n a
+</span><a href="#local-6989586621679409065"><span class="hs-identifier hs-var">lMin</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-68"></span><span>  </span><span id="local-6989586621679408942"><span id="local-6989586621679408943"><span class="annot"><a href="#local-6989586621679409065"><span class="hs-identifier hs-type">lMin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408942"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MinimumDiagram"><span class="hs-identifier hs-type">MinimumDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408943"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408942"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minimum"><span class="hs-identifier hs-type">Minimum</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408943"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408942"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679409065"><span class="annot"><span class="annottext">lMin :: forall a (n :: N').
+Multiplicative a =&gt;
+MinimumDiagram 'To n a -&gt; Minimum 'To n a
+</span><a href="#local-6989586621679409065"><span class="hs-identifier hs-var hs-var">lMin</span></a></span></span><span> </span><span id="local-6989586621679409072"><span class="annot"><span class="annottext">MinimumDiagram 'To n a
+</span><a href="#local-6989586621679409072"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'To) ('S n) n a
+-&gt; (Cone Mlt 'Projective ('Chain 'To) ('S n) n a -&gt; a)
+-&gt; Limes Mlt 'Projective ('Chain 'To) ('S n) n a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+Cone Mlt 'Projective ('Chain 'To) ('S n) n a
+</span><a href="#local-6989586621679409074"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'To) ('S n) n a -&gt; a
+forall {n :: N'} {a}.
+Cone Mlt 'Projective ('Chain 'To) ('S n) n a -&gt; a
+</span><a href="#local-6989586621679409075"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>    </span><span id="local-6989586621679409074"><span class="annot"><span class="annottext">l :: Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+</span><a href="#local-6989586621679409074"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FactorChain 'To n a
+-&gt; Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+forall a (n :: N').
+Multiplicative a =&gt;
+FactorChain 'To n a
+-&gt; Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnPrjChainTo"><span class="hs-identifier hs-var">cnPrjChainTo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; MinimumDiagram 'To n a -&gt; FactorChain 'To n a
+forall (s :: Site) (n :: N') a.
+a -&gt; Diagram ('Chain s) (n + 1) n a -&gt; FactorChain s n a
+</span><a href="OAlg.Limes.Cone.Definition.html#FactorChain"><span class="hs-identifier hs-var">FactorChain</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; a
+forall c. Multiplicative c =&gt; Point c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#one"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram ('Chain 'To) ('S n) n a -&gt; Point a
+forall a (n :: N') (m :: N').
+Oriented a =&gt;
+Diagram ('Chain 'To) n m a -&gt; Point a
+</span><a href="OAlg.Entity.Diagram.Definition.html#chnToStart"><span class="hs-identifier hs-var">chnToStart</span></a></span><span> </span><span class="annot"><span class="annottext">MinimumDiagram 'To n a
+Diagram ('Chain 'To) ('S n) n a
+</span><a href="#local-6989586621679409072"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MinimumDiagram 'To n a
+</span><a href="#local-6989586621679409072"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679409075"><span class="annot"><span class="annottext">u :: Cone Mlt 'Projective ('Chain 'To) ('S n) n a -&gt; a
+</span><a href="#local-6989586621679409075"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span id="local-6989586621679409080"><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'To) ('S n) n a
+</span><a href="#local-6989586621679409080"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679409081"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#FactorChain"><span class="hs-identifier hs-type">FactorChain</span></a></span><span> </span><span id="local-6989586621679409081"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679409081"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="annot"><span class="annottext">Diagram ('Chain 'To) (n + 1) n a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+-&gt; FactorChain 'To n a
+forall (n :: N') a.
+Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+-&gt; FactorChain 'To n a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnPrjChainToInv"><span class="hs-identifier hs-var">cnPrjChainToInv</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'To) (n + 1) n a
+Cone Mlt 'Projective ('Chain 'To) ('S n) n a
+</span><a href="#local-6989586621679409080"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="annot"><span class="hs-comment">-- | minima according to @'Chain' 'From'@.</span></span><span>
+</span><span id="line-74"></span><span id="local-6989586621679408969"><span id="local-6989586621679408971"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#minimaFrom"><span class="hs-identifier hs-type">minimaFrom</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408969"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minima"><span class="hs-identifier hs-type">Minima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408971"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408969"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-75"></span><span id="minimaFrom"><span class="annot"><span class="annottext">minimaFrom :: forall a (n :: N'). Multiplicative a =&gt; Minima 'From n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#minimaFrom"><span class="hs-identifier hs-var hs-var">minimaFrom</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Chain 'From) ('S n) n a
+ -&gt; Limes Mlt 'Projective ('Chain 'From) ('S n) n a)
+-&gt; Limits Mlt 'Projective ('Chain 'From) ('S n) n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">MinimumDiagram 'From n a -&gt; Minimum 'From n a
+Diagram ('Chain 'From) ('S n) n a
+-&gt; Limes Mlt 'Projective ('Chain 'From) ('S n) n a
+forall a (n :: N').
+Multiplicative a =&gt;
+MinimumDiagram 'From n a -&gt; Minimum 'From n a
+</span><a href="#local-6989586621679409085"><span class="hs-identifier hs-var">lMin</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>  </span><span id="local-6989586621679408974"><span id="local-6989586621679408975"><span class="annot"><a href="#local-6989586621679409085"><span class="hs-identifier hs-type">lMin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408974"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MinimumDiagram"><span class="hs-identifier hs-type">MinimumDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408975"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408974"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minimum"><span class="hs-identifier hs-type">Minimum</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408975"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408974"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-77"></span><span>  </span><span id="local-6989586621679409085"><span class="annot"><span class="annottext">lMin :: forall a (n :: N').
+Multiplicative a =&gt;
+MinimumDiagram 'From n a -&gt; Minimum 'From n a
+</span><a href="#local-6989586621679409085"><span class="hs-identifier hs-var hs-var">lMin</span></a></span></span><span> </span><span id="local-6989586621679409089"><span class="annot"><span class="annottext">MinimumDiagram 'From n a
+</span><a href="#local-6989586621679409089"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'From) ('S n) n a
+-&gt; (Cone Mlt 'Projective ('Chain 'From) ('S n) n a -&gt; a)
+-&gt; Limes Mlt 'Projective ('Chain 'From) ('S n) n a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+Cone Mlt 'Projective ('Chain 'From) ('S n) n a
+</span><a href="#local-6989586621679409090"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'From) ('S n) n a -&gt; a
+forall {n :: N'} {a}.
+Cone Mlt 'Projective ('Chain 'From) ('S n) n a -&gt; a
+</span><a href="#local-6989586621679409091"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-78"></span><span>    </span><span id="local-6989586621679409090"><span class="annot"><span class="annottext">l :: Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+</span><a href="#local-6989586621679409090"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FactorChain 'From n a
+-&gt; Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+forall a (n :: N').
+Multiplicative a =&gt;
+FactorChain 'From n a
+-&gt; Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnPrjChainFrom"><span class="hs-identifier hs-var">cnPrjChainFrom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; MinimumDiagram 'From n a -&gt; FactorChain 'From n a
+forall (s :: Site) (n :: N') a.
+a -&gt; Diagram ('Chain s) (n + 1) n a -&gt; FactorChain s n a
+</span><a href="OAlg.Limes.Cone.Definition.html#FactorChain"><span class="hs-identifier hs-var">FactorChain</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; a
+forall c. Multiplicative c =&gt; Point c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#one"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram ('Chain 'From) ('S n) n a -&gt; Point a
+forall (n :: N') (m :: N') a.
+Diagram ('Chain 'From) n m a -&gt; Point a
+</span><a href="OAlg.Entity.Diagram.Definition.html#chnFromStart"><span class="hs-identifier hs-var">chnFromStart</span></a></span><span> </span><span class="annot"><span class="annottext">MinimumDiagram 'From n a
+Diagram ('Chain 'From) ('S n) n a
+</span><a href="#local-6989586621679409089"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MinimumDiagram 'From n a
+</span><a href="#local-6989586621679409089"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>    </span><span id="local-6989586621679409091"><span class="annot"><span class="annottext">u :: Cone Mlt 'Projective ('Chain 'From) ('S n) n a -&gt; a
+</span><a href="#local-6989586621679409091"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span id="local-6989586621679409094"><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'From) ('S n) n a
+</span><a href="#local-6989586621679409094"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679409095"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#FactorChain"><span class="hs-identifier hs-type">FactorChain</span></a></span><span> </span><span id="local-6989586621679409095"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679409095"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="annot"><span class="annottext">Diagram ('Chain 'From) (n + 1) n a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+-&gt; FactorChain 'From n a
+forall (n :: N') a.
+Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+-&gt; FactorChain 'From n a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnPrjChainFromInv"><span class="hs-identifier hs-var">cnPrjChainFromInv</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Chain 'From) (n + 1) n a
+Cone Mlt 'Projective ('Chain 'From) ('S n) n a
+</span><a href="#local-6989586621679409094"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-82"></span><span class="hs-comment">-- Maxima -</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="annot"><span class="hs-comment">-- | 'Diagram' for a maximum.</span></span><span>
+</span><span id="line-85"></span><span class="hs-keyword">type</span><span> </span><span id="MaximumDiagram"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MaximumDiagram"><span class="hs-identifier hs-var">MaximumDiagram</span></a></span></span><span> </span><span id="local-6989586621679409097"><span class="annot"><a href="#local-6989586621679409097"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409098"><span class="annot"><a href="#local-6989586621679409098"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409097"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409098"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409098"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="annot"><span class="hs-comment">-- | 'Cone' for a maximum.</span></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">type</span><span> </span><span id="MaximumCone"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#MaximumCone"><span class="hs-identifier hs-var">MaximumCone</span></a></span></span><span> </span><span id="local-6989586621679409099"><span class="annot"><a href="#local-6989586621679409099"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409100"><span class="annot"><a href="#local-6989586621679409100"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#Cone"><span class="hs-identifier hs-type">Cone</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409099"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409100"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409100"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="annot"><span class="hs-comment">-- | maximum as a 'Limes'.</span></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">type</span><span> </span><span id="Maximum"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maximum"><span class="hs-identifier hs-var">Maximum</span></a></span></span><span> </span><span id="local-6989586621679409101"><span class="annot"><a href="#local-6989586621679409101"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409102"><span class="annot"><a href="#local-6989586621679409102"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409101"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409102"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409102"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><span class="hs-comment">-- | maxima for a 'Multiplicative' structure.</span></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">type</span><span> </span><span id="Maxima"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-var">Maxima</span></a></span></span><span> </span><span id="local-6989586621679409103"><span class="annot"><a href="#local-6989586621679409103"><span class="hs-identifier hs-type">t</span></a></span></span><span> </span><span id="local-6989586621679409104"><span class="annot"><a href="#local-6989586621679409104"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Chain"><span class="hs-identifier hs-type">Chain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409103"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679409104"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409104"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- Duality - Max -</span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span class="annot"><span class="hs-comment">-- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.</span></span><span>
+</span><span id="line-100"></span><span id="local-6989586621679408987"><span id="local-6989586621679408988"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityTo"><span class="hs-identifier hs-type">maxLimitsDualityTo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408987"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-type">Maxima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408988"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minima"><span class="hs-identifier hs-type">Minima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679408988"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679408987"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-101"></span><span id="maxLimitsDualityTo"><span class="annot"><span class="annottext">maxLimitsDualityTo :: forall a (n :: N').
+Multiplicative a =&gt;
+LimitsDuality Mlt (Maxima 'To n) (Minima 'From n) a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityTo"><span class="hs-identifier hs-var hs-var">maxLimitsDualityTo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (Limits Mlt 'Injective ('Chain 'To) ('S n) n a
+    :~: Limits Mlt 'Injective ('Chain 'To) ('S n) n a)
+-&gt; (Limits Mlt 'Projective ('Chain 'From) ('S n) n (Op a)
+    :~: Dual (Limits Mlt 'Injective ('Chain 'To) ('S n) n a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual ('Chain 'To)) :~: 'Chain 'To)
+-&gt; LimitsDuality
+     Mlt
+     (Limits Mlt 'Injective ('Chain 'To) ('S n) n)
+     (Limits Mlt 'Projective ('Chain 'From) ('S n) n)
+     a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limits s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limits s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimitsDuality s f g a
+</span><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Injective ('Chain 'To) ('S n) n a
+:~: Limits Mlt 'Injective ('Chain 'To) ('S n) n a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Projective ('Chain 'From) ('S n) n (Op a)
+:~: Dual (Limits Mlt 'Injective ('Chain 'To) ('S n) n a)
+Limits Mlt 'Projective ('Chain 'From) ('S n) n (Op a)
+:~: Limits Mlt 'Projective ('Chain 'From) ('S n) n (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual ('Chain 'To)) :~: 'Chain 'To
+'Chain 'To :~: 'Chain 'To
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span class="annot"><span class="hs-comment">-- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.</span></span><span>
+</span><span id="line-104"></span><span id="local-6989586621679409009"><span id="local-6989586621679409010"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityFrom"><span class="hs-identifier hs-type">maxLimitsDualityFrom</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409009"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-type">Maxima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409010"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Minima"><span class="hs-identifier hs-type">Minima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409010"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679409009"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-106"></span><span id="maxLimitsDualityFrom"><span class="annot"><span class="annottext">maxLimitsDualityFrom :: forall a (n :: N').
+Multiplicative a =&gt;
+LimitsDuality Mlt (Maxima 'From n) (Minima 'To n) a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityFrom"><span class="hs-identifier hs-var hs-var">maxLimitsDualityFrom</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+-&gt; (Limits Mlt 'Injective ('Chain 'From) ('S n) n a
+    :~: Limits Mlt 'Injective ('Chain 'From) ('S n) n a)
+-&gt; (Limits Mlt 'Projective ('Chain 'To) ('S n) n (Op a)
+    :~: Dual (Limits Mlt 'Injective ('Chain 'From) ('S n) n a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual ('Chain 'From)) :~: 'Chain 'From)
+-&gt; LimitsDuality
+     Mlt
+     (Limits Mlt 'Injective ('Chain 'From) ('S n) n)
+     (Limits Mlt 'Projective ('Chain 'To) ('S n) n)
+     a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limits s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limits s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimitsDuality s f g a
+</span><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt a
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Injective ('Chain 'From) ('S n) n a
+:~: Limits Mlt 'Injective ('Chain 'From) ('S n) n a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Projective ('Chain 'To) ('S n) n (Op a)
+:~: Dual (Limits Mlt 'Injective ('Chain 'From) ('S n) n a)
+Limits Mlt 'Projective ('Chain 'To) ('S n) n (Op a)
+:~: Limits Mlt 'Projective ('Chain 'To) ('S n) n (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual ('Chain 'From)) :~: 'Chain 'From
+'Chain 'From :~: 'Chain 'From
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-109"></span><span class="hs-comment">-- maxima -</span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="annot"><span class="hs-comment">-- | maxima according to @'Chain' 'To'@.</span></span><span>
+</span><span id="line-112"></span><span id="local-6989586621679409013"><span id="local-6989586621679409014"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo"><span class="hs-identifier hs-type">maximaTo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409013"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-type">Maxima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409014"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409013"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-113"></span><span id="maximaTo"><span class="annot"><span class="annottext">maximaTo :: forall a (n :: N'). Multiplicative a =&gt; Maxima 'To n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo"><span class="hs-identifier hs-var hs-var">maximaTo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LimitsDuality
+  Mlt
+  (Limits Mlt 'Injective ('Chain 'To) ('S n) n)
+  (Limits Mlt 'Projective ('Chain 'From) ('S n) n)
+  a
+-&gt; Limits Mlt 'Projective ('Chain 'From) ('S n) n (Op a)
+-&gt; Limits Mlt 'Injective ('Chain 'To) ('S n) n a
+forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; g (Op a) -&gt; f a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier hs-var">lmsFromOp</span></a></span><span> </span><span class="annot"><span class="annottext">LimitsDuality Mlt (Maxima 'To n) (Minima 'From n) a
+LimitsDuality
+  Mlt
+  (Limits Mlt 'Injective ('Chain 'To) ('S n) n)
+  (Limits Mlt 'Projective ('Chain 'From) ('S n) n)
+  a
+forall a (n :: N').
+Multiplicative a =&gt;
+LimitsDuality Mlt (Maxima 'To n) (Minima 'From n) a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityTo"><span class="hs-identifier hs-var">maxLimitsDualityTo</span></a></span><span> </span><span class="annot"><span class="annottext">Minima 'From n (Op a)
+Limits Mlt 'Projective ('Chain 'From) ('S n) n (Op a)
+forall a (n :: N'). Multiplicative a =&gt; Minima 'From n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#minimaFrom"><span class="hs-identifier hs-var">minimaFrom</span></a></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span class="annot"><span class="hs-comment">-- | maxima according to @'Chain' 'From'@.</span></span><span>
+</span><span id="line-116"></span><span id="local-6989586621679409022"><span id="local-6989586621679409023"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom"><span class="hs-identifier hs-type">maximaFrom</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409022"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-type">Maxima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409023"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409022"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-117"></span><span id="maximaFrom"><span class="annot"><span class="annottext">maximaFrom :: forall a (n :: N'). Multiplicative a =&gt; Maxima 'From n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom"><span class="hs-identifier hs-var hs-var">maximaFrom</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LimitsDuality
+  Mlt
+  (Limits Mlt 'Injective ('Chain 'From) ('S n) n)
+  (Limits Mlt 'Projective ('Chain 'To) ('S n) n)
+  a
+-&gt; Limits Mlt 'Projective ('Chain 'To) ('S n) n (Op a)
+-&gt; Limits Mlt 'Injective ('Chain 'From) ('S n) n a
+forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; g (Op a) -&gt; f a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier hs-var">lmsFromOp</span></a></span><span> </span><span class="annot"><span class="annottext">LimitsDuality Mlt (Maxima 'From n) (Minima 'To n) a
+LimitsDuality
+  Mlt
+  (Limits Mlt 'Injective ('Chain 'From) ('S n) n)
+  (Limits Mlt 'Projective ('Chain 'To) ('S n) n)
+  a
+forall a (n :: N').
+Multiplicative a =&gt;
+LimitsDuality Mlt (Maxima 'From n) (Minima 'To n) a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maxLimitsDualityFrom"><span class="hs-identifier hs-var">maxLimitsDualityFrom</span></a></span><span> </span><span class="annot"><span class="annottext">Minima 'To n (Op a)
+Limits Mlt 'Projective ('Chain 'To) ('S n) n (Op a)
+forall a (n :: N'). Multiplicative a =&gt; Minima 'To n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#minimaTo"><span class="hs-identifier hs-var">minimaTo</span></a></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="annot"><span class="hs-comment">-- | maxima according to @'Chain' 'To'@ given by two proxy types.</span></span><span>
+</span><span id="line-120"></span><span id="local-6989586621679409026"><span id="local-6989586621679409027"><span id="local-6989586621679409028"><span id="local-6989586621679409029"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo%27"><span class="hs-identifier hs-type">maximaTo'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409026"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679409027"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409028"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679409029"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409026"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-type">Maxima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409028"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409026"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span><span>
+</span><span id="line-121"></span><span id="maximaTo%27"><span class="annot"><span class="annottext">maximaTo' :: forall a (p :: N' -&gt; *) (n :: N') (f :: * -&gt; *).
+Multiplicative a =&gt;
+p n -&gt; f a -&gt; Maxima 'To n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo%27"><span class="hs-identifier hs-var hs-var">maximaTo'</span></a></span></span><span> </span><span class="annot"><span class="annottext">p n
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">f a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maxima 'To n a
+forall a (n :: N'). Multiplicative a =&gt; Maxima 'To n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo"><span class="hs-identifier hs-var">maximaTo</span></a></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="annot"><span class="hs-comment">-- | maxima according to @'Chain' 'From'@ given by two proxy types.</span></span><span>
+</span><span id="line-124"></span><span id="local-6989586621679409034"><span id="local-6989586621679409035"><span id="local-6989586621679409036"><span id="local-6989586621679409037"><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom%27"><span class="hs-identifier hs-type">maximaFrom'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409034"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679409035"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409036"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679409037"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409034"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html#Maxima"><span class="hs-identifier hs-type">Maxima</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409036"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679409034"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span><span>
+</span><span id="line-125"></span><span id="maximaFrom%27"><span class="annot"><span class="annottext">maximaFrom' :: forall a (p :: N' -&gt; *) (n :: N') (f :: * -&gt; *).
+Multiplicative a =&gt;
+p n -&gt; f a -&gt; Maxima 'From n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom%27"><span class="hs-identifier hs-var hs-var">maximaFrom'</span></a></span></span><span> </span><span class="annot"><span class="annottext">p n
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">f a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maxima 'From n a
+forall a (n :: N'). Multiplicative a =&gt; Maxima 'From n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom"><span class="hs-identifier hs-var">maximaFrom</span></a></span><span>
+</span><span id="line-126"></span></pre></body></html>

@@ -1,0 +1,1184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Module      : OAlg.Limes.KernelsAndCokernels</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Description : kernels and cokernels</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- kernels and cokernels, i.e. limits in a 'Distributive' structure of @'Diagram' ('Parallel' __d__)@</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- making all arrows 'zero'.</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Limes.KernelsAndCokernels</span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Kernels</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier">Kernels</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier">Kernel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelCone"><span class="hs-identifier">KernelCone</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier">KernelDiagram</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelFactor"><span class="hs-identifier">kernelFactor</span></a></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelDiagram"><span class="hs-identifier">kernelDiagram</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Construction</span></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernels"><span class="hs-identifier">kernels</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernels0"><span class="hs-identifier">kernels0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernels1"><span class="hs-identifier">kernels1</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#krnEqls"><span class="hs-identifier">krnEqls</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#eqlKrns"><span class="hs-identifier">eqlKrns</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelZero"><span class="hs-identifier">kernelZero</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-comment">-- *** Orientation</span></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelsOrnt"><span class="hs-identifier">kernelsOrnt</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Cokernels</span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier">Cokernels</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernel"><span class="hs-identifier">Cokernel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelCone"><span class="hs-identifier">CokernelCone</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelDiagram"><span class="hs-identifier">CokernelDiagram</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelFactor"><span class="hs-identifier">cokernelFactor</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelDiagram"><span class="hs-identifier">cokernelDiagram</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Construction</span></span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels"><span class="hs-identifier">cokernels</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels%27"><span class="hs-identifier">cokernels'</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- *** Orientation</span></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelsOrnt"><span class="hs-identifier">cokernelsOrnt</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Duality</span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#krnLimesDuality"><span class="hs-identifier">krnLimesDuality</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimesDuality"><span class="hs-identifier">cokrnLimesDuality</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Proposition</span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#prpIsKernel"><span class="hs-identifier">prpIsKernel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#prpIsCokernel"><span class="hs-identifier">prpIsCokernel</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Typeable</span></span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html"><span class="hs-identifier">OAlg.Entity.Natural</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B%2B"><span class="hs-operator">(++)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html"><span class="hs-identifier">OAlg.Entity.FinList</span></a></span><span> </span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.html"><span class="hs-identifier">OAlg.Entity.Diagram</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.html"><span class="hs-identifier">OAlg.Structure.Additive</span></a></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.html"><span class="hs-identifier">OAlg.Structure.Distributive</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.html"><span class="hs-identifier">OAlg.Limes.Cone</span></a></span><span>
+</span><span id="line-65"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html"><span class="hs-identifier">OAlg.Limes.Definition</span></a></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html"><span class="hs-identifier">OAlg.Limes.Limits</span></a></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html"><span class="hs-identifier">OAlg.Limes.EqualizersAndCoequalizers</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- Kernels -</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="annot"><span class="hs-comment">-- | 'Diagram' for a kernel.</span></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">type</span><span> </span><span id="KernelDiagram"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-var">KernelDiagram</span></a></span></span><span> </span><span id="local-6989586621679411005"><span class="annot"><a href="#local-6989586621679411005"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#LeftToRight"><span class="hs-identifier hs-type">LeftToRight</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411005"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="annot"><span class="hs-comment">-- | 'Cone' for a kernel.</span></span><span>
+</span><span id="line-76"></span><span class="hs-keyword">type</span><span> </span><span id="KernelCone"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelCone"><span class="hs-identifier hs-var">KernelCone</span></a></span></span><span> </span><span id="local-6989586621679411006"><span class="annot"><a href="#local-6989586621679411006"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#Cone"><span class="hs-identifier hs-type">Cone</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#LeftToRight"><span class="hs-identifier hs-type">LeftToRight</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411006"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="annot"><span class="hs-comment">-- | kernel as a 'Limes'.</span></span><span>
+</span><span id="line-79"></span><span class="hs-keyword">type</span><span> </span><span id="Kernel"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-var">Kernel</span></a></span></span><span> </span><span id="local-6989586621679411007"><span class="annot"><a href="#local-6989586621679411007"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#LeftToRight"><span class="hs-identifier hs-type">LeftToRight</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411007"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span class="annot"><span class="hs-comment">-- | kernels for 'Distributive' structures.</span></span><span>
+</span><span id="line-82"></span><span class="hs-keyword">type</span><span> </span><span id="Kernels"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-var">Kernels</span></a></span></span><span> </span><span id="local-6989586621679411008"><span class="annot"><a href="#local-6989586621679411008"><span class="hs-identifier hs-type">n</span></a></span></span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#LeftToRight"><span class="hs-identifier hs-type">LeftToRight</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411008"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- kernelFactor -</span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="annot"><span class="hs-comment">-- | the factor of its shell.</span></span><span>
+</span><span id="line-88"></span><span id="local-6989586621679410703"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelFactor"><span class="hs-identifier hs-type">kernelFactor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelCone"><span class="hs-identifier hs-type">KernelCone</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410703"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410703"><span class="hs-identifier hs-type">c</span></a></span></span><span>
+</span><span id="line-89"></span><span id="kernelFactor"><span class="annot"><span class="annottext">kernelFactor :: forall c. KernelCone N1 c -&gt; c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernelFactor"><span class="hs-identifier hs-var hs-var">kernelFactor</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 N1 c
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411015"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411015"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411015"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- kernelDiagram -</span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="annot"><span class="hs-comment">-- | the kernel diagram of a given factor.</span></span><span>
+</span><span id="line-95"></span><span id="local-6989586621679410717"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelDiagram"><span class="hs-identifier hs-type">kernelDiagram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Oriented"><span class="hs-identifier hs-type">Oriented</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410717"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410717"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-type">KernelDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410717"><span class="hs-identifier hs-type">c</span></a></span></span><span>
+</span><span id="line-96"></span><span id="kernelDiagram"><span class="annot"><span class="annottext">kernelDiagram :: forall c. Oriented c =&gt; c -&gt; KernelDiagram N1 c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernelDiagram"><span class="hs-identifier hs-var hs-var">kernelDiagram</span></a></span></span><span> </span><span id="local-6989586621679411019"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411019"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Point c
+-&gt; Point c
+-&gt; FinList N1 c
+-&gt; Diagram ('Parallel 'LeftToRight) N2 N1 c
+forall a (m :: N').
+Point a
+-&gt; Point a
+-&gt; FinList m a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-var">DiagramParallelLR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Point c
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411019"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Point c
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#end"><span class="hs-identifier hs-var">end</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411019"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411019"><span class="hs-identifier hs-var">f</span></a></span><span class="annot"><span class="annottext">c -&gt; FinList 'N0 c -&gt; FinList ('N0 + 1) c
+forall a (n1 :: N'). a -&gt; FinList n1 a -&gt; FinList (n1 + 1) a
+</span><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-var">:|</span></a></span><span class="annot"><span class="annottext">FinList 'N0 c
+forall a. FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- kernelZero -</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="annot"><span class="hs-comment">-- | the kernel of the 'zero' factor given by the orientation, i.e. 'one'</span></span><span>
+</span><span id="line-102"></span><span id="local-6989586621679410730"><span id="local-6989586621679410731"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelZero"><span class="hs-identifier hs-type">kernelZero</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410730"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410731"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410730"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Point"><span class="hs-identifier hs-type">Point</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410730"><span class="hs-identifier hs-type">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410730"><span class="hs-identifier hs-type">c</span></a></span></span></span><span>
+</span><span id="line-103"></span><span id="kernelZero"><span class="annot"><span class="annottext">kernelZero :: forall c (p :: * -&gt; *).
+Distributive c =&gt;
+p c -&gt; Orientation (Point c) -&gt; Kernel N1 c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernelZero"><span class="hs-identifier hs-var hs-var">kernelZero</span></a></span></span><span> </span><span class="annot"><span class="annottext">p c
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411043"><span class="annot"><span class="annottext">Orientation (Point c)
+</span><a href="#local-6989586621679411043"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c
+-&gt; (Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c -&gt; c)
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c
+</span><a href="#local-6989586621679411045"><span class="hs-identifier hs-var">oKer</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c -&gt; c
+forall c. KernelCone N1 c -&gt; c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernelFactor"><span class="hs-identifier hs-var">kernelFactor</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679411046"><span class="annot"><span class="annottext">z :: c
+</span><a href="#local-6989586621679411046"><span class="hs-identifier hs-var hs-var">z</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Root c -&gt; c
+forall a. Additive a =&gt; Root a -&gt; a
+</span><a href="OAlg.Structure.Additive.Definition.html#zero"><span class="hs-identifier hs-var">zero</span></a></span><span> </span><span class="annot"><span class="annottext">Orientation (Point c)
+Root c
+</span><a href="#local-6989586621679411043"><span class="hs-identifier hs-var">o</span></a></span><span>
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621679411045"><span class="annot"><span class="annottext">oKer :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c
+</span><a href="#local-6989586621679411045"><span class="hs-identifier hs-var hs-var">oKer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 N1 c
+-&gt; c -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 c
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Diagram ('Parallel 'LeftToRight) N2 N1 c
+forall c. Oriented c =&gt; c -&gt; KernelDiagram N1 c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernelDiagram"><span class="hs-identifier hs-var">kernelDiagram</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411046"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point c -&gt; c
+forall c. Multiplicative c =&gt; Point c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#one"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Point c
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411046"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span>  </span><span>
+</span><span id="line-108"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-109"></span><span class="hs-comment">-- kernels0 -</span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="annot"><span class="hs-comment">-- | kernels for zero arrows.</span></span><span>
+</span><span id="line-112"></span><span id="local-6989586621679410752"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernels0"><span class="hs-identifier hs-type">kernels0</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410752"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410752"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-113"></span><span id="kernels0"><span class="annot"><span class="annottext">kernels0 :: forall a. Distributive a =&gt; Kernels 'N0 a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernels0"><span class="hs-identifier hs-var hs-var">kernels0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'LeftToRight) N2 'N0 a
+ -&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a)
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 'N0 a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+forall a. Distributive a =&gt; KernelDiagram 'N0 a -&gt; Kernel 'N0 a
+</span><a href="#local-6989586621679411051"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-114"></span><span>  </span><span id="local-6989586621679410762"><span class="annot"><a href="#local-6989586621679411051"><span class="hs-identifier hs-type">krn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410762"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-type">KernelDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410762"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410762"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-115"></span><span>  </span><span id="local-6989586621679411051"><span class="annot"><span class="annottext">krn :: forall a. Distributive a =&gt; KernelDiagram 'N0 a -&gt; Kernel 'N0 a
+</span><a href="#local-6989586621679411051"><span class="hs-identifier hs-var hs-var">krn</span></a></span></span><span> </span><span id="local-6989586621679411054"><span class="annot"><span class="annottext">d :: KernelDiagram 'N0 a
+</span><a href="#local-6989586621679411054"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-type">DiagramParallelLR</span></a></span><span> </span><span id="local-6989586621679411057"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411057"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+-&gt; (Cone Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a -&gt; a)
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+</span><a href="#local-6989586621679411061"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a -&gt; a
+forall a. KernelCone 'N0 a -&gt; a
+</span><a href="#local-6989586621679411062"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621679411061"><span class="annot"><span class="annottext">l :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+</span><a href="#local-6989586621679411061"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KernelDiagram 'N0 a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 'N0 a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram 'N0 a
+</span><a href="#local-6989586621679411054"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Point a -&gt; a
+forall c. Multiplicative c =&gt; Point c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#one"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411057"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-117"></span><span>    </span><span id="local-6989586621679410764"><span class="annot"><a href="#local-6989586621679411062"><span class="hs-identifier hs-type">u</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelCone"><span class="hs-identifier hs-type">KernelCone</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N0"><span class="hs-identifier hs-type">N0</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410764"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410764"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-118"></span><span>    </span><span id="local-6989586621679411062"><span class="annot"><span class="annottext">u :: forall a. KernelCone 'N0 a -&gt; a
+</span><a href="#local-6989586621679411062"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 'N0 a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411068"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411068"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411068"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- krnEqls -</span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="annot"><span class="hs-comment">-- | the induced equalizers where its first arrow is 'zero'.</span></span><span>
+</span><span id="line-124"></span><span id="local-6989586621679410766"><span id="local-6989586621679410768"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#krnEqls"><span class="hs-identifier hs-type">krnEqls</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410766"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.Definition.html#Abelian"><span class="hs-identifier hs-type">Abelian</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410766"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410768"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410766"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html#Equalizers"><span class="hs-identifier hs-type">Equalizers</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410768"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410766"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-125"></span><span id="krnEqls"><span class="annot"><span class="annottext">krnEqls :: forall a (n :: N').
+(Distributive a, Abelian a) =&gt;
+Kernels n a -&gt; Equalizers (n + 1) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#krnEqls"><span class="hs-identifier hs-var hs-var">krnEqls</span></a></span></span><span> </span><span id="local-6989586621679411073"><span class="annot"><span class="annottext">Kernels n a
+</span><a href="#local-6989586621679411073"><span class="hs-identifier hs-var">krn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+ -&gt; Limes Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a)
+-&gt; Limits Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Kernels n a -&gt; EqualizerDiagram (n + 1) a -&gt; Equalizer (n + 1) a
+forall a (n :: N').
+(Distributive a, Abelian a) =&gt;
+Kernels n a -&gt; EqualizerDiagram (n + 1) a -&gt; Equalizer (n + 1) a
+</span><a href="#local-6989586621679411074"><span class="hs-identifier hs-var">eql</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels n a
+</span><a href="#local-6989586621679411073"><span class="hs-identifier hs-var">krn</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-126"></span><span>  </span><span id="local-6989586621679410776"><span id="local-6989586621679410777"><span class="annot"><a href="#local-6989586621679411074"><span class="hs-identifier hs-type">eql</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410776"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.Definition.html#Abelian"><span class="hs-identifier hs-type">Abelian</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410776"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410777"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410776"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html#EqualizerDiagram"><span class="hs-identifier hs-type">EqualizerDiagram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410777"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410776"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html#Equalizer"><span class="hs-identifier hs-type">Equalizer</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410777"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410776"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-128"></span><span>  </span><span id="local-6989586621679411074"><span class="annot"><span class="annottext">eql :: forall a (n :: N').
+(Distributive a, Abelian a) =&gt;
+Kernels n a -&gt; EqualizerDiagram (n + 1) a -&gt; Equalizer (n + 1) a
+</span><a href="#local-6989586621679411074"><span class="hs-identifier hs-var hs-var">eql</span></a></span></span><span> </span><span id="local-6989586621679411088"><span class="annot"><span class="annottext">Kernels n a
+</span><a href="#local-6989586621679411088"><span class="hs-identifier hs-var">krn</span></a></span></span><span> </span><span id="local-6989586621679411089"><span class="annot"><span class="annottext">EqualizerDiagram (n + 1) a
+</span><a href="#local-6989586621679411089"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; (Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a -&gt; a)
+-&gt; Limes Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411090"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a -&gt; a
+</span><a href="#local-6989586621679411091"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-129"></span><span>    </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span id="local-6989586621679411098"><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411098"><span class="hs-identifier hs-var">dKrn</span></a></span></span><span> </span><span id="local-6989586621679411099"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411099"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679411100"><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><a href="#local-6989586621679411100"><span class="hs-identifier hs-var">uKrn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Kernels n a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 n a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels n a
+</span><a href="#local-6989586621679411088"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EqualizerDiagram (n + 1) a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 n a
+forall a (d :: Direction) (n :: N') (m :: N').
+Abelian a =&gt;
+Diagram ('Parallel d) n (m + 1) a -&gt; Diagram ('Parallel d) n m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgPrlDiffTail"><span class="hs-identifier hs-var">dgPrlDiffTail</span></a></span><span> </span><span class="annot"><span class="annottext">EqualizerDiagram (n + 1) a
+</span><a href="#local-6989586621679411089"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>    </span><span id="local-6989586621679411103"><span class="annot"><span class="annottext">a0 :: a
+</span><a href="#local-6989586621679411103"><span class="hs-identifier hs-var hs-var">a0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FinList (n + 1) a -&gt; a
+FinList ('S n) a -&gt; a
+forall (n :: N') a. FinList (n + 1) a -&gt; a
+</span><a href="OAlg.Entity.FinList.html#head"><span class="hs-identifier hs-var">head</span></a></span><span> </span><span class="annot"><span class="annottext">(FinList ('S n) a -&gt; a) -&gt; FinList ('S n) a -&gt; a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 ('S n) a -&gt; FinList ('S n) a
+forall (t :: DiagramType) (n :: N') (m :: N') a.
+Diagram t n m a -&gt; FinList m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgArrows"><span class="hs-identifier hs-var">dgArrows</span></a></span><span> </span><span class="annot"><span class="annottext">EqualizerDiagram (n + 1) a
+Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411089"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-131"></span><span>    </span><span>
+</span><span id="line-132"></span><span>    </span><span id="local-6989586621679411090"><span class="annot"><span class="annottext">l :: Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411090"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; Point a
+-&gt; FinList N2 a
+-&gt; Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Multiplicative a =&gt;
+Diagram t n m a
+-&gt; Point a -&gt; FinList n a -&gt; Cone Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-var">ConeProjective</span></a></span><span> </span><span class="annot"><span class="annottext">EqualizerDiagram (n + 1) a
+Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411089"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Point a
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411099"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411099"><span class="hs-identifier hs-var">k</span></a></span><span class="annot"><span class="annottext">a -&gt; FinList N1 a -&gt; FinList (N1 + 1) a
+forall a (n1 :: N'). a -&gt; FinList n1 a -&gt; FinList (n1 + 1) a
+</span><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-var">:|</span></a></span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411103"><span class="hs-identifier hs-var">a0</span></a></span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#%2A"><span class="hs-operator hs-var">*</span></a></span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411099"><span class="hs-identifier hs-var">k</span></a></span><span class="annot"><span class="annottext">a -&gt; FinList 'N0 a -&gt; FinList ('N0 + 1) a
+forall a (n1 :: N'). a -&gt; FinList n1 a -&gt; FinList (n1 + 1) a
+</span><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-var">:|</span></a></span><span class="annot"><span class="annottext">FinList 'N0 a
+forall a. FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>    </span><span id="local-6989586621679411091"><span class="annot"><span class="annottext">u :: Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a -&gt; a
+</span><a href="#local-6989586621679411091"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span id="local-6989586621679411109"><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411109"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><a href="#local-6989586621679411100"><span class="hs-identifier hs-var">uKrn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411098"><span class="hs-identifier hs-var">dKrn</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinList (N1 + 1) a -&gt; a
+FinList N2 a -&gt; a
+forall (n :: N') a. FinList (n + 1) a -&gt; a
+</span><a href="OAlg.Entity.FinList.html#head"><span class="hs-identifier hs-var">head</span></a></span><span> </span><span class="annot"><span class="annottext">(FinList N2 a -&gt; a) -&gt; FinList N2 a -&gt; a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; FinList N2 a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; FinList n a
+</span><a href="OAlg.Limes.Cone.Definition.html#shell"><span class="hs-identifier hs-var">shell</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411109"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- eqlKrns -</span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="annot"><span class="hs-comment">-- | the induced kernels given by adjoining a 'zero' arrow as first arrow.</span></span><span>
+</span><span id="line-139"></span><span id="local-6989586621679410809"><span id="local-6989586621679410810"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#eqlKrns"><span class="hs-identifier hs-type">eqlKrns</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410809"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html#Equalizers"><span class="hs-identifier hs-type">Equalizers</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410810"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410809"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410810"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410809"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-140"></span><span id="eqlKrns"><span class="annot"><span class="annottext">eqlKrns :: forall a (n :: N').
+Distributive a =&gt;
+Equalizers (n + 1) a -&gt; Kernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#eqlKrns"><span class="hs-identifier hs-var hs-var">eqlKrns</span></a></span></span><span> </span><span id="local-6989586621679411113"><span class="annot"><span class="annottext">Equalizers (n + 1) a
+</span><a href="#local-6989586621679411113"><span class="hs-identifier hs-var">eql</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'LeftToRight) N2 n a
+ -&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a)
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Equalizers (n + 1) a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 n a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall a (n :: N').
+Distributive a =&gt;
+Equalizers (n + 1) a -&gt; KernelDiagram n a -&gt; Kernel n a
+</span><a href="#local-6989586621679411114"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="annot"><span class="annottext">Equalizers (n + 1) a
+</span><a href="#local-6989586621679411113"><span class="hs-identifier hs-var">eql</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-141"></span><span>  </span><span id="local-6989586621679410813"><span id="local-6989586621679410814"><span class="annot"><a href="#local-6989586621679411114"><span class="hs-identifier hs-type">krn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410813"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html#Equalizers"><span class="hs-identifier hs-type">Equalizers</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410814"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410813"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-type">KernelDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410814"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410813"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410814"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410813"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-142"></span><span>  </span><span id="local-6989586621679411114"><span class="annot"><span class="annottext">krn :: forall a (n :: N').
+Distributive a =&gt;
+Equalizers (n + 1) a -&gt; KernelDiagram n a -&gt; Kernel n a
+</span><a href="#local-6989586621679411114"><span class="hs-identifier hs-var hs-var">krn</span></a></span></span><span> </span><span id="local-6989586621679411121"><span class="annot"><span class="annottext">Equalizers (n + 1) a
+</span><a href="#local-6989586621679411121"><span class="hs-identifier hs-var">eql</span></a></span></span><span> </span><span id="local-6989586621679411122"><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411122"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+-&gt; (Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a)
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411123"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><a href="#local-6989586621679411124"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-143"></span><span>    </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span id="local-6989586621679411126"><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411126"><span class="hs-identifier hs-var">lEql</span></a></span></span><span> </span><span id="local-6989586621679411127"><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a -&gt; a
+</span><a href="#local-6989586621679411127"><span class="hs-identifier hs-var">uEql</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; Limes Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Equalizers (n + 1) a
+Limits Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411121"><span class="hs-identifier hs-var">eql</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">KernelDiagram n a -&gt; Diagram ('Parallel 'LeftToRight) N2 (n + 1) a
+forall a (n :: N') (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) n m a
+-&gt; Diagram ('Parallel 'LeftToRight) n (m + 1) a
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgPrlAdjZero"><span class="hs-identifier hs-var">dgPrlAdjZero</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411122"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-144"></span><span>    </span><span>
+</span><span id="line-145"></span><span>    </span><span id="local-6989586621679411123"><span class="annot"><span class="annottext">l :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411123"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411122"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinList (N1 + 1) a -&gt; a
+FinList N2 a -&gt; a
+forall (n :: N') a. FinList (n + 1) a -&gt; a
+</span><a href="OAlg.Entity.FinList.html#head"><span class="hs-identifier hs-var">head</span></a></span><span> </span><span class="annot"><span class="annottext">(FinList N2 a -&gt; a) -&gt; FinList N2 a -&gt; a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; FinList N2 a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; FinList n a
+</span><a href="OAlg.Limes.Cone.Definition.html#shell"><span class="hs-identifier hs-var">shell</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411126"><span class="hs-identifier hs-var">lEql</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>    </span><span id="local-6989586621679411124"><span class="annot"><span class="annottext">u :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><a href="#local-6989586621679411124"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span id="local-6989586621679411129"><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411129"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a -&gt; a
+</span><a href="#local-6989586621679411127"><span class="hs-identifier hs-var">uEql</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; Point a
+-&gt; FinList N2 a
+-&gt; Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Multiplicative a =&gt;
+Diagram t n m a
+-&gt; Point a -&gt; FinList n a -&gt; Cone Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-var">ConeProjective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; Diagram t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnDiagram"><span class="hs-identifier hs-var">cnDiagram</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+</span><a href="#local-6989586621679411126"><span class="hs-identifier hs-var">lEql</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; Point a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; Point a
+</span><a href="OAlg.Limes.Cone.Definition.html#tip"><span class="hs-identifier hs-var">tip</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411129"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+-&gt; FinList N2 a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; FinList n a
+</span><a href="OAlg.Limes.Cone.Definition.html#shell"><span class="hs-identifier hs-var">shell</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411129"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- kenrels1 -</span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="annot"><span class="hs-comment">-- | promoting kernels.</span></span><span>
+</span><span id="line-152"></span><span id="local-6989586621679410832"><span id="local-6989586621679410833"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernels1"><span class="hs-identifier hs-type">kernels1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410832"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410832"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410833"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410832"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-153"></span><span id="kernels1"><span class="annot"><span class="annottext">kernels1 :: forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; Kernels (n + 1) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernels1"><span class="hs-identifier hs-var hs-var">kernels1</span></a></span></span><span> </span><span id="local-6989586621679411134"><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411134"><span class="hs-identifier hs-var">krn1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'LeftToRight) N2 ('S n) a
+ -&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 ('S n) a)
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 ('S n) a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Kernels N1 a -&gt; KernelDiagram (n + 1) a -&gt; Kernel (n + 1) a
+forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; KernelDiagram (n + 1) a -&gt; Kernel (n + 1) a
+</span><a href="#local-6989586621679411135"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411134"><span class="hs-identifier hs-var">krn1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-154"></span><span>  </span><span id="local-6989586621679410836"><span id="local-6989586621679410837"><span class="annot"><a href="#local-6989586621679411135"><span class="hs-identifier hs-type">krn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410836"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410836"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-type">KernelDiagram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410837"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410836"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679410837"><span class="hs-identifier hs-type">n</span></a></span><span class="annot"><a href="OAlg.Entity.Natural.html#%2B"><span class="hs-operator hs-type">+</span></a></span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410836"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-155"></span><span>  </span><span id="local-6989586621679411135"><span class="annot"><span class="annottext">krn :: forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; KernelDiagram (n + 1) a -&gt; Kernel (n + 1) a
+</span><a href="#local-6989586621679411135"><span class="hs-identifier hs-var hs-var">krn</span></a></span></span><span> </span><span id="local-6989586621679411140"><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411140"><span class="hs-identifier hs-var">krn1</span></a></span></span><span> </span><span id="local-6989586621679411141"><span class="annot"><span class="annottext">d :: KernelDiagram (n + 1) a
+</span><a href="#local-6989586621679411141"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-type">DiagramParallelLR</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span class="annot"><span class="annottext">FinList n1 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 N1 a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 N1 a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411140"><span class="hs-identifier hs-var">krn1</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram (n + 1) a
+Diagram ('Parallel 'LeftToRight) N2 N1 a
+</span><a href="#local-6989586621679411141"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-156"></span><span>  </span><span class="annot"><a href="#local-6989586621679411135"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span id="local-6989586621679411150"><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411150"><span class="hs-identifier hs-var">krn1</span></a></span></span><span> </span><span id="local-6989586621679411151"><span class="annot"><span class="annottext">d :: KernelDiagram (n + 1) a
+</span><a href="#local-6989586621679411151"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-type">DiagramParallelLR</span></a></span><span> </span><span id="local-6989586621679411154"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411154"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679411155"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411155"><span class="hs-identifier hs-var">q</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679411160"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411160"><span class="hs-identifier hs-var">a0</span></a></span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span id="local-6989586621679411161"><span class="annot"><span class="annottext">aN :: FinList n1 a
+</span><a href="#local-6989586621679411161"><span class="hs-identifier hs-var">aN</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span class="annot"><span class="annottext">FinList n1 a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+-&gt; (Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+    -&gt; a)
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+</span><a href="#local-6989586621679411169"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+-&gt; a
+</span><a href="#local-6989586621679411170"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-157"></span><span>    </span><span id="local-6989586621679411171"><span class="annot"><span class="annottext">dN :: Diagram ('Parallel 'LeftToRight) N2 n1 a
+</span><a href="#local-6989586621679411171"><span class="hs-identifier hs-var hs-var">dN</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Point a
+-&gt; Point a
+-&gt; FinList n1 a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 n1 a
+forall a (m :: N').
+Point a
+-&gt; Point a
+-&gt; FinList m a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-var">DiagramParallelLR</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411154"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411155"><span class="hs-identifier hs-var">q</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n1 a
+</span><a href="#local-6989586621679411161"><span class="hs-identifier hs-var">aN</span></a></span><span>
+</span><span id="line-158"></span><span>    </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 (n1 + 1) a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411178"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411178"><span class="hs-identifier hs-var">h</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679411179"><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 (n1 + 1) a -&gt; a
+Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S n1) a -&gt; a
+</span><a href="#local-6989586621679411179"><span class="hs-identifier hs-var">uN</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 (n1 + 1) a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 (n1 + 1) a
+forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; KernelDiagram (n + 1) a -&gt; Kernel (n + 1) a
+</span><a href="#local-6989586621679411135"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411150"><span class="hs-identifier hs-var">krn1</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n1 a
+Diagram ('Parallel 'LeftToRight) N2 (n1 + 1) a
+</span><a href="#local-6989586621679411171"><span class="hs-identifier hs-var">dN</span></a></span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span>    </span><span id="local-6989586621679411180"><span class="annot"><span class="annottext">d1 :: Diagram ('Parallel 'LeftToRight) N2 N1 a
+</span><a href="#local-6989586621679411180"><span class="hs-identifier hs-var hs-var">d1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Point a
+-&gt; Point a
+-&gt; FinList N1 a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 N1 a
+forall a (m :: N').
+Point a
+-&gt; Point a
+-&gt; FinList m a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-var">DiagramParallelLR</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Point a
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411178"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411155"><span class="hs-identifier hs-var">q</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411160"><span class="hs-identifier hs-var">a0</span></a></span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#%2A"><span class="hs-operator hs-var">*</span></a></span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411178"><span class="hs-identifier hs-var">h</span></a></span><span class="annot"><span class="annottext">a -&gt; FinList 'N0 a -&gt; FinList ('N0 + 1) a
+forall a (n1 :: N'). a -&gt; FinList n1 a -&gt; FinList (n1 + 1) a
+</span><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-var">:|</span></a></span><span class="annot"><span class="annottext">FinList 'N0 a
+forall a. FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-161"></span><span>    </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 N1 a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411187"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411187"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679411188"><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 a -&gt; a
+</span><a href="#local-6989586621679411188"><span class="hs-identifier hs-var">u1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 N1 a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 N1 a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411150"><span class="hs-identifier hs-var">krn1</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 N1 a
+</span><a href="#local-6989586621679411180"><span class="hs-identifier hs-var">d1</span></a></span><span>
+</span><span id="line-162"></span><span>    </span><span id="local-6989586621679411169"><span class="annot"><span class="annottext">l :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+</span><a href="#local-6989586621679411169"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+-&gt; a
+-&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram (n + 1) a
+Diagram ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+</span><a href="#local-6989586621679411151"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411178"><span class="hs-identifier hs-var">h</span></a></span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#%2A"><span class="hs-operator hs-var">*</span></a></span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411187"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-163"></span><span>    </span><span id="local-6989586621679411170"><span class="annot"><span class="annottext">u :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+-&gt; a
+</span><a href="#local-6989586621679411170"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 ('S ('S n1)) a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411196"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411196"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411197"><span class="hs-identifier hs-var">uk</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-164"></span><span>      </span><span id="local-6989586621679411197"><span class="annot"><span class="annottext">uk :: a
+</span><a href="#local-6989586621679411197"><span class="hs-identifier hs-var hs-var">uk</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 a -&gt; a
+</span><a href="#local-6989586621679411188"><span class="hs-identifier hs-var">u1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 N1 a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 N1 a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 N1 a
+</span><a href="#local-6989586621679411180"><span class="hs-identifier hs-var">d1</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411198"><span class="hs-identifier hs-var">uh</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-165"></span><span>      </span><span id="local-6989586621679411198"><span class="annot"><span class="annottext">uh :: a
+</span><a href="#local-6989586621679411198"><span class="hs-identifier hs-var hs-var">uh</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n1 a -&gt; a
+Cone Dst 'Projective ('Parallel 'LeftToRight) N2 ('S n1) a -&gt; a
+</span><a href="#local-6989586621679411179"><span class="hs-identifier hs-var">uN</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n1 a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n1 a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n1 a
+</span><a href="#local-6989586621679411171"><span class="hs-identifier hs-var">dN</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411196"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- kernels -</span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span class="annot"><span class="hs-comment">-- | promoting kernels.</span></span><span>
+</span><span id="line-171"></span><span id="local-6989586621679410843"><span id="local-6989586621679410844"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernels"><span class="hs-identifier hs-type">kernels</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410843"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410843"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410844"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410843"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-172"></span><span id="kernels"><span class="annot"><span class="annottext">kernels :: forall a (n :: N'). Distributive a =&gt; Kernels N1 a -&gt; Kernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernels"><span class="hs-identifier hs-var hs-var">kernels</span></a></span></span><span> </span><span id="local-6989586621679411201"><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411201"><span class="hs-identifier hs-var">krn1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'LeftToRight) N2 n a
+ -&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a)
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Kernels N1 a
+-&gt; Diagram ('Parallel 'LeftToRight) N2 n a
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; KernelDiagram n a -&gt; Kernel n a
+</span><a href="#local-6989586621679411202"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411201"><span class="hs-identifier hs-var">krn1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-173"></span><span>  </span><span id="local-6989586621679410847"><span id="local-6989586621679410848"><span class="annot"><a href="#local-6989586621679411202"><span class="hs-identifier hs-type">krn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410847"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-174"></span><span>    </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410847"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-type">KernelDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410848"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410847"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410848"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410847"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-175"></span><span>  </span><span id="local-6989586621679411202"><span class="annot"><span class="annottext">krn :: forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; KernelDiagram n a -&gt; Kernel n a
+</span><a href="#local-6989586621679411202"><span class="hs-identifier hs-var hs-var">krn</span></a></span></span><span> </span><span id="local-6989586621679411204"><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411204"><span class="hs-identifier hs-var">krn1</span></a></span></span><span> </span><span id="local-6989586621679411205"><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411205"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a -&gt; FinList n a
+forall (t :: DiagramType) (n :: N') (m :: N') a.
+Diagram t n m a -&gt; FinList m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgArrows"><span class="hs-identifier hs-var">dgArrows</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411205"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-176"></span><span>    </span><span class="annot"><span class="annottext">FinList n a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>     </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+-&gt; KernelDiagram n a -&gt; Kernel n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+Kernels 'N0 a
+forall a. Distributive a =&gt; Kernels 'N0 a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernels0"><span class="hs-identifier hs-var">kernels0</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411205"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-177"></span><span>    </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span class="annot"><span class="annottext">FinList n1 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+-&gt; KernelDiagram n a -&gt; Kernel n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+Kernels N1 a
+</span><a href="#local-6989586621679411204"><span class="hs-identifier hs-var">krn1</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411205"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-178"></span><span>    </span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="annot"><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-type">:|</span></a></span><span class="annot"><span class="annottext">FinList n1 a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+-&gt; KernelDiagram n a -&gt; Kernel n a
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limits s p t n m a -&gt; Diagram t n m a -&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Limits.html#limes"><span class="hs-identifier hs-var">limes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Kernels N1 a -&gt; Kernels ('S n1 + 1) a
+forall a (n :: N').
+Distributive a =&gt;
+Kernels N1 a -&gt; Kernels (n + 1) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernels1"><span class="hs-identifier hs-var">kernels1</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 a
+</span><a href="#local-6989586621679411204"><span class="hs-identifier hs-var">krn1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411205"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-179"></span><span>
+</span><span id="line-180"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-181"></span><span class="hs-comment">-- kernelsOrnt -</span><span>
+</span><span id="line-182"></span><span>
+</span><span id="line-183"></span><span class="annot"><span class="hs-comment">-- | kernels for 'Orientation'.</span></span><span>
+</span><span id="line-184"></span><span id="local-6989586621679410854"><span id="local-6989586621679410856"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#kernelsOrnt"><span class="hs-identifier hs-type">kernelsOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410854"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410854"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410856"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410854"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-185"></span><span id="kernelsOrnt"><span class="annot"><span class="annottext">kernelsOrnt :: forall p (n :: N'). Entity p =&gt; p -&gt; Kernels n (Orientation p)
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernelsOrnt"><span class="hs-identifier hs-var hs-var">kernelsOrnt</span></a></span></span><span> </span><span id="local-6989586621679411219"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411219"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'LeftToRight) N2 n (Orientation p)
+ -&gt; Limes
+      Dst 'Projective ('Parallel 'LeftToRight) N2 n (Orientation p))
+-&gt; Limits
+     Dst 'Projective ('Parallel 'LeftToRight) N2 n (Orientation p)
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+-&gt; Diagram ('Parallel 'LeftToRight) N2 n (Orientation p)
+-&gt; Limes
+     Dst 'Projective ('Parallel 'LeftToRight) N2 n (Orientation p)
+forall p a (n :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; KernelDiagram n a -&gt; Kernel n a
+</span><a href="#local-6989586621679411220"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411219"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-186"></span><span>  </span><span id="local-6989586621679410859"><span id="local-6989586621679410860"><span id="local-6989586621679410861"><span class="annot"><a href="#local-6989586621679411220"><span class="hs-identifier hs-type">krn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410859"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679410860"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410859"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410859"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#KernelDiagram"><span class="hs-identifier hs-type">KernelDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410861"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410860"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410861"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410860"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-187"></span><span>  </span><span id="local-6989586621679411220"><span class="annot"><span class="annottext">krn :: forall p a (n :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; KernelDiagram n a -&gt; Kernel n a
+</span><a href="#local-6989586621679411220"><span class="hs-identifier hs-var hs-var">krn</span></a></span></span><span> </span><span id="local-6989586621679411224"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411224"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679411225"><span class="annot"><span class="annottext">d :: KernelDiagram n a
+</span><a href="#local-6989586621679411225"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelLR"><span class="hs-identifier hs-type">DiagramParallelLR</span></a></span><span> </span><span id="local-6989586621679411231"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411231"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">FinList n a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+-&gt; (Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a)
+-&gt; Limes Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411232"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><a href="#local-6989586621679411233"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-188"></span><span>    </span><span id="local-6989586621679411232"><span class="annot"><span class="annottext">l :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411232"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) N2 m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><a href="#local-6989586621679411225"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411224"><span class="hs-identifier hs-var">t</span></a></span><span class="annot"><span class="annottext">p -&gt; p -&gt; Orientation p
+forall p. p -&gt; p -&gt; Orientation p
+</span><a href="OAlg.Structure.Oriented.Definition.html#%3A%3E"><span class="hs-operator hs-var">:&gt;</span></a></span><span class="annot"><span class="annottext">p
+Point a
+</span><a href="#local-6989586621679411231"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-189"></span><span>    </span><span id="local-6989586621679411233"><span class="annot"><span class="annottext">u :: Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><a href="#local-6989586621679411233"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">KernelDiagram n a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411244"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411244"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Point a
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411244"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; p -&gt; Orientation p
+forall p. p -&gt; p -&gt; Orientation p
+</span><a href="OAlg.Structure.Oriented.Definition.html#%3A%3E"><span class="hs-operator hs-var">:&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411224"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-190"></span><span>  </span><span>
+</span><span id="line-191"></span><span>
+</span><span id="line-192"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-193"></span><span class="hs-comment">-- Cokernels -</span><span>
+</span><span id="line-194"></span><span>
+</span><span id="line-195"></span><span class="annot"><span class="hs-comment">-- | 'Diagram' for a cokernel.</span></span><span>
+</span><span id="line-196"></span><span class="hs-keyword">type</span><span> </span><span id="CokernelDiagram"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelDiagram"><span class="hs-identifier hs-var">CokernelDiagram</span></a></span></span><span> </span><span id="local-6989586621679411245"><span class="annot"><a href="#local-6989586621679411245"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Diagram"><span class="hs-identifier hs-type">Diagram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#RightToLeft"><span class="hs-identifier hs-type">RightToLeft</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411245"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-197"></span><span>
+</span><span id="line-198"></span><span class="annot"><span class="hs-comment">-- | 'Cone' for a cokernel.</span></span><span>
+</span><span id="line-199"></span><span class="hs-keyword">type</span><span> </span><span id="CokernelCone"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelCone"><span class="hs-identifier hs-var">CokernelCone</span></a></span></span><span> </span><span id="local-6989586621679411246"><span class="annot"><a href="#local-6989586621679411246"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#Cone"><span class="hs-identifier hs-type">Cone</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#RightToLeft"><span class="hs-identifier hs-type">RightToLeft</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411246"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-200"></span><span>
+</span><span id="line-201"></span><span class="annot"><span class="hs-comment">-- | cokernel as 'Limes'.</span></span><span>
+</span><span id="line-202"></span><span class="hs-keyword">type</span><span> </span><span id="Cokernel"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernel"><span class="hs-identifier hs-var">Cokernel</span></a></span></span><span> </span><span id="local-6989586621679411247"><span class="annot"><a href="#local-6989586621679411247"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#RightToLeft"><span class="hs-identifier hs-type">RightToLeft</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411247"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-203"></span><span>
+</span><span id="line-204"></span><span class="annot"><span class="hs-comment">-- | cokernels for 'Distributive' structures.</span></span><span>
+</span><span id="line-205"></span><span class="hs-keyword">type</span><span> </span><span id="Cokernels"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-var">Cokernels</span></a></span></span><span> </span><span id="local-6989586621679411248"><span class="annot"><a href="#local-6989586621679411248"><span class="hs-identifier hs-type">n</span></a></span></span><span>       </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-type">Limits</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#Parallel"><span class="hs-identifier hs-type">Parallel</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#RightToLeft"><span class="hs-identifier hs-type">RightToLeft</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N2"><span class="hs-identifier hs-type">N2</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679411248"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-206"></span><span>
+</span><span id="line-207"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- cokernelFactor -</span><span>
+</span><span id="line-209"></span><span>
+</span><span id="line-210"></span><span class="annot"><span class="hs-comment">-- | the factor of its shell.</span></span><span>
+</span><span id="line-211"></span><span id="local-6989586621679410867"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelFactor"><span class="hs-identifier hs-type">cokernelFactor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelCone"><span class="hs-identifier hs-type">CokernelCone</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410867"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410867"><span class="hs-identifier hs-type">c</span></a></span></span><span>
+</span><span id="line-212"></span><span id="cokernelFactor"><span class="annot"><span class="annottext">cokernelFactor :: forall c. CokernelCone N1 c -&gt; c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelFactor"><span class="hs-identifier hs-var hs-var">cokernelFactor</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeCokernel"><span class="hs-identifier hs-type">ConeCokernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'RightToLeft) N2 N1 c
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411255"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411255"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411255"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-213"></span><span>
+</span><span id="line-214"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-215"></span><span class="hs-comment">-- cokernelDiagram -</span><span>
+</span><span id="line-216"></span><span>
+</span><span id="line-217"></span><span class="annot"><span class="hs-comment">-- | the cokernel diagram of a given factor.</span></span><span>
+</span><span id="line-218"></span><span id="local-6989586621679410872"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelDiagram"><span class="hs-identifier hs-type">cokernelDiagram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Oriented"><span class="hs-identifier hs-type">Oriented</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410872"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410872"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelDiagram"><span class="hs-identifier hs-type">CokernelDiagram</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410872"><span class="hs-identifier hs-type">c</span></a></span></span><span>
+</span><span id="line-219"></span><span id="cokernelDiagram"><span class="annot"><span class="annottext">cokernelDiagram :: forall c. Oriented c =&gt; c -&gt; CokernelDiagram N1 c
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelDiagram"><span class="hs-identifier hs-var hs-var">cokernelDiagram</span></a></span></span><span> </span><span id="local-6989586621679411259"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411259"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Point c
+-&gt; Point c
+-&gt; FinList N1 c
+-&gt; Diagram ('Parallel 'RightToLeft) N2 N1 c
+forall a (m :: N').
+Point a
+-&gt; Point a
+-&gt; FinList m a
+-&gt; Diagram ('Parallel 'RightToLeft) N2 m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelRL"><span class="hs-identifier hs-var">DiagramParallelRL</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Point c
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#end"><span class="hs-identifier hs-var">end</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411259"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Point c
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411259"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679411259"><span class="hs-identifier hs-var">f</span></a></span><span class="annot"><span class="annottext">c -&gt; FinList 'N0 c -&gt; FinList ('N0 + 1) c
+forall a (n1 :: N'). a -&gt; FinList n1 a -&gt; FinList (n1 + 1) a
+</span><a href="OAlg.Entity.FinList.html#%3A%7C"><span class="hs-operator hs-var">:|</span></a></span><span class="annot"><span class="annottext">FinList 'N0 c
+forall a. FinList 'N0 a
+</span><a href="OAlg.Entity.FinList.html#Nil"><span class="hs-identifier hs-var">Nil</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-220"></span><span>
+</span><span id="line-221"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-222"></span><span class="hs-comment">-- Cokernels - Duality -</span><span>
+</span><span id="line-223"></span><span>
+</span><span id="line-224"></span><span class="annot"><span class="hs-comment">-- | duality between cokernels and kernels.</span></span><span>
+</span><span id="line-225"></span><span id="local-6989586621679410875"><span id="local-6989586621679410876"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimitsDuality"><span class="hs-identifier hs-type">cokrnLimitsDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410875"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-226"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-type">LimitsDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-type">Cokernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410876"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernels"><span class="hs-identifier hs-type">Kernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410876"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410875"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-227"></span><span id="cokrnLimitsDuality"><span class="annot"><span class="annottext">cokrnLimitsDuality :: forall a (n :: N').
+Distributive a =&gt;
+LimitsDuality Dst (Cokernels n) (Kernels n) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimitsDuality"><span class="hs-identifier hs-var hs-var">cokrnLimitsDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+-&gt; (Cokernels n a :~: Cokernels n a)
+-&gt; (Kernels n (Op a) :~: Dual (Cokernels n a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual ('Parallel 'RightToLeft))
+    :~: 'Parallel 'RightToLeft)
+-&gt; LimitsDuality Dst (Cokernels n) (Kernels n) a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limits s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limits s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimitsDuality s f g a
+</span><a href="OAlg.Limes.Limits.html#LimitsDuality"><span class="hs-identifier hs-var">LimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+forall a. Distributive a =&gt; ConeStruct Dst a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="annot"><span class="annottext">Cokernels n a :~: Cokernels n a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Kernels n (Op a) :~: Dual (Cokernels n a)
+Kernels n (Op a) :~: Kernels n (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual ('Parallel 'RightToLeft)) :~: 'Parallel 'RightToLeft
+'Parallel 'RightToLeft :~: 'Parallel 'RightToLeft
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-228"></span><span>
+</span><span id="line-229"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-230"></span><span class="hs-comment">-- cokrnLimesDuality -</span><span>
+</span><span id="line-231"></span><span>
+</span><span id="line-232"></span><span class="annot"><span class="hs-comment">-- | duality between 'Cokernel' to 'Kernel'.</span></span><span>
+</span><span id="line-233"></span><span id="local-6989586621679410896"><span id="local-6989586621679410897"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimesDuality"><span class="hs-identifier hs-type">cokrnLimesDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410896"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-234"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-type">LimesDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernel"><span class="hs-identifier hs-type">Cokernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410897"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410897"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410896"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-235"></span><span id="cokrnLimesDuality"><span class="annot"><span class="annottext">cokrnLimesDuality :: forall a (n :: N').
+Distributive a =&gt;
+LimesDuality Dst (Cokernel n) (Kernel n) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimesDuality"><span class="hs-identifier hs-var hs-var">cokrnLimesDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+-&gt; (Cokernel n a :~: Cokernel n a)
+-&gt; (Kernel n (Op a) :~: Dual (Cokernel n a))
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual ('Parallel 'RightToLeft))
+    :~: 'Parallel 'RightToLeft)
+-&gt; LimesDuality Dst (Cokernel n) (Kernel n) a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limes s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limes s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimesDuality s f g a
+</span><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-var">LimesDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+forall a. Distributive a =&gt; ConeStruct Dst a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="annot"><span class="annottext">Cokernel n a :~: Cokernel n a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Kernel n (Op a) :~: Dual (Cokernel n a)
+Kernel n (Op a) :~: Kernel n (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual ('Parallel 'RightToLeft)) :~: 'Parallel 'RightToLeft
+'Parallel 'RightToLeft :~: 'Parallel 'RightToLeft
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-236"></span><span>
+</span><span id="line-237"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-238"></span><span class="hs-comment">-- krnLimesDuality -</span><span>
+</span><span id="line-239"></span><span>
+</span><span id="line-240"></span><span class="annot"><span class="hs-comment">-- | duality from 'Kernel' to 'Cokernel'.</span></span><span>
+</span><span id="line-241"></span><span id="local-6989586621679410910"><span id="local-6989586621679410911"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#krnLimesDuality"><span class="hs-identifier hs-type">krnLimesDuality</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410910"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-242"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-type">LimesDuality</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410911"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernel"><span class="hs-identifier hs-type">Cokernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410911"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679410910"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-243"></span><span id="krnLimesDuality"><span class="annot"><span class="annottext">krnLimesDuality :: forall a (n :: N').
+Distributive a =&gt;
+LimesDuality Dst (Kernel n) (Cokernel n) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#krnLimesDuality"><span class="hs-identifier hs-var hs-var">krnLimesDuality</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+-&gt; (Kernel n a :~: Kernel n a)
+-&gt; (Cokernel n (Op a) :~: Dual (Kernel n a))
+-&gt; (Dual (Dual 'Projective) :~: 'Projective)
+-&gt; (Dual (Dual ('Parallel 'LeftToRight))
+    :~: 'Parallel 'LeftToRight)
+-&gt; LimesDuality Dst (Kernel n) (Cokernel n) a
+forall s a (f :: * -&gt; *) (p :: Perspective) (t :: DiagramType)
+       (n :: N') (m :: N') (g :: * -&gt; *).
+ConeStruct s a
+-&gt; (f a :~: Limes s p t n m a)
+-&gt; (g (Op a) :~: Dual (Limes s p t n m a))
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; LimesDuality s f g a
+</span><a href="OAlg.Limes.Definition.html#LimesDuality"><span class="hs-identifier hs-var">LimesDuality</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst a
+forall a. Distributive a =&gt; ConeStruct Dst a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="annot"><span class="annottext">Kernel n a :~: Kernel n a
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Cokernel n (Op a) :~: Dual (Kernel n a)
+Cokernel n (Op a) :~: Cokernel n (Op a)
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Projective) :~: 'Projective
+'Projective :~: 'Projective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual ('Parallel 'LeftToRight)) :~: 'Parallel 'LeftToRight
+'Parallel 'LeftToRight :~: 'Parallel 'LeftToRight
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-244"></span><span>
+</span><span id="line-245"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-246"></span><span class="hs-comment">-- cokernels -</span><span>
+</span><span id="line-247"></span><span>
+</span><span id="line-248"></span><span class="annot"><span class="hs-comment">-- | promoting cokernels.</span></span><span>
+</span><span id="line-249"></span><span id="local-6989586621679410914"><span id="local-6989586621679410915"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels"><span class="hs-identifier hs-type">cokernels</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410914"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-type">Cokernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410914"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-type">Cokernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410915"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410914"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-250"></span><span id="cokernels"><span class="annot"><span class="annottext">cokernels :: forall a (n :: N').
+Distributive a =&gt;
+Cokernels N1 a -&gt; Cokernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels"><span class="hs-identifier hs-var hs-var">cokernels</span></a></span></span><span> </span><span id="local-6989586621679411278"><span class="annot"><span class="annottext">Cokernels N1 a
+</span><a href="#local-6989586621679411278"><span class="hs-identifier hs-var">ckrn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LimitsDuality Dst (Cokernels n) (Kernels n) a
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n (Op a)
+-&gt; Limits Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; g (Op a) -&gt; f a
+</span><a href="OAlg.Limes.Limits.html#lmsFromOp"><span class="hs-identifier hs-var">lmsFromOp</span></a></span><span> </span><span class="annot"><span class="annottext">LimitsDuality Dst (Cokernels n) (Kernels n) a
+forall a (n :: N').
+Distributive a =&gt;
+LimitsDuality Dst (Cokernels n) (Kernels n) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimitsDuality"><span class="hs-identifier hs-var">cokrnLimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">(Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n (Op a)
+ -&gt; Limits Dst 'Injective ('Parallel 'RightToLeft) N2 n a)
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n (Op a)
+-&gt; Limits Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 (Op a)
+-&gt; Limits Dst 'Projective ('Parallel 'LeftToRight) N2 n (Op a)
+forall a (n :: N'). Distributive a =&gt; Kernels N1 a -&gt; Kernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#kernels"><span class="hs-identifier hs-var">kernels</span></a></span><span> </span><span class="annot"><span class="annottext">Kernels N1 (Op a)
+</span><a href="#local-6989586621679411280"><span class="hs-identifier hs-var">krn</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-251"></span><span>  </span><span id="local-6989586621679411280"><span class="annot"><span class="annottext">krn :: Kernels N1 (Op a)
+</span><a href="#local-6989586621679411280"><span class="hs-identifier hs-var hs-var">krn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LimitsDuality Dst (Cokernels N1) (Kernels N1) a
+-&gt; Cokernels N1 a -&gt; Kernels N1 (Op a)
+forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimitsDuality s f g a -&gt; f a -&gt; g (Op a)
+</span><a href="OAlg.Limes.Limits.html#lmsToOp"><span class="hs-identifier hs-var">lmsToOp</span></a></span><span> </span><span class="annot"><span class="annottext">LimitsDuality Dst (Cokernels N1) (Kernels N1) a
+forall a (n :: N').
+Distributive a =&gt;
+LimitsDuality Dst (Cokernels n) (Kernels n) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimitsDuality"><span class="hs-identifier hs-var">cokrnLimitsDuality</span></a></span><span> </span><span class="annot"><span class="annottext">Cokernels N1 a
+</span><a href="#local-6989586621679411278"><span class="hs-identifier hs-var">ckrn</span></a></span><span>
+</span><span id="line-252"></span><span>
+</span><span id="line-253"></span><span class="annot"><span class="hs-comment">-- | 'cokernels' given by an additional proxy for @n@.</span></span><span>
+</span><span id="line-254"></span><span id="local-6989586621679410927"><span id="local-6989586621679410928"><span id="local-6989586621679410929"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels%27"><span class="hs-identifier hs-type">cokernels'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410928"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410929"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-type">Cokernels</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N1"><span class="hs-identifier hs-type">N1</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-type">Cokernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410929"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410927"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-255"></span><span id="cokernels%27"><span class="annot"><span class="annottext">cokernels' :: forall a (p :: N' -&gt; *) (n :: N').
+Distributive a =&gt;
+p n -&gt; Cokernels N1 a -&gt; Cokernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels%27"><span class="hs-identifier hs-var hs-var">cokernels'</span></a></span></span><span> </span><span class="annot"><span class="annottext">p n
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cokernels N1 a -&gt; Cokernels n a
+forall a (n :: N').
+Distributive a =&gt;
+Cokernels N1 a -&gt; Cokernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels"><span class="hs-identifier hs-var">cokernels</span></a></span><span>
+</span><span id="line-256"></span><span>
+</span><span id="line-257"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-258"></span><span class="hs-comment">-- cokernelsOrnt -</span><span>
+</span><span id="line-259"></span><span>
+</span><span id="line-260"></span><span class="annot"><span class="hs-comment">-- | cokernels for 'Orientation'.</span></span><span>
+</span><span id="line-261"></span><span id="local-6989586621679410933"><span id="local-6989586621679410934"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelsOrnt"><span class="hs-identifier hs-type">cokernelsOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410933"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410933"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernels"><span class="hs-identifier hs-type">Cokernels</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410934"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410933"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-262"></span><span id="cokernelsOrnt"><span class="annot"><span class="annottext">cokernelsOrnt :: forall p (n :: N'). Entity p =&gt; p -&gt; Cokernels n (Orientation p)
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelsOrnt"><span class="hs-identifier hs-var hs-var">cokernelsOrnt</span></a></span></span><span> </span><span id="local-6989586621679411287"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411287"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Diagram ('Parallel 'RightToLeft) N2 n (Orientation p)
+ -&gt; Limes
+      Dst 'Injective ('Parallel 'RightToLeft) N2 n (Orientation p))
+-&gt; Limits
+     Dst 'Injective ('Parallel 'RightToLeft) N2 n (Orientation p)
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+(Diagram t n m a -&gt; Limes s p t n m a) -&gt; Limits s p t n m a
+</span><a href="OAlg.Limes.Limits.html#Limits"><span class="hs-identifier hs-var">Limits</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+-&gt; Diagram ('Parallel 'RightToLeft) N2 n (Orientation p)
+-&gt; Limes
+     Dst 'Injective ('Parallel 'RightToLeft) N2 n (Orientation p)
+forall p a (n :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; CokernelDiagram n a -&gt; Cokernel n a
+</span><a href="#local-6989586621679411288"><span class="hs-identifier hs-var">cokrn</span></a></span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411287"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-263"></span><span>  </span><span id="local-6989586621679410937"><span id="local-6989586621679410938"><span id="local-6989586621679410939"><span class="annot"><a href="#local-6989586621679411288"><span class="hs-identifier hs-type">cokrn</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410937"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679410938"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-type">~</span></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Orientation"><span class="hs-identifier hs-type">Orientation</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410937"><span class="hs-identifier hs-type">p</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410937"><span class="hs-identifier hs-type">p</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#CokernelDiagram"><span class="hs-identifier hs-type">CokernelDiagram</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410939"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410938"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernel"><span class="hs-identifier hs-type">Cokernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410939"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410938"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-264"></span><span>  </span><span id="local-6989586621679411288"><span class="annot"><span class="annottext">cokrn :: forall p a (n :: N').
+(Entity p, a ~ Orientation p) =&gt;
+p -&gt; CokernelDiagram n a -&gt; Cokernel n a
+</span><a href="#local-6989586621679411288"><span class="hs-identifier hs-var hs-var">cokrn</span></a></span></span><span> </span><span id="local-6989586621679411292"><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411292"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679411293"><span class="annot"><span class="annottext">d :: CokernelDiagram n a
+</span><a href="#local-6989586621679411293"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Diagram.Definition.html#DiagramParallelRL"><span class="hs-identifier hs-type">DiagramParallelRL</span></a></span><span> </span><span id="local-6989586621679411298"><span class="annot"><span class="annottext">Point a
+</span><a href="#local-6989586621679411298"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">FinList n a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+-&gt; (Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a -&gt; a)
+-&gt; Limes Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Injective t n m a
+-&gt; (Cone s 'Injective t n m a -&gt; a) -&gt; Limes s 'Injective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesInjective"><span class="hs-identifier hs-var">LimesInjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+</span><a href="#local-6989586621679411300"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a -&gt; a
+</span><a href="#local-6989586621679411301"><span class="hs-identifier hs-var">u</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-265"></span><span>    </span><span id="local-6989586621679411300"><span class="annot"><span class="annottext">l :: Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+</span><a href="#local-6989586621679411300"><span class="hs-identifier hs-var hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CokernelDiagram n a
+-&gt; a -&gt; Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'RightToLeft) N2 m a
+-&gt; a -&gt; Cone Dst 'Injective ('Parallel 'RightToLeft) N2 m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeCokernel"><span class="hs-identifier hs-var">ConeCokernel</span></a></span><span> </span><span class="annot"><span class="annottext">CokernelDiagram n a
+</span><a href="#local-6989586621679411293"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">p
+Point a
+</span><a href="#local-6989586621679411298"><span class="hs-identifier hs-var">p</span></a></span><span class="annot"><span class="annottext">p -&gt; p -&gt; Orientation p
+forall p. p -&gt; p -&gt; Orientation p
+</span><a href="OAlg.Structure.Oriented.Definition.html#%3A%3E"><span class="hs-operator hs-var">:&gt;</span></a></span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411292"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-266"></span><span>    </span><span id="local-6989586621679411301"><span class="annot"><span class="annottext">u :: Cone Dst 'Injective ('Parallel 'RightToLeft) N2 n a -&gt; a
+</span><a href="#local-6989586621679411301"><span class="hs-identifier hs-var hs-var">u</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeCokernel"><span class="hs-identifier hs-type">ConeCokernel</span></a></span><span> </span><span class="annot"><span class="annottext">CokernelDiagram n a
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679411311"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411311"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">p
+</span><a href="#local-6989586621679411292"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">p -&gt; p -&gt; Orientation p
+forall p. p -&gt; p -&gt; Orientation p
+</span><a href="OAlg.Structure.Oriented.Definition.html#%3A%3E"><span class="hs-operator hs-var">:&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Point a
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#end"><span class="hs-identifier hs-var">end</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411311"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-267"></span><span>
+</span><span id="line-268"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-269"></span><span class="hs-comment">-- prpIsKernel -</span><span>
+</span><span id="line-270"></span><span>
+</span><span id="line-271"></span><span id="local-6989586621679410943"><span id="local-6989586621679410944"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#relIsKernel"><span class="hs-identifier hs-type">relIsKernel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679410943"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410944"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410943"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html#FinList"><span class="hs-identifier hs-type">FinList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410944"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410943"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410943"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span></span><span>
+</span><span id="line-272"></span><span id="relIsKernel"><span class="annot"><span class="annottext">relIsKernel :: forall a (n :: N').
+Eq a =&gt;
+Kernel n a -&gt; FinList n a -&gt; a -&gt; Statement
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#relIsKernel"><span class="hs-identifier hs-var hs-var">relIsKernel</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span id="local-6989586621679411337"><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411337"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679411338"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411338"><span class="hs-identifier hs-var">k'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective ('Parallel 'LeftToRight) N2 n a -&gt; a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679411339"><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411339"><span class="hs-identifier hs-var">fs</span></a></span></span><span> </span><span id="local-6989586621679411340"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411340"><span class="hs-identifier hs-var">k</span></a></span></span><span>
+</span><span id="line-273"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;1&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411339"><span class="hs-identifier hs-var">fs</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n a -&gt; FinList n a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a -&gt; FinList n a
+forall (t :: DiagramType) (n :: N') (m :: N') a.
+Diagram t n m a -&gt; FinList m a
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgArrows"><span class="hs-identifier hs-var">dgArrows</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411337"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Message -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3F%3E"><span class="hs-operator hs-var">:?&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">[Parameter] -&gt; Message
+</span><a href="OAlg.Data.Statement.Definition.html#Params"><span class="hs-identifier hs-var">Params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;fs&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span class="annot"><span class="annottext">FinList n a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411339"><span class="hs-identifier hs-var">fs</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;d&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) N2 n a
+</span><a href="#local-6989586621679411337"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-274"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;2&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411340"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411338"><span class="hs-identifier hs-var">k'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Message -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3F%3E"><span class="hs-operator hs-var">:?&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">[Parameter] -&gt; Message
+</span><a href="OAlg.Data.Statement.Definition.html#Params"><span class="hs-identifier hs-var">Params</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;k&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411340"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;k'&quot;</span></span><span class="annot"><span class="annottext">String -&gt; String -&gt; Parameter
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3D"><span class="hs-operator hs-var">:=</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411338"><span class="hs-identifier hs-var">k'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-275"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-276"></span><span>    </span><span>
+</span><span id="line-277"></span><span class="hs-comment">-- | checks if the arrows of the kernel diagram are equal to the given ones and if its</span><span>
+</span><span id="line-278"></span><span class="hs-comment">-- shell is equal to the given arrow.</span><span>
+</span><span id="line-279"></span><span class="hs-comment">--</span><span>
+</span><span id="line-280"></span><span class="hs-comment">-- __Property__ Let</span><span>
+</span><span id="line-281"></span><span class="hs-comment">-- @'LimesProjective' ('ConeKerenl d k') _ = ker@ be in @'Kernel' __n__ __a__@,</span><span>
+</span><span id="line-282"></span><span class="hs-comment">-- @fs@ in @'FinList' __n__ __a__@ and @k@ be in @__a__@, then the statement</span><span>
+</span><span id="line-283"></span><span class="hs-comment">-- @'prpIsKernel' ker fs k@ holds if and only if</span><span>
+</span><span id="line-284"></span><span class="hs-comment">--</span><span>
+</span><span id="line-285"></span><span class="hs-comment">-- (1) @fs '==' 'dgArrows' d@.</span><span>
+</span><span id="line-286"></span><span class="hs-comment">--</span><span>
+</span><span id="line-287"></span><span class="hs-comment">-- (2) @k '==' k'@.</span><span>
+</span><span id="line-288"></span><span id="local-6989586621679410964"><span id="local-6989586621679410965"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#prpIsKernel"><span class="hs-identifier hs-type">prpIsKernel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410964"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Kernel"><span class="hs-identifier hs-type">Kernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410965"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410964"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html#FinList"><span class="hs-identifier hs-type">FinList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410965"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410964"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410964"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span></span><span>
+</span><span id="line-289"></span><span id="prpIsKernel"><span class="annot"><span class="annottext">prpIsKernel :: forall a (n :: N').
+Distributive a =&gt;
+Kernel n a -&gt; FinList n a -&gt; a -&gt; Statement
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#prpIsKernel"><span class="hs-identifier hs-var hs-var">prpIsKernel</span></a></span></span><span> </span><span id="local-6989586621679411355"><span class="annot"><span class="annottext">Kernel n a
+</span><a href="#local-6989586621679411355"><span class="hs-identifier hs-var">ker</span></a></span></span><span> </span><span id="local-6989586621679411356"><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411356"><span class="hs-identifier hs-var">fs</span></a></span></span><span> </span><span id="local-6989586621679411357"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411357"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;IsKernel&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Kernel n a -&gt; FinList n a -&gt; a -&gt; Statement
+forall a (n :: N').
+Eq a =&gt;
+Kernel n a -&gt; FinList n a -&gt; a -&gt; Statement
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#relIsKernel"><span class="hs-identifier hs-var">relIsKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Kernel n a
+</span><a href="#local-6989586621679411355"><span class="hs-identifier hs-var">ker</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411356"><span class="hs-identifier hs-var">fs</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411357"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-290"></span><span>
+</span><span id="line-291"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-292"></span><span class="hs-comment">-- prpIsCokernel -</span><span>
+</span><span id="line-293"></span><span>
+</span><span id="line-294"></span><span class="hs-comment">-- | checks if the arrows of the cokernel diagram are equal to the given ones and if its</span><span>
+</span><span id="line-295"></span><span class="hs-comment">-- shell is equal to the given arrow.</span><span>
+</span><span id="line-296"></span><span class="hs-comment">--</span><span>
+</span><span id="line-297"></span><span class="hs-comment">-- __Property__ Let</span><span>
+</span><span id="line-298"></span><span class="hs-comment">-- @'LimesInjective' ('ConeCokerenl d k') _ = coker@ be in @'Cokernel' __n__ __a__@,</span><span>
+</span><span id="line-299"></span><span class="hs-comment">-- @fs@ in @'FinList' __n__ __a__@ and @k@ be in @__a__@, then the statement</span><span>
+</span><span id="line-300"></span><span class="hs-comment">-- @'prpIsCokernel' coker fs k@ holds if and only if</span><span>
+</span><span id="line-301"></span><span class="hs-comment">--</span><span>
+</span><span id="line-302"></span><span class="hs-comment">-- (1) @fs '==' 'dgArrows' d@.</span><span>
+</span><span id="line-303"></span><span class="hs-comment">--</span><span>
+</span><span id="line-304"></span><span class="hs-comment">-- (2) @k '==' k'@.</span><span>
+</span><span id="line-305"></span><span id="local-6989586621679410968"><span id="local-6989586621679410969"><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#prpIsCokernel"><span class="hs-identifier hs-type">prpIsCokernel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410968"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html#Cokernel"><span class="hs-identifier hs-type">Cokernel</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410969"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410968"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html#FinList"><span class="hs-identifier hs-type">FinList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410969"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679410968"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679410968"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span></span><span>
+</span><span id="line-306"></span><span id="prpIsCokernel"><span class="annot"><span class="annottext">prpIsCokernel :: forall a (n :: N').
+Distributive a =&gt;
+Cokernel n a -&gt; FinList n a -&gt; a -&gt; Statement
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#prpIsCokernel"><span class="hs-identifier hs-var hs-var">prpIsCokernel</span></a></span></span><span> </span><span id="local-6989586621679411371"><span class="annot"><span class="annottext">Cokernel n a
+</span><a href="#local-6989586621679411371"><span class="hs-identifier hs-var">coker</span></a></span></span><span> </span><span id="local-6989586621679411372"><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411372"><span class="hs-identifier hs-var">fs</span></a></span></span><span> </span><span id="local-6989586621679411373"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411373"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;IsCokernel&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Kernel n (Op a) -&gt; FinList n (Op a) -&gt; Op a -&gt; Statement
+forall a (n :: N').
+Eq a =&gt;
+Kernel n a -&gt; FinList n a -&gt; a -&gt; Statement
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#relIsKernel"><span class="hs-identifier hs-var">relIsKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Kernel n (Op a)
+</span><a href="#local-6989586621679411374"><span class="hs-identifier hs-var">ker</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a -&gt; Op a) -&gt; FinList n a -&gt; FinList n (Op a)
+forall a b. (a -&gt; b) -&gt; FinList n a -&gt; FinList n b
+forall (h :: * -&gt; * -&gt; *) (f :: * -&gt; *) a b.
+Applicative1 h f =&gt;
+h a b -&gt; f a -&gt; f b
+</span><a href="OAlg.Category.Applicative.html#amap1"><span class="hs-identifier hs-var">amap1</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; Op a
+forall x. x -&gt; Op x
+</span><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-var">Op</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n a
+</span><a href="#local-6989586621679411372"><span class="hs-identifier hs-var">fs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Op a
+forall x. x -&gt; Op x
+</span><a href="OAlg.Data.Opposite.html#Op"><span class="hs-identifier hs-var">Op</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679411373"><span class="hs-identifier hs-var">k</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-307"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679411374"><span class="annot"><span class="annottext">ker :: Kernel n (Op a)
+</span><a href="#local-6989586621679411374"><span class="hs-identifier hs-var hs-var">ker</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LimesDuality Dst (Cokernel n) (Kernel n) a
+-&gt; Cokernel n a -&gt; Kernel n (Op a)
+forall s (f :: * -&gt; *) (g :: * -&gt; *) a.
+LimesDuality s f g a -&gt; f a -&gt; g (Op a)
+</span><a href="OAlg.Limes.Definition.html#lmToOp"><span class="hs-identifier hs-var">lmToOp</span></a></span><span> </span><span class="annot"><span class="annottext">LimesDuality Dst (Cokernel n) (Kernel n) a
+forall a (n :: N').
+Distributive a =&gt;
+LimesDuality Dst (Cokernel n) (Kernel n) a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokrnLimesDuality"><span class="hs-identifier hs-var">cokrnLimesDuality</span></a></span><span> </span><span class="annot"><span class="annottext">Cokernel n a
+</span><a href="#local-6989586621679411371"><span class="hs-identifier hs-var">coker</span></a></span><span>
+</span><span id="line-308"></span><span>  </span><span>
+</span><span id="line-309"></span><span>
+</span><span id="line-310"></span><span>
+</span><span id="line-311"></span></pre></body></html>

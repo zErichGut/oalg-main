@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Module      : OAlg.Limes.Proposition</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Description : propositions on limits</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- propositions on 'OAlg.Limes.Limits.Limits'.</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Limes.Proposition</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="OAlg.Limes.Proposition.html#prpLimitsOrntSymbol"><span class="hs-identifier">prpLimitsOrntSymbol</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Typeable</span></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Symbol.html"><span class="hs-identifier">OAlg.Data.Symbol</span></a></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html"><span class="hs-identifier">OAlg.Entity.Natural</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html"><span class="hs-identifier">OAlg.Limes.TerminalAndInitialPoint</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.MinimaAndMaxima.html"><span class="hs-identifier">OAlg.Limes.MinimaAndMaxima</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html"><span class="hs-identifier">OAlg.Limes.ProductsAndSums</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.EqualizersAndCoequalizers.html"><span class="hs-identifier">OAlg.Limes.EqualizersAndCoequalizers</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.PullbacksAndPushouts.html"><span class="hs-identifier">OAlg.Limes.PullbacksAndPushouts</span></a></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.KernelsAndCokernels.html"><span class="hs-identifier">OAlg.Limes.KernelsAndCokernels</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- prpLimitsOrntSymbol -</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="annot"><span class="hs-comment">-- | validity of 'OAlg.Limes.Limits.Limits' for @'Orientation' 'Symbol'@.</span></span><span>
+</span><span id="line-45"></span><span class="annot"><a href="OAlg.Limes.Proposition.html#prpLimitsOrntSymbol"><span class="hs-identifier hs-type">prpLimitsOrntSymbol</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-46"></span><span id="prpLimitsOrntSymbol"><span class="annot"><span class="annottext">prpLimitsOrntSymbol :: Statement
+</span><a href="OAlg.Limes.Proposition.html#prpLimitsOrntSymbol"><span class="hs-identifier hs-var hs-var">prpLimitsOrntSymbol</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;LimesOrntSymbol&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;TerminalAndInitialPoint&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-48"></span><span>          </span><span class="annot"><span class="annottext">(Symbol -&gt; InitialPoint OS) -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; InitialPoint OS
+forall p. Entity p =&gt; p -&gt; InitialPoint (Orientation p)
+</span><a href="OAlg.Limes.TerminalAndInitialPoint.html#initialPointOrnt"><span class="hs-identifier hs-var">initialPointOrnt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Symbol.html#Symbol"><span class="hs-identifier hs-type">Symbol</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.TerminalAndInitialPoint.html#InitialPoint"><span class="hs-identifier hs-type">InitialPoint</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;MinimaAndMaxima&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-50"></span><span>          </span><span class="annot"><span class="annottext">X SomeNatural -&gt; (SomeNatural -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Exist"><span class="hs-identifier hs-var">Exist</span></a></span><span> </span><span class="annot"><span class="annottext">X SomeNatural
+</span><a href="#local-6989586621679411567"><span class="hs-identifier hs-var">xN</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#SomeNatural"><span class="hs-identifier hs-type">SomeNatural</span></a></span><span> </span><span id="local-6989586621679411582"><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411582"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411582"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-51"></span><span>                     </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Injective ('Chain 'To) ('S n) n OS -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; Proxy OS -&gt; Maxima 'To n OS
+forall a (p :: N' -&gt; *) (n :: N') (f :: * -&gt; *).
+Multiplicative a =&gt;
+p n -&gt; f a -&gt; Maxima 'To n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaTo%27"><span class="hs-identifier hs-var">maximaTo'</span></a></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411582"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy OS
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>                         </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Injective ('Chain 'From) ('S n) n OS -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; Proxy OS -&gt; Maxima 'From n OS
+forall a (p :: N' -&gt; *) (n :: N') (f :: * -&gt; *).
+Multiplicative a =&gt;
+p n -&gt; f a -&gt; Maxima 'From n a
+</span><a href="OAlg.Limes.MinimaAndMaxima.html#maximaFrom%27"><span class="hs-identifier hs-var">maximaFrom'</span></a></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411582"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Proxy OS
+forall {k} (t :: k). Proxy t
+</span><span class="hs-identifier hs-var">Proxy</span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Proxy</span></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>                         </span><span class="hs-special">]</span><span>
+</span><span id="line-54"></span><span>                     </span><span>
+</span><span id="line-55"></span><span>                   </span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ProductsAndSums&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-58"></span><span>          </span><span class="annot"><span class="annottext">X SomeNatural -&gt; (SomeNatural -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Exist"><span class="hs-identifier hs-var">Exist</span></a></span><span> </span><span class="annot"><span class="annottext">X SomeNatural
+</span><a href="#local-6989586621679411567"><span class="hs-identifier hs-var">xN</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#SomeNatural"><span class="hs-identifier hs-type">SomeNatural</span></a></span><span> </span><span id="local-6989586621679411598"><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411598"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411598"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-59"></span><span>                      </span><span class="annot"><span class="annottext">Sums n OS -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; Sums 'N0 OS -&gt; Sums ('S N1) OS -&gt; Sums n OS
+forall a (p :: N' -&gt; *) (n :: N').
+Multiplicative a =&gt;
+p n -&gt; Sums 'N0 a -&gt; Sums ('S N1) a -&gt; Sums n a
+</span><a href="OAlg.Limes.ProductsAndSums.html#sums%27"><span class="hs-identifier hs-var">sums'</span></a></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411598"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Sums 'N0 OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Sums n (Orientation p)
+</span><a href="OAlg.Limes.ProductsAndSums.html#sumsOrnt"><span class="hs-identifier hs-var">sumsOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#I"><span class="hs-identifier hs-var">I</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Sums ('S N1) OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Sums n (Orientation p)
+</span><a href="OAlg.Limes.ProductsAndSums.html#sumsOrnt"><span class="hs-identifier hs-var">sumsOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#I"><span class="hs-identifier hs-var">I</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>                   </span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;EqualizersAndCoEqualizers&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-62"></span><span>          </span><span class="annot"><span class="annottext">X SomeNatural -&gt; (SomeNatural -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Exist"><span class="hs-identifier hs-var">Exist</span></a></span><span> </span><span class="annot"><span class="annottext">X SomeNatural
+</span><a href="#local-6989586621679411567"><span class="hs-identifier hs-var">xN</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#SomeNatural"><span class="hs-identifier hs-type">SomeNatural</span></a></span><span> </span><span id="local-6989586621679411613"><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411613"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411613"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-63"></span><span>                      </span><span class="annot"><span class="annottext">Coequalizers n OS -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n
+-&gt; Sums ('S N1) OS -&gt; Coequalizers ('S N1) OS -&gt; Coequalizers n OS
+forall a (p :: N' -&gt; *) (n :: N').
+Multiplicative a =&gt;
+p n -&gt; Sums ('S N1) a -&gt; Coequalizers ('S N1) a -&gt; Coequalizers n a
+</span><a href="OAlg.Limes.EqualizersAndCoequalizers.html#coequalizers%27"><span class="hs-identifier hs-var">coequalizers'</span></a></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411613"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Sums ('S N1) OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Sums n (Orientation p)
+</span><a href="OAlg.Limes.ProductsAndSums.html#sumsOrnt"><span class="hs-identifier hs-var">sumsOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#I"><span class="hs-identifier hs-var">I</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Coequalizers ('S N1) OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Coequalizers n (Orientation p)
+</span><a href="OAlg.Limes.EqualizersAndCoequalizers.html#coequalizersOrnt"><span class="hs-identifier hs-var">coequalizersOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#I"><span class="hs-identifier hs-var">I</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>                   </span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;PullbacksAndPushouts&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-67"></span><span>          </span><span class="annot"><span class="annottext">X SomeNatural -&gt; (SomeNatural -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Exist"><span class="hs-identifier hs-var">Exist</span></a></span><span> </span><span class="annot"><span class="annottext">X SomeNatural
+</span><a href="#local-6989586621679411567"><span class="hs-identifier hs-var">xN</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#SomeNatural"><span class="hs-identifier hs-type">SomeNatural</span></a></span><span> </span><span id="local-6989586621679411624"><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411624"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411624"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-68"></span><span>                      </span><span class="annot"><span class="annottext">Limits Mlt 'Injective ('Star 'From) ('S n) n OS -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; Pushouts ('S N1) OS -&gt; Pushouts n OS
+forall a (p :: N' -&gt; *) (n :: N').
+Multiplicative a =&gt;
+p n -&gt; Pushouts ('S N1) a -&gt; Pushouts n a
+</span><a href="OAlg.Limes.PullbacksAndPushouts.html#pushouts%27"><span class="hs-identifier hs-var">pushouts'</span></a></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411624"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Pushouts ('S N1) OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Pushouts n (Orientation p)
+</span><a href="OAlg.Limes.PullbacksAndPushouts.html#pushoutsOrnt"><span class="hs-identifier hs-var">pushoutsOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#I"><span class="hs-identifier hs-var">I</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>                   </span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;plbPrdEql2&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Limits Mlt 'Projective ('Star 'To) ('S ('S N1)) ('S N1) OS
+-&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Products ('S N1) OS
+-&gt; Equalizers ('S N1) OS -&gt; Pullbacks ('S N1) OS
+forall a.
+Multiplicative a =&gt;
+Products ('S N1) a -&gt; Equalizers ('S N1) a -&gt; Pullbacks ('S N1) a
+</span><a href="OAlg.Limes.PullbacksAndPushouts.html#plbPrdEql2"><span class="hs-identifier hs-var">plbPrdEql2</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Products ('S N1) OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Products n (Orientation p)
+</span><a href="OAlg.Limes.ProductsAndSums.html#productsOrnt"><span class="hs-identifier hs-var">productsOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#P"><span class="hs-identifier hs-var">P</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Equalizers ('S N1) OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Equalizers n (Orientation p)
+</span><a href="OAlg.Limes.EqualizersAndCoequalizers.html#equalizersOrnt"><span class="hs-identifier hs-var">equalizersOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#E"><span class="hs-identifier hs-var">E</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>    </span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;KernelsAndCokernels&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-73"></span><span>          </span><span class="annot"><span class="annottext">X SomeNatural -&gt; (SomeNatural -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Exist"><span class="hs-identifier hs-var">Exist</span></a></span><span> </span><span class="annot"><span class="annottext">X SomeNatural
+</span><a href="#local-6989586621679411567"><span class="hs-identifier hs-var">xN</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Natural.html#SomeNatural"><span class="hs-identifier hs-type">SomeNatural</span></a></span><span> </span><span id="local-6989586621679411643"><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411643"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411643"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-74"></span><span>                      </span><span class="annot"><span class="annottext">Cokernels n OS -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">W n -&gt; Cokernels N1 OS -&gt; Cokernels n OS
+forall a (p :: N' -&gt; *) (n :: N').
+Distributive a =&gt;
+p n -&gt; Cokernels N1 a -&gt; Cokernels n a
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernels%27"><span class="hs-identifier hs-var">cokernels'</span></a></span><span> </span><span class="annot"><span class="annottext">W n
+</span><a href="#local-6989586621679411643"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Symbol -&gt; Cokernels N1 OS
+forall p (n :: N'). Entity p =&gt; p -&gt; Cokernels n (Orientation p)
+</span><a href="OAlg.Limes.KernelsAndCokernels.html#cokernelsOrnt"><span class="hs-identifier hs-var">cokernelsOrnt</span></a></span><span> </span><span class="annot"><span class="annottext">Symbol
+</span><a href="OAlg.Data.Symbol.html#I"><span class="hs-identifier hs-var">I</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>                   </span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679411567"><span class="annot"><span class="annottext">xN :: X SomeNatural
+</span><a href="#local-6989586621679411567"><span class="hs-identifier hs-var hs-var">xN</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[SomeNatural] -&gt; X SomeNatural
+forall a. [a] -&gt; X a
+</span><a href="OAlg.Data.X.html#xOneOf"><span class="hs-identifier hs-var">xOneOf</span></a></span><span> </span><span class="annot"><span class="annottext">([SomeNatural] -&gt; X SomeNatural) -&gt; [SomeNatural] -&gt; X SomeNatural
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">N -&gt; [SomeNatural] -&gt; [SomeNatural]
+forall a. N -&gt; [a] -&gt; [a]
+</span><a href="OAlg.Data.Number.html#takeN"><span class="hs-identifier hs-var">takeN</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">20</span></span><span> </span><span class="annot"><span class="annottext">[SomeNatural]
+</span><a href="OAlg.Entity.Natural.html#naturals"><span class="hs-identifier hs-var">naturals</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span></pre></body></html>

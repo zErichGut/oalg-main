@@ -1,0 +1,577 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE TypeOperators #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Module      : OAlg.Adjunction.Limes</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Description : mapping of limits under adjunctions</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- mapping of 'OAlg.Limes.Limits.Limits' under 'Adjunction's.</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Adjunction.Limes</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Multiplicative</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmPrjMap"><span class="hs-identifier">lmPrjMap</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmInjMap"><span class="hs-identifier">lmInjMap</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Distributive</span></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmPrjMapDst"><span class="hs-identifier">lmPrjMapDst</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmInjMapDst"><span class="hs-identifier">lmInjMapDst</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Typeable</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.html"><span class="hs-identifier">OAlg.Entity.Diagram</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.FinList.html"><span class="hs-identifier">OAlg.Entity.FinList</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.html"><span class="hs-identifier">OAlg.Structure.Distributive</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Hom.html"><span class="hs-identifier">OAlg.Hom</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html"><span class="hs-identifier">OAlg.Adjunction.Definition</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Cone.html"><span class="hs-identifier">OAlg.Limes.Cone</span></a></span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html"><span class="hs-identifier">OAlg.Limes.Definition</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- lmPrjMap -</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-51"></span><span id="local-6989586621679415015"><span id="local-6989586621679415017"><span id="local-6989586621679415019"><span id="local-6989586621679415022"><span id="local-6989586621679415023"><span id="local-6989586621679415024"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmPrjMapStruct"><span class="hs-identifier hs-type">lmPrjMapStruct</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415015"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-type">Struct</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415017"><span class="hs-identifier hs-type">d</span></a></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415015"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415017"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415019"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415022"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415023"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415024"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415017"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415022"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415023"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415024"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415019"><span class="hs-identifier hs-type">c</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-55"></span><span id="lmPrjMapStruct"><span class="annot"><span class="annottext">lmPrjMapStruct :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Struct Mlt d
+-&gt; Adjunction h d c
+-&gt; Limes Mlt 'Projective t n m d
+-&gt; Limes Mlt 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMapStruct"><span class="hs-identifier hs-var hs-var">lmPrjMapStruct</span></a></span></span><span> </span><span class="annot"><span class="annottext">Struct Mlt d
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span> </span><span id="local-6989586621679415265"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415265"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span id="local-6989586621679415266"><span class="annot"><span class="annottext">h c d
+</span><a href="#local-6989586621679415266"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679415267"><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415267"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span id="local-6989586621679415271"><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d
+</span><a href="#local-6989586621679415271"><span class="hs-identifier hs-var">dLim</span></a></span></span><span> </span><span id="local-6989586621679415272"><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d -&gt; d
+</span><a href="#local-6989586621679415272"><span class="hs-identifier hs-var">dUniv</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m c
+-&gt; (Cone Mlt 'Projective t n m c -&gt; c)
+-&gt; Limes Mlt 'Projective t n m c
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m c
+</span><a href="#local-6989586621679415273"><span class="hs-identifier hs-var">cLim</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m c -&gt; c
+</span><a href="#local-6989586621679415274"><span class="hs-identifier hs-var">cUniv</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span>  </span><span id="local-6989586621679415275"><span class="annot"><span class="annottext">dDgm :: Diagram t n m d
+</span><a href="#local-6989586621679415275"><span class="hs-identifier hs-var hs-var">dDgm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d -&gt; Diagram t n m d
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; Diagram t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnDiagram"><span class="hs-identifier hs-var">cnDiagram</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d
+</span><a href="#local-6989586621679415271"><span class="hs-identifier hs-var">dLim</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span>
+</span><span id="line-60"></span><span>  </span><span id="local-6989586621679415273"><span class="annot"><span class="annottext">cLim :: Cone Mlt 'Projective t n m c
+</span><a href="#local-6989586621679415273"><span class="hs-identifier hs-var hs-var">cLim</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">h d c
+-&gt; Cone Mlt 'Projective t n m d -&gt; Cone Mlt 'Projective t n m c
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+Hom s h =&gt;
+h a b -&gt; Cone s p t n m a -&gt; Cone s p t n m b
+</span><a href="OAlg.Limes.Cone.Definition.html#cnMap"><span class="hs-identifier hs-var">cnMap</span></a></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415267"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d
+</span><a href="#local-6989586621679415271"><span class="hs-identifier hs-var">dLim</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span>
+</span><span id="line-62"></span><span>  </span><span id="local-6989586621679415274"><span class="annot"><span class="annottext">cUniv :: Cone Mlt 'Projective t n m c -&gt; c
+</span><a href="#local-6989586621679415274"><span class="hs-identifier hs-var hs-var">cUniv</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-type">ConeProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m c
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679415291"><span class="annot"><span class="annottext">Point c
+</span><a href="#local-6989586621679415291"><span class="hs-identifier hs-var">cTip</span></a></span></span><span> </span><span id="local-6989586621679415292"><span class="annot"><span class="annottext">FinList n c
+</span><a href="#local-6989586621679415292"><span class="hs-identifier hs-var">fs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Point c -&gt; d -&gt; c
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Point c -&gt; d -&gt; c
+</span><a href="OAlg.Adjunction.Definition.html#adjr"><span class="hs-identifier hs-var">adjr</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415265"><span class="hs-identifier hs-var">adj</span></a></span><span> </span><span class="annot"><span class="annottext">Point c
+</span><a href="#local-6989586621679415291"><span class="hs-identifier hs-var">cTip</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d -&gt; d
+</span><a href="#local-6989586621679415272"><span class="hs-identifier hs-var">dUniv</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Mlt 'Projective t n m d
+</span><a href="#local-6989586621679415294"><span class="hs-identifier hs-var">dCone</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>    </span><span class="hs-comment">-- from ConeProjective _ cTip fs is eligible and ajd is valid follows</span><span>
+</span><span id="line-64"></span><span>    </span><span class="hs-comment">-- that dCone is eligible!</span><span>
+</span><span id="line-65"></span><span>    </span><span id="local-6989586621679415294"><span class="annot"><span class="annottext">dCone :: Cone Mlt 'Projective t n m d
+</span><a href="#local-6989586621679415294"><span class="hs-identifier hs-var hs-var">dCone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram t n m d
+-&gt; Point d -&gt; FinList n d -&gt; Cone Mlt 'Projective t n m d
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Multiplicative a =&gt;
+Diagram t n m a
+-&gt; Point a -&gt; FinList n a -&gt; Cone Mlt 'Projective t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeProjective"><span class="hs-identifier hs-var">ConeProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m d
+</span><a href="#local-6989586621679415275"><span class="hs-identifier hs-var">dDgm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">h c d -&gt; Point c -&gt; Point d
+forall a b. h a b -&gt; Point a -&gt; Point b
+forall (h :: * -&gt; * -&gt; *) a b.
+HomOriented h =&gt;
+h a b -&gt; Point a -&gt; Point b
+</span><a href="OAlg.Hom.Oriented.Definition.html#pmap"><span class="hs-identifier hs-var">pmap</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><a href="#local-6989586621679415266"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Point c
+</span><a href="#local-6989586621679415291"><span class="hs-identifier hs-var">cTip</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FinList n d
+</span><a href="#local-6989586621679415296"><span class="hs-identifier hs-var">fs'</span></a></span><span>
+</span><span id="line-66"></span><span>    </span><span id="local-6989586621679415296"><span class="annot"><span class="annottext">fs' :: FinList n d
+</span><a href="#local-6989586621679415296"><span class="hs-identifier hs-var hs-var">fs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Point d, c) -&gt; d) -&gt; FinList n (Point d, c) -&gt; FinList n d
+forall a b. (a -&gt; b) -&gt; FinList n a -&gt; FinList n b
+forall (h :: * -&gt; * -&gt; *) (f :: * -&gt; *) a b.
+Applicative1 h f =&gt;
+h a b -&gt; f a -&gt; f b
+</span><a href="OAlg.Category.Applicative.html#amap1"><span class="hs-identifier hs-var">amap1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Point d -&gt; c -&gt; d) -&gt; (Point d, c) -&gt; d
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="OAlg.Category.Definition.html#uncurry"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Point d -&gt; c -&gt; d
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Point d -&gt; c -&gt; d
+</span><a href="OAlg.Adjunction.Definition.html#adjl"><span class="hs-identifier hs-var">adjl</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415265"><span class="hs-identifier hs-var">adj</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Diagram t n m d -&gt; FinList n (Point d)
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Oriented a =&gt;
+Diagram t n m a -&gt; FinList n (Point a)
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgPoints"><span class="hs-identifier hs-var">dgPoints</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m d
+</span><a href="#local-6989586621679415275"><span class="hs-identifier hs-var">dDgm</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n (Point d) -&gt; FinList n c -&gt; FinList n (Point d, c)
+forall (n :: N') a b.
+FinList n a -&gt; FinList n b -&gt; FinList n (a, b)
+</span><a href="OAlg.Entity.FinList.html#zip"><span class="hs-operator hs-var">`zip`</span></a></span><span> </span><span class="annot"><span class="annottext">FinList n c
+</span><a href="#local-6989586621679415292"><span class="hs-identifier hs-var">fs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="annot"><span class="hs-comment">-- | mapping a projective limes under an adjunction.</span></span><span>
+</span><span id="line-70"></span><span id="local-6989586621679415093"><span id="local-6989586621679415094"><span id="local-6989586621679415095"><span id="local-6989586621679415096"><span id="local-6989586621679415097"><span id="local-6989586621679415098"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmPrjMap"><span class="hs-identifier hs-type">lmPrjMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415093"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415093"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415094"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415095"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415096"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415097"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415098"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415094"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415096"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415097"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415098"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415095"><span class="hs-identifier hs-type">c</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-72"></span><span id="lmPrjMap"><span class="annot"><span class="annottext">lmPrjMap :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Adjunction h d c
+-&gt; Limes Mlt 'Projective t n m d -&gt; Limes Mlt 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMap"><span class="hs-identifier hs-var hs-var">lmPrjMap</span></a></span></span><span> </span><span id="local-6989586621679415313"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415313"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679415314"><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415314"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Struct Mlt d
+-&gt; Adjunction h d c
+-&gt; Limes Mlt 'Projective t n m d
+-&gt; Limes Mlt 'Projective t n m c
+forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Struct Mlt d
+-&gt; Adjunction h d c
+-&gt; Limes Mlt 'Projective t n m d
+-&gt; Limes Mlt 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMapStruct"><span class="hs-identifier hs-var">lmPrjMapStruct</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Struct (ObjectClass h) d -&gt; Struct Mlt d
+forall x. Struct (ObjectClass h) x -&gt; Struct Mlt x
+forall s t x. Transformable s t =&gt; Struct s x -&gt; Struct t x
+</span><a href="OAlg.Structure.Definition.html#tau"><span class="hs-identifier hs-var">tau</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">h d c -&gt; Struct (ObjectClass h) d
+forall x y. h x y -&gt; Struct (ObjectClass h) x
+forall (m :: * -&gt; * -&gt; *) x y.
+Morphism m =&gt;
+m x y -&gt; Struct (ObjectClass m) x
+</span><a href="OAlg.Category.Definition.html#domain"><span class="hs-identifier hs-var">domain</span></a></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415314"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415313"><span class="hs-identifier hs-var">adj</span></a></span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- lmInjMap -</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span id="local-6989586621679415117"><span id="local-6989586621679415118"><span id="local-6989586621679415119"><span id="local-6989586621679415121"><span id="local-6989586621679415125"><span id="local-6989586621679415126"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmInjMapHom"><span class="hs-identifier hs-type">lmInjMapHom</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415117"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-79"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Category.Definition.html#Homomorphous"><span class="hs-identifier hs-type">Homomorphous</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415118"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415119"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415121"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679415121"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415117"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415118"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415119"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415121"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415125"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415126"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415119"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415121"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415125"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415126"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415118"><span class="hs-identifier hs-type">d</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-82"></span><span id="lmInjMapHom"><span class="annot"><span class="annottext">lmInjMapHom :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Homomorphous Mlt d c
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Adjunction h d c
+-&gt; Limes Mlt 'Injective t n m c
+-&gt; Limes Mlt 'Injective t n m d
+</span><a href="OAlg.Adjunction.Limes.html#lmInjMapHom"><span class="hs-identifier hs-var hs-var">lmInjMapHom</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Struct Mlt d
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span class="annot"><a href="OAlg.Category.Definition.html#%3A%3E%3A"><span class="hs-operator hs-type">:&gt;:</span></a></span><span class="annot"><span class="annottext">Struct Mlt c
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679415333"><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679415333"><span class="hs-identifier hs-var">rt</span></a></span></span><span> </span><span id="local-6989586621679415334"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415334"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679415335"><span class="annot"><span class="annottext">Limes Mlt 'Injective t n m c
+</span><a href="#local-6989586621679415335"><span class="hs-identifier hs-var">lim</span></a></span></span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt d
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limes Mlt 'Injective t n m d)
+-&gt; Limes Mlt 'Injective t n m d
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limes s p t n m a)
+-&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Definition.html#coLimesInv"><span class="hs-identifier hs-var">coLimesInv</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt d
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679415333"><span class="hs-identifier hs-var">rt</span></a></span><span>
+</span><span id="line-84"></span><span>  </span><span class="annot"><span class="annottext">(Limes Mlt 'Projective (Dual t) n m (Op d)
+ -&gt; Limes Mlt 'Injective t n m d)
+-&gt; Limes Mlt 'Projective (Dual t) n m (Op d)
+-&gt; Limes Mlt 'Injective t n m d
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction (OpHom h) (Op c) (Op d)
+-&gt; Limes Mlt 'Projective (Dual t) n m (Op c)
+-&gt; Limes Mlt 'Projective (Dual t) n m (Op d)
+forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Adjunction h d c
+-&gt; Limes Mlt 'Projective t n m d -&gt; Limes Mlt 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMap"><span class="hs-identifier hs-var">lmPrjMap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Dual (Adjunction h d c)
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Dual (Adjunction h d c)
+</span><a href="OAlg.Adjunction.Definition.html#coAdjunction"><span class="hs-identifier hs-var">coAdjunction</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415334"><span class="hs-identifier hs-var">adj</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ConeStruct Mlt c
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limes Mlt 'Injective t n m c
+-&gt; Dual (Limes Mlt 'Injective t n m c)
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limes s p t n m a
+-&gt; Dual (Limes s p t n m a)
+</span><a href="OAlg.Limes.Definition.html#coLimes"><span class="hs-identifier hs-var">coLimes</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Mlt c
+forall a. Multiplicative a =&gt; ConeStruct Mlt a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructMlt"><span class="hs-identifier hs-var">ConeStructMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679415333"><span class="hs-identifier hs-var">rt</span></a></span><span> </span><span class="annot"><span class="annottext">Limes Mlt 'Injective t n m c
+</span><a href="#local-6989586621679415335"><span class="hs-identifier hs-var">lim</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="annot"><span class="hs-comment">-- | mapping a injective limes under an adjunction.</span></span><span>
+</span><span id="line-88"></span><span id="local-6989586621679415159"><span id="local-6989586621679415160"><span id="local-6989586621679415161"><span id="local-6989586621679415162"><span id="local-6989586621679415163"><span id="local-6989586621679415164"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmInjMap"><span class="hs-identifier hs-type">lmInjMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415159"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415159"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415160"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415161"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415162"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415163"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415164"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415161"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Mlt"><span class="hs-identifier hs-type">Mlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415162"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415163"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415164"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415160"><span class="hs-identifier hs-type">d</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-90"></span><span id="lmInjMap"><span class="annot"><span class="annottext">lmInjMap :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Adjunction h d c
+-&gt; Limes Mlt 'Injective t n m c -&gt; Limes Mlt 'Injective t n m d
+</span><a href="OAlg.Adjunction.Limes.html#lmInjMap"><span class="hs-identifier hs-var hs-var">lmInjMap</span></a></span></span><span> </span><span id="local-6989586621679415346"><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415346"><span class="hs-identifier hs-var">adj</span></a></span></span><span> </span><span id="local-6989586621679415347"><span class="annot"><span class="annottext">Limes Mlt 'Injective t n m c
+</span><a href="#local-6989586621679415347"><span class="hs-identifier hs-var">lim</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Homomorphous Mlt d c
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Adjunction h d c
+-&gt; Limes Mlt 'Injective t n m c
+-&gt; Limes Mlt 'Injective t n m d
+forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Mlt h =&gt;
+Homomorphous Mlt d c
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Adjunction h d c
+-&gt; Limes Mlt 'Injective t n m c
+-&gt; Limes Mlt 'Injective t n m d
+</span><a href="OAlg.Adjunction.Limes.html#lmInjMapHom"><span class="hs-identifier hs-var">lmInjMapHom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Homomorphous Mlt d c
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Homomorphous Mlt d c
+</span><a href="OAlg.Adjunction.Definition.html#adjHomMlt"><span class="hs-identifier hs-var">adjHomMlt</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415346"><span class="hs-identifier hs-var">adj</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Limes Mlt 'Injective t n m c -&gt; Dual (Dual t) :~: t
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limes s p t n m a -&gt; Dual (Dual t) :~: t
+</span><a href="OAlg.Limes.Definition.html#lmDiagramTypeRefl"><span class="hs-identifier hs-var">lmDiagramTypeRefl</span></a></span><span> </span><span class="annot"><span class="annottext">Limes Mlt 'Injective t n m c
+</span><a href="#local-6989586621679415347"><span class="hs-identifier hs-var">lim</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415346"><span class="hs-identifier hs-var">adj</span></a></span><span> </span><span class="annot"><span class="annottext">Limes Mlt 'Injective t n m c
+</span><a href="#local-6989586621679415347"><span class="hs-identifier hs-var">lim</span></a></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- lmPrjMapDst -</span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span id="local-6989586621679415181"><span id="local-6989586621679415182"><span id="local-6989586621679415183"><span id="local-6989586621679415184"><span id="local-6989586621679415185"><span id="local-6989586621679415186"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmPrjMapDstStruct"><span class="hs-identifier hs-type">lmPrjMapDstStruct</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415181"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-type">Struct</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415182"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415181"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415182"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415183"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-96"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415184"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415185"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415186"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415182"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415184"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415185"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415186"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415183"><span class="hs-identifier hs-type">c</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-97"></span><span id="lmPrjMapDstStruct"><span class="annot"><span class="annottext">lmPrjMapDstStruct :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Struct Dst d
+-&gt; Adjunction h d c
+-&gt; Limes Dst 'Projective t n m d
+-&gt; Limes Dst 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMapDstStruct"><span class="hs-identifier hs-var hs-var">lmPrjMapDstStruct</span></a></span></span><span> </span><span class="annot"><span class="annottext">Struct Dst d
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span> </span><span id="local-6989586621679415361"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415361"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679415362"><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415362"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-type">LimesProjective</span></a></span><span> </span><span id="local-6989586621679415364"><span class="annot"><span class="annottext">dLim :: Cone Dst 'Projective t n m d
+</span><a href="#local-6989586621679415364"><span class="hs-identifier hs-var">dLim</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) ('S N1) m d
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679415372"><span class="annot"><span class="annottext">Cone Dst 'Projective t n m d -&gt; d
+</span><a href="#local-6989586621679415372"><span class="hs-identifier hs-var">dUniv</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m c
+-&gt; (Cone Dst 'Projective t n m c -&gt; c)
+-&gt; Limes Dst 'Projective t n m c
+forall s (t :: DiagramType) (n :: N') (m :: N') a.
+Cone s 'Projective t n m a
+-&gt; (Cone s 'Projective t n m a -&gt; a) -&gt; Limes s 'Projective t n m a
+</span><a href="OAlg.Limes.Definition.html#LimesProjective"><span class="hs-identifier hs-var">LimesProjective</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m c
+</span><a href="#local-6989586621679415373"><span class="hs-identifier hs-var">cLim</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m c -&gt; c
+</span><a href="#local-6989586621679415374"><span class="hs-identifier hs-var">cUniv</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-99"></span><span>
+</span><span id="line-100"></span><span>  </span><span id="local-6989586621679415375"><span class="annot"><span class="annottext">dDgm :: Diagram t n m d
+</span><a href="#local-6989586621679415375"><span class="hs-identifier hs-var hs-var">dDgm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m d -&gt; Diagram t n m d
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Cone s p t n m a -&gt; Diagram t n m a
+</span><a href="OAlg.Limes.Cone.Definition.html#cnDiagram"><span class="hs-identifier hs-var">cnDiagram</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m d
+</span><a href="#local-6989586621679415364"><span class="hs-identifier hs-var">dLim</span></a></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span>  </span><span id="local-6989586621679415373"><span class="annot"><span class="annottext">cLim :: Cone Dst 'Projective t n m c
+</span><a href="#local-6989586621679415373"><span class="hs-identifier hs-var hs-var">cLim</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">h d c
+-&gt; Cone Dst 'Projective t n m d -&gt; Cone Dst 'Projective t n m c
+forall s (h :: * -&gt; * -&gt; *) a b (p :: Perspective)
+       (t :: DiagramType) (n :: N') (m :: N').
+Hom s h =&gt;
+h a b -&gt; Cone s p t n m a -&gt; Cone s p t n m b
+</span><a href="OAlg.Limes.Cone.Definition.html#cnMap"><span class="hs-identifier hs-var">cnMap</span></a></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415362"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m d
+</span><a href="#local-6989586621679415364"><span class="hs-identifier hs-var">dLim</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679415374"><span class="annot"><span class="annottext">cUniv :: Cone Dst 'Projective t n m c -&gt; c
+</span><a href="#local-6989586621679415374"><span class="hs-identifier hs-var hs-var">cUniv</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-type">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) ('S N1) m c
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679415389"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679415389"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Point c -&gt; d -&gt; c
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Point c -&gt; d -&gt; c
+</span><a href="OAlg.Adjunction.Definition.html#adjr"><span class="hs-identifier hs-var">adjr</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415361"><span class="hs-identifier hs-var">adj</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c -&gt; Point c
+forall q. Oriented q =&gt; q -&gt; Point q
+</span><a href="OAlg.Structure.Oriented.Definition.html#start"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679415389"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m d -&gt; d
+</span><a href="#local-6989586621679415372"><span class="hs-identifier hs-var">dUniv</span></a></span><span> </span><span class="annot"><span class="annottext">Cone Dst 'Projective t n m d
+Cone Dst 'Projective ('Parallel 'LeftToRight) ('S N1) m d
+</span><a href="#local-6989586621679415391"><span class="hs-identifier hs-var">dCone</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-105"></span><span>    </span><span id="local-6989586621679415391"><span class="annot"><span class="annottext">dCone :: Cone Dst 'Projective ('Parallel 'LeftToRight) ('S N1) m d
+</span><a href="#local-6989586621679415391"><span class="hs-identifier hs-var hs-var">dCone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Diagram ('Parallel 'LeftToRight) ('S N1) m d
+-&gt; d -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) ('S N1) m d
+forall a (m :: N').
+Distributive a =&gt;
+Diagram ('Parallel 'LeftToRight) ('S N1) m a
+-&gt; a -&gt; Cone Dst 'Projective ('Parallel 'LeftToRight) ('S N1) m a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeKernel"><span class="hs-identifier hs-var">ConeKernel</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m d
+Diagram ('Parallel 'LeftToRight) ('S N1) m d
+</span><a href="#local-6989586621679415375"><span class="hs-identifier hs-var">dDgm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Point d -&gt; c -&gt; d
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Point d -&gt; c -&gt; d
+</span><a href="OAlg.Adjunction.Definition.html#adjl"><span class="hs-identifier hs-var">adjl</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415361"><span class="hs-identifier hs-var">adj</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FinList (N1 + 1) (Point d) -&gt; Point d
+FinList ('S N1) (Point d) -&gt; Point d
+forall (n :: N') a. FinList (n + 1) a -&gt; a
+</span><a href="OAlg.Entity.FinList.html#head"><span class="hs-identifier hs-var">head</span></a></span><span> </span><span class="annot"><span class="annottext">(FinList ('S N1) (Point d) -&gt; Point d)
+-&gt; FinList ('S N1) (Point d) -&gt; Point d
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m d -&gt; FinList n (Point d)
+forall a (t :: DiagramType) (n :: N') (m :: N').
+Oriented a =&gt;
+Diagram t n m a -&gt; FinList n (Point a)
+</span><a href="OAlg.Entity.Diagram.Definition.html#dgPoints"><span class="hs-identifier hs-var">dgPoints</span></a></span><span> </span><span class="annot"><span class="annottext">Diagram t n m d
+</span><a href="#local-6989586621679415375"><span class="hs-identifier hs-var">dDgm</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679415389"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="annot"><span class="hs-comment">-- | mapping a projective limes under an adjunction.</span></span><span>
+</span><span id="line-108"></span><span id="local-6989586621679415207"><span id="local-6989586621679415208"><span id="local-6989586621679415209"><span id="local-6989586621679415210"><span id="local-6989586621679415211"><span id="local-6989586621679415212"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmPrjMapDst"><span class="hs-identifier hs-type">lmPrjMapDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415207"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-109"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415207"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415208"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415209"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415210"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415211"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415212"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415208"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Projective"><span class="hs-identifier hs-type">Projective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415210"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415211"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415212"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415209"><span class="hs-identifier hs-type">c</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-110"></span><span id="lmPrjMapDst"><span class="annot"><span class="annottext">lmPrjMapDst :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Adjunction h d c
+-&gt; Limes Dst 'Projective t n m d -&gt; Limes Dst 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMapDst"><span class="hs-identifier hs-var hs-var">lmPrjMapDst</span></a></span></span><span> </span><span id="local-6989586621679415402"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415402"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679415403"><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415403"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Struct Dst d
+-&gt; Adjunction h d c
+-&gt; Limes Dst 'Projective t n m d
+-&gt; Limes Dst 'Projective t n m c
+forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Struct Dst d
+-&gt; Adjunction h d c
+-&gt; Limes Dst 'Projective t n m d
+-&gt; Limes Dst 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMapDstStruct"><span class="hs-identifier hs-var">lmPrjMapDstStruct</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Struct (ObjectClass h) d -&gt; Struct Dst d
+forall x. Struct (ObjectClass h) x -&gt; Struct Dst x
+forall s t x. Transformable s t =&gt; Struct s x -&gt; Struct t x
+</span><a href="OAlg.Structure.Definition.html#tau"><span class="hs-identifier hs-var">tau</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">h d c -&gt; Struct (ObjectClass h) d
+forall x y. h x y -&gt; Struct (ObjectClass h) x
+forall (m :: * -&gt; * -&gt; *) x y.
+Morphism m =&gt;
+m x y -&gt; Struct (ObjectClass m) x
+</span><a href="OAlg.Category.Definition.html#domain"><span class="hs-identifier hs-var">domain</span></a></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415403"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415402"><span class="hs-identifier hs-var">adj</span></a></span><span> </span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-113"></span><span class="hs-comment">-- lmInjMapDst -</span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621679415219"><span id="local-6989586621679415220"><span id="local-6989586621679415221"><span id="local-6989586621679415222"><span id="local-6989586621679415223"><span id="local-6989586621679415224"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmInjMapDstHom"><span class="hs-identifier hs-type">lmInjMapDstHom</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415219"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-116"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Category.Definition.html#Homomorphous"><span class="hs-identifier hs-type">Homomorphous</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415220"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415221"><span class="hs-identifier hs-type">c</span></a></span><span>
+</span><span id="line-117"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Dualisable.html#Dual"><span class="hs-identifier hs-type">Dual</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415222"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-operator hs-type">:~:</span></span><span> </span><span class="annot"><a href="#local-6989586621679415222"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415219"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415220"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415221"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415222"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415223"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415224"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415221"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415222"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415223"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415224"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415220"><span class="hs-identifier hs-type">d</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-119"></span><span id="lmInjMapDstHom"><span class="annot"><span class="annottext">lmInjMapDstHom :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Homomorphous Dst d c
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Adjunction h d c
+-&gt; Limes Dst 'Injective t n m c
+-&gt; Limes Dst 'Injective t n m d
+</span><a href="OAlg.Adjunction.Limes.html#lmInjMapDstHom"><span class="hs-identifier hs-var hs-var">lmInjMapDstHom</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Struct Dst d
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span class="annot"><a href="OAlg.Category.Definition.html#%3A%3E%3A"><span class="hs-operator hs-type">:&gt;:</span></a></span><span class="annot"><span class="annottext">Struct Dst c
+</span><a href="OAlg.Structure.Definition.html#Struct"><span class="hs-identifier hs-var">Struct</span></a></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679415419"><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679415419"><span class="hs-identifier hs-var">rt</span></a></span></span><span> </span><span id="local-6989586621679415420"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415420"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679415421"><span class="annot"><span class="annottext">Limes Dst 'Injective t n m c
+</span><a href="#local-6989586621679415421"><span class="hs-identifier hs-var">lim</span></a></span></span><span>
+</span><span id="line-120"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst d
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limes Dst 'Injective t n m d)
+-&gt; Limes Dst 'Injective t n m d
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Dual (Limes s p t n m a)
+-&gt; Limes s p t n m a
+</span><a href="OAlg.Limes.Definition.html#coLimesInv"><span class="hs-identifier hs-var">coLimesInv</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst d
+forall a. Distributive a =&gt; ConeStruct Dst a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679415419"><span class="hs-identifier hs-var">rt</span></a></span><span>
+</span><span id="line-121"></span><span>  </span><span class="annot"><span class="annottext">(Limes Dst 'Projective (Dual t) n m (Op d)
+ -&gt; Limes Dst 'Injective t n m d)
+-&gt; Limes Dst 'Projective (Dual t) n m (Op d)
+-&gt; Limes Dst 'Injective t n m d
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction (OpHom h) (Op c) (Op d)
+-&gt; Limes Dst 'Projective (Dual t) n m (Op c)
+-&gt; Limes Dst 'Projective (Dual t) n m (Op d)
+forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Adjunction h d c
+-&gt; Limes Dst 'Projective t n m d -&gt; Limes Dst 'Projective t n m c
+</span><a href="OAlg.Adjunction.Limes.html#lmPrjMapDst"><span class="hs-identifier hs-var">lmPrjMapDst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Adjunction h d c -&gt; Dual (Adjunction h d c)
+forall (h :: * -&gt; * -&gt; *) d c.
+Hom Mlt h =&gt;
+Adjunction h d c -&gt; Dual (Adjunction h d c)
+</span><a href="OAlg.Adjunction.Definition.html#coAdjunction"><span class="hs-identifier hs-var">coAdjunction</span></a></span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415420"><span class="hs-identifier hs-var">adj</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ConeStruct Dst c
+-&gt; (Dual (Dual 'Injective) :~: 'Injective)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limes Dst 'Injective t n m c
+-&gt; Dual (Limes Dst 'Injective t n m c)
+forall s a (p :: Perspective) (t :: DiagramType) (n :: N')
+       (m :: N').
+ConeStruct s a
+-&gt; (Dual (Dual p) :~: p)
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Limes s p t n m a
+-&gt; Dual (Limes s p t n m a)
+</span><a href="OAlg.Limes.Definition.html#coLimes"><span class="hs-identifier hs-var">coLimes</span></a></span><span> </span><span class="annot"><span class="annottext">ConeStruct Dst c
+forall a. Distributive a =&gt; ConeStruct Dst a
+</span><a href="OAlg.Limes.Cone.Definition.html#ConeStructDst"><span class="hs-identifier hs-var">ConeStructDst</span></a></span><span> </span><span class="annot"><span class="annottext">Dual (Dual 'Injective) :~: 'Injective
+'Injective :~: 'Injective
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="annot"><span class="annottext">Dual (Dual t) :~: t
+</span><a href="#local-6989586621679415419"><span class="hs-identifier hs-var">rt</span></a></span><span> </span><span class="annot"><span class="annottext">Limes Dst 'Injective t n m c
+</span><a href="#local-6989586621679415421"><span class="hs-identifier hs-var">lim</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="annot"><span class="hs-comment">-- | mapping a injective limes under an adjunction.</span></span><span>
+</span><span id="line-124"></span><span id="local-6989586621679415232"><span id="local-6989586621679415233"><span id="local-6989586621679415234"><span id="local-6989586621679415235"><span id="local-6989586621679415236"><span id="local-6989586621679415237"><span class="annot"><a href="OAlg.Adjunction.Limes.html#lmInjMapDst"><span class="hs-identifier hs-type">lmInjMapDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Hom.Definition.html#Hom"><span class="hs-identifier hs-type">Hom</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415232"><span class="hs-identifier hs-type">h</span></a></span><span>
+</span><span id="line-125"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415232"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415233"><span class="hs-identifier hs-type">d</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415234"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415235"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415236"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415237"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415234"><span class="hs-identifier hs-type">c</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Limes.Definition.html#Limes"><span class="hs-identifier hs-type">Limes</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Dst"><span class="hs-identifier hs-type">Dst</span></a></span><span> </span><span class="annot"><a href="OAlg.Limes.Perspective.html#Injective"><span class="hs-identifier hs-type">Injective</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415235"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415236"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415237"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679415233"><span class="hs-identifier hs-type">d</span></a></span></span></span></span></span></span></span><span>
+</span><span id="line-126"></span><span id="lmInjMapDst"><span class="annot"><span class="annottext">lmInjMapDst :: forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Adjunction h d c
+-&gt; Limes Dst 'Injective t n m c -&gt; Limes Dst 'Injective t n m d
+</span><a href="OAlg.Adjunction.Limes.html#lmInjMapDst"><span class="hs-identifier hs-var hs-var">lmInjMapDst</span></a></span></span><span> </span><span id="local-6989586621679415431"><span class="annot"><span class="annottext">adj :: Adjunction h d c
+</span><a href="#local-6989586621679415431"><span class="hs-identifier hs-var">adj</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Adjunction.Definition.html#Adjunction"><span class="hs-identifier hs-type">Adjunction</span></a></span><span> </span><span class="annot"><span class="annottext">h c d
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679415432"><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415432"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="annot"><span class="annottext">Point c -&gt; c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Point d -&gt; d
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679415433"><span class="annot"><span class="annottext">Limes Dst 'Injective t n m c
+</span><a href="#local-6989586621679415433"><span class="hs-identifier hs-var">lim</span></a></span></span><span>
+</span><span id="line-127"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Homomorphous Dst d c
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Adjunction h d c
+-&gt; Limes Dst 'Injective t n m c
+-&gt; Limes Dst 'Injective t n m d
+forall (h :: * -&gt; * -&gt; *) d c (t :: DiagramType) (n :: N')
+       (m :: N').
+Hom Dst h =&gt;
+Homomorphous Dst d c
+-&gt; (Dual (Dual t) :~: t)
+-&gt; Adjunction h d c
+-&gt; Limes Dst 'Injective t n m c
+-&gt; Limes Dst 'Injective t n m d
+</span><a href="OAlg.Adjunction.Limes.html#lmInjMapDstHom"><span class="hs-identifier hs-var">lmInjMapDstHom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Homomorphous (ObjectClass h) d c -&gt; Homomorphous Dst d c
+forall s t x y.
+Transformable s t =&gt;
+Homomorphous s x y -&gt; Homomorphous t x y
+</span><a href="OAlg.Category.Definition.html#tauHom"><span class="hs-identifier hs-var">tauHom</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">h d c -&gt; Homomorphous (ObjectClass h) d c
+forall x y. h x y -&gt; Homomorphous (ObjectClass h) x y
+forall (m :: * -&gt; * -&gt; *) x y.
+Morphism m =&gt;
+m x y -&gt; Homomorphous (ObjectClass m) x y
+</span><a href="OAlg.Category.Definition.html#homomorphous"><span class="hs-identifier hs-var">homomorphous</span></a></span><span> </span><span class="annot"><span class="annottext">h d c
+</span><a href="#local-6989586621679415432"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Limes Dst 'Injective t n m c -&gt; Dual (Dual t) :~: t
+forall s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N')
+       a.
+Limes s p t n m a -&gt; Dual (Dual t) :~: t
+</span><a href="OAlg.Limes.Definition.html#lmDiagramTypeRefl"><span class="hs-identifier hs-var">lmDiagramTypeRefl</span></a></span><span> </span><span class="annot"><span class="annottext">Limes Dst 'Injective t n m c
+</span><a href="#local-6989586621679415433"><span class="hs-identifier hs-var">lim</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Adjunction h d c
+</span><a href="#local-6989586621679415431"><span class="hs-identifier hs-var">adj</span></a></span><span> </span><span class="annot"><span class="annottext">Limes Dst 'Injective t n m c
+</span><a href="#local-6989586621679415433"><span class="hs-identifier hs-var">lim</span></a></span><span>
+</span><span id="line-128"></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span></pre></body></html>

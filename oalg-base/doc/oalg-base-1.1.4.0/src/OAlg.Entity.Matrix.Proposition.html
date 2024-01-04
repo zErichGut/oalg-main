@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Module      : OAlg.Entity.Matrix.Proposition</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Description : propositions on matrices</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- propositions on matrices.</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Entity.Matrix.Proposition</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Proposition</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrix"><span class="hs-identifier">prpMatrix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrixZ"><span class="hs-identifier">prpMatrixZ</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.html"><span class="hs-identifier">OAlg.Structure.Fibred</span></a></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.html"><span class="hs-identifier">OAlg.Structure.Additive</span></a></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Vectorial.html"><span class="hs-identifier">OAlg.Structure.Vectorial</span></a></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.html"><span class="hs-identifier">OAlg.Structure.Distributive</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Algebraic.html"><span class="hs-identifier">OAlg.Structure.Algebraic</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html"><span class="hs-identifier">OAlg.Limes.ProductsAndSums</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html"><span class="hs-identifier">OAlg.Entity.Natural</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html"><span class="hs-identifier">OAlg.Entity.Matrix.Definition</span></a></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.ProductsAndSums.html"><span class="hs-identifier">OAlg.Entity.Matrix.ProductsAndSums</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- prpMatrix -</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><span class="hs-comment">-- | validity of the algebraic structure of matrices.</span></span><span>
+</span><span id="line-47"></span><span id="local-6989586621679414630"><span class="annot"><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrix"><span class="hs-identifier hs-type">prpMatrix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Definition.html#Distributive"><span class="hs-identifier hs-type">Distributive</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414630"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#XOrtOrientation"><span class="hs-identifier hs-type">XOrtOrientation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414630"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#XOrtSite"><span class="hs-identifier hs-type">XOrtSite</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#From"><span class="hs-identifier hs-type">From</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414630"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#XOrtSite"><span class="hs-identifier hs-type">XOrtSite</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Dualisable.html#To"><span class="hs-identifier hs-type">To</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414630"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span><span>
+</span><span id="line-52"></span><span id="prpMatrix"><span class="annot"><span class="annottext">prpMatrix :: forall x.
+Distributive x =&gt;
+XOrtOrientation (Matrix x)
+-&gt; XOrtSite 'From (Matrix x)
+-&gt; XOrtSite 'To (Matrix x)
+-&gt; Statement
+</span><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrix"><span class="hs-identifier hs-var hs-var">prpMatrix</span></a></span></span><span> </span><span id="local-6989586621679414771"><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span></span><span> </span><span id="local-6989586621679414772"><span class="annot"><span class="annottext">XOrtSite 'From (Matrix x)
+</span><a href="#local-6989586621679414772"><span class="hs-identifier hs-var">xf</span></a></span></span><span> </span><span id="local-6989586621679414773"><span class="annot"><span class="annottext">XOrtSite 'To (Matrix x)
+</span><a href="#local-6989586621679414773"><span class="hs-identifier hs-var">xt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Matrix&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-53"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">XOrt (Matrix x) -&gt; Statement
+forall q. Oriented q =&gt; XOrt q -&gt; Statement
+</span><a href="OAlg.Structure.Oriented.Proposition.html#prpOrt"><span class="hs-identifier hs-var">prpOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x) -&gt; XOrt (Matrix x)
+forall q. XOrtOrientation q -&gt; XOrt q
+</span><a href="OAlg.Structure.Oriented.Proposition.html#xoOrt"><span class="hs-identifier hs-var">xoOrt</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XMlt (Matrix x) -&gt; Statement
+forall c. Multiplicative c =&gt; XMlt c -&gt; Statement
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#prpMlt"><span class="hs-identifier hs-var">prpMlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">X N -&gt; XOrtOrientation (Matrix x) -&gt; XMlt (Matrix x)
+forall c. Multiplicative c =&gt; X N -&gt; XOrtOrientation c -&gt; XMlt c
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#xoMlt"><span class="hs-identifier hs-var">xoMlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; N -&gt; X N
+</span><a href="OAlg.Data.X.html#xNB"><span class="hs-identifier hs-var">xNB</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">10</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt (Matrix x) -&gt; Statement
+forall f. Fibred f =&gt; XFbr f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbr"><span class="hs-identifier hs-var">prpFbr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x) -&gt; XOrt (Matrix x)
+forall q. XOrtOrientation q -&gt; XOrt q
+</span><a href="OAlg.Structure.Fibred.Proposition.html#xoFbr"><span class="hs-identifier hs-var">xoFbr</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt (Matrix x) -&gt; Statement
+forall f. FibredOriented f =&gt; XFbrOrt f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbrOrt"><span class="hs-identifier hs-var">prpFbrOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x) -&gt; XOrt (Matrix x)
+forall q. XOrtOrientation q -&gt; XOrt q
+</span><a href="OAlg.Structure.Fibred.Proposition.html#xoFbrOrt"><span class="hs-identifier hs-var">xoFbrOrt</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAdd (Matrix x) -&gt; Statement
+forall a. Additive a =&gt; XAdd a -&gt; Statement
+</span><a href="OAlg.Structure.Additive.Proposition.html#prpAdd"><span class="hs-identifier hs-var">prpAdd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">X N -&gt; XOrtOrientation (Matrix x) -&gt; XAdd (Matrix x)
+forall a. FibredOriented a =&gt; X N -&gt; XOrtOrientation a -&gt; XAdd a
+</span><a href="OAlg.Structure.Additive.Proposition.html#xoAdd"><span class="hs-identifier hs-var">xoAdd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; N -&gt; X N
+</span><a href="OAlg.Data.X.html#xNB"><span class="hs-identifier hs-var">xNB</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">5</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XDst (Matrix x) -&gt; Statement
+forall d. Distributive d =&gt; XDst d -&gt; Statement
+</span><a href="OAlg.Structure.Distributive.Proposition.html#prpDst"><span class="hs-identifier hs-var">prpDst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+-&gt; XOrtSite 'From (Matrix x)
+-&gt; XOrtSite 'To (Matrix x)
+-&gt; XDst (Matrix x)
+forall d.
+Distributive d =&gt;
+XOrtOrientation d -&gt; XOrtSite 'From d -&gt; XOrtSite 'To d -&gt; XDst d
+</span><a href="OAlg.Structure.Distributive.Proposition.html#xoDst"><span class="hs-identifier hs-var">xoDst</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix x)
+</span><a href="#local-6989586621679414771"><span class="hs-identifier hs-var">xo</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtSite 'From (Matrix x)
+</span><a href="#local-6989586621679414772"><span class="hs-identifier hs-var">xf</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtSite 'To (Matrix x)
+</span><a href="#local-6989586621679414773"><span class="hs-identifier hs-var">xt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span id="local-6989586621679414659"><span class="annot"><a href="OAlg.Entity.Matrix.Proposition.html#dstMatrix"><span class="hs-identifier hs-type">dstMatrix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679414659"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-63"></span><span id="dstMatrix"><span class="annot"><span class="annottext">dstMatrix :: forall x. Int -&gt; X (Matrix x) -&gt; IO ()
+</span><a href="OAlg.Entity.Matrix.Proposition.html#dstMatrix"><span class="hs-identifier hs-var hs-var">dstMatrix</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Matrix x -&gt; [String]) -&gt; Int -&gt; X (Matrix x) -&gt; IO ()
+forall x. (x -&gt; [String]) -&gt; Int -&gt; X x -&gt; IO ()
+</span><a href="OAlg.Data.X.html#putDstr"><span class="hs-identifier hs-var">putDstr</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679414792"><span class="annot"><span class="annottext">Matrix x
+</span><a href="#local-6989586621679414792"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Matrix x -&gt; String
+forall {x}. Matrix x -&gt; String
+</span><a href="#local-6989586621679414793"><span class="hs-identifier hs-var">rws</span></a></span><span> </span><span class="annot"><span class="annottext">Matrix x
+</span><a href="#local-6989586621679414792"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Matrix x -&gt; String
+forall {x}. Matrix x -&gt; String
+</span><a href="#local-6989586621679414794"><span class="hs-identifier hs-var">cls</span></a></span><span> </span><span class="annot"><span class="annottext">Matrix x
+</span><a href="#local-6989586621679414792"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679414793"><span class="annot"><span class="annottext">rws :: Matrix x -&gt; String
+</span><a href="#local-6989586621679414793"><span class="hs-identifier hs-var hs-var">rws</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span id="local-6989586621679414802"><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414802"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Entries N N x
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">N -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">(N -&gt; String) -&gt; N -&gt; String
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x) -&gt; N
+forall x. LengthN x =&gt; x -&gt; N
+</span><a href="OAlg.Data.Number.html#lengthN"><span class="hs-identifier hs-var">lengthN</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414802"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621679414794"><span class="annot"><span class="annottext">cls :: Matrix x -&gt; String
+</span><a href="#local-6989586621679414794"><span class="hs-identifier hs-var hs-var">cls</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679414809"><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414809"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="annot"><span class="annottext">Entries N N x
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">N -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">(N -&gt; String) -&gt; N -&gt; String
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x) -&gt; N
+forall x. LengthN x =&gt; x -&gt; N
+</span><a href="OAlg.Data.Number.html#lengthN"><span class="hs-identifier hs-var">lengthN</span></a></span><span> </span><span class="annot"><span class="annottext">Dim x (Point x)
+</span><a href="#local-6989586621679414809"><span class="hs-identifier hs-var">c</span></a></span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- prpMatrixZ -</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="annot"><span class="hs-comment">-- | validity of the algebraic structure of block matrices of 'Z'.</span></span><span>
+</span><span id="line-72"></span><span class="annot"><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrixZ"><span class="hs-identifier hs-type">prpMatrixZ</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-73"></span><span id="prpMatrixZ"><span class="annot"><span class="annottext">prpMatrixZ :: Statement
+</span><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrixZ"><span class="hs-identifier hs-var hs-var">prpMatrixZ</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;MatrixZ&quot;</span></span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+-&gt; XOrtSite 'From (Matrix (Matrix Z))
+-&gt; XOrtSite 'To (Matrix (Matrix Z))
+-&gt; Statement
+forall x.
+Distributive x =&gt;
+XOrtOrientation (Matrix x)
+-&gt; XOrtSite 'From (Matrix x)
+-&gt; XOrtSite 'To (Matrix x)
+-&gt; Statement
+</span><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrix"><span class="hs-identifier hs-var">prpMatrix</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414810"><span class="hs-identifier hs-var">xo</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtSite 'From (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414811"><span class="hs-identifier hs-var">xf</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtSite 'To (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414812"><span class="hs-identifier hs-var">xt</span></a></span><span>
+</span><span id="line-75"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAbl (Matrix (Matrix Z)) -&gt; Statement
+forall a. Abelian a =&gt; XAbl a -&gt; Statement
+</span><a href="OAlg.Structure.Additive.Proposition.html#prpAbl"><span class="hs-identifier hs-var">prpAbl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">X Z
+-&gt; XOrtOrientation (Matrix (Matrix Z)) -&gt; XAbl (Matrix (Matrix Z))
+forall a. FibredOriented a =&gt; X Z -&gt; XOrtOrientation a -&gt; XAbl a
+</span><a href="OAlg.Structure.Additive.Proposition.html#xoAbl"><span class="hs-identifier hs-var">xoAbl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Z -&gt; Z -&gt; X Z
+</span><a href="OAlg.Data.X.html#xZB"><span class="hs-identifier hs-var">xZB</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">10</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">10</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414810"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>            </span><span>
+</span><span id="line-76"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XVec (Matrix (Matrix Z)) -&gt; Statement
+forall v. Vectorial v =&gt; XVec v -&gt; Statement
+</span><a href="OAlg.Structure.Vectorial.Proposition.html#prpVec"><span class="hs-identifier hs-var">prpVec</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">X (Scalar (Matrix (Matrix Z)))
+-&gt; XOrtOrientation (Matrix (Matrix Z)) -&gt; XVec (Matrix (Matrix Z))
+forall v.
+FibredOriented v =&gt;
+X (Scalar v) -&gt; XOrtOrientation v -&gt; XVec v
+</span><a href="OAlg.Structure.Vectorial.Proposition.html#xoVec"><span class="hs-identifier hs-var">xoVec</span></a></span><span> </span><span class="annot"><span class="annottext">X Z
+X (Scalar (Matrix (Matrix Z)))
+</span><a href="OAlg.Data.X.html#xZ"><span class="hs-identifier hs-var">xZ</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414810"><span class="hs-identifier hs-var">xo</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAlg (Matrix (Matrix Z)) -&gt; Statement
+forall a. Algebraic a =&gt; XAlg a -&gt; Statement
+</span><a href="OAlg.Structure.Algebraic.Proposition.html#prpAlg"><span class="hs-identifier hs-var">prpAlg</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">X (Scalar (Matrix (Matrix Z)))
+-&gt; XOrtSite 'From (Matrix (Matrix Z)) -&gt; XAlg (Matrix (Matrix Z))
+forall a (d :: Site).
+Algebraic a =&gt;
+X (Scalar a) -&gt; XOrtSite d a -&gt; XAlg a
+</span><a href="OAlg.Structure.Algebraic.Proposition.html#xoAlg"><span class="hs-identifier hs-var">xoAlg</span></a></span><span> </span><span class="annot"><span class="annottext">X Z
+X (Scalar (Matrix (Matrix Z)))
+</span><a href="OAlg.Data.X.html#xZ"><span class="hs-identifier hs-var">xZ</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtSite 'From (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414811"><span class="hs-identifier hs-var">xf</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Sums N3 (Matrix Z)&quot;</span></span><span> </span><span>
+</span><span id="line-79"></span><span>                 </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Sums N3 (Matrix Z) -&gt; Statement
+forall a. Validable a =&gt; a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#valid"><span class="hs-identifier hs-var">valid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Sums N3 (Matrix Z)
+forall x (n :: N'). Distributive x =&gt; Sums n (Matrix x)
+</span><a href="OAlg.Entity.Matrix.ProductsAndSums.html#mtxSums"><span class="hs-identifier hs-var">mtxSums</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Limes.ProductsAndSums.html#Sums"><span class="hs-identifier hs-type">Sums</span></a></span><span> </span><span class="annot"><a href="OAlg.Entity.Natural.html#N3"><span class="hs-identifier hs-type">N3</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Matrix.Definition.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679414810"><span class="annot"><span class="annottext">xo :: XOrtOrientation (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414810"><span class="hs-identifier hs-var hs-var">xo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+</span><a href="OAlg.Entity.Matrix.Definition.html#xodZZ"><span class="hs-identifier hs-var">xodZZ</span></a></span><span>
+</span><span id="line-82"></span><span>        </span><span id="local-6989586621679414811"><span class="annot"><span class="annottext">xf :: XOrtSite 'From (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414811"><span class="hs-identifier hs-var hs-var">xf</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+-&gt; XOrtSite 'From (Matrix (Matrix Z))
+forall q. Oriented q =&gt; XOrtOrientation q -&gt; XOrtSite 'From q
+</span><a href="OAlg.Structure.Oriented.Definition.html#xoFrom"><span class="hs-identifier hs-var">xoFrom</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414810"><span class="hs-identifier hs-var">xo</span></a></span><span>
+</span><span id="line-83"></span><span>        </span><span id="local-6989586621679414812"><span class="annot"><span class="annottext">xt :: XOrtSite 'To (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414812"><span class="hs-identifier hs-var hs-var">xt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+-&gt; XOrtSite 'To (Matrix (Matrix Z))
+forall q. Oriented q =&gt; XOrtOrientation q -&gt; XOrtSite 'To q
+</span><a href="OAlg.Structure.Oriented.Definition.html#xoTo"><span class="hs-identifier hs-var">xoTo</span></a></span><span> </span><span class="annot"><span class="annottext">XOrtOrientation (Matrix (Matrix Z))
+</span><a href="#local-6989586621679414810"><span class="hs-identifier hs-var">xo</span></a></span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span></pre></body></html>

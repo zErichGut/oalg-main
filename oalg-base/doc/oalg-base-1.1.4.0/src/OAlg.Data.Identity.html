@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE DeriveFoldable #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Module      : OAlg.Data.Identity</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Description : identical predicate</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- identical predicate.</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Data.Identity</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier">Id</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#fromId"><span class="hs-identifier">fromId</span></a></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#trafoFromId"><span class="hs-identifier">trafoFromId</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#trafoToId"><span class="hs-identifier">trafoToId</span></a></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- Id -</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><span class="hs-comment">-- | identical predicate.</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">newtype</span><span> </span><span id="Id"><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-var">Id</span></a></span></span><span> </span><span id="local-6989586621679349950"><span class="annot"><a href="#local-6989586621679349950"><span class="hs-identifier hs-type">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Id"><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-var">Id</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679349950"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span> </span><span id="local-6989586621679349960"><span id="local-6989586621679349965"><span id="local-6989586621679349969"><span class="annot"><span class="annottext">Int -&gt; Id x -&gt; ShowS
+[Id x] -&gt; ShowS
+Id x -&gt; String
+(Int -&gt; Id x -&gt; ShowS)
+-&gt; (Id x -&gt; String) -&gt; ([Id x] -&gt; ShowS) -&gt; Show (Id x)
+forall x. Show x =&gt; Int -&gt; Id x -&gt; ShowS
+forall x. Show x =&gt; [Id x] -&gt; ShowS
+forall x. Show x =&gt; Id x -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall x. Show x =&gt; Int -&gt; Id x -&gt; ShowS
+showsPrec :: Int -&gt; Id x -&gt; ShowS
+$cshow :: forall x. Show x =&gt; Id x -&gt; String
+show :: Id x -&gt; String
+$cshowList :: forall x. Show x =&gt; [Id x] -&gt; ShowS
+showList :: [Id x] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679349974"><span id="local-6989586621679349978"><span id="local-6989586621679349981"><span id="local-6989586621679349988"><span class="annot"><span class="annottext">ReadPrec [Id x]
+ReadPrec (Id x)
+Int -&gt; ReadS (Id x)
+ReadS [Id x]
+(Int -&gt; ReadS (Id x))
+-&gt; ReadS [Id x]
+-&gt; ReadPrec (Id x)
+-&gt; ReadPrec [Id x]
+-&gt; Read (Id x)
+forall x. Read x =&gt; ReadPrec [Id x]
+forall x. Read x =&gt; ReadPrec (Id x)
+forall x. Read x =&gt; Int -&gt; ReadS (Id x)
+forall x. Read x =&gt; ReadS [Id x]
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+$creadsPrec :: forall x. Read x =&gt; Int -&gt; ReadS (Id x)
+readsPrec :: Int -&gt; ReadS (Id x)
+$creadList :: forall x. Read x =&gt; ReadS [Id x]
+readList :: ReadS [Id x]
+$creadPrec :: forall x. Read x =&gt; ReadPrec (Id x)
+readPrec :: ReadPrec (Id x)
+$creadListPrec :: forall x. Read x =&gt; ReadPrec [Id x]
+readListPrec :: ReadPrec [Id x]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679349993"><span id="local-6989586621679349997"><span class="annot"><span class="annottext">Id x -&gt; Id x -&gt; Bool
+(Id x -&gt; Id x -&gt; Bool) -&gt; (Id x -&gt; Id x -&gt; Bool) -&gt; Eq (Id x)
+forall x. Eq x =&gt; Id x -&gt; Id x -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall x. Eq x =&gt; Id x -&gt; Id x -&gt; Bool
+== :: Id x -&gt; Id x -&gt; Bool
+$c/= :: forall x. Eq x =&gt; Id x -&gt; Id x -&gt; Bool
+/= :: Id x -&gt; Id x -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679350007"><span id="local-6989586621679350011"><span id="local-6989586621679350015"><span id="local-6989586621679350019"><span id="local-6989586621679350023"><span id="local-6989586621679350027"><span id="local-6989586621679350031"><span class="annot"><span class="annottext">Eq (Id x)
+Eq (Id x)
+-&gt; (Id x -&gt; Id x -&gt; Ordering)
+-&gt; (Id x -&gt; Id x -&gt; Bool)
+-&gt; (Id x -&gt; Id x -&gt; Bool)
+-&gt; (Id x -&gt; Id x -&gt; Bool)
+-&gt; (Id x -&gt; Id x -&gt; Bool)
+-&gt; (Id x -&gt; Id x -&gt; Id x)
+-&gt; (Id x -&gt; Id x -&gt; Id x)
+-&gt; Ord (Id x)
+Id x -&gt; Id x -&gt; Bool
+Id x -&gt; Id x -&gt; Ordering
+Id x -&gt; Id x -&gt; Id x
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall {x}. Ord x =&gt; Eq (Id x)
+forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Bool
+forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Ordering
+forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Id x
+$ccompare :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Ordering
+compare :: Id x -&gt; Id x -&gt; Ordering
+$c&lt; :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Bool
+&lt; :: Id x -&gt; Id x -&gt; Bool
+$c&lt;= :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Bool
+&lt;= :: Id x -&gt; Id x -&gt; Bool
+$c&gt; :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Bool
+&gt; :: Id x -&gt; Id x -&gt; Bool
+$c&gt;= :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Bool
+&gt;= :: Id x -&gt; Id x -&gt; Bool
+$cmax :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Id x
+max :: Id x -&gt; Id x -&gt; Id x
+$cmin :: forall x. Ord x =&gt; Id x -&gt; Id x -&gt; Id x
+min :: Id x -&gt; Id x -&gt; Id x
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679350039"><span id="local-6989586621679350043"><span id="local-6989586621679350047"><span id="local-6989586621679350051"><span id="local-6989586621679350055"><span id="local-6989586621679350059"><span id="local-6989586621679350063"><span id="local-6989586621679350067"><span class="annot"><span class="annottext">Int -&gt; Id x
+Id x -&gt; Int
+Id x -&gt; [Id x]
+Id x -&gt; Id x
+Id x -&gt; Id x -&gt; [Id x]
+Id x -&gt; Id x -&gt; Id x -&gt; [Id x]
+(Id x -&gt; Id x)
+-&gt; (Id x -&gt; Id x)
+-&gt; (Int -&gt; Id x)
+-&gt; (Id x -&gt; Int)
+-&gt; (Id x -&gt; [Id x])
+-&gt; (Id x -&gt; Id x -&gt; [Id x])
+-&gt; (Id x -&gt; Id x -&gt; [Id x])
+-&gt; (Id x -&gt; Id x -&gt; Id x -&gt; [Id x])
+-&gt; Enum (Id x)
+forall x. Enum x =&gt; Int -&gt; Id x
+forall x. Enum x =&gt; Id x -&gt; Int
+forall x. Enum x =&gt; Id x -&gt; [Id x]
+forall x. Enum x =&gt; Id x -&gt; Id x
+forall x. Enum x =&gt; Id x -&gt; Id x -&gt; [Id x]
+forall x. Enum x =&gt; Id x -&gt; Id x -&gt; Id x -&gt; [Id x]
+forall a.
+(a -&gt; a)
+-&gt; (a -&gt; a)
+-&gt; (Int -&gt; a)
+-&gt; (a -&gt; Int)
+-&gt; (a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; [a])
+-&gt; (a -&gt; a -&gt; a -&gt; [a])
+-&gt; Enum a
+$csucc :: forall x. Enum x =&gt; Id x -&gt; Id x
+succ :: Id x -&gt; Id x
+$cpred :: forall x. Enum x =&gt; Id x -&gt; Id x
+pred :: Id x -&gt; Id x
+$ctoEnum :: forall x. Enum x =&gt; Int -&gt; Id x
+toEnum :: Int -&gt; Id x
+$cfromEnum :: forall x. Enum x =&gt; Id x -&gt; Int
+fromEnum :: Id x -&gt; Int
+$cenumFrom :: forall x. Enum x =&gt; Id x -&gt; [Id x]
+enumFrom :: Id x -&gt; [Id x]
+$cenumFromThen :: forall x. Enum x =&gt; Id x -&gt; Id x -&gt; [Id x]
+enumFromThen :: Id x -&gt; Id x -&gt; [Id x]
+$cenumFromTo :: forall x. Enum x =&gt; Id x -&gt; Id x -&gt; [Id x]
+enumFromTo :: Id x -&gt; Id x -&gt; [Id x]
+$cenumFromThenTo :: forall x. Enum x =&gt; Id x -&gt; Id x -&gt; Id x -&gt; [Id x]
+enumFromThenTo :: Id x -&gt; Id x -&gt; Id x -&gt; [Id x]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Enum</span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679350074"><span id="local-6989586621679350078"><span class="annot"><span class="annottext">Id x
+Id x -&gt; Id x -&gt; Bounded (Id x)
+forall a. a -&gt; a -&gt; Bounded a
+forall x. Bounded x =&gt; Id x
+$cminBound :: forall x. Bounded x =&gt; Id x
+minBound :: Id x
+$cmaxBound :: forall x. Bounded x =&gt; Id x
+maxBound :: Id x
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Bounded</span></span></span></span><span>
+</span><span id="line-28"></span><span>           </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679350084"><span id="local-6989586621679350086"><span class="annot"><span class="annottext">(forall a b. (a -&gt; b) -&gt; Id a -&gt; Id b)
+-&gt; (forall a b. a -&gt; Id b -&gt; Id a) -&gt; Functor Id
+forall a b. a -&gt; Id b -&gt; Id a
+forall a b. (a -&gt; b) -&gt; Id a -&gt; Id b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+$cfmap :: forall a b. (a -&gt; b) -&gt; Id a -&gt; Id b
+fmap :: forall a b. (a -&gt; b) -&gt; Id a -&gt; Id b
+$c&lt;$ :: forall a b. a -&gt; Id b -&gt; Id a
+&lt;$ :: forall a b. a -&gt; Id b -&gt; Id a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span>
+</span><span id="line-29"></span><span>           </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679350090"><span id="local-6989586621679350096"><span id="local-6989586621679350099"><span id="local-6989586621679350104"><span id="local-6989586621679350106"><span id="local-6989586621679350109"><span id="local-6989586621679350112"><span id="local-6989586621679350115"><span id="local-6989586621679350118"><span id="local-6989586621679350121"><span id="local-6989586621679350124"><span id="local-6989586621679350126"><span id="local-6989586621679350129"><span id="local-6989586621679350134"><span id="local-6989586621679350139"><span id="local-6989586621679350144"><span id="local-6989586621679350149"><span class="annot"><span class="annottext">(forall m. Monoid m =&gt; Id m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a)
+-&gt; (forall a. Id a -&gt; [a])
+-&gt; (forall a. Id a -&gt; Bool)
+-&gt; (forall a. Id a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; Id a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; Id a -&gt; a)
+-&gt; (forall a. Ord a =&gt; Id a -&gt; a)
+-&gt; (forall a. Num a =&gt; Id a -&gt; a)
+-&gt; (forall a. Num a =&gt; Id a -&gt; a)
+-&gt; Foldable Id
+forall a. Eq a =&gt; a -&gt; Id a -&gt; Bool
+forall a. Num a =&gt; Id a -&gt; a
+forall a. Ord a =&gt; Id a -&gt; a
+forall m. Monoid m =&gt; Id m -&gt; m
+forall a. Id a -&gt; Bool
+forall a. Id a -&gt; Int
+forall a. Id a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+$cfold :: forall m. Monoid m =&gt; Id m -&gt; m
+fold :: forall m. Monoid m =&gt; Id m -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m
+foldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m
+foldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; Id a -&gt; m
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b
+foldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b
+foldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; Id a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b
+foldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b
+foldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; Id a -&gt; b
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a
+foldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a
+foldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; Id a -&gt; a
+$ctoList :: forall a. Id a -&gt; [a]
+toList :: forall a. Id a -&gt; [a]
+$cnull :: forall a. Id a -&gt; Bool
+null :: forall a. Id a -&gt; Bool
+$clength :: forall a. Id a -&gt; Int
+length :: forall a. Id a -&gt; Int
+$celem :: forall a. Eq a =&gt; a -&gt; Id a -&gt; Bool
+elem :: forall a. Eq a =&gt; a -&gt; Id a -&gt; Bool
+$cmaximum :: forall a. Ord a =&gt; Id a -&gt; a
+maximum :: forall a. Ord a =&gt; Id a -&gt; a
+$cminimum :: forall a. Ord a =&gt; Id a -&gt; a
+minimum :: forall a. Ord a =&gt; Id a -&gt; a
+$csum :: forall a. Num a =&gt; Id a -&gt; a
+sum :: forall a. Num a =&gt; Id a -&gt; a
+$cproduct :: forall a. Num a =&gt; Id a -&gt; a
+product :: forall a. Num a =&gt; Id a -&gt; a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-30"></span><span>           </span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- formId -</span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="annot"><span class="hs-comment">-- | deconstructs 'Id'.</span></span><span>
+</span><span id="line-36"></span><span id="local-6989586621679349936"><span class="annot"><a href="OAlg.Data.Identity.html#fromId"><span class="hs-identifier hs-type">fromId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-type">Id</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349936"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349936"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-37"></span><span id="fromId"><span class="annot"><span class="annottext">fromId :: forall x. Id x -&gt; x
+</span><a href="OAlg.Data.Identity.html#fromId"><span class="hs-identifier hs-var hs-var">fromId</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-type">Id</span></a></span><span> </span><span id="local-6989586621679350154"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679350154"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679350154"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- trafoFromId -</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="annot"><span class="hs-comment">-- | transforming a @f :: x -&gt; 'Id' y@ to a @f' :: x -&gt; i z@.</span></span><span>
+</span><span id="line-43"></span><span id="local-6989586621679349938"><span id="local-6989586621679349939"><span id="local-6989586621679349940"><span id="local-6989586621679349941"><span class="annot"><a href="OAlg.Data.Identity.html#trafoFromId"><span class="hs-identifier hs-type">trafoFromId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679349938"><span class="hs-identifier hs-type">y</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349939"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349940"><span class="hs-identifier hs-type">z</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679349941"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-type">Id</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349938"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349941"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349939"><span class="hs-identifier hs-type">i</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349940"><span class="hs-identifier hs-type">z</span></a></span></span></span></span></span><span>
+</span><span id="line-44"></span><span id="trafoFromId"><span class="annot"><span class="annottext">trafoFromId :: forall y (i :: * -&gt; *) z x. (y -&gt; i z) -&gt; (x -&gt; Id y) -&gt; x -&gt; i z
+</span><a href="OAlg.Data.Identity.html#trafoFromId"><span class="hs-identifier hs-var hs-var">trafoFromId</span></a></span></span><span> </span><span id="local-6989586621679350155"><span class="annot"><span class="annottext">y -&gt; i z
+</span><a href="#local-6989586621679350155"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679350156"><span class="annot"><span class="annottext">x -&gt; Id y
+</span><a href="#local-6989586621679350156"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679350157"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679350157"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">y -&gt; i z
+</span><a href="#local-6989586621679350155"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">y
+</span><a href="#local-6989586621679350158"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-type">Id</span></a></span><span> </span><span id="local-6989586621679350158"><span class="annot"><span class="annottext">y
+</span><a href="#local-6989586621679350158"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">x -&gt; Id y
+</span><a href="#local-6989586621679350156"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679350157"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- trafoToId -</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><span class="hs-comment">-- | transforming a @f :: x -&gt; y@ to a @f' :: x -&gt; Id y@.</span></span><span>
+</span><span id="line-50"></span><span id="local-6989586621679349946"><span id="local-6989586621679349947"><span class="annot"><a href="OAlg.Data.Identity.html#trafoToId"><span class="hs-identifier hs-type">trafoToId</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679349946"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349947"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349946"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-type">Id</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349947"><span class="hs-identifier hs-type">y</span></a></span></span></span><span>
+</span><span id="line-51"></span><span id="trafoToId"><span class="annot"><span class="annottext">trafoToId :: forall x y. (x -&gt; y) -&gt; x -&gt; Id y
+</span><a href="OAlg.Data.Identity.html#trafoToId"><span class="hs-identifier hs-var hs-var">trafoToId</span></a></span></span><span> </span><span id="local-6989586621679350159"><span class="annot"><span class="annottext">x -&gt; y
+</span><a href="#local-6989586621679350159"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">y -&gt; Id y
+forall x. x -&gt; Id x
+</span><a href="OAlg.Data.Identity.html#Id"><span class="hs-identifier hs-var">Id</span></a></span><span> </span><span class="annot"><span class="annottext">(y -&gt; Id y) -&gt; (x -&gt; y) -&gt; x -&gt; Id y
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">x -&gt; y
+</span><a href="#local-6989586621679350159"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-52"></span></pre></body></html>

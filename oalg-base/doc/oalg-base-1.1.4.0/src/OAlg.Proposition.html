@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : OAlg.Proposition</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : validation of this package.</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- validation of this package.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Proposition</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Proposition.html#prpOAlgBase"><span class="hs-identifier">prpOAlgBase</span></a></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Proposition.html"><span class="hs-identifier">OAlg.Structure.Proposition</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Hom.Proposition.html"><span class="hs-identifier">OAlg.Hom.Proposition</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Limes.Proposition.html"><span class="hs-identifier">OAlg.Limes.Proposition</span></a></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Product.html"><span class="hs-identifier">OAlg.Entity.Product</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Diagram.Proposition.html"><span class="hs-identifier">OAlg.Entity.Diagram.Proposition</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Matrix.html"><span class="hs-identifier">OAlg.Entity.Matrix</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.html"><span class="hs-identifier">OAlg.Entity.Sequence</span></a></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- prpOAlgBase -</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><span class="hs-comment">-- | Validation of the basic entities of the package oalg-base.</span></span><span>
+</span><span id="line-30"></span><span class="annot"><a href="OAlg.Proposition.html#prpOAlgBase"><span class="hs-identifier hs-type">prpOAlgBase</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-31"></span><span id="prpOAlgBase"><span class="annot"><span class="annottext">prpOAlgBase :: Statement
+</span><a href="OAlg.Proposition.html#prpOAlgBase"><span class="hs-identifier hs-var hs-var">prpOAlgBase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;OAlgBase&quot;</span></span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;logic&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-33"></span><span>                </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpBool"><span class="hs-identifier hs-var">prpBool</span></a></span><span>
+</span><span id="line-34"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Data.Statement.Proposition.html#prpValidTautologies"><span class="hs-identifier hs-var">prpValidTautologies</span></a></span><span>
+</span><span id="line-35"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Data.Statement.Proposition.html#prpStatement"><span class="hs-identifier hs-var">prpStatement</span></a></span><span>
+</span><span id="line-36"></span><span>                    </span><span class="hs-special">]</span><span>
+</span><span id="line-37"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Structure&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-38"></span><span>                </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureN"><span class="hs-identifier hs-var">prpStructureN</span></a></span><span>
+</span><span id="line-39"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureZ"><span class="hs-identifier hs-var">prpStructureZ</span></a></span><span>
+</span><span id="line-40"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureQ"><span class="hs-identifier hs-var">prpStructureQ</span></a></span><span>
+</span><span id="line-41"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureOS"><span class="hs-identifier hs-var">prpStructureOS</span></a></span><span>
+</span><span id="line-42"></span><span>                    </span><span class="hs-special">]</span><span>
+</span><span id="line-43"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Hom&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-44"></span><span>                </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Hom.Proposition.html#prpIdHom"><span class="hs-identifier hs-var">prpIdHom</span></a></span><span>
+</span><span id="line-45"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Hom.Proposition.html#prpHomOp"><span class="hs-identifier hs-var">prpHomOp</span></a></span><span>
+</span><span id="line-46"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Hom.Proposition.html#prpIsoOpOrt"><span class="hs-identifier hs-var">prpIsoOpOrt</span></a></span><span>
+</span><span id="line-47"></span><span>                    </span><span class="hs-special">]</span><span>
+</span><span id="line-48"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Product&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Entity.Product.Proposition.html#prpOrtProductZOrntSymbol"><span class="hs-identifier hs-var">prpOrtProductZOrntSymbol</span></a></span><span>
+</span><span id="line-49"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Diagram&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Entity.Diagram.Proposition.html#prpDiagramOrntSymbol"><span class="hs-identifier hs-var">prpDiagramOrntSymbol</span></a></span><span>
+</span><span id="line-50"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Limes&quot;</span></span><span>   </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Limes.Proposition.html#prpLimitsOrntSymbol"><span class="hs-identifier hs-var">prpLimitsOrntSymbol</span></a></span><span>
+</span><span id="line-51"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Permutation&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Entity.Sequence.Permutation.html#prpPermutation"><span class="hs-identifier hs-var">prpPermutation</span></a></span><span>
+</span><span id="line-52"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Matrix&quot;</span></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Entity.Matrix.Proposition.html#prpMatrixZ"><span class="hs-identifier hs-var">prpMatrixZ</span></a></span><span>
+</span><span id="line-53"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Label"><span class="hs-identifier hs-var">Label</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Vector&quot;</span></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; Statement
+</span><a href="OAlg.Entity.Matrix.Vector.html#prpRepMatrixZ"><span class="hs-identifier hs-var">prpRepMatrixZ</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">8</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">15</span></span><span>
+</span><span id="line-54"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span></pre></body></html>

@@ -1,0 +1,914 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Module      : OAlg.Data.Boolean.Proposition</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Description : propositions on boolean structures.</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- </span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- propositions on boolean structures which must always be true, i.e. tautologies. They</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- serve also to describe the semantic of the boolean operators.</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Data.Boolean.Proposition</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpBool"><span class="hs-identifier">prpBool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpBoolTautologies"><span class="hs-identifier">prpBoolTautologies</span></a></span><span>
+</span><span id="line-17"></span><span>  </span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Tautologies</span></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpTautologies"><span class="hs-identifier">prpTautologies</span></a></span><span>
+</span><span id="line-20"></span><span>    </span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Not</span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpNotNot"><span class="hs-identifier">prpNotNot</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** And</span></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndAssoc"><span class="hs-identifier">prpAndAssoc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndOr"><span class="hs-identifier">prpAndOr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndTrue"><span class="hs-identifier">prpAndTrue</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAnd0"><span class="hs-identifier">prpAnd0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAnds"><span class="hs-identifier">prpAnds</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Or</span></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrAssoc"><span class="hs-identifier">prpOrAssoc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrAnd"><span class="hs-identifier">prpOrAnd</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOr0"><span class="hs-identifier">prpOr0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrs"><span class="hs-identifier">prpOrs</span></a></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Impl</span></span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplRefl"><span class="hs-identifier">prpImplRefl</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplFalseEverything"><span class="hs-identifier">prpImplFalseEverything</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplCurry"><span class="hs-identifier">prpImplCurry</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplTransitive"><span class="hs-identifier">prpImplTransitive</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Eqvl</span></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpEqvlAnd"><span class="hs-identifier">prpEqvlAnd</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Lazy</span></span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazy"><span class="hs-identifier">prpLazy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazyAnd"><span class="hs-identifier">prpLazyAnd</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazyOr"><span class="hs-identifier">prpLazyOr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazyImpl"><span class="hs-identifier">prpLazyImpl</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Prelude</span></span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IO</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">undefined</span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">take</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">repeat</span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Category.Definition.html"><span class="hs-identifier">OAlg.Category.Definition</span></a></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Canonical.html"><span class="hs-identifier">OAlg.Data.Canonical</span></a></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Number.html"><span class="hs-identifier">OAlg.Data.Number</span></a></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html"><span class="hs-identifier">OAlg.Data.Boolean.Definition</span></a></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html"><span class="hs-identifier">OAlg.Data.Statement.Definition</span></a></span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.X.html"><span class="hs-identifier">OAlg.Data.X</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- not -</span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | for all @p@ holds: @'not' ('not' p) '&lt;~&gt;' p@.</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621679355771"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpNotNot"><span class="hs-identifier hs-type">prpNotNot</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355771"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355771"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355771"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-59"></span><span id="prpNotNot"><span class="annot"><span class="annottext">prpNotNot :: forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpNotNot"><span class="hs-identifier hs-var hs-var">prpNotNot</span></a></span></span><span> </span><span id="local-6989586621679355906"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355906"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#not"><span class="hs-identifier hs-var">not</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#not"><span class="hs-identifier hs-var">not</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355906"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355906"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- and -</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><span class="hs-comment">-- | for all @a@, @b@ and @c@ holds: @(a '&amp;&amp;' b) '&amp;&amp;' c '&lt;~&gt;' a '&amp;&amp;' (b '&amp;&amp;' c)@.</span></span><span>
+</span><span id="line-65"></span><span id="local-6989586621679355774"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndAssoc"><span class="hs-identifier hs-type">prpAndAssoc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355774"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355774"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355774"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355774"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355774"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-66"></span><span id="prpAndAssoc"><span class="annot"><span class="annottext">prpAndAssoc :: forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndAssoc"><span class="hs-identifier hs-var hs-var">prpAndAssoc</span></a></span></span><span> </span><span id="local-6989586621679355914"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355914"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679355915"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355915"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679355916"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355916"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355914"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355915"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355916"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355914"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355915"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355916"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="annot"><span class="hs-comment">-- | for all @a@, @b@ and @c@ holds: @(a '&amp;&amp;' b) '||' c '&lt;~&gt;' (a '||' c) '&amp;&amp;' (b '||' c)@.</span></span><span>
+</span><span id="line-69"></span><span id="local-6989586621679355918"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndOr"><span class="hs-identifier hs-type">prpAndOr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355918"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355918"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355918"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355918"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355918"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-70"></span><span id="prpAndOr"><span class="annot"><span class="annottext">prpAndOr :: forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndOr"><span class="hs-identifier hs-var hs-var">prpAndOr</span></a></span></span><span> </span><span id="local-6989586621679355926"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355926"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679355927"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355927"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679355928"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355928"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355926"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355927"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355928"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355926"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355928"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355927"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355928"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="annot"><span class="hs-comment">-- | for all @p@ holds: @'true' '&amp;&amp;' p '&lt;~&gt;' p@.</span></span><span>
+</span><span id="line-73"></span><span id="local-6989586621679355930"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndTrue"><span class="hs-identifier hs-type">prpAndTrue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355930"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355930"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355930"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-74"></span><span id="prpAndTrue"><span class="annot"><span class="annottext">prpAndTrue :: forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndTrue"><span class="hs-identifier hs-var hs-var">prpAndTrue</span></a></span></span><span> </span><span id="local-6989586621679355935"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355935"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#true"><span class="hs-identifier hs-var">true</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355935"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355935"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="annot"><span class="hs-comment">-- | @'and' [] '&lt;~&gt;' 'true'@.</span></span><span>
+</span><span id="line-77"></span><span id="local-6989586621679355937"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAnd0"><span class="hs-identifier hs-type">prpAnd0</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355937"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355937"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-78"></span><span id="prpAnd0"><span class="annot"><span class="annottext">prpAnd0 :: forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAnd0"><span class="hs-identifier hs-var hs-var">prpAnd0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[b] -&gt; b
+forall b. Boolean b =&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#and"><span class="hs-identifier hs-var">and</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#true"><span class="hs-identifier hs-var">true</span></a></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="annot"><span class="hs-comment">-- | for all @a@ and @as@ holds: @'and' (a':'as) '&lt;~&gt;' a '&amp;&amp;' 'and' as@.</span></span><span>
+</span><span id="line-81"></span><span id="local-6989586621679355780"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAnds"><span class="hs-identifier hs-type">prpAnds</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355780"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355780"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679355780"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355780"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-82"></span><span id="prpAnds"><span class="annot"><span class="annottext">prpAnds :: forall b. Boolean b =&gt; b -&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAnds"><span class="hs-identifier hs-var hs-var">prpAnds</span></a></span></span><span> </span><span id="local-6989586621679355947"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355947"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679355948"><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679355948"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[b] -&gt; b
+forall b. Boolean b =&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#and"><span class="hs-identifier hs-var">and</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355947"><span class="hs-identifier hs-var">a</span></a></span><span class="annot"><span class="annottext">b -&gt; [b] -&gt; [b]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679355948"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355947"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">[b] -&gt; b
+forall b. Boolean b =&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#and"><span class="hs-identifier hs-var">and</span></a></span><span> </span><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679355948"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- | substituting equivalent boolenas in '&amp;&amp;' yiels equivalent booleans, i.e.</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--   @for all @(a,a')@ and @(b,b')@ holds:</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--   (a '&lt;~&gt;' a') '&amp;&amp;' (b '&lt;~&gt;' b') '~&gt;' ((a '&amp;&amp;' b) '&lt;~&gt;' (a' '&amp;&amp;' b'))@.</span><span>
+</span><span id="line-87"></span><span id="local-6989586621679355782"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpAndSubs"><span class="hs-identifier hs-type">prpAndSubs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355782"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679355782"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679355782"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679355782"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679355782"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355782"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-88"></span><span id="prpAndSubs"><span class="annot"><span class="annottext">prpAndSubs :: forall b. Boolean b =&gt; (b, b) -&gt; (b, b) -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndSubs"><span class="hs-identifier hs-var hs-var">prpAndSubs</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679355959"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355959"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679355960"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355960"><span class="hs-identifier hs-var">a'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679355961"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355961"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679355962"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355962"><span class="hs-identifier hs-var">b'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355959"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355960"><span class="hs-identifier hs-var">a'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355961"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355962"><span class="hs-identifier hs-var">b'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355959"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355961"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355960"><span class="hs-identifier hs-var">a'</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355962"><span class="hs-identifier hs-var">b'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- Or -</span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><span class="hs-comment">-- | for all @a@, @b@ and @c@ holds: @(a '||' b) '||' c '&lt;~&gt;' a '||' (b '||' c)@.</span></span><span>
+</span><span id="line-94"></span><span id="local-6989586621679355963"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrAssoc"><span class="hs-identifier hs-type">prpOrAssoc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span>  </span><span class="annot"><a href="#local-6989586621679355963"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355963"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355963"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355963"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355963"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-95"></span><span id="prpOrAssoc"><span class="annot"><span class="annottext">prpOrAssoc :: forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrAssoc"><span class="hs-identifier hs-var hs-var">prpOrAssoc</span></a></span></span><span> </span><span id="local-6989586621679355970"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355970"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679355971"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355971"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679355972"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355972"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355970"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355971"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355972"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355970"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355971"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355972"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="annot"><span class="hs-comment">-- | for all @a@, @b@ and @c@ holds: @(a '||' b) '&amp;&amp;' c '&lt;~&gt;' (a '&amp;&amp;' c) '||' (b '&amp;&amp;' c)@.</span></span><span>
+</span><span id="line-98"></span><span id="local-6989586621679355973"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrAnd"><span class="hs-identifier hs-type">prpOrAnd</span></a></span><span> </span><span class="hs-glyph">::</span><span>  </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355973"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355973"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355973"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355973"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355973"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-99"></span><span id="prpOrAnd"><span class="annot"><span class="annottext">prpOrAnd :: forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrAnd"><span class="hs-identifier hs-var hs-var">prpOrAnd</span></a></span></span><span> </span><span id="local-6989586621679355981"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355981"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679355982"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355982"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679355983"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355983"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355981"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355982"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355983"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355981"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355983"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355982"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355983"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>
+</span><span id="line-101"></span><span class="annot"><span class="hs-comment">-- | for all @p@ holds:  @'false' '||' p '&lt;~&gt;' p@.</span></span><span>
+</span><span id="line-102"></span><span id="local-6989586621679355985"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrFalse"><span class="hs-identifier hs-type">prpOrFalse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355985"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355985"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355985"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-103"></span><span id="prpOrFalse"><span class="annot"><span class="annottext">prpOrFalse :: forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrFalse"><span class="hs-identifier hs-var hs-var">prpOrFalse</span></a></span></span><span> </span><span id="local-6989586621679355991"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355991"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355991"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679355991"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span class="annot"><span class="hs-comment">-- | @'or' [] '&lt;~&gt;' 'false'@.</span></span><span>
+</span><span id="line-106"></span><span id="local-6989586621679355993"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOr0"><span class="hs-identifier hs-type">prpOr0</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355993"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355993"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-107"></span><span id="prpOr0"><span class="annot"><span class="annottext">prpOr0 :: forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOr0"><span class="hs-identifier hs-var hs-var">prpOr0</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[b] -&gt; b
+forall b. Boolean b =&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#or"><span class="hs-identifier hs-var">or</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#false"><span class="hs-identifier hs-var">false</span></a></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="annot"><span class="hs-comment">-- | @for all @a@ and @as@ holds: 'or' (a':'as) '&lt;~&gt;' a '||' 'or' as@.</span></span><span>
+</span><span id="line-110"></span><span id="local-6989586621679355998"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpOrs"><span class="hs-identifier hs-type">prpOrs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355998"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355998"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679355998"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679355998"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-111"></span><span id="prpOrs"><span class="annot"><span class="annottext">prpOrs :: forall b. Boolean b =&gt; b -&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrs"><span class="hs-identifier hs-var hs-var">prpOrs</span></a></span></span><span> </span><span id="local-6989586621679356004"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356004"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679356005"><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679356005"><span class="hs-keyword hs-var">as</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[b] -&gt; b
+forall b. Boolean b =&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#or"><span class="hs-identifier hs-var">or</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356004"><span class="hs-identifier hs-var">a</span></a></span><span class="annot"><span class="annottext">b -&gt; [b] -&gt; [b]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679356005"><span class="hs-keyword hs-var">as</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356004"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">[b] -&gt; b
+forall b. Boolean b =&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#or"><span class="hs-identifier hs-var">or</span></a></span><span> </span><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679356005"><span class="hs-keyword hs-var">as</span></a></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- Impl -</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="annot"><span class="hs-comment">-- | @for all @p@ holds: p '~&gt;' p@.</span></span><span>
+</span><span id="line-117"></span><span id="local-6989586621679356006"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplRefl"><span class="hs-identifier hs-type">prpImplRefl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356006"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356006"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356006"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-118"></span><span id="prpImplRefl"><span class="annot"><span class="annottext">prpImplRefl :: forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplRefl"><span class="hs-identifier hs-var hs-var">prpImplRefl</span></a></span></span><span> </span><span id="local-6989586621679356009"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356009"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356009"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356009"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- | for all @p@ holds: @'false' '~&gt;' (p '&lt;~&gt;' 'true')@.</span><span>
+</span><span id="line-121"></span><span class="hs-comment">--</span><span>
+</span><span id="line-122"></span><span class="hs-comment">--   i.e. a false premisis implies everithing.</span><span>
+</span><span id="line-123"></span><span id="local-6989586621679356010"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplFalseEverything"><span class="hs-identifier hs-type">prpImplFalseEverything</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356010"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356010"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356010"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-124"></span><span id="prpImplFalseEverything"><span class="annot"><span class="annottext">prpImplFalseEverything :: forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplFalseEverything"><span class="hs-identifier hs-var hs-var">prpImplFalseEverything</span></a></span></span><span> </span><span id="local-6989586621679356016"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356016"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356016"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#true"><span class="hs-identifier hs-var">true</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="annot"><span class="hs-comment">-- | for all @a@, @b@ and @c@ holds: @((a '&amp;&amp;' b) '~&gt;' c) '&lt;~&gt;' (a '~&gt;' b '~&gt;' c)@.</span></span><span>
+</span><span id="line-127"></span><span id="local-6989586621679356017"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplCurry"><span class="hs-identifier hs-type">prpImplCurry</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356017"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356017"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356017"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356017"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356017"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-128"></span><span id="prpImplCurry"><span class="annot"><span class="annottext">prpImplCurry :: forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplCurry"><span class="hs-identifier hs-var hs-var">prpImplCurry</span></a></span></span><span> </span><span id="local-6989586621679356024"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356024"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679356025"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356025"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679356026"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356026"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356024"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356025"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356026"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356024"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356025"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356026"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span class="annot"><span class="hs-comment">-- | for all @a@, @b@ and @c@ holds: @(a '~&gt;' b) '&amp;&amp;' (b '~&gt;' c) '~&gt;' (a '~&gt;' c)@. </span></span><span>
+</span><span id="line-131"></span><span id="local-6989586621679356027"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpImplTransitive"><span class="hs-identifier hs-type">prpImplTransitive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356027"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356027"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-132"></span><span id="prpImplTransitive"><span class="annot"><span class="annottext">prpImplTransitive :: forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplTransitive"><span class="hs-identifier hs-var hs-var">prpImplTransitive</span></a></span></span><span> </span><span id="local-6989586621679356034"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356034"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679356035"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356035"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span id="local-6989586621679356036"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356036"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356034"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356035"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356035"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356036"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356034"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356036"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- Eqvl -</span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span class="annot"><span class="hs-comment">-- | for all @a@ and @b@ holds: @(a '&lt;~&gt;' b) '&lt;~&gt;' ((a '~&gt;' b) &amp;&amp; (b '~&gt;' a))@.</span></span><span>
+</span><span id="line-138"></span><span id="local-6989586621679356037"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpEqvlAnd"><span class="hs-identifier hs-type">prpEqvlAnd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356037"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356037"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356037"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356037"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-139"></span><span id="prpEqvlAnd"><span class="annot"><span class="annottext">prpEqvlAnd :: forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpEqvlAnd"><span class="hs-identifier hs-var hs-var">prpEqvlAnd</span></a></span></span><span> </span><span id="local-6989586621679356044"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356044"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679356045"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356045"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356044"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356045"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356044"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356045"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356045"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679356044"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- lazy -</span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- | lazy evaluation of '&amp;&amp;', i.e. @'false' '&amp;&amp;' 'undefined' '&lt;~&gt;' 'false'@.</span><span>
+</span><span id="line-145"></span><span class="hs-comment">--</span><span>
+</span><span id="line-146"></span><span class="hs-comment">--  __Note__ @('undefined' '&amp;&amp;' 'false')@ evaluates to an exception!</span><span>
+</span><span id="line-147"></span><span id="local-6989586621679356046"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazyAnd"><span class="hs-identifier hs-type">prpLazyAnd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356046"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356046"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-148"></span><span id="prpLazyAnd"><span class="annot"><span class="annottext">prpLazyAnd :: forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazyAnd"><span class="hs-identifier hs-var hs-var">prpLazyAnd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%26%26"><span class="hs-operator hs-var">&amp;&amp;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall a. HasCallStack =&gt; a
+</span><span class="hs-identifier hs-var">undefined</span></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%3C~%3E"><span class="hs-operator hs-var">&lt;~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#false"><span class="hs-identifier hs-var">false</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="annot"><span class="hs-comment">-- | lazy evaluationof '||', i.e. @'true' '||' 'undefined'@.</span></span><span>
+</span><span id="line-151"></span><span id="local-6989586621679356054"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazyOr"><span class="hs-identifier hs-type">prpLazyOr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356054"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356054"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-152"></span><span id="prpLazyOr"><span class="annot"><span class="annottext">prpLazyOr :: forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazyOr"><span class="hs-identifier hs-var hs-var">prpLazyOr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#true"><span class="hs-identifier hs-var">true</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#%7C%7C"><span class="hs-operator hs-var">||</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall a. HasCallStack =&gt; a
+</span><span class="hs-identifier hs-var">undefined</span></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="annot"><span class="hs-comment">-- | lazy evaluation of '~&gt;', i.e. @'false' ':=&gt;' 'undefined'@.</span></span><span>
+</span><span id="line-155"></span><span id="local-6989586621679356061"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazyImpl"><span class="hs-identifier hs-type">prpLazyImpl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679356061"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679356061"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-156"></span><span id="prpLazyImpl"><span class="annot"><span class="annottext">prpLazyImpl :: forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazyImpl"><span class="hs-identifier hs-var hs-var">prpLazyImpl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#false"><span class="hs-identifier hs-var">false</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Definition.html#~%3E"><span class="hs-operator hs-var">~&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall a. HasCallStack =&gt; a
+</span><span class="hs-identifier hs-var">undefined</span></span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- prpTautologies -</span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span class="annot"><span class="hs-comment">-- | tautologies on boolean structures.</span></span><span>
+</span><span id="line-162"></span><span id="local-6989586621679355800"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpTautologies"><span class="hs-identifier hs-type">prpTautologies</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355800"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679355800"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355800"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679355800"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span><span>
+</span><span id="line-163"></span><span id="prpTautologies"><span class="annot"><span class="annottext">prpTautologies :: forall b.
+Boolean b =&gt;
+(b -&gt; Statement) -&gt; X b -&gt; X [b] -&gt; Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpTautologies"><span class="hs-identifier hs-var hs-var">prpTautologies</span></a></span></span><span> </span><span id="local-6989586621679356099"><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span></span><span> </span><span id="local-6989586621679356100"><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span></span><span> </span><span id="local-6989586621679356101"><span class="annot"><span class="annottext">X [b]
+</span><a href="#local-6989586621679356101"><span class="hs-identifier hs-var">xbs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Tautologies&quot;</span></span><span>
+</span><span id="line-164"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="hs-comment">-- Not</span><span>
+</span><span id="line-165"></span><span>              </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;NotNot&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X b -&gt; (b -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; (b -&gt; b) -&gt; b -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpNotNot"><span class="hs-identifier hs-var">prpNotNot</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span>              </span><span class="hs-comment">-- And</span><span>
+</span><span id="line-168"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;AndAssoc&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b) -&gt; ((b, b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b, b) -&gt; b) -&gt; (b, b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b -&gt; b) -&gt; (b, b, b) -&gt; b
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="OAlg.Category.Definition.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndAssoc"><span class="hs-identifier hs-var">prpAndAssoc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-169"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;AndOr&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b) -&gt; ((b, b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b, b) -&gt; b) -&gt; (b, b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b -&gt; b) -&gt; (b, b, b) -&gt; b
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="OAlg.Category.Definition.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndOr"><span class="hs-identifier hs-var">prpAndOr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;AndTrue&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X b -&gt; (b -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; (b -&gt; b) -&gt; b -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAndTrue"><span class="hs-identifier hs-var">prpAndTrue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-171"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;And0&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAnd0"><span class="hs-identifier hs-var">prpAnd0</span></a></span><span>
+</span><span id="line-172"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Ands&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, [b]) -&gt; ((b, [b]) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, [b])
+</span><a href="#local-6989586621679356109"><span class="hs-identifier hs-var">xbbs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, [b]) -&gt; b) -&gt; (b, [b]) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; [b] -&gt; b) -&gt; (b, [b]) -&gt; b
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="OAlg.Category.Definition.html#uncurry"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; [b] -&gt; b
+forall b. Boolean b =&gt; b -&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpAnds"><span class="hs-identifier hs-var">prpAnds</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-173"></span><span>
+</span><span id="line-174"></span><span>              </span><span class="hs-comment">-- Or</span><span>
+</span><span id="line-175"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;OrAssoc&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b) -&gt; ((b, b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b, b) -&gt; b) -&gt; (b, b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b -&gt; b) -&gt; (b, b, b) -&gt; b
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="OAlg.Category.Definition.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrAssoc"><span class="hs-identifier hs-var">prpOrAssoc</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-176"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;OrAnd&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b) -&gt; ((b, b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b, b) -&gt; b) -&gt; (b, b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b -&gt; b) -&gt; (b, b, b) -&gt; b
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="OAlg.Category.Definition.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrAnd"><span class="hs-identifier hs-var">prpOrAnd</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-177"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;OrFalse&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X b -&gt; (b -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; (b -&gt; b) -&gt; b -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrFalse"><span class="hs-identifier hs-var">prpOrFalse</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-178"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Or0&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOr0"><span class="hs-identifier hs-var">prpOr0</span></a></span><span>
+</span><span id="line-179"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Ors&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, [b]) -&gt; ((b, [b]) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, [b])
+</span><a href="#local-6989586621679356109"><span class="hs-identifier hs-var">xbbs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, [b]) -&gt; b) -&gt; (b, [b]) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; [b] -&gt; b) -&gt; (b, [b]) -&gt; b
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="OAlg.Category.Definition.html#uncurry"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; [b] -&gt; b
+forall b. Boolean b =&gt; b -&gt; [b] -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpOrs"><span class="hs-identifier hs-var">prpOrs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span>              </span><span class="hs-comment">-- Impl</span><span>
+</span><span id="line-182"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ImplRefl&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X b -&gt; (b -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; (b -&gt; b) -&gt; b -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplRefl"><span class="hs-identifier hs-var">prpImplRefl</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-183"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ImplFalseEverything&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X b -&gt; (b -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; (b -&gt; b) -&gt; b -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplFalseEverything"><span class="hs-identifier hs-var">prpImplFalseEverything</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-184"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ImplCurry&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b) -&gt; ((b, b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b, b) -&gt; b) -&gt; (b, b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b -&gt; b) -&gt; (b, b, b) -&gt; b
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="OAlg.Category.Definition.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplCurry"><span class="hs-identifier hs-var">prpImplCurry</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-185"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ImplTransitive&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b) -&gt; ((b, b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b, b) -&gt; b) -&gt; (b, b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b -&gt; b) -&gt; (b, b, b) -&gt; b
+forall a b c d. (a -&gt; b -&gt; c -&gt; d) -&gt; (a, b, c) -&gt; d
+</span><a href="OAlg.Category.Definition.html#uncurry3"><span class="hs-identifier hs-var">uncurry3</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpImplTransitive"><span class="hs-identifier hs-var">prpImplTransitive</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-186"></span><span>
+</span><span id="line-187"></span><span>              </span><span class="hs-comment">-- Eqvl</span><span>
+</span><span id="line-188"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;EqvlAnd&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b) -&gt; ((b, b) -&gt; Statement) -&gt; Statement
+forall x. X x -&gt; (x -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#Forall"><span class="hs-identifier hs-var">Forall</span></a></span><span> </span><span class="annot"><span class="annottext">X (b, b)
+</span><a href="#local-6989586621679356111"><span class="hs-identifier hs-var">xab</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356099"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">(b -&gt; Statement) -&gt; ((b, b) -&gt; b) -&gt; (b, b) -&gt; Statement
+forall y z x. (y -&gt; z) -&gt; (x -&gt; y) -&gt; x -&gt; z
+forall (c :: * -&gt; * -&gt; *) y z x.
+Category c =&gt;
+c y z -&gt; c x y -&gt; c x z
+</span><a href="OAlg.Category.Definition.html#."><span class="hs-operator hs-var">.</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(b -&gt; b -&gt; b) -&gt; (b, b) -&gt; b
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><a href="OAlg.Category.Definition.html#uncurry"><span class="hs-identifier hs-var">uncurry</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; b -&gt; b
+forall b. Boolean b =&gt; b -&gt; b -&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpEqvlAnd"><span class="hs-identifier hs-var">prpEqvlAnd</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-189"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-190"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679356111"><span class="annot"><span class="annottext">xab :: X (b, b)
+</span><a href="#local-6989586621679356111"><span class="hs-identifier hs-var hs-var">xab</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X b -&gt; X b -&gt; X (b, b)
+forall a b. X a -&gt; X b -&gt; X (a, b)
+</span><a href="OAlg.Data.X.html#xTupple2"><span class="hs-identifier hs-var">xTupple2</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-191"></span><span>        </span><span id="local-6989586621679356107"><span class="annot"><span class="annottext">xabc :: X (b, b, b)
+</span><a href="#local-6989586621679356107"><span class="hs-identifier hs-var hs-var">xabc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X b -&gt; X b -&gt; X b -&gt; X (b, b, b)
+forall a b c. X a -&gt; X b -&gt; X c -&gt; X (a, b, c)
+</span><a href="OAlg.Data.X.html#xTupple3"><span class="hs-identifier hs-var">xTupple3</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-192"></span><span>        </span><span id="local-6989586621679356109"><span class="annot"><span class="annottext">xbbs :: X (b, [b])
+</span><a href="#local-6989586621679356109"><span class="hs-identifier hs-var hs-var">xbbs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X b -&gt; X [b] -&gt; X (b, [b])
+forall a b. X a -&gt; X b -&gt; X (a, b)
+</span><a href="OAlg.Data.X.html#xTupple2"><span class="hs-identifier hs-var">xTupple2</span></a></span><span> </span><span class="annot"><span class="annottext">X b
+</span><a href="#local-6989586621679356100"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X [b]
+</span><a href="#local-6989586621679356101"><span class="hs-identifier hs-var">xbs</span></a></span><span>
+</span><span id="line-193"></span><span>
+</span><span id="line-194"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-195"></span><span class="hs-comment">-- prpBoolTautologies -</span><span>
+</span><span id="line-196"></span><span>
+</span><span id="line-197"></span><span class="annot"><span class="hs-comment">-- | tautologies for 'Bool'.</span></span><span>
+</span><span id="line-198"></span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpBoolTautologies"><span class="hs-identifier hs-type">prpBoolTautologies</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-199"></span><span id="prpBoolTautologies"><span class="annot"><span class="annottext">prpBoolTautologies :: Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpBoolTautologies"><span class="hs-identifier hs-var hs-var">prpBoolTautologies</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;BoolTautologies&quot;</span></span><span>
+</span><span id="line-200"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Statement) -&gt; X Bool -&gt; X [Bool] -&gt; Statement
+forall b.
+Boolean b =&gt;
+(b -&gt; Statement) -&gt; X b -&gt; X [b] -&gt; Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpTautologies"><span class="hs-identifier hs-var">prpTautologies</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Statement
+forall a b. Embeddable a b =&gt; a -&gt; b
+</span><a href="OAlg.Data.Canonical.html#inj"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="OAlg.Data.X.html#xBool"><span class="hs-identifier hs-var">xBool</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; N -&gt; X Bool -&gt; X [Bool]
+forall x. N -&gt; N -&gt; X x -&gt; X [x]
+</span><a href="OAlg.Data.X.html#xTakeB"><span class="hs-identifier hs-var">xTakeB</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="OAlg.Data.X.html#xBool"><span class="hs-identifier hs-var">xBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-201"></span><span>  </span><span>
+</span><span id="line-202"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- prpLazy -</span><span>
+</span><span id="line-204"></span><span>
+</span><span id="line-205"></span><span class="annot"><span class="hs-comment">-- | laziness of 'and', 'or' and @('~&gt;')@.</span></span><span>
+</span><span id="line-206"></span><span id="local-6989586621679355825"><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpLazy"><span class="hs-identifier hs-type">prpLazy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Boolean.Definition.html#Boolean"><span class="hs-identifier hs-type">Boolean</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679355825"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679355825"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span></span><span>
+</span><span id="line-207"></span><span id="prpLazy"><span class="annot"><span class="annottext">prpLazy :: forall b. Boolean b =&gt; (b -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazy"><span class="hs-identifier hs-var hs-var">prpLazy</span></a></span></span><span> </span><span id="local-6989586621679356121"><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356121"><span class="hs-identifier hs-var">prp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Lazy&quot;</span></span><span>
+</span><span id="line-208"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;LazyAnd&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356121"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazyAnd"><span class="hs-identifier hs-var">prpLazyAnd</span></a></span><span>
+</span><span id="line-209"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;LazyOr&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356121"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazyOr"><span class="hs-identifier hs-var">prpLazyOr</span></a></span><span>
+</span><span id="line-210"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;LazyImpl&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; Statement
+</span><a href="#local-6989586621679356121"><span class="hs-identifier hs-var">prp</span></a></span><span> </span><span class="annot"><span class="annottext">b
+forall b. Boolean b =&gt; b
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazyImpl"><span class="hs-identifier hs-var">prpLazyImpl</span></a></span><span>
+</span><span id="line-211"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-212"></span><span>  </span><span>
+</span><span id="line-213"></span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#xbDst"><span class="hs-identifier hs-type">xbDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-214"></span><span id="xbDst"><span class="annot"><span class="annottext">xbDst :: Int -&gt; X Bool -&gt; IO ()
+</span><a href="OAlg.Data.Boolean.Proposition.html#xbDst"><span class="hs-identifier hs-var hs-var">xbDst</span></a></span></span><span> </span><span id="local-6989586621679356123"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356123"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679356124"><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356124"><span class="hs-identifier hs-var">xb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO Omega
+</span><a href="OAlg.Data.X.html#getOmega"><span class="hs-identifier hs-var">getOmega</span></a></span><span> </span><span class="annot"><span class="annottext">IO Omega -&gt; (Omega -&gt; IO ()) -&gt; IO ()
+forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; X Bool -&gt; Omega -&gt; IO ()
+forall x. (Show x, Ord x) =&gt; Int -&gt; X x -&gt; Omega -&gt; IO ()
+</span><a href="OAlg.Data.X.html#putDistribution"><span class="hs-identifier hs-var">putDistribution</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356123"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356124"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-215"></span><span>
+</span><span id="line-216"></span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#xabDst"><span class="hs-identifier hs-type">xabDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-217"></span><span id="xabDst"><span class="annot"><span class="annottext">xabDst :: Int -&gt; X Bool -&gt; IO ()
+</span><a href="OAlg.Data.Boolean.Proposition.html#xabDst"><span class="hs-identifier hs-var hs-var">xabDst</span></a></span></span><span> </span><span id="local-6989586621679356128"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356128"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679356129"><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356129"><span class="hs-identifier hs-var">xb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO Omega
+</span><a href="OAlg.Data.X.html#getOmega"><span class="hs-identifier hs-var">getOmega</span></a></span><span> </span><span class="annot"><span class="annottext">IO Omega -&gt; (Omega -&gt; IO ()) -&gt; IO ()
+forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; X (Bool, Bool) -&gt; Omega -&gt; IO ()
+forall x. (Show x, Ord x) =&gt; Int -&gt; X x -&gt; Omega -&gt; IO ()
+</span><a href="OAlg.Data.X.html#putDistribution"><span class="hs-identifier hs-var">putDistribution</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356128"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">X (Bool, Bool)
+</span><a href="#local-6989586621679356130"><span class="hs-identifier hs-var">xab</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-218"></span><span>  </span><span id="local-6989586621679356130"><span class="annot"><span class="annottext">xab :: X (Bool, Bool)
+</span><a href="#local-6989586621679356130"><span class="hs-identifier hs-var hs-var">xab</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X Bool -&gt; X Bool -&gt; X (Bool, Bool)
+forall a b. X a -&gt; X b -&gt; X (a, b)
+</span><a href="OAlg.Data.X.html#xTupple2"><span class="hs-identifier hs-var">xTupple2</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356129"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356129"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-219"></span><span>
+</span><span id="line-220"></span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#xabcDst"><span class="hs-identifier hs-type">xabcDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-221"></span><span id="xabcDst"><span class="annot"><span class="annottext">xabcDst :: Int -&gt; X Bool -&gt; IO ()
+</span><a href="OAlg.Data.Boolean.Proposition.html#xabcDst"><span class="hs-identifier hs-var hs-var">xabcDst</span></a></span></span><span> </span><span id="local-6989586621679356132"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356132"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679356133"><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356133"><span class="hs-identifier hs-var">xb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO Omega
+</span><a href="OAlg.Data.X.html#getOmega"><span class="hs-identifier hs-var">getOmega</span></a></span><span> </span><span class="annot"><span class="annottext">IO Omega -&gt; (Omega -&gt; IO ()) -&gt; IO ()
+forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; X (Bool, Bool, Bool) -&gt; Omega -&gt; IO ()
+forall x. (Show x, Ord x) =&gt; Int -&gt; X x -&gt; Omega -&gt; IO ()
+</span><a href="OAlg.Data.X.html#putDistribution"><span class="hs-identifier hs-var">putDistribution</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356132"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">X (Bool, Bool, Bool)
+</span><a href="#local-6989586621679356134"><span class="hs-identifier hs-var">xabc</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-222"></span><span>  </span><span id="local-6989586621679356134"><span class="annot"><span class="annottext">xabc :: X (Bool, Bool, Bool)
+</span><a href="#local-6989586621679356134"><span class="hs-identifier hs-var hs-var">xabc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X Bool -&gt; X Bool -&gt; X Bool -&gt; X (Bool, Bool, Bool)
+forall a b c. X a -&gt; X b -&gt; X c -&gt; X (a, b, c)
+</span><a href="OAlg.Data.X.html#xTupple3"><span class="hs-identifier hs-var">xTupple3</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356133"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356133"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356133"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-223"></span><span>
+</span><span id="line-224"></span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#xbbsDst"><span class="hs-identifier hs-type">xbbsDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.X.html#X"><span class="hs-identifier hs-type">X</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-225"></span><span id="xbbsDst"><span class="annot"><span class="annottext">xbbsDst :: Int -&gt; Int -&gt; X Bool -&gt; IO ()
+</span><a href="OAlg.Data.Boolean.Proposition.html#xbbsDst"><span class="hs-identifier hs-var hs-var">xbbsDst</span></a></span></span><span> </span><span id="local-6989586621679356136"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356136"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679356137"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356137"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679356138"><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356138"><span class="hs-identifier hs-var">xb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO Omega
+</span><a href="OAlg.Data.X.html#getOmega"><span class="hs-identifier hs-var">getOmega</span></a></span><span> </span><span class="annot"><span class="annottext">IO Omega -&gt; (Omega -&gt; IO ()) -&gt; IO ()
+forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; X (Bool, [Bool]) -&gt; Omega -&gt; IO ()
+forall x. (Show x, Ord x) =&gt; Int -&gt; X x -&gt; Omega -&gt; IO ()
+</span><a href="OAlg.Data.X.html#putDistribution"><span class="hs-identifier hs-var">putDistribution</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356136"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">X (Bool, [Bool])
+</span><a href="#local-6989586621679356139"><span class="hs-identifier hs-var">xbbs</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-226"></span><span>  </span><span id="local-6989586621679356145"><span class="annot"><span class="annottext">xbs :: X [Bool]
+</span><a href="#local-6989586621679356145"><span class="hs-identifier hs-var hs-var">xbs</span></a></span></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; X Int
+</span><a href="OAlg.Data.X.html#xIntB"><span class="hs-identifier hs-var">xIntB</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356137"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">X Int -&gt; (Int -&gt; X [Bool]) -&gt; X [Bool]
+forall a b. X a -&gt; (a -&gt; X b) -&gt; X b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679356147"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356147"><span class="hs-identifier hs-var">n'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[X Bool] -&gt; X [Bool]
+forall x. [X x] -&gt; X [x]
+</span><a href="OAlg.Data.X.html#xList"><span class="hs-identifier hs-var">xList</span></a></span><span> </span><span class="annot"><span class="annottext">([X Bool] -&gt; X [Bool]) -&gt; [X Bool] -&gt; X [Bool]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [X Bool] -&gt; [X Bool]
+forall a. Int -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">take</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679356147"><span class="hs-identifier hs-var">n'</span></a></span><span> </span><span class="annot"><span class="annottext">([X Bool] -&gt; [X Bool]) -&gt; [X Bool] -&gt; [X Bool]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool -&gt; [X Bool]
+forall a. a -&gt; [a]
+</span><span class="hs-identifier hs-var">repeat</span></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356138"><span class="hs-identifier hs-var">xb</span></a></span><span>
+</span><span id="line-227"></span><span>  </span><span id="local-6989586621679356139"><span class="annot"><span class="annottext">xbbs :: X (Bool, [Bool])
+</span><a href="#local-6989586621679356139"><span class="hs-identifier hs-var hs-var">xbbs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">X Bool -&gt; X [Bool] -&gt; X (Bool, [Bool])
+forall a b. X a -&gt; X b -&gt; X (a, b)
+</span><a href="OAlg.Data.X.html#xTupple2"><span class="hs-identifier hs-var">xTupple2</span></a></span><span> </span><span class="annot"><span class="annottext">X Bool
+</span><a href="#local-6989586621679356138"><span class="hs-identifier hs-var">xb</span></a></span><span> </span><span class="annot"><span class="annottext">X [Bool]
+</span><a href="#local-6989586621679356145"><span class="hs-identifier hs-var">xbs</span></a></span><span>
+</span><span id="line-228"></span><span>
+</span><span id="line-229"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-230"></span><span class="hs-comment">-- prpBool -</span><span>
+</span><span id="line-231"></span><span>
+</span><span id="line-232"></span><span class="annot"><span class="hs-comment">-- | validity of the 'Boolean' structure of 'Bool'.</span></span><span>
+</span><span id="line-233"></span><span class="annot"><a href="OAlg.Data.Boolean.Proposition.html#prpBool"><span class="hs-identifier hs-type">prpBool</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-234"></span><span id="prpBool"><span class="annot"><span class="annottext">prpBool :: Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpBool"><span class="hs-identifier hs-var hs-var">prpBool</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Bool&quot;</span></span><span>
+</span><span id="line-235"></span><span>  </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpBoolTautologies"><span class="hs-identifier hs-var">prpBoolTautologies</span></a></span><span>
+</span><span id="line-236"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Statement) -&gt; Statement
+forall b. Boolean b =&gt; (b -&gt; Statement) -&gt; Statement
+</span><a href="OAlg.Data.Boolean.Proposition.html#prpLazy"><span class="hs-identifier hs-var">prpLazy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Statement
+forall a b. Embeddable a b =&gt; a -&gt; b
+</span><a href="OAlg.Data.Canonical.html#inj"><span class="hs-identifier hs-var">inj</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-237"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-238"></span><span>
+</span><span id="line-239"></span></pre></body></html>

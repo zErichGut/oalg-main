@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Module      : OAlg.Structure.Operational</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Description : operations on entities</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- operations on entities by a 'Multiplicative' structure.</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Structure.Operational</span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">(</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Operation</span></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="OAlg.Structure.Operational.html#Opr"><span class="hs-identifier">Opr</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#Opl"><span class="hs-identifier">Opl</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Total</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#TotalOpr"><span class="hs-identifier">TotalOpr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#TotalOpl"><span class="hs-identifier">TotalOpl</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Oriented</span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#OrientedOpr"><span class="hs-identifier">OrientedOpr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#OrientedOpl"><span class="hs-identifier">OrientedOpl</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html"><span class="hs-identifier">OAlg.Structure.Oriented.Definition</span></a></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html"><span class="hs-identifier">OAlg.Structure.Multiplicative.Definition</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- Opr -</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- | right operation of @__f__@ on @__x__@. This class is rather technical, because on this</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- abstract level it is not possible to define the exact behavior of the operation, i.e.</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- for which values @f@ and @x@ the expression @x '&lt;*' f@ is 'valid'. For a precise</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- definition see for example 'TotalOpr' or 'OrientedOpr' where the behavior can</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- be stated.</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">class</span><span> </span><span id="Opr"><span class="annot"><a href="OAlg.Structure.Operational.html#Opr"><span class="hs-identifier hs-var">Opr</span></a></span></span><span> </span><span id="local-6989586621679363308"><span class="annot"><a href="#local-6989586621679363308"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679363309"><span class="annot"><a href="#local-6989586621679363309"><span class="hs-identifier hs-type">x</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">infixl</span><span> </span><span class="hs-number">5</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#%3C%2A"><span class="hs-operator hs-type">&lt;*</span></a></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-comment">-- | right operation.</span><span>
+</span><span id="line-48"></span><span>  </span><span id="%3C%2A"><span class="annot"><a href="OAlg.Structure.Operational.html#%3C%2A"><span class="hs-operator hs-type">(&lt;*)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679363309"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679363308"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679363309"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- TotalOpr -</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- | right operation of a 'Total' 'Multiplicative' structure @__f__@ on @__x__@.</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- __Property__ Let @__f__@ be a 'Total' 'Multiplicative' structure and @__x__@ an</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- instance of 'Entity', then holds:</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- (1) For all @x@ in @__x__@ holds: @x '&lt;*' 'one' u '==' x@ where @u = 'OAlg.Data.Singleton.unit'@</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- is the singleton element in @'Point' __f__@.</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- (2) For all @x@ in @__x__@ and @f@, @g@ in @__f__@ holds:</span><span>
+</span><span id="line-62"></span><span class="hs-comment">--     @x '&lt;*' f '&lt;*' g '==' x '&lt;*' (f '*' g)@.</span><span>
+</span><span id="line-63"></span><span class="hs-comment">--</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- __Note__ If @f@ is invertible, then it gives rise of a /bijection/ @'&lt;*' f@ on @__x__@</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- with inverse @'&lt;*' 'invert' f@.</span><span>
+</span><span id="line-66"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Operational.html#Opr"><span class="hs-identifier hs-type">Opr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363288"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363289"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363288"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Total"><span class="hs-identifier hs-type">Total</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363288"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363289"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="TotalOpr"><span class="annot"><a href="OAlg.Structure.Operational.html#TotalOpr"><span class="hs-identifier hs-var">TotalOpr</span></a></span></span><span> </span><span id="local-6989586621679363288"><span class="annot"><a href="#local-6989586621679363288"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679363289"><span class="annot"><a href="#local-6989586621679363289"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- OrientedOpr -</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- | right operation of a 'Multiplicative' structure @__f__@ on a 'Oriented' structure</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- @__x__@.</span><span>
+</span><span id="line-73"></span><span class="hs-comment">--</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- __Property__ Let @__f__@ be a 'Multiplicative' and @__x__@ a 'Oriented' structure,</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- then holds:</span><span>
+</span><span id="line-76"></span><span class="hs-comment">--</span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- (1) For all @f@ in @__f__@ and @x@ in @__x__@ holds.</span><span>
+</span><span id="line-78"></span><span class="hs-comment">--</span><span>
+</span><span id="line-79"></span><span class="hs-comment">--     (1) If @'start' x '==' 'end' f@ then @x '&lt;*' f@ is 'valid' and</span><span>
+</span><span id="line-80"></span><span class="hs-comment">--     @'orientation' (x '&lt;*' f) '==' 'start' f ':&gt;' 'end' x@.</span><span>
+</span><span id="line-81"></span><span class="hs-comment">--</span><span>
+</span><span id="line-82"></span><span class="hs-comment">--     (2) If @'start' x '/=' 'end' f@ then @x '&lt;*' f@ is not 'valid' and its</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--     evaluation will end up in a 'OAlg.Structure.Exception.NotApplicable' exception.</span><span>
+</span><span id="line-84"></span><span class="hs-comment">--</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- (1) For all @x@ in @__x__@ holds: @x '&lt;*' 'one' ('start' x) '==' x@.</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- (3) For all @x@ in @__x__@ and @f@, @g@ in @__f__@ with @'end' f '==' 'start' x@,</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- @'end' g '==' 'start' f@ holds: @x '&lt;*' f '&lt;*' g '==' x '&lt;*' (f '*' g)@.</span><span>
+</span><span id="line-89"></span><span class="hs-comment">--</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- __Note__ If @f@ is invertible, then it rise of a /bijection/ @'&lt;*' f@ from all</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- @x@ in @__x__@ with @'start' x '==' 'end' f@ to all @y@ in @__x__@ with</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- @'start' y '==' 'start' f@. Its inverse is given by @'&lt;*' 'invert' f@.</span><span>
+</span><span id="line-93"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Operational.html#Opr"><span class="hs-identifier hs-type">Opr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363295"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363296"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363295"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Oriented"><span class="hs-identifier hs-type">Oriented</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363296"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="OrientedOpr"><span class="annot"><a href="OAlg.Structure.Operational.html#OrientedOpr"><span class="hs-identifier hs-var">OrientedOpr</span></a></span></span><span> </span><span id="local-6989586621679363295"><span class="annot"><a href="#local-6989586621679363295"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679363296"><span class="annot"><a href="#local-6989586621679363296"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- Opl -</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- | left operation of @__f__@ on @__x__@. This class is rather technical, because on this</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- abstract level it is not possible to define the exact behavior of the operation, i.e.</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- for which values @f@ and @x@ the expression @f '*&gt;' x@ is 'valid'. For a precise</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- definition see for example 'TotalOpl' or 'OrientedOpl' where the behavior can</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- be stated.</span><span>
+</span><span id="line-103"></span><span class="hs-keyword">class</span><span> </span><span id="Opl"><span class="annot"><a href="OAlg.Structure.Operational.html#Opl"><span class="hs-identifier hs-var">Opl</span></a></span></span><span> </span><span id="local-6989586621679363327"><span class="annot"><a href="#local-6989586621679363327"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679363328"><span class="annot"><a href="#local-6989586621679363328"><span class="hs-identifier hs-type">x</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span class="hs-keyword">infixr</span><span> </span><span class="annot"><a href="OAlg.Structure.Operational.html#%2A%3E"><span class="hs-operator hs-type">*&gt;</span></a></span><span>
+</span><span id="line-105"></span><span>  </span><span id="%2A%3E"><span class="annot"><a href="OAlg.Structure.Operational.html#%2A%3E"><span class="hs-operator hs-type">(*&gt;)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679363327"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679363328"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679363328"><span class="hs-identifier hs-type">x</span></a></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- TotalOpl -</span><span>
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- | left operation of a 'Total' 'Multiplicative' structure @__f__@ on @__x__@.</span><span>
+</span><span id="line-111"></span><span class="hs-comment">--</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- __Property__ Let @__f__@ be a 'Total' 'Multiplicative' structure and @__x__@ an</span><span>
+</span><span id="line-113"></span><span class="hs-comment">-- instance of 'Entity', then holds:</span><span>
+</span><span id="line-114"></span><span class="hs-comment">--</span><span>
+</span><span id="line-115"></span><span class="hs-comment">-- (1) For all @x@ in @__x__@ holds: @'one' u '*&gt;' x '==' x@ where @u = 'OAlg.Data.Singleton.unit'@</span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- is the singleton element in @'Point' __f__@.</span><span>
+</span><span id="line-117"></span><span class="hs-comment">--</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- (2) For all @x@ in @__x__@ and @f@, @g@ in @__f__@ holds:</span><span>
+</span><span id="line-119"></span><span class="hs-comment">--     @f '*&gt;' g '*&gt;' x '==' (f '*' g) '*&gt;' x@.</span><span>
+</span><span id="line-120"></span><span class="hs-comment">--</span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- __Note__ If @f@ is invertible, then it gives rise of a /bijection/ @f '*&gt;'@ on @__x__@</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- with inverse @'invert' f '*&gt;'@.</span><span>
+</span><span id="line-123"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Operational.html#Opr"><span class="hs-identifier hs-type">Opr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363299"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363300"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363299"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Total"><span class="hs-identifier hs-type">Total</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363299"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363300"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="TotalOpl"><span class="annot"><a href="OAlg.Structure.Operational.html#TotalOpl"><span class="hs-identifier hs-var">TotalOpl</span></a></span></span><span> </span><span id="local-6989586621679363299"><span class="annot"><a href="#local-6989586621679363299"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679363300"><span class="annot"><a href="#local-6989586621679363300"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- OrientedOpl -</span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- | left operation of a 'Multiplicative' structure @__f__@ on a 'Oriented' structure</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- @__x__@.</span><span>
+</span><span id="line-130"></span><span class="hs-comment">--</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- __Property__ Let @__f__@ be a 'Multiplicative' and @__x__@ a 'Oriented' structure,</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- and @__f__@, @__x__@ an instance of 'OrientedOpl', then holds:</span><span>
+</span><span id="line-133"></span><span class="hs-comment">--</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- (1) For all @f@ in @__f__@ and @x@ in @__x__@ holds.</span><span>
+</span><span id="line-135"></span><span class="hs-comment">--</span><span>
+</span><span id="line-136"></span><span class="hs-comment">--     (1) If @'end' x '==' 'start' f@ then @f '*&gt;' x@ is 'valid' and</span><span>
+</span><span id="line-137"></span><span class="hs-comment">--     @'orientation' (f '*&gt;' x) '==' 'start' x ':&gt;' 'end' f@.</span><span>
+</span><span id="line-138"></span><span class="hs-comment">--</span><span>
+</span><span id="line-139"></span><span class="hs-comment">--     (2) If @'end' x '/=' 'start' f@ then @f '*&gt;' x@ is not 'valid' and its</span><span>
+</span><span id="line-140"></span><span class="hs-comment">--     evaluation will end up in a 'OAlg.Structure.Exception.NotApplicable' exception.</span><span>
+</span><span id="line-141"></span><span class="hs-comment">--</span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- (1) For all @x@ in @__x__@ holds: @'one' ('end' x) '*&gt;' x'==' x@.</span><span>
+</span><span id="line-143"></span><span class="hs-comment">--</span><span>
+</span><span id="line-144"></span><span class="hs-comment">-- (3) For all @x@ in @__x__@ and @f@, @g@ in @__f__@ with @'start' g '==' 'end' x@,</span><span>
+</span><span id="line-145"></span><span class="hs-comment">-- @'start' f '==' 'end' g@ holds: @f '*&gt;' g '*&gt;' x '==' (f '*' g) '*&gt;' x @.</span><span>
+</span><span id="line-146"></span><span class="hs-comment">--</span><span>
+</span><span id="line-147"></span><span class="hs-comment">-- __Note__ If @f@ is invertible, then it rise of a /bijection/ @f '*&gt;'@ from all</span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- @x@ in @__x__@ with @'end' x '==' 'start' f@ to all @y@ in @__x__@ with</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- @'end' y '==' 'end' f@. Its inverse is given by @'invert' f '*&gt;'@.</span><span>
+</span><span id="line-150"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Operational.html#Opl"><span class="hs-identifier hs-type">Opl</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363302"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363303"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Multiplicative"><span class="hs-identifier hs-type">Multiplicative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363302"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#Oriented"><span class="hs-identifier hs-type">Oriented</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679363303"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="OrientedOpl"><span class="annot"><a href="OAlg.Structure.Operational.html#OrientedOpl"><span class="hs-identifier hs-var">OrientedOpl</span></a></span></span><span> </span><span id="local-6989586621679363302"><span class="annot"><a href="#local-6989586621679363302"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679363303"><span class="annot"><a href="#local-6989586621679363303"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span></pre></body></html>

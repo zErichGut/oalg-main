@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : OAlg.Structure.Vectorial.Definition</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : propositions on basic algebraic structures</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- propositions on basic algebraic structures.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Structure.Proposition</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Proposition</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureN"><span class="hs-identifier">prpStructureN</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureZ"><span class="hs-identifier">prpStructureZ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureQ"><span class="hs-identifier">prpStructureQ</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureOS"><span class="hs-identifier">prpStructureOS</span></a></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.html"><span class="hs-identifier">OAlg.Structure.Oriented</span></a></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.html"><span class="hs-identifier">OAlg.Structure.Fibred</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.html"><span class="hs-identifier">OAlg.Structure.Additive</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.html"><span class="hs-identifier">OAlg.Structure.Distributive</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- prpStructureN -</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><span class="hs-comment">-- | validity of the algebraic structure of 'N'.</span></span><span>
+</span><span id="line-33"></span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureN"><span class="hs-identifier hs-type">prpStructureN</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-34"></span><span id="prpStructureN"><span class="annot"><span class="annottext">prpStructureN :: Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureN"><span class="hs-identifier hs-var hs-var">prpStructureN</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;StructureN&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">XOrt N -&gt; Statement
+forall q. Oriented q =&gt; XOrt q -&gt; Statement
+</span><a href="OAlg.Structure.Oriented.Proposition.html#prpOrt"><span class="hs-identifier hs-var">prpOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt N
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Proposition.html#XOrt"><span class="hs-identifier hs-type">XOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XMlt N -&gt; Statement
+forall c. Multiplicative c =&gt; XMlt c -&gt; Statement
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#prpMlt"><span class="hs-identifier hs-var">prpMlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XMlt N
+forall c. XStandardMlt c =&gt; XMlt c
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#xStandardMlt"><span class="hs-identifier hs-var">xStandardMlt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Proposition.html#XMlt"><span class="hs-identifier hs-type">XMlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt N -&gt; Statement
+forall f. Fibred f =&gt; XFbr f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbr"><span class="hs-identifier hs-var">prpFbr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt N
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbr"><span class="hs-identifier hs-type">XFbr</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt N -&gt; Statement
+forall f. FibredOriented f =&gt; XFbrOrt f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbrOrt"><span class="hs-identifier hs-var">prpFbrOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt N
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbrOrt"><span class="hs-identifier hs-type">XFbrOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAdd N -&gt; Statement
+forall a. Additive a =&gt; XAdd a -&gt; Statement
+</span><a href="OAlg.Structure.Additive.Proposition.html#prpAdd"><span class="hs-identifier hs-var">prpAdd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XAdd N
+forall a. XStandardAdd a =&gt; XAdd a
+</span><a href="OAlg.Structure.Additive.Proposition.html#xStandardAdd"><span class="hs-identifier hs-var">xStandardAdd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.Proposition.html#XAdd"><span class="hs-identifier hs-type">XAdd</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XDst N -&gt; Statement
+forall d. Distributive d =&gt; XDst d -&gt; Statement
+</span><a href="OAlg.Structure.Distributive.Proposition.html#prpDst"><span class="hs-identifier hs-var">prpDst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XDst N
+forall d. XStandardDst d =&gt; XDst d
+</span><a href="OAlg.Structure.Distributive.Proposition.html#xStandardDst"><span class="hs-identifier hs-var">xStandardDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Proposition.html#XDst"><span class="hs-identifier hs-type">XDst</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#N"><span class="hs-identifier hs-type">N</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- prpStructureZ -</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><span class="hs-comment">-- | validity of the algebraic structure of 'Z'.</span></span><span>
+</span><span id="line-47"></span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureZ"><span class="hs-identifier hs-type">prpStructureZ</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-48"></span><span id="prpStructureZ"><span class="annot"><span class="annottext">prpStructureZ :: Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureZ"><span class="hs-identifier hs-var hs-var">prpStructureZ</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;StructureZ&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">XOrt Z -&gt; Statement
+forall q. Oriented q =&gt; XOrt q -&gt; Statement
+</span><a href="OAlg.Structure.Oriented.Proposition.html#prpOrt"><span class="hs-identifier hs-var">prpOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt Z
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Proposition.html#XOrt"><span class="hs-identifier hs-type">XOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XMlt Z -&gt; Statement
+forall c. Multiplicative c =&gt; XMlt c -&gt; Statement
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#prpMlt"><span class="hs-identifier hs-var">prpMlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XMlt Z
+forall c. XStandardMlt c =&gt; XMlt c
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#xStandardMlt"><span class="hs-identifier hs-var">xStandardMlt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Proposition.html#XMlt"><span class="hs-identifier hs-type">XMlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt Z -&gt; Statement
+forall f. Fibred f =&gt; XFbr f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbr"><span class="hs-identifier hs-var">prpFbr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt Z
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbr"><span class="hs-identifier hs-type">XFbr</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt Z -&gt; Statement
+forall f. FibredOriented f =&gt; XFbrOrt f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbrOrt"><span class="hs-identifier hs-var">prpFbrOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt Z
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbrOrt"><span class="hs-identifier hs-type">XFbrOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAdd Z -&gt; Statement
+forall a. Additive a =&gt; XAdd a -&gt; Statement
+</span><a href="OAlg.Structure.Additive.Proposition.html#prpAdd"><span class="hs-identifier hs-var">prpAdd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XAdd Z
+forall a. XStandardAdd a =&gt; XAdd a
+</span><a href="OAlg.Structure.Additive.Proposition.html#xStandardAdd"><span class="hs-identifier hs-var">xStandardAdd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.Proposition.html#XAdd"><span class="hs-identifier hs-type">XAdd</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XDst Z -&gt; Statement
+forall d. Distributive d =&gt; XDst d -&gt; Statement
+</span><a href="OAlg.Structure.Distributive.Proposition.html#prpDst"><span class="hs-identifier hs-var">prpDst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XDst Z
+forall d. XStandardDst d =&gt; XDst d
+</span><a href="OAlg.Structure.Distributive.Proposition.html#xStandardDst"><span class="hs-identifier hs-var">xStandardDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Proposition.html#XDst"><span class="hs-identifier hs-type">XDst</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Z"><span class="hs-identifier hs-type">Z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- prpStructureQ -</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="annot"><span class="hs-comment">-- | validity of the algebraic structure of 'Q'.</span></span><span>
+</span><span id="line-61"></span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureQ"><span class="hs-identifier hs-type">prpStructureQ</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-62"></span><span id="prpStructureQ"><span class="annot"><span class="annottext">prpStructureQ :: Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureQ"><span class="hs-identifier hs-var hs-var">prpStructureQ</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;StructureQ&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">XOrt Q -&gt; Statement
+forall q. Oriented q =&gt; XOrt q -&gt; Statement
+</span><a href="OAlg.Structure.Oriented.Proposition.html#prpOrt"><span class="hs-identifier hs-var">prpOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt Q
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Proposition.html#XOrt"><span class="hs-identifier hs-type">XOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Q"><span class="hs-identifier hs-type">Q</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XMlt Q -&gt; Statement
+forall c. Multiplicative c =&gt; XMlt c -&gt; Statement
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#prpMlt"><span class="hs-identifier hs-var">prpMlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XMlt Q
+forall c. XStandardMlt c =&gt; XMlt c
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#xStandardMlt"><span class="hs-identifier hs-var">xStandardMlt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Proposition.html#XMlt"><span class="hs-identifier hs-type">XMlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Q"><span class="hs-identifier hs-type">Q</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt Q -&gt; Statement
+forall f. Fibred f =&gt; XFbr f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbr"><span class="hs-identifier hs-var">prpFbr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt Q
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbr"><span class="hs-identifier hs-type">XFbr</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Q"><span class="hs-identifier hs-type">Q</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt Q -&gt; Statement
+forall f. FibredOriented f =&gt; XFbrOrt f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbrOrt"><span class="hs-identifier hs-var">prpFbrOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt Q
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbrOrt"><span class="hs-identifier hs-type">XFbrOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Q"><span class="hs-identifier hs-type">Q</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAdd Q -&gt; Statement
+forall a. Additive a =&gt; XAdd a -&gt; Statement
+</span><a href="OAlg.Structure.Additive.Proposition.html#prpAdd"><span class="hs-identifier hs-var">prpAdd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XAdd Q
+forall a. XStandardAdd a =&gt; XAdd a
+</span><a href="OAlg.Structure.Additive.Proposition.html#xStandardAdd"><span class="hs-identifier hs-var">xStandardAdd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.Proposition.html#XAdd"><span class="hs-identifier hs-type">XAdd</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Q"><span class="hs-identifier hs-type">Q</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XDst Q -&gt; Statement
+forall d. Distributive d =&gt; XDst d -&gt; Statement
+</span><a href="OAlg.Structure.Distributive.Proposition.html#prpDst"><span class="hs-identifier hs-var">prpDst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XDst Q
+forall d. XStandardDst d =&gt; XDst d
+</span><a href="OAlg.Structure.Distributive.Proposition.html#xStandardDst"><span class="hs-identifier hs-var">xStandardDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Proposition.html#XDst"><span class="hs-identifier hs-type">XDst</span></a></span><span> </span><span class="annot"><a href="OAlg.Data.Number.html#Q"><span class="hs-identifier hs-type">Q</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- prpStructureOS -</span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="annot"><span class="hs-comment">-- | validity of the algebraic structure of 'OS'.</span></span><span>
+</span><span id="line-75"></span><span class="annot"><a href="OAlg.Structure.Proposition.html#prpStructureOS"><span class="hs-identifier hs-type">prpStructureOS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Data.Statement.Definition.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span>
+</span><span id="line-76"></span><span id="prpStructureOS"><span class="annot"><span class="annottext">prpStructureOS :: Statement
+</span><a href="OAlg.Structure.Proposition.html#prpStructureOS"><span class="hs-identifier hs-var hs-var">prpStructureOS</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Label
+</span><a href="OAlg.Data.Statement.Definition.html#Prp"><span class="hs-identifier hs-var">Prp</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;StructureOS&quot;</span></span><span> </span><span class="annot"><span class="annottext">Label -&gt; Statement -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#%3A%3C%3D%3E%3A"><span class="hs-operator hs-var">:&lt;=&gt;:</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; Statement
+</span><a href="OAlg.Data.Statement.Definition.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">XOrt OS -&gt; Statement
+forall q. Oriented q =&gt; XOrt q -&gt; Statement
+</span><a href="OAlg.Structure.Oriented.Proposition.html#prpOrt"><span class="hs-identifier hs-var">prpOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt OS
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Proposition.html#XOrt"><span class="hs-identifier hs-type">XOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XMlt OS -&gt; Statement
+forall c. Multiplicative c =&gt; XMlt c -&gt; Statement
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#prpMlt"><span class="hs-identifier hs-var">prpMlt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XMlt OS
+forall c. XStandardMlt c =&gt; XMlt c
+</span><a href="OAlg.Structure.Multiplicative.Proposition.html#xStandardMlt"><span class="hs-identifier hs-var">xStandardMlt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Proposition.html#XMlt"><span class="hs-identifier hs-type">XMlt</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt OS -&gt; Statement
+forall f. Fibred f =&gt; XFbr f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbr"><span class="hs-identifier hs-var">prpFbr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt OS
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbr"><span class="hs-identifier hs-type">XFbr</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XOrt OS -&gt; Statement
+forall f. FibredOriented f =&gt; XFbrOrt f -&gt; Statement
+</span><a href="OAlg.Structure.Fibred.Proposition.html#prpFbrOrt"><span class="hs-identifier hs-var">prpFbrOrt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XOrt OS
+forall x. XStandard x =&gt; X x
+</span><a href="OAlg.Data.Validable.html#xStandard"><span class="hs-identifier hs-var">xStandard</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Proposition.html#XFbrOrt"><span class="hs-identifier hs-type">XFbrOrt</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XAdd OS -&gt; Statement
+forall a. Additive a =&gt; XAdd a -&gt; Statement
+</span><a href="OAlg.Structure.Additive.Proposition.html#prpAdd"><span class="hs-identifier hs-var">prpAdd</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XAdd OS
+forall a. XStandardAdd a =&gt; XAdd a
+</span><a href="OAlg.Structure.Additive.Proposition.html#xStandardAdd"><span class="hs-identifier hs-var">xStandardAdd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.Proposition.html#XAdd"><span class="hs-identifier hs-type">XAdd</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>      </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">XDst OS -&gt; Statement
+forall d. Distributive d =&gt; XDst d -&gt; Statement
+</span><a href="OAlg.Structure.Distributive.Proposition.html#prpDst"><span class="hs-identifier hs-var">prpDst</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">XDst OS
+forall d. XStandardDst d =&gt; XDst d
+</span><a href="OAlg.Structure.Distributive.Proposition.html#xStandardDst"><span class="hs-identifier hs-var">xStandardDst</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Distributive.Proposition.html#XDst"><span class="hs-identifier hs-type">XDst</span></a></span><span> </span><span class="annot"><a href="OAlg.Structure.Oriented.Definition.html#OS"><span class="hs-identifier hs-type">OS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span></pre></body></html>

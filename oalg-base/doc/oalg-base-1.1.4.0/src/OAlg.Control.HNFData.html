@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE StandaloneDeriving #-}</span><span> </span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE ExistentialQuantification #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Module      : OAlg.Control.HNFData</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Description : reducing a value to head normal form</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- reducing a value to head normal form. This is much weaker then &quot;Control.DeepSeq&quot;.</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Control.HNFData</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier">HNFValue</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#fromHNFValue"><span class="hs-identifier">fromHNFValue</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFData"><span class="hs-identifier">HNFData</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#hnfValue"><span class="hs-identifier">hnfValue</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Exception</span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- HNFValue -</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><span class="hs-comment">-- | values in head normal form.</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">data</span><span> </span><span id="HNFValue"><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-var">HNFValue</span></a></span></span><span> </span><span id="local-6989586621679349248"><span class="annot"><a href="#local-6989586621679349248"><span class="hs-identifier hs-type">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="HNFValue"><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-var">HNFValue</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679349248"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679349277"><span class="annot"><a href="#local-6989586621679349277"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Exception</span></span><span> </span><span class="annot"><a href="#local-6989586621679349277"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="Failure"><span class="annot"><a href="OAlg.Control.HNFData.html#Failure"><span class="hs-identifier hs-var">Failure</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679349277"><span class="hs-identifier hs-type">e</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span id="local-6989586621679349240"><span id="local-6989586621679349281"><span id="local-6989586621679349285"><span id="local-6989586621679349289"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679349240"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-type">HNFValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349240"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679349294"><span class="annot"><span class="hs-identifier hs-type">Functor</span></span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-type">HNFValue</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679349298"><span class="annot"><span class="annottext">fmap :: forall a b. (a -&gt; b) -&gt; HNFValue a -&gt; HNFValue b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fmap</span></span></span><span> </span><span id="local-6989586621679349299"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679349299"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-type">HNFValue</span></a></span><span> </span><span id="local-6989586621679349300"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679349300"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b -&gt; HNFValue b
+forall x. x -&gt; HNFValue x
+</span><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-var">HNFValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679349299"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679349300"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; b
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Control.HNFData.html#Failure"><span class="hs-identifier hs-type">Failure</span></a></span><span> </span><span id="local-6989586621679349303"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679349303"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; HNFValue b
+forall x e. Exception e =&gt; e -&gt; HNFValue x
+</span><a href="OAlg.Control.HNFData.html#Failure"><span class="hs-identifier hs-var">Failure</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679349303"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- fromHNFValue -</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- | from head normal form.</span><span>
+</span><span id="line-39"></span><span class="hs-comment">--</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- __Property__ Let @x'@ be in @'HNFValue' __x__@ then holds:</span><span>
+</span><span id="line-41"></span><span class="hs-comment">--</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- (1) If @x'@ matches @'HNFValue' x@ then the result of @'fromHNFValue' x'@ is @x@.</span><span>
+</span><span id="line-43"></span><span class="hs-comment">--</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- (2) If @x'@ matches @'Failure' e@ then evaluation @'fromHNFValue' x'@ will end up</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- in a throwing @e@.</span><span>
+</span><span id="line-46"></span><span id="local-6989586621679349251"><span class="annot"><a href="OAlg.Control.HNFData.html#fromHNFValue"><span class="hs-identifier hs-type">fromHNFValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-type">HNFValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349251"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349251"><span class="hs-identifier hs-type">x</span></a></span></span><span>
+</span><span id="line-47"></span><span id="fromHNFValue"><span class="annot"><span class="annottext">fromHNFValue :: forall x. HNFValue x -&gt; x
+</span><a href="OAlg.Control.HNFData.html#fromHNFValue"><span class="hs-identifier hs-var hs-var">fromHNFValue</span></a></span></span><span> </span><span id="local-6989586621679349304"><span class="annot"><span class="annottext">HNFValue x
+</span><a href="#local-6989586621679349304"><span class="hs-identifier hs-var">hvx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">HNFValue x
+</span><a href="#local-6989586621679349304"><span class="hs-identifier hs-var">hvx</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-48"></span><span>  </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-type">HNFValue</span></a></span><span> </span><span id="local-6989586621679349305"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679349305"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679349305"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="OAlg.Control.HNFData.html#Failure"><span class="hs-identifier hs-type">Failure</span></a></span><span> </span><span id="local-6989586621679349308"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679349308"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">e -&gt; x
+forall a e. Exception e =&gt; e -&gt; a
+</span><span class="hs-identifier hs-var">throw</span></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679349308"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- HNFData -</span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><span class="hs-comment">-- | data reducible to head normal form.</span></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">class</span><span> </span><span id="HNFData"><span class="annot"><a href="OAlg.Control.HNFData.html#HNFData"><span class="hs-identifier hs-var">HNFData</span></a></span></span><span> </span><span id="local-6989586621679349261"><span class="annot"><a href="#local-6989586621679349261"><span class="hs-identifier hs-type">x</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-comment">-- | tries to reduce a value to its head normal form, throwing an 'Exception' for</span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-comment">--   undefined values.</span><span>
+</span><span id="line-58"></span><span>  </span><span id="rhnf"><span class="annot"><a href="OAlg.Control.HNFData.html#rhnf"><span class="hs-identifier hs-type">rhnf</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679349261"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- hnfValue -</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- | tries to reduce a value @x@ to its head normal form. If the reduction ends up in a 'SomeException'</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- @e@ then this will be catched and @'Failure' e@ will be returned, otherwise @'HNFValue' will be</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- returned.</span><span>
+</span><span id="line-66"></span><span id="local-6989586621679349257"><span class="annot"><a href="OAlg.Control.HNFData.html#hnfValue"><span class="hs-identifier hs-type">hnfValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFData"><span class="hs-identifier hs-type">HNFData</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349257"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679349257"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-type">HNFValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679349257"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-67"></span><span id="hnfValue"><span class="annot"><span class="annottext">hnfValue :: forall x. HNFData x =&gt; x -&gt; IO (HNFValue x)
+</span><a href="OAlg.Control.HNFData.html#hnfValue"><span class="hs-identifier hs-var hs-var">hnfValue</span></a></span></span><span> </span><span id="local-6989586621679349320"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679349320"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">x -&gt; ()
+forall x. HNFData x =&gt; x -&gt; ()
+</span><a href="OAlg.Control.HNFData.html#rhnf"><span class="hs-identifier hs-var">rhnf</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679349320"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-68"></span><span>              </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">HNFValue x -&gt; IO (HNFValue x)
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">x -&gt; HNFValue x
+forall x. x -&gt; HNFValue x
+</span><a href="OAlg.Control.HNFData.html#HNFValue"><span class="hs-identifier hs-var">HNFValue</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679349320"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>            </span><span class="annot"><span class="annottext">IO (HNFValue x)
+-&gt; (SomeException -&gt; IO (HNFValue x)) -&gt; IO (HNFValue x)
+forall e a. Exception e =&gt; IO a -&gt; (e -&gt; IO a) -&gt; IO a
+</span><span class="hs-operator hs-var">`catch`</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679349322"><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679349322"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SomeException</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">HNFValue x -&gt; IO (HNFValue x)
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SomeException -&gt; HNFValue x
+forall x e. Exception e =&gt; e -&gt; HNFValue x
+</span><a href="OAlg.Control.HNFData.html#Failure"><span class="hs-identifier hs-var">Failure</span></a></span><span> </span><span class="annot"><span class="annottext">SomeException
+</span><a href="#local-6989586621679349322"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFData"><span class="hs-identifier hs-type">HNFData</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-73"></span><span>  </span><span id="local-6989586621679349326"><span class="annot"><span class="annottext">rhnf :: () -&gt; ()
+</span><a href="OAlg.Control.HNFData.html#rhnf"><span class="hs-identifier hs-var hs-var hs-var hs-var">rhnf</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="OAlg.Control.HNFData.html#HNFData"><span class="hs-identifier hs-type">HNFData</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>  </span><span id="local-6989586621679349329"><span class="annot"><span class="annottext">rhnf :: Bool -&gt; ()
+</span><a href="OAlg.Control.HNFData.html#rhnf"><span class="hs-identifier hs-var hs-var hs-var hs-var">rhnf</span></a></span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="OAlg.Control.HNFData.html#rhnf"><span class="hs-identifier hs-var">rhnf</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier">_</span></span><span>     </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>  </span><span>
+</span><span id="line-79"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679349267"><span class="annot"><a href="OAlg.Control.HNFData.html#HNFData"><span class="hs-identifier hs-type">HNFData</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679349267"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">]</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679349332"><span class="annot"><span class="annottext">rhnf :: [x] -&gt; ()
+</span><a href="OAlg.Control.HNFData.html#rhnf"><span class="hs-identifier hs-var hs-var hs-var hs-var">rhnf</span></a></span></span><span> </span><span id="local-6989586621679349333"><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679349333"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[x]
+</span><a href="#local-6989586621679349333"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-81"></span><span>              </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>              </span><span class="annot"><span class="annottext">[x]
+</span><span class="hs-identifier">_</span></span><span>  </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span></pre></body></html>

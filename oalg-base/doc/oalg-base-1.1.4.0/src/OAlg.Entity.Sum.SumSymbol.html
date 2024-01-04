@@ -1,0 +1,826 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Module      : OAlg.Entity.Sum.SumSymbol</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Description : free sums over symbols.</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-13"></span><span class="hs-comment">--</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- free sums with symbols in @__a__@.</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.Entity.Sum.SumSymbol</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * SumSymbol</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier">SumSymbol</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssypsq"><span class="hs-identifier">ssypsq</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssylc"><span class="hs-identifier">ssylc</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#sumSymbol"><span class="hs-identifier">sumSymbol</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#sy"><span class="hs-identifier">sy</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyMap"><span class="hs-identifier">ssyMap</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssySum"><span class="hs-identifier">ssySum</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyJoin"><span class="hs-identifier">ssyJoin</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyprj"><span class="hs-identifier">ssyprj</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><span class="hs-comment">-- * R</span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier">R</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>  </span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">map</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">repeat</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier">zip</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-operator">(++)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Prelude.html"><span class="hs-identifier">OAlg.Prelude</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Data.Constructable.html"><span class="hs-identifier">OAlg.Data.Constructable</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.html"><span class="hs-identifier">OAlg.Structure.Fibred</span></a></span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Additive.html"><span class="hs-identifier">OAlg.Structure.Additive</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.html"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></a></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Ring.html"><span class="hs-identifier">OAlg.Structure.Ring</span></a></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Structure.Vectorial.html"><span class="hs-identifier">OAlg.Structure.Vectorial</span></a></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.html"><span class="hs-identifier">OAlg.Entity.Sequence</span></a></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Product.ProductSymbol.html#sy"><span class="hs-identifier">sy</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html"><span class="hs-identifier">OAlg.Entity.Sum.Definition</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- R -</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><span class="hs-comment">-- | adjoining the root @()@.</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">newtype</span><span> </span><span id="R"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-var">R</span></a></span></span><span> </span><span id="local-6989586621679393632"><span class="annot"><a href="#local-6989586621679393632"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="R"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-var">R</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679393632"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679393705"><span id="local-6989586621679393710"><span id="local-6989586621679393714"><span class="annot"><span class="annottext">Int -&gt; R a -&gt; ShowS
+[R a] -&gt; ShowS
+R a -&gt; String
+(Int -&gt; R a -&gt; ShowS)
+-&gt; (R a -&gt; String) -&gt; ([R a] -&gt; ShowS) -&gt; Show (R a)
+forall a. Show a =&gt; Int -&gt; R a -&gt; ShowS
+forall a. Show a =&gt; [R a] -&gt; ShowS
+forall a. Show a =&gt; R a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; R a -&gt; ShowS
+showsPrec :: Int -&gt; R a -&gt; ShowS
+$cshow :: forall a. Show a =&gt; R a -&gt; String
+show :: R a -&gt; String
+$cshowList :: forall a. Show a =&gt; [R a] -&gt; ShowS
+showList :: [R a] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679393719"><span id="local-6989586621679393723"><span class="annot"><span class="annottext">R a -&gt; R a -&gt; Bool
+(R a -&gt; R a -&gt; Bool) -&gt; (R a -&gt; R a -&gt; Bool) -&gt; Eq (R a)
+forall a. Eq a =&gt; R a -&gt; R a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall a. Eq a =&gt; R a -&gt; R a -&gt; Bool
+== :: R a -&gt; R a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; R a -&gt; R a -&gt; Bool
+/= :: R a -&gt; R a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679393733"><span id="local-6989586621679393737"><span id="local-6989586621679393741"><span id="local-6989586621679393745"><span id="local-6989586621679393749"><span id="local-6989586621679393753"><span id="local-6989586621679393757"><span class="annot"><span class="annottext">Eq (R a)
+Eq (R a)
+-&gt; (R a -&gt; R a -&gt; Ordering)
+-&gt; (R a -&gt; R a -&gt; Bool)
+-&gt; (R a -&gt; R a -&gt; Bool)
+-&gt; (R a -&gt; R a -&gt; Bool)
+-&gt; (R a -&gt; R a -&gt; Bool)
+-&gt; (R a -&gt; R a -&gt; R a)
+-&gt; (R a -&gt; R a -&gt; R a)
+-&gt; Ord (R a)
+R a -&gt; R a -&gt; Bool
+R a -&gt; R a -&gt; Ordering
+R a -&gt; R a -&gt; R a
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall {a}. Ord a =&gt; Eq (R a)
+forall a. Ord a =&gt; R a -&gt; R a -&gt; Bool
+forall a. Ord a =&gt; R a -&gt; R a -&gt; Ordering
+forall a. Ord a =&gt; R a -&gt; R a -&gt; R a
+$ccompare :: forall a. Ord a =&gt; R a -&gt; R a -&gt; Ordering
+compare :: R a -&gt; R a -&gt; Ordering
+$c&lt; :: forall a. Ord a =&gt; R a -&gt; R a -&gt; Bool
+&lt; :: R a -&gt; R a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; R a -&gt; R a -&gt; Bool
+&lt;= :: R a -&gt; R a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; R a -&gt; R a -&gt; Bool
+&gt; :: R a -&gt; R a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; R a -&gt; R a -&gt; Bool
+&gt;= :: R a -&gt; R a -&gt; Bool
+$cmax :: forall a. Ord a =&gt; R a -&gt; R a -&gt; R a
+max :: R a -&gt; R a -&gt; R a
+$cmin :: forall a. Ord a =&gt; R a -&gt; R a -&gt; R a
+min :: R a -&gt; R a -&gt; R a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679393765"><span class="annot"><span class="annottext">R a -&gt; Statement
+(R a -&gt; Statement) -&gt; Validable (R a)
+forall a. Validable a =&gt; R a -&gt; Statement
+forall a. (a -&gt; Statement) -&gt; Validable a
+$cvalid :: forall a. Validable a =&gt; R a -&gt; Statement
+valid :: R a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-var hs-var hs-var hs-var">Validable</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393469"><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393469"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393469"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393474"><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393474"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Definition.html#Fibred"><span class="hs-identifier hs-type">Fibred</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393474"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Root"><span class="annot"><a href="OAlg.Structure.Fibred.Definition.html#Root"><span class="hs-identifier hs-var">Root</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393474"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679393800"><span class="annot"><span class="annottext">root :: R a -&gt; Root (R a)
+</span><a href="#local-6989586621679393800"><span class="hs-identifier hs-var hs-var hs-var hs-var">root</span></a></span></span><span> </span><span class="annot"><span class="annottext">R a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393478"><span class="annot"><a href="OAlg.Structure.Fibred.Definition.html#OrdRoot"><span class="hs-identifier hs-type">OrdRoot</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393478"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- SumSymbol -</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="annot"><span class="hs-comment">-- | free sum with symbols in @__a__@.</span></span><span>
+</span><span id="line-61"></span><span class="hs-keyword">newtype</span><span> </span><span id="SumSymbol"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span></span><span> </span><span id="local-6989586621679393596"><span class="annot"><a href="#local-6989586621679393596"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span id="local-6989586621679393597"><span class="annot"><a href="#local-6989586621679393597"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="SumSymbol"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html#Sum"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393596"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393597"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679393812"><span id="local-6989586621679393818"><span class="annot"><span class="annottext">SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+(SumSymbol r a -&gt; SumSymbol r a -&gt; Bool)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; Bool) -&gt; Eq (SumSymbol r a)
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+forall r a.
+(Entity a, Entity r) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+$c== :: forall r a.
+(Entity a, Entity r) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+== :: SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+$c/= :: forall r a.
+(Entity a, Entity r) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+/= :: SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679393830"><span id="local-6989586621679393838"><span id="local-6989586621679393845"><span id="local-6989586621679393852"><span id="local-6989586621679393859"><span id="local-6989586621679393866"><span id="local-6989586621679393873"><span class="annot"><span class="annottext">Eq (SumSymbol r a)
+Eq (SumSymbol r a)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; Ordering)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; Bool)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; Bool)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; Bool)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; Bool)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a)
+-&gt; Ord (SumSymbol r a)
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+SumSymbol r a -&gt; SumSymbol r a -&gt; Ordering
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall {r} {a}.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+Eq (SumSymbol r a)
+forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Ordering
+forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+$ccompare :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Ordering
+compare :: SumSymbol r a -&gt; SumSymbol r a -&gt; Ordering
+$c&lt; :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+&lt; :: SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+$c&lt;= :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+&lt;= :: SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+$c&gt; :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+&gt; :: SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+$c&gt;= :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+&gt;= :: SumSymbol r a -&gt; SumSymbol r a -&gt; Bool
+$cmax :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+max :: SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+$cmin :: forall r a.
+(Entity a, Entity r, Ord r, Ord a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+min :: SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679393885"><span class="annot"><span class="annottext">SumSymbol r a -&gt; Statement
+(SumSymbol r a -&gt; Statement) -&gt; Validable (SumSymbol r a)
+forall a. (a -&gt; Statement) -&gt; Validable a
+forall r a.
+(Distributive r, Total r, Commutative r, Entity a) =&gt;
+SumSymbol r a -&gt; Statement
+$cvalid :: forall r a.
+(Distributive r, Total r, Commutative r, Entity a) =&gt;
+SumSymbol r a -&gt; Statement
+valid :: SumSymbol r a -&gt; Statement
+</span><a href="OAlg.Data.Validable.html#Validable"><span class="hs-identifier hs-var hs-var hs-var hs-var">Validable</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679393901"><span id="local-6989586621679393910"><span id="local-6989586621679393917"><span class="annot"><span class="annottext">Fibred (SumSymbol r a)
+N -&gt; SumSymbol r a -&gt; SumSymbol r a
+Fibred (SumSymbol r a)
+-&gt; (Root (SumSymbol r a) -&gt; SumSymbol r a)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a)
+-&gt; (N -&gt; SumSymbol r a -&gt; SumSymbol r a)
+-&gt; Additive (SumSymbol r a)
+Root (SumSymbol r a) -&gt; SumSymbol r a
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+forall a.
+Fibred a
+-&gt; (Root a -&gt; a) -&gt; (a -&gt; a -&gt; a) -&gt; (N -&gt; a -&gt; a) -&gt; Additive a
+forall {r} {a}.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+Fibred (SumSymbol r a)
+forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+N -&gt; SumSymbol r a -&gt; SumSymbol r a
+forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+Root (SumSymbol r a) -&gt; SumSymbol r a
+forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+$czero :: forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+Root (SumSymbol r a) -&gt; SumSymbol r a
+zero :: Root (SumSymbol r a) -&gt; SumSymbol r a
+$c+ :: forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
++ :: SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+$cntimes :: forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Entity a) =&gt;
+N -&gt; SumSymbol r a -&gt; SumSymbol r a
+ntimes :: N -&gt; SumSymbol r a -&gt; SumSymbol r a
+</span><a href="OAlg.Structure.Additive.Definition.html#Additive"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Additive</span></a></span></span></span></span><span class="hs-special">,</span><span id="local-6989586621679393934"><span id="local-6989586621679393942"><span id="local-6989586621679393949"><span class="annot"><span class="annottext">Additive (SumSymbol r a)
+Z -&gt; SumSymbol r a -&gt; SumSymbol r a
+Additive (SumSymbol r a)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a)
+-&gt; (SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a)
+-&gt; (Z -&gt; SumSymbol r a -&gt; SumSymbol r a)
+-&gt; Abelian (SumSymbol r a)
+SumSymbol r a -&gt; SumSymbol r a
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+forall a.
+Additive a
+-&gt; (a -&gt; a) -&gt; (a -&gt; a -&gt; a) -&gt; (Z -&gt; a -&gt; a) -&gt; Abelian a
+forall {r} {a}.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+Additive (SumSymbol r a)
+forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+Z -&gt; SumSymbol r a -&gt; SumSymbol r a
+forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a
+forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+$cnegate :: forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a
+negate :: SumSymbol r a -&gt; SumSymbol r a
+$c- :: forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+- :: SumSymbol r a -&gt; SumSymbol r a -&gt; SumSymbol r a
+$cztimes :: forall r a.
+(Distributive r, Total r, Commutative r, Ord a, Abelian r,
+ Entity a) =&gt;
+Z -&gt; SumSymbol r a -&gt; SumSymbol r a
+ztimes :: Z -&gt; SumSymbol r a -&gt; SumSymbol r a
+</span><a href="OAlg.Structure.Additive.Definition.html#Abelian"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Abelian</span></a></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- ssylc -</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><span class="hs-comment">-- | the underlying linear combination.</span></span><span>
+</span><span id="line-67"></span><span id="local-6989586621679393524"><span id="local-6989586621679393525"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssylc"><span class="hs-identifier hs-type">ssylc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393524"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393524"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393525"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html#LinearCombination"><span class="hs-identifier hs-type">LinearCombination</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393524"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393525"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-68"></span><span id="ssylc"><span class="annot"><span class="annottext">ssylc :: forall r a. Semiring r =&gt; SumSymbol r a -&gt; LinearCombination r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssylc"><span class="hs-identifier hs-var hs-var">ssylc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span id="local-6989586621679393966"><span class="annot"><span class="annottext">Sum r (R a)
+</span><a href="#local-6989586621679393966"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(r, a)] -&gt; LinearCombination r a
+forall r a. [(r, a)] -&gt; LinearCombination r a
+</span><a href="OAlg.Entity.Sum.Definition.html#LinearCombination"><span class="hs-identifier hs-var">LinearCombination</span></a></span><span> </span><span class="annot"><span class="annottext">([(r, a)] -&gt; LinearCombination r a)
+-&gt; [(r, a)] -&gt; LinearCombination r a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((r, R a) -&gt; (r, a)) -&gt; [(r, R a)] -&gt; [(r, a)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679393969"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679393969"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">,</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span id="local-6989586621679393970"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679393970"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679393969"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679393970"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(r, R a)] -&gt; [(r, a)]) -&gt; [(r, R a)] -&gt; [(r, a)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">LinearCombination r (R a) -&gt; [(r, R a)]
+forall r a. LinearCombination r a -&gt; [(r, a)]
+</span><a href="OAlg.Entity.Sum.Definition.html#lcs"><span class="hs-identifier hs-var">lcs</span></a></span><span> </span><span class="annot"><span class="annottext">(LinearCombination r (R a) -&gt; [(r, R a)])
+-&gt; LinearCombination r (R a) -&gt; [(r, R a)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R a) -&gt; LinearCombination r (R a)
+forall r a. Semiring r =&gt; Sum r a -&gt; LinearCombination r a
+</span><a href="OAlg.Entity.Sum.Definition.html#smlc"><span class="hs-identifier hs-var">smlc</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R a)
+</span><a href="#local-6989586621679393966"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- ssypsq -</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="annot"><span class="hs-comment">-- | the underlying partial sequence.</span></span><span>
+</span><span id="line-74"></span><span id="local-6989586621679393541"><span id="local-6989586621679393542"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssypsq"><span class="hs-identifier hs-type">ssypsq</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393541"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393541"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393542"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.PSequence.html#PSequence"><span class="hs-identifier hs-type">PSequence</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393542"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393541"><span class="hs-identifier hs-type">r</span></a></span></span></span><span>
+</span><span id="line-75"></span><span id="ssypsq"><span class="annot"><span class="annottext">ssypsq :: forall r a. Semiring r =&gt; SumSymbol r a -&gt; PSequence a r
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssypsq"><span class="hs-identifier hs-var hs-var">ssypsq</span></a></span></span><span> </span><span id="local-6989586621679393977"><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679393977"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(r, a)] -&gt; PSequence a r
+forall i x. [(x, i)] -&gt; PSequence i x
+</span><a href="OAlg.Entity.Sequence.PSequence.html#PSequence"><span class="hs-identifier hs-var">PSequence</span></a></span><span> </span><span class="annot"><span class="annottext">([(r, a)] -&gt; PSequence a r) -&gt; [(r, a)] -&gt; PSequence a r
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">LinearCombination r a -&gt; [(r, a)]
+forall r a. LinearCombination r a -&gt; [(r, a)]
+</span><a href="OAlg.Entity.Sum.Definition.html#lcs"><span class="hs-identifier hs-var">lcs</span></a></span><span> </span><span class="annot"><span class="annottext">(LinearCombination r a -&gt; [(r, a)])
+-&gt; LinearCombination r a -&gt; [(r, a)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a -&gt; LinearCombination r a
+forall r a. Semiring r =&gt; SumSymbol r a -&gt; LinearCombination r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssylc"><span class="hs-identifier hs-var">ssylc</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679393977"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- SumSymbol - Entity -</span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span id="local-6989586621679393548"><span id="local-6989586621679393549"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyShow"><span class="hs-identifier hs-type">ssyShow</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393548"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679393549"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393548"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393549"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span></span></span><span>
+</span><span id="line-81"></span><span id="ssyShow"><span class="annot"><span class="annottext">ssyShow :: forall r a. (Semiring r, Show a) =&gt; SumSymbol r a -&gt; String
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssyShow"><span class="hs-identifier hs-var hs-var">ssyShow</span></a></span></span><span> </span><span id="local-6989586621679393990"><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679393990"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(r, a)] -&gt; String
+forall {a} {a}.
+(Distributive a, Total a, Show a) =&gt;
+[(a, a)] -&gt; String
+</span><a href="#local-6989586621679393991"><span class="hs-identifier hs-var">shws</span></a></span><span> </span><span class="annot"><span class="annottext">([(r, a)] -&gt; String) -&gt; [(r, a)] -&gt; String
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">LinearCombination r a -&gt; [(r, a)]
+forall r a. LinearCombination r a -&gt; [(r, a)]
+</span><a href="OAlg.Entity.Sum.Definition.html#lcs"><span class="hs-identifier hs-var">lcs</span></a></span><span> </span><span class="annot"><span class="annottext">(LinearCombination r a -&gt; [(r, a)])
+-&gt; LinearCombination r a -&gt; [(r, a)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a -&gt; LinearCombination r a
+forall r a. Semiring r =&gt; SumSymbol r a -&gt; LinearCombination r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssylc"><span class="hs-identifier hs-var">ssylc</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679393990"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-82"></span><span>  </span><span id="local-6989586621679393991"><span class="annot"><span class="annottext">shws :: [(a, a)] -&gt; String
+</span><a href="#local-6989586621679393991"><span class="hs-identifier hs-var hs-var">shws</span></a></span></span><span> </span><span id="local-6989586621679394093"><span class="annot"><span class="annottext">[(a, a)]
+</span><a href="#local-6989586621679394093"><span class="hs-identifier hs-var">ss</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+forall (m :: * -&gt; *) a. Monad m =&gt; m (m a) -&gt; m a
+</span><span class="hs-identifier hs-var">join</span></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String) -&gt; [String] -&gt; String
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; [String]
+forall a. a -&gt; [a] -&gt; [a]
+</span><a href="OAlg.Data.Show.html#tween"><span class="hs-identifier hs-var">tween</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;+&quot;</span></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; [String]) -&gt; [String] -&gt; [String]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((a, a) -&gt; String) -&gt; [(a, a)] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(a, a) -&gt; String
+forall {a} {a}.
+(Distributive a, Total a, Show a) =&gt;
+(a, a) -&gt; String
+</span><a href="#local-6989586621679394095"><span class="hs-identifier hs-var">shw</span></a></span><span> </span><span class="annot"><span class="annottext">[(a, a)]
+</span><a href="#local-6989586621679394093"><span class="hs-identifier hs-var">ss</span></a></span><span>
+</span><span id="line-83"></span><span>  </span><span id="local-6989586621679394095"><span class="annot"><span class="annottext">shw :: (a, a) -&gt; String
+</span><a href="#local-6989586621679394095"><span class="hs-identifier hs-var hs-var">shw</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679394184"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394184"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679394185"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394185"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394184"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rOne"><span class="hs-identifier hs-var">rOne</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394185"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-84"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394184"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;!&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394185"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393579"><span id="local-6989586621679393580"><span id="local-6989586621679394191"><span id="local-6989586621679394196"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393579"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679393580"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393579"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393580"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-87"></span><span>  </span><span id="local-6989586621679394200"><span class="annot"><span class="annottext">show :: SumSymbol r a -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span id="local-6989586621679394201"><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394201"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;SumSymbol[&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a -&gt; String
+forall r a. (Semiring r, Show a) =&gt; SumSymbol r a -&gt; String
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssyShow"><span class="hs-identifier hs-var">ssyShow</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394201"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;]&quot;</span></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393583"><span id="local-6989586621679393584"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393583"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393583"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393584"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393583"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393584"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- SumSymbol - Fibred - Vectorial -</span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393510"><span id="local-6989586621679393511"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393510"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393510"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393511"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Fibred.Definition.html#Fibred"><span class="hs-identifier hs-type">Fibred</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393510"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393511"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-95"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Root"><span class="annot"><a href="OAlg.Structure.Fibred.Definition.html#Root"><span class="hs-identifier hs-var">Root</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393510"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393511"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>  </span><span id="local-6989586621679394233"><span class="annot"><span class="annottext">root :: SumSymbol r a -&gt; Root (SumSymbol r a)
+</span><a href="OAlg.Structure.Fibred.Definition.html#root"><span class="hs-identifier hs-var hs-var hs-var hs-var">root</span></a></span></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393592"><span id="local-6989586621679393593"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393592"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393592"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393593"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393593"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Vectorial.Definition.html#Vectorial"><span class="hs-identifier hs-type">Vectorial</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393592"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393593"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-keyword">type</span><span> </span><span id="Scalar"><span class="annot"><a href="OAlg.Structure.Vectorial.Definition.html#Scalar"><span class="hs-identifier hs-var">Scalar</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393592"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393593"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="#local-6989586621679393592"><span class="hs-identifier hs-type">r</span></a></span><span>
+</span><span id="line-100"></span><span>  </span><span id="local-6989586621679394253"><span class="annot"><span class="annottext">Scalar (SumSymbol r a)
+</span><a href="#local-6989586621679394253"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span id="local-6989586621679394254"><span class="annot"><span class="annottext">! :: Scalar (SumSymbol r a) -&gt; SumSymbol r a -&gt; SumSymbol r a
+</span><a href="#local-6989586621679394254"><span class="hs-operator hs-var hs-var hs-var hs-var">!</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span id="local-6989586621679394256"><span class="annot"><span class="annottext">Sum r (R a)
+</span><a href="#local-6989586621679394256"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum r (R a) -&gt; SumSymbol r a
+forall r a. Sum r (R a) -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Scalar (Sum r (R a))
+Scalar (SumSymbol r a)
+</span><a href="#local-6989586621679394253"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Scalar (Sum r (R a)) -&gt; Sum r (R a) -&gt; Sum r (R a)
+forall v. Vectorial v =&gt; Scalar v -&gt; v -&gt; v
+</span><a href="OAlg.Structure.Vectorial.Definition.html#%21"><span class="hs-operator hs-var">!</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R a)
+</span><a href="#local-6989586621679394256"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679393602"><span id="local-6989586621679393603"><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393602"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393602"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393603"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393603"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Structure.Vectorial.Definition.html#Euclidean"><span class="hs-identifier hs-type">Euclidean</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393602"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393603"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-103"></span><span>  </span><span id="local-6989586621679394282"><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394282"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679394283"><span class="annot"><span class="annottext">&lt;!&gt; :: SumSymbol r a -&gt; SumSymbol r a -&gt; Scalar (SumSymbol r a)
+</span><a href="#local-6989586621679394283"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;!&gt;</span></a></span></span><span> </span><span id="local-6989586621679394285"><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394285"><span class="hs-identifier hs-var">y</span></a></span></span><span>
+</span><span id="line-104"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(r -&gt; r -&gt; r) -&gt; r -&gt; [r] -&gt; r
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) b a.
+Foldable t =&gt;
+(b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldl</span></span><span> </span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall a. Additive a =&gt; a -&gt; a -&gt; a
+</span><a href="OAlg.Structure.Additive.Definition.html#%2B"><span class="hs-operator hs-var">(+)</span></a></span><span> </span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rZero"><span class="hs-identifier hs-var">rZero</span></a></span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><span class="annottext">([r] -&gt; r) -&gt; [r] -&gt; r
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((r, a) -&gt; r) -&gt; [(r, a)] -&gt; [r]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(r, a) -&gt; r
+forall a b. (a, b) -&gt; a
+</span><a href="OAlg.Category.Definition.html#fst"><span class="hs-identifier hs-var">fst</span></a></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><span class="annottext">([(r, a)] -&gt; [r]) -&gt; [(r, a)] -&gt; [r]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PSequence a r -&gt; [(r, a)]
+forall i x. PSequence i x -&gt; [(x, i)]
+</span><a href="OAlg.Entity.Sequence.PSequence.html#psqxs"><span class="hs-identifier hs-var">psqxs</span></a></span><span>
+</span><span id="line-107"></span><span>    </span><span class="annot"><span class="annottext">(PSequence a r -&gt; [(r, a)]) -&gt; PSequence a r -&gt; [(r, a)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(r -&gt; r -&gt; r)
+-&gt; (r -&gt; r)
+-&gt; (r -&gt; r)
+-&gt; PSequence a r
+-&gt; PSequence a r
+-&gt; PSequence a r
+forall i x y z.
+Ord i =&gt;
+(x -&gt; y -&gt; z)
+-&gt; (x -&gt; z)
+-&gt; (y -&gt; z)
+-&gt; PSequence i x
+-&gt; PSequence i y
+-&gt; PSequence i z
+</span><a href="OAlg.Entity.Sequence.PSequence.html#psqInterlace"><span class="hs-identifier hs-var">psqInterlace</span></a></span><span> </span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#%2A"><span class="hs-operator hs-var">(*)</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall b a. b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Definition.html#const"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rZero"><span class="hs-identifier hs-var">rZero</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall b a. b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Definition.html#const"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rZero"><span class="hs-identifier hs-var">rZero</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumSymbol r a -&gt; PSequence a r
+forall r a. Semiring r =&gt; SumSymbol r a -&gt; PSequence a r
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssypsq"><span class="hs-identifier hs-var">ssypsq</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394282"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumSymbol r a -&gt; PSequence a r
+forall r a. Semiring r =&gt; SumSymbol r a -&gt; PSequence a r
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssypsq"><span class="hs-identifier hs-var">ssypsq</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394285"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span><span>    </span><span>
+</span><span id="line-109"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- sumSymbol -</span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="annot"><span class="hs-comment">-- | the induced free sum given by a list of scalars and symbols.</span></span><span>
+</span><span id="line-113"></span><span id="local-6989586621679393618"><span id="local-6989586621679393619"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#sumSymbol"><span class="hs-identifier hs-type">sumSymbol</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393618"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393618"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393619"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393619"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679393618"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span class="annot"><a href="#local-6989586621679393619"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393618"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393619"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-114"></span><span id="sumSymbol"><span class="annot"><span class="annottext">sumSymbol :: forall r a.
+(Semiring r, Commutative r, Entity a, Ord a) =&gt;
+[(r, a)] -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#sumSymbol"><span class="hs-identifier hs-var hs-var">sumSymbol</span></a></span></span><span> </span><span id="local-6989586621679394307"><span class="annot"><span class="annottext">[(r, a)]
+</span><a href="#local-6989586621679394307"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum r (R a) -&gt; SumSymbol r a
+forall r a. Sum r (R a) -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">(Sum r (R a) -&gt; SumSymbol r a) -&gt; Sum r (R a) -&gt; SumSymbol r a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Form (Sum r (R a)) -&gt; Sum r (R a)
+SumForm r (R a) -&gt; Sum r (R a)
+forall x. Constructable x =&gt; Form x -&gt; x
+</span><a href="OAlg.Data.Constructable.html#make"><span class="hs-identifier hs-var">make</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (R a) -&gt; Sum r (R a)) -&gt; SumForm r (R a) -&gt; Sum r (R a)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (R a) -&gt; SumForm r (R a) -&gt; SumForm r (R a))
+-&gt; SumForm r (R a) -&gt; [SumForm r (R a)] -&gt; SumForm r (R a)
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">SumForm r (R a) -&gt; SumForm r (R a) -&gt; SumForm r (R a)
+forall r a. SumForm r a -&gt; SumForm r a -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#%3A%2B"><span class="hs-operator hs-var">(:+)</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Root (R a) -&gt; SumForm r (R a)
+forall r a. Root a -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#Zero"><span class="hs-identifier hs-var">Zero</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([SumForm r (R a)] -&gt; SumForm r (R a))
+-&gt; [SumForm r (R a)] -&gt; SumForm r (R a)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((r, a) -&gt; SumForm r (R a)) -&gt; [(r, a)] -&gt; [SumForm r (R a)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679394312"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679394312"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679394313"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394313"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679394312"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">r -&gt; SumForm r (R a) -&gt; SumForm r (R a)
+forall r a. r -&gt; SumForm r a -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#%3A%21"><span class="hs-operator hs-var">:!</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">R a -&gt; SumForm r (R a)
+forall r a. a -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#S"><span class="hs-identifier hs-var">S</span></a></span><span> </span><span class="annot"><span class="annottext">(R a -&gt; SumForm r (R a)) -&gt; R a -&gt; SumForm r (R a)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; R a
+forall a. a -&gt; R a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-var">R</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394313"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(r, a)]
+</span><a href="#local-6989586621679394307"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- sy -</span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span class="annot"><span class="hs-comment">-- | the induced free sum given by the symbol.</span></span><span>
+</span><span id="line-120"></span><span id="local-6989586621679393633"><span id="local-6989586621679393634"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#sy"><span class="hs-identifier hs-type">sy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393633"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393633"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393634"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393634"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679393634"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393633"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393634"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-121"></span><span id="sy"><span class="annot"><span class="annottext">sy :: forall r a.
+(Semiring r, Commutative r, Entity a, Ord a) =&gt;
+a -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#sy"><span class="hs-identifier hs-var hs-var">sy</span></a></span></span><span> </span><span id="local-6989586621679394325"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394325"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(r, a)] -&gt; SumSymbol r a
+forall r a.
+(Semiring r, Commutative r, Entity a, Ord a) =&gt;
+[(r, a)] -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#sumSymbol"><span class="hs-identifier hs-var">sumSymbol</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rOne"><span class="hs-identifier hs-var">rOne</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679394325"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- ssyMap -</span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="annot"><span class="hs-comment">-- | mapping of free sums</span></span><span>
+</span><span id="line-127"></span><span id="local-6989586621679393637"><span id="local-6989586621679393638"><span id="local-6989586621679393639"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyMap"><span class="hs-identifier hs-type">ssyMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393637"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393637"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393638"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393638"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679393639"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679393638"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393637"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393639"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393637"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393638"><span class="hs-identifier hs-type">y</span></a></span></span></span></span><span>
+</span><span id="line-128"></span><span id="ssyMap"><span class="annot"><span class="annottext">ssyMap :: forall r y x.
+(Semiring r, Commutative r, Entity y, Ord y) =&gt;
+(x -&gt; y) -&gt; SumSymbol r x -&gt; SumSymbol r y
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssyMap"><span class="hs-identifier hs-var hs-var">ssyMap</span></a></span></span><span> </span><span id="local-6989586621679394337"><span class="annot"><span class="annottext">x -&gt; y
+</span><a href="#local-6989586621679394337"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span id="local-6989586621679394338"><span class="annot"><span class="annottext">Sum r (R x)
+</span><a href="#local-6989586621679394338"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum r (R y) -&gt; SumSymbol r y
+forall r a. Sum r (R a) -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(R x -&gt; R y) -&gt; Sum r (R x) -&gt; Sum r (R y)
+forall y r x.
+(Singleton (Root y), Fibred y, Ord y, Semiring r, Commutative r) =&gt;
+(x -&gt; y) -&gt; Sum r x -&gt; Sum r y
+</span><a href="OAlg.Entity.Sum.Definition.html#smMap"><span class="hs-identifier hs-var">smMap</span></a></span><span> </span><span class="annot"><span class="annottext">R x -&gt; R y
+</span><a href="#local-6989586621679394340"><span class="hs-identifier hs-var">f'</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R x)
+</span><a href="#local-6989586621679394338"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-129"></span><span>  </span><span id="local-6989586621679394340"><span class="annot"><span class="annottext">f' :: R x -&gt; R y
+</span><a href="#local-6989586621679394340"><span class="hs-identifier hs-var hs-var">f'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span id="local-6989586621679394341"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679394341"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">y -&gt; R y
+forall a. a -&gt; R a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-var">R</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">x -&gt; y
+</span><a href="#local-6989586621679394337"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679394341"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- ssySum -</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- | additive homomorphism given by a mapping of a symbol in @__x__@ to a linear combination of</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- @__y__@.</span><span>
+</span><span id="line-136"></span><span id="local-6989586621679393646"><span id="local-6989586621679393647"><span id="local-6989586621679393648"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssySum"><span class="hs-identifier hs-type">ssySum</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393646"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393646"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393647"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393647"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679393648"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html#LinearCombination"><span class="hs-identifier hs-type">LinearCombination</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393646"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393647"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393646"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393648"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393646"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393647"><span class="hs-identifier hs-type">y</span></a></span></span></span></span><span>
+</span><span id="line-138"></span><span id="ssySum"><span class="annot"><span class="annottext">ssySum :: forall r y x.
+(Semiring r, Commutative r, Entity y, Ord y) =&gt;
+(x -&gt; LinearCombination r y) -&gt; SumSymbol r x -&gt; SumSymbol r y
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssySum"><span class="hs-identifier hs-var hs-var">ssySum</span></a></span></span><span> </span><span id="local-6989586621679394358"><span class="annot"><span class="annottext">x -&gt; LinearCombination r y
+</span><a href="#local-6989586621679394358"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span id="local-6989586621679394359"><span class="annot"><span class="annottext">Sum r (R x)
+</span><a href="#local-6989586621679394359"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum r (R y) -&gt; SumSymbol r y
+forall r a. Sum r (R a) -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">(Sum r (R y) -&gt; SumSymbol r y) -&gt; Sum r (R y) -&gt; SumSymbol r y
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Form (Sum r (R y)) -&gt; Sum r (R y)
+SumForm r (R y) -&gt; Sum r (R y)
+forall x. Constructable x =&gt; Form x -&gt; x
+</span><a href="OAlg.Data.Constructable.html#make"><span class="hs-identifier hs-var">make</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (R y) -&gt; Sum r (R y)) -&gt; SumForm r (R y) -&gt; Sum r (R y)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">SumForm r (SumForm r (R y)) -&gt; SumForm r (R y)
+forall r a. SumForm r (SumForm r a) -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#smfJoin"><span class="hs-identifier hs-var">smfJoin</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (SumForm r (R y)) -&gt; SumForm r (R y))
+-&gt; SumForm r (SumForm r (R y)) -&gt; SumForm r (R y)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(R x -&gt; SumForm r (R y))
+-&gt; SumForm r (R x) -&gt; SumForm r (SumForm r (R y))
+forall y x r.
+Singleton (Root y) =&gt;
+(x -&gt; y) -&gt; SumForm r x -&gt; SumForm r y
+</span><a href="OAlg.Entity.Sum.Definition.html#smfMap"><span class="hs-identifier hs-var">smfMap</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(x -&gt; LinearCombination r y) -&gt; R x -&gt; SumForm r (R y)
+forall r x y.
+Semiring r =&gt;
+(x -&gt; LinearCombination r y) -&gt; R x -&gt; SumForm r (R y)
+</span><a href="#local-6989586621679394362"><span class="hs-identifier hs-var">f'</span></a></span><span> </span><span class="annot"><span class="annottext">x -&gt; LinearCombination r y
+</span><a href="#local-6989586621679394358"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(SumForm r (R x) -&gt; SumForm r (SumForm r (R y)))
+-&gt; SumForm r (R x) -&gt; SumForm r (SumForm r (R y))
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R x) -&gt; Form (Sum r (R x))
+forall x. Exposable x =&gt; x -&gt; Form x
+</span><a href="OAlg.Data.Constructable.html#form"><span class="hs-identifier hs-var">form</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R x)
+</span><a href="#local-6989586621679394359"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>  </span><span id="local-6989586621679393660"><span id="local-6989586621679393661"><span id="local-6989586621679393662"><span class="annot"><a href="#local-6989586621679394362"><span class="hs-identifier hs-type">f'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393660"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679393661"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html#LinearCombination"><span class="hs-identifier hs-type">LinearCombination</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393660"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393662"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393661"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html#SumForm"><span class="hs-identifier hs-type">SumForm</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393660"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393662"><span class="hs-identifier hs-type">y</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-140"></span><span>  </span><span id="local-6989586621679394362"><span class="annot"><span class="annottext">f' :: forall r x y.
+Semiring r =&gt;
+(x -&gt; LinearCombination r y) -&gt; R x -&gt; SumForm r (R y)
+</span><a href="#local-6989586621679394362"><span class="hs-identifier hs-var hs-var">f'</span></a></span></span><span> </span><span id="local-6989586621679394374"><span class="annot"><span class="annottext">x -&gt; LinearCombination r y
+</span><a href="#local-6989586621679394374"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span id="local-6989586621679394375"><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679394375"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Root (R y) -&gt; LinearCombination r (R y) -&gt; SumForm r (R y)
+forall r a.
+Semiring r =&gt;
+Root a -&gt; LinearCombination r a -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#lcsmf"><span class="hs-identifier hs-var">lcsmf</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LinearCombination r (R y) -&gt; SumForm r (R y))
+-&gt; LinearCombination r (R y) -&gt; SumForm r (R y)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">[(r, R y)] -&gt; LinearCombination r (R y)
+forall r a. [(r, a)] -&gt; LinearCombination r a
+</span><a href="OAlg.Entity.Sum.Definition.html#LinearCombination"><span class="hs-identifier hs-var">LinearCombination</span></a></span><span> </span><span class="annot"><span class="annottext">([(r, R y)] -&gt; LinearCombination r (R y))
+-&gt; [(r, R y)] -&gt; LinearCombination r (R y)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">((r, y) -&gt; (r, R y)) -&gt; [(r, y)] -&gt; [(r, R y)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+forall (h :: * -&gt; * -&gt; *) (f :: * -&gt; *) a b.
+Applicative1 h f =&gt;
+h a b -&gt; f a -&gt; f b
+</span><a href="OAlg.Category.Applicative.html#amap1"><span class="hs-identifier hs-var">amap1</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679394378"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679394378"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679394379"><span class="annot"><span class="annottext">y
+</span><a href="#local-6989586621679394379"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679394378"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">y -&gt; R y
+forall a. a -&gt; R a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-var">R</span></a></span><span> </span><span class="annot"><span class="annottext">y
+</span><a href="#local-6989586621679394379"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([(r, y)] -&gt; [(r, R y)]) -&gt; [(r, y)] -&gt; [(r, R y)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">LinearCombination r y -&gt; [(r, y)]
+forall r a. LinearCombination r a -&gt; [(r, a)]
+</span><a href="OAlg.Entity.Sum.Definition.html#lcs"><span class="hs-identifier hs-var">lcs</span></a></span><span> </span><span class="annot"><span class="annottext">(LinearCombination r y -&gt; [(r, y)])
+-&gt; LinearCombination r y -&gt; [(r, y)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">x -&gt; LinearCombination r y
+</span><a href="#local-6989586621679394374"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">x
+</span><a href="#local-6989586621679394375"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- ssyJoin -</span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span class="annot"><span class="hs-comment">-- | joining a free sum of free sums to a free sum.</span></span><span>
+</span><span id="line-146"></span><span id="local-6989586621679393675"><span id="local-6989586621679393676"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyJoin"><span class="hs-identifier hs-type">ssyJoin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393675"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393675"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393676"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393676"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>  </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393675"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393675"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393676"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393675"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393676"><span class="hs-identifier hs-type">x</span></a></span></span></span><span>
+</span><span id="line-148"></span><span id="ssyJoin"><span class="annot"><span class="annottext">ssyJoin :: forall r x.
+(Semiring r, Commutative r, Entity x, Ord x) =&gt;
+SumSymbol r (SumSymbol r x) -&gt; SumSymbol r x
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssyJoin"><span class="hs-identifier hs-var hs-var">ssyJoin</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span id="local-6989586621679394394"><span class="annot"><span class="annottext">Sum r (R (SumSymbol r x))
+</span><a href="#local-6989586621679394394"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum r (R x) -&gt; SumSymbol r x
+forall r a. Sum r (R a) -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-var">SumSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">(Sum r (R x) -&gt; SumSymbol r x) -&gt; Sum r (R x) -&gt; SumSymbol r x
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Form (Sum r (R x)) -&gt; Sum r (R x)
+SumForm r (R x) -&gt; Sum r (R x)
+forall x. Constructable x =&gt; Form x -&gt; x
+</span><a href="OAlg.Data.Constructable.html#make"><span class="hs-identifier hs-var">make</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (R x) -&gt; Sum r (R x)) -&gt; SumForm r (R x) -&gt; Sum r (R x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">SumForm r (SumForm r (R x)) -&gt; SumForm r (R x)
+forall r a. SumForm r (SumForm r a) -&gt; SumForm r a
+</span><a href="OAlg.Entity.Sum.Definition.html#smfJoin"><span class="hs-identifier hs-var">smfJoin</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (SumForm r (R x)) -&gt; SumForm r (R x))
+-&gt; SumForm r (SumForm r (R x)) -&gt; SumForm r (R x)
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(R (SumSymbol r x) -&gt; SumForm r (R x))
+-&gt; SumForm r (R (SumSymbol r x)) -&gt; SumForm r (SumForm r (R x))
+forall y x r.
+Singleton (Root y) =&gt;
+(x -&gt; y) -&gt; SumForm r x -&gt; SumForm r y
+</span><a href="OAlg.Entity.Sum.Definition.html#smfMap"><span class="hs-identifier hs-var">smfMap</span></a></span><span> </span><span class="annot"><span class="annottext">R (SumSymbol r x) -&gt; SumForm r (R x)
+forall r x. R (SumSymbol r x) -&gt; SumForm r (R x)
+</span><a href="#local-6989586621679394395"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">(SumForm r (R (SumSymbol r x)) -&gt; SumForm r (SumForm r (R x)))
+-&gt; SumForm r (R (SumSymbol r x)) -&gt; SumForm r (SumForm r (R x))
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R (SumSymbol r x)) -&gt; Form (Sum r (R (SumSymbol r x)))
+forall x. Exposable x =&gt; x -&gt; Form x
+</span><a href="OAlg.Data.Constructable.html#form"><span class="hs-identifier hs-var">form</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R (SumSymbol r x))
+</span><a href="#local-6989586621679394394"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-149"></span><span>  </span><span id="local-6989586621679393679"><span id="local-6989586621679393680"><span class="annot"><a href="#local-6989586621679394395"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393679"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393680"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.Definition.html#SumForm"><span class="hs-identifier hs-type">SumForm</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393679"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393680"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-150"></span><span>  </span><span id="local-6989586621679394395"><span class="annot"><span class="annottext">f :: forall r x. R (SumSymbol r x) -&gt; SumForm r (R x)
+</span><a href="#local-6989586621679394395"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#R"><span class="hs-identifier hs-type">R</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span id="local-6989586621679394397"><span class="annot"><span class="annottext">Sum r (R x)
+</span><a href="#local-6989586621679394397"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Sum r (R x) -&gt; Form (Sum r (R x))
+forall x. Exposable x =&gt; x -&gt; Form x
+</span><a href="OAlg.Data.Constructable.html#form"><span class="hs-identifier hs-var">form</span></a></span><span> </span><span class="annot"><span class="annottext">Sum r (R x)
+</span><a href="#local-6989586621679394397"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- ssyprj -</span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- | the projectin of a free sum according to the given set of symbols.</span><span>
+</span><span id="line-156"></span><span class="hs-comment">--</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- __Definition__ Let @x@ be in @'SumSymbol' __r__ __a__@ and @s@ a 'Set' of symbols in</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- @__a__@, then @x@ is called __/representable according to/__ @s@ iff all symbols of @'ssylc' x@</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- are elements of @s@.</span><span>
+</span><span id="line-160"></span><span class="hs-comment">--</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- __Property__ Let @s@ be a set of symbols in @__a__@ and @x@ be representable in</span><span>
+</span><span id="line-162"></span><span class="hs-comment">-- @'SumSymbol' __r__ __a__@ according to @s@, then @'ssyprj' x '==' x@.</span><span>
+</span><span id="line-163"></span><span class="hs-comment">--</span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- __Examples__ </span><span>
+</span><span id="line-165"></span><span class="hs-comment">--</span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- &gt;&gt;&gt; ssyprj (Set [A,D,E]) (3!sy D) :: SumSymbol Z Symbol</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- SumSymbol[3!D]</span><span>
+</span><span id="line-168"></span><span class="hs-comment">--</span><span>
+</span><span id="line-169"></span><span class="hs-comment">-- &gt;&gt;&gt; ssyprj (Set [A,D,E]) (2!sy B) :: SumSymbol Z Symbol</span><span>
+</span><span id="line-170"></span><span class="hs-comment">-- SumSymbol[]</span><span>
+</span><span id="line-171"></span><span class="hs-comment">--</span><span>
+</span><span id="line-172"></span><span class="hs-comment">-- &gt;&gt;&gt; ssyprj (Set [A,D,E]) (3!sy D + sy A - 5!sy E) :: SumSymbol Z Symbol</span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- SumSymbol[A+3!D+-5!E]</span><span>
+</span><span id="line-174"></span><span class="hs-comment">--</span><span>
+</span><span id="line-175"></span><span class="hs-comment">-- &gt;&gt;&gt; ssyprj (Set [A,D,E]) (2!sy D + 7!sy B - sy E + sy F) :: SumSymbol Z Symbol</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- SumSymbol[2!D+-1!E]</span><span>
+</span><span id="line-177"></span><span id="local-6989586621679393683"><span id="local-6989586621679393684"><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#ssyprj"><span class="hs-identifier hs-type">ssyprj</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="OAlg.Structure.Ring.Definition.html#Semiring"><span class="hs-identifier hs-type">Semiring</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393683"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Structure.Multiplicative.Definition.html#Commutative"><span class="hs-identifier hs-type">Commutative</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393683"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679393684"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.Entity.Definition.html#Entity"><span class="hs-identifier hs-type">Entity</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393684"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sequence.Set.html#Set"><span class="hs-identifier hs-type">Set</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393684"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393683"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393684"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="OAlg.Entity.Sum.SumSymbol.html#SumSymbol"><span class="hs-identifier hs-type">SumSymbol</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393683"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679393684"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-178"></span><span id="ssyprj"><span class="annot"><span class="annottext">ssyprj :: forall r a.
+(Semiring r, Commutative r, Ord a, Entity a) =&gt;
+Set a -&gt; SumSymbol r a -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssyprj"><span class="hs-identifier hs-var hs-var">ssyprj</span></a></span></span><span> </span><span id="local-6989586621679394417"><span class="annot"><span class="annottext">Set a
+</span><a href="#local-6989586621679394417"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679394418"><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394418"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(r, a)] -&gt; SumSymbol r a
+forall r a.
+(Semiring r, Commutative r, Entity a, Ord a) =&gt;
+[(r, a)] -&gt; SumSymbol r a
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#sumSymbol"><span class="hs-identifier hs-var">sumSymbol</span></a></span><span> </span><span class="annot"><span class="annottext">([(r, a)] -&gt; SumSymbol r a) -&gt; [(r, a)] -&gt; SumSymbol r a
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">PSequence a r -&gt; [(r, a)]
+forall i x. PSequence i x -&gt; [(x, i)]
+</span><a href="OAlg.Entity.Sequence.PSequence.html#psqxs"><span class="hs-identifier hs-var">psqxs</span></a></span><span> </span><span class="annot"><span class="annottext">(PSequence a r -&gt; [(r, a)]) -&gt; PSequence a r -&gt; [(r, a)]
+forall (h :: * -&gt; * -&gt; *) a b. Applicative h =&gt; h a b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Applicative.html#%24"><span class="hs-operator hs-var">$</span></a></span><span> </span><span class="annot"><span class="annottext">(r -&gt; r -&gt; r)
+-&gt; (r -&gt; r)
+-&gt; (r -&gt; r)
+-&gt; PSequence a r
+-&gt; PSequence a r
+-&gt; PSequence a r
+forall i x y z.
+Ord i =&gt;
+(x -&gt; y -&gt; z)
+-&gt; (x -&gt; z)
+-&gt; (y -&gt; z)
+-&gt; PSequence i x
+-&gt; PSequence i y
+-&gt; PSequence i z
+</span><a href="OAlg.Entity.Sequence.PSequence.html#psqInterlace"><span class="hs-identifier hs-var">psqInterlace</span></a></span><span> </span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><a href="OAlg.Structure.Multiplicative.Definition.html#%2A"><span class="hs-operator hs-var">(*)</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall b a. b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Definition.html#const"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rZero"><span class="hs-identifier hs-var">rZero</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r -&gt; r -&gt; r
+forall b a. b -&gt; a -&gt; b
+</span><a href="OAlg.Category.Definition.html#const"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rZero"><span class="hs-identifier hs-var">rZero</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">PSequence a r
+</span><a href="#local-6989586621679394419"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SumSymbol r a -&gt; PSequence a r
+forall r a. Semiring r =&gt; SumSymbol r a -&gt; PSequence a r
+</span><a href="OAlg.Entity.Sum.SumSymbol.html#ssypsq"><span class="hs-identifier hs-var">ssypsq</span></a></span><span> </span><span class="annot"><span class="annottext">SumSymbol r a
+</span><a href="#local-6989586621679394418"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-179"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679394419"><span class="annot"><span class="annottext">xs' :: PSequence a r
+</span><a href="#local-6989586621679394419"><span class="hs-identifier hs-var hs-var">xs'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(r, a)] -&gt; PSequence a r
+forall i x. [(x, i)] -&gt; PSequence i x
+</span><a href="OAlg.Entity.Sequence.PSequence.html#PSequence"><span class="hs-identifier hs-var">PSequence</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r -&gt; [r]
+forall a. a -&gt; [a]
+</span><span class="hs-identifier hs-var">repeat</span></span><span> </span><span class="annot"><span class="annottext">r
+forall r. Semiring r =&gt; r
+</span><a href="OAlg.Structure.Ring.Definition.html#rOne"><span class="hs-identifier hs-var">rOne</span></a></span><span> </span><span class="annot"><span class="annottext">[r] -&gt; [a] -&gt; [(r, a)]
+forall a b. [a] -&gt; [b] -&gt; [(a, b)]
+</span><span class="hs-operator hs-var">`zip`</span></span><span> </span><span class="annot"><span class="annottext">Set a -&gt; [a]
+forall x. Set x -&gt; [x]
+</span><a href="OAlg.Entity.Sequence.Set.html#setxs"><span class="hs-identifier hs-var">setxs</span></a></span><span> </span><span class="annot"><span class="annottext">Set a
+</span><a href="#local-6989586621679394417"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-special">)</span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span></pre></body></html>
