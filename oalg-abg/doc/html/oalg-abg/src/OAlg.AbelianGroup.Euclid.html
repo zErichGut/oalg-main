@@ -1,0 +1,289 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE NoImplicitPrelude #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : OAlg.AbelianGroup.Euclid</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : basic algorithms for integers</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Erich Gut</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : BSD3</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : zerich.gut@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">--</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- basic algorithms for the integers 'Z'.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">OAlg.AbelianGroup.Euclid</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#gcd"><span class="hs-identifier">gcd</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#gcds"><span class="hs-identifier">gcds</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#lcm"><span class="hs-identifier">lcm</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#lcms"><span class="hs-identifier">lcms</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#euclid"><span class="hs-identifier">euclid</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#mod0"><span class="hs-identifier">mod0</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#%2F%2F"><span class="hs-operator">(//)</span></a></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">OAlg.Prelude</span></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">foldl</span></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">OAlg.Data.Canonical</span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">OAlg.Structure.Additive</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">OAlg.Structure.Multiplicative</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">OAlg.Structure.Number</span></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- mod0 -</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- | extended modulo in 'Z' according to 'N'.</span><span>
+</span><span id="line-32"></span><span class="hs-comment">--</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- __Property__ For all @z@ and @n@ holds</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- (1) @'mod0' z 0 '==' z@.</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- (2) if @0 &lt; n@ than @'mod0' z n '==' 'mod' z ('inj' n)@.</span><span>
+</span><span id="line-38"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#mod0"><span class="hs-identifier hs-type">mod0</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span>
+</span><span id="line-39"></span><span id="mod0"><span class="annot"><span class="annottext">mod0 :: Z -&gt; N -&gt; Z
+</span><a href="OAlg.AbelianGroup.Euclid.html#mod0"><span class="hs-identifier hs-var hs-var">mod0</span></a></span></span><span> </span><span id="local-6989586621679082870"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082870"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082870"><span class="hs-identifier hs-var">z</span></a></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#mod0"><span class="hs-identifier hs-var">mod0</span></a></span><span> </span><span id="local-6989586621679082871"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082871"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span id="local-6989586621679082872"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679082872"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Z -&gt; Z -&gt; Z
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">mod</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082871"><span class="hs-identifier hs-var">z</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; Z
+forall a b. Embeddable a b =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">inj</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679082872"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- (//) -</span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">infix</span><span> </span><span class="hs-number">7</span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#%2F%2F"><span class="hs-operator hs-type">//</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- | extended division in 'Z' by a dividend in 'N'.</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--  __Properties__ For all @z@ and @n@ holds:</span><span>
+</span><span id="line-50"></span><span class="hs-comment">--</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--  (1) @0 // 0 '==' 1@.</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--  (2) if @z '/=' 0@ then @z // 0 '==' 0@.</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--</span><span>
+</span><span id="line-55"></span><span class="hs-comment">--  (3) if @0 '&lt;' n@ then @z // n '==' 'div' z n@.</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">--  (4) @z '==' (z // n) '*' 'inj' n '+' 'mod0' z n@.</span><span>
+</span><span id="line-58"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#%2F%2F"><span class="hs-operator hs-type">(//)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span>
+</span><span id="line-59"></span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">0</span></span><span> </span><span id="%2F%2F"><span class="annot"><span class="annottext">// :: Z -&gt; N -&gt; Z
+</span><a href="OAlg.AbelianGroup.Euclid.html#%2F%2F"><span class="hs-operator hs-var hs-var">//</span></a></span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-60"></span><span class="annot"><span class="annottext">Z
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#%2F%2F"><span class="hs-operator hs-var">//</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-61"></span><span id="local-6989586621679082878"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082878"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#%2F%2F"><span class="hs-operator hs-var">//</span></a></span><span> </span><span id="local-6989586621679082879"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679082879"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Z -&gt; Z -&gt; Z
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">div</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082878"><span class="hs-identifier hs-var">z</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; Z
+forall a b. Embeddable a b =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">inj</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679082879"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- euclid -</span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- | extended euclidean algorithm to determine the greatest cowmon divisor.</span><span>
+</span><span id="line-67"></span><span class="hs-comment">--</span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- __Properties__ @(g,s,t) = 'euclid' a b@ then</span><span>
+</span><span id="line-69"></span><span class="hs-comment">--</span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- (1) @g@ is the greatest common divisor of @a@ and @b@.</span><span>
+</span><span id="line-71"></span><span class="hs-comment">--</span><span>
+</span><span id="line-72"></span><span class="hs-comment">-- (2) @g '==' s '*' a '+' t '*' b@.</span><span>
+</span><span id="line-73"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#euclid"><span class="hs-identifier hs-type">euclid</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span class="hs-special">,</span><span class="annot"><span class="hs-identifier hs-type">Z</span></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>  </span><span class="hs-comment">-- we use the property: signum x * x == abs x for all x :: Z</span><span>
+</span><span id="line-75"></span><span id="euclid"><span class="annot"><span class="annottext">euclid :: Z -&gt; Z -&gt; (N, Z, Z)
+</span><a href="OAlg.AbelianGroup.Euclid.html#euclid"><span class="hs-identifier hs-var hs-var">euclid</span></a></span></span><span> </span><span id="local-6989586621679082880"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082880"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679082881"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082881"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Z -&gt; N
+forall a b. Projectible a b =&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">prj</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082883"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z -&gt; Z
+forall r. Number r =&gt; r -&gt; r
+</span><span class="hs-identifier hs-var">signum</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082880"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Z -&gt; Z -&gt; Z
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082885"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z -&gt; Z
+forall r. Number r =&gt; r -&gt; r
+</span><span class="hs-identifier hs-var">signum</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082881"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Z -&gt; Z -&gt; Z
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082886"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679082883"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082883"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082885"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082885"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082886"><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082886"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Z, Z, Z) -&gt; (Z, Z, Z) -&gt; (Z, Z, Z)
+forall {c}.
+(Num c, Abelian c, Integral c) =&gt;
+(c, c, c) -&gt; (c, c, c) -&gt; (c, c, c)
+</span><a href="#local-6989586621679082897"><span class="hs-identifier hs-var">eval</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Z -&gt; Z
+forall r. Number r =&gt; r -&gt; r
+</span><span class="hs-identifier hs-var">abs</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082880"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">1</span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Z -&gt; Z
+forall r. Number r =&gt; r -&gt; r
+</span><span class="hs-identifier hs-var">abs</span></span><span> </span><span class="annot"><span class="annottext">Z
+</span><a href="#local-6989586621679082881"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">0</span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span> </span><span class="hs-comment">-- invariants for eval (r'',s'',t'') (r',s',t'):  r'' = s''*a + t''*b and r' = s'*a + t'*b </span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679082897"><span class="annot"><span class="annottext">eval :: (c, c, c) -&gt; (c, c, c) -&gt; (c, c, c)
+</span><a href="#local-6989586621679082897"><span class="hs-identifier hs-var hs-var">eval</span></a></span></span><span> </span><span id="local-6989586621679082984"><span class="annot"><span class="annottext">(c, c, c)
+</span><a href="#local-6989586621679082984"><span class="hs-identifier hs-var">u</span></a></span></span><span>             </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-special">,</span><span class="annot"><span class="annottext">c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">,</span><span class="annot"><span class="annottext">c
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(c, c, c)
+</span><a href="#local-6989586621679082984"><span class="hs-identifier hs-var">u</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span class="annot"><a href="#local-6989586621679082897"><span class="hs-identifier hs-var">eval</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082985"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082985"><span class="hs-identifier hs-var">r''</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082986"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082986"><span class="hs-identifier hs-var">s''</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082987"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082987"><span class="hs-identifier hs-var">t''</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082988"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082988"><span class="hs-identifier hs-var">r'</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082989"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082989"><span class="hs-identifier hs-var">s'</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082990"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082990"><span class="hs-identifier hs-var">t'</span></a></span></span><span class="hs-special">)</span><span> </span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082989"><span class="hs-identifier hs-var">s'</span></a></span><span> </span><span class="annot"><span class="annottext">c -&gt; (c, c, c) -&gt; (c, c, c)
+forall a b. a -&gt; b -&gt; b
+</span><span class="hs-operator hs-var">`seq`</span></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082990"><span class="hs-identifier hs-var">t'</span></a></span><span> </span><span class="annot"><span class="annottext">c -&gt; (c, c, c) -&gt; (c, c, c)
+forall a b. a -&gt; b -&gt; b
+</span><span class="hs-operator hs-var">`seq`</span></span><span> </span><span class="annot"><span class="annottext">(c, c, c) -&gt; (c, c, c) -&gt; (c, c, c)
+</span><a href="#local-6989586621679082897"><span class="hs-identifier hs-var">eval</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082988"><span class="hs-identifier hs-var">r'</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082989"><span class="hs-identifier hs-var">s'</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082990"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082991"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082986"><span class="hs-identifier hs-var">s''</span></a></span><span> </span><span class="annot"><span class="annottext">c -&gt; c -&gt; c
+forall a. Abelian a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082993"><span class="hs-identifier hs-var">q</span></a></span><span class="annot"><span class="annottext">c -&gt; c -&gt; c
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><span class="hs-operator hs-var">*</span></span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082989"><span class="hs-identifier hs-var">s'</span></a></span><span class="hs-special">,</span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082987"><span class="hs-identifier hs-var">t''</span></a></span><span> </span><span class="annot"><span class="annottext">c -&gt; c -&gt; c
+forall a. Abelian a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082993"><span class="hs-identifier hs-var">q</span></a></span><span class="annot"><span class="annottext">c -&gt; c -&gt; c
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><span class="hs-operator hs-var">*</span></span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082990"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679082993"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082993"><span class="hs-identifier hs-var">q</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679082991"><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082991"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">c -&gt; c -&gt; (c, c)
+forall a. Integral a =&gt; a -&gt; a -&gt; (a, a)
+</span><span class="hs-identifier hs-var">divMod</span></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082985"><span class="hs-identifier hs-var">r''</span></a></span><span> </span><span class="annot"><span class="annottext">c
+</span><a href="#local-6989586621679082988"><span class="hs-identifier hs-var">r'</span></a></span><span>
+</span><span id="line-82"></span><span>
+</span><span id="line-83"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- gcd -</span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- | greatest common divisor.</span><span>
+</span><span id="line-87"></span><span class="hs-comment">--</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- __Properties__ For all @a@ and @b@ in 'N' holds:</span><span>
+</span><span id="line-89"></span><span class="hs-comment">--</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- (1) @gcd a b '==' gcd b a@.</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- (2) @gcd a b '==' 0@ if and only if @a '==' 0@ and @b '==' 0@.</span><span>
+</span><span id="line-93"></span><span class="hs-comment">--</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- (4) @gcd a 0 '==' a@.</span><span>
+</span><span id="line-95"></span><span class="hs-comment">--</span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- (4) @gcd a 1 '==' 1@.</span><span>
+</span><span id="line-97"></span><span class="hs-comment">--</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- (5) @gcd a b '*' 'lcm' a b '==' a '*' b@.</span><span>
+</span><span id="line-99"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#gcd"><span class="hs-identifier hs-type">gcd</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span>
+</span><span id="line-100"></span><span id="gcd"><span class="annot"><span class="annottext">gcd :: N -&gt; N -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#gcd"><span class="hs-identifier hs-var hs-var">gcd</span></a></span></span><span> </span><span id="local-6989586621679083081"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083081"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679083082"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083082"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083083"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="hs-keyword">where</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679083083"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083083"><span class="hs-identifier hs-var">g</span></a></span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span class="annot"><span class="annottext">Z
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Z -&gt; Z -&gt; (N, Z, Z)
+</span><a href="OAlg.AbelianGroup.Euclid.html#euclid"><span class="hs-identifier hs-var">euclid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; Z
+forall a b. Embeddable a b =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">inj</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083081"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N -&gt; Z
+forall a b. Embeddable a b =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">inj</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083082"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- gcds -</span><span>
+</span><span id="line-104"></span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- | greatest common divisor of the given list.</span><span>
+</span><span id="line-106"></span><span class="hs-comment">--</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- __Note__ @gcds [] '==' 0@.</span><span>
+</span><span id="line-108"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#gcds"><span class="hs-identifier hs-type">gcds</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span>
+</span><span id="line-109"></span><span id="gcds"><span class="annot"><span class="annottext">gcds :: [N] -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#gcds"><span class="hs-identifier hs-var hs-var">gcds</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(N -&gt; N -&gt; N) -&gt; N -&gt; [N] -&gt; N
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) b a.
+Foldable t =&gt;
+(b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldl</span></span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#gcd"><span class="hs-identifier hs-var">gcd</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- lcm -</span><span>
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- | least common multiple.</span><span>
+</span><span id="line-115"></span><span class="hs-comment">--</span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- __Properties__ For all @a@ and @b@ in 'N' holds:</span><span>
+</span><span id="line-117"></span><span class="hs-comment">--</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- (1) @lcm a b '==' lcm b a@.</span><span>
+</span><span id="line-119"></span><span class="hs-comment">--</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- (2) @lcm a b '==' 1@ if and only if @a '==' 1@ and @b '==' 1@.</span><span>
+</span><span id="line-121"></span><span class="hs-comment">--</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- (3) @lcm a 0 '==' 0@.</span><span>
+</span><span id="line-123"></span><span class="hs-comment">--</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- (4) @lcm a 1 '==' a@.</span><span>
+</span><span id="line-125"></span><span class="hs-comment">--</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- (5) @'gcd' a b '*' lcm a b '==' a '*' b@.</span><span>
+</span><span id="line-127"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#lcm"><span class="hs-identifier hs-type">lcm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span>
+</span><span id="line-128"></span><span id="lcm"><span class="annot"><span class="annottext">lcm :: N -&gt; N -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#lcm"><span class="hs-identifier hs-var hs-var">lcm</span></a></span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-129"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#lcm"><span class="hs-identifier hs-var">lcm</span></a></span><span> </span><span id="local-6989586621679083086"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083086"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679083087"><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083087"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083086"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+forall c. Multiplicative c =&gt; c -&gt; c -&gt; c
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083087"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`div`</span></span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#gcd"><span class="hs-identifier hs-var">gcd</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083086"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><a href="#local-6989586621679083087"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-comment">--------------------------------------------------------------------------------</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- lcms -</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- | least common multiple of the given list.</span><span>
+</span><span id="line-135"></span><span class="hs-comment">--</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- __Property__ @'lcms' [] '==' 1@.</span><span>
+</span><span id="line-137"></span><span class="annot"><a href="OAlg.AbelianGroup.Euclid.html#lcms"><span class="hs-identifier hs-type">lcms</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">N</span></span><span>
+</span><span id="line-138"></span><span id="lcms"><span class="annot"><span class="annottext">lcms :: [N] -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#lcms"><span class="hs-identifier hs-var hs-var">lcms</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(N -&gt; N -&gt; N) -&gt; N -&gt; [N] -&gt; N
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) b a.
+Foldable t =&gt;
+(b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldl</span></span><span> </span><span class="annot"><span class="annottext">N -&gt; N -&gt; N
+</span><a href="OAlg.AbelianGroup.Euclid.html#lcm"><span class="hs-identifier hs-var">lcm</span></a></span><span> </span><span class="annot"><span class="annottext">N
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-139"></span></pre></body></html>
