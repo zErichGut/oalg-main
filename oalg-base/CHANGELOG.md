@@ -30,3 +30,7 @@ and this project adheres to the
 
 	Change
 	- OAlg.Entity.Sequence.ProductSymbol moved OAlg.Entity.Product.ProductSymbol
+
+## [1.2.0,0] - 2024-01-05
+	Adapttion
+	- ghc 9.4.7
