@@ -1,6 +1,6 @@
 # oalg-base
 
-A package for solving algebraic problems purely written in Haskell.
-See the contents in the provided documentation.
+A [package](https://hackage.haskell.org/package/oalg-base) for solving algebraic problems purely written in Haskell.
+
 
 
