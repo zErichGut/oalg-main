@@ -17,5 +17,3 @@ and this project adheres to the
 
 	### Fixing
 	- orthography of help
-
-	
