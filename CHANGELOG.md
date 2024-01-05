@@ -12,3 +12,10 @@ and this project adheres to the
 
 	### Addaption
 	- Addaption to oalg-top version 0.2.0.0
+
+## Released 1.0.1.1 - 2024-01-5
+
+	### Fixing
+	- orthography of help
+
+	
