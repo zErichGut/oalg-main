@@ -20,7 +20,7 @@ category:            Mathematics, Algebra, Category
 description:         Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
 
 dependencies:
-- base >= 4.17 && < 5
+- base >= 4.16 && < 5
 - oalg-base >= 1.1
 
 ghc-options:
@@ -36,6 +36,7 @@ ghc-options:
 - -Wno-name-shadowing
 - -Wno-unused-top-binds
 - -Wno-incomplete-uni-patterns
+- -Wno-unticked-promoted-constructors
 
 library:
   source-dirs: src

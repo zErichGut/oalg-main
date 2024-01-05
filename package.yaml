@@ -42,6 +42,7 @@ ghc-options:
 - -Wno-unticked-promoted-constructors
 - -Wno-name-shadowing
 - -Wno-unused-top-binds
+- -Wno-unticked-promoted-constructors
 
 library:
   source-dirs: src

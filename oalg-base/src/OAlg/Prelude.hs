@@ -46,9 +46,6 @@ module OAlg.Prelude
     -- * Additionals
     -- | Some additional definition from the standard "Prelude".
 
-    -- ** Type Equality
-  , type (~)
-
     -- ** Bounded
   , Bounded(..)
 
@@ -72,7 +69,6 @@ import Prelude( Bounded(..)
               , undefined, error
               )
 
-import Data.Type.Equality (type (~))
 import System.IO (IO,putStrLn)
 
 import OAlg.Control.Exception as Exc
