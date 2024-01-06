@@ -7,7 +7,11 @@ cabal-version: 1.12
 name:           oalg-abg
 version:        1.0.0.0
 synopsis:       Finitely generated abelian groups.
-description:    Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
+description:    Representing __finitely generated abelian groups__ ("OAlg.AbelianGroup.Definition") as finite products of __cyclic groups__ ("OAlg.AbelianGroup.ZMod") and additive homomorphisms between finitely generated abelian groups as matrices of additive homomorphisms between cyclic groups.
+                .
+                __Kernels__ and __Cokernels__ ("OAlg.AbelianGroup.KernelsAndCokernels") for additive homomorphisms between finitely generated abelian groups are provided by reducing Z-matrices to Smith Normal Form ("OAlg.AbelianGroup.Free.SmithNormalForm").
+                .
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
 category:       Mathematics, Algebra, Category
 homepage:       https://github.com/zErichGut/oalg-abg#readme
 bug-reports:    https://github.com/zErichGut/oalg-abg/issues
