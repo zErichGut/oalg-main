@@ -1,6 +1,6 @@
 name:                oalg-abg
 version:             1.0.0.0
-github:              "zErichGut/oalg-abg"
+github:              "zErichGut/oalg-main/oalg-abg"
 license:             BSD3
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
@@ -29,7 +29,7 @@ description:
   Form ("OAlg.AbelianGroup.Free.SmithNormalForm").
 
 
-  Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
+  Please see the README on GitHub at <https://github.com/zErichGut/oalg-main/blob/main/oalg-abg/README.md>
 
 dependencies:
 - base >= 4.17 && < 5
