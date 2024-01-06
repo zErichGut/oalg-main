@@ -17,7 +17,19 @@ category:            Mathematics, Algebra, Category
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
+description:
+
+  Representing __finitely generated abelian groups__ ("OAlg.AbelianGroup.Definition") as finite
+  products of __cyclic groups__ ("OAlg.AbelianGroup.ZMod") and additive homomorphisms between
+  finitely generated abelian groups as matrices of additive homomorphisms between cyclic groups.
+
+
+  __Kernels__ and __Cokernels__ ("OAlg.AbelianGroup.KernelsAndCokernels") for additive homomorphisms
+  between finitely generated abelian groups are provided by reducing Z-matrices to Smith Normal
+  Form ("OAlg.AbelianGroup.Free.SmithNormalForm").
+
+
+  Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
 
 dependencies:
 - base >= 4.16 && < 5
