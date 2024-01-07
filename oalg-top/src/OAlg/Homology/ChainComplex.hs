@@ -117,3 +117,12 @@ chainComplex' h c = ccplMap h (chainComplexZ c)
 chainComplex :: Simplical s x => Complex s n x -> ChainComplex From n AbHom
 chainComplex = chainComplex' FreeAbHom
 
+--------------------------------------------------------------------------------
+
+cplKleinBottle = chainComplex $ complex kleinBottle
+
+
+dKleinBottle :: FinList N4 AbHom
+dKleinBottle = dgArrows d where ChainComplex d = cplKleinBottle
+
+

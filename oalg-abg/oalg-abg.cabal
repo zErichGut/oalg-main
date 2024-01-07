@@ -11,10 +11,10 @@ description:    Representing __finitely generated abelian groups__ ("OAlg.Abelia
                 .
                 __Kernels__ and __Cokernels__ ("OAlg.AbelianGroup.KernelsAndCokernels") for additive homomorphisms between finitely generated abelian groups are provided by reducing Z-matrices to Smith Normal Form ("OAlg.AbelianGroup.Free.SmithNormalForm").
                 .
-                Please see the README on GitHub at <https://github.com/zErichGut/oalg-abg#readme>
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-main/blob/main/oalg-abg/README.md>
 category:       Mathematics, Algebra, Category
-homepage:       https://github.com/zErichGut/oalg-abg#readme
-bug-reports:    https://github.com/zErichGut/oalg-abg/issues
+homepage:       https://github.com/zErichGut/oalg-main#readme
+bug-reports:    https://github.com/zErichGut/oalg-main/issues
 author:         Erich.Gut
 maintainer:     zerich.gut@gmail.com
 copyright:      Erich Gut
@@ -27,7 +27,8 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/zErichGut/oalg-abg
+  location: https://github.com/zErichGut/oalg-main
+  subdir: oalg-abg
 
 library
   exposed-modules:
