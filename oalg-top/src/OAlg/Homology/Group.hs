@@ -11,8 +11,6 @@
   , StandaloneDeriving
   , GeneralizedNewtypeDeriving
   , DataKinds
-  , RankNTypes
-  , PolyKinds
 #-}
 
 -- |
@@ -33,74 +31,16 @@ import Data.Foldable
 
 import OAlg.Prelude
 
+import OAlg.Structure.Distributive
 
 import OAlg.Entity.Natural
 import OAlg.Entity.Sequence
+import qualified OAlg.Entity.Diagram as D
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Chain
 
 import OAlg.Homology.Complex
-
---------------------------------------------------------------------------------
--- (:<=:) -
-
-infix 4 :<=:
-  
--- | ordering relation for naturals 'N''.
-data n :<=: m where
-  Diff :: Any n -> Any d -> n :<=: (n + d)
-
-instance Show (n :<=: m) where
-  show (Diff n d) = join [show n," <= ",show (n++d)]
-
-nodRefl :: Any n -> n :<=: n
-nodRefl n = case prpAddNtrlR n of Refl -> Diff n W0
-
-nodPred :: n + 1 :<=: m -> n :<=: m
-nodPred (Diff (SW n) d) = case lemma1 n d of Refl -> Diff n (SW d)
-  where
-
-    lemma1 :: Any n -> Any d -> (n + S d) :~: S (n + d)
-    lemma1 n d = lemma6 (lemma5 n d) (sym $ lemma2 n d) (sym $ lemma3 n d)
-    
-    lemma2 :: Any n -> Any d -> (n + S d) :~: (n + (d + N1))
-    lemma2 n d = sbstAdd (refl n) (lemma7 d)
-    
-    lemma3 :: Any n -> Any d -> S (n + d) :~: ((n + d) + N1)
-    lemma3 n d = lemma7 (n++d)
-    
-    lemma5 :: Any n -> Any d -> (n + (d + N1)) :~: ((n + d) + N1)
-    lemma5 n d = sym $ prpAddAssoc n d (SW W0)
-    
-    lemma6 :: forall {k} (a :: k) (b :: k) (a' :: k) (b' :: k)
-            . a :~: b -> a :~: a' -> b :~: b' -> a' :~: b'
-    lemma6 Refl Refl Refl = Refl
-    
-    lemma7 :: Any n -> S n :~: n + S N0
-    lemma7 n = lemma6 (lemma8 n) (lemma9 n) Refl
-    
-    lemma8 :: Any n -> S n + N0 :~: n + S N0
-    lemma8 n = lemmaAdd1 n W0
-    
-    lemma9 :: Any n -> S n + N0 :~: S n
-    lemma9 n = prpAddNtrlR (SW n)
-  
-nodTrans :: x :<=: y -> y :<=: z -> x :<=: z
-nodTrans = error "nyi" -- Diff x (d++d')
-
---------------------------------------------------------------------------------
--- ats -
-
-ats :: Any n -> Ats n
-ats W0     = Ats
-ats (SW n) = atsSucc (ats n)
-
---------------------------------------------------------------------------------
--- atsSucc -
-
-atsSucc :: Ats n -> Ats (n+1)
-atsSucc Ats = Ats
 
 --------------------------------------------------------------------------------
 -- setFaces -
@@ -116,8 +56,6 @@ setFacesOrd Struct = set . join . amap1 faces' where
 -- | the set of the faces of the given set of simplical entities.
 setFaces :: Simplical s x => Set (s (n+1) x) -> Set (s n x)
 setFaces (Set ss) = setFacesOrd sOrd ss
-
---------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- HomologySet -
@@ -159,9 +97,9 @@ instance Simplical s x => Show (HomologySet s i x) where
   show = hsShow
 
 
-hsRefl :: Simplical s x => Any i -> Set (s i x) -> HomologySet s i x
-hsRefl W0 s0     = HomologySet0 (Set []) s0
-hsRefl (SW i) s' = HomologySet i (Set []) s' (setFaces s')
+hsInit :: Simplical s x => Any i -> Set (s i x) -> HomologySet s i x
+hsInit W0 s0     = HomologySet0 (Set []) s0
+hsInit (SW i) s' = HomologySet i (Set []) s' (setFaces s')
 
 hsPred :: Simplical s x => HomologySet s (i+1) x -> HomologySet s i x
 hsPred (HomologySet i _ s' s) = case i of
@@ -169,18 +107,66 @@ hsPred (HomologySet i _ s' s) = case i of
   SW i -> HomologySet i s' s (setFaces s)
 
 --------------------------------------------------------------------------------
+-- ConsecutiveZeroChain -
+
+newtype ConsecutiveZeroChain t n a = ConsecutiveZeroChain (D.Diagram (D.Chain t) (n+1) n a)
+  deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- HomologyGroup' -
+
+data HomologyGroup' s i x a
+  = HomologyGroup'
+      (HomologySet s i x)
+      (ConsecutiveZeroChain From N2 a)
+
+deriving instance (Simplical s x, Distributive a) => Show (HomologyGroup' s i x a)
+
+hg'Init :: Simplical s x => Any i -> Set (s i x) -> HomologyGroup' s i x a
+hg'Init n s = HomologyGroup' (hsInit n s) (error "nyi")
+
+hg'Pred :: Simplical s x => HomologyGroup' s (i+1) x a -> HomologyGroup' s i x a
+hg'Pred (HomologyGroup' hs _) = HomologyGroup' (hsPred hs) (error "nyi")
+
+--------------------------------------------------------------------------------
 -- HomologyGroup -
 
 data HomologyGroup s n i x r a
   = HomologyGroup (Set (s n x)) (i :<=: n) (HomologySet s i x)
 
-deriving instance (Simplical s x, Show (s n x)) => Show (HomologyGroup s n i x r a)
+hgIndexBase :: HomologyGroup s n i x r a -> Any n
+hgIndexBase (HomologyGroup _ i _) = nodAnySnd i
 
-hgRefl :: Simplical s x => Any n -> Set (s n x) -> HomologyGroup s n n x r a
-hgRefl n s = HomologyGroup s (nodRefl n) (hsRefl n s) 
+hgIndex :: HomologyGroup s n i x r a -> Any i
+hgIndex (HomologyGroup _ i _) = nodAnyFst i
+
+hgShowEnt :: Simplical s x => Any n -> Struct Ent (s n x) -> HomologyGroup s n i x r a -> String
+hgShowEnt n Struct (HomologyGroup s i s')
+  = join [ "HomologyGroup[",show n,"] "
+         , "(",show s,") "
+         , "(",show i,") "
+         , "(",show s',")"
+         ]
+
+hgShow :: Simplical s x => HomologyGroup s n i x r a -> String
+hgShow g = let n = hgIndexBase g in case ats n of Ats -> hgShowEnt n sEnt g
+
+instance Simplical s x => Show (HomologyGroup s n i x r a) where
+  show = hgShow
+
+hgInit :: Simplical s x => Any n -> Set (s n x) -> HomologyGroup s n n x r a
+hgInit n s = HomologyGroup s (nodRefl n) (hsInit n s) 
 
 hgPred :: Simplical s x => HomologyGroup s n (i+1) x r a -> HomologyGroup s n i x r a
-hgPred (HomologyGroup s i' hs) = HomologyGroup s (nodPred i') (hsPred hs)
+hgPred (HomologyGroup s i' s') = HomologyGroup s (nodPred i') (hsPred s')
+
+--------------------------------------------------------------------------------
+-- H -
+
+data H s n i x r a where
+  H :: HomologyGroup s n i x r a -> Chain r s i x -> Chain r s (i+1) x -> H s n i x r a
+
+  
 --------------------------------------------------------------------------------
 -- HomologyGroup -
 

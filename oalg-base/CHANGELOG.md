@@ -34,3 +34,8 @@ and this project adheres to the
 ## [1.2.0,0] - 2024-01-05
 	Adapttion
 	- ghc 9.4.7
+
+## [1.2.1,0] - 2024-01-17
+	Added
+	- Order releation for natruals
+	- Any natural is attestable

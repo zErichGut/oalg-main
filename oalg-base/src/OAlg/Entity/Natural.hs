@@ -39,8 +39,11 @@ module OAlg.Entity.Natural
   ( -- * Natrual Numbers
      N'(..), toN', type (+), type (*)
 
+    -- * Ordering
+  , (:<=:)(..), nodAnyFst, nodAnySnd, nodRefl, nodPred
+
     -- * Attest
-  , Attestable(..), Ats(..), nValue, W(..), cmpW, (++), (**), W'(..), toW'
+  , Attestable(..), Ats(..), ats, atsSucc, nValue, W(..), cmpW, (++), (**), W'(..), toW'
   , SomeNatural(..), succSomeNatural, someNatural, naturals
 
     -- * Induction
@@ -331,6 +334,21 @@ nValue :: Attestable n => p n -> N
 nValue p = nValue' p attest where
   nValue' :: p n -> Any n -> N
   nValue' _ = lengthN
+
+--------------------------------------------------------------------------------
+-- ats -
+
+-- | any natural @__n__@ is also attestable.
+ats :: Any n -> Ats n
+ats W0     = Ats
+ats (SW n) = atsSucc (ats n)
+
+--------------------------------------------------------------------------------
+-- atsSucc -
+
+-- | if @__n__@ is attestable then also @__n__ t'+' __1__@ is.
+atsSucc :: Ats n -> Ats (n+1)
+atsSucc Ats = Ats
 
 --------------------------------------------------------------------------------
 -- SomeNatural -
@@ -908,6 +926,78 @@ itfW n m = join $ tween "\n" $ L.map join $ splt nats where
   splt [] = []
   splt ss = s : splt ss' where
     (s,ss') = L.splitAt 4 ss
+
+--------------------------------------------------------------------------------
+-- (:<=:) -
+
+infix 4 :<=:
+  
+-- | ordering relation for naturals 'N''.
+data n :<=: m where
+  Add :: Any n -> Any d -> n :<=: (n + d)
+
+instance Show (n :<=: m) where
+  show (Add n d) = join [show n," <= ",show (n++d)]
+
+--------------------------------------------------------------------------------
+-- nodAnyFst -
+
+-- | the induced witness of the first component.
+nodAnyFst :: i :<=: n -> Any i
+nodAnyFst (Add i _) = i
+
+--------------------------------------------------------------------------------
+-- nodAnySnd -
+
+-- | the induced witness of the second component.
+nodAnySnd :: i :<=: n -> Any n
+nodAnySnd (Add i d) = i++d
+
+--------------------------------------------------------------------------------
+-- nodRefl -
+
+-- | for any @__n__@ holds that @(':<=:')@ is reflexive.
+nodRefl :: Any n -> n :<=: n
+nodRefl n = case prpAddNtrlR n of Refl -> Add n W0
+
+--------------------------------------------------------------------------------
+-- nodPred -
+
+-- | if @__n__ t'+' __1__@ is smaler or equal to @__m__@ then @__n__@ is also smaler of equal
+-- to @__m__@.
+nodPred :: n + 1 :<=: m -> n :<=: m
+nodPred (Add (SW n) d) = case lemma1 n d of Refl -> Add n (SW d)
+  where
+
+    lemma1 :: Any n -> Any d -> (n + S d) :~: S (n + d)
+    lemma1 n d = lemma6 (lemma5 n d) (sym $ lemma2 n d) (sym $ lemma3 n d)
+    
+    lemma2 :: Any n -> Any d -> (n + S d) :~: (n + (d + N1))
+    lemma2 n d = sbstAdd (refl n) (lemma7 d)
+    
+    lemma3 :: Any n -> Any d -> S (n + d) :~: ((n + d) + N1)
+    lemma3 n d = lemma7 (n++d)
+    
+    lemma5 :: Any n -> Any d -> (n + (d + N1)) :~: ((n + d) + N1)
+    lemma5 n d = sym $ prpAddAssoc n d (SW W0)
+    
+    lemma6 :: forall {k} (a :: k) (b :: k) (a' :: k) (b' :: k)
+            . a :~: b -> a :~: a' -> b :~: b' -> a' :~: b'
+    lemma6 Refl Refl Refl = Refl
+    
+    lemma7 :: Any n -> S n :~: n + S N0
+    lemma7 n = lemma6 (lemma8 n) (lemma9 n) Refl
+    
+    lemma8 :: Any n -> S n + N0 :~: n + S N0
+    lemma8 n = lemmaAdd1 n W0
+    
+    lemma9 :: Any n -> S n + N0 :~: S n
+    lemma9 n = prpAddNtrlR (SW n)
+
+{-  
+nodTrans :: x :<=: y -> y :<=: z -> x :<=: z
+nodTrans = error "nyi" -- Add x (d++d')
+-}
 
 ----------------------------------------
 -- wi -
