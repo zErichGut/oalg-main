@@ -31,11 +31,11 @@ and this project adheres to the
 	Change
 	- OAlg.Entity.Sequence.ProductSymbol moved OAlg.Entity.Product.ProductSymbol
 
-## [1.2.0,0] - 2024-01-05
+## [1.2.0.0] - 2024-01-05
 	Adapttion
 	- ghc 9.4.7
 
-## [1.2.1,0] - 2024-01-17
+## [1.2.1.0] - 2024-01-17
 	Added
 	- Order releation for natruals
 	- Any natural is attestable
