@@ -7,7 +7,7 @@
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
-  ,  GADTs
+  , GADTs
   , StandaloneDeriving
   , GeneralizedNewtypeDeriving
   , DataKinds
@@ -31,11 +31,20 @@ import Data.Foldable
 
 import OAlg.Prelude
 
+import OAlg.Data.Singleton
+
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
+import OAlg.Structure.Exponential
 
 import OAlg.Entity.Natural
+import OAlg.Entity.FinList
 import OAlg.Entity.Sequence
 import qualified OAlg.Entity.Diagram as D
+import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Chain
@@ -58,6 +67,12 @@ setFaces :: Simplical s x => Set (s (n+1) x) -> Set (s n x)
 setFaces (Set ss) = setFacesOrd sOrd ss
 
 --------------------------------------------------------------------------------
+-- ConsecutiveZeroChain -
+
+newtype ConsecutiveZeroChain t n a = ConsecutiveZeroChain (D.Diagram (D.Chain t) (n+1) n a)
+  deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
 -- HomologySet -
 
 data HomologySet s i x where
@@ -69,6 +84,8 @@ hsIndex :: HomologySet s i x -> Any i
 hsIndex (HomologySet0 _ _)    = W0
 hsIndex (HomologySet i _ _ _) = SW i
 
+hsIndex' :: HomologySet s (i+1) x -> Any i
+hsIndex' (HomologySet i _ _ _) = i
 
 hsShowEnt0 :: Struct Ent (s N1 x) -> Struct Ent (s N0 x)
   -> HomologySet s N0 x -> String
@@ -106,11 +123,58 @@ hsPred (HomologySet i _ s' s) = case i of
   W0   -> HomologySet0 s' s
   SW i -> HomologySet i s' s (setFaces s)
 
---------------------------------------------------------------------------------
--- ConsecutiveZeroChain -
+hsRepBoundary'Struct :: (Ring r, Commutative r, Simplical s x, Attestable i)
+  => Struct Ent (s (i+1) x)
+  -> Struct Ent (s i x)
+  -> Struct Ord' (s (i+1) x)
+  -> Struct Ord' (s i x)
+  -> HomologySet s i x
+  -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
+hsRepBoundary'Struct Struct Struct Struct Struct h = case h of
+  HomologySet0 s1 s0     -> Representable HomBoundary s1 s0
+  HomologySet _ s'' s' _ -> Representable HomBoundary s'' s'
 
-newtype ConsecutiveZeroChain t n a = ConsecutiveZeroChain (D.Diagram (D.Chain t) (n+1) n a)
-  deriving (Show,Eq)
+hsRepBoundary' :: (Ring r, Commutative r, Simplical s x)
+  => HomologySet s i x
+  -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
+hsRepBoundary' h = case ats $ hsIndex h of
+  Ats -> hsRepBoundary'Struct sEnt sEnt sOrd sOrd h
+
+hsRepBoundaryStruct :: (Ring r, Commutative r, Simplical s x, Attestable i)
+  => Struct Ent (s (i+1) x)
+  -> Struct Ent (s i x)
+  -> Struct Ord' (s (i+1) x)
+  -> Struct Ord' (s i x)
+  -> HomologySet s (i+1) x
+  -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
+hsRepBoundaryStruct Struct Struct Struct Struct (HomologySet _ _ s' s)
+  = Representable HomBoundary s' s
+
+hsRepBoundary :: (Ring r, Commutative r, Simplical s x)
+  => HomologySet s (i+1) x
+  -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
+hsRepBoundary h = case ats $ hsIndex' h of
+  Ats -> hsRepBoundaryStruct sEnt sEnt sOrd sOrd h
+
+hsRepBoundaryConsZero :: (Ring r, Commutative r, Simplical s x)
+  => HomologySet s i x -> ConsecutiveZeroChain From N2 (Matrix r)
+hsRepBoundaryConsZero h = ConsecutiveZeroChain $ rep h where
+  rep :: (Ring r, Commutative r, Simplical s x)
+      => HomologySet s i x -> D.Diagram (D.Chain From) N3 N2 (Matrix r)
+  rep h = D.DiagramChainFrom (start m') (m' :| m :| Nil) where
+    m' = mtx' h
+    m  = mtx h
+
+  mtx' :: (Ring r, Commutative r, Simplical s x)
+      => HomologySet s i x -> Matrix r
+  mtx' h = repMatrix $ hsRepBoundary' h
+
+  mtx :: (Ring r, Commutative r, Simplical s x)
+      => HomologySet s i x -> Matrix r
+  mtx (HomologySet0 _ s0)      = zero (u ^ n0 :> u ^ 0) where
+    n0 = lengthN s0
+    u = dim unit
+  mtx h@(HomologySet _ _ _ _) = repMatrix $ hsRepBoundary h
 
 --------------------------------------------------------------------------------
 -- HomologyGroup' -
@@ -159,6 +223,9 @@ hgInit n s = HomologyGroup s (nodRefl n) (hsInit n s)
 
 hgPred :: Simplical s x => HomologyGroup s n (i+1) x r a -> HomologyGroup s n i x r a
 hgPred (HomologyGroup s i' s') = HomologyGroup s (nodPred i') (hsPred s')
+
+hgRepBoundary :: HomologyGroup s n i x r a -> ConsecutiveZeroChain From N2 (Matrix r)
+hgRepBoundary = error "nyi"
 
 --------------------------------------------------------------------------------
 -- H -
