@@ -98,10 +98,8 @@ type ChainComplex = ConsecutiveZero From
 -- HomologySet -
 
 data HomologySet s i x where
-  HomologySet0 :: Set (s N1 x) -> Set (s N0 x) -> HomologySet s N0 x
-  HomologySet  :: Any i -> Set (s (i+2) x) -> Set (s (i+1) x) -> Set (s i x)
-               -> HomologySet s (i+1) x
-               
+  HomologySet  :: Set (s (i+1) x) -> Set (s i x) -> HomologySet s i x
+{-               
 hsIndex :: HomologySet s i x -> Any i
 hsIndex (HomologySet0 _ _)    = W0
 hsIndex (HomologySet i _ _ _) = SW i
@@ -115,53 +113,50 @@ hsShowEnt0 Struct Struct (HomologySet0 s1 s0)
   = join [ "(", show s1, ") "
          , "(", show s0, ")"
          ]
+-}
 
-hsShowEnt :: Struct Ent (s (i+2) x) -> Struct Ent (s (i+1) x) -> Struct Ent (s i x)
-  -> HomologySet s (i+1) x -> String
-hsShowEnt Struct Struct Struct (HomologySet _ s'' s' s)
-  = join [ "(", show s'', ") "
-         , "(", show s' , ") "
+hsShowEnt :: Struct Ent (s (i+1) x) -> Struct Ent (s i x)
+  -> HomologySet s i x -> String
+hsShowEnt Struct Struct (HomologySet s' s)
+  = join [ "(", show s' , ") "
          , "(", show s  , ")"
          ]
 
-hsShow :: Simplical s x => HomologySet s i x -> String
-hsShow s = join
-  [ "HomologySet[", show $ hsIndex s, "] "
-  , case s of
-      HomologySet0 _ _    -> hsShowEnt0 sEnt sEnt s
-      HomologySet i _ _ _ -> case ats i of Ats -> hsShowEnt sEnt sEnt sEnt s
+hsShow :: Simplical s x => Any i -> HomologySet s i x -> String
+hsShow i s = join
+  [ "HomologySet[", show i, "] "
+  , case ats i of Ats -> hsShowEnt sEnt sEnt s
   ]
 
-instance Simplical s x => Show (HomologySet s i x) where
-  show = hsShow
+
+instance (Simplical s x, Attestable i) => Show (HomologySet s i x) where
+  show = hsShow attest
 
 
-hsInit :: Simplical s x => Any i -> Set (s i x) -> HomologySet s i x
-hsInit W0 s0     = HomologySet0 (Set []) s0
-hsInit (SW i) s' = HomologySet i (Set []) s' (setFaces s')
+hsInit :: Set (s i x) -> HomologySet s i x
+hsInit s = HomologySet (Set []) s
 
 hsPred :: Simplical s x => HomologySet s (i+1) x -> HomologySet s i x
-hsPred (HomologySet i _ s' s) = case i of
-  W0   -> HomologySet0 s' s
-  SW i -> HomologySet i s' s (setFaces s)
+hsPred (HomologySet _ s) = HomologySet s (setFaces s)
+
 
 hsRepBoundaryStruct :: (Ring r, Commutative r, Simplical s x, Attestable i)
-  => Struct Ent (s (i+1) x)
+  => Any i
+  -> Struct Ent (s (i+1) x)
   -> Struct Ent (s i x)
   -> Struct Ord' (s (i+1) x)
   -> Struct Ord' (s i x)
   -> HomologySet s i x
   -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
-hsRepBoundaryStruct Struct Struct Struct Struct h = case h of
-  HomologySet0 s1 s0     -> Representable HomBoundary s1 s0
-  HomologySet _ s'' s' _ -> Representable HomBoundary s'' s'
+hsRepBoundaryStruct _ Struct Struct Struct Struct (HomologySet s' s)
+  = Representable HomBoundary s' s
 
 hsRepBoundary :: (Ring r, Commutative r, Simplical s x)
-  => HomologySet s i x
-  -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
-hsRepBoundary h = case ats $ hsIndex h of
-  Ats -> hsRepBoundaryStruct sEnt sEnt sOrd sOrd h
+  => Any i
+  -> HomologySet s i x -> Representable r (HomBoundary r s) (Chain r s (i+1) x) (Chain r s i x)
+hsRepBoundary i = case ats i of Ats -> hsRepBoundaryStruct i sEnt sEnt sOrd sOrd
 
+{-
 --------------------------------------------------------------------------------
 -- HomologyGroup' -
 
@@ -177,6 +172,7 @@ hg'Init n s = HomologyGroup' (hsInit n s) (error "nyi")
 
 hg'Pred :: Simplical s x => HomologyGroup' s (i+1) x a -> HomologyGroup' s i x a
 hg'Pred (HomologyGroup' hs _) = HomologyGroup' (hsPred hs) (error "nyi")
+-}
 
 --------------------------------------------------------------------------------
 -- HomologyGroup -
@@ -191,22 +187,24 @@ hgIndexBase (HomologyGroup _ i _) = nodAnySnd i
 hgIndex :: HomologyGroup a s n i x -> Any i
 hgIndex (HomologyGroup _ i _) = nodAnyFst i
 
-hgShowEnt :: Simplical s x => Any n -> Struct Ent (s n x) -> HomologyGroup a s n i x -> String
-hgShowEnt n Struct (HomologyGroup s i s')
-  = join [ "HomologyGroup[",show n,"] "
+hgShowEnt :: Simplical s x => Struct Ent (s n x) -> HomologyGroup a s n i x -> String
+hgShowEnt Struct (HomologyGroup s i'n s')
+  = join [ "HomologyGroup[",show $ nodAnySnd i'n,"] "
          , "(",show s,") "
-         , "(",show i,") "
-         , "(",show s',")"
+         , "(",show i'n,") "
+         , "(", case ats $ nodAnyFst i'n of Ats -> show s',")"
          ]
 
 hgShow :: Simplical s x => HomologyGroup a s n i x -> String
-hgShow g = let n = hgIndexBase g in case ats n of Ats -> hgShowEnt n sEnt g
+hgShow g = let n = hgIndexBase g in case ats n of Ats -> hgShowEnt sEnt g
+
 
 instance Simplical s x => Show (HomologyGroup a s n i x) where
   show = hgShow
 
-hgInit :: Simplical s x => Any n -> Set (s n x) -> HomologyGroup a s n n x
-hgInit n s = HomologyGroup s (nodRefl n) (hsInit n s) 
+
+hgInit :: Any n -> Set (s n x) -> HomologyGroup a s n n x
+hgInit n s = HomologyGroup s (nodRefl n) (hsInit s) 
 
 
 hgPred :: Simplical s x => HomologyGroup a s n (i+1) x -> HomologyGroup a s n i x
@@ -215,18 +213,20 @@ hgPred (HomologyGroup s i' s') = HomologyGroup s (nodPred i') (hsPred s')
 
 hgRepBoundary :: (Ring r, Commutative r, Simplical s x)
   => HomologyGroup a s n i x -> ChainComplex (i+2) (Matrix r)
-hgRepBoundary (HomologyGroup _ _ s) = conZero $ bnd s where
+hgRepBoundary (HomologyGroup _ i s) = conZero $ bnd (nodAnyFst i) s where
   
   conZero :: Oriented m => FinList (i+2) m -> ConsecutiveZero From (i+2) m
   conZero ms@(m:|_) = ConsecutiveZero (D.DiagramChainFrom (start m) ms)
 
   bnd :: (Ring r, Commutative r, Simplical s x)
-    => HomologySet s i x -> FinList (i+2) (Matrix r)
-  bnd s = (repMatrix $ hsRepBoundary s) :| case s of
-    HomologySet _ _ _ _  -> bnd (hsPred s)
-    HomologySet0 _ s0    -> zero (u ^ n0 :> u ^ 0) :| Nil where
+    => Any i -> HomologySet s i x -> FinList (i+2) (Matrix r)
+  bnd i s = (repMatrix $ hsRepBoundary i s) :| case i of
+    SW i' -> bnd i' (hsPred s)
+    W0    -> zero (u ^ n0 :> u ^ 0) :| Nil where
+      HomologySet _ s0 = s
       n0 = lengthN s0
       u  = dim unit
+
 
 --------------------------------------------------------------------------------
 -- H -
