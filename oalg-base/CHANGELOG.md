@@ -35,7 +35,8 @@ and this project adheres to the
 	Adapttion
 	- ghc 9.4.7
 
-## [1.2.1.0] - 2024-01-17
+## [1.2.1.0] - 2024-01-22
 	Added
 	- Order releation for natruals
 	- Any natural is attestable
+        - XStandard for matrices over Z

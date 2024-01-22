@@ -52,6 +52,8 @@ import OAlg.Homology.Chain
 
 import OAlg.Homology.Complex
 
+import OAlg.AbelianGroup.Definition
+
 --------------------------------------------------------------------------------
 -- setFaces -
 

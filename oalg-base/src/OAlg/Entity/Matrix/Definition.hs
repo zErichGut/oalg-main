@@ -559,6 +559,9 @@ instance ( Additive x, FibredOriented x
   => XStandardOrtOrientation (Matrix x) where
   xStandardOrtOrientation = xMatrix 0.8 xStandardOrtOrientation xStandardOrientationMatrix
 
+--------------------------------------------------------------------------------
+-- Matrix Z - XStandard -
+
 instance XStandardOrtSite From (Matrix Z) where
   xStandardOrtSite = xoFrom xStandardOrtOrientation
   
@@ -566,3 +569,10 @@ instance XStandardOrtSiteFrom (Matrix Z)
 
 instance XStandardOrtSite To (Matrix Z) where
   xStandardOrtSite = xoTo xStandardOrtOrientation
+
+instance XStandard (Matrix Z) where
+  xStandard = xosOrt (xStandardOrtSite :: XOrtSite From (Matrix Z))
+  
+dstXStdMatrixZ :: Int -> (Matrix Z -> String) -> IO ()
+dstXStdMatrixZ n f = getOmega >>= putDistribution n (amap1 f xStandard)
+
