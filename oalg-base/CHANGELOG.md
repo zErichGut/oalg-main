@@ -44,3 +44,4 @@ and this project adheres to the
 - Order releation for natruals
 - Any natural is attestable
 - XStandard for matrices over Z
+- Liftable

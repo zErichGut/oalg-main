@@ -20,7 +20,7 @@ import OAlg.Prelude
 --------------------------------------------------------------------------------
 -- ArithmeticException -
 
--- | arithmetic exceptions which are sub exceptions from 'SomeOAlgException'.
+-- | arithmetic exceptions which are sub exceptions of 'SomeOAlgException'.
 data ArithmeticException
   = NotAddable
   | NotMultiplicable

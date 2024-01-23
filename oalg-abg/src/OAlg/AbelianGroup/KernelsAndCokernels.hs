@@ -125,7 +125,7 @@ abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
 
       fct :: ZMod -> ZModHom -> ZModHom
       fct z h = zmh (z:>end h) (toZ h)
-      
+
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo -
 

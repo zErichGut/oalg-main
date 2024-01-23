@@ -46,6 +46,9 @@ module OAlg.Entity.Slice.Definition
     -- ** Injective
   , slfLimitsInjective
 
+    -- * Liftables
+  , Liftable(..), liftBase, lift
+  , LiftableException(..)
     -- * X
   , xSliceTo, xSliceFrom
   , xosXOrtSiteToSliceFactorTo
@@ -540,4 +543,89 @@ instance XStandardOrtSite From (SliceFactor To Proxy OS) where
       return (SliceFactor s (SliceTo i (b:>p)) (a:>b))
 
 instance XStandardOrtSiteFrom (SliceFactor To Proxy OS)
+
+
+--------------------------------------------------------------------------------
+-- LiftableException -
+
+-- | liftable exceptions which are sub exceptions of 'SomeOAlgException'.
+data LiftableException
+  = NotLiftable
+  deriving (Eq,Show)
+
+instance Exception LiftableException where
+  toException   = oalgExceptionToException
+  fromException = oalgExceptionFromException
+
+--------------------------------------------------------------------------------
+-- Liftable -
+
+-- | liftable slices.
+--
+-- __Property__ Let @l@ be in @'Liftable' __p__ __s__ __i__ __c__@ for an @__i__@-sliced 'Oriented'
+-- structure @__c__@, then holds:
+--
+-- (1) If @l@ matches @'LiftableFrom' c lift@, then holds:
+-- For all @f@ in @'Slice' 'From' __i__ __c__@ holds:
+--
+--     (1) If @'end' c '/=' 'end' ('slice' f)@ then the evaluation of @lift f@ ends up in a
+--     'NotLiftable'-exception.
+--
+--     (2) If @'end' c '==' 'end' ('slice' f)@ then @lift f@ is 'valid' and
+--     @'slice' f '==' c '*' 'slice' (lift f)@.
+--
+-- (2) If @l@ matches @'LiftableTo' c lift@, then holds:
+-- For all @t@ in @'Slice' 'To' __i__ __c__@ holds:
+--
+--     (1) If @'start' c '/=' 'start' ('slice' t)@ then the evaluation of @lift t@ ends up in a
+--     'NotLiftable'-exception.
+--
+--     (2) If @'start' c '==' 'start' ('slice' t)@ then @lift t@ is 'valid' and
+--     @'slice' t '==' 'slice' (lift l) '*' c@.
+data Liftable s i c where
+  LiftableFrom :: c -> (Slice From i c -> Slice From i c) -> Liftable From i c
+  LiftableTo  :: c -> (Slice To i c -> Slice To i c) -> Liftable To i c
+
+instance Show c => Show (Liftable s i c) where
+  show (LiftableFrom c _) = join ["LiftableFrom (",show c,") lift"]
+  show (LiftableTo c _)   = join ["LiftableTo (",show c,") lift"]
+
+relLiftable :: (Multiplicative c, Sliced i c)
+  => i c -> XOrtOrientation c -> Liftable s i c -> Statement
+relLiftable i xo (LiftableFrom c lift)
+  = And [ Label "c" :<=>: valid c
+        , Forall xf (\f
+            -> And [ Label "f" :<=>: valid f
+                   , let f' = lift f in case end c == end (slice f) of
+                       False -> (valid f' :=> throw implError)
+                                  `Catch` (\e -> case e of NotLiftable -> SValid)
+                       True  -> (slice f == c * slice f')
+                                  :?> Params ["c":=show c,"f":=show f,"lift f":=show f']
+                   ]
+                    )
+        ]
+    
+  where implError = ImplementationError "unliftable dos not throw a NotLiftable-exception"
+        ip = slicePoint i
+  
+        xf = amap1 (SliceFrom i)
+           $ xOneOfXW [ (9,xoArrow xo (ip :> end c))
+                      , (1,xoPoint xo >>= xoArrow xo . (ip:>))
+                      ]
+  
+--------------------------------------------------------------------------------
+-- liftBase -
+
+-- | the underlying factor.
+liftBase :: Liftable s i c -> c
+liftBase (LiftableFrom c _) = c
+liftBase (LiftableTo c _) = c
+
+--------------------------------------------------------------------------------
+-- lift -
+
+-- | the lifting map.
+lift :: Liftable s i c -> Slice s i c -> Slice s i c
+lift (LiftableFrom _ l) = l
+lift (LiftableTo _ l) = l
 
