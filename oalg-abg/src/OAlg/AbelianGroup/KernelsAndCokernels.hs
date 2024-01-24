@@ -500,29 +500,18 @@ abhSliceFreeAdjunction = slcAdjunction
 --------------------------------------------------------------------------------
 -- abhCokernel -
 
--- | cokernel for a given additive homomorphism.
---
--- @
---           w          
---     c <------- e'' 
---     ^           | 
---   u |        q' | 
---     |           | 
---     |    h'     v    
---    s' --------> e' -----> h'L
---     |           |          |
---  p  |         q |          | u'
---     |           |          |
---     v     h     v    w'    v
---     s --------> e ------> c'L
--- @
-abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
-abhCokernel d@(DiagramParallelRL _ _ (h:|Nil))
+-- | cokernel for a given additive homomorphism and for any proxy dimension @__k__@ a liftable with
+-- base equal to the shell factor of the cokernel.
+abhCokernelLiftable :: CokernelDiagram N1 AbHom
+  -> (Cokernel N1 AbHom, Any k -> Liftable From (Free k) AbHom)
+abhCokernelLiftable d@(DiagramParallelRL _ _ (h:|Nil))
   = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
   ( GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
     , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
-    ) -> LimesInjective w'Cn w'Univ where
-
+    ) -> (LimesInjective w'Cn w'Univ,lft) where
+    
+    ----------------------------------------
+    -- cokernel -
     adj@(Adjunction lAdj _ _ _) = abhSliceFreeAdjunction ne'
     
     q'SliceTo = SliceTo ne' q'    
@@ -568,6 +557,34 @@ abhCokernel d@(DiagramParallelRL _ _ (h:|Nil))
       yFrom = SliceFactor h'L t y
 
       y = universalFactor h'Coker (ConeCokernel (diagram h'Coker) xq)
+
+    ----------------------------------------
+    -- liftable -
+    lft k  = LiftableFrom w' (l k) where
+      l :: Any k -> Slice From (Free k) AbHom -> Slice From (Free k) AbHom
+      l k (SliceFrom k' f) = case ats k of
+        Ats | start f /= slicePoint k' -> throw $ InvalidData "Slice"
+            | end f /= end w'          -> throw $ NotLiftable
+            | otherwise                -> error "nyi"
+      
+-- | cokernel for a given additive homomorphism.
+--
+-- @
+--           w          
+--     c <------- e'' 
+--     ^           | 
+--   u |        q' | 
+--     |           | 
+--     |    h'     v    
+--    s' --------> e' -----> h'L
+--     |           |          |
+--  p  |         q |          | u'
+--     |           |          |
+--     v     h     v    w'    v
+--     s --------> e ------> c'L
+-- @
+abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
+abhCokernel = fst . abhCokernelLiftable
 
 --------------------------------------------------------------------------------
 -- abhCokernels -

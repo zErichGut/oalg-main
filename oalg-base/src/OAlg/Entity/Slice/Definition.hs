@@ -11,6 +11,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
+{-# LANGUAGE RankNTypes #-}
+
 
 -- |
 -- Module      : OAlg.Entity.Slice.Definition
@@ -49,6 +51,10 @@ module OAlg.Entity.Slice.Definition
     -- * Liftables
   , Liftable(..), liftBase, lift
   , LiftableException(..)
+
+    -- ** Duality
+  , coLiftable
+  
     -- * X
   , xSliceTo, xSliceFrom
   , xosXOrtSiteToSliceFactorTo
@@ -84,6 +90,7 @@ import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
 
 import OAlg.Data.Symbol
+
 --------------------------------------------------------------------------------
 -- Sliced -
 
@@ -140,6 +147,16 @@ coSlice :: Singleton1 i => Slice s i c -> Dual (Slice s i c)
 coSlice (SliceFrom _ f) = SliceTo unit1 (Op f)
 coSlice (SliceTo _ f)   = SliceFrom unit1 (Op f)
 
+slFromOpOp :: Singleton1 i => Slice s i (Op (Op c)) -> Slice s i c
+slFromOpOp (SliceFrom _ (Op (Op f))) = SliceFrom unit1 f
+slFromOpOp (SliceTo _ (Op (Op t))) = SliceTo unit1 t
+
+slSiteBidual :: Slice s i c -> Dual (Dual s) :~: s
+slSiteBidual (SliceFrom _ _) = Refl
+slSiteBidual (SliceTo _ _) = Refl
+
+coSliceInv :: Singleton1 i => Dual (Dual s) :~: s -> Dual (Slice s i c) -> Slice s i c
+coSliceInv Refl = slFromOpOp . coSlice
 
 --------------------------------------------------------------------------------
 -- Slice - Validable -
@@ -590,8 +607,22 @@ instance Show c => Show (Liftable s i c) where
   show (LiftableFrom c _) = join ["LiftableFrom (",show c,") lift"]
   show (LiftableTo c _)   = join ["LiftableTo (",show c,") lift"]
 
+--------------------------------------------------------------------------------
+-- Liftable - Dual -
+
+type instance Dual (Liftable s i c) = Liftable (Dual s) i (Op c)
+
+coLiftable :: Singleton1 i => Dual (Dual s) :~: s -> Liftable s i c -> Dual (Liftable s i c)
+coLiftable r (LiftableFrom c lift) = LiftableTo (Op c) (coSlice . lift . coSliceInv r)
+coLiftable r (LiftableTo c lift) = LiftableFrom (Op c) (coSlice . lift . coSliceInv r)
+
+--------------------------------------------------------------------------------
+-- Liftable - Valid -
+
 relLiftable :: (Multiplicative c, Sliced i c)
   => i c -> XOrtOrientation c -> Liftable s i c -> Statement
+relLiftable _ xo l@(LiftableTo _ _)
+  = relLiftable unit1 (coXOrtOrientation xo) (coLiftable Refl l)
 relLiftable i xo (LiftableFrom c lift)
   = And [ Label "c" :<=>: valid c
         , Forall xf (\f
@@ -612,7 +643,11 @@ relLiftable i xo (LiftableFrom c lift)
            $ xOneOfXW [ (9,xoArrow xo (ip :> end c))
                       , (1,xoPoint xo >>= xoArrow xo . (ip:>))
                       ]
-  
+
+instance (Multiplicative c, Sliced i c, XStandardOrtOrientation c)
+  => Validable (Liftable s i c) where
+  valid l = Label "Liftable" :<=>: relLiftable unit1 xStandardOrtOrientation l
+                                      
 --------------------------------------------------------------------------------
 -- liftBase -
 
