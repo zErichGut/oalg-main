@@ -10,15 +10,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
-
+{-# LANGUAGE RankNTypes #-}
 -- |
 -- Module      : OAlg.Entity.Slice.Free
--- Description : slicing by free points
+-- Description : slicing by free points.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- sliced structures with an assigned /free/ 'Point' of some given /dimension/.
+-- sliced structures with an assigned /free/ 'Point' of some given /dimension/ and
+-- with /specialized/ limits.
 module OAlg.Entity.Slice.Free
   (
     -- * Free
@@ -32,13 +33,17 @@ module OAlg.Entity.Slice.Free
 
     -- ** Kernel
   , KernelFree, KernelDiagramFree
+  
     -- ** Cokernel
-  , CokernelDiagramFree    
+  , CokernelDiagramFree
+  , CokernelLiftableFree(..), clfCokernel, clfLiftableFree
 
     -- ** Pullback
   , PullbackFree, PullbackDiagramFree  
   
   ) where
+
+import Control.Monad (join)
 
 import Data.Typeable
 import Data.List ((++))
@@ -137,7 +142,7 @@ class XStandardSomeFreeSliceFrom c where
 
 -- | predicate for a limes with a /free/ tip of its universal cone.
 --
--- __Property__ Let @'LimesFree k l@ be in
+-- __Property__ Let @'LimesFree' k l@ be in
 -- @'LimesFree' __s__ __p__ __t__ __n__ __m__ __a__@ and
 -- then holds: @'slicePoint' k '==' t@ where @t = 'tip' ('universalCone' l)@. 
 data LimesFree s p t n m a where
@@ -249,4 +254,54 @@ type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
 
 -- | pullback of a diagram with free points.
 type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
+
+--------------------------------------------------------------------------------
+-- CokernelLiftableFree -
+
+-- | predicate for a liftable cokernel.
+--
+-- __Property__ Let @'CokernelLiftableFree' c l@ be in @'CokernelLiftableFree' __c__@ for a
+-- 'Distributive' structure @__c__@, then holds:
+-- For any @k@ in @'Any' __k__@ holds:
+-- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
+data CokernelLiftableFree c
+  = CokernelLiftableFree (Cokernel N1 c) (forall (k :: N') . Any k -> Liftable From (Free k) c)
+
+instance Oriented c => Show (CokernelLiftableFree c) where
+  show (CokernelLiftableFree c _) = join ["CokernelLiftableFree (", show c, ")"]
+
+
+instance (Distributive c, XStandardOrtSiteFrom c, XStandardOrtOrientation c)
+  => Validable (CokernelLiftableFree c) where
+  valid (CokernelLiftableFree c l) = Label "CokernelLiftable" :<=>:
+    And [ Label "c" :<=>: valid c
+        , Forall xk (\(SomeNatural k) -> vldLftFree k cf (l k))  
+        ]
+    where xk = amap1 someNatural $ xNB 0 30
+          cf = cokernelFactor $ universalCone c
+          
+          vldLftFree :: (Distributive c, XStandardOrtOrientation c)
+            => Any k -> c -> Liftable From (Free k) c -> Statement
+          vldLftFree k cf lk 
+            = And [ Label "l k" :<=>: valid lk
+                  , (cf == liftBase lk)
+                    :?> Params [ "k":=show k
+                               , "cokernelFactor (universalCone c)":=show cf
+                               , "l k":=show lk
+                               ]
+                  ]
+
+--------------------------------------------------------------------------------
+-- clfCokernel -
+
+-- | the underlying cokernel.
+clfCokernel :: CokernelLiftableFree c -> Cokernel N1 c
+clfCokernel (CokernelLiftableFree c _) = c
+
+--------------------------------------------------------------------------------
+-- clfLiftableFree -
+
+-- | the induced liftable.
+clfLiftableFree :: CokernelLiftableFree c -> Any k -> Liftable From (Free k) c
+clfLiftableFree (CokernelLiftableFree _ l) = l
 

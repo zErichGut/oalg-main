@@ -6,7 +6,7 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DataKinds, RankNTypes #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.AbelianGroup.KernelsAndCokernels
@@ -18,6 +18,7 @@
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
+{-    
     -- * Kernels
     abhKernels
 
@@ -29,7 +30,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Adjunction
   , abhSliceFreeAdjunction
-
+-}
   )
   where
 
@@ -72,6 +73,77 @@ import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
 import OAlg.AbelianGroup.Free
 
+
+--------------------------------------------------------------------------------
+-- abhCokernelFree -
+
+-- | the liftable free cokernel of a free cokernel diagram.
+--
+--  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
+-- @cf = 'abhCokernelFree' d@, then holds: Let @c = 'clfCokernel' cf@ in
+--
+-- (1) @'diagram' c '==' d@.
+--
+-- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
+abhCokernelFree :: CokernelDiagramFree N1 AbHom -> CokernelLiftableFree AbHom
+abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
+  = CokernelLiftableFree (LimesInjective (ConeCokernel d coker) univ) lftAny where
+
+  --------------------
+  -- cokernel -
+
+  m = abhz h
+  SmithNormalForm o ds (RowTrafo ra) _ = smithNormalForm m
+  Inv a aInv = amap GLTGL ra
+  AbHom aInv' = zabh aInv
+  p = lengthN ds
+  q = lengthN (rows m) >- (o + p)
+
+  d0 = dim (ZMod 0)
+  gp = Dim $ productSymbol $ amap1 (ZMod . prj) ds
+  gq = d0 ^ q
+  gpq = gp * gq
+  
+  coker = ( AbHom $ mtxJoin
+          $ matrixBlc [gp,gq] [d0^o,d0^p,gq] [(matrix gp (d0^p) ps,0,1),(one gq,1,2)]
+          )
+        * zabh a where
+    ps = [(zmh (ZMod 0 :> ZMod (prj d)) 1,i,i)| (d,i) <- ds `zip` [0..]]
+    -- @0 < d@ for all d in ds as ds is the diagonal of the smith normal form
+
+  univ :: CokernelCone N1 AbHom -> AbHom
+  univ (ConeCokernel _ (AbHom x))
+    = AbHom
+    $ Matrix (rows x) gpq
+    $ rcets $ Row $ PSequence
+    $ map (\(cl,j) -> (cl,j>-o))
+    $ fcts o (map fst $ listN gp)
+    $ listN $ etsrc $ mtxxs (x*aInv')
+    where
+      
+      fcts :: (Enum j, Ord j) => j -> [ZMod] -> [(Col i ZModHom,j)] -> [(Col i ZModHom,j)] 
+      fcts _ [] cls = cls
+      fcts _ _ []   = []
+      fcts j (z:zs) cls@((cl,j'):cls') = if j < j'
+        then fcts (succ j) zs cls
+        else ((amap1 (fct z) cl,j'):fcts (succ j) zs cls')
+
+      fct :: ZMod -> ZModHom -> ZModHom
+      fct z h = zmh (z:>end h) (toZ h)
+
+
+  --------------------
+  -- liftable -
+  lftAny :: Any k -> Liftable From (Free k) AbHom
+  lftAny k = case ats k of Ats -> LiftableFrom coker (lft coker)
+
+  lft :: Attestable k => AbHom -> Slice From (Free k) AbHom -> Slice From (Free k) AbHom
+  lft c s@(SliceFrom i f)
+    | slicePoint i /= start f = throw $ InvalidData $ show s
+    | end c /= end f          = throw NotLiftable
+    | otherwise = error "nyi"
+  
+{-
 --------------------------------------------------------------------------------
 -- abhCokernelFree -
 
@@ -500,19 +572,36 @@ abhSliceFreeAdjunction = slcAdjunction
 --------------------------------------------------------------------------------
 -- abhCokernel -
 
+
 -- | cokernel for a given additive homomorphism and for any proxy dimension @__k__@ a liftable with
 -- base equal to the shell factor of the cokernel.
+--
+-- @
+--           w          
+--     c <------- e'' 
+--     ^           | 
+--   u |        q' | 
+--     |           | 
+--     |    h'     v    
+--    s' --------> e' -----> h'L
+--     |           |          |
+--  p  |         q |          | u'
+--     |           |          |
+--     v     h     v    w'    v
+--     s --------> e ------> c'L
+-- @
 abhCokernelLiftable :: CokernelDiagram N1 AbHom
   -> (Cokernel N1 AbHom, Any k -> Liftable From (Free k) AbHom)
 abhCokernelLiftable d@(DiagramParallelRL _ _ (h:|Nil))
   = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
-  ( GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
+  (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
     , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
     ) -> (LimesInjective w'Cn w'Univ,lft) where
     
     ----------------------------------------
     -- cokernel -
-    adj@(Adjunction lAdj _ _ _) = abhSliceFreeAdjunction ne'
+    -- adj@(Adjunction lAdj _ _ _) = abhSliceFreeAdjunction ne'
+    adj@(Adjunction lAdj _ _ _) = slcAdjunction ne'
     
     q'SliceTo = SliceTo ne' q'    
     q'Coker'  = sliceCokernelTo q'SliceTo
@@ -569,20 +658,6 @@ abhCokernelLiftable d@(DiagramParallelRL _ _ (h:|Nil))
       
 -- | cokernel for a given additive homomorphism.
 --
--- @
---           w          
---     c <------- e'' 
---     ^           | 
---   u |        q' | 
---     |           | 
---     |    h'     v    
---    s' --------> e' -----> h'L
---     |           |          |
---  p  |         q |          | u'
---     |           |          |
---     v     h     v    w'    v
---     s --------> e ------> c'L
--- @
 abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
 abhCokernel = fst . abhCokernelLiftable
 
@@ -610,3 +685,4 @@ isoSmithNormal g = Inv h h' where
   h' = universalFactor c (ConeCokernel (diagram c) (one g))
 
 
+-}

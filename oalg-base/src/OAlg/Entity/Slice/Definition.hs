@@ -579,7 +579,7 @@ instance Exception LiftableException where
 
 -- | liftable slices.
 --
--- __Property__ Let @l@ be in @'Liftable' __p__ __s__ __i__ __c__@ for an @__i__@-sliced 'Oriented'
+-- __Property__ Let @l@ be in @'Liftable' __p__ __i__ __c__@ for an @__i__@-sliced 'Oriented'
 -- structure @__c__@, then holds:
 --
 -- (1) If @l@ matches @'LiftableFrom' c lift@, then holds:
@@ -600,8 +600,8 @@ instance Exception LiftableException where
 --     (2) If @'start' c '==' 'start' ('slice' t)@ then @lift t@ is 'valid' and
 --     @'slice' t '==' 'slice' (lift l) '*' c@.
 data Liftable s i c where
-  LiftableFrom :: c -> (Slice From i c -> Slice From i c) -> Liftable From i c
-  LiftableTo  :: c -> (Slice To i c -> Slice To i c) -> Liftable To i c
+  LiftableFrom :: Sliced i c => c -> (Slice From i c -> Slice From i c) -> Liftable From i c
+  LiftableTo :: Sliced i c => c -> (Slice To i c -> Slice To i c) -> Liftable To i c
 
 instance Show c => Show (Liftable s i c) where
   show (LiftableFrom c _) = join ["LiftableFrom (",show c,") lift"]
@@ -612,18 +612,15 @@ instance Show c => Show (Liftable s i c) where
 
 type instance Dual (Liftable s i c) = Liftable (Dual s) i (Op c)
 
-coLiftable :: Singleton1 i => Dual (Dual s) :~: s -> Liftable s i c -> Dual (Liftable s i c)
+coLiftable :: Dual (Dual s) :~: s -> Liftable s i c -> Dual (Liftable s i c)
 coLiftable r (LiftableFrom c lift) = LiftableTo (Op c) (coSlice . lift . coSliceInv r)
 coLiftable r (LiftableTo c lift) = LiftableFrom (Op c) (coSlice . lift . coSliceInv r)
 
 --------------------------------------------------------------------------------
 -- Liftable - Valid -
 
-relLiftable :: (Multiplicative c, Sliced i c)
-  => i c -> XOrtOrientation c -> Liftable s i c -> Statement
-relLiftable _ xo l@(LiftableTo _ _)
-  = relLiftable unit1 (coXOrtOrientation xo) (coLiftable Refl l)
-relLiftable i xo (LiftableFrom c lift)
+relLiftableFrom :: Multiplicative c => i c -> XOrtOrientation c -> Liftable From i c -> Statement
+relLiftableFrom i xo (LiftableFrom c lift)
   = And [ Label "c" :<=>: valid c
         , Forall xf (\f
             -> And [ Label "f" :<=>: valid f
@@ -644,9 +641,14 @@ relLiftable i xo (LiftableFrom c lift)
                       , (1,xoPoint xo >>= xoArrow xo . (ip:>))
                       ]
 
-instance (Multiplicative c, Sliced i c, XStandardOrtOrientation c)
+relLiftable :: Multiplicative c => XOrtOrientation c -> Liftable s i c -> Statement
+relLiftable xo l = case l of
+  LiftableFrom _ _ -> relLiftableFrom unit1 xo l
+  LiftableTo _ _   -> relLiftable (coXOrtOrientation xo) (coLiftable Refl l)
+  
+instance (Multiplicative c, XStandardOrtOrientation c)
   => Validable (Liftable s i c) where
-  valid l = Label "Liftable" :<=>: relLiftable unit1 xStandardOrtOrientation l
+  valid l = Label "Liftable" :<=>: relLiftable xStandardOrtOrientation l
                                       
 --------------------------------------------------------------------------------
 -- liftBase -
