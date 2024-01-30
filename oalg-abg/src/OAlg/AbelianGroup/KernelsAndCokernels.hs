@@ -141,62 +141,34 @@ abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
   lft c s@(SliceFrom i f)
     | slicePoint i /= start f = throw $ InvalidData $ show s
     | end c /= end f          = throw NotLiftable
-    | otherwise = error "nyi"
-  
-{-
---------------------------------------------------------------------------------
--- abhCokernelFree -
+    | otherwise               = SliceFrom i f' where
+        f'  = zabh (aInv * zf')
 
--- | the cokernel of a free cokernel diagram.
---
---  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
--- @coker = 'abhCokernelFree' d@, then holds: 
---
--- (1) @'diagram' coker '==' d@.
---
--- (2) @'tip' ('universalCone' coker)@ is smith normal (see t'AbGroup').
-abhCokernelFree :: CokernelDiagramFree N1 AbHom -> Cokernel N1 AbHom
-abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
-  = LimesInjective (ConeCokernel d coker) univ where
+        zf  = abhz f
+        zf' = mtxJoin $ matrixBlc [dim () ^ r,rows zf] [cols zf] [(zf,1,0)]
+        r   = lengthN (start aInv) >- lengthN (rows zf)
 
-  m = abhz h
-  SmithNormalForm o ds (RowTrafo ra) _ = smithNormalForm m
-  Inv a aInv = amap GLTGL ra
-  AbHom aInv' = zabh aInv
-  p = lengthN ds
-  q = lengthN (rows m) >- (o + p)
+        
+        
+xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagramFree N1 AbHom)
+xCokernelDiagramFree xm = do
+  m <- xm
+  let r = lengthN $ rows m
+      c = lengthN $ cols m
+      a = zabh m
+   in case (someNatural r, someNatural c) of
+        (SomeNatural r',SomeNatural c')
+          -> return (DiagramFree
+                       (SomeFree (Free r'):|SomeFree (Free c'):|Nil)
+                       (DiagramParallelRL (end a) (start a) (a:|Nil))
+                    )
+             
+vldAbhCokernelFree :: Statement
+vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFree) where
+  xm = xoOrientation xmo >>= xoArrow xmo
+  -- xm = xStandard
+  xmo = xMatrixTtl 10 0.8 (xZB (-100) 100)
 
-  d0 = dim (ZMod 0)
-  gp = Dim $ productSymbol $ amap1 (ZMod . prj) ds
-  gq = d0 ^ q
-  gpq = gp * gq
-  
-  coker = ( AbHom $ mtxJoin
-          $ matrixBlc [gp,gq] [d0^o,d0^p,gq] [(matrix gp (d0^p) ps,0,1),(one gq,1,2)]
-          )
-        * zabh a where
-    ps = [(zmh (ZMod 0 :> ZMod (prj d)) 1,i,i)| (d,i) <- ds `zip` [0..]]
-    -- @0 < d@ for all d in ds as ds is the diagonal of the smith normal form
-
-  univ :: CokernelCone N1 AbHom -> AbHom
-  univ (ConeCokernel _ (AbHom x))
-    = AbHom
-    $ Matrix (rows x) gpq
-    $ rcets $ Row $ PSequence
-    $ map (\(cl,j) -> (cl,j>-o))
-    $ fcts o (map fst $ listN gp)
-    $ listN $ etsrc $ mtxxs (x*aInv')
-    where
-      
-      fcts :: (Enum j, Ord j) => j -> [ZMod] -> [(Col i ZModHom,j)] -> [(Col i ZModHom,j)] 
-      fcts _ [] cls = cls
-      fcts _ _ []   = []
-      fcts j (z:zs) cls@((cl,j'):cls') = if j < j'
-        then fcts (succ j) zs cls
-        else ((amap1 (fct z) cl,j'):fcts (succ j) zs cls')
-
-      fct :: ZMod -> ZModHom -> ZModHom
-      fct z h = zmh (z:>end h) (toZ h)
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo -
@@ -204,14 +176,14 @@ abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
 -- | the cokernel of a free site to.
 --
 --  __Properties__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
--- @coker = 'abhCokernelFreeTo' s@, then holds: 
+-- @cf = 'abhCokernelFreeTo' s@, then holds: Let @c = 'clfCokernel' cf@ in 
 --
--- (1) @'diagram' coker '==' 'cokernelDiagram' h@.
+-- (1) @'diagram' c '==' 'cokernelDiagram' h@.
 --
--- (2) @'tip' ('universalCone' coker)@ is smith normal (see t'AbGroup').
+-- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
 abhCokernelFreeTo :: Attestable k
-  => Slice To (Free k) AbHom -> Cokernel N1 AbHom
-abhCokernelFreeTo (SliceTo k h) = LimesInjective hCoker hUniv where
+  => Slice To (Free k) AbHom -> CokernelLiftableFree AbHom
+abhCokernelFreeTo (SliceTo k h) = CokernelLiftableFree (LimesInjective hCoker hUniv) lft where
 
   h' = amap FreeAbHom (amap AbHomFree h)
   -- h' has free start and end
@@ -223,7 +195,7 @@ abhCokernelFreeTo (SliceTo k h) = LimesInjective hCoker hUniv where
     SomeNatural k' -> DiagramFree ks (cokernelDiagram h') where
       ks = SomeFree k:|SomeFree (Free k'):|Nil
 
-  h'Coker = abhCokernelFree h'Dgm
+  CokernelLiftableFree h'Coker lft = abhCokernelFree h'Dgm
   
   -- as unitRight abhFreeAdjunction (start h) is an epimorphism it follows
   -- that h and h' have the same cokernelFactor!
@@ -231,6 +203,23 @@ abhCokernelFreeTo (SliceTo k h) = LimesInjective hCoker hUniv where
 
   hUniv (ConeCokernel _ x) = universalFactor h'Coker (ConeCokernel (diagram h'Coker) x)
 
+xSomeFreeSliceTo :: X (SomeFree AbHom) -> XOrtSite To AbHom -> X (SomeFreeSlice To AbHom)
+xSomeFreeSliceTo xn xos = do
+  SomeFree n <- xn
+  f <- xSliceTo xos n
+  return (SomeFreeSlice f)
+
+vldAbhCokernelFreeTo :: Statement
+vldAbhCokernelFreeTo = Forall xst (\(SomeFreeSlice s) -> valid $ abhCokernelFreeTo s) where
+  xst = xSomeFreeSliceTo (xn 10) xos
+  
+  xn :: N -> X (SomeFree AbHom)
+  xn nMax = do
+    SomeNatural n <- amap1 someNatural (xNB 0 nMax)
+    return (SomeFree $ Free n)
+    
+  xos = xStandardOrtSite
+  
 --------------------------------------------------------------------------------
 -- abhPullbackFree -
 
@@ -260,8 +249,9 @@ someFree n = case someNatural n of
 plbDgmFree :: PullbackDiagram n (Matrix Z) -> PullbackDiagramFree n AbHom
 plbDgmFree d = DiagramFree (amap1 (someFree . lengthN) $ dgPoints d) (dgMap FreeAbHom d)
 
-pp1 :: Statement
-pp1 = Forall xd (valid . limesFree . abhPullbackFree) where
+
+vldAbhPullbackFree :: Statement
+vldAbhPullbackFree = Forall xd (valid . limesFree . abhPullbackFree) where
   xd = amap1 plbDgmFree (xStandard :: X (PullbackDiagram N3 (Matrix Z)))
   
 --------------------------------------------------------------------------------
@@ -516,7 +506,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
 
     _:|q':|_   = shell $ universalCone k'p'Plb
     q'CokerDgm = cokernelDiagram q' 
-    q'Coker    = abhCokernelFree
+    q'Coker    = clfCokernel $ abhCokernelFree
       ( DiagramFree
          (SomeFree nr':|SomeFree nr'':|Nil)
          q'CokerDgm
@@ -550,7 +540,7 @@ abhKernels = Limits abhKernel
 -- AbHom - SliceCokernelTo -
 
 instance Attestable k => SliceCokernelTo (Free k) AbHom where
-  sliceCokernelTo = abhCokernelFreeTo
+  sliceCokernelTo = clfCokernel . abhCokernelFreeTo
 
 --------------------------------------------------------------------------------
 -- AbHom - SliceKernelFrom -
@@ -568,7 +558,7 @@ abhSliceFreeAdjunction :: Attestable k
        (SliceFactor From (Free k) AbHom)
        (SliceFactor To (Free k) AbHom)
 abhSliceFreeAdjunction = slcAdjunction
-
+{-
 --------------------------------------------------------------------------------
 -- abhCokernel -
 

@@ -236,9 +236,9 @@ zmxDiagonalFormStrictPositive (Matrix r c xs)
 --
 -- (1) @'snfDiagonalForm' s@ is 'valid'.
 --
--- (2) For all @k@ in @ks@ holds: @0 < k@.
+-- (2) For all @d@ in @ds@ holds: @0 < d@.
 --
--- (3) For all @..k':'k'..@ in @ks@ holds: @'mod' k' k '==' 0@.
+-- (3) For all @..d':'d'..@ in @ds@ holds: @'mod' d' d '==' 0@.
 data SmithNormalForm k = SmithNormalForm N [k] (RowTrafo k) (ColTrafo k)
   deriving (Show,Eq)
 
@@ -279,10 +279,10 @@ instance Entity (SmithNormalForm Z)
 -- | Smith Normal Form of a matrix.
 --
 -- __Property__ Let @m@ be in @'Matrix' 'Z'@ and
--- @'SmithNormalForm o ds a b = 'smithNormalForm' m@, then holds:
+-- @'SmithNormalForm' o ds a b = 'smithNormalForm' m@, then holds:
 -- @(a 'OAlg.Structure.Operational.*>' m) 'OAlg.Structure.Operational.<*' b '=='
--- 'diagonal' ('rows' m) ('cols' m) ds@ where
--- @ds = ('takeN' o '$' 'repeat' 1) '++' ds'@. 
+-- 'diagonal' ('rows' m) ('cols' m) ds'@ where
+-- @ds' = ('takeN' o '$' 'repeat' 1) '++' ds'@. 
 smithNormalForm :: Matrix Z -> SmithNormalForm Z
 smithNormalForm = smithNormalForm' . zmxDiagonalFormStrictPositive
 
