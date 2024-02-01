@@ -18,19 +18,18 @@
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
-{-    
     -- * Kernels
     abhKernels
 
     -- * Cokernels
-  , abhCokernels
+  , abhCokernels, abhCokernelLftFree, abhCokernelFreeDgmLftFree
     
     -- * Smith Normal
   , isoSmithNormal
 
     -- * Adjunction
   , abhSliceFreeAdjunction
--}
+
   )
   where
 
@@ -75,18 +74,18 @@ import OAlg.AbelianGroup.Free
 
 
 --------------------------------------------------------------------------------
--- abhCokernelFree -
+-- abhCokernelFreeDgmLftFree -
 
 -- | the liftable free cokernel of a free cokernel diagram.
 --
 --  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
--- @cf = 'abhCokernelFree' d@, then holds: Let @c = 'clfCokernel' cf@ in
+-- @cf = 'abhCokernelFreeDgmLftFree' d@, then holds: Let @c = 'clfCokernel' cf@ in
 --
 -- (1) @'diagram' c '==' d@.
 --
 -- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
-abhCokernelFree :: CokernelDiagramFree N1 AbHom -> CokernelLiftableFree AbHom
-abhCokernelFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
+abhCokernelFreeDgmLftFree :: CokernelDiagramFree N1 AbHom -> CokernelLiftableFree AbHom
+abhCokernelFreeDgmLftFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
   = CokernelLiftableFree (LimesInjective (ConeCokernel d coker) univ) lftAny where
 
   --------------------
@@ -164,7 +163,7 @@ xCokernelDiagramFree xm = do
                     )
              
 vldAbhCokernelFree :: Statement
-vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFree) where
+vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFreeDgmLftFree) where
   xm = xoOrientation xmo >>= xoArrow xmo
   -- xm = xStandard
   xmo = xMatrixTtl 10 0.8 (xZB (-100) 100)
@@ -196,7 +195,7 @@ abhCokernelFreeTo (SliceTo k h) = CokernelLiftableFree (LimesInjective hCoker hU
     SomeNatural k' -> DiagramFree ks (cokernelDiagram h') where
       ks = SomeFree k:|SomeFree (Free k'):|Nil
 
-  CokernelLiftableFree h'Coker lft = abhCokernelFree h'Dgm
+  CokernelLiftableFree h'Coker lft = abhCokernelFreeDgmLftFree h'Dgm
   
   -- as unitRight abhFreeAdjunction (start h) is an epimorphism it follows
   -- that h and h' have the same cokernelFactor!
@@ -507,7 +506,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
 
     _:|q':|_   = shell $ universalCone k'p'Plb
     q'CokerDgm = cokernelDiagram q' 
-    q'Coker    = clfCokernel $ abhCokernelFree
+    q'Coker    = clfCokernel $ abhCokernelFreeDgmLftFree
       ( DiagramFree
          (SomeFree nr':|SomeFree nr'':|Nil)
          q'CokerDgm
@@ -584,9 +583,8 @@ abhSliceFreeAdjunction = slcAdjunction
 --     v     h     v    w'    v
 --     s --------> e ------> c'L
 -- @
-abhCokernelLiftableFree :: CokernelDiagram N1 AbHom
-  -> CokernelLiftableFree AbHom
-abhCokernelLiftableFree d@(DiagramParallelRL _ _ (h:|Nil))
+abhCokernelLftFree :: CokernelDiagram N1 AbHom -> CokernelLiftableFree AbHom
+abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
   = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
   (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
     , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
@@ -657,7 +655,7 @@ abhCokernelLiftableFree d@(DiagramParallelRL _ _ (h:|Nil))
 -- | cokernel for a given additive homomorphism.
 --
 abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
-abhCokernel = clfCokernel . abhCokernelLiftableFree
+abhCokernel = clfCokernel . abhCokernelLftFree
 
 --------------------------------------------------------------------------------
 -- abhCokernels -
