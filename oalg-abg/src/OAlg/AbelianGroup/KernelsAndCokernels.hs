@@ -169,6 +169,8 @@ vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFree) 
   -- xm = xStandard
   xmo = xMatrixTtl 10 0.8 (xZB (-100) 100)
 
+atsFree :: Free k c -> Ats k
+atsFree (Free k) = ats k
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo -
@@ -181,8 +183,7 @@ vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFree) 
 -- (1) @'diagram' c '==' 'cokernelDiagram' h@.
 --
 -- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
-abhCokernelFreeTo :: Attestable k
-  => Slice To (Free k) AbHom -> CokernelLiftableFree AbHom
+abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> CokernelLiftableFree AbHom
 abhCokernelFreeTo (SliceTo k h) = CokernelLiftableFree (LimesInjective hCoker hUniv) lft where
 
   h' = amap FreeAbHom (amap AbHomFree h)
@@ -541,7 +542,9 @@ abhKernels = Limits abhKernel
 
 instance Attestable k => SliceCokernelTo (Free k) AbHom where
   sliceCokernelTo = clfCokernel . abhCokernelFreeTo
-
+  -- do not change this definition, otherwise the liftable of abhCokernelLiftable has
+  -- to be adapted.
+  
 --------------------------------------------------------------------------------
 -- AbHom - SliceKernelFrom -
 
@@ -558,7 +561,8 @@ abhSliceFreeAdjunction :: Attestable k
        (SliceFactor From (Free k) AbHom)
        (SliceFactor To (Free k) AbHom)
 abhSliceFreeAdjunction = slcAdjunction
-{-
+
+
 --------------------------------------------------------------------------------
 -- abhCokernel -
 
@@ -580,17 +584,16 @@ abhSliceFreeAdjunction = slcAdjunction
 --     v     h     v    w'    v
 --     s --------> e ------> c'L
 -- @
-abhCokernelLiftable :: CokernelDiagram N1 AbHom
-  -> (Cokernel N1 AbHom, Any k -> Liftable From (Free k) AbHom)
-abhCokernelLiftable d@(DiagramParallelRL _ _ (h:|Nil))
+abhCokernelLiftableFree :: CokernelDiagram N1 AbHom
+  -> CokernelLiftableFree AbHom
+abhCokernelLiftableFree d@(DiagramParallelRL _ _ (h:|Nil))
   = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
   (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
     , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
-    ) -> (LimesInjective w'Cn w'Univ,lft) where
+    ) -> CokernelLiftableFree (LimesInjective w'Cn w'Univ) lft where
     
     ----------------------------------------
     -- cokernel -
-    -- adj@(Adjunction lAdj _ _ _) = abhSliceFreeAdjunction ne'
     adj@(Adjunction lAdj _ _ _) = slcAdjunction ne'
     
     q'SliceTo = SliceTo ne' q'    
@@ -637,19 +640,24 @@ abhCokernelLiftable d@(DiagramParallelRL _ _ (h:|Nil))
 
       y = universalFactor h'Coker (ConeCokernel (diagram h'Coker) xq)
 
+
     ----------------------------------------
     -- liftable -
-    lft k  = LiftableFrom w' (l k) where
-      l :: Any k -> Slice From (Free k) AbHom -> Slice From (Free k) AbHom
-      l k (SliceFrom k' f) = case ats k of
-        Ats | start f /= slicePoint k' -> throw $ InvalidData "Slice"
-            | end f /= end w'          -> throw $ NotLiftable
-            | otherwise                -> error "nyi"
-      
+    CokernelLiftableFree _ lftSum = abhCokernelFreeTo tSum where tSum = tip $ universalCone cSum
+    -- as the point map of lAdj is equal to clfCokernel . abhCokernelFreeTo
+    -- it follows that w' * q is the cokernel of the cSum
+
+    lft :: Any k -> Liftable From (Free k) AbHom
+    lft k = case ats k of Ats -> LiftableFrom w' w'Slc
+      where
+        w'Slc s@(SliceFrom nk _) = SliceFrom nk (q * s') where SliceFrom _ s' = lift (lftSum k) s
+        
+
+     
 -- | cokernel for a given additive homomorphism.
 --
 abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
-abhCokernel = fst . abhCokernelLiftable
+abhCokernel = clfCokernel . abhCokernelLiftableFree
 
 --------------------------------------------------------------------------------
 -- abhCokernels -
@@ -675,4 +683,3 @@ isoSmithNormal g = Inv h h' where
   h' = universalFactor c (ConeCokernel (diagram c) (one g))
 
 
--}
