@@ -172,18 +172,18 @@ atsFree :: Free k c -> Ats k
 atsFree (Free k) = ats k
 
 --------------------------------------------------------------------------------
--- abhCokernelFreeTo -
+-- abhCokernelFreeTo' -
 
 -- | the cokernel of a free site to.
 --
 --  __Properties__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
--- @cf = 'abhCokernelFreeTo' s@, then holds: Let @c = 'clfCokernel' cf@ in 
+-- @cf = 'abhCokernelFreeTo'' s@, then holds: Let @c = 'clfCokernel' cf@ in 
 --
 -- (1) @'diagram' c '==' 'cokernelDiagram' h@.
 --
 -- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
-abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> CokernelLiftableFree AbHom
-abhCokernelFreeTo (SliceTo k h) = CokernelLiftableFree (LimesInjective hCoker hUniv) lft where
+abhCokernelFreeTo' :: Attestable k => Slice To (Free k) AbHom -> CokernelLiftableFree AbHom
+abhCokernelFreeTo' (SliceTo k h) = CokernelLiftableFree (LimesInjective hCoker hUniv) lft where
 
   h' = amap FreeAbHom (amap AbHomFree h)
   -- h' has free start and end
@@ -210,7 +210,7 @@ xSomeFreeSliceTo xn xos = do
   return (SomeFreeSlice f)
 
 vldAbhCokernelFreeTo :: Statement
-vldAbhCokernelFreeTo = Forall xst (\(SomeFreeSlice s) -> valid $ abhCokernelFreeTo s) where
+vldAbhCokernelFreeTo = Forall xst (\(SomeFreeSlice s) -> valid $ abhCokernelFreeTo' s) where
   xst = xSomeFreeSliceTo (xn 10) xos
   
   xn :: N -> X (SomeFree AbHom)
@@ -219,6 +219,55 @@ vldAbhCokernelFreeTo = Forall xst (\(SomeFreeSlice s) -> valid $ abhCokernelFree
     return (SomeFree $ Free n)
     
   xos = xStandardOrtSite
+
+--------------------------------------------------------------------------------
+-- AbhCokernelFree -
+
+-- | the liftable cokernel of a @__k__@-free slice 'To' as entity. Such an entity can be generated
+-- with 'abhCokernelFreeTo'.
+data AbhCokernelFreeTo k = AbhCokernelFreeTo
+  (Slice To (Free k) AbHom) (CokernelLiftableFree AbHom) deriving (Show)
+
+--------------------------------------------------------------------------------
+-- abhCokernelFreeTo -
+
+-- | the induced cokernel of a @__k__@-free slice 'To' as entity.
+abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> AbhCokernelFreeTo k
+abhCokernelFreeTo s = AbhCokernelFreeTo s (abhCokernelFreeTo' s)
+
+--------------------------------------------------------------------------------
+-- abhcftLiftableFree -
+
+abhcftLiftableFree :: AbhCokernelFreeTo k -> CokernelLiftableFree AbHom
+abhcftLiftableFree (AbhCokernelFreeTo _ c) = c
+
+--------------------------------------------------------------------------------
+-- abhcftSliceFrom -
+
+-- | the @__k__@-free slice 'From', i.e. the shell factor of the cokernel
+abhcftSliceFrom :: AbhCokernelFreeTo k -> Slice From (Free k) AbHom
+-- abhcftSliceFrom :: AbhCokernelFreeTo k -> Cokernel N1 AbHom
+abhcftSliceFrom (AbhCokernelFreeTo (SliceTo k _) c) = SliceFrom k f where
+  f = head $ universalShell $ clfCokernel c
+
+-- as the constructor is not public and the only way to instantate a value of AbhCokenrelFreeTo
+-- is via abhCokernelFreeTo it is sufficiant to check the equality of the input parameter!
+instance Eq (AbhCokernelFreeTo k) where
+  AbhCokernelFreeTo s _ == AbhCokernelFreeTo s' _ = s == s'
+
+instance Attestable k => Validable (AbhCokernelFreeTo k) where
+  valid (AbhCokernelFreeTo s c) = Label "AbhCokernelFreeTo" :<=>:
+    And [ valid s
+        , valid c
+        ]
+
+instance Attestable k => Entity (AbhCokernelFreeTo k)    
+
+--------------------------------------------------------------------------------
+-- AbhCokernelFreeToFactor -
+
+data AbhCokernelFreeToFactor k
+  = AbhCokernelFreeToFactor (AbhCokernelFreeTo k) (AbhCokernelFreeTo k) AbHom
   
 --------------------------------------------------------------------------------
 -- abhPullbackFree -
@@ -540,7 +589,7 @@ abhKernels = Limits abhKernel
 -- AbHom - SliceCokernelTo -
 
 instance Attestable k => SliceCokernelTo (Free k) AbHom where
-  sliceCokernelTo = clfCokernel . abhCokernelFreeTo
+  sliceCokernelTo = clfCokernel . abhCokernelFreeTo'
   -- do not change this definition, otherwise the liftable of abhCokernelLiftable has
   -- to be adapted.
   
@@ -641,8 +690,8 @@ abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
 
     ----------------------------------------
     -- liftable -
-    CokernelLiftableFree _ lftSum = abhCokernelFreeTo tSum where tSum = tip $ universalCone cSum
-    -- as the point map of lAdj is equal to clfCokernel . abhCokernelFreeTo
+    CokernelLiftableFree _ lftSum = abhCokernelFreeTo' tSum where tSum = tip $ universalCone cSum
+    -- as the point map of lAdj is equal to clfCokernel . abhCokernelFreeTo'
     -- it follows that w' * q is the cokernel of the cSum
 
     lft :: Any k -> Liftable From (Free k) AbHom

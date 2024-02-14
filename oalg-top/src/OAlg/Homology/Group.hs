@@ -232,10 +232,18 @@ hgRepBoundary (HomologyGroup _ i s) = conZero $ bnd (nodAnyFst i) s where
 
 --------------------------------------------------------------------------------
 -- H -
-{-
-data H s n i x r a where
-  H :: HomologyGroup a s n i x -> Chain r s i x -> Chain r s (i+1) x -> H s n i x r a
--}
+
+
+data H s n i x = H
+  (HomologyGroup AbHom s n i x)
+  (D.Diagram (D.Chain From) N3 N2 AbHom) -- the induced boundary operators
+
+hGroup :: Simplical s x => HomologyGroup AbHom s n i x -> H s n i x
+hGroup h = H h b where
+  b@(D.DiagramChainFrom s (d:|d':|Nil)) = case hgRepBoundary h of
+        ConsecutiveZero (D.DiagramChainFrom s (d:|d':|_))
+          -> D.dgMap FreeAbHom (D.DiagramChainFrom s (d:|d':|Nil))
+
   
 --------------------------------------------------------------------------------
 -- HomologyGroup -
