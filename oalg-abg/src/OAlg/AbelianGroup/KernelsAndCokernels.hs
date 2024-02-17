@@ -42,6 +42,7 @@ import OAlg.Prelude
 import OAlg.Data.Canonical
 import OAlg.Data.Generator
 
+import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Additive
@@ -268,7 +269,45 @@ instance Attestable k => Entity (AbhCokernelFreeTo k)
 
 data AbhCokernelFreeToFactor k
   = AbhCokernelFreeToFactor (AbhCokernelFreeTo k) (AbhCokernelFreeTo k) AbHom
-  
+  deriving (Show, Eq)
+
+--------------------------------------------------------------------------------
+-- abhcftSliceFromFactor -
+
+-- | the @__k__@-free slice factor 'From'.
+abhcftSliceFromFactor :: AbhCokernelFreeToFactor k -> SliceFactor From (Free k) AbHom
+abhcftSliceFromFactor (AbhCokernelFreeToFactor a b h) = SliceFactor a' b' h where
+  a' = abhcftSliceFrom a
+  b' = abhcftSliceFrom b
+
+instance Attestable k => Validable (AbhCokernelFreeToFactor k) where
+  valid f@(AbhCokernelFreeToFactor a b _) = Label "AbhCokernelFreeToFactor" :<=>:
+    And [ valid a
+        , valid b
+        , valid $ abhcftSliceFromFactor f
+        ]
+
+instance Attestable k => Entity (AbhCokernelFreeToFactor k)
+
+--------------------------------------------------------------------------------
+-- AbhCokernelFreeToFactor - Murliplicative -
+
+instance Attestable k => Oriented (AbhCokernelFreeToFactor k) where
+  type Point (AbhCokernelFreeToFactor k) = AbhCokernelFreeTo k
+  orientation (AbhCokernelFreeToFactor a b _) = a :> b
+
+instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
+  one a = AbhCokernelFreeToFactor a a (one e) where
+    e = case abhcftSliceFrom a of
+          SliceFrom _ h -> end h
+
+  AbhCokernelFreeToFactor a b f * AbhCokernelFreeToFactor c d g
+    | d /= a    = throw NotMultiplicable
+    | otherwise = AbhCokernelFreeToFactor c b (f * g)
+
+  npower (AbhCokernelFreeToFactor a b f) n = f' `seq` AbhCokernelFreeToFactor a b f' where
+    f' = npower f n
+    
 --------------------------------------------------------------------------------
 -- abhPullbackFree -
 
