@@ -35,6 +35,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
 import Control.Monad
 
+import Data.Typeable
 import Data.List (map,(++),repeat,zip)
 
 import OAlg.Prelude
@@ -221,93 +222,6 @@ vldAbhCokernelFreeTo = Forall xst (\(SomeFreeSlice s) -> valid $ abhCokernelFree
     
   xos = xStandardOrtSite
 
---------------------------------------------------------------------------------
--- AbhCokernelFree -
-
--- | the liftable cokernel of a @__k__@-free slice 'To' as entity. Such an entity can be generated
--- with 'abhCokernelFreeTo'.
-data AbhCokernelFreeTo k = AbhCokernelFreeTo
-  (Slice To (Free k) AbHom) (CokernelLiftableFree AbHom) deriving (Show)
-
---------------------------------------------------------------------------------
--- abhCokernelFreeTo -
-
--- | the induced cokernel of a @__k__@-free slice 'To' as entity.
-abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> AbhCokernelFreeTo k
-abhCokernelFreeTo s = AbhCokernelFreeTo s (abhCokernelFreeTo' s)
-
---------------------------------------------------------------------------------
--- abhcftLiftableFree -
-
-abhcftLiftableFree :: AbhCokernelFreeTo k -> CokernelLiftableFree AbHom
-abhcftLiftableFree (AbhCokernelFreeTo _ c) = c
-
---------------------------------------------------------------------------------
--- abhcftSliceFrom -
-
--- | the @__k__@-free slice 'From', i.e. the shell factor of the cokernel
-abhcftSliceFrom :: AbhCokernelFreeTo k -> Slice From (Free k) AbHom
--- abhcftSliceFrom :: AbhCokernelFreeTo k -> Cokernel N1 AbHom
-abhcftSliceFrom (AbhCokernelFreeTo (SliceTo k _) c) = SliceFrom k f where
-  f = head $ universalShell $ clfCokernel c
-
--- as the constructor is not public and the only way to instantate a value of AbhCokenrelFreeTo
--- is via abhCokernelFreeTo it is sufficiant to check the equality of the input parameter!
-instance Eq (AbhCokernelFreeTo k) where
-  AbhCokernelFreeTo s _ == AbhCokernelFreeTo s' _ = s == s'
-
-instance Attestable k => Validable (AbhCokernelFreeTo k) where
-  valid (AbhCokernelFreeTo s c) = Label "AbhCokernelFreeTo" :<=>:
-    And [ valid s
-        , valid c
-        ]
-
-instance Attestable k => Entity (AbhCokernelFreeTo k)    
-
---------------------------------------------------------------------------------
--- AbhCokernelFreeToFactor -
-
-data AbhCokernelFreeToFactor k
-  = AbhCokernelFreeToFactor (AbhCokernelFreeTo k) (AbhCokernelFreeTo k) AbHom
-  deriving (Show, Eq)
-
---------------------------------------------------------------------------------
--- abhcftSliceFromFactor -
-
--- | the @__k__@-free slice factor 'From'.
-abhcftSliceFromFactor :: AbhCokernelFreeToFactor k -> SliceFactor From (Free k) AbHom
-abhcftSliceFromFactor (AbhCokernelFreeToFactor a b h) = SliceFactor a' b' h where
-  a' = abhcftSliceFrom a
-  b' = abhcftSliceFrom b
-
-instance Attestable k => Validable (AbhCokernelFreeToFactor k) where
-  valid f@(AbhCokernelFreeToFactor a b _) = Label "AbhCokernelFreeToFactor" :<=>:
-    And [ valid a
-        , valid b
-        , valid $ abhcftSliceFromFactor f
-        ]
-
-instance Attestable k => Entity (AbhCokernelFreeToFactor k)
-
---------------------------------------------------------------------------------
--- AbhCokernelFreeToFactor - Murliplicative -
-
-instance Attestable k => Oriented (AbhCokernelFreeToFactor k) where
-  type Point (AbhCokernelFreeToFactor k) = AbhCokernelFreeTo k
-  orientation (AbhCokernelFreeToFactor a b _) = a :> b
-
-instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
-  one a = AbhCokernelFreeToFactor a a (one e) where
-    e = case abhcftSliceFrom a of
-          SliceFrom _ h -> end h
-
-  AbhCokernelFreeToFactor a b f * AbhCokernelFreeToFactor c d g
-    | d /= a    = throw NotMultiplicable
-    | otherwise = AbhCokernelFreeToFactor c b (f * g)
-
-  npower (AbhCokernelFreeToFactor a b f) n = f' `seq` AbhCokernelFreeToFactor a b f' where
-    f' = npower f n
-    
 --------------------------------------------------------------------------------
 -- abhPullbackFree -
 
@@ -523,6 +437,133 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
           -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
         ) kers
 
+--------------------------------------------------------------------------------
+-- AbhCokernelFree -
+
+-- | the liftable cokernel of a @__k__@-free slice 'To' as entity. Such an entity can be generated
+-- with 'abhCokernelFreeTo'.
+data AbhCokernelFreeTo k = AbhCokernelFreeTo
+  (Slice To (Free k) AbHom) (CokernelLiftableFree AbHom) deriving (Show)
+
+--------------------------------------------------------------------------------
+-- abhCokernelFreeTo -
+
+-- | the induced cokernel of a @__k__@-free slice 'To' as entity.
+abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> AbhCokernelFreeTo k
+abhCokernelFreeTo s = AbhCokernelFreeTo s (abhCokernelFreeTo' s)
+
+--------------------------------------------------------------------------------
+-- abhcftLiftableFree -
+
+abhcftLiftableFree :: AbhCokernelFreeTo k -> CokernelLiftableFree AbHom
+abhcftLiftableFree (AbhCokernelFreeTo _ c) = c
+
+--------------------------------------------------------------------------------
+-- abhcftSliceFrom -
+
+-- | the @__k__@-free slice 'From', i.e. the shell factor of the cokernel
+abhcftSliceFrom :: AbhCokernelFreeTo k -> Slice From (Free k) AbHom
+-- abhcftSliceFrom :: AbhCokernelFreeTo k -> Cokernel N1 AbHom
+abhcftSliceFrom (AbhCokernelFreeTo (SliceTo k _) c) = SliceFrom k f where
+  f = head $ universalShell $ clfCokernel c
+
+-- as the constructor is not public and the only way to instantate a value of AbhCokenrelFreeTo
+-- is via abhCokernelFreeTo it is sufficiant to check the equality of the input parameter!
+instance Eq (AbhCokernelFreeTo k) where
+  AbhCokernelFreeTo s _ == AbhCokernelFreeTo s' _ = s == s'
+
+instance Attestable k => Validable (AbhCokernelFreeTo k) where
+  valid (AbhCokernelFreeTo s c) = Label "AbhCokernelFreeTo" :<=>:
+    And [ valid s
+        , valid c
+        ]
+
+instance Attestable k => Entity (AbhCokernelFreeTo k)    
+
+--------------------------------------------------------------------------------
+-- AbhCokernelFreeToFactor -
+
+data AbhCokernelFreeToFactor k
+  = AbhCokernelFreeToFactor (AbhCokernelFreeTo k) (AbhCokernelFreeTo k) AbHom
+  deriving (Show, Eq)
+
+--------------------------------------------------------------------------------
+-- abhcftSliceFromFactor -
+
+-- | the @__k__@-free slice factor 'From'.
+abhcftSliceFromFactor :: AbhCokernelFreeToFactor k -> SliceFactor From (Free k) AbHom
+abhcftSliceFromFactor (AbhCokernelFreeToFactor a b h) = SliceFactor a' b' h where
+  a' = abhcftSliceFrom a
+  b' = abhcftSliceFrom b
+
+instance Attestable k => Validable (AbhCokernelFreeToFactor k) where
+  valid f@(AbhCokernelFreeToFactor a b _) = Label "AbhCokernelFreeToFactor" :<=>:
+    And [ valid a
+        , valid b
+        , valid $ abhcftSliceFromFactor f
+        ]
+
+instance Attestable k => Entity (AbhCokernelFreeToFactor k)
+
+--------------------------------------------------------------------------------
+-- abhFreeToCokernel -
+
+abhFreeToCokernel :: Attestable k => SliceFactor To (Free k) AbHom -> AbhCokernelFreeToFactor k
+abhFreeToCokernel = error "nyi"
+
+--------------------------------------------------------------------------------
+-- AbhCokernelFreeToFactor - Murliplicative -
+
+instance Attestable k => Oriented (AbhCokernelFreeToFactor k) where
+  type Point (AbhCokernelFreeToFactor k) = AbhCokernelFreeTo k
+  orientation (AbhCokernelFreeToFactor a b _) = a :> b
+
+instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
+  one a = AbhCokernelFreeToFactor a a (one e) where
+    e = case abhcftSliceFrom a of
+          SliceFrom _ h -> end h
+
+  AbhCokernelFreeToFactor a b f * AbhCokernelFreeToFactor c d g
+    | d /= a    = throw NotMultiplicable
+    | otherwise = AbhCokernelFreeToFactor c b (f * g)
+
+  npower (AbhCokernelFreeToFactor a b f) n = f' `seq` AbhCokernelFreeToFactor a b f' where
+    f' = npower f n
+
+--------------------------------------------------------------------------------
+-- AbhSliceFreeAdjunction -
+
+data AbhSliceFreeAdjunction k x y where
+  
+  AbhFreeToCokernel :: AbhSliceFreeAdjunction k (SliceFactor To (Free k) AbHom)
+                                                (AbhCokernelFreeToFactor k)
+
+  AbhFreeFromKernel :: AbhSliceFreeAdjunction k (AbhCokernelFreeToFactor k)
+                                                (SliceFactor To (Free k) AbHom)
+                       
+--------------------------------------------------------------------------------
+-- AbhSliceFreeAdjunction - Entity -
+
+deriving instance Show (AbhSliceFreeAdjunction k x y)
+instance Show2 (AbhSliceFreeAdjunction k)
+
+deriving instance Eq (AbhSliceFreeAdjunction k x y)
+instance Eq2 (AbhSliceFreeAdjunction k)
+
+instance Validable (AbhSliceFreeAdjunction k x y) where
+  valid AbhFreeToCokernel = SValid
+  valid AbhFreeFromKernel = SValid
+instance Validable2 (AbhSliceFreeAdjunction k)
+
+instance (Typeable x, Typeable y, Typeable k) => Entity (AbhSliceFreeAdjunction k x y)
+instance Typeable k => Entity2 (AbhSliceFreeAdjunction k)
+
+--------------------------------------------------------------------------------
+-- AbhSliceFreeAdjunction - HomMultiplicative -
+
+instance Attestable k => Applicative (AbhSliceFreeAdjunction k) where
+  amap AbhFreeToCokernel = abhFreeToCokernel
+  
 --------------------------------------------------------------------------------
 -- abhKernel -
 
