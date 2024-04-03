@@ -509,7 +509,7 @@ instance Attestable k => Entity (AbhCokernelFreeToFactor k)
 -- abhFreeToCokernel -
 
 abhFreeToCokernel :: Attestable k => SliceFactor To (Free k) AbHom -> AbhCokernelFreeToFactor k
-abhFreeToCokernel = error "nyi"
+abhFreeToCokernel = error "nyi" -- to emplement
 
 --------------------------------------------------------------------------------
 -- AbhCokernelFreeToFactor - Murliplicative -
