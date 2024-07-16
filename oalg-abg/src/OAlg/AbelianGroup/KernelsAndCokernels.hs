@@ -508,8 +508,16 @@ instance Attestable k => Entity (AbhCokernelFreeToFactor k)
 --------------------------------------------------------------------------------
 -- abhFreeToCokernel -
 
+--  tbd
 abhFreeToCokernel :: Attestable k => SliceFactor To (Free k) AbHom -> AbhCokernelFreeToFactor k
-abhFreeToCokernel = error "nyi" -- to emplement
+abhFreeToCokernel (SliceFactor a b _) = AbhCokernelFreeToFactor a' b' f' where
+  a' = abhCokernelFreeTo a
+  b' = abhCokernelFreeTo b
+  
+  a'coker = clfCokernel $ abhcftLiftableFree a'
+  b'coker = clfCokernel $ abhcftLiftableFree b'
+  b'cone = ConeCokernel (diagram a'coker) (cokernelFactor $ universalCone b'coker)
+  f' = universalFactor a'coker b'cone
 
 --------------------------------------------------------------------------------
 -- AbhCokernelFreeToFactor - Murliplicative -

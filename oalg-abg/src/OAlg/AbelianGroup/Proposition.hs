@@ -15,8 +15,24 @@ module OAlg.AbelianGroup.Proposition
 
 import OAlg.Prelude
 
+import OAlg.Entity.Natural hiding ((++))
+import OAlg.Entity.Slice.Free
+
+import OAlg.Limes.Definition
+import OAlg.Limes.KernelsAndCokernels
+
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+
+--------------------------------------------------------------------------------
+-- prpAbhCokernelLftFree -
+
+prpAbhCokernelLftFree :: CokernelDiagram N1 AbHom -> Statement
+prpAbhCokernelLftFree dgm
+  = And [ (dgm == (diagram $ clfCokernel ck)) :?> Params ["dgm":=show dgm]
+        , valid ck
+        ]
+  where ck = abhCokernelLftFree dgm
 
 -- | validity for abelian groups.
 prpAbelianGroups :: Statement
@@ -24,6 +40,6 @@ prpAbelianGroups = Prp "AbelianGroups"
   :<=>: And [ prpAbHom
             , Label "isoSmithNormal" :<=>: Forall xStandard (valid . isoSmithNormal)
             , Label "kernels" :<=>: valid abhKernels
-            , Label "cokernels" :<=>: valid abhCokernels
+            , Label "cokernels liftable" :<=>: Forall xStandard prpAbhCokernelLftFree
             , Label "abhFreeAdjunction" :<=>: valid abhFreeAdjunction
             ]
