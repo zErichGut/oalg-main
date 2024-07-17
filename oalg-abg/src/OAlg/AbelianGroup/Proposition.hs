@@ -10,7 +10,7 @@
 --
 -- validity of abelian groups.
 module OAlg.AbelianGroup.Proposition
-  ( prpAbelianGroups
+  ( prpAbelianGroups, prpAbhCokernelLftFree
   ) where
 
 import OAlg.Prelude
@@ -19,6 +19,7 @@ import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.Slice.Free
 
 import OAlg.Limes.Definition
+import OAlg.Limes.Cone.Definition
 import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.AbelianGroup.Definition
@@ -27,12 +28,16 @@ import OAlg.AbelianGroup.KernelsAndCokernels
 --------------------------------------------------------------------------------
 -- prpAbhCokernelLftFree -
 
+-- | validity of 'abhCokernelLftFree' for a given cokernel diagram @h@.
 prpAbhCokernelLftFree :: CokernelDiagram N1 AbHom -> Statement
-prpAbhCokernelLftFree dgm
-  = And [ (dgm == (diagram $ clfCokernel ck)) :?> Params ["dgm":=show dgm]
-        , valid ck
-        ]
-  where ck = abhCokernelLftFree dgm
+prpAbhCokernelLftFree h = Prp "AbhCokernelLftFree" :<=>:
+  And [ valid c
+      , Label "1" :<=>: (h == (diagram $ clfCokernel c)) :?> Params ["h":=show h]
+      , Label "2" :<=>: (isSmithNormal $ tip $ universalCone $ clfCokernel c)
+          :?> Params ["h":=show h]
+      
+      ]
+  where c = abhCokernelLftFree h
 
 -- | validity for abelian groups.
 prpAbelianGroups :: Statement

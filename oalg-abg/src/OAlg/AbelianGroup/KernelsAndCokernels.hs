@@ -78,7 +78,7 @@ import OAlg.AbelianGroup.Free
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFree -
 
--- | the liftable free cokernel of a free cokernel diagram.
+-- | a liftable cokernel of a free cokernel diagram.
 --
 --  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
 -- @cf = 'abhCokernelFreeDgmLftFree' d@, then holds: Let @c = 'clfCokernel' cf@ in
@@ -700,11 +700,17 @@ abhSliceFreeAdjunction = slcAdjunction
 
 
 --------------------------------------------------------------------------------
--- abhCokernel -
+-- abhCokernelLftFree -
 
 
--- | cokernel for a given additive homomorphism and for any proxy dimension @__k__@ a liftable with
--- base equal to the shell factor of the cokernel.
+-- | a liftable cokernel of a cokernel diagram.
+--
+--  __Properties__ Let @h@ be in @'CokernelDiagram' 'N1' 'AbHom'@ and
+-- @cf = 'abhCokernelLftFree' h@, then holds: Let @c = 'clfCokernel' cf@ in
+--
+-- (1) @'diagram' c '==' h@.
+--
+-- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
 --
 -- @
 --           w          

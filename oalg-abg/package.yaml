@@ -1,5 +1,5 @@
 name:                oalg-abg
-version:             1.1.0.0
+version:             1.2.0.0
 github:              "zErichGut/oalg-main/oalg-abg"
 license:             BSD3
 author:              "Erich.Gut"
@@ -27,6 +27,8 @@ description:
   __Kernels__ and __Cokernels__ ("OAlg.AbelianGroup.KernelsAndCokernels") for additive homomorphisms
   between finitely generated abelian groups are provided by reducing Z-matrices to Smith Normal
   Form ("OAlg.AbelianGroup.Free.SmithNormalForm").
+
+  Further more the provided cokernels are all liftable.
 
 
   Please see the README on GitHub at <https://github.com/zErichGut/oalg-main/blob/main/oalg-abg/README.md>
