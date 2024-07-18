@@ -42,6 +42,7 @@ import OAlg.Prelude
 
 import OAlg.Data.Canonical
 import OAlg.Data.Generator
+import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
@@ -520,6 +521,17 @@ abhFreeToCokernel (SliceFactor a b _) = AbhCokernelFreeToFactor a' b' f' where
   f' = universalFactor a'coker b'cone
 
 --------------------------------------------------------------------------------
+-- abhFreeFromKernel -
+
+abhFreeFromKernel :: Attestable k => AbhCokernelFreeToFactor k -> SliceFactor To (Free k) AbHom
+abhFreeFromKernel f = case abhcftSliceFromFactor f of
+  SliceFactor a b _ -> SliceFactor (SliceTo k a') (SliceTo k b') f' where
+    k  = unit1
+    a' = kernelFactor $ universalCone $ limesFree $ abhKernelFreeFrom a
+    b' = error "nyi"
+    f' = error "nyi"
+
+--------------------------------------------------------------------------------
 -- AbhCokernelFreeToFactor - Murliplicative -
 
 instance Attestable k => Oriented (AbhCokernelFreeToFactor k) where
@@ -571,6 +583,7 @@ instance Typeable k => Entity2 (AbhSliceFreeAdjunction k)
 
 instance Attestable k => Applicative (AbhSliceFreeAdjunction k) where
   amap AbhFreeToCokernel = abhFreeToCokernel
+  amap AbhFreeFromKernel = abhFreeFromKernel -- . abhcftSliceFromFactor
   
 --------------------------------------------------------------------------------
 -- abhKernel -
