@@ -23,12 +23,14 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Cokernels
   , abhCokernels, abhCokernelLftFree, abhCokernelFreeDgmLftFree
+  , abhCokernelFreeTo, AbhCokernelFreeTo(), abgCftLiftableFree, abgCftSliceFrom
     
     -- * Smith Normal
   , isoSmithNormal
 
     -- * Adjunction
   , abhSliceFreeAdjunction
+  , AbhSliceFreeAdjunction(..)
 
   )
   where
@@ -455,18 +457,18 @@ abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> AbhCokernelFreeT
 abhCokernelFreeTo s = AbhCokernelFreeTo s (abhCokernelFreeTo' s)
 
 --------------------------------------------------------------------------------
--- abhcftLiftableFree -
+-- abgCftLiftableFree -
 
-abhcftLiftableFree :: AbhCokernelFreeTo k -> CokernelLiftableFree AbHom
-abhcftLiftableFree (AbhCokernelFreeTo _ c) = c
+abgCftLiftableFree :: AbhCokernelFreeTo k -> CokernelLiftableFree AbHom
+abgCftLiftableFree (AbhCokernelFreeTo _ c) = c
 
 --------------------------------------------------------------------------------
--- abhcftSliceFrom -
+-- abgCftSliceFrom -
 
 -- | the @__k__@-free slice 'From', i.e. the shell factor of the cokernel
-abhcftSliceFrom :: AbhCokernelFreeTo k -> Slice From (Free k) AbHom
--- abhcftSliceFrom :: AbhCokernelFreeTo k -> Cokernel N1 AbHom
-abhcftSliceFrom (AbhCokernelFreeTo (SliceTo k _) c) = SliceFrom k f where
+abgCftSliceFrom :: AbhCokernelFreeTo k -> Slice From (Free k) AbHom
+-- abgCftSliceFrom :: AbhCokernelFreeTo k -> Cokernel N1 AbHom
+abgCftSliceFrom (AbhCokernelFreeTo (SliceTo k _) c) = SliceFrom k f where
   f = head $ universalShell $ clfCokernel c
 
 -- as the constructor is not public and the only way to instantate a value of AbhCokenrelFreeTo
@@ -490,19 +492,19 @@ data AbhCokernelFreeToFactor k
   deriving (Show, Eq)
 
 --------------------------------------------------------------------------------
--- abhcftSliceFromFactor -
+-- abgCftSliceFromFactor -
 
 -- | the @__k__@-free slice factor 'From'.
-abhcftSliceFromFactor :: AbhCokernelFreeToFactor k -> SliceFactor From (Free k) AbHom
-abhcftSliceFromFactor (AbhCokernelFreeToFactor a b h) = SliceFactor a' b' h where
-  a' = abhcftSliceFrom a
-  b' = abhcftSliceFrom b
+abgCftSliceFromFactor :: AbhCokernelFreeToFactor k -> SliceFactor From (Free k) AbHom
+abgCftSliceFromFactor (AbhCokernelFreeToFactor a b h) = SliceFactor a' b' h where
+  a' = abgCftSliceFrom a
+  b' = abgCftSliceFrom b
 
 instance Attestable k => Validable (AbhCokernelFreeToFactor k) where
   valid f@(AbhCokernelFreeToFactor a b _) = Label "AbhCokernelFreeToFactor" :<=>:
     And [ valid a
         , valid b
-        , valid $ abhcftSliceFromFactor f
+        , valid $ abgCftSliceFromFactor f
         ]
 
 instance Attestable k => Entity (AbhCokernelFreeToFactor k)
@@ -516,8 +518,8 @@ abhFreeToCokernel (SliceFactor a b _) = AbhCokernelFreeToFactor a' b' f' where
   a' = abhCokernelFreeTo a
   b' = abhCokernelFreeTo b
   
-  a'coker = clfCokernel $ abhcftLiftableFree a'
-  b'coker = clfCokernel $ abhcftLiftableFree b'
+  a'coker = clfCokernel $ abgCftLiftableFree a'
+  b'coker = clfCokernel $ abgCftLiftableFree b'
   b'cone = ConeCokernel (diagram a'coker) (cokernelFactor $ universalCone b'coker)
   f' = universalFactor a'coker b'cone
 
@@ -525,7 +527,7 @@ abhFreeToCokernel (SliceFactor a b _) = AbhCokernelFreeToFactor a' b' f' where
 -- abhFreeFromKernel -
 
 abhFreeFromKernel :: Attestable k => AbhCokernelFreeToFactor k -> SliceFactor To (Free k) AbHom
-abhFreeFromKernel f = case abhcftSliceFromFactor f of
+abhFreeFromKernel f = case abgCftSliceFromFactor f of
   SliceFactor a b _ -> SliceFactor (SliceTo k a') (SliceTo k b') f' where
     k  = unit1
 
@@ -547,7 +549,7 @@ instance Attestable k => Oriented (AbhCokernelFreeToFactor k) where
 
 instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
   one a = AbhCokernelFreeToFactor a a (one e) where
-    e = case abhcftSliceFrom a of
+    e = case abgCftSliceFrom a of
           SliceFrom _ h -> end h
 
   AbhCokernelFreeToFactor a b f * AbhCokernelFreeToFactor c d g
@@ -605,7 +607,7 @@ instance Attestable k => EmbeddableMorphismTyp (AbhSliceFreeAdjunction k)
 
 
 abhKernelFreeFrom' :: Attestable k => AbhCokernelFreeTo k -> Slice To (Free k) AbHom
-abhKernelFreeFrom' c = case abhcftSliceFrom c of
+abhKernelFreeFrom' c = case abgCftSliceFrom c of
   a@(SliceFrom k _) -> SliceTo k a' where
     a' = kernelFactor $ universalCone $ limesFree $ abhKernelFreeFrom a
 

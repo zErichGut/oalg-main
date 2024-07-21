@@ -1,6 +1,13 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{-# LANGUAGE TypeFamilies, TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
+
 -- |
 -- Module      : OAlg.AbelianGroup.Proposition
 -- Description : validity of abelian groups
@@ -15,8 +22,14 @@ module OAlg.AbelianGroup.Proposition
 
 import OAlg.Prelude
 
+import OAlg.Data.Singleton
+
 import OAlg.Entity.Natural hiding ((++))
-import OAlg.Entity.Slice.Free
+import OAlg.Entity.Slice
+
+import OAlg.Structure.Oriented
+
+import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone.Definition
@@ -24,6 +37,17 @@ import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+
+--------------------------------------------------------------------------------
+-- xHomMltAbhSliceFreeAdjunction -
+
+xHomMltAbhSliceFreeAdjunction :: Attestable k
+  => XOrtSite To AbHom -> XHomMlt (AbhSliceFreeAdjunction k)
+xHomMltAbhSliceFreeAdjunction xAbhTo = XHomMlt (xPnt k xAbhTo) xMlt where
+  k = unit1
+  xPnt :: Free k AbHom -> XOrtSite To AbHom -> X (SomeApplPnt (AbhSliceFreeAdjunction k))
+  xPnt = error "nyi"
+  xMlt = error "nyi"
 
 --------------------------------------------------------------------------------
 -- prpAbhCokernelLftFree -
