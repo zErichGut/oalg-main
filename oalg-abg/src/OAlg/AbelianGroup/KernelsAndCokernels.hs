@@ -53,6 +53,7 @@ import OAlg.Structure.Operational
 import OAlg.Structure.Number
 
 import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
 
 import OAlg.Adjunction
 
@@ -527,9 +528,15 @@ abhFreeFromKernel :: Attestable k => AbhCokernelFreeToFactor k -> SliceFactor To
 abhFreeFromKernel f = case abhcftSliceFromFactor f of
   SliceFactor a b _ -> SliceFactor (SliceTo k a') (SliceTo k b') f' where
     k  = unit1
-    a' = kernelFactor $ universalCone $ limesFree $ abhKernelFreeFrom a
-    b' = error "nyi"
-    f' = error "nyi"
+
+    a'ker = limesFree $ abhKernelFreeFrom a
+    b'ker = limesFree $ abhKernelFreeFrom b
+    
+    a' = kernelFactor $ universalCone a'ker
+    b' = kernelFactor $ universalCone b'ker
+
+    f'cone = ConeKernel (diagram b'ker) a'
+    f'     = universalFactor b'ker f'cone
 
 --------------------------------------------------------------------------------
 -- AbhCokernelFreeToFactor - Murliplicative -
@@ -583,8 +590,33 @@ instance Typeable k => Entity2 (AbhSliceFreeAdjunction k)
 
 instance Attestable k => Applicative (AbhSliceFreeAdjunction k) where
   amap AbhFreeToCokernel = abhFreeToCokernel
-  amap AbhFreeFromKernel = abhFreeFromKernel -- . abhcftSliceFromFactor
-  
+  amap AbhFreeFromKernel = abhFreeFromKernel
+
+instance Attestable k => Morphism (AbhSliceFreeAdjunction k) where
+  type ObjectClass (AbhSliceFreeAdjunction k) = Mlt
+
+  homomorphous AbhFreeToCokernel = Struct :>: Struct
+  homomorphous AbhFreeFromKernel = Struct :>: Struct
+
+instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Typ
+instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Ort
+
+instance Attestable k => EmbeddableMorphismTyp (AbhSliceFreeAdjunction k)
+
+
+abhKernelFreeFrom' :: Attestable k => AbhCokernelFreeTo k -> Slice To (Free k) AbHom
+abhKernelFreeFrom' c = case abhcftSliceFrom c of
+  a@(SliceFrom k _) -> SliceTo k a' where
+    a' = kernelFactor $ universalCone $ limesFree $ abhKernelFreeFrom a
+
+
+instance Attestable k => HomOriented (AbhSliceFreeAdjunction k) where
+  pmap AbhFreeToCokernel = abhCokernelFreeTo
+  pmap AbhFreeFromKernel = abhKernelFreeFrom'
+
+instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Mlt
+instance Attestable k => HomMultiplicative (AbhSliceFreeAdjunction k)
+
 --------------------------------------------------------------------------------
 -- abhKernel -
 
