@@ -23,7 +23,9 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Cokernels
   , abhCokernels, abhCokernelLftFree, abhCokernelFreeDgmLftFree
-  , abhCokernelFreeTo, AbhCokernelFreeTo(), abgCftLiftableFree, abgCftSliceFrom
+  , abhCokernelFreeTo
+  , AbhCokernelFreeTo(), AbhCokernelFreeToFactor(..)
+  , abhCokernelFreeToSliceTo, abgCftLiftableFree, abgCftSliceFrom
     
     -- * Smith Normal
   , isoSmithNormal
@@ -448,6 +450,12 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
 -- with 'abhCokernelFreeTo'.
 data AbhCokernelFreeTo k = AbhCokernelFreeTo
   (Slice To (Free k) AbHom) (CokernelLiftableFree AbHom) deriving (Show)
+
+--------------------------------------------------------------------------------
+-- abhCokernelFreeToSliceTo -
+
+abhCokernelFreeToSliceTo :: AbhCokernelFreeTo k -> Slice To (Free k) AbHom
+abhCokernelFreeToSliceTo (AbhCokernelFreeTo s _) = s
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo -

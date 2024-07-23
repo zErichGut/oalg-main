@@ -25,6 +25,7 @@ module OAlg.Hom.Multiplicative.Proposition
   , prpHomMlt, XHomMlt(..), coXHomMlt, coXHomMltInv
   , SomeApplPnt(..), coSomeApplPnt, coSomeApplPntInv
   , SomeApplMltp2(..), coSomeApplMltp2, coSomeApplMltp2Inv
+  , XSomeApplMlt(..)
   , prpHomMlt1, prpHomMlt2
 
     -- * X
@@ -154,55 +155,55 @@ prpHomMlt (XHomMlt xsap xsam2) = Prp "HomMlt"
             ]
 
 --------------------------------------------------------------------------------
--- SomeApplMlt -
+-- XSomeApplMlt -
 
 -- | some application on 'Oriented' 'Site'.
-data SomeApplMlt d h where
-  SomeApplMlt :: h a b -> XOrtSite d a -> SomeApplMlt d h
+data XSomeApplMlt d h where
+  XSomeApplMlt :: h a b -> XOrtSite d a -> XSomeApplMlt d h
 
 --------------------------------------------------------------------------------
--- SomeApplMlt - Dualisable -
+-- XSomeApplMlt - Dualisable -
 
-type instance Dual (SomeApplMlt To h) = SomeApplMlt From (OpHom h)
+type instance Dual (XSomeApplMlt To h) = XSomeApplMlt From (OpHom h)
 
--- | to the dual of @'SomeApplMlt' 'To' __h__@.
-coSomeApplMltTo :: Transformable1 Op (ObjectClass h)
-  => SomeApplMlt To h -> Dual (SomeApplMlt To h)
-coSomeApplMltTo (SomeApplMlt h xe@(XEnd _ _)) = SomeApplMlt h' xs' where
+-- | to the dual of @'XSomeApplMlt' 'To' __h__@.
+coXSomeApplMltTo :: Transformable1 Op (ObjectClass h)
+  => XSomeApplMlt To h -> Dual (XSomeApplMlt To h)
+coXSomeApplMltTo (XSomeApplMlt h xe@(XEnd _ _)) = XSomeApplMlt h' xs' where
     h'  = OpHom h
     xs' = toDual xe
 
 --------------------------------------------------------------------------------
 -- xSomeApplPnt -
 
--- | random variable for some application on a point given by a 'SomeApplMlt'.
-xSomeApplPnt :: SomeApplMlt d h -> X (SomeApplPnt h)
-xSomeApplPnt (SomeApplMlt h (XStart xp _))
+-- | random variable for some application on a point given by a 'XSomeApplMlt'.
+xSomeApplPnt :: XSomeApplMlt d h -> X (SomeApplPnt h)
+xSomeApplPnt (XSomeApplMlt h (XStart xp _))
   = xp >>= return . SomeApplPnt h
-xSomeApplPnt (SomeApplMlt h (XEnd xp _))
+xSomeApplPnt (XSomeApplMlt h (XEnd xp _))
   = xp >>= return . SomeApplPnt h
 
 
 --------------------------------------------------------------------------------
 -- xSomeApplMltp2 -
 
--- | random variable for some application on multiplicable factors given by a 'SomeApplMlt'.
-xSomeApplMltp2 :: Hom Mlt h => SomeApplMlt d h -> X (SomeApplMltp2 h)
-xSomeApplMltp2 (SomeApplMlt h xs@(XStart _ _))
+-- | random variable for some application on multiplicable factors given by a 'XSomeApplMlt'.
+xSomeApplMltp2 :: Hom Mlt h => XSomeApplMlt d h -> X (SomeApplMltp2 h)
+xSomeApplMltp2 (XSomeApplMlt h xs@(XStart _ _))
   = xSam2Start xs (tau (domain h)) h where
   
       xSam2Start :: XOrtSite From a -> Struct Mlt a
         -> h a b -> X (SomeApplMltp2 h)
       xSam2Start xs Struct h = xMltp2 xs >>= return . SomeApplMltp2 h
       
-xSomeApplMltp2 sa@(SomeApplMlt _ (XEnd _ _))
-  = amap1 coSomeApplMltp2Inv $ xSomeApplMltp2 $ coSomeApplMltTo sa
+xSomeApplMltp2 sa@(XSomeApplMlt _ (XEnd _ _))
+  = amap1 coSomeApplMltp2Inv $ xSomeApplMltp2 $ coXSomeApplMltTo sa
 
 --------------------------------------------------------------------------------
 -- xHomMlt -
 
--- | the induced random variable of 'XHomMlt', given by 'SomeApplMlt'.
-xHomMlt :: Hom Mlt h => SomeApplMlt d h -> XHomMlt h
+-- | the induced random variable of 'XHomMlt', given by 'XSomeApplMlt'.
+xHomMlt :: Hom Mlt h => XSomeApplMlt d h -> XHomMlt h
 xHomMlt sams = XHomMlt xsap xsam2 where
   xsap  = xSomeApplPnt sams
   xsam2 = xSomeApplMltp2 sams
@@ -234,10 +235,10 @@ prpHomOpMlt = Prp "HomOpMlt"
     xsp' = xosXOrtSitePath (toDual xeo) 10
     
     xsaOpposite :: XHomMlt (HomOp Mlt)
-    xsaOpposite = xHomMlt (SomeApplMlt Opposite $ toDual xeo)
+    xsaOpposite = xHomMlt (XSomeApplMlt Opposite $ toDual xeo)
 
     xsaOpPathInv :: XHomMlt (HomOp Mlt)
-    xsaOpPathInv = xHomMlt (SomeApplMlt OpPathInv $ xsp')
+    xsaOpPathInv = xHomMlt (XSomeApplMlt OpPathInv $ xsp')
 
     xsaToOpOp :: XHomMlt (HomOp Mlt)
-    xsaToOpOp = xHomMlt (SomeApplMlt ToOpOp xeo)
+    xsaToOpOp = xHomMlt (XSomeApplMlt ToOpOp xeo)
