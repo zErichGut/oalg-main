@@ -20,16 +20,24 @@ module OAlg.AbelianGroup.Proposition
   ( prpAbelianGroups, prpAbhCokernelLftFree
   ) where
 
+import Prelude (ceiling)
+
+import Data.Foldable
+import Data.List
+
 import Control.Monad
 import OAlg.Prelude
 
+import OAlg.Data.Canonical
 import OAlg.Data.Singleton
 
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.Slice
 import OAlg.Entity.Slice.Free
+import OAlg.Entity.Matrix.Definition
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
@@ -40,6 +48,7 @@ import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+import OAlg.AbelianGroup.ZMod
 
 --------------------------------------------------------------------------------
 -- xHomMltAbhSliceFreeAdjunction -
@@ -79,32 +88,47 @@ pp k = case someNatural k of
                         , prpHomMlt (xHomMltAbhCokernelSliceTo (Free k') xStandardOrtSite)
                         ]
 
-{-
-xHomMltAbhSliceFreeAdjunction :: Attestable k
-  => XOrtSite To AbHom -> XOrtSite From AbHom -> XHomMlt (AbhSliceFreeAdjunction k)
-xHomMltAbhSliceFreeAdjunction xAbhTo xAbhFrom
-  = XHomMlt (xPnt k xAbhTo xAbhFrom) (xMlt k xAbhTo xAbhFrom) where
-    k = unit1
-    xPnt :: Attestable k => Free k AbHom -> XOrtSite To AbHom -> XOrtSite From AbHom
-         -> X (SomeApplPnt (AbhSliceFreeAdjunction k))
-    xPnt k xAbhTo xAbhFrom = xPntTo k xAbhTo  
-  
-    xPntTo :: Attestable k => Free k AbHom -> XOrtSite To AbHom
-      -> X (SomeApplPnt (AbhSliceFreeAdjunction k))
-    xPntTo k xAbhTo = do
-      s <- xp
-      return (SomeApplPnt AbhFreeToCokernel s)
-  
-      where XEnd xp _ = xosXOrtSiteToSliceFactorTo xAbhTo k
-  
-    xMlt :: Attestable k => Free k AbHom -> XOrtSite To AbHom -> XOrtSite From AbHom
-         -> X (SomeApplMltp2 (AbhSliceFreeAdjunction k))
-    xMlt k xAbhTo xAbhFrom = xMltTo k xAbhTo
 
-    xMltTo :: Attestable k => Free k AbHom -> XOrtSite To AbHom
-         -> X (SomeApplMltp2 (AbhSliceFreeAdjunction k))
-    xMltTo k xAbhTo = error "nyi"
--}    
+abgLength :: AbGroup -> N
+abgLength (AbGroup p) = lengthN p
+
+abhLength :: AbHom -> N
+abhLength (AbHom m) = lengthN $ mtxxs m
+
+abhDensity :: N -> AbHom -> Maybe Q
+abhDensity n h = let s :> e = orientation h
+  in case abgLength s * abgLength e of
+       0 -> Nothing
+       m -> Just (ceiling (n' * d) % n) where
+         d = (inj $ abhLength h) % m
+         n' = inj n
+
+dst1 :: N -> Int -> XOrtSite To AbHom -> IO ()
+dst1 k n xTo = case someNatural k of
+  SomeNatural k' -> putDstr shw n xShw where
+    xShw = xosPoint $ xosXOrtSiteToSliceFactorTo xTo (Free k')
+    -- shw = return . show . length . filter isFree . toList . (\(AbGroup g) -> g) . start . slice
+    shw = return . show . abhDensity 5 . slice
+    isFree (ZMod n) = True -- n == 0
+
+dst2 :: N -> Int -> XOrtSite To AbHom -> IO ()
+dst2 k n xTo = case someNatural k of
+  SomeNatural k' -> putDstr shw n xShw where
+    xShw = xosOrt $ xosXOrtSiteToSliceFactorTo xTo (Free k')
+    shw = return . show . abhDensity 5 . slfDrop
+
+dst3 :: N -> Int -> XOrtSite To AbHom -> IO ()
+dst3 k n xTo = case someNatural k of
+  SomeNatural k' -> putDstr shw n xShw where
+    xShw = xosPoint $ xosXOrtSiteFromAbhCokernelFreeToFactor (Free k') xTo 
+    shw = return . show . end . slice . abgCftSliceFrom
+    isFree (ZMod n) = True -- n == 0
+
+dst4 :: N -> Int -> XOrtSite To AbHom -> IO ()
+dst4 k n xTo = case someNatural k of
+  SomeNatural k' -> putDstr shw n xShw where
+    xShw = xosOrt $ xosXOrtSiteFromAbhCokernelFreeToFactor (Free k') xTo 
+    shw = return . show . abhDensity 17 . slfDrop . abgCftSliceFromFactor
 
 --------------------------------------------------------------------------------
 -- prpAbhCokernelLftFree -

@@ -25,7 +25,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
   , abhCokernels, abhCokernelLftFree, abhCokernelFreeDgmLftFree
   , abhCokernelFreeTo
   , AbhCokernelFreeTo(), AbhCokernelFreeToFactor(..)
-  , abhCokernelFreeToSliceTo, abgCftLiftableFree, abgCftSliceFrom
+  , abhCokernelFreeToSliceTo, abgCftLiftableFree, abgCftSliceFrom, abgCftSliceFromFactor
     
     -- * Smith Normal
   , isoSmithNormal
