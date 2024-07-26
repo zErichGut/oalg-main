@@ -24,7 +24,7 @@ module OAlg.Entity.Matrix.Definition
     -- * Matrix
     Matrix(..), rows, cols, mtxxs
   , mtxRowCol, mtxColRow
-  , mtxMap
+  , mtxMap, mtxDensity
   
     -- ** Group
   , mtxGroupRow, mtxGroupDim
@@ -127,6 +127,16 @@ cols (Matrix _ c _) = c
 -- | the entries.
 mtxxs :: Matrix x -> Entries N N x
 mtxxs (Matrix _ _ xs) = xs
+
+--------------------------------------------------------------------------------
+-- mtxDensity -
+
+-- | the density of the entries of a matrix, which is the number of the entries divided by the
+-- product of the number of its rows and columns.
+mtxDensity :: Matrix x -> Maybe Q
+mtxDensity m = case (lengthN $ rows m) * (lengthN $ cols m) of
+ 0 -> Nothing
+ d -> Just $ ((inj $ lengthN $ mtxxs m) % d)
 
 --------------------------------------------------------------------------------
 -- Matrix - Entity -
