@@ -65,37 +65,6 @@ xHomMltAbhCokernelSliceTo k xTo = xHomMlt xAppl where
   xAppl = XSomeApplMlt AbhFreeFromKernel (xosAbhCokerneFreeToFactor k xSliceTo)
   xSliceTo = xosAdjTerminal (1%100) $ xosXOrtSiteToSliceFactorTo xTo k
 
-{-
-xosXOrtSiteFromAbhCokernelFreeToFactor :: Attestable k
-  => Free k AbHom -> XOrtSite To AbHom -> XOrtSite To (AbhCokernelFreeToFactor k)
-xosXOrtSiteFromAbhCokernelFreeToFactor k xTo = XEnd xToSlice xToFactor where
-  XEnd xToP xToM = xosXOrtSiteToSliceFactorTo xTo k
-  xToSlice = fmap (pmap AbhFreeToCokernel) xToP
-  xToFactor e = do
-    f <- xToM $ abhCokernelFreeToSliceTo e
-    s <- return $ pmap AbhFreeToCokernel $ start f
-    sCoker <- return $ clfCokernel $ abgCftLiftableFree s 
-    eDgm <- return $ diagram sCoker
-    eCone <- return $ ConeCokernel eDgm (slice $ abgCftSliceFrom e)
-    return (AbhCokernelFreeToFactor s e (universalFactor sCoker eCone)) -- valid
--}
-
-xosAbhCokerneFreeToFactor :: Attestable k
-  => Free k AbHom -> XOrtSite To (SliceFactor To (Free k) AbHom)
-  -> XOrtSite To (AbhCokernelFreeToFactor k)
-xosAbhCokerneFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
-  xp = fmap (pmap AbhFreeToCokernel) xSliceTo
-  xf e = do
-    eSliceTo <- return $ abhCokernelFreeToSliceTo e
-    f        <- xSliceFactorTo eSliceTo
-    return $ amap AbhFreeToCokernel $ f
-
-
-
-dst5 :: Attestable k => Int -> XOrtSite To (SliceFactor To (Free k) AbHom) -> IO ()
-dst5 n xTo = putDstr shw n xShw where
-    xShw = xosOrt $ xosAbhCokerneFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
-    shw = return . show . abhDensity 17 . slfDrop . abgCftSliceFromFactor
 
 {-
 qq :: N -> Statement
@@ -112,29 +81,6 @@ pp k = case someNatural k of
 rr :: N -> Statement
 rr k = case someNatural k of
   SomeNatural k' -> valid $ xosAbhCokerneFreeToFactor (Free k') xStandardOrtSite 
-
-abgLength :: AbGroup -> N
-abgLength (AbGroup p) = lengthN p
-
-abhLength :: AbHom -> N
-abhLength (AbHom m) = lengthN $ mtxxs m
-
-abhDensity :: N -> AbHom -> Maybe Q
-abhDensity n (AbHom h) = do
-  d <- mtxDensity h
-  return (ceiling (inj n * d) % n)
-
-ff :: Sliced i c => XOrtSite To (SliceFactor To i c) -> i c
-ff _ = unit1
-
-xosAdjTerminal :: (Multiplicative c, Sliced i c)
-  => Q -> XOrtSite To (SliceFactor To i c) -> XOrtSite To (SliceFactor To i c)
-xosAdjTerminal w xos@(XEnd xp xf) = XEnd xp' xf where
-  xp' = xOneOfXW [(w0,xp),(w,return s)]
-  w0  = 1 - w
-  c   = ff xos
-  s   = SliceTo c (one $ slicePoint c)
-
 
 dst1 :: N -> Int -> XOrtSite To AbHom -> IO ()
 dst1 k n xTo = case someNatural k of

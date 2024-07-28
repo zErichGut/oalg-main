@@ -28,7 +28,7 @@ module OAlg.Entity.Slice.Definition
     Slice(..), slice
 
     -- * Factor
-  , SliceFactor(..), slfDrop
+  , SliceFactor(..), slfDrop, slfIndex
   
     -- * Sliced
   , Sliced(..)
@@ -59,7 +59,7 @@ module OAlg.Entity.Slice.Definition
   , xSliceTo, xSliceFrom
   , xosXOrtSiteToSliceFactorTo
   , xosXOrtSiteFromSliceFactorFrom
-
+  , xosAdjTerminal
   ) where
 
 import Control.Monad
@@ -74,6 +74,7 @@ import OAlg.Data.Singleton
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
+import OAlg.Structure.Additive((-))
 
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
@@ -208,6 +209,13 @@ data SliceFactor s i c = SliceFactor (Slice s i c) (Slice s i c) c
 -- | the underlying factor.
 slfDrop :: SliceFactor s i c -> c       
 slfDrop (SliceFactor _ _ f) = f
+
+--------------------------------------------------------------------------------
+-- slfIndex -
+
+-- | the associated index.
+slfIndex :: Sliced i c => XOrtSite To (SliceFactor To i c) -> i c
+slfIndex _ = unit1
 
 --------------------------------------------------------------------------------
 -- SliceFactor - Dual -
@@ -560,6 +568,20 @@ instance XStandardOrtSite From (SliceFactor To Proxy OS) where
       return (SliceFactor s (SliceTo i (b:>p)) (a:>b))
 
 instance XStandardOrtSiteFrom (SliceFactor To Proxy OS)
+
+--------------------------------------------------------------------------------
+-- xosAdjTerminal -
+
+-- | adjoins a terminal point with the given probability to the random variable of the points of
+-- the given @'XOrtSite' 'To'@ of the @'SliceFactor' 'To' __i__ __c__@. Such a terminal point is given
+-- by @'one' s@ where @s@ is the slice point. 
+xosAdjTerminal :: (Multiplicative c, Sliced i c)
+  => Q -> XOrtSite To (SliceFactor To i c) -> XOrtSite To (SliceFactor To i c)
+xosAdjTerminal w xos@(XEnd xp xf) = XEnd xp' xf where
+  xp' = xOneOfXW [(w0,xp),(w,return s)]
+  w0  = 1 - w
+  i   = slfIndex xos
+  s   = SliceTo i (one $ slicePoint i)
 
 
 --------------------------------------------------------------------------------

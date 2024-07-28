@@ -25,6 +25,7 @@ module OAlg.AbelianGroup.Definition
   , AbHom(..)
   , abh, abh'
   , abhz, zabh
+  , abhDensity
 
     -- * Adjunction
   , abhFreeAdjunction
@@ -43,6 +44,8 @@ module OAlg.AbelianGroup.Definition
     -- * Proposition
   , prpAbHom
   ) where
+
+import Prelude(ceiling)
 
 import Control.Monad
 import Control.Applicative ((<|>))
@@ -245,6 +248,16 @@ newtype AbHom = AbHom (Matrix ZModHom)
 -- | the associated dimension for matrices of 'ZModHom'.
 abgDim :: AbGroup -> Dim' ZModHom
 abgDim (AbGroup g) = Dim g
+
+--------------------------------------------------------------------------------
+-- abhDensity -
+
+-- | the density of the abelian homomorphism, i. e. the density of the underlying matrix
+-- (see: 'mtxDensity').
+abhDensity :: N -> AbHom -> Maybe Q
+abhDensity n (AbHom h) = do
+  d <- mtxDensity h
+  return (ceiling (inj n * d) % n)
 
 --------------------------------------------------------------------------------
 -- abhz -
