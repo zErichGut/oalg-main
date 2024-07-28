@@ -35,7 +35,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
   , AbhSliceFreeAdjunction(..)
 
     -- * X
-  , xosAbhCokerneFreeToFactor
+  , xosAbhCokernelFreeToFactor
 
   )
   where
@@ -571,13 +571,13 @@ instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
     f' = npower f n
 
 --------------------------------------------------------------------------------
--- xosAbhCokerneFreeToFactor -
+-- xosAbhCokernelFreeToFactor -
 
 -- | the induced @'XOrtSite' 'To'@ of @'AbhCokernelFreeToFactor' __k__@.
-xosAbhCokerneFreeToFactor :: Attestable k
+xosAbhCokernelFreeToFactor :: Attestable k
   => Free k AbHom -> XOrtSite To (SliceFactor To (Free k) AbHom)
   -> XOrtSite To (AbhCokernelFreeToFactor k)
-xosAbhCokerneFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
+xosAbhCokernelFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
   xp = fmap (pmap AbhFreeToCokernel) xSliceTo
   xf e = do
     eSliceTo <- return $ abhCokernelFreeToSliceTo e
@@ -585,11 +585,11 @@ xosAbhCokerneFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
     return $ amap AbhFreeToCokernel $ f
 
 
-dstAbhCokerneFreeToFactor :: Attestable k
+dstAbhCokernelFreeToFactor :: Attestable k
   => Int -> XOrtSite To (SliceFactor To (Free k) AbHom) -> IO ()
-dstAbhCokerneFreeToFactor n xTo = putDstr shw n xShw where
-    xShw = xosOrt $ xosAbhCokerneFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
-    shw = return . show . abhDensity 17 . slfDrop . abgCftSliceFromFactor
+dstAbhCokernelFreeToFactor n xTo = putDstr shw n xShw where
+    xShw = xosOrt $ xosAbhCokernelFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
+    shw = return . show . abhDensity 17 . slfFactor . abgCftSliceFromFactor
 
 --------------------------------------------------------------------------------
 -- AbhSliceFreeAdjunction -

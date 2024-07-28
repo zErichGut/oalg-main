@@ -62,25 +62,9 @@ xHomMltAbhSliceToCokernel k xTo = xHomMlt xAppl where
 xHomMltAbhCokernelSliceTo :: Attestable k
   => Free k AbHom -> XOrtSite To AbHom -> XHomMlt (AbhSliceFreeAdjunction k)
 xHomMltAbhCokernelSliceTo k xTo = xHomMlt xAppl where
-  xAppl = XSomeApplMlt AbhFreeFromKernel (xosAbhCokerneFreeToFactor k xSliceTo)
+  xAppl = XSomeApplMlt AbhFreeFromKernel (xosAbhCokernelFreeToFactor k xSliceTo)
   xSliceTo = xosAdjTerminal (1%100) $ xosXOrtSiteToSliceFactorTo xTo k
 
-
-{-
-qq :: N -> Statement
-qq k = case someNatural k of
-  SomeNatural k' -> valid $ xosXOrtSiteFromAbhCokernelFreeToFactor (Free k') xStandardOrtSite 
--}
-
-pp :: N -> Statement
-pp k = case someNatural k of
-  SomeNatural k' -> And [ prpHomMlt (xHomMltAbhSliceToCokernel (Free k') xStandardOrtSite)
-                        , prpHomMlt (xHomMltAbhCokernelSliceTo (Free k') xStandardOrtSite)
-                        ]
-
-rr :: N -> Statement
-rr k = case someNatural k of
-  SomeNatural k' -> valid $ xosAbhCokerneFreeToFactor (Free k') xStandardOrtSite 
 
 dst1 :: N -> Int -> XOrtSite To AbHom -> IO ()
 dst1 k n xTo = case someNatural k of
@@ -94,22 +78,35 @@ dst2 :: N -> Int -> XOrtSite To AbHom -> IO ()
 dst2 k n xTo = case someNatural k of
   SomeNatural k' -> putDstr shw n xShw where
     xShw = xosOrt $ xosXOrtSiteToSliceFactorTo xTo (Free k')
-    shw = return . show . abhDensity 5 . slfDrop
+    shw = return . show . abhDensity 5 . slfFactor
 
-{-
-dst3 :: N -> Int -> XOrtSite To AbHom -> IO ()
-dst3 k n xTo = case someNatural k of
-  SomeNatural k' -> putDstr shw n xShw where
-    xShw = xosPoint $ xosXOrtSiteFromAbhCokernelFreeToFactor (Free k') xTo 
-    shw = return . show . end . slice . abgCftSliceFrom
-    isFree (ZMod n) = True -- n == 0
+--------------------------------------------------------------------------------
+-- prpAbhCokernelFreeToFactor -
 
-dst4 :: N -> Int -> XOrtSite To AbHom -> IO ()
-dst4 k n xTo = case someNatural k of
-  SomeNatural k' -> putDstr shw n xShw where
-    xShw = xosOrt $ xosXOrtSiteFromAbhCokernelFreeToFactor (Free k') xTo 
-    shw = return . show . abhDensity 17 . slfDrop . abgCftSliceFromFactor
--}
+-- | validity of @'AbhCokernelFreeToFactor' __k__@ is a 'Multiplicative' structure for the given
+-- dimension.
+prpAbhCokernelFreeToFactor :: N -> Statement
+prpAbhCokernelFreeToFactor k = case someNatural k of
+  SomeNatural k' -> And [ prpOrt $ xosOrt xos
+                        , prpMlt xMltAbhCokernelFreeToFactor
+                        ] where
+    k'' = Free k'
+    xos = xosAbhCokernelFreeToFactor k'' xStandardOrtSite 
+    xMltAbhCokernelFreeToFactor = xMlt xos (xNB 0 5) xe
+    xe = fmap (Endo . one) $ xosPoint xos
+    -- for the moment there is no better implementation for endos!
+
+--------------------------------------------------------------------------------
+-- prpAbhSliceFreeAdjunctionHomMlt -
+
+-- | validity of @'AbhSliceFreeAdjunction' __k__@ beeing multiplicative homomorphisms between
+-- @'SliceFactor' 'To' ('Free' __k__) 'AbHom'@ and @'AbhCokernelFreeToFactor' __k__@.
+prpAbhSliceFreeAdjunctionHomMlt :: N -> Statement
+prpAbhSliceFreeAdjunctionHomMlt k = case someNatural k of
+  SomeNatural k' -> And [ prpHomMlt (xHomMltAbhSliceToCokernel (Free k') xStandardOrtSite)
+                        , prpHomMlt (xHomMltAbhCokernelSliceTo (Free k') xStandardOrtSite)
+                        ]
+
 --------------------------------------------------------------------------------
 -- prpAbhCokernelLftFree -
 
@@ -131,5 +128,7 @@ prpAbelianGroups = Prp "AbelianGroups"
             , Label "isoSmithNormal" :<=>: Forall xStandard (valid . isoSmithNormal)
             , Label "kernels" :<=>: valid abhKernels
             , Label "cokernels liftable" :<=>: Forall xStandard prpAbhCokernelLftFree
+            , Prp "AbhCokernelFreeToFactor 8" :<=>: prpAbhCokernelFreeToFactor 8
+            , Prp "AbhSliceFreeAdjunctionHomMlt 7" :<=>: prpAbhSliceFreeAdjunctionHomMlt 7
             , Label "abhFreeAdjunction" :<=>: valid abhFreeAdjunction
             ]

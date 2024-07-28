@@ -28,7 +28,7 @@ module OAlg.Entity.Slice.Definition
     Slice(..), slice
 
     -- * Factor
-  , SliceFactor(..), slfDrop, slfIndex
+  , SliceFactor(..), slfFactor, slfIndex
   
     -- * Sliced
   , Sliced(..)
@@ -204,17 +204,17 @@ data SliceFactor s i c = SliceFactor (Slice s i c) (Slice s i c) c
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- slfDrop -
+-- slfFactor -
 
 -- | the underlying factor.
-slfDrop :: SliceFactor s i c -> c       
-slfDrop (SliceFactor _ _ f) = f
+slfFactor :: SliceFactor s i c -> c       
+slfFactor (SliceFactor _ _ f) = f
 
 --------------------------------------------------------------------------------
 -- slfIndex -
 
 -- | the associated index.
-slfIndex :: Sliced i c => XOrtSite To (SliceFactor To i c) -> i c
+slfIndex :: Sliced i c => f (SliceFactor To i c) -> i c
 slfIndex _ = unit1
 
 --------------------------------------------------------------------------------
@@ -409,8 +409,8 @@ instance EmbeddableMorphism (SliceFactorDrop s) Mlt
 -- SliceFactorDrop - Hom Mlt -
 
 instance Applicative (SliceFactorDrop s) where
-  amap SliceFactorFromDrop = slfDrop
-  amap SliceFactorToDrop   = slfDrop
+  amap SliceFactorFromDrop = slfFactor
+  amap SliceFactorToDrop   = slfFactor
 
 instance Typeable s => HomOriented (SliceFactorDrop s) where
   pmap SliceFactorFromDrop (SliceFrom _ a) = end a
