@@ -31,7 +31,8 @@ module OAlg.AbelianGroup.KernelsAndCokernels
   , isoSmithNormal
 
     -- * Adjunction
-  , abhSliceFreeAdjunction
+  -- , abhSliceFreeAdjunction
+  , abgSliceFreeAdjunction
   , AbhSliceFreeAdjunction(..)
 
     -- * X
@@ -571,27 +572,6 @@ instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
     f' = npower f n
 
 --------------------------------------------------------------------------------
--- xosAbhCokernelFreeToFactor -
-
--- | the induced @'XOrtSite' 'To'@ of @'AbhCokernelFreeToFactor' __k__@.
-xosAbhCokernelFreeToFactor :: Attestable k
-  => Free k AbHom -> XOrtSite To (SliceFactor To (Free k) AbHom)
-  -> XOrtSite To (AbhCokernelFreeToFactor k)
-xosAbhCokernelFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
-  xp = fmap (pmap AbhFreeToCokernel) xSliceTo
-  xf e = do
-    eSliceTo <- return $ abhCokernelFreeToSliceTo e
-    f        <- xSliceFactorTo eSliceTo
-    return $ amap AbhFreeToCokernel $ f
-
-
-dstAbhCokernelFreeToFactor :: Attestable k
-  => Int -> XOrtSite To (SliceFactor To (Free k) AbHom) -> IO ()
-dstAbhCokernelFreeToFactor n xTo = putDstr shw n xShw where
-    xShw = xosOrt $ xosAbhCokernelFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
-    shw = return . show . abhDensity 17 . slfFactor . abgCftSliceFromFactor
-
---------------------------------------------------------------------------------
 -- AbhSliceFreeAdjunction -
 
 data AbhSliceFreeAdjunction k x y where
@@ -650,6 +630,62 @@ instance Attestable k => HomOriented (AbhSliceFreeAdjunction k) where
 
 instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Mlt
 instance Attestable k => HomMultiplicative (AbhSliceFreeAdjunction k)
+
+--------------------------------------------------------------------------------
+-- abhCokerKer -
+
+-- | the right unit of the cokernel-kernel adjunction 'abhAdjunction'.
+abhCokerKer :: Attestable k => Slice To (Free k) AbHom -> SliceFactor To (Free k) AbHom
+abhCokerKer a@(SliceTo i a') = SliceFactor a (SliceTo i k) u where
+  aCokerKer = limesFree $ abhKernelFreeFrom $ abgCftSliceFrom $ (pmap AbhFreeToCokernel a)
+  k = kernelFactor $ universalCone aCokerKer
+  u = universalFactor aCokerKer (ConeKernel (diagram aCokerKer) a') 
+
+
+--------------------------------------------------------------------------------
+-- abhKerCoker -
+
+-- | the left unit of the cokernel-kenrel adjunction 'slcAdjunction'.
+abhKerCoker :: Attestable k
+  => AbhCokernelFreeTo k -> AbhCokernelFreeToFactor k
+abhKerCoker a = AbhCokernelFreeToFactor aKerCokerLft a v where
+  aKerCokerLft   = pmap AbhFreeToCokernel $ pmap AbhFreeFromKernel a
+  aKerCoker      = clfCokernel $ abgCftLiftableFree aKerCokerLft
+  SliceFrom _ a' = abgCftSliceFrom a
+  
+  v = universalFactor aKerCoker (ConeCokernel (diagram aKerCoker) a')
+
+--------------------------------------------------------------------------------
+-- abgSliceFreeAdjunction -
+
+-- | kernel-cokernel adjunction between free slices of a given dimension. 
+abgSliceFreeAdjunction :: Attestable k => Free k AbHom
+  -> Adjunction (AbhSliceFreeAdjunction k) (AbhCokernelFreeToFactor k) (SliceFactor To (Free k) AbHom)
+abgSliceFreeAdjunction _ = Adjunction AbhFreeToCokernel AbhFreeFromKernel u v where
+  u = abhCokerKer
+  v = abhKerCoker
+
+
+--------------------------------------------------------------------------------
+-- xosAbhCokernelFreeToFactor -
+
+-- | the induced @'XOrtSite' 'To'@ of @'AbhCokernelFreeToFactor' __k__@.
+xosAbhCokernelFreeToFactor :: Attestable k
+  => Free k AbHom -> XOrtSite To (SliceFactor To (Free k) AbHom)
+  -> XOrtSite To (AbhCokernelFreeToFactor k)
+xosAbhCokernelFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
+  xp = fmap (pmap AbhFreeToCokernel) xSliceTo
+  xf e = do
+    eSliceTo <- return $ abhCokernelFreeToSliceTo e
+    f        <- xSliceFactorTo eSliceTo
+    return $ amap AbhFreeToCokernel $ f
+
+
+dstAbhCokernelFreeToFactor :: Attestable k
+  => Int -> XOrtSite To (SliceFactor To (Free k) AbHom) -> IO ()
+dstAbhCokernelFreeToFactor n xTo = putDstr shw n xShw where
+    xShw = xosOrt $ xosAbhCokernelFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
+    shw = return . show . abhDensity 17 . slfFactor . abgCftSliceFromFactor
 
 --------------------------------------------------------------------------------
 -- abhKernel -
