@@ -142,7 +142,7 @@ prpAbelianGroups = Prp "AbelianGroups"
             , Label "cokernels liftable" :<=>: Forall xStandard prpAbhCokernelLftFree
             , Prp "AbhCokernelFreeToFactor 8" :<=>: prpAbhCokernelFreeToFactor 8
             , Prp "AbhSliceFreeAdjunctionHomMlt 7" :<=>: prpAbhSliceFreeAdjunctionHomMlt 7
-            , Prp "abgSliceFreeAdjunction 5" :<=>: prpAbgSliceFreeAdjunction 8
+            , Prp "AbgSliceFreeAdjunction 5" :<=>: prpAbgSliceFreeAdjunction 8
             ]
 
 

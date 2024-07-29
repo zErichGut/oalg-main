@@ -687,6 +687,17 @@ dstAbhCokernelFreeToFactor n xTo = putDstr shw n xShw where
     xShw = xosOrt $ xosAbhCokernelFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
     shw = return . show . abhDensity 17 . slfFactor . abgCftSliceFromFactor
 
+instance Attestable k => XStandardOrtSite To (AbhCokernelFreeToFactor k) where
+  xStandardOrtSite = xosAbhCokernelFreeToFactor unit1 (xosAdjTerminal (1%100) $ xStandardOrtSite)
+
+instance Attestable k => XStandard (AbhCokernelFreeTo k) where
+  xStandard = xosPoint (xStandardOrtSite :: Attestable k => XOrtSite To (AbhCokernelFreeToFactor k))
+
+instance Attestable k => XStandard (AbhCokernelFreeToFactor k) where
+  xStandard = xosOrt (xStandardOrtSite :: Attestable k => XOrtSite To (AbhCokernelFreeToFactor k))
+
+instance Attestable k => XStandardPoint (AbhCokernelFreeToFactor k)
+ 
 --------------------------------------------------------------------------------
 -- abhKernel -
 
