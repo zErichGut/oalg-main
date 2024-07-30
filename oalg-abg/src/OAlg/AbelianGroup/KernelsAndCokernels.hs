@@ -850,76 +850,47 @@ abhSliceFreeAdjunction = slcAdjunction
 --  p  |         q |          | u'
 --     |           |          |
 --     v     h     v    w'    v
---     s --------> e ------> c'L
+--     s --------> e ------> c' = cCokerLft
 -- @
 abhCokernelLftFree :: CokernelDiagram N1 AbHom -> CokernelLiftableFree AbHom
 abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
   = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
   (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
     , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
-    ) -> CokernelLiftableFree (LimesInjective w'Cn w'Univ) lft where
-    
+    ) -> CokernelLiftableFree (LimesInjective w'Cn w'Univ) w'Lft where
+
     ----------------------------------------
-    -- cokernel -
-    adj@(Adjunction lAdj _ _ _) = slcAdjunction ne'
-    
-    q'SliceTo = SliceTo ne' q'    
-    q'Coker'  = sliceCokernelTo q'SliceTo
-    q'L       = pmap lAdj q'SliceTo
+    -- constructing c -
+    h'         = lq (SliceFrom ns' (h*p))
+    h'SliceTo  = SliceTo ne' h'
+    q'SliceTo  = SliceTo ne' q'
 
-    qSliceFrom = SliceFrom ne' q
-    
-    -- isomorphism with inverse qIso'
-    qIso = SliceFactor qSliceFrom q'L u  where
-      u = universalFactor q'Coker (ConeCokernel (diagram q'Coker) i)
-      SliceFrom _ i = q'L 
+    cSum       = limes (slfLimitsInjective abhSums)
+                   (DiagramDiscrete (h'SliceTo:|q'SliceTo:|Nil))
+    cSliceTo   = tip $ universalCone cSum
 
-    qIso' = SliceFactor q'L qSliceFrom u where
-      u = universalFactor q'Coker' (ConeCokernel (diagram q'Coker') q)
-      
-    h'        = lq (SliceFrom ns' (h*p))
-    h'SliceTo = SliceTo ne' h'
-    h'L       = pmap lAdj h'SliceTo
-    h'Coker   = sliceCokernelTo h'SliceTo
-    
-    cSum = limes (slfLimitsInjective abhSums)
-                 (DiagramDiscrete (h'SliceTo:|q'SliceTo:|Nil))
-           
-    _:|w:|Nil = shell $ universalCone cSum        
+    ----------------------------------------
+    -- evaluating c' -
+    cCokerLft = abhCokernelFreeTo' cSliceTo
+    cCoker    = clfCokernel cCokerLft
+    c'        = cokernelFactor $ universalCone cCoker
 
-    -- the univesal cone
+    ----------------------------------------
+    -- evaluating w' -
+    w' = universalFactor q'Coker (ConeCokernel (diagram q'Coker) c')
     w'Cn = ConeCokernel d w'
-    SliceFactor _ _ w' = amap lAdj w * qIso
-
-    c'Sum = lmInjMap adj cSum
-
-    -- the universal factor
-    w'Univ (ConeCokernel _ x) = f where
-      SliceFactor _ _ f = universalFactor c'Sum
-        (ConeInjective (diagram c'Sum) t (yFrom:|xFrom * qIso':|Nil))
-
-      xq = x*q
-      t = SliceFrom ne' xq
-      
-      xFrom = SliceFactor qSliceFrom t x
-
-      yFrom = SliceFactor h'L t y
-
-      y = universalFactor h'Coker (ConeCokernel (diagram h'Coker) xq)
-
 
     ----------------------------------------
-    -- liftable -
-    CokernelLiftableFree _ lftSum = abhCokernelFreeTo' tSum where tSum = tip $ universalCone cSum
-    -- as the point map of lAdj is equal to clfCokernel . abhCokernelFreeTo'
-    -- it follows that w' * q is the cokernel of the cSum
+    -- universal property w' -
+    w'Univ (ConeCokernel _ x) = universalFactor cCoker cCone where
+      cCone = ConeCokernel (diagram cCoker) (x*q)
 
-    lft :: Any k -> Liftable From (Free k) AbHom
-    lft k = case ats k of Ats -> LiftableFrom w' w'Slc
-      where
-        w'Slc s@(SliceFrom nk _) = SliceFrom nk (q * s') where SliceFrom _ s' = lift (lftSum k) s
+    w'Lft :: Any k -> Liftable From (Free k) AbHom
+    w'Lft k = case ats k of
+      Ats -> LiftableFrom w' w'SlcFromLft where
+        w'SlcFromLft f = SliceFrom nk (q*f') where
+          SliceFrom nk f' = lift (clfLiftableFree cCokerLft k) f
         
-
      
 -- | cokernel for a given additive homomorphism.
 --

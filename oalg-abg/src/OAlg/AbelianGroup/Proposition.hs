@@ -65,7 +65,7 @@ xHomMltAbhCokernelSliceTo k xTo = xHomMlt xAppl where
   xAppl = XSomeApplMlt AbhFreeFromKernel (xosAbhCokernelFreeToFactor k xSliceTo)
   xSliceTo = xosAdjTerminal (1%100) $ xosXOrtSiteToSliceFactorTo xTo k
 
-
+{-
 dst1 :: N -> Int -> XOrtSite To AbHom -> IO ()
 dst1 k n xTo = case someNatural k of
   SomeNatural k' -> putDstr shw n xShw where
@@ -79,7 +79,7 @@ dst2 k n xTo = case someNatural k of
   SomeNatural k' -> putDstr shw n xShw where
     xShw = xosOrt $ xosXOrtSiteToSliceFactorTo xTo (Free k')
     shw = return . show . abhDensity 5 . slfFactor
-
+-}
 --------------------------------------------------------------------------------
 -- prpAbhCokernelFreeToFactor -
 
@@ -142,7 +142,7 @@ prpAbelianGroups = Prp "AbelianGroups"
             , Label "cokernels liftable" :<=>: Forall xStandard prpAbhCokernelLftFree
             , Prp "AbhCokernelFreeToFactor 8" :<=>: prpAbhCokernelFreeToFactor 8
             , Prp "AbhSliceFreeAdjunctionHomMlt 7" :<=>: prpAbhSliceFreeAdjunctionHomMlt 7
-            , Prp "abgSliceFreeAdjunction 5" :<=>: prpAbgSliceFreeAdjunction 8
+            , Prp "AbgSliceFreeAdjunction 5" :<=>: prpAbgSliceFreeAdjunction 8
             ]
 
 
