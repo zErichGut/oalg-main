@@ -27,12 +27,24 @@ module OAlg.Homology.Simplical
 
   ) where
 
-import Data.Typeable
+-- import Data.Typeable
 
 import OAlg.Prelude
 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
+
+--------------------------------------------------------------------------------
+-- Simplex -
+
+newtype Simplex n x = Simplex (FinList (n+1) x) deriving (Show,Eq,Ord,Validable,Entity)
+
+
+{-
+(<:) :: x -> Face Simplex n x -> Face Simplex (n+1) x
+x <: EmptyFace = Face (Simplex (x:|Nil))
+x <: (Face (Simplex xs)) = Face (Simplex (x:|xs))
+-}
 
 {-
 --------------------------------------------------------------------------------
@@ -58,17 +70,6 @@ class Typeable s => Simplical s x where
   sOrd :: Struct Ord' (s n x)
   sEnt :: Attestable n => Struct Ent (s n x)
   faces :: s n x -> FinList (n+1) (Face s n x)
-
---------------------------------------------------------------------------------
--- Simplex -
-
-newtype Simplex n x = Simplex (FinList (n+1) x) deriving (Show,Eq,Ord,Validable,Entity)
-
-
-(<:) :: x -> Face Simplex n x -> Face Simplex (n+1) x
-x <: EmptyFace = Face (Simplex (x:|Nil))
-x <: (Face (Simplex xs)) = Face (Simplex (x:|xs))
-
 
 instance (Ord x, Entity x) => Simplical Simplex x where
   sOrd = Struct
