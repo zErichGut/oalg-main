@@ -45,3 +45,8 @@ and this project adheres to the
 - Any natural is attestable
 - XStandard for matrices over Z
 - Liftable and CokernelLiftableFree
+
+## [1.2.2.0] - 2024-07-31
+
+### Added
+- mtxDensity

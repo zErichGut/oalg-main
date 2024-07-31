@@ -12,5 +12,7 @@ and this project adheres to the
 
 ## [1.1.0.0] - 2024-02-01
 
+## [1.3.0.0] - 2024-07-31
+
 ### Added
 - Liftable cokernels

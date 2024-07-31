@@ -22,21 +22,27 @@ module OAlg.AbelianGroup.KernelsAndCokernels
     abhKernels
 
     -- * Cokernels
-  , abhCokernels, abhCokernelLftFree, abhCokernelFreeDgmLftFree
-  , abhCokernelFreeTo
+  , abhCokernels, abhCokernelLftFree
+  -- , abhCokernelFreeDgmLftFree
+  -- , abhCokernelFreeTo
+  -- , abhCokernelFreeTo'
+
+{-
   , AbhCokernelFreeTo(), AbhCokernelFreeToFactor(..)
   , abhCokernelFreeToSliceTo, abgCftLiftableFree, abgCftSliceFrom, abgCftSliceFromFactor
-    
+-}
+  
     -- * Smith Normal
   , isoSmithNormal
 
     -- * Adjunction
-  -- , abhSliceFreeAdjunction
-  , abgSliceFreeAdjunction
-  , AbhSliceFreeAdjunction(..)
+  , abhSliceFreeAdjunction
+  -- , abgSliceFreeAdjunction
+  -- , AbhSliceFreeAdjunction(..)
 
     -- * X
-  , xosAbhCokernelFreeToFactor
+    
+  -- , xosAbhCokernelFreeToFactor
 
   )
   where
@@ -446,7 +452,7 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
          -> universalFactor ker (ConeKernel (diagram ker) x)
           -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
         ) kers
-
+{-
 --------------------------------------------------------------------------------
 -- AbhCokernelFree -
 
@@ -697,7 +703,8 @@ instance Attestable k => XStandard (AbhCokernelFreeToFactor k) where
   xStandard = xosOrt (xStandardOrtSite :: Attestable k => XOrtSite To (AbhCokernelFreeToFactor k))
 
 instance Attestable k => XStandardPoint (AbhCokernelFreeToFactor k)
- 
+-}
+
 --------------------------------------------------------------------------------
 -- abhKernel -
 
