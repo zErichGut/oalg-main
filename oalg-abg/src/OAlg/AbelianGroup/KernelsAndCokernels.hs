@@ -23,51 +23,33 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Cokernels
   , abhCokernels, abhCokernelLftFree
-  -- , abhCokernelFreeDgmLftFree
-  -- , abhCokernelFreeTo
-  -- , abhCokernelFreeTo'
-
-{-
-  , AbhCokernelFreeTo(), AbhCokernelFreeToFactor(..)
-  , abhCokernelFreeToSliceTo, abgCftLiftableFree, abgCftSliceFrom, abgCftSliceFromFactor
--}
   
     -- * Smith Normal
   , isoSmithNormal
 
     -- * Adjunction
   , abhSliceFreeAdjunction
-  -- , abgSliceFreeAdjunction
-  -- , AbhSliceFreeAdjunction(..)
 
     -- * X
     
-  -- , xosAbhCokernelFreeToFactor
-
   )
   where
 
 import Control.Monad
 
-import Data.Typeable
 import Data.List (map,(++),repeat,zip)
 
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
 import OAlg.Data.Generator
-import OAlg.Data.Singleton
 
-import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Additive
 import OAlg.Structure.Exponential
 import OAlg.Structure.Operational
 import OAlg.Structure.Number
-
-import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
 
 import OAlg.Adjunction
 
@@ -452,258 +434,6 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
          -> universalFactor ker (ConeKernel (diagram ker) x)
           -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
         ) kers
-{-
---------------------------------------------------------------------------------
--- AbhCokernelFree -
-
--- | the liftable cokernel of a @__k__@-free slice 'To' as entity. Such an entity can be generated
--- with 'abhCokernelFreeTo'.
-data AbhCokernelFreeTo k = AbhCokernelFreeTo
-  (Slice To (Free k) AbHom) (CokernelLiftableFree AbHom) deriving (Show)
-
---------------------------------------------------------------------------------
--- abhCokernelFreeToSliceTo -
-
-abhCokernelFreeToSliceTo :: AbhCokernelFreeTo k -> Slice To (Free k) AbHom
-abhCokernelFreeToSliceTo (AbhCokernelFreeTo s _) = s
-
---------------------------------------------------------------------------------
--- abhCokernelFreeTo -
-
--- | the induced cokernel of a @__k__@-free slice 'To' as entity.
-abhCokernelFreeTo :: Attestable k => Slice To (Free k) AbHom -> AbhCokernelFreeTo k
-abhCokernelFreeTo s = AbhCokernelFreeTo s (abhCokernelFreeTo' s)
-
---------------------------------------------------------------------------------
--- abgCftLiftableFree -
-
-abgCftLiftableFree :: AbhCokernelFreeTo k -> CokernelLiftableFree AbHom
-abgCftLiftableFree (AbhCokernelFreeTo _ c) = c
-
---------------------------------------------------------------------------------
--- abgCftSliceFrom -
-
--- | the @__k__@-free slice 'From', i.e. the shell factor of the cokernel
-abgCftSliceFrom :: AbhCokernelFreeTo k -> Slice From (Free k) AbHom
--- abgCftSliceFrom :: AbhCokernelFreeTo k -> Cokernel N1 AbHom
-abgCftSliceFrom (AbhCokernelFreeTo (SliceTo k _) c) = SliceFrom k f where
-  f = head $ universalShell $ clfCokernel c
-
--- as the constructor is not public and the only way to instantate a value of AbhCokenrelFreeTo
--- is via abhCokernelFreeTo it is sufficiant to check the equality of the input parameter!
-instance Eq (AbhCokernelFreeTo k) where
-  AbhCokernelFreeTo s _ == AbhCokernelFreeTo s' _ = s == s'
-
-instance Attestable k => Validable (AbhCokernelFreeTo k) where
-  valid (AbhCokernelFreeTo s c) = Label "AbhCokernelFreeTo" :<=>:
-    And [ valid s
-        , valid c
-        ]
-
-instance Attestable k => Entity (AbhCokernelFreeTo k)    
-
---------------------------------------------------------------------------------
--- AbhCokernelFreeToFactor -
-
-data AbhCokernelFreeToFactor k
-  = AbhCokernelFreeToFactor (AbhCokernelFreeTo k) (AbhCokernelFreeTo k) AbHom
-  deriving (Show, Eq)
-
---------------------------------------------------------------------------------
--- abgCftSliceFromFactor -
-
--- | the @__k__@-free slice factor 'From'.
-abgCftSliceFromFactor :: AbhCokernelFreeToFactor k -> SliceFactor From (Free k) AbHom
-abgCftSliceFromFactor (AbhCokernelFreeToFactor a b h) = SliceFactor a' b' h where
-  a' = abgCftSliceFrom a
-  b' = abgCftSliceFrom b
-
-instance Attestable k => Validable (AbhCokernelFreeToFactor k) where
-  valid f@(AbhCokernelFreeToFactor a b _) = Label "AbhCokernelFreeToFactor" :<=>:
-    And [ valid a
-        , valid b
-        , valid $ abgCftSliceFromFactor f
-        ]
-
-instance Attestable k => Entity (AbhCokernelFreeToFactor k)
-
---------------------------------------------------------------------------------
--- abhFreeToCokernel -
-
---  tbd
-abhFreeToCokernel :: Attestable k => SliceFactor To (Free k) AbHom -> AbhCokernelFreeToFactor k
-abhFreeToCokernel (SliceFactor a b _) = AbhCokernelFreeToFactor a' b' f' where
-  a' = abhCokernelFreeTo a
-  b' = abhCokernelFreeTo b
-  
-  a'coker = clfCokernel $ abgCftLiftableFree a'
-  b'coker = clfCokernel $ abgCftLiftableFree b'
-  b'cone = ConeCokernel (diagram a'coker) (cokernelFactor $ universalCone b'coker)
-  f' = universalFactor a'coker b'cone
-
---------------------------------------------------------------------------------
--- abhFreeFromKernel -
-
-abhFreeFromKernel :: Attestable k => AbhCokernelFreeToFactor k -> SliceFactor To (Free k) AbHom
-abhFreeFromKernel f = case abgCftSliceFromFactor f of
-  SliceFactor a b _ -> SliceFactor (SliceTo k a') (SliceTo k b') f' where
-    k  = unit1
-
-    a'ker = limesFree $ abhKernelFreeFrom a
-    b'ker = limesFree $ abhKernelFreeFrom b
-    
-    a' = kernelFactor $ universalCone a'ker
-    b' = kernelFactor $ universalCone b'ker
-
-    f'cone = ConeKernel (diagram b'ker) a'
-    f'     = universalFactor b'ker f'cone
-
---------------------------------------------------------------------------------
--- AbhCokernelFreeToFactor - Murliplicative -
-
-instance Attestable k => Oriented (AbhCokernelFreeToFactor k) where
-  type Point (AbhCokernelFreeToFactor k) = AbhCokernelFreeTo k
-  orientation (AbhCokernelFreeToFactor a b _) = a :> b
-
-instance Attestable k => Multiplicative (AbhCokernelFreeToFactor k) where
-  one a = AbhCokernelFreeToFactor a a (one e) where
-    e = case abgCftSliceFrom a of
-          SliceFrom _ h -> end h
-
-  AbhCokernelFreeToFactor a b f * AbhCokernelFreeToFactor c d g
-    | d /= a    = throw NotMultiplicable
-    | otherwise = AbhCokernelFreeToFactor c b (f * g)
-
-  npower (AbhCokernelFreeToFactor a b f) n = f' `seq` AbhCokernelFreeToFactor a b f' where
-    f' = npower f n
-
---------------------------------------------------------------------------------
--- AbhSliceFreeAdjunction -
-
-data AbhSliceFreeAdjunction k x y where
-  
-  AbhFreeToCokernel :: AbhSliceFreeAdjunction k (SliceFactor To (Free k) AbHom)
-                                                (AbhCokernelFreeToFactor k)
-
-  AbhFreeFromKernel :: AbhSliceFreeAdjunction k (AbhCokernelFreeToFactor k)
-                                                (SliceFactor To (Free k) AbHom)
-                       
---------------------------------------------------------------------------------
--- AbhSliceFreeAdjunction - Entity -
-
-deriving instance Show (AbhSliceFreeAdjunction k x y)
-instance Show2 (AbhSliceFreeAdjunction k)
-
-deriving instance Eq (AbhSliceFreeAdjunction k x y)
-instance Eq2 (AbhSliceFreeAdjunction k)
-
-instance Validable (AbhSliceFreeAdjunction k x y) where
-  valid AbhFreeToCokernel = SValid
-  valid AbhFreeFromKernel = SValid
-instance Validable2 (AbhSliceFreeAdjunction k)
-
-instance (Typeable x, Typeable y, Typeable k) => Entity (AbhSliceFreeAdjunction k x y)
-instance Typeable k => Entity2 (AbhSliceFreeAdjunction k)
-
---------------------------------------------------------------------------------
--- AbhSliceFreeAdjunction - HomMultiplicative -
-
-instance Attestable k => Applicative (AbhSliceFreeAdjunction k) where
-  amap AbhFreeToCokernel = abhFreeToCokernel
-  amap AbhFreeFromKernel = abhFreeFromKernel
-
-instance Attestable k => Morphism (AbhSliceFreeAdjunction k) where
-  type ObjectClass (AbhSliceFreeAdjunction k) = Mlt
-
-  homomorphous AbhFreeToCokernel = Struct :>: Struct
-  homomorphous AbhFreeFromKernel = Struct :>: Struct
-
-instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Typ
-instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Ort
-
-instance Attestable k => EmbeddableMorphismTyp (AbhSliceFreeAdjunction k)
-
-
-abhKernelFreeFrom' :: Attestable k => AbhCokernelFreeTo k -> Slice To (Free k) AbHom
-abhKernelFreeFrom' c = case abgCftSliceFrom c of
-  a@(SliceFrom k _) -> SliceTo k a' where
-    a' = kernelFactor $ universalCone $ limesFree $ abhKernelFreeFrom a
-
-
-instance Attestable k => HomOriented (AbhSliceFreeAdjunction k) where
-  pmap AbhFreeToCokernel = abhCokernelFreeTo
-  pmap AbhFreeFromKernel = abhKernelFreeFrom'
-
-instance Attestable k => EmbeddableMorphism (AbhSliceFreeAdjunction k) Mlt
-instance Attestable k => HomMultiplicative (AbhSliceFreeAdjunction k)
-
---------------------------------------------------------------------------------
--- abhCokerKer -
-
--- | the right unit of the cokernel-kernel adjunction 'abhAdjunction'.
-abhCokerKer :: Attestable k => Slice To (Free k) AbHom -> SliceFactor To (Free k) AbHom
-abhCokerKer a@(SliceTo i a') = SliceFactor a (SliceTo i k) u where
-  aCokerKer = limesFree $ abhKernelFreeFrom $ abgCftSliceFrom $ (pmap AbhFreeToCokernel a)
-  k = kernelFactor $ universalCone aCokerKer
-  u = universalFactor aCokerKer (ConeKernel (diagram aCokerKer) a') 
-
-
---------------------------------------------------------------------------------
--- abhKerCoker -
-
--- | the left unit of the cokernel-kenrel adjunction 'slcAdjunction'.
-abhKerCoker :: Attestable k
-  => AbhCokernelFreeTo k -> AbhCokernelFreeToFactor k
-abhKerCoker a = AbhCokernelFreeToFactor aKerCokerLft a v where
-  aKerCokerLft   = pmap AbhFreeToCokernel $ pmap AbhFreeFromKernel a
-  aKerCoker      = clfCokernel $ abgCftLiftableFree aKerCokerLft
-  SliceFrom _ a' = abgCftSliceFrom a
-  
-  v = universalFactor aKerCoker (ConeCokernel (diagram aKerCoker) a')
-
---------------------------------------------------------------------------------
--- abgSliceFreeAdjunction -
-
--- | kernel-cokernel adjunction between free slices of a given dimension. 
-abgSliceFreeAdjunction :: Attestable k => Free k AbHom
-  -> Adjunction (AbhSliceFreeAdjunction k) (AbhCokernelFreeToFactor k) (SliceFactor To (Free k) AbHom)
-abgSliceFreeAdjunction _ = Adjunction AbhFreeToCokernel AbhFreeFromKernel u v where
-  u = abhCokerKer
-  v = abhKerCoker
-
-
---------------------------------------------------------------------------------
--- xosAbhCokernelFreeToFactor -
-
--- | the induced @'XOrtSite' 'To'@ of @'AbhCokernelFreeToFactor' __k__@.
-xosAbhCokernelFreeToFactor :: Attestable k
-  => Free k AbHom -> XOrtSite To (SliceFactor To (Free k) AbHom)
-  -> XOrtSite To (AbhCokernelFreeToFactor k)
-xosAbhCokernelFreeToFactor _ (XEnd xSliceTo xSliceFactorTo) = XEnd xp xf where
-  xp = fmap (pmap AbhFreeToCokernel) xSliceTo
-  xf e = do
-    eSliceTo <- return $ abhCokernelFreeToSliceTo e
-    f        <- xSliceFactorTo eSliceTo
-    return $ amap AbhFreeToCokernel $ f
-
-
-dstAbhCokernelFreeToFactor :: Attestable k
-  => Int -> XOrtSite To (SliceFactor To (Free k) AbHom) -> IO ()
-dstAbhCokernelFreeToFactor n xTo = putDstr shw n xShw where
-    xShw = xosOrt $ xosAbhCokernelFreeToFactor unit1 $ xosAdjTerminal (1%100) xTo 
-    shw = return . show . abhDensity 17 . slfFactor . abgCftSliceFromFactor
-
-instance Attestable k => XStandardOrtSite To (AbhCokernelFreeToFactor k) where
-  xStandardOrtSite = xosAbhCokernelFreeToFactor unit1 (xosAdjTerminal (1%100) $ xStandardOrtSite)
-
-instance Attestable k => XStandard (AbhCokernelFreeTo k) where
-  xStandard = xosPoint (xStandardOrtSite :: Attestable k => XOrtSite To (AbhCokernelFreeToFactor k))
-
-instance Attestable k => XStandard (AbhCokernelFreeToFactor k) where
-  xStandard = xosOrt (xStandardOrtSite :: Attestable k => XOrtSite To (AbhCokernelFreeToFactor k))
-
-instance Attestable k => XStandardPoint (AbhCokernelFreeToFactor k)
--}
 
 --------------------------------------------------------------------------------
 -- abhKernel -
