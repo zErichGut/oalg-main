@@ -20,10 +20,10 @@
 module OAlg.Homology.Simplical
   (  
     -- * Simplical
-    Simplical(..), Face(..), fcSimplex
+--    Simplical(..), Face(..), fcSimplex
 
     -- * Simplex
-  , Simplex(..), simplex
+--  , Simplex(..), simplex
 
   ) where
 
@@ -34,6 +34,7 @@ import OAlg.Prelude
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
+{-
 --------------------------------------------------------------------------------
 -- Face -
 
@@ -84,3 +85,4 @@ simplex n v = Simplex $ spl n v where
   spl W0 v = v :| Nil
   spl (SW n) v = v :| spl n (succ v) 
 
+-}
