@@ -15,3 +15,11 @@ and this project adheres to the
 
 	### Changed
 	- Making the type for Complexe more generic.
+
+## [0.4.0.0] - 2024-08-07
+
+	### Elimination
+	- Generic class Simplical, such that complexes are always based on simplices.
+
+	### Added
+	- Liftable cokernels for the homology groups.

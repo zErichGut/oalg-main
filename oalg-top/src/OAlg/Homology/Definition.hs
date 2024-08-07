@@ -17,9 +17,11 @@
 --
 -- definition of 'Homology'.
 module OAlg.Homology.Definition
-  ( -- * Homology
+  (
+    -- * Homology
     Homology(..), homologyGroups, homology
-  , homologyFrom
+
+
   ) where
 
 import OAlg.Prelude
@@ -35,32 +37,46 @@ import OAlg.Limes.KernelsAndCokernels
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F hiding (zip) 
 import OAlg.Entity.Diagram
+import OAlg.Entity.Slice.Free
+
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 
 
-import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 
+
 --------------------------------------------------------------------------------
--- homologyFrom -
+-- HomologyGroup -
 
--- | the homology
---
--- __Pre__ @'end' g '==' 'start' f@
-homologyFrom :: Distributive a => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> Point a
-homologyFrom ker coker (ChainComplex (DiagramChainFrom _ (g:|f:|_))) = tip $ universalCone hCoker where
+data HomologyGroup where
+  HomologyGroup 
+    :: ChainComplex From N0 AbHom
+    -> Kernel N1 AbHom
+    -> AbHom
+    -> CokernelLiftableFree AbHom
+    -> HomologyGroup
 
-  -- image of g
-  gCoker = limes coker (cokernelDiagram g)
-  gIm    = limes ker (kernelDiagram $ cokernelFactor $ universalCone gCoker)
+--------------------------------------------------------------------------------
+-- homologyGroup - 
+homologyGroup :: HomologyGroup -> AbGroup
+homologyGroup (HomologyGroup _ _ _ c) = tip $ universalCone $ clfCokernel c
 
-  -- kernel of f
-  fKer   = limes ker (kernelDiagram f)
+--------------------------------------------------------------------------------
+-- ccplFromHomologyGroup -
 
-  h      = universalFactor fKer (ConeKernel (diagram fKer) (kernelFactor $ universalCone gIm))
-  hCoker = limes coker (cokernelDiagram h)
+ccplFromHomologyGroup :: ChainComplex From n AbHom -> HomologyGroup
+ccplFromHomologyGroup (ChainComplex (DiagramChainFrom s (d:|d':|_)))
+  = HomologyGroup
+      (ChainComplex (DiagramChainFrom s (d:|d':|Nil)))
+      ker
+      img
+      (abhCokernelLftFree $ cokernelDiagram img)
+  where
+    d'Dgm = kernelDiagram d'
+    ker   = limes abhKernels d'Dgm
+    img   = universalFactor ker (ConeKernel d'Dgm d)
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -73,22 +89,21 @@ deriving instance Distributive a => Show (Homology n a)
 --------------------------------------------------------------------------------
 -- homology -
 
-homology :: Distributive a
-  => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> Homology n a
-homology ker coker = Homology . hmlgy ker coker where
-  hmlgy :: Distributive a
-    => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> FinList (n+1) (Point a)
+homology :: ChainComplex From n AbHom -> Homology n AbHom
+homology = Homology . hmlgy where
+  hmlgy :: ChainComplex From n AbHom -> FinList (n+1) AbGroup
   
-  hmlgy ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|Nil)))
-    = homologyFrom ker coker c:|Nil
-  hmlgy ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|_:|_)))
-    = homologyFrom ker coker c:|hmlgy ker coker (ccplPred c)
+  hmlgy c@(ChainComplex (DiagramChainFrom _ (_:|_:|Nil)))
+    = (homologyGroup $ ccplFromHomologyGroup c):|Nil
+  hmlgy c@(ChainComplex (DiagramChainFrom _ (_:|_:|_:|_)))
+    = (homologyGroup $ ccplFromHomologyGroup c):|hmlgy (ccplPred c)
+
 
 -----------------------------------------------------------------------------------------
 -- homologyGroups -
 
-homologyGroups :: Simplical s x => Complex s n x -> Homology n AbHom
-homologyGroups = homology abhKernels abhCokernels . chainComplex
+homologyGroups :: (Entity x, Ord x) => Complex n x -> Homology n AbHom
+homologyGroups = homology . chainComplex
 
 
 

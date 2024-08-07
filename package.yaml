@@ -1,5 +1,5 @@
 name:                oalg-main
-version:             1.0.1.0
+version:             1.2.0.0
 github:              "zErichGut/oalg-main"
 license:             BSD3
 author:              "Erich.Gut"
@@ -27,7 +27,7 @@ dependencies:
 - time >=1.9.3
 - oalg-base >= 1.2.2
 - oalg-abg >= 1.3
-- oalg-top >= 0.3
+- oalg-top >= 0.4
 
 ghc-options:
 - -Wall

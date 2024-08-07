@@ -7,7 +7,7 @@
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
-  ,  GADTs
+  , GADTs
   , StandaloneDeriving
   , GeneralizedNewtypeDeriving
   , DataKinds
@@ -22,7 +22,9 @@
 --
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
-  ( -- * Chain Complex
+  (
+
+    -- * Chain Complex
     ChainComplex(..), ccplPred
   , chainComplex, chainComplex', chainComplexZ
 
@@ -49,8 +51,8 @@ import OAlg.Entity.Matrix
 
 import OAlg.AbelianGroup.Definition
 
-import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
+
 
 --------------------------------------------------------------------------------
 -- ChainComplex -
@@ -93,27 +95,28 @@ instance Distributive a => Validable (ChainComplex t n a) where
 --------------------------------------------------------------------------------
 -- chainComplexZ -
 
-chainComplexZ :: Simplical s x => Complex s n x -> ChainComplex From n (Matrix Z)
+chainComplexZ :: (Entity x, Ord x) => Complex n x -> ChainComplex From n (Matrix Z)
 chainComplexZ c = case chain c of
   (_,DiagramChainFrom n ds) -> ChainComplex (DiagramChainFrom dZero (zero (dZero :> n) :| ds))
   where
 
     dZero = one ()
 
-    chain :: Simplical s x
-      => Complex s n x -> (Ats n, Diagram (Chain From) (n+2) (n+1) (Matrix Z))
+    chain :: (Entity x, Ord x) => Complex n x -> (Ats n, Diagram (Chain From) (n+2) (n+1) (Matrix Z))
     chain (Vertices s) = (Ats,DiagramChainFrom n (zero (n :> dZero):|Nil)) where n = dim () ^ lengthN s
     chain c@(Complex _ c') = case chain c' of
       (Ats,DiagramChainFrom _ ds) -> (Ats,DiagramChainFrom m (d:|ds)) where
         m = start d
         d = repMatrix $ cplHomBoundary c 
-  
+
 --------------------------------------------------------------------------------
 -- chainComplex -
 
-chainComplex' :: (Hom Dst h, Simplical s x) => h (Matrix Z) a -> Complex s n x -> ChainComplex From n a
+chainComplex' :: (Hom Dst h, Entity x, Ord x)
+  => h (Matrix Z) a -> Complex n x -> ChainComplex From n a
 chainComplex' h c = ccplMap h (chainComplexZ c)
 
-chainComplex :: Simplical s x => Complex s n x -> ChainComplex From n AbHom
+chainComplex :: (Entity x, Ord x) => Complex n x -> ChainComplex From n AbHom
 chainComplex = chainComplex' FreeAbHom
+
 

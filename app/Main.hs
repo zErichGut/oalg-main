@@ -77,7 +77,7 @@ putHelp = do
   putStrLn "Available complexes:"
   putStrLn "  simplex N              Simplex of dimension N."
   putStrLn "  sphere N               Sphere of dimension N."
-  putStrLn "  kleineBottle           Klein Bottle."
+  putStrLn "  kleinBottle            Klein Bottle."
   putStrLn "  torus                  Torus of dimension 2."
   putStrLn "  moebiusStrip           Moebius Strip."
   putStrLn ""
