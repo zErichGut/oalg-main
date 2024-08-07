@@ -5,12 +5,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DataKinds, RankNTypes #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Homology.Complex
--- Description : definition of an abstract complex.
+-- Description : definition of complexes.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
@@ -18,7 +18,6 @@
 -- definition of 'Complex'.
 module OAlg.Homology.Complex
   (
-
     -- * Complex
     Complex(..), cplDim, cplSet, cplSucc, cplPred
   , cplIndex, cplHomBoundary, cplHomBoundary'
@@ -65,128 +64,105 @@ import OAlg.Entity.FinList as F hiding (zip,(++))
 import OAlg.Entity.Sequence
 import OAlg.Entity.Matrix
 
-import OAlg.Homology.Simplical
+import OAlg.Homology.Simplex
 import OAlg.Homology.Chain
+
 
 --------------------------------------------------------------------------------
 -- Complex -
 
-data Complex s n x where
-  Vertices :: Set (s N0 x) -> Complex s N0 x
-  Complex  :: Set (s (S n) x) -> Complex s n x -> Complex s (S n) x
+data Complex n x where
+  Vertices :: Set (Simplex N0 x) -> Complex N0 x
+  Complex  :: Set (Simplex (S n) x) -> Complex n x -> Complex (S n) x
 
 --------------------------------------------------------------------------------
 -- cplDim -
 
 -- | dimension of a complex.
-cplDim :: Complex s n x -> N
+cplDim :: Complex n x -> N
 cplDim (Vertices _)  = 0
 cplDim (Complex _ c) = 1 + cplDim c
 
+{-
 --------------------------------------------------------------------------------
 -- cplOrd -
 
 cplOrd :: Simplical s x => Complex s n x -> Struct Ord' (s n x)
 cplOrd _ = sOrd
+-}
 
 --------------------------------------------------------------------------------
 -- cplSet -
 
-cplSet :: Complex s n x -> Set (s n x)
+cplSet :: Complex n x -> Set (Simplex n x)
 cplSet (Vertices s)  = s
 cplSet (Complex s _) = s
 
 --------------------------------------------------------------------------------
 -- cplSucc -
 
-cplSucc :: Complex s n x -> Complex s (n+1) x
+cplSucc :: Complex n x -> Complex (n+1) x
 cplSucc c = Complex setEmpty c
 
 --------------------------------------------------------------------------------
 -- cplPred -
 
-cplPred :: Complex s (n+1) x -> Complex s n x
+cplPred :: Complex (n+1) x -> Complex n x
 cplPred (Complex _ c) = c
 
 --------------------------------------------------------------------------------
 -- cplIndex -
 
-cplIndex :: Simplical s x => Complex s n x -> s n x -> Maybe N
-cplIndex c = case cplOrd c of
-  Struct -> setIndex $ cplSet c
+cplIndex :: Ord x => Complex n x -> Simplex n x -> Maybe N
+cplIndex = setIndex . cplSet
 
 --------------------------------------------------------------------------------
 -- Comlex - Entity -
 
-deriving instance Show (s N0 x) => Show (Complex s N0 x)
-deriving instance (Show (s (S n) x), Show (Complex s n x)) => Show (Complex s (S n) x)
+deriving instance Show x => Show (Complex n x)
 
-deriving instance Eq (s N0 x) => Eq (Complex s N0 x)
-deriving instance (Eq (s (S n) x), Eq (Complex s n x)) => Eq (Complex s (S n) x)
+deriving instance Eq x => Eq (Complex n x)
 
-instance (Simplical s x, Validable (s N0 x), Show (s N0 x)) => Validable (Complex s N0 x) where
-  valid c@(Vertices s) = vld (cplOrd c) s where
-    vld :: (Validable (s N0 x), Show (s N0 x)) => Struct Ord' (s N0 x) -> Set (s N0 x) -> Statement
-    vld Struct = valid
+instance (Entity x, Ord x) => Validable (Complex n x) where
+  valid (Vertices xs) = valid xs
+  valid (Complex xs@(Set xs') c') = valid xs && valid c' && vldSimplices 0 xs' (cplIndex c') where
 
-instance ( Simplical s x
-         , Show (s n x), Show (s (S n) x)
-         , Validable (s (S n) x), Validable (Complex s n x)
-         )
-  => Validable (Complex s (S n) x) where
-  valid c@(Complex xs@(Set xs') c') = case cplOrd c of
-    Struct -> valid xs && valid c' && vldSimplices 0 xs' (cplIndex c') where
-
-    where
-      vldSimplices :: (Simplical s x, Show (s n x))
-        => N -> [s (n+1) x] -> (s n x -> Maybe N) -> Statement
+      vldSimplices :: (Entity x, Ord x)
+        => N -> [Simplex (n+1) x] -> (Simplex n x -> Maybe N) -> Statement
       vldSimplices _ [] _      = SValid
       vldSimplices i (s:ss) fs = vldFaces i 0 (faces s) fs && vldSimplices (succ i) ss fs
 
-      vldFaces :: (Show (s n x))
-        => N -> N -> FinList m (Face s (n+1) x) -> (s n x -> Maybe N) -> Statement
+      vldFaces :: (Entity x, Ord x)
+        => N -> N -> FinList m (Face (n+1) x) -> (Simplex n x -> Maybe N) -> Statement
       vldFaces _ _ Nil _ = SValid
       vldFaces i j (Face s:|ss) fs = case fs s of
         Just _  -> vldFaces i (succ j) ss fs
         Nothing -> False :?> Params ["index (simplex,face)":=show (i,j), "simplex":=show s]
 
 
-instance ( Simplical s x
-         , Show (s N0 x)
-         , Eq (s N0 x)
-         , Validable (s N0 x)
-         , Typeable x
-         ) => Entity (Complex s N0 x)
-         
-instance ( Simplical s x
-         , Show (s (S n) x), Show (s n x), Show (Complex s n x)
-         , Eq (s (S n) x), Eq (Complex s n x)
-         , Validable (s (S n) x), Validable (Complex s n x)
-         , Typeable x, Typeable n
-         ) => Entity (Complex s (S n) x)
+instance (Entity x, Ord x, Typeable n) => Entity (Complex n x)
+
 
 --------------------------------------------------------------------------------
 -- (<+) -
 
 infixr 5 <+
 
-(<+) :: Simplical s x => Set (s n x) -> Complex s n x -> Complex s n x
-xs <+ c = merge (cplOrd c) xs c where
-  merge :: Simplical s x => Struct Ord' (s n x) -> Set (s n x) -> Complex s n x -> Complex s n x
-  merge Struct s (Vertices s') = Vertices (s `setUnion` s')
-  merge Struct s@(Set xs) (Complex s' c) = Complex s'' (fs <+ c) where
+(<+) :: Ord x => Set (Simplex n x) -> Complex n x -> Complex n x
+xs <+ c = merge xs c where
+  merge :: Ord x => Set (Simplex n x) -> Complex n x -> Complex n x
+  merge s (Vertices s') = Vertices (s `setUnion` s')
+  merge s@(Set xs) (Complex s' c) = Complex s'' (fs <+ c) where
     s'' = s `setUnion` s'
-    fs = set' (cplOrd c) $ amap1 fcSimplex $ join $ amap1 (toList . faces) xs
+    fs = set $ amap1 fcSimplex $ join $ amap1 (toList . faces) xs
 
-  set' :: forall s (n :: N') x . Struct Ord' (s n x) -> [s n x] -> Set (s n x)
-  set' Struct = set
 
 --------------------------------------------------------------------------------
 -- cplEmpty -
 
-cplEmpty :: Attestable n => Complex s n x
+cplEmpty :: Attestable n => Complex n x
 cplEmpty = ce attest where
-  ce :: Any n -> Complex s n x
+  ce :: Any n -> Complex n x
   ce W0 = Vertices setEmpty
   ce (SW n) = Complex setEmpty (ce n)
 
@@ -194,24 +170,20 @@ cplEmpty = ce attest where
 -- complex -
 
 -- | generates a complex by the given set of simplices.
-complex :: (Simplical s x, Attestable n) => Set (s n x) -> Complex s n x
+complex :: (Ord x, Attestable n) => Set (Simplex n x) -> Complex n x
 complex s = s <+ cplEmpty
 
 --------------------------------------------------------------------------------
 -- cplHomBoundary -
 
-cplHomBoundary :: (Ring r, Commutative r, Simplical s x, Attestable n)
-  => Complex s (n+1) x -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
-cplHomBoundary (Complex sn' c) = bm HomBoundary sn' (cplSet c) where
-  bm :: (Ring r, Commutative r, Typeable s)
-    => HomBoundary r s (Chain r s (n+1) x) (Chain r s n x) -> Set (s (n+1) x) -> Set (s n x)
-    -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
-  bm b@HomBoundary sn' sn = case (hbdEnt b,hbdOrd b) of
-    (Struct :>: Struct, Struct :>: Struct) -> Representable b sn' sn
+cplHomBoundary :: (Ring r, Commutative r, Entity x, Ord x, Attestable n)
+  => Complex (n+1) x -> Representable r (HomBoundary r) (Chain r (n+1) x) (Chain r n x)
+cplHomBoundary (Complex sn' c) = Representable HomBoundary sn' (cplSet c)
 
-cplHomBoundary' :: (Ring r, Commutative r, Simplical s x, Attestable n)
-  => p r -> Complex s (n+1) x -> Representable r (HomBoundary r s) (Chain r s (n+1) x) (Chain r s n x)
+cplHomBoundary' :: (Ring r, Commutative r, Entity x, Ord x, Attestable n)
+  => p r -> Complex (n+1) x -> Representable r (HomBoundary r) (Chain r (n+1) x) (Chain r n x)
 cplHomBoundary' _ = cplHomBoundary
+
 
 --------------------------------------------------------------------------------
 -- triangle -
@@ -307,7 +279,7 @@ torus (Set as) (Set bs) = set $ pln (join [as,[L.head as]]) (join [bs,[L.head bs
 --------------------------------------------------------------------------------
 -- sphere -
 
-sphere :: (Enum v, Ord v, Entity v) => Any n -> v -> Set (Simplex n v)
+sphere :: (Enum v, Ord v) => Any n -> v -> Set (Simplex n v)
 sphere n v = set $ amap1 fcSimplex $ toList $ faces $ simplex (SW n) v
 
 --------------------------------------------------------------------------------
@@ -366,4 +338,5 @@ dh2 = set
   , trn A D B, trn D B E, trn B E A
   , trn C D E
   ]
+
 

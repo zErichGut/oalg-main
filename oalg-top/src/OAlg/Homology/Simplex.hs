@@ -94,37 +94,3 @@ fcSimplex (Face s) = s
 faces :: Simplex n x -> FinList (n+1) (Face n x)
 faces (Simplex (_:|Nil))       = FaceEmpty:|Nil
 faces (Simplex (x:|xs@(_:|_))) = Face (Simplex xs) :| amap1 (x<:) (faces (Simplex xs))
-
-{-
---------------------------------------------------------------------------------
--- Face -
-
-data Face s n x where
-  FaceEmpty :: Face s N0 x
-  Face      :: s n x -> Face s (n+1) x
-
-instance Show (Face s N0 x) where show FaceEmpty = "FaceEmpty"
-deriving instance Show (s n x) => Show (Face s (S n) x)
-
---------------------------------------------------------------------------------
--- fcSimplex -
-
-fcSimplex :: Face s (n+1) x -> s n x
-fcSimplex (Face s) = s
-
---------------------------------------------------------------------------------
--- Simplical -
-
-class Typeable s => Simplical s x where
-  sOrd :: Struct Ord' (s n x)
-  sEnt :: Attestable n => Struct Ent (s n x)
-
-
-instance (Ord x, Entity x) => Simplical Simplex x where
-  sOrd = Struct
-  sEnt = Struct
-  faces (Simplex (_:|Nil))       = FaceEmpty:|Nil
-  faces (Simplex (x:|xs@(_:|_))) = Face (Simplex xs) :| amap1 (x<:) (faces (Simplex xs))
-
-
--}
