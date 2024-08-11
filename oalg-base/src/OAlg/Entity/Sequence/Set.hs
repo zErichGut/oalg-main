@@ -160,15 +160,17 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
 -- Just 2
 setIndex :: Ord x => Set x -> x -> Maybe N
 setIndex (Set []) = const Nothing
-setIndex (Set xs) = \x -> let (x',i) = lookup xs' x in if x' == x then Just i else Nothing
+-- setIndex (Set xs) = \x -> let (x',i) = lookup xs' x in if x' == x then Just i else Nothing
+setIndex (Set xs) = lp (lt (xs `zip` [0..]))
   where
-    xs' = lt (xs `zip` [0..])
-
+    -- xs' = lt (xs `zip` [0..])
     lt :: Ord x => [(x,N)] -> Tree x (x,N)
     lt [xi] = Leaf xi
     lt xis  = Node (fst $ head xisR) (lt xisL) (lt xisR) where
       (xisL,xisR) = splitAtN (lengthN xis `div` 2) xis
 
+lp :: Ord x => Tree x (x,y) -> x -> Maybe y
+lp t x = let (x',y) = lookup t x in if x' == x then Just y else Nothing
 --------------------------------------------------------------------------------
 -- Set - POrd -
 

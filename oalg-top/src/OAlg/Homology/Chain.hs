@@ -11,12 +11,12 @@
 
 -- |
 -- Module      : OAlg.Homology.Chain
--- Description : boundary of chains.
+-- Description : chains and there boundary.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- 'boundary' of a 'Chain'.
+-- The 'boundary' of a 'Chain'.
 module OAlg.Homology.Chain
   ( -- * Boundary
     HomBoundary(..), homBoundary

@@ -1,7 +1,12 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies, RankNTypes #-}
+{-# LANGUAGE
+    TypeFamilies
+  , TypeOperators
+  , RankNTypes
+  , DataKinds
+#-}
 
 -- |
 -- Module      : Lib
@@ -32,13 +37,17 @@ import OAlg.Data.Canonical
 import OAlg.Data.Symbol
 
 import OAlg.Entity.Natural hiding ((++))
+import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Sequence
+import OAlg.Entity.Diagram
 
 import OAlg.AbelianGroup.Definition
+import OAlg.AbelianGroup.KernelsAndCokernels
 
 import OAlg.Homology.Definition as H
 import OAlg.Homology.Simplex
 import OAlg.Homology.Complex
+import OAlg.Homology.ChainComplex
 
 --------------------------------------------------------------------------------
 -- Flag -
@@ -82,17 +91,21 @@ readN s = do
 putHomologyGroups :: (Entity x, Ord x) => Complex n x -> IO ()
 putHomologyGroups c = do
   putStrLn "homology groups:"  
-  putH (cplDim c) (toList hs)
+  putChnCmplH (cplDim c) c setEmpty (chainComplex c)
   where
 
-    Homology hs = homologyGroups c
+    putChnCmplH :: N -> Complex n x -> Set (Simplex (n+1) x) -> ChainComplex From n AbHom -> IO ()
+    putChnCmplH d (Vertices s0) s1 h = do
+      putH d s1 s0 (ccplHomology abhKernels abhCokernels h)
+      return ()      
+    putChnCmplH d (Complex s c') s' h = do
+      putH d s' s (ccplHomology abhKernels abhCokernels h)
+      putChnCmplH (pred d) c' s (ccplPred h)
 
-    putH :: N -> [AbGroup] -> IO ()
-    putH _ []     = return ()
-    putH d (g:gs) = do
-      putStrLn ("H " ++ show d ++ ": " ++ show g)
+    putH :: N -> Set (Simplex (n+1) x) -> Set (Simplex n x) -> Homology From n AbHom -> IO ()
+    putH d _ _ h = do
+      putStrLn ("H " ++ show d ++ ": " ++ (show $ hmlGroup h))
       hFlush stdout
-      putH (pred d) gs
 
 --------------------------------------------------------------------------------
 -- putCardinality -

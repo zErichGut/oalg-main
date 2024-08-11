@@ -18,8 +18,10 @@
 -- definition of 'Homology'.
 module OAlg.Homology.Definition
   (
+
     -- * Homology
-    Homology(..), homologyGroups, homology
+    Homology(..), hmlGroup
+  , ccplHomology
 
 
   ) where
@@ -27,6 +29,7 @@ module OAlg.Homology.Definition
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Limes.Cone
@@ -47,6 +50,41 @@ import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 
 
+--------------------------------------------------------------------------------
+-- Homology -
+
+newtype Homology t (n :: N') a = Homology (Transformation (Chain t) N3 N2 a)
+
+--------------------------------------------------------------------------------
+-- hmlGroup -
+
+hmlGroup :: Multiplicative a => Homology From n a -> Point a
+hmlGroup (Homology t) = end h where DiagramChainFrom _ (_:|h:|_) = start t
+  
+--------------------------------------------------------------------------------
+--
+
+ccplHomology :: Distributive a
+  => Kernels N1 a -> Cokernels N1 a
+  -> ChainComplex From n a -> Homology From n a
+ccplHomology kers cokers (ChainComplex (DiagramChainFrom p (d:|d':|_)))
+  = Homology t where
+  t = Transformation s e f where
+  e = DiagramChainFrom p (d:|d':|Nil)
+  s = DiagramChainFrom p (u:|h:|Nil)
+  f = one p :| k :| v :| Nil
+
+  d'Dgm = kernelDiagram d'
+  d'Ker = limes kers d'Dgm
+  u = universalFactor d'Ker (ConeKernel d'Dgm d)
+  k = kernelFactor $ universalCone d'Ker 
+
+  uDgm = cokernelDiagram u
+  uCoker = limes cokers uDgm
+  h = cokernelFactor $ universalCone uCoker
+  v = universalFactor uCoker (ConeCokernel uDgm (d'*k))
+  
+{-
 --------------------------------------------------------------------------------
 -- HomologyGroup -
 
@@ -104,7 +142,7 @@ homology = Homology . hmlgy where
 
 homologyGroups :: (Entity x, Ord x) => Complex n x -> Homology n AbHom
 homologyGroups = homology . chainComplex
-
+-}
 
 
 
