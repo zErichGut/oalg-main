@@ -39,6 +39,7 @@ library
       OAlg.AbelianGroup.Free.Limes
       OAlg.AbelianGroup.Free.SmithNormalForm
       OAlg.AbelianGroup.KernelsAndCokernels
+      OAlg.AbelianGroup.Liftable
       OAlg.AbelianGroup.Proposition
       OAlg.AbelianGroup.ZMod
   other-modules:
