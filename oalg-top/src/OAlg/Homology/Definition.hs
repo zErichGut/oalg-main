@@ -18,131 +18,198 @@
 -- definition of 'Homology'.
 module OAlg.Homology.Definition
   (
-
+{-
     -- * Homology
     Homology(..), hmlGroup
   , ccplHomology
-
+-}
 
   ) where
 
+import Data.Typeable
+
+import Data.Foldable
+import Data.List (filter,(++))
+
 import OAlg.Prelude
+
+import OAlg.Data.Generator
+import OAlg.Data.Constructable
+import OAlg.Data.Either
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
+import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
+import OAlg.Structure.Vectorial
+import OAlg.Structure.Exception
 
-import OAlg.Limes.Cone
-import OAlg.Limes.Definition
-import OAlg.Limes.Limits
-import OAlg.Limes.KernelsAndCokernels
-
-import OAlg.Entity.Natural
-import OAlg.Entity.FinList as F hiding (zip) 
+import OAlg.Entity.Natural as N hiding ((++))
+import OAlg.Entity.FinList as F hiding ((++)) 
+import OAlg.Entity.Matrix hiding (Transformation(..))
+import OAlg.Entity.Slice
+import OAlg.Entity.Sum
+import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Diagram
-import OAlg.Entity.Slice.Free
 
 import OAlg.AbelianGroup.Definition
-import OAlg.AbelianGroup.KernelsAndCokernels
-
 
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
+import OAlg.Homology.Chain as C
+import OAlg.Homology.Simplex
 
 
---------------------------------------------------------------------------------
--- Homology -
-
-newtype Homology t (n :: N') a = Homology (Transformation (Chain t) N3 N2 a)
-
---------------------------------------------------------------------------------
--- hmlGroup -
-
-hmlGroup :: Multiplicative a => Homology From n a -> Point a
-hmlGroup (Homology t) = end h where DiagramChainFrom _ (_:|h:|_) = start t
-  
---------------------------------------------------------------------------------
---
-
-ccplHomology :: Distributive a
-  => Kernels N1 a -> Cokernels N1 a
-  -> ChainComplex From n a -> Homology From n a
-ccplHomology kers cokers (ChainComplex (DiagramChainFrom p (d:|d':|_)))
-  = Homology t where
-  t = Transformation s e f where
-  e = DiagramChainFrom p (d:|d':|Nil)
-  s = DiagramChainFrom p (u:|h:|Nil)
-  f = one p :| k :| v :| Nil
-
-  d'Dgm = kernelDiagram d'
-  d'Ker = limes kers d'Dgm
-  u = universalFactor d'Ker (ConeKernel d'Dgm d)
-  k = kernelFactor $ universalCone d'Ker 
-
-  uDgm = cokernelDiagram u
-  uCoker = limes cokers uDgm
-  h = cokernelFactor $ universalCone uCoker
-  v = universalFactor uCoker (ConeCokernel uDgm (d'*k))
-  
-{-
---------------------------------------------------------------------------------
--- HomologyGroup -
-
-data HomologyGroup where
-  HomologyGroup 
-    :: ChainComplex From N0 AbHom
-    -> Kernel N1 AbHom
-    -> AbHom
-    -> CokernelLiftableFree AbHom
-    -> HomologyGroup
-
---------------------------------------------------------------------------------
--- homologyGroup - 
-homologyGroup :: HomologyGroup -> AbGroup
-homologyGroup (HomologyGroup _ _ _ c) = tip $ universalCone $ clfCokernel c
-
---------------------------------------------------------------------------------
--- ccplFromHomologyGroup -
-
-ccplFromHomologyGroup :: ChainComplex From n AbHom -> HomologyGroup
-ccplFromHomologyGroup (ChainComplex (DiagramChainFrom s (d:|d':|_)))
-  = HomologyGroup
-      (ChainComplex (DiagramChainFrom s (d:|d':|Nil)))
-      ker
-      img
-      (abhCokernelLftFree $ cokernelDiagram img)
-  where
-    d'Dgm = kernelDiagram d'
-    ker   = limes abhKernels d'Dgm
-    img   = universalFactor ker (ConeKernel d'Dgm d)
+import OAlg.Data.Symbol
 
 --------------------------------------------------------------------------------
 -- Homology -
 
-newtype Homology n a = Homology (FinList (n+1) (Point a))
+data Homology n k x where
+  Homology
+    :: (Attestable n, Attestable k)
+    => Any n
+    -> Any k
+    -> ChainComplex From N0 (BoundaryOperator Z x) -- ^ boundary operator
+    -> Variance (Free N1) AbHom -- ^ variance of the boundary operator
+    -> Homology n k x
 
-deriving instance Distributive a => Show (Homology n a)
-
+hmgGroup :: Homology n k x -> AbGroup
+hmgGroup (Homology _ _ _ v) = vrcT' v
 
 --------------------------------------------------------------------------------
+-- SomeHomology -
+
+data SomeHomology n x where
+  SomeHomology :: Homology n k x -> SomeHomology n x
+
+getHomology :: Attestable k => Any k -> FinList l (SomeHomology n x) -> Maybe (Homology n k x)
+getHomology _ Nil                   = Nothing
+getHomology k (SomeHomology h:|shs) = case eqAny k h of
+  Just Refl -> Just h
+  Nothing   -> getHomology k shs
+  
+  where eqAny :: Attestable k => Any k -> Homology n k' x -> Maybe (k :~: k')
+        eqAny _ (Homology _ _ _ _) = eqT
+
+  --------------------------------------------------------------------------------
 -- homology -
 
-homology :: ChainComplex From n AbHom -> Homology n AbHom
-homology = Homology . hmlgy where
-  hmlgy :: ChainComplex From n AbHom -> FinList (n+1) AbGroup
+homology :: (Entity x, Ord x, Attestable n)
+  => Regular -> Complex n x -> FinList (n+1) (SomeHomology n x)
+homology r c
+  = amap1 (uncurry $ shmg $ cpxDim c) ((ccxMap' ccxHead ds) `zip` (ccxMap' ccxVarianceZ vs)) where
   
-  hmlgy c@(ChainComplex (DiagramChainFrom _ (_:|_:|Nil)))
-    = (homologyGroup $ ccplFromHomologyGroup c):|Nil
-  hmlgy c@(ChainComplex (DiagramChainFrom _ (_:|_:|_:|_)))
-    = (homologyGroup $ ccplFromHomologyGroup c):|hmlgy (ccplPred c)
+  ds = chainComplex r c
+  vs = ccxMap HomBoundaryOperator ds
+
+  shmg :: (Entity x, Ord x, Attestable n)
+       => Any n
+       -> ChainComplex From N0 (BoundaryOperator Z x)
+       -> Variance (Free N1) AbHom
+       -> SomeHomology n x
+  shmg n d v = case bdoDim d of
+    SomeNatural k -> SomeHomology $ Homology n k d v
+
+--------------------------------------------------------------------------------
+-- HomologyClass -
+
+type HomologyClass = AbElement
+
+--------------------------------------------------------------------------------
+-- hmgChainSet -
+ssAny :: Attestable l => Set (Simplex l x) -> Any l
+ssAny _ = attest
 
 
------------------------------------------------------------------------------------------
--- homologyGroups -
+hmgChainSet :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex k x)
+hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+  _:|_:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> s
+    Nothing -> throw $ ImplementationError "invalid homology"
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe (k :~: l)
+    eqAny _ _ = eqT
 
-homologyGroups :: (Entity x, Ord x) => Complex n x -> Homology n AbHom
-homologyGroups = homology . chainComplex
--}
 
+hmgChainSet' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k+1) x)
+hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+  _:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> s
+    Nothing -> throw $ ImplementationError "invalid homology"
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 1) :~: l)
+    eqAny _ _ = eqT
+    
+hmgChainSet'' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k + 2) x)
+hmgChainSet''  (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+  SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> s
+    Nothing -> throw $ ImplementationError "invalid homology"
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 2) :~: l)
+    eqAny _ _ = eqT
+
+
+--------------------------------------------------------------------------------
+-- BoundaryFailure -
+
+
+data BoundaryFailure r k h x
+  = NotRepresentable (C.Chain r (k+1) x) -- ^ the representable part, if the given chain is not representable in the underlying simplex set.
+  | NotACycle (C.Chain r k x) -- ^ the boundary, if the given chain is not a cycle..
+  | HomologyClass h -- ^ the homology class, it the given chain has no boundary.
+  deriving (Show)
+
+
+--------------------------------------------------------------------------------
+-- hmgBoundary -
+
+-- | evaluates a boundary for the given chain @s@ according to the given homology @h@,
+-- i.e. a @h@-representable element @d@ in @'C.Chain' 'Z' (__k__ + 2) __x__@ such that
+-- @'boundary' d '==' s@. If no such @d@ exists, than the result will be a 'BoundaryFailure' where
+--
+-- (1) If @s@ is not @h@-representable, then the result will be @'NotRepresentable' s'@ where @s'@ is
+-- the @h@-representable part of @s@.
+--
+-- (2) If @s@ is not a cycle, then the result will be @'NotACycle' ('boundary' s)@.
+--
+-- (3) If the homology class of @s@ is not zero, then the result will be
+-- @'HomologyClass' ('homologyClass' s)@.
+hmgBoundary :: (Entity x, Ord x)
+  => Homology n k x
+  -> C.Chain Z (k+1) x
+  -> Either (BoundaryFailure Z k AbElement x) (C.Chain Z (k+2) x)
+hmgBoundary h@(Homology _ _ _ v) s
+  | not (isZero (s - s')) = Left (NotRepresentable s')
+  | otherwise = case vrcBoundary v (toAbSlice (lengthN ss) sv) of
+      Left (Left t)   -> Left $ NotACycle $ cfsssy (hmgChainSet h) $ fromAbSlice t
+      Left (Right t') -> Left $ HomologyClass $ AbElement t'
+      Right r         -> Right $ cfsssy (hmgChainSet'' h) $ fromAbSlice r
+  where
+    ss = hmgChainSet' h
+    sv = ssycfs ss s
+    s' = cfsssy ss sv
+
+    toAbSlice :: N -> Vector Z -> Slice From (Free N1) AbHom
+    toAbSlice r v = SliceFrom (Free attest :: Free N1 AbHom) (zabh h) where
+      h = matrixTtl r 1 $ amap1 (\(x,i) -> (x,i,0)) $ filter ((<r).snd) $ psqxs $ vecpsq v 
+
+    fromAbSlice :: Slice From (Free N1) AbHom -> Vector Z
+    fromAbSlice (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
+      fstRow :: (i ~ N, j ~ N) => Row j (Col i r) -> Vector r
+      fstRow (Row (PSequence rs)) = case rs of
+        []            -> Vector psqEmpty
+        [(Col ris,0)] -> Vector ris
+        _             -> throw $ InvalidData "fromAbSlice"
+
+c = complex kleinBottle
+ht = homology Truncated $ c
+hr = homology Regular c
+Just ht0 = getHomology (attest :: Any N0) ht
+Just hr0 = getHomology (attest :: Any N0) hr
+v s = ch (Simplex (s:|Nil)) :: Chain Z N1 Symbol
 
 

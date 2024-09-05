@@ -55,7 +55,9 @@ import OAlg.Structure.Number
 --  (1) For all @..x':'y..@ in @xs@ holds: @x '<' y@.
 --
 --  (2) @'lengthN' s '==' 'lengthN' xs@.
-newtype Set x = Set [x] deriving (Show,Eq,LengthN,Foldable)
+--
+--  __Note__ The canonical ordering 'Ord' and the subset ordering 'POrd' are not equivalent.
+newtype Set x = Set [x] deriving (Show,Eq,Ord,LengthN,Foldable)
 
 relSet :: (Validable x, Ord x, Show x) => Set x -> Statement
 relSet (Set [])     = SValid

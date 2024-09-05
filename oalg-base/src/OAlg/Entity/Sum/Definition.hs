@@ -41,12 +41,15 @@ import OAlg.Data.Constructable
 import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
+import OAlg.Structure.Oriented.Definition
 import OAlg.Structure.Fibred.Definition
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Ring.Definition
-import OAlg.Structure.Number
-import OAlg.Structure.Vectorial
+import OAlg.Structure.Distributive.Definition
+import OAlg.Structure.Vectorial.Definition
+import OAlg.Structure.Algebraic.Definition
+import OAlg.Structure.Number.Definition
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Fibred
@@ -305,4 +308,37 @@ nSum h = restrict (smfSum (zero . rmap h) ntimes (+) (amap h))
 -- | additive homomorphism for sums over 'Z'.
 zSum :: (Hom Fbr h,Abelian x) => h a x -> Sum Z a -> x
 zSum h = restrict (smfSum (zero . rmap h) ztimes (+) (amap h))
+
+--------------------------------------------------------------------------------
+-- Sum - Algebra -
+
+instance (Semiring r, Commutative r, FibredOriented m) => Oriented (SumForm r m) where
+  type Point (SumForm r m) = Point m
+  orientation = root
+
+instance (Semiring r, Commutative r, FibredOriented m) => Oriented (Sum r m) where
+  type Point (Sum r m) = Point m
+  orientation = root
+
+instance (Semiring r, Commutative r, Multiplicative m, FibredOriented m, Ord m)
+  => Multiplicative (Sum r m) where
+  one = make . S . one
+
+  Sum f * Sum g 
+    | end g /= start f = throw NotMultiplicable
+    | otherwise = make
+                $ lcsmf (start g :> end f)
+                $ LinearCombination
+                $ [(r*s,a*b) | (r,a) <- as, (s,b) <- bs]
+      where LinearCombination as = smflc f
+            LinearCombination bs = smflc g
+
+instance (Semiring r, Commutative r, FibredOriented m) => FibredOriented (SumForm r m)
+instance (Semiring r, Commutative r, FibredOriented m) => FibredOriented (Sum r m)
+
+instance (Semiring r, Commutative r, Multiplicative m, FibredOriented m, Ord m)
+  => Distributive (Sum r m)
+
+instance (Semiring r, Commutative r, Multiplicative m, FibredOriented m, Ord m)
+  => Algebraic (Sum r m)
 

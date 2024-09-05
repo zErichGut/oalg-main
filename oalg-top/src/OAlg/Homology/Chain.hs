@@ -1,12 +1,15 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies, TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies
+           , TypeOperators
+           , MultiParamTypeClasses
+           , FlexibleInstances
+           , FlexibleContexts
+           , GADTs
+           , StandaloneDeriving
+           , DataKinds
+#-}
 
 
 -- |
@@ -19,7 +22,7 @@
 -- The 'boundary' of a 'Chain'.
 module OAlg.Homology.Chain
   ( -- * Boundary
-    HomBoundary(..), homBoundary
+    HomBoundary(..), boundary
 
     -- * Chain
   , Chain, ch
@@ -49,24 +52,19 @@ import OAlg.Entity.Sum as Sum hiding (S)
 
 import OAlg.Homology.Simplex
 
-
 --------------------------------------------------------------------------------
 -- Chain -
 
-type Chain r (n :: N') x = SumSymbol r (Simplex n x)
+-- | chains of order @__o__@ as free sum over simplices of the length @__o__@.
+type Chain r (o :: N') x = SumSymbol r (Simplex o x)
 
 
 --------------------------------------------------------------------------------
 -- ch -
-{-
-chStruct :: (Ring r, Commutative r)
-  => Struct Ent (s n x) -> Struct Ord' (s n x) -> s n x -> Chain r s n x
-chStruct Struct Struct = Sum.sy
--}
 
-ch :: (Ring r, Commutative r, Entity x, Attestable n, Ord x) => Simplex n x -> Chain r n x
+-- | simplex as a chain.
+ch :: (Attestable o, Ring r, Commutative r, Entity x, Ord x) => Simplex o x -> Chain r o x
 ch = Sum.sy
-
 
 --------------------------------------------------------------------------------
 -- rAlt -
@@ -75,32 +73,22 @@ rAlt :: Ring r => [r]
 rAlt = za rOne where za i = i:za (negate i)
 
 -------------------------------------------------------------------------------
--- homBoundary -
-{-
-homBoundaryOrd :: (Simplical s x, Ring r, Commutative r)
-  => Struct Ord' (s n x) -> Struct Ent (s n x) -> Chain r s (n+1) x -> Chain r s n x
-homBoundaryOrd Struct Struct c = ssySum (f rAlt) c where
-  f :: Simplical s x => [r] -> s (n+1) x -> LinearCombination r (s n x)
-  f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
- 
-  f' :: forall r (s :: N' -> Type -> Type) (n :: N') x . [r] -> [s n x] -> LinearCombination r (s n x)
-  f' rs sns = LinearCombination (rs `zip` sns) 
--}            
-homBoundary :: (Ring r, Commutative r, Attestable n, Entity x, Ord x)
-  => Chain r (n+1) x -> Chain r n x
-homBoundary = ssySum (f rAlt) where
+-- boundary -
+
+-- | the boundary operator of a chain of order @__o__@. 
+boundary :: (Attestable o, Ring r, Commutative r, Entity x, Ord x)
+  => Chain r (o+1) x -> Chain r o x
+boundary = ssySum (f rAlt) where
   f :: [r] -> Simplex (n+1) x -> LinearCombination r (Simplex n x)
-  f rs sn' = f' rs (amap1 fcSimplex $ toList $ faces sn')
+  f rs sn' = LinearCombination (rs `zip` (toList $ faces sn'))
  
-  f' rs sns = LinearCombination (rs `zip` sns) 
-
-
 --------------------------------------------------------------------------------
 -- HomBoundary -
 
+-- | the 'boundary' operator as homomorphism.
 data HomBoundary r x y where
-  HomBoundary :: (Entity x, Ord x, Attestable n) 
-    => HomBoundary r (Chain r (n+1) x) (Chain r n x)
+  HomBoundary :: (Attestable o, Entity x, Ord x) 
+    => HomBoundary r (Chain r (o+1) x) (Chain r o x)
 
 --------------------------------------------------------------------------------
 -- HomBoundary - Entity -
@@ -112,7 +100,8 @@ deriving instance Eq (HomBoundary r x y)
 instance Eq2 (HomBoundary r)
 
 instance Validable (HomBoundary r x y) where
-  valid HomBoundary = SValid
+  valid HomBoundary     = SValid
+  
 instance Validable2 (HomBoundary r)
 
 instance (Typeable r, Typeable x, Typeable y) => Entity (HomBoundary r x y)
@@ -120,17 +109,6 @@ instance Typeable r => Entity2 (HomBoundary r)
 
 --------------------------------------------------------------------------------
 -- HomBoundary - HomVectorial -
-
-{-
-hbdOrd :: HomBoundary r s (Chain r s (n+1) x) (Chain r s n x)
-  -> Homomorphous Ord' (s (n+1) x) (s n x)
-hbdOrd HomBoundary = sOrd :>: sOrd
-
-hbdEnt :: HomBoundary r s (Chain r s (n+1) x) (Chain r s n x)
-  -> Homomorphous Ent (s (n+1) x) (s n x)
-hbdEnt HomBoundary = sEnt :>: sEnt
--}
-
 
 instance (Ring r, Commutative r) => Morphism (HomBoundary r) where
   type ObjectClass (HomBoundary r) = Vec r
@@ -144,12 +122,14 @@ instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) Add
 instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) (Vec r)
 
 instance (Ring r, Commutative r) => Applicative (HomBoundary r) where
-  amap HomBoundary = homBoundary
+  amap HomBoundary     = boundary
   
 instance (Ring r, Commutative r) => HomFibred (HomBoundary r) where
-  rmap HomBoundary _ = ()
+  rmap HomBoundary     = const ()
+
 instance (Ring r, Commutative r) => HomAdditive (HomBoundary r)
 instance (Ring r, Commutative r) => HomVectorial r (HomBoundary r)
+
 
 
 

@@ -37,6 +37,9 @@ module OAlg.AbelianGroup.Definition
     -- * Generator
   , abgGeneratorTo
 
+    -- * Elements
+  , AbElement(..), AbElementForm(..), abge
+
     -- * X
   , xAbHom, xAbHomTo, xAbHomFrom
   , stdMaxDim
@@ -93,6 +96,7 @@ import OAlg.Entity.Sequence
 import OAlg.Entity.Matrix
 import OAlg.Entity.Product
 import OAlg.Entity.Slice
+import OAlg.Entity.Sum hiding (sy)
 
 import OAlg.Data.Generator
 
@@ -715,6 +719,86 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
         | n == 1    = lftRows i'' gs rws
         | i == i'   = (amap1 (fromZ . toZ) rw,i''):lftRows (succ i'') gs rws'
         | otherwise = lftRows (succ i'') gs rws
+
+--------------------------------------------------------------------------------
+-- AbElementForm -
+
+-- | form for a 'AbElement'.
+data AbElementForm = AbElementForm AbGroup [(Z,N)] deriving (Eq)
+
+instance Show AbElementForm where
+  show (AbElementForm a zis) = shs zis ++ " :: " ++ show a where
+    shs []       = "0"
+    shs (zi:zis) = sh zi ++ shs' zis
+
+    shs' []       = ""
+    shs' (zi:zis) = " + " ++ sh zi ++ shs' zis
+
+    sh (1,i) = "e" ++ show i
+    sh (z,i) = show z ++ "!e" ++ show i
+
+--------------------------------------------------------------------------------
+-- AbElement -
+
+-- | elements of an finitely generated abelian group. There 'root' - which is an element of 'AbGroup' -
+--   gives there affiliated group. They are gererated via 'make'.
+newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Eq,Validable,Entity)
+
+instance Show AbElement where
+  show = show . form
+
+instance LengthN AbElement where
+  lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a
+  
+--------------------------------------------------------------------------------
+-- AbElement - Constructable -
+
+instance Exposable AbElement where
+  type Form AbElement = AbElementForm
+  form (AbElement (SliceFrom _ a)) = AbElementForm (end a) zis where
+    zis = amap1 (\(z,i,_) -> (z,i))
+        $ etsxs $ mtxxs $ abhz a
+  
+instance Constructable AbElement where
+  make (AbElementForm a zis)
+    = AbElement
+    $ SliceFrom (Free (SW W0))
+    $ abh' (abg 0 :> a)
+    $ amap1 (\(z,i) -> (z,i,0))
+    $ lcs
+    $ ssylc
+    $ sumSymbol
+    $ filter ((<n).snd)
+    $ zis
+    where n = lengthN a
+
+--------------------------------------------------------------------------------
+-- abge -
+
+-- | the @i@-th canonical generator of the given abelian group.
+abge :: AbGroup -> N -> AbElement
+abge a i = make (AbElementForm a [(1,i)])
+
+--------------------------------------------------------------------------------
+-- AbElement - Abelian -
+
+instance Fibred AbElement where
+  type Root AbElement = AbGroup
+  root (AbElement (SliceFrom _ a)) = end a
+
+instance Additive AbElement where
+  zero g = AbElement (SliceFrom (Free (SW W0)) (zero (abg 0 :> g)))
+
+  AbElement (SliceFrom i a) + AbElement (SliceFrom _ b) = AbElement (SliceFrom i (a+b))
+    
+instance Abelian AbElement where
+  negate (AbElement (SliceFrom i a)) = AbElement (SliceFrom i (negate a))
+
+  AbElement (SliceFrom i a) - AbElement (SliceFrom _ b) = AbElement (SliceFrom i (a-b))
+
+instance Vectorial AbElement where
+  type Scalar AbElement = Z
+  z ! AbElement (SliceFrom i a) = AbElement (SliceFrom i (z!a))
 
 --------------------------------------------------------------------------------
 -- XSomeFreeSliceFromLiftable -

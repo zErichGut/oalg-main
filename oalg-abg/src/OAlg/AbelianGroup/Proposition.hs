@@ -24,7 +24,7 @@ import OAlg.Prelude
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
-
+import OAlg.AbelianGroup.Liftable
 --------------------------------------------------------------------------------
 -- prpAbelianGroups -
 
@@ -35,6 +35,7 @@ prpAbelianGroups = Prp "AbelianGroups"
             , Label "isoSmithNormal" :<=>: Forall xStandard (valid . isoSmithNormal)
             , Label "kernels" :<=>: valid abhKernels
             , Label "cokernels liftable" :<=>: valid abhCokernelLftFree
+            , prpMatrixZLiftable
             ]
 
 

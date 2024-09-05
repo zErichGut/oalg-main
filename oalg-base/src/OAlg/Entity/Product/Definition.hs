@@ -54,7 +54,7 @@ module OAlg.Entity.Product.Definition
   , prfMapTotal
 
     -- ** Reduction
-  , prfReduce, prfReduceWith
+  , prfReduce, prfReduceWith, prfReductionWith
 
     -- ** Operations
   , prfopr, prfopr', prfopl, prfopl'
@@ -419,6 +419,16 @@ prfReduceWith rel pf
   $ prfwrd pf
 
 --------------------------------------------------------------------------------
+-- prfReduce' -
+
+-- | reduces a product form by the given reduction rule and aggregates it.
+prfReductionWith :: (Oriented a, Integral r)
+  => (Word r a -> Rdc (Word r a)) -> ProductForm r a -> Rdc (ProductForm r a)
+prfReductionWith rel pf = (rel $ prfwrd pf) >>= wrdPrfGroup >>= return . wrdprf (end pf)
+
+    
+
+--------------------------------------------------------------------------------
 -- prfFactors -
 
 -- | list of elementary factors.
@@ -434,7 +444,7 @@ prfLookup p = lookup 0 (fromWord $ prfwrd p) where
 instance Sequence (ProductForm N) N x where
   list _ pf = prfFactors pf `zip` [0..]
   (??) = prfLookup
-  
+
 --------------------------------------------------------------------------------
 -- prfReduce -
 

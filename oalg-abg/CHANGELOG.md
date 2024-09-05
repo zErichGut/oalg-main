@@ -15,4 +15,9 @@ and this project adheres to the
 ## [1.3.0.0] - 2024-07-31
 
 ### Added
-- Liftable cokernels
+	- Liftable cokernels
+
+## [1.4.1.0] - 2024-09-03
+### Added
+	- Liftable Z-Matrices
+	- Elements of abelian groups

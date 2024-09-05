@@ -1,34 +1,35 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies, TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies
+           , TypeOperators
+           , MultiParamTypeClasses
+           , FlexibleInstances
+           , FlexibleContexts
+           , GADTs
+           , GeneralizedNewtypeDeriving
+           , DataKinds
+#-}
 
 -- |
 -- Module      : OAlg.Homology.Simplex
--- Description : simplices and there faces..
+-- Description : simplices and there faces.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- Simplices and there faces.
 module OAlg.Homology.Simplex
-  (  
+  (
     -- * Simplex
-    Simplex(..), simplex
+    Simplex(..), simplex, (<:), spxEmpty
 
     -- * Face
-  , Face(..), fcSimplex
-  , faces, (<:)
+  , faces
 
   ) where
 
-import Data.Typeable
+import Data.Foldable 
 
 import OAlg.Prelude
 
@@ -38,59 +39,48 @@ import OAlg.Entity.FinList
 --------------------------------------------------------------------------------
 -- Simplex -
 
--- | @__n__@-dimensional simplex, given by @__n__ + 1@ points in @__x__@.
-newtype Simplex n x = Simplex (FinList (n+1) x) deriving (Show,Eq,Ord,Validable,Entity)
+-- | simplex as a finite list of a given length @__l__@ of vertices in a space @__x__@.
+--
+--  __Note__ We allow also simplices with zero length, i.e. the empty simplex.
+newtype Simplex l x = Simplex (FinList l x) deriving (Eq, Ord, Validable, Entity,Foldable)
+
+instance Show x => Show (Simplex l x) where
+  show  = show . toList 
 
 --------------------------------------------------------------------------------
 -- simplex -
 
--- | the @__n__@-diemensional 'Simplex', starting at the given enumerating value @v@.
+-- | the 'Simplex' of dimension @'Dim' __n__@, starting at the given enumerating value @v@.
 --
 --  __Example__
 --
--- >>> simplex (attest :: Any N4) (0::N)
--- Simplex (0 :| (1 :| (2 :| (3 :| (4 :| Nil)))))
-simplex :: Enum v => Any n -> v -> Simplex n v
+-- >>> simplex (dim :: Dim N4) (0::N)
+-- [0,1,2,3,4]
+simplex :: Enum v => Any l -> v -> Simplex (l+1) v
 simplex n v = Simplex $ spl n v where
   spl :: Enum v => Any n -> v -> FinList (n+1) v
   spl W0 v = v :| Nil
   spl (SW n) v = v :| spl n (succ v) 
 
 --------------------------------------------------------------------------------
--- Face -
+-- spxEmpty -
 
--- | a 'Face' of a @__n__@-dimensional 'Simplex', which is a @__n__ - 1@-dimensional 'Simplex'.
-data Face n x where
-  FaceEmpty :: Face N0 x
-  Face      :: Simplex n x -> Face (n+1) x
-
-deriving instance Show x => Show (Face n x)
-deriving instance Eq x => Eq (Face n x)
-deriving instance Ord x => Ord (Face n x)
-
-instance Validable x => Validable (Face n x) where
-  valid FaceEmpty = SValid
-  valid (Face s)  = valid s
-
-instance (Entity x, Typeable n) => Entity (Face n x)
+-- | the empty simplex.
+spxEmpty :: Simplex N0 x
+spxEmpty = Simplex Nil
 
 --------------------------------------------------------------------------------
--- (<:) -
+-- (<:)
 
-(<:) :: x -> Face n x -> Face (n+1) x
-x <: FaceEmpty = Face (Simplex (x:|Nil))
-x <: (Face (Simplex xs)) = Face (Simplex (x:|xs))
-
---------------------------------------------------------------------------------
--- fcSimplex -
-
-fcSimplex :: Face (n+1) x -> Simplex n x
-fcSimplex (Face s) = s
+-- | cons of a vertex and a simplex.
+(<:) :: x -> Simplex l x -> Simplex (l+1) x
+v <: Simplex vs = Simplex (v:|vs)
 
 --------------------------------------------------------------------------------
 -- faces -
 
--- | the 'Face's of a 'Simplex'.
-faces :: Simplex n x -> FinList (n+1) (Face n x)
-faces (Simplex (_:|Nil))       = FaceEmpty:|Nil
-faces (Simplex (x:|xs@(_:|_))) = Face (Simplex xs) :| amap1 (x<:) (faces (Simplex xs))
+-- | the faces of a simplex.
+faces :: Simplex (l+1) x -> FinList (l+1) (Simplex l x)
+faces (Simplex (v:|vs)) = case vs of
+  Nil  -> spxEmpty :| Nil
+  _:|_ -> Simplex vs :| amap1 (v<:) (faces $ Simplex vs)

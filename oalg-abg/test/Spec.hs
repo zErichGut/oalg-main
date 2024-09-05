@@ -13,7 +13,7 @@ import OAlg.AbelianGroup.Proposition
 
 main :: IO ()
 main = do
-  b <- validateStatistics Standard prpAbelianGroups
+  b <- validate prpAbelianGroups
 
   putStrLn ""
   putStrLn "***************************"
