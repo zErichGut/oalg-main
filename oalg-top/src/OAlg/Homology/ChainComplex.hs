@@ -52,6 +52,8 @@ import Control.Monad
 
 import Data.Typeable
 import Data.Foldable (toList)
+import Data.Kind
+import Data.List (filter)
 
 import OAlg.Prelude hiding (T)
 
@@ -59,6 +61,7 @@ import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 import OAlg.Data.Singleton
 import OAlg.Data.Either
+import OAlg.Data.Generator
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -98,6 +101,7 @@ import OAlg.Limes.KernelsAndCokernels
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 import OAlg.AbelianGroup.Liftable
+import OAlg.AbelianGroup.ZMod
 
 import OAlg.Homology.Complex
 import OAlg.Homology.Chain as C
@@ -494,6 +498,9 @@ ccxPred (ChainComplex c) = ChainComplex $ case c of
 instance (Oriented c, Sliced i c, Typeable t) => Oriented (Slice t i c) where
   type Point (Slice t i c) = Point c
   orientation s = orientation $ slice s
+
+instance (Sliced i c, Ord c) => Ord (Slice t i c) where
+  compare (SliceFrom _ a ) (SliceFrom _ b) = compare a b
   
 --------------------------------------------------------------------------------
 -- Slice From - OrientedOpl -
@@ -517,6 +524,8 @@ instance (Distributive d, Sliced i d) => Additive (Slice From i d) where
           i' _ = unit1
 
   SliceFrom i a + SliceFrom _ b = SliceFrom i (a+b)
+
+  ntimes n (SliceFrom i a) = SliceFrom i (ntimes n a)
   
 --------------------------------------------------------------------------------
 -- Variance -
@@ -560,17 +569,30 @@ data Variance i d where
        -- | the universal property of the kernel of c. Let @s@ be in @Slice From i c@ with
        -- @end s == start c@ then holds: If @c *> s@ is not zero then the result is @Left (c*>s)@
        -- otherwise the universal factor of the kernel of @c@.
-    -> (S i d -> Either (T i d) (S' i d))
+    -> (S (i N1) d -> Either (T (i N1) d) (S' (i N1) d))
 
        -- | the universal property of the kernel of h. Let @s'@ be in @Slice From i c@ with
        -- @end s' == start c'@ then holds: If @c' *> s'@ is not zero then the result is @Left (c'*>s')@
        -- otherwise the universal factor of the kernel of @c'@.
-    -> (S' i d -> Either (T' i d) (S'' i d))
+    -> (S' (i N1) d -> Either (T' (i N1) d) (S'' (i N1) d))
 
-       -- | the liftable property of b''. Let @s@ be in @Slice From i c@ with @end s == end b''@
+       -- | the liftable property of b''. Let @s@ be in @Slice From (i N1) c@ with @end s == end b''@
        -- then the result is the lifted @s@.
-    -> (S'' i d -> R i d)
+    -> (S'' (i N1) d -> R (i N1) d)
+
+       -- | generator set for the kernel of @b@.
+    -> Set (R (i N1) d)
+
+      -- | generator set for the cycles of @s@.
+    -> Set (S (i N1) d)
     -> Variance i d
+
+instance Distributive d => Validable (Variance i d) where
+  valid (Variance d3x3 _ _ _ _ _) = Label "Variance" :<=>:
+    And [ valid d3x3
+        , valid $ amap1 ChainComplex $ dgPoints $ d3x3
+        ]
+
 
 --------------------------------------------------------------------------------
 -- vrcHomologyClass -
@@ -578,20 +600,19 @@ data Variance i d where
 -- | tries to evaluate the homology class of a given chain.
 --
 --  __Property__ Let @v@ be in @'Variance' __i__ __c__@ and @s@ in @'S' __i__ __c__@ with
---  @'root' s == start c@ (see diagram in 'Variance'), then holds:
+--  @'end' s == start c@ (see diagram in 'Variance'), then holds:
 --
 --  (1) If @t = c *> s@ is not zero, then the result is @('Left' t)@, otherwise
 --
 --  (2) The result is @c' '*>' s'@, where @s'@ is the induce factor given by @s@.
-vrcHomologyClass :: (Distributive d, Sliced i d) => Variance i d -> S i d -> Either (T i d) (T' i d)
-vrcHomologyClass (Variance d3x3 cKerUnv _ _) s = do
+vrcHomologyClass :: (Distributive d, Sliced (i N1) d)
+  => Variance i d -> S (i N1) d -> Either (T (i N1) d) (T' (i N1) d)
+vrcHomologyClass (Variance d3x3 cKerUnv _ _ _ _) s = do
   s' <- cKerUnv s
-  return (c' *> s)
+  return (c' *> s')
   where
-    _:|c':|_ = dgArrows $ end $ head $ dgArrows $ d3x3
+    _:|c':|_ = dgArrows $ start $ head $ dgArrows $ d3x3
       
-  
-
 --------------------------------------------------------------------------------
 -- vrcBoundary -
 
@@ -606,22 +627,20 @@ vrcHomologyClass (Variance d3x3 cKerUnv _ _) s = do
 --  result is @'Left' ('Right' t')@, otherwise
 --
 --  (3) The result is @'Right' r@ such that @b *> r == s@,
-vrcBoundary :: Variance i d -> S i d -> Either (Either (T i d) (T' i d)) (R i d)
-vrcBoundary (Variance _ cKerUnv c'KerUnv b''Lft) s
+vrcBoundary :: Variance i d -> S (i N1) d -> Either (Either (T (i N1) d) (T' (i N1) d)) (R (i N1) d)
+vrcBoundary (Variance _ cKerUnv c'KerUnv b''Lft _ _) s
   = case cKerUnv s of
       Left t      -> Left (Left t)
       Right s'    -> case c'KerUnv s' of
         Left t'   -> Left (Right t')
         Right s'' -> Right (b''Lft s'')
 
-
 --------------------------------------------------------------------------------
 -- vrcT' -
 
 -- | the point @t'@ in the diagram of 'Variance'.
 vrcT' :: Distributive d => Variance i d -> Point d
-vrcT' v = case v of
-  Variance (DiagramChainTo _ (u:|_)) _ _ _ -> case start u of
+vrcT' (Variance (DiagramChainTo _ (u:|_)) _ _ _ _ _) = case start u of
     DiagramChainFrom _ (_:|c':|_) -> end c'
 
 --------------------------------------------------------------------------------
@@ -629,15 +648,75 @@ vrcT' v = case v of
 
 -- | the point @t''@ in the diagram of 'Variance'.
 vrcT'' :: Distributive d => Variance i d -> Point d
-vrcT'' v = case v of
-  Variance (DiagramChainTo _ (_:|u':|_)) _ _ _ -> case start u' of
+vrcT'' (Variance (DiagramChainTo _ (_:|u':|_)) _ _ _ _ _) = case start u' of
     DiagramChainFrom _ (_:|c'':|_) -> end c''
 
+--------------------------------------------------------------------------------
+-- ClfCokernels -
+
+newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftableFree d)
+
+clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
+clfLimes (ClfCokernels l) = l
 
 --------------------------------------------------------------------------------
--- ccxVariance -
+-- maybeFinList -
 
--- | evaluates 
+maybeFinList :: Any n -> [a] -> Maybe (FinList n a)
+maybeFinList W0 _          = Just (Nil)
+maybeFinList _ []          = Nothing
+maybeFinList (SW n) (a:as) = maybeFinList n as >>= return . (a:|)
+
+--------------------------------------------------------------------------------
+-- abhSplit -
+
+abhSplit :: Slice From (Free k) AbHom -> FinList k (Slice From (Free N1) AbHom)
+abhSplit (SliceFrom (Free k) h@(AbHom h'))
+  = case maybeFinList k $ toAbHoms k 0 $ rowxs $ mtxRowCol h' of
+      Just xs -> xs
+      _       -> throw $ ImplementationError "abhSplit.maybeFinList"
+  where
+    r  = end h
+    n1 = Free attest :: Free N1 AbHom
+    z1 = abg 0 
+    
+    sZero :: Slice From (Free N1) AbHom
+    sZero = zero r
+
+    toAbHoms :: (j ~ N, i ~ N) => Any k -> j -> [(Col i ZModHom,j)] -> [Slice From (Free N1) AbHom]
+    toAbHoms W0 _ _                         = []
+    toAbHoms (SW k') j []                   = sZero : toAbHoms k' (succ j) []
+    toAbHoms (SW k') j cljs@((cl,j'):cljs') = case j `compare` j' of
+      LT -> sZero : toAbHoms k' (succ j) cljs
+      EQ -> toAbHom cl : toAbHoms k' (succ j) cljs'
+      _  -> throw $ ImplementationError "abhSplit.toAbHoms"
+
+
+    toAbHom :: i ~  N => Col i ZModHom -> Slice From (Free N1) AbHom
+    toAbHom cl = SliceFrom n1 h where
+      h = abh (z1 :> r) $ amap1 (\(x,i) -> (x,i,0)) $ colxs cl
+
+instance Validable a => Validable (SomeFinList a) where
+  valid (SomeFinList xs) = valid xs
+
+
+ff :: SomeFreeSlice From AbHom -> SomeFinList (Slice From (Free N1) AbHom)
+ff (SomeFreeSlice hs) = SomeFinList $ abhSplit hs
+
+xSomeF :: N -> X (SomeFreeSlice From AbHom)
+xSomeF nMax = do
+  n <- xNB 0 nMax
+  g <- xStandard
+  h <- xAbHom 0.8 ((z1 ^ n) :> g)
+  case someNatural n of
+    SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
+  where z1 = abg 0
+
+    
+--------------------------------------------------------------------------------
+-- Variance' -
+
+-- | restricted variance (see also 'Variance').
 -- @
 --                  b            c
 --   p :     r ---------> s -------------> t
@@ -648,79 +727,124 @@ vrcT'' v = case v of
 --   p':     r ---------> s'------------>> t'
 --                b'         c' = coker b'
 -- @
-ccxVariance' :: (Distributive d, Sliced i d)
-  => Kernels N1 d -> Cokernels N1 d
+data Variance' i d where
+  Variance'
+   :: Transformation (D.Chain From) N3 N2 d
+   -> (S (i N1) d -> Either (T (i N1) d) (S' (i N1) d))
+   -> Set (R (i N1) d)
+   -> Variance' i d
+   
+--------------------------------------------------------------------------------
+-- ccxVariance -
+
+-- in a further release the constraint (i ~ Free) can be relaxed by adapting CokernlLiftableFree
+-- and Generator!
+
+data SomeSliceN t (i :: N' -> Type -> Type) d where
+  SomeSliceN :: Sliced (i n) d => Slice t (i n) d -> SomeSliceN t i d
+
+deriving instance Show d => Show (SomeSliceN t i d)
+
+-- | the generator 
+generator :: Generator To d -> SomeSliceN From Free d
+generator (GeneratorTo (DiagramChainTo _ (p:|_)) k' _ _ _ _)
+  = SomeSliceN (SliceFrom k' p)
+
+
+-- | evaluates the restricted varaince.
+--
+--  __Propterties__
+--
+--  (1) For the spliting function
+--  @splt :: forall k . Slice From (i k) d -> FinList k (Slice From (i N1) d)@
+--  holds: For all @s@ in @'Slice' 'From' (__i__ __k__) __d__@ and @s'@ in @splt s@ holds:
+--  @'end' s' '==' 'end' s'@.
+-- @
+--                  b            c
+--   p :     r ---------> s -------------> t
+--   ^       ^            ^                ^
+--   |       |            |                |
+--   | u     | one        | k = ker c      | 0
+--   |       |            |                |
+--   p':     r ---------> s'------------>> t'
+--                b'         c' = coker b'
+-- @
+ccxVariance' :: (Distributive d, Sliced (i N1) d, Ord d, i ~ Free)
+  => Kernels N1 d -> ClfCokernels N1 d
+  -> (Point d -> Generator To d)
+  -> (forall k . Slice From (i k) d -> FinList k (Slice From (i N1) d))
   -> ChainComplex From l d
-  -> ( Transformation (D.Chain From) N3 N2 d
-     , S i d -> Either (T i d) (S' i d)
-     )
-ccxVariance' kers cokers (ChainComplex (DiagramChainFrom _ (b:|c:|_))) = (u,kUniv) where
+  -> Variance' i d
+ccxVariance' kers clfCokers gen splt (ChainComplex (DiagramChainFrom r (b:|c:|_)))
+  = case generator bKerTipGen of
+      SomeSliceN bKerTipGen' -> Variance' u kUniv bKerGen where
+        bKerGen = set (splt <> (bKerFct *> bKerTipGen'))
+
+    where
+
+  (<>) :: (Distributive d, Sliced (i N1) d) => (Slice From (i k) d -> FinList k (Slice From (i N1) d))
+       -> Slice From (i k) d -> [Slice From (i N1) d]
+  (<>) splt = filter (not . isZero) . toList . splt
+
+      
   u  = Transformation p' p (one r :| k :| zero (end c' :> end c) :| Nil)
   p  = DiagramChainFrom r (b :|c :|Nil)
   p' = DiagramChainFrom r (b':|c':|Nil) 
-  r  = start b
+
 
   cDgm = kernelDiagram c
   cKer = limes kers cDgm
   k    = kernelFactor $ universalCone cKer
   b'   = universalFactor cKer (ConeKernel cDgm b)
 
-  b'Dgm   = cokernelDiagram b'
-  b'Coker = limes cokers b'Dgm
-  c'      = cokernelFactor $ universalCone b'Coker
+  b'Dgm      = cokernelDiagram b'
+  b'CokerLft = clfLimes clfCokers b'Dgm
+  b'Coker    = clfCokernel b'CokerLft
+  c'         = cokernelFactor $ universalCone b'Coker
 
   kUniv s@(SliceFrom i s')
     | not $ isZero $ slice t = Left t
     | otherwise              = Right (SliceFrom i $ universalFactor cKer $ ConeKernel cDgm s')
     where t = c *> s
 
+  bDgm       = kernelDiagram b
+  bKer       = limes kers bDgm
+  bKerCn     = universalCone bKer
+  bKerFct    = kernelFactor bKerCn
+  bKerTipGen = gen $ tip bKerCn
+
+
+instance OrdPoint ZModHom
+deriving instance Ord AbHom
 
 -- | evaluates the 'Variance' of the first two matrices where they are mapped in to 'AbHom'
 -- via 'FreeAbHom'.    
-ccxVarianceZ :: Attestable k => ChainComplex From l (Matrix Z) -> Variance (Free k) AbHom
-ccxVarianceZ ccx = Variance d3x3 kUniv k'Univ b''Lft where
-  p = ccxMap FreeAbHom ccx
+ccxVarianceZ :: ChainComplex From l (Matrix Z) -> Variance Free AbHom
+ccxVarianceZ ccx = case vrcZ p of
+    Variance' u kUniv bKerGs -> Variance d3x3 kUniv k'Univ b''Lft bKerGs sCycGs where
 
-  (u ,kUniv ) = ccxVariance' abhKernels abhCokernels p
-  (u',k'Univ) = ccxVariance' abhKernels abhCokernels (ChainComplex $ start u)
-  
-  d3x3 = DiagramChainTo (start u) (u:|u':|Nil)
+      Variance' u' k'Univ _    = vrcZ (ChainComplex $ start u)
+      
+      d3x3 = DiagramChainTo (end u) (u:|u':|Nil)
+    
+      b'' = head $ dgArrows $ start u'
+      b''Z = abhz b''
+    
+      -- see the note of the Variance
+      b''Lft :: S (Free k) AbHom -> R (Free k) AbHom
+      b''Lft (SliceFrom k s'') = SliceFrom k (zabh rZ) where
+        s''Z = abhz s''
+        rZ = case zMatrixLift b''Z s''Z of
+          Just x  -> x 
+          Nothing -> throw $ ImplementationError "zMatrixLift dos not hold spezification"
+    
+      sCycGs = error "nyi"
+      
+      
+  where 
+    p = ccxMap FreeAbHom ccx
 
-  b'' = head $ dgArrows $ start u'
-  b''Z = abhz b''
+    abhClfCokernels = ClfCokernels abhCokernelLftFree
+    vrcZ = ccxVariance' abhKernels abhClfCokernels abgGeneratorTo abhSplit
 
-  -- see the note of the Variance
-  b''Lft :: S (Free k) AbHom -> R (Free k) AbHom
-  b''Lft (SliceFrom k s'') = SliceFrom k (zabh rZ) where
-    s''Z = abhz s''
-    rZ = case zMatrixLift b''Z s''Z of
-      Just x  -> x 
-      Nothing -> throw $ ImplementationError "zMatrixLift dos not hold spezification"
-
-
-{-
-ccxVarianceZ ccx = VarianceAbHom d3x3 cKer b'Coker hLft hKer (b''Lft b'') where
-  g = ccxMap FreeAbHom ccx
-
-  (i,cKer,CokernelLiftableFree b'Coker hLft) = ccxVariance' g
-  (i',hKer,_) = ccxVariance' (ChainComplex $ start i)
-
-  d3x3 = DiagramChainTo (start i) (i:|i':|Nil)
-
-  b'' = case start i' of {DiagramChainFrom _ bs -> head bs}
-
-  -- as the start and the end of b'' are free and furthermore b'' is surjective
-  -- we can use zMatrixLift to solve the liftable property!
-  b''Lft :: AbHom -> Any i -> Liftable From (Free i) AbHom
-  b''Lft b'' i = case ats i of {Ats -> LiftableFrom b'' (b''LftSliceFrom b'' i )}
-
-  b''LftSliceFrom :: AbHom -> Any i -> Slice From (Free i) AbHom -> Slice From (Free i) AbHom
-  b''LftSliceFrom a _ (SliceFrom i y) = SliceFrom i x where
-    y' = abhz y
-    a' = abhz a
-    x' = case zMatrixLift a' y' of
-      Just x  -> x
-      Nothing -> throw $ ImplementationError "zMatrixLift dos not hold spezification"
-    x = zabh x'
--}
 
