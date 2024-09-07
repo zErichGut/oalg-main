@@ -65,7 +65,10 @@ import OAlg.Limes.KernelsAndCokernels
 --  For all @__k__@ and @s@ in @'Slice' 'From' (__i__ __k__) __d__@ holds:
 --  @'end' s' '==' 'end' s@ for all @s'@ in @splt s@.
 newtype Splitable s i d
-  = Splitable (forall k . Slice s (i k) d -> FinList k (Slice s (i N1) d))
+  = Splitable
+      (forall k . (Attestable k, Sliced (i k) d, Oriented d)
+         => Slice s (i k) d -> FinList k (Slice s (i N1) d)
+      )
 
 --------------------------------------------------------------------------------
 -- FinitePresentation -

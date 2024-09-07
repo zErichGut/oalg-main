@@ -14,7 +14,9 @@
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
--- 
+--
+-- __deprecated__ use instead "OAlg.Data.FinitelyPresentable".
+--
 -- 'Generator' for finitely generated 'Point's within a 'Distributive' structure.
 module OAlg.Data.Generator
   (
