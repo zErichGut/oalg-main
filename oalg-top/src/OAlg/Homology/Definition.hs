@@ -76,8 +76,17 @@ data Homology n k x where
     -> Variance Free AbHom -- ^ variance of the boundary operator
     -> Homology n k x
 
+--------------------------------------------------------------------------------
+-- hmgVariance -
+
+hmgVariance :: Homology n k x -> Variance Free AbHom
+hmgVariance (Homology _ _ _ v) = v
+
+--------------------------------------------------------------------------------
+-- hmgGroup -
+
 hmgGroup :: Homology n k x -> AbGroup
-hmgGroup (Homology _ _ _ v) = vrcT' v
+hmgGroup = vrcT' . hmgVariance
 
 --------------------------------------------------------------------------------
 -- SomeHomology -
@@ -94,7 +103,7 @@ getHomology k (SomeHomology h:|shs) = case eqAny k h of
   where eqAny :: Attestable k => Any k -> Homology n k' x -> Maybe (k :~: k')
         eqAny _ (Homology _ _ _ _) = eqT
 
-  --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- homology -
 
 homology :: (Entity x, Ord x, Attestable n)
@@ -236,6 +245,10 @@ Just hr0 = getHomology (attest :: Any N0) hr
 v s = ch (Simplex (s:|Nil)) :: Chain Z N1 Symbol
 
 
-hmgCycleGen'' :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+2) x)
-hmgCycleGen'' h@(Homology _ _ _ v) = case v of
+hmgCycles :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
+hmgCycles h@(Homology _ _ _ v)
+  = set $ amap1 (cfsssy (hmgChainSet' h) . fromAbSlice) $ setxs $ vrcCycles $ v
+{-
+hmgCycles h@(Homology _ _ _ v) = case v of
   Variance _ _ _ _ (Set g) _ -> set $ amap1 (cfsssy (hmgChainSet'' h) . fromAbSlice) g
+-}

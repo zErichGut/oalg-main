@@ -34,10 +34,14 @@ module OAlg.Entity.Slice.Free
     -- ** Kernel
   , KernelFree, KernelDiagramFree
   
-    -- ** Cokernel
+    -- ** Liftable Cokernel
   , CokernelDiagramFree
-  , CokernelLiftableFree(..), clfCokernel, clfLiftableFree
+  , CokernelLiftableFree(..)
+  , clfCokernel, clfLiftableFree
 
+    -- *** Liftable Cokernels
+  , clfLimes, ClfCokernels(..)
+  
     -- ** Pullback
   , PullbackFree, PullbackDiagramFree  
   
@@ -118,6 +122,7 @@ deriving instance Show (SomeFree c)
 
 instance Validable (SomeFree c) where
   valid (SomeFree k) = Label "SomeFree" :<=>: valid k
+
 --------------------------------------------------------------------------------
 -- SomeFreeSlice -
 
@@ -304,4 +309,16 @@ clfCokernel (CokernelLiftableFree c _) = c
 -- | the induced liftable.
 clfLiftableFree :: CokernelLiftableFree c -> Any k -> Liftable From (Free k) c
 clfLiftableFree (CokernelLiftableFree _ l) = l
+
+--------------------------------------------------------------------------------
+-- ClfCokernels -
+
+-- | predicate for liftable free cokernels where for each cokernel diagram @d@ in
+--   @'CokernelDiagram' __n__ __d__@ ther is an associated @'CokernelLifatbleFree' __d__@ such
+--   that its underlying diagram is equal to @d@.
+newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftableFree d)
+
+-- | the limes of the given diagram.
+clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
+clfLimes (ClfCokernels l) = l
 

@@ -17,15 +17,18 @@
 -- 
 -- 'Generator' for finitely generated 'Point's within a 'Distributive' structure.
 module OAlg.Data.Generator
-  ( -- * Generator
+  (
+{-
+    -- * Generator
     Generator(..)
 
     -- * X
   , XSomeFreeSliceFromLiftable(..), xsfsfl
   , XStandardSomeFreeSliceFromLiftable(..)
+-}
   )
   where
-
+{-
 import Data.Typeable
 
 import OAlg.Prelude
@@ -154,3 +157,4 @@ xsfsfl (XSomeFreeSliceFromLiftable xfl) = xfl
 class XStandardSomeFreeSliceFromLiftable a where
   xStandardSomeFreeSliceFromLiftable :: XSomeFreeSliceFromLiftable a
 
+-}
