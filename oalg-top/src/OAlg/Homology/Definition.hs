@@ -29,13 +29,15 @@ module OAlg.Homology.Definition
 import Data.Typeable
 
 import Data.Foldable
-import Data.List (filter,(++))
+import Data.List as L (filter,(++),zip)
+import qualified Data.Map.Strict as M
 
 import OAlg.Prelude
 
 import OAlg.Data.Generator
 import OAlg.Data.Constructable
 import OAlg.Data.Either
+import OAlg.Data.Tree
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -44,6 +46,7 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Exception
+import OAlg.Structure.Ring
 
 import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.FinList as F hiding ((++)) 
@@ -64,8 +67,29 @@ import OAlg.Homology.Simplex
 
 import OAlg.Data.Symbol
 
+{-
+hmgCycles :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
+hmgCycles h@(Homology _ _ _ v)
+  = set $ amap1 (cfsssy (hmgChainSet' h) . fromAbSlice) $ setxs $ vrcCycles $ v
+-}
+
+ssAny :: Attestable l => Set (Simplex l x) -> Any l
+ssAny _ = attest
+
+bdoSimplexSet' :: (Ring r, Commutative r, Ord r, OrdPoint r, Entity x, Ord x, Attestable k)
+  => Any k -> ChainComplex From n (BoundaryOperator r x) -> Maybe (Set (Simplex (k+1) x))
+bdoSimplexSet' k (ChainComplex ds) = case dgPoints ds of
+  _:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> Just s
+    Nothing   -> Nothing
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 1) :~: l)
+    eqAny _ _ = eqT
+ 
 --------------------------------------------------------------------------------
 -- Homology -
+
+type CyGens k x = M.Map N (C.Chain Z k x) 
 
 data Homology n k x where
   Homology
@@ -74,19 +98,48 @@ data Homology n k x where
     -> Any k
     -> ChainComplex From N0 (BoundaryOperator Z x) -- ^ boundary operator
     -> Variance Free AbHom -- ^ variance of the boundary operator
+    -> CyGens (k+1) x -- ^ set of generators for thy cycles
     -> Homology n k x
 
 --------------------------------------------------------------------------------
 -- hmgVariance -
 
 hmgVariance :: Homology n k x -> Variance Free AbHom
-hmgVariance (Homology _ _ _ v) = v
+hmgVariance (Homology _ _ _ v _) = v
+
 
 --------------------------------------------------------------------------------
 -- hmgGroup -
 
 hmgGroup :: Homology n k x -> AbGroup
 hmgGroup = vrcT' . hmgVariance
+
+--------------------------------------------------------------------------------
+-- hmgCyGens -
+
+hmgCyGens :: (Entity x, Ord x) => Homology n k x -> CyGens (k+1) x
+hmgCyGens (Homology _ _ _ _ cs) = cs
+
+--------------------------------------------------------------------------------
+-- hmgCycles -
+
+-- | a set of generators for the cycles.
+hmgCycles :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
+hmgCycles = Set . M.elems . hmgCyGens
+
+--------------------------------------------------------------------------------
+-- hmgCyclesCard -
+
+-- | cardinality of the underlying set of generators for the cycles.
+hmgCyclesCard :: (Entity x, Ord x) => Homology n k x -> N
+hmgCyclesCard = toEnum . M.size . hmgCyGens
+
+--------------------------------------------------------------------------------
+-- hmgCycle -
+
+-- | the @i@-the cycle of the underlying set of generators for the cycles.
+hmgCycle :: (Entity x, Ord x) => Homology n k x -> N -> C.Chain Z (k+1) x
+hmgCycle  = (M.!) . hmgCyGens
 
 --------------------------------------------------------------------------------
 -- SomeHomology -
@@ -101,7 +154,7 @@ getHomology k (SomeHomology h:|shs) = case eqAny k h of
   Nothing   -> getHomology k shs
   
   where eqAny :: Attestable k => Any k -> Homology n k' x -> Maybe (k :~: k')
-        eqAny _ (Homology _ _ _ _) = eqT
+        eqAny _ (Homology _ _ _ _ _) = eqT
 
 --------------------------------------------------------------------------------
 -- homology -
@@ -109,7 +162,7 @@ getHomology k (SomeHomology h:|shs) = case eqAny k h of
 homology :: (Entity x, Ord x, Attestable n)
   => Regular -> Complex n x -> FinList (n+1) (SomeHomology n x)
 homology r c
-  = amap1 (uncurry $ shmg $ cpxDim c) ((ccxMap' ccxHead ds) `zip` (ccxMap' ccxVarianceZ vs)) where
+  = amap1 (uncurry $ shmg $ cpxDim c) ((ccxMap' ccxHead ds) `F.zip` (ccxMap' ccxVarianceZ vs)) where
   
   ds = chainComplex r c
   vs = ccxMap HomBoundaryOperator ds
@@ -120,7 +173,12 @@ homology r c
        -> Variance Free AbHom
        -> SomeHomology n x
   shmg n d v = case bdoDim d of
-    SomeNatural k -> SomeHomology $ Homology n k d v
+    SomeNatural k -> SomeHomology $ Homology n k d v cGen where
+      cGen = case bdoSimplexSet' k d of
+        Just s -> M.fromAscList ([0..] `L.zip` cs) where
+          cas    = vrcCycles v abgFinPres abhSplitable
+          Set cs = set $ amap1 (cfsssy s . fromAbSlice) $ setxs cas
+        Nothing -> throw $ ImplementationError "homology cGen"
 
 --------------------------------------------------------------------------------
 -- HomologyClass -
@@ -129,12 +187,10 @@ type HomologyClass = AbElement
 
 --------------------------------------------------------------------------------
 -- hmgChainSet -
-ssAny :: Attestable l => Set (Simplex l x) -> Any l
-ssAny _ = attest
 
 
 hmgChainSet :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex k x)
-hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+hmgChainSet (Homology _ k (ChainComplex ds) _ _) = case dgPoints ds of
   _:|_:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
     Just Refl -> s
     Nothing -> throw $ ImplementationError "invalid homology"
@@ -144,16 +200,12 @@ hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
 
 
 hmgChainSet' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k+1) x)
-hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
-  _:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
-    Just Refl -> s
-    Nothing -> throw $ ImplementationError "invalid homology"
-  where
-    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 1) :~: l)
-    eqAny _ _ = eqT
-    
+hmgChainSet' (Homology _ k ds _ _) = case bdoSimplexSet' k ds of
+  Just s  -> s
+  Nothing -> throw $ ImplementationError "invalid homology"
+
 hmgChainSet'' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k + 2) x)
-hmgChainSet''  (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+hmgChainSet''  (Homology _ k (ChainComplex ds) _ _) = case dgPoints ds of
   SimplexSet s:|_  -> case eqAny k (ssAny s) of
     Just Refl -> s
     Nothing -> throw $ ImplementationError "invalid homology"
@@ -197,7 +249,7 @@ homologyClass :: (Entity x, Ord x)
   => Homology n k x
   -> C.Chain Z (k+1) x
   -> Either (HomologyFailure Z k AbElement x) AbElement
-homologyClass h@(Homology _ _ _ v) s
+homologyClass h@(Homology _ _ _ v _) s
   | not (isZero (s - s')) = Left (NotRepresentable s')
   | otherwise = case vrcHomologyClass v (toAbSlice (lengthN ss') sv) of
       Left t -> Left $ NotACycle $ cfsssy (hmgChainSet h) $ fromAbSlice t
@@ -225,7 +277,7 @@ hmgBoundary :: (Entity x, Ord x)
   => Homology n k x
   -> C.Chain Z (k+1) x
   -> Either (HomologyFailure Z k AbElement x) (C.Chain Z (k+2) x)
-hmgBoundary h@(Homology _ _ _ v) s
+hmgBoundary h@(Homology _ _ _ v _) s
   | not (isZero (s - s')) = Left (NotRepresentable s')
   | otherwise = case vrcBoundary v (toAbSlice (lengthN ss') sv) of
       Left (Left t)   -> Left $ NotACycle $ cfsssy (hmgChainSet h) $ fromAbSlice t
@@ -244,10 +296,6 @@ Just ht0 = getHomology (attest :: Any N0) ht
 Just hr0 = getHomology (attest :: Any N0) hr
 v s = ch (Simplex (s:|Nil)) :: Chain Z N1 Symbol
 
-
-hmgCycles :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
-hmgCycles h@(Homology _ _ _ v)
-  = set $ amap1 (cfsssy (hmgChainSet' h) . fromAbSlice) $ setxs $ vrcCycles $ v
 {-
 hmgCycles h@(Homology _ _ _ v) = case v of
   Variance _ _ _ _ (Set g) _ -> set $ amap1 (cfsssy (hmgChainSet'' h) . fromAbSlice) g

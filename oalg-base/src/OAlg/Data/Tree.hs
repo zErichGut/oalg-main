@@ -1,4 +1,8 @@
 
+{-# LANGUAGE
+  DeriveFoldable
+#-}
+
 -- |
 -- Module      : OAlg.Data.Tree
 -- Description : binary trees for lookup
@@ -19,7 +23,10 @@ import Prelude hiding (lookup)
 
 -- | binary tree with node element in @__i__@ and leaf element in @__x__@.
 data Tree i x = Node i (Tree i x) (Tree i x) | Leaf x
+  deriving (Show,Eq,Ord,Foldable)
 
+--------------------------------------------------------------------------------
+-- lookup -
 
 -- | lookup a value in a binary tree.
 lookup :: Ord i => Tree i x -> i -> x

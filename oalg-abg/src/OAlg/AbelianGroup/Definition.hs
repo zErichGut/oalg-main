@@ -26,7 +26,8 @@ module OAlg.AbelianGroup.Definition
   , abh, abh'
   , abhz, zabh
   , abhDensity
-
+  , abhSplitable
+  
     -- * Adjunction
   , abhFreeAdjunction
   , AbHomFree(..)
@@ -34,15 +35,16 @@ module OAlg.AbelianGroup.Definition
     -- * Limes
   , abhProducts, abhSums
 
-    -- * Generator
-  , abgGeneratorTo
+
+    -- * Finite Presentation
+  , abgFinPres
 
     -- * Elements
   , AbElement(..), AbElementForm(..), abge
 
     -- * X
   , xAbHom, xAbHomTo, xAbHomFrom
-  , stdMaxDim
+  , stdMaxDim, xAbhSomeFreeSlice
 
     -- * Proposition
   , prpAbHom
@@ -61,6 +63,7 @@ import OAlg.Prelude
 import OAlg.Data.Canonical
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
+import OAlg.Data.FinitelyPresentable
 
 import OAlg.Category.Path as C
 
@@ -97,8 +100,6 @@ import OAlg.Entity.Matrix
 import OAlg.Entity.Product
 import OAlg.Entity.Slice
 import OAlg.Entity.Sum hiding (sy)
-
-import OAlg.Data.Generator
 
 import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
@@ -244,7 +245,7 @@ isSmithNormal (AbGroup g) = sn (amap1 fst ws) where
 -- | additive homomorphism between finitely generated abelian groups which are
 -- represented by matrices over 'ZModHom'.
 newtype AbHom = AbHom (Matrix ZModHom)
-  deriving (Show,Eq,Validable,Entity)
+  deriving (Show,Eq,Ord,Validable,Entity)
 
 --------------------------------------------------------------------------------
 -- abgDim -
@@ -532,6 +533,40 @@ abgMaybeFree g = case someNatural $ lengthN g of
 -- | number of free components.
 abgFrees :: AbGroup -> N
 abgFrees = lengthN . filter ((== ZMod 0) . fst) . abgxs
+
+--------------------------------------------------------------------------------
+-- abhSplit -
+
+-- | splitable property for 'AbHom' with free start point of any finite dimension.
+abhSplitable :: Splitable From Free AbHom
+abhSplitable = Splitable abhSplit
+
+abhSplit :: Slice From (Free k) AbHom -> FinList k (Slice From (Free N1) AbHom)
+abhSplit (SliceFrom (Free k) h@(AbHom h'))
+  = case maybeFinList k $ toAbHoms k 0 $ rowxs $ mtxRowCol h' of
+      Just xs -> xs
+      _       -> throw $ ImplementationError "abhSplit.maybeFinList"
+  where
+    r  = end h
+    n1 = Free attest :: Free N1 AbHom
+    z1 = abg 0 
+    
+    sZero :: Slice From (Free N1) AbHom
+    sZero = zero r
+
+    toAbHoms :: (j ~ N, i ~ N) => Any k -> j -> [(Col i ZModHom,j)] -> [Slice From (Free N1) AbHom]
+    toAbHoms W0 _ _                         = []
+    toAbHoms (SW k') j []                   = sZero : toAbHoms k' (succ j) []
+    toAbHoms (SW k') j cljs@((cl,j'):cljs') = case j `compare` j' of
+      LT -> sZero : toAbHoms k' (succ j) cljs
+      EQ -> toAbHom cl : toAbHoms k' (succ j) cljs'
+      _  -> throw $ ImplementationError "abhSplit.toAbHoms"
+
+
+    toAbHom :: i ~  N => Col i ZModHom -> Slice From (Free N1) AbHom
+    toAbHom cl = SliceFrom n1 h where
+      h = abh (z1 :> r) $ amap1 (\(x,i) -> (x,i,0)) $ colxs cl
+
   
 --------------------------------------------------------------------------------
 -- AbHomFree -
@@ -645,7 +680,7 @@ abhFreeAdjunction = Adjunction AbHomFree FreeAbHom u one where
 --
 -- __Property__ Let @a@ be in 'AbGroup', then holds
 -- @a '==' g@ where @'Generator' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
-abgGeneratorTo :: AbGroup -> Generator To AbHom
+abgGeneratorTo :: AbGroup -> FinitePresentation To Free AbHom
 abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
   (SomeNatural k',SomeNatural k'') -> GeneratorTo chn (Free k') (Free k'') coker ker lft
   where
@@ -707,8 +742,8 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
         castZHom :: ZMod -> ZModHom -> ZModHom
         castZHom g h = zmh (g :> end h) (toZ h)
 
-    lft :: Slice From (Free k) AbHom -> AbHom
-    lft (SliceFrom _ (AbHom (Matrix _ c xs))) = AbHom (Matrix (abgDim g') c xs') where
+    lft :: Slice From (Free k) AbHom -> Slice From (Free k) AbHom
+    lft (SliceFrom k (AbHom (Matrix _ c xs))) = SliceFrom k $ AbHom (Matrix (abgDim g') c xs') where
       xs' = crets $ Col $ PSequence $ lftRows 0 gs (listN $ etscr xs)
 
       lftRows :: (Ord i, Enum i)
@@ -720,6 +755,12 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
         | i == i'   = (amap1 (fromZ . toZ) rw,i''):lftRows (succ i'') gs rws'
         | otherwise = lftRows (succ i'') gs rws
 
+--------------------------------------------------------------------------------
+-- abgFinPres -
+
+-- | free finitely presentations for 'AbHom'. 
+abgFinPres :: FinitelyPresentable To Free AbHom
+abgFinPres = FinitelyPresentable abgGeneratorTo
 --------------------------------------------------------------------------------
 -- AbElementForm -
 
@@ -787,18 +828,22 @@ instance Fibred AbElement where
   root (AbElement (SliceFrom _ a)) = end a
 
 instance Additive AbElement where
-  zero g = AbElement (SliceFrom (Free (SW W0)) (zero (abg 0 :> g)))
+  zero g = AbElement (zero g)
 
-  AbElement (SliceFrom i a) + AbElement (SliceFrom _ b) = AbElement (SliceFrom i (a+b))
+  AbElement a + AbElement b = AbElement (a+b)
+
+  ntimes n (AbElement a) = AbElement $ ntimes n a
     
 instance Abelian AbElement where
-  negate (AbElement (SliceFrom i a)) = AbElement (SliceFrom i (negate a))
+  negate (AbElement a) = AbElement $ negate a
 
-  AbElement (SliceFrom i a) - AbElement (SliceFrom _ b) = AbElement (SliceFrom i (a-b))
+  AbElement a - AbElement b = AbElement (a-b)
+
+  ztimes z (AbElement a) = AbElement $ ztimes z a
 
 instance Vectorial AbElement where
   type Scalar AbElement = Z
-  z ! AbElement (SliceFrom i a) = AbElement (SliceFrom i (z!a))
+  z ! AbElement a = AbElement (z!a)
 
 --------------------------------------------------------------------------------
 -- XSomeFreeSliceFromLiftable -
@@ -1193,3 +1238,15 @@ prpAbHom = Prp "AbHom" :<=>:
 xMltAbh :: XMlt AbHom
 xMltAbh = xoMlt xN (xStandardOrtOrientation :: XOrtOrientation AbHom)
 
+--------------------------------------------------------------------------------
+-- xAbhSomeFreeSlice -
+xAbhSomeFreeSlice :: N -> X (SomeFreeSlice From AbHom)
+xAbhSomeFreeSlice nMax = do
+  n <- xNB 0 nMax
+  g <- xStandard
+  h <- xAbHom 0.8 ((z1 ^ n) :> g)
+  case someNatural n of
+    SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
+  where z1 = abg 0
+
+    

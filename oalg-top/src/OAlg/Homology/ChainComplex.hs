@@ -53,7 +53,6 @@ import Control.Monad
 
 import Data.Typeable
 import Data.Foldable (toList)
-import Data.Kind
 import Data.List (filter)
 
 import OAlg.Prelude hiding (T)
@@ -62,14 +61,14 @@ import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 import OAlg.Data.Singleton
 import OAlg.Data.Either
-import OAlg.Data.Generator
+import OAlg.Data.FinitelyPresentable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
-import OAlg.Structure.Ring
 import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
@@ -102,7 +101,6 @@ import OAlg.Limes.KernelsAndCokernels
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 import OAlg.AbelianGroup.Liftable
-import OAlg.AbelianGroup.ZMod
 
 import OAlg.Homology.Complex
 import OAlg.Homology.Chain as C
@@ -590,11 +588,11 @@ vrck (Variance (DiagramChainTo _ (u:|_)) _ _ _ _) = case trfs u of
 -- | a set of gererators of the kernel of @c@.
 vrcCycles :: (Distributive d, Ord d, Sliced (i N1) d, i ~ Free)
   => Variance i d
-  -> (Point d -> Generator To d)
+  -> FinitelyPresentable To i d
   -> Splitable From i d
   -> Set (S (i N1) d)
-vrcCycles v@(Variance _ _ _ _ _) gen (Splitable splt) = case kGen of
-    SomeSliceN kGen -> set (splt <> (k *> kGen))
+vrcCycles v@(Variance _ _ _ _ _) gen sp = case kGen of
+    SomeSliceN kGen -> set (split sp <> (k *> kGen))
   where
     (<>) :: (Distributive d, Sliced (i N1) d)
       => (Slice From (i k) d -> FinList k (Slice From (i N1) d))
@@ -602,7 +600,7 @@ vrcCycles v@(Variance _ _ _ _ _) gen (Splitable splt) = case kGen of
     (<>) splt = filter (not . isZero) . toList . splt
   
     k     = vrck v
-    kGen = generator $ gen $ start k
+    kGen = generator $ finitePresentation gen $ start k
 
 --------------------------------------------------------------------------------
 -- vrcHomologyClass -
@@ -615,7 +613,7 @@ vrcCycles v@(Variance _ _ _ _ _) gen (Splitable splt) = case kGen of
 --  (1) If @t = c *> s@ is not zero, then the result is @('Left' t)@, otherwise
 --
 --  (2) The result is @c' '*>' s'@, where @s'@ is the induce factor given by @s@.
-vrcHomologyClass :: (Distributive d, Sliced (i N1) d)
+vrcHomologyClass :: Distributive d
   => Variance i d -> S (i N1) d -> Either (T (i N1) d) (T' (i N1) d)
 vrcHomologyClass (Variance d3x3 cKerUnv _ _ _) s = do
   s' <- cKerUnv s
@@ -645,60 +643,7 @@ vrcBoundary (Variance _ cKerUnv c'KerUnv b''Lft _) s
         Left t'   -> Left (Right t')
         Right s'' -> Right (b''Lft s'')
 
---------------------------------------------------------------------------------
--- maybeFinList -
 
-maybeFinList :: Any n -> [a] -> Maybe (FinList n a)
-maybeFinList W0 _          = Just (Nil)
-maybeFinList _ []          = Nothing
-maybeFinList (SW n) (a:as) = maybeFinList n as >>= return . (a:|)
-
---------------------------------------------------------------------------------
--- abhSplit -
-
-abhSplit :: Slice From (Free k) AbHom -> FinList k (Slice From (Free N1) AbHom)
-abhSplit (SliceFrom (Free k) h@(AbHom h'))
-  = case maybeFinList k $ toAbHoms k 0 $ rowxs $ mtxRowCol h' of
-      Just xs -> xs
-      _       -> throw $ ImplementationError "abhSplit.maybeFinList"
-  where
-    r  = end h
-    n1 = Free attest :: Free N1 AbHom
-    z1 = abg 0 
-    
-    sZero :: Slice From (Free N1) AbHom
-    sZero = zero r
-
-    toAbHoms :: (j ~ N, i ~ N) => Any k -> j -> [(Col i ZModHom,j)] -> [Slice From (Free N1) AbHom]
-    toAbHoms W0 _ _                         = []
-    toAbHoms (SW k') j []                   = sZero : toAbHoms k' (succ j) []
-    toAbHoms (SW k') j cljs@((cl,j'):cljs') = case j `compare` j' of
-      LT -> sZero : toAbHoms k' (succ j) cljs
-      EQ -> toAbHom cl : toAbHoms k' (succ j) cljs'
-      _  -> throw $ ImplementationError "abhSplit.toAbHoms"
-
-
-    toAbHom :: i ~  N => Col i ZModHom -> Slice From (Free N1) AbHom
-    toAbHom cl = SliceFrom n1 h where
-      h = abh (z1 :> r) $ amap1 (\(x,i) -> (x,i,0)) $ colxs cl
-
-instance Validable a => Validable (SomeFinList a) where
-  valid (SomeFinList xs) = valid xs
-
-
-ff :: SomeFreeSlice From AbHom -> SomeFinList (Slice From (Free N1) AbHom)
-ff (SomeFreeSlice hs) = SomeFinList $ abhSplit hs
-
-xSomeF :: N -> X (SomeFreeSlice From AbHom)
-xSomeF nMax = do
-  n <- xNB 0 nMax
-  g <- xStandard
-  h <- xAbHom 0.8 ((z1 ^ n) :> g)
-  case someNatural n of
-    SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
-  where z1 = abg 0
-
-    
 --------------------------------------------------------------------------------
 -- Variance' -
 
@@ -725,8 +670,6 @@ data Variance' i d where
 -- in a further release the constraint (i ~ Free) can be relaxed by adapting CokernlLiftableFree
 -- and Generator!
 
-deriving instance Show d => Show (SomeSliceN t i d)
-
 -- | evaluates the restricted varaince.
 --
 -- @
@@ -739,7 +682,7 @@ deriving instance Show d => Show (SomeSliceN t i d)
 --   p':     r ---------> s'------------>> t'
 --                b'         c' = coker b'
 -- @
-ccxVariance' :: (Distributive d, Sliced (i N1) d, Ord d, i ~ Free)
+ccxVariance' :: (Distributive d, i ~ Free)
   => Kernels N1 d -> ClfCokernels N1 d
   -> ChainComplex From l d
   -> Variance' i d
@@ -768,18 +711,13 @@ ccxVariance' kers clfCokers (ChainComplex (DiagramChainFrom r (b:|c:|_)))
     | otherwise              = Right (SliceFrom i $ universalFactor cKer $ ConeKernel cDgm s')
     where t = c *> s
 
-
-instance OrdPoint ZModHom
-deriving instance Ord AbHom
-
 -- | evaluates the 'Variance' of the first two matrices where they are mapped in to 'AbHom'
 -- via 'FreeAbHom'.    
 ccxVarianceZ :: ChainComplex From l (Matrix Z) -> Variance Free AbHom
 ccxVarianceZ ccx = Variance d3x3 kUniv k'Univ b''Lft c'Lft where
     p = ccxMap FreeAbHom ccx
 
-    abhClfCokernels = ClfCokernels abhCokernelLftFree
-    vrcZ = ccxVariance' abhKernels abhClfCokernels
+    vrcZ = ccxVariance' abhKernels abhCokersLftFree
 
     Variance' u kUniv   = vrcZ p
     Variance' u' k'Univ = vrcZ (ChainComplex $ start u)

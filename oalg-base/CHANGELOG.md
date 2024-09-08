@@ -64,3 +64,4 @@ has been defined by EmbeddingFrom.
 ### Added
 - vectorial structure for Slice From entities.
 - liftable cokernels for CokernelLiftableFree.
+- maybeFinList

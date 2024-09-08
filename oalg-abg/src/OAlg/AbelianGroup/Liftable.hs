@@ -34,7 +34,7 @@ import Data.List (zip)
 
 import OAlg.Prelude
 
-import OAlg.Data.Generator
+import OAlg.Data.FinitelyPresentable
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Oriented
@@ -98,7 +98,7 @@ prpAbhLift = Prp "AbhLift" :<=>:
           e  <- xStandard
           a  <- xAbHom 0.8 (s:>e)
           k' <- xNB 0 10
-          case abgGeneratorTo s of
+          case finitePresentation abgFinPres s of
             GeneratorTo (DiagramChainTo _ (p:|_)) (Free n) _ _ _ _
               -> let d = dim ()
                      XOrtOrientation _ xMatrixZ = xodZ

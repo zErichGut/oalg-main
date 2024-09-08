@@ -27,7 +27,9 @@ module OAlg.Entity.FinList
     FinList(..), toW, head, tail, zip, zip3, (|:), (++), (**), repeat
   , iFinList, iFinList0, iFinList', toArray
 
-  , someFinList, SomeFinList(..), (<++>)
+  , maybeFinList
+  , someFinList, SomeFinList(..)
+  , (<++>)
 
     -- ** Induction
   , inductionS, FinList'(..)
@@ -35,7 +37,7 @@ module OAlg.Entity.FinList
 
   where
 
-import Control.Monad (Functor(..))
+import Control.Monad
 
 import Data.Typeable
 import Data.Foldable
@@ -195,15 +197,30 @@ iFinList' i = adj 0 i where
 data SomeFinList a = forall n . SomeFinList (FinList n a)
 
 deriving instance Show a => Show (SomeFinList a)
+
+instance Validable a => Validable (SomeFinList a) where
+  valid (SomeFinList xs) = valid xs
+
 instance Functor SomeFinList where
   fmap f (SomeFinList xs) = SomeFinList (fmap f xs)
   
+
+--------------------------------------------------------------------------------
+-- someFinList -
 
 -- | the associated finite list.
 someFinList :: [a] -> SomeFinList a
 someFinList [] = SomeFinList Nil
 someFinList (a:as) = case someFinList as of
   SomeFinList as' -> SomeFinList (a:|as')
+
+--------------------------------------------------------------------------------
+-- maybeFinList -
+
+maybeFinList :: Any n -> [a] -> Maybe (FinList n a)
+maybeFinList W0 _          = Just (Nil)
+maybeFinList _ []          = Nothing
+maybeFinList (SW n) (a:as) = maybeFinList n as >>= return . (a:|)
 
 --------------------------------------------------------------------------------
 -- (<++>) -

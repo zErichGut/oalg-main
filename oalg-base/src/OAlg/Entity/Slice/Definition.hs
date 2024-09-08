@@ -730,6 +730,7 @@ instance (Distributive d, Sliced i d) => Additive (Slice From i d) where
           i' :: Sliced i d => Point d -> i d
           i' _ = unit1
 
+
   SliceFrom i a + SliceFrom _ b = SliceFrom i (a+b)
 
   ntimes n (SliceFrom i a) = SliceFrom i (ntimes n a)

@@ -15,9 +15,17 @@ and this project adheres to the
 ## [1.3.0.0] - 2024-07-31
 
 ### Added
-	- Liftable cokernels
+- Liftable cokernels
 
 ## [1.4.1.0] - 2024-09-03
 ### Added
-	- Liftable Z-Matrices
-	- Elements of abelian groups
+- Liftable Z-Matrices
+- Elements of abelian groups
+
+## [1.5.0.0] - 2024-09-08
+### Changed
+- adapted to oalg-base-2.0.0.0
+- replaced abgGeneratorTo and abgFinPres
+- replaced abhCokernelLftFree by abhCokersLftFree
+### Added
+- abhSplitable, xAbhSomeFreeSlice

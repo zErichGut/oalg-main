@@ -22,7 +22,7 @@ module OAlg.Data.FinitelyPresentable
     FinitelyPresentable(..), finitePresentation
 
     -- * Splitable
-  , Splitable(..)
+  , Splitable(..), split
     
     -- * Finite Presentation
   , FinitePresentation(..)
@@ -66,9 +66,18 @@ import OAlg.Limes.KernelsAndCokernels
 --  @'end' s' '==' 'end' s@ for all @s'@ in @splt s@.
 newtype Splitable s i d
   = Splitable
-      (forall k . (Attestable k, Sliced (i k) d, Oriented d)
+      (forall k. (Attestable k, Sliced (i k) d)
          => Slice s (i k) d -> FinList k (Slice s (i N1) d)
       )
+
+--------------------------------------------------------------------------------
+-- split -
+
+-- | splitting of a slice of dimension @__i__ __k__@.
+split :: (Attestable k, Sliced (i k) d)
+  => Splitable s i d -> Slice s (i k) d -> FinList k (Slice s (i N1) d)
+split (Splitable s) = s
+
 
 --------------------------------------------------------------------------------
 -- FinitePresentation -
@@ -160,7 +169,9 @@ finitePoint (EmbeddingFrom (DiagramChainFrom s _) _ _ _ _ _) = s
 
 -- | some slice.
 data SomeSliceN t (i :: N' -> Type -> Type) d where
-  SomeSliceN :: Sliced (i n) d => Slice t (i n) d -> SomeSliceN t i d
+  SomeSliceN :: (Attestable n, Sliced (i n) d) => Slice t (i n) d -> SomeSliceN t i d
+
+deriving instance Show d => Show (SomeSliceN t i d)
 
 --------------------------------------------------------------------------------
 -- generator -
@@ -243,7 +254,6 @@ instance ( Distributive a, XStandardOrtSiteFrom a, XStandardOrtSiteTo a
 
         ]
 
-    -- where DiagramChainTo g (p:|p':|Nil) = d
        where DiagramChainTo p (g:|g':|Nil) = d
 
 

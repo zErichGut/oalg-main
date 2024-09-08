@@ -22,7 +22,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
     abhKernels
 
     -- * Cokernels
-  , abhCokernels, abhCokernelLftFree
+  , abhCokernels, abhCokersLftFree
   
     -- * Smith Normal
   , isoSmithNormal
@@ -42,7 +42,7 @@ import Data.List (map,(++),repeat,zip)
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
-import OAlg.Data.Generator
+import OAlg.Data.FinitelyPresentable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
@@ -464,11 +464,11 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
 --     r --------> s -------> e
 -- @
 abhKernel :: KernelDiagram N1 AbHom -> Kernel N1 AbHom
-abhKernel d = hKer d (abgGeneratorTo (start h)) where
+abhKernel d = hKer d (finitePresentation abgFinPres $ start h) where
 
   DiagramParallelLR _ _ (h:|Nil) = d
   
-  hKer :: KernelDiagram N1 AbHom -> Generator To AbHom -> Kernel N1 AbHom
+  hKer :: KernelDiagram N1 AbHom -> FinitePresentation To Free AbHom -> Kernel N1 AbHom
   hKer
     d@(DiagramParallelLR _ _ (h:|Nil))
     g@(GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) ns' _ _ _ _)
@@ -476,7 +476,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
 
   hKer'
     :: KernelDiagram N1 AbHom
-    -> Generator To AbHom
+    -> FinitePresentation To Free AbHom
     -> KernelFree N1 AbHom
     -> Kernel N1 AbHom
   hKer'
@@ -493,7 +493,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
     
   hKer''
     :: KernelDiagram N1 AbHom
-    -> Generator To AbHom
+    -> FinitePresentation To Free AbHom
     -> KernelFree N1 AbHom
     -> PullbackFree N2 AbHom
     -> Kernel N1 AbHom
@@ -516,7 +516,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
       hKerFactor = universalFactor q'Coker (ConeCokernel q'CokerDgm (p*k'))
       k' = kernelFactor $ universalCone hpKer
     
-    hUniv cn@(ConeKernel _ x) = case abgGeneratorTo (start x) of
+    hUniv cn@(ConeKernel _ x) = case finitePresentation abgFinPres $ start x of
       GeneratorTo (DiagramChainTo _ (t:|_)) nv' _ t'Coker _ _
         | not (d == cnDiagram cn) -> throw $ ConeNotEligible $ show cn
         | otherwise               -> universalFactor t'Coker t'Cone where
@@ -526,7 +526,7 @@ abhKernel d = hKer d (abgGeneratorTo (start h)) where
         u' = universalFactor hpKer x'Cone
 
         x'Cone = ConeKernel (diagram hpKer) x'
-        x' = lp (SliceFrom nv' (x*t))
+        SliceFrom _ x' = lp (SliceFrom nv' (x*t))
 
 
 --------------------------------------------------------------------------------
@@ -591,16 +591,16 @@ abhSliceFreeAdjunction = slcAdjunction
 -- @
 abhCokernelLftFree :: CokernelDiagram N1 AbHom -> CokernelLiftableFree AbHom
 abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
-  = case (abgGeneratorTo (start h),abgGeneratorTo (end h)) of
+  = let fp = finitePresentation abgFinPres in case (fp $ start h,fp $ end h) of
   (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
     , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
     ) -> CokernelLiftableFree (LimesInjective w'Cn w'Univ) w'Lft where
 
     ----------------------------------------
     -- constructing c -
-    h'         = lq (SliceFrom ns' (h*p))
-    h'SliceTo  = SliceTo ne' h'
-    q'SliceTo  = SliceTo ne' q'
+    SliceFrom _ h' = lq (SliceFrom ns' (h*p))
+    h'SliceTo      = SliceTo ne' h'
+    q'SliceTo      = SliceTo ne' q'
 
     cSum       = limes (slfLimitsInjective abhSums)
                    (DiagramDiscrete (h'SliceTo:|q'SliceTo:|Nil))
@@ -627,10 +627,18 @@ abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
       Ats -> LiftableFrom w' w'SlcFromLft where
         w'SlcFromLft f = SliceFrom nk (q*f') where
           SliceFrom nk f' = lift (clfLiftableFree cCokerLft k) f
-        
-     
+
+--------------------------------------------------------------------------------
+-- abhCokersLftFree -
+
+-- | liftable free cokernels.
+abhCokersLftFree :: ClfCokernels N1 AbHom
+abhCokersLftFree = ClfCokernels abhCokernelLftFree
+
+--------------------------------------------------------------------------------
+-- abhCokernel -
+
 -- | cokernel for a given additive homomorphism.
---
 abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
 abhCokernel = clfCokernel . abhCokernelLftFree
 
