@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           oalg-top
-version:        0.4.0.0
+version:        1.0.0.0
 description:    Please see the README on GitHub at <https://github.com/zErichGut/oalg-top#readme>
 homepage:       https://github.com/zErichGut/oalg-top#readme
 bug-reports:    https://github.com/zErichGut/oalg-top/issues
@@ -31,6 +31,7 @@ library
       OAlg.Homology.Definition
       OAlg.Homology.Group
       OAlg.Homology.Simplex
+      OAlg.Homology.Variance
   other-modules:
       Paths_oalg_top
   hs-source-dirs:

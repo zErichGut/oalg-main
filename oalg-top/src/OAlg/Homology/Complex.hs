@@ -60,19 +60,13 @@ import OAlg.Prelude
 
 import OAlg.Data.Symbol hiding (S)
 
-import OAlg.Structure.Additive
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Ring
-
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Natural as Nat hiding ((++))
 import OAlg.Entity.FinList as F hiding (zip,(++)) 
 import OAlg.Entity.Sequence
-import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplex
-import OAlg.Homology.Chain
 
 
 --------------------------------------------------------------------------------

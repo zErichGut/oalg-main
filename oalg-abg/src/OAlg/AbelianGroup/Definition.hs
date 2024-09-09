@@ -41,7 +41,7 @@ module OAlg.AbelianGroup.Definition
 
     -- * Elements
   , AbElement(..), AbElementForm(..), abge
-
+  , abhvecFree1, vecabhFree1
     -- * X
   , xAbHom, xAbHomTo, xAbHomFrom
   , stdMaxDim, xAbhSomeFreeSlice
@@ -820,6 +820,27 @@ instance Constructable AbElement where
 abge :: AbGroup -> N -> AbElement
 abge a i = make (AbElementForm a [(1,i)])
 
+--------------------------------------------------------------------------------
+-- vecabhFree1 -
+
+-- | the abelian homomorphism with the free 'start' point of dimension @1@ and free
+-- 'end' point of the given dimension according to the given vector.
+vecabhFree1 :: N -> Vector Z -> Slice From (Free N1) AbHom
+vecabhFree1 r v = SliceFrom (Free attest :: Free N1 AbHom) (zabh h) where
+  h = matrixTtl r 1 $ amap1 (\(x,i) -> (x,i,0)) $ filter ((<r).snd) $ psqxs $ vecpsq v 
+
+--------------------------------------------------------------------------------
+-- abhvecFree1 -
+
+-- | the underlying 'Z'-vector.
+abhvecFree1 :: Slice From (Free N1) AbHom -> Vector Z
+abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
+  fstRow :: (i ~ N, j ~ N) => Row j (Col i r) -> Vector r
+  fstRow (Row (PSequence rs)) = case rs of
+    []            -> Vector psqEmpty
+    [(Col ris,0)] -> Vector ris
+    _             -> throw $ InvalidData "abhvecFree1"
+    
 --------------------------------------------------------------------------------
 -- AbElement - Abelian -
 
