@@ -17,11 +17,13 @@
 --
 -- library for evaluating the homology groups of some complexes.
 module Lib
-    ( readN
+    (
+      readN
     , Flag(..), readFlag
 
     , putSimplex, putSphere, putKleinBottle, putTorus2, putMoebiusStrip
     , putProjectivePlane
+
     ) where
 
 import Control.Monad
@@ -91,21 +93,19 @@ readN s = do
 putHomologyGroups :: (Entity x, Ord x) => Complex n x -> IO ()
 putHomologyGroups c = do
   putStrLn "homology groups:"  
-  putChnCmplH (cplDim c) c setEmpty (chainComplex c)
+  case ats n of
+    Ats -> putHmgGroups (lengthN n) (toList $ hmgGroups $ homology Truncated c)
   where
-
-    putChnCmplH :: N -> Complex n x -> Set (Simplex (n+1) x) -> ChainComplex From n AbHom -> IO ()
-    putChnCmplH d (Vertices s0) s1 h = do
-      putH d s1 s0 (ccplHomology abhKernels abhCokernels h)
-      return ()      
-    putChnCmplH d (Complex s c') s' h = do
-      putH d s' s (ccplHomology abhKernels abhCokernels h)
-      putChnCmplH (pred d) c' s (ccplPred h)
-
-    putH :: N -> Set (Simplex (n+1) x) -> Set (Simplex n x) -> Homology From n AbHom -> IO ()
-    putH d _ _ h = do
-      putStrLn ("H " ++ show d ++ ": " ++ (show $ hmlGroup h))
+    n = cpxDim c
+    
+    putHmgGroups :: N -> [AbGroup] -> IO ()
+    putHmgGroups _ []     = hFlush stdout
+    putHmgGroups k (g:gs) = do
+      putStrLn ("H " ++ show k ++ ": " ++ show g)
       hFlush stdout
+      putHmgGroups (pred k) gs
+    
+
 
 --------------------------------------------------------------------------------
 -- putCardinality -
@@ -114,7 +114,7 @@ putHomologyGroups c = do
 putCardinality :: Complex n x -> IO ()
 putCardinality c = do
   putStrLn "cardinality of simplex-sets:"
-  putCard (cplDim c) c
+  putCard (lengthN $ cpxDim c) c
   where
 
     putC :: N -> N -> IO ()
@@ -212,3 +212,4 @@ putProjectivePlane f = case f of
   Homlgy -> putHomologyGroups c
   Card   -> putCardinality c
   where c = complex $ projectivePlane
+

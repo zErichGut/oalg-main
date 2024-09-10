@@ -81,8 +81,9 @@ data Complex n x where
 -- cpxDim -
 
 -- | the dimension of the complex space.
-cpxDim :: Attestable n => Complex n x -> Any n
-cpxDim _ = attest
+cpxDim :: Complex n x -> Any n
+cpxDim (Vertices _)  = W0
+cpxDim (Complex _ c) = SW $ cpxDim c
 
 --------------------------------------------------------------------------------
 -- cpxSet -

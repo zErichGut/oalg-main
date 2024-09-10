@@ -845,8 +845,8 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
 -- AbElement - Abelian -
 
 instance Fibred AbElement where
-  type Root AbElement = AbGroup
-  root (AbElement (SliceFrom _ a)) = end a
+  type Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
+  root (AbElement a) = root a
 
 instance Additive AbElement where
   zero g = AbElement (zero g)
