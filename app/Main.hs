@@ -15,6 +15,7 @@ import Control.Exception
 import Lib
 
 import OAlg.Entity.Natural hiding ((++))
+import OAlg.Homology.Complex
 
 --------------------------------------------------------------------------------
 -- Flag' -
@@ -98,7 +99,8 @@ main = do
   case f' of
     Help                  -> putHelp
     Version               -> putVersion
-    Flag f                -> case args' of      
+    Flag (Interactive r)  -> iComplex r (complex kleinBottle)
+    Flag f                -> case args' of
       "simplex":sd:_      -> do
         d <- readN sd
         case someNatural d of
