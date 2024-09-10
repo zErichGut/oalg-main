@@ -80,7 +80,8 @@ class (Opr f x, Multiplicative f, Total f, Entity x) => TotalOpr f x
 --     @'orientation' (x '<*' f) '==' 'start' f ':>' 'end' x@.
 --
 --     (2) If @'start' x '/=' 'end' f@ then @x '<*' f@ is not 'valid' and its
---     evaluation will end up in a 'OAlg.Structure.Exception.NotApplicable' exception.
+--     evaluation will end up in a 'OAlg.Structure.Exception.ArithmeticException.NotApplicable' or
+--     'OAlg.Structure.Exception.ArithmeticException.NotMultiplicable' exception.
 --
 -- (1) For all @x@ in @__x__@ holds: @x '<*' 'one' ('start' x) '==' x@.
 --
@@ -137,7 +138,9 @@ class (Opr f x, Multiplicative f, Total f, Entity x) => TotalOpl f x
 --     @'orientation' (f '*>' x) '==' 'start' x ':>' 'end' f@.
 --
 --     (2) If @'end' x '/=' 'start' f@ then @f '*>' x@ is not 'valid' and its
---     evaluation will end up in a 'OAlg.Structure.Exception.NotApplicable' exception.
+--     evaluation will end up in a
+--     'OAlg.Structure.Exception.ArithmeticException.NotApplicable' or
+--     'OAlg.Structure.Exception.ArithmeticException.NotMultiplicable' exception.
 --
 -- (1) For all @x@ in @__x__@ holds: @'one' ('end' x) '*>' x'==' x@.
 --

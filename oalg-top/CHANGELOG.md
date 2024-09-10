@@ -10,8 +10,27 @@ and this project adheres to the
 
 ## [0.2.0.0] - 2023-11-19
 
-	### Added
-	- The class Simplical.
+### Added
+- The class Simplical.
 
-	### Changed
-	- Making the type for Complexe more generic.
+### Changed
+- Making the type for Complexe more generic.
+
+## [0.4.0.0] - 2024-08-07
+
+### Elimination
+- Generic class Simplical, such that complexes are always based on simplices.
+
+### Added
+- Liftable cokernels for the homology groups.
+
+## [1.0.0.0] - 2024-09-09
+
+## Added
+- the data structure Variance to measure the deviation of beeing exact.
+
+### Added Functionality
+- the boundary for a cycle, see hmgBoundary.
+- the homology class for a cycle, see homologyClass.
+- evaluation of a generater set for cycles of a given dimension, see hmgCycleGenSet.
+- evaluation of a generater set for the homology group of a given dimension, see hmgGroupGenSet.

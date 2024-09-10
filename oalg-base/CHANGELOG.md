@@ -50,3 +50,18 @@ and this project adheres to the
 
 ### Added
 - mtxDensity
+
+## [2.0.0.0] - 2024-09-07
+
+### Changed
+- operational structures no longer have to throw a NotApplicable exception if
+the application is not well defined. They also are allowed to throw a NotMultiplicable
+- the module OAlg.Data.Generator has been replaced by OAlg.Data.FinitelyPresentable and the
+type Generator to FinitePresentation. Further more the slice index has been relaxed and
+the type of the liftable has been refined. Last but not least the dual concept of a GenaratorTo
+has been defined by EmbeddingFrom.
+
+### Added
+- vectorial structure for Slice From entities.
+- liftable cokernels for CokernelLiftableFree.
+- maybeFinList

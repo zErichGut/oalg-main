@@ -234,6 +234,7 @@ instance Distributive ZModHom
 
 instance Algebraic ZModHom
 
+instance OrdPoint ZModHom
 --------------------------------------------------------------------------------
 -- zmhGenOrd -
 

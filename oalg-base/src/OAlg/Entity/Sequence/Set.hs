@@ -55,7 +55,9 @@ import OAlg.Structure.Number
 --  (1) For all @..x':'y..@ in @xs@ holds: @x '<' y@.
 --
 --  (2) @'lengthN' s '==' 'lengthN' xs@.
-newtype Set x = Set [x] deriving (Show,Eq,LengthN,Foldable)
+--
+--  __Note__ The canonical ordering 'Ord' and the subset ordering 'POrd' are not equivalent.
+newtype Set x = Set [x] deriving (Show,Eq,Ord,LengthN,Foldable)
 
 relSet :: (Validable x, Ord x, Show x) => Set x -> Statement
 relSet (Set [])     = SValid
@@ -160,15 +162,17 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
 -- Just 2
 setIndex :: Ord x => Set x -> x -> Maybe N
 setIndex (Set []) = const Nothing
-setIndex (Set xs) = \x -> let (x',i) = lookup xs' x in if x' == x then Just i else Nothing
+-- setIndex (Set xs) = \x -> let (x',i) = lookup xs' x in if x' == x then Just i else Nothing
+setIndex (Set xs) = lp (lt (xs `zip` [0..]))
   where
-    xs' = lt (xs `zip` [0..])
-
+    -- xs' = lt (xs `zip` [0..])
     lt :: Ord x => [(x,N)] -> Tree x (x,N)
     lt [xi] = Leaf xi
     lt xis  = Node (fst $ head xisR) (lt xisL) (lt xisR) where
       (xisL,xisR) = splitAtN (lengthN xis `div` 2) xis
 
+lp :: Ord x => Tree x (x,y) -> x -> Maybe y
+lp t x = let (x',y) = lookup t x in if x' == x then Just y else Nothing
 --------------------------------------------------------------------------------
 -- Set - POrd -
 

@@ -24,6 +24,7 @@
 module OAlg.Homology.Group
   ( ) where
 
+{-
 import Control.Monad
 
 import Data.Typeable
@@ -281,4 +282,5 @@ data Cycle r s d x where
 data Boundary r s d x where
   Boundary :: HomologyGroup r s (d+1) x -> Chain r s (d+1) x -> Chain r s (d+2) x
            -> Boundary r s (d+1) x 
+-}
 -}

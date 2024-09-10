@@ -17,79 +17,275 @@
 --
 -- definition of 'Homology'.
 module OAlg.Homology.Definition
-  ( -- * Homology
-    Homology(..), homologyGroups, homology
-  , homologyFrom
+  (
+
+    -- * Homology
+    Homology(..)
+  , hmgChainSet'', hmgChainSet', hmgChainSet
+  , hmgVariance
+  , SomeHomology(..)
+
+    -- ** Chain Homology
+  , ChainHomology(..), chHomology
+  , homology
+
+    -- * Cycle
+  , hmgCycleGenSet
+  , hmgGroupGenSet
+
+    -- * Boundary
+  , hmgBoundary
+  
+    -- * Group
+  , hmgGroup, hmgGroups
+
+    -- * Class
+  , homologyClass
+  , HomologyClass
+
+    -- * Failure
+  , HomologyFailure(..)
   ) where
+
+import Data.Typeable
 
 import OAlg.Prelude
 
-import OAlg.Structure.Oriented
-import OAlg.Structure.Distributive
+import OAlg.Data.Either
 
-import OAlg.Limes.Cone
-import OAlg.Limes.Definition
-import OAlg.Limes.Limits
-import OAlg.Limes.KernelsAndCokernels
+import OAlg.Structure.Additive
 
-import OAlg.Entity.Natural
-import OAlg.Entity.FinList as F hiding (zip) 
+import OAlg.Entity.Natural as N hiding ((++))
+import OAlg.Entity.FinList as F hiding ((++)) 
+import OAlg.Entity.Matrix hiding (Transformation(..))
+import OAlg.Entity.Slice
+
+import OAlg.Entity.Sequence.Set
+
 import OAlg.Entity.Diagram
+
 import OAlg.AbelianGroup.Definition
-import OAlg.AbelianGroup.KernelsAndCokernels
 
-
-import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
+import OAlg.Homology.Chain as C
+import OAlg.Homology.Simplex
+import OAlg.Homology.Variance
 
---------------------------------------------------------------------------------
--- homologyFrom -
 
--- | the homology
---
--- __Pre__ @'end' g '==' 'start' f@
-homologyFrom :: Distributive a => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> Point a
-homologyFrom ker coker (ChainComplex (DiagramChainFrom _ (g:|f:|_))) = tip $ universalCone hCoker where
-
-  -- image of g
-  gCoker = limes coker (cokernelDiagram g)
-  gIm    = limes ker (kernelDiagram $ cokernelFactor $ universalCone gCoker)
-
-  -- kernel of f
-  fKer   = limes ker (kernelDiagram f)
-
-  h      = universalFactor fKer (ConeKernel (diagram fKer) (kernelFactor $ universalCone gIm))
-  hCoker = limes coker (cokernelDiagram h)
+-- import OAlg.Data.Symbol
 
 --------------------------------------------------------------------------------
 -- Homology -
 
-newtype Homology n a = Homology (FinList (n+1) (Point a))
+data Homology n k x where
+  Homology
+    :: (Attestable n, Attestable k)
+    => Any n
+    -> Any k
+    -> ChainComplex From N0 (BoundaryOperator Z x) -- ^ boundary operator
+    -> Variance Free AbHom -- ^ variance of the boundary operator
+    -> Homology n k x
 
-deriving instance Distributive a => Show (Homology n a)
+--------------------------------------------------------------------------------
+-- hmgChainSet -
 
+ssAny :: Attestable l => Set (Simplex l x) -> Any l
+ssAny _ = attest
+
+-- | the underlying set of @__k__@-simplices.
+hmgChainSet :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex k x)
+hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+  _:|_:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> s
+    Nothing -> throw $ ImplementationError "invalid homology"
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe (k :~: l)
+    eqAny _ _ = eqT
+
+-- | the underlying set of @__k__ + 1@-simplices.
+hmgChainSet' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k+1) x)
+hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+  _:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> s
+    Nothing   -> throw $ ImplementationError "invalid homology"
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 1) :~: l)
+    eqAny _ _ = eqT
+
+-- | the underlying set of @__k__ + 2@-simplices.
+hmgChainSet'' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k + 2) x)
+hmgChainSet''  (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
+  SimplexSet s:|_  -> case eqAny k (ssAny s) of
+    Just Refl -> s
+    Nothing -> throw $ ImplementationError "invalid homology"
+  where
+    eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 2) :~: l)
+    eqAny _ _ = eqT
+
+--------------------------------------------------------------------------------
+-- hmgVariance -
+
+-- | the underlying 'Variance'.
+hmgVariance :: Homology n k x -> Variance Free AbHom
+hmgVariance (Homology _ _ _ v) = v
+
+--------------------------------------------------------------------------------
+-- hmgGroup -
+
+-- | the homology group.
+hmgGroup :: Homology n k x -> AbGroup
+hmgGroup = vrcT' . hmgVariance
+
+--------------------------------------------------------------------------------
+-- hmgCycleGenSet -
+
+-- | a set of generators for the @__k__ + 1@-cycles.
+hmgCycleGenSet :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
+hmgCycleGenSet h@(Homology _ _ _ v) = set $ amap1 (cfsssy s . abhvecFree1) $ setxs gs where
+  s   = hmgChainSet' h
+  gs = vrcCyclesGen v abgFinPres abhSplitable
+
+--------------------------------------------------------------------------------
+-- hmgGroupGenSet -
+
+-- | a set of @__k__ + 1@-cycles, generating the homology group via 'homologyClass'.
+hmgGroupGenSet :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
+hmgGroupGenSet h@(Homology _ _ _ v) = set $ amap1 (cfsssy s . abhvecFree1) $ setxs gs where
+  s   = hmgChainSet' h
+  gs = vrcHomologyGroupGen v abgFinPres abhSplitable
+
+--------------------------------------------------------------------------------
+-- SomeHomology -
+
+-- | some 'Homology'.
+data SomeHomology n x where
+  SomeHomology :: Homology n k x -> SomeHomology n x
+
+--------------------------------------------------------------------------------
+-- ChainHomology -
+
+-- | a finite list @s __n__ __n__, s __n__ (__n__-1) .. s __n__ __0__@ of 'SomeHomology' where
+--   @s ___n__ __k__@ contains a homology in @'Homology' __n__ __k__ x@.
+newtype ChainHomology n x = ChainHomology (FinList (n+1) (SomeHomology n x))
+
+--------------------------------------------------------------------------------
+-- chHomology -
+
+-- | gets the homology of @'Homology' __n__ __k__ __x__@.
+chHomology :: Attestable k => Any k -> ChainHomology n x -> Homology n k x
+chHomology k (ChainHomology hs) = chh k hs where
+  chh :: Attestable k => Any k -> FinList l (SomeHomology n x) -> Homology n k x
+  chh _ Nil                   = throw $ InvalidData "chHomology: ChainHomology"
+  chh k (SomeHomology h:|shs) = case eqAny k h of
+    Just Refl -> h
+    Nothing   -> chh k shs
+    
+    where eqAny :: Attestable k => Any k -> Homology n k' x -> Maybe (k :~: k')
+          eqAny _ (Homology _ _ _ _) = eqT
 
 --------------------------------------------------------------------------------
 -- homology -
 
-homology :: Distributive a
-  => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> Homology n a
-homology ker coker = Homology . hmlgy ker coker where
-  hmlgy :: Distributive a
-    => Kernels N1 a -> Cokernels N1 a -> ChainComplex From n a -> FinList (n+1) (Point a)
+-- | the 'ChainHomology'.
+homology :: (Entity x, Ord x, Attestable n)
+  => Regular -> Complex n x -> ChainHomology n x
+homology r c = ChainHomology hs where
+  hs = amap1 (uncurry $ shmg $ cpxDim c) ((ccxMap' ccxHead ds) `zip` (ccxMap' ccxVarianceZ vs))
   
-  hmlgy ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|Nil)))
-    = homologyFrom ker coker c:|Nil
-  hmlgy ker coker c@(ChainComplex (DiagramChainFrom _ (_:|_:|_:|_)))
-    = homologyFrom ker coker c:|hmlgy ker coker (ccplPred c)
+  ds = chainComplex r c
+  vs = ccxMap HomBoundaryOperator ds
 
------------------------------------------------------------------------------------------
--- homologyGroups -
+  shmg :: (Entity x, Ord x, Attestable n)
+       => Any n
+       -> ChainComplex From N0 (BoundaryOperator Z x)
+       -> Variance Free AbHom
+       -> SomeHomology n x
+  shmg n d v = case bdoDim d of
+    SomeNatural k -> SomeHomology $ Homology n k d v
 
-homologyGroups :: Simplical s x => Complex s n x -> Homology n AbHom
-homologyGroups = homology abhKernels abhCokernels . chainComplex
+--------------------------------------------------------------------------------
+-- HomologyFailure -
+
+data HomologyFailure r k h x
+  = -- | the representable part, if the given chain is not representable in the underlying simplex set.
+    NotRepresentable (C.Chain r (k+1) x)
+    
+    -- | the boundary, if the given chain is not a cycle..
+  | NotACycle (C.Chain r k x)
+
+    -- | the homology class, it the given chain has no boundary.
+  | NonTrivialHomologyClass h
+  deriving (Show)
+
+--------------------------------------------------------------------------------
+-- HomologyClass -
+
+type HomologyClass = AbElement
+
+--------------------------------------------------------------------------------
+-- hmgGroups -
+
+-- | the homology groups starting by @__n__@ to @__0__@.
+hmgGroups :: ChainHomology n x -> FinList (n+1) AbGroup
+hmgGroups (ChainHomology hs) = amap1 hg hs where
+  hg (SomeHomology h) = hmgGroup h
 
 
+--------------------------------------------------------------------------------
+-- homologyClass -
 
+-- | the homology class of a given chain according to the given homology.
+homologyClass :: (Entity x, Ord x)
+  => Homology n k x
+  -> C.Chain Z (k+1) x
+  -> Either (HomologyFailure Z k AbElement x) AbElement
+homologyClass h@(Homology _ _ _ v) s
+  | not (isZero (s - s')) = Left (NotRepresentable s')
+  | otherwise = case vrcHomologyClass v (vecabhFree1 (lengthN ss') sv) of
+      Left t -> Left $ NotACycle $ cfsssy (hmgChainSet h) $ abhvecFree1 t
+      Right t' -> Right $ AbElement t'
+  where 
+    ss' = hmgChainSet' h
+    sv  = ssycfs ss' s
+    s'  = cfsssy ss' sv
 
+--------------------------------------------------------------------------------
+-- hmgBoundary -
+
+-- | evaluates a boundary for the given chain @s@ according to the given homology @h@,
+-- i.e. a @h@-representable element @d@ in @'C.Chain' 'Z' (__k__ + 2) __x__@ such that
+-- @'boundary' d '==' s@. If no such @d@ exists, than the result will be a 'HomologyFailure' where
+--
+-- (1) If @s@ is not @h@-representable, then the result will be @'NotRepresentable' s'@ where @s'@ is
+-- the @h@-representable part of @s@.
+--
+-- (2) If @s@ is not a cycle, then the result will be @'NotACycle' ('boundary' s)@.
+--
+-- (3) If the homology class of @s@ is not zero, then the result will be
+-- @'NonTrivialHomologyClass' ('homologyClass' s)@.
+hmgBoundary :: (Entity x, Ord x)
+  => Homology n k x
+  -> C.Chain Z (k+1) x
+  -> Either (HomologyFailure Z k AbElement x) (C.Chain Z (k+2) x)
+hmgBoundary h@(Homology _ _ _ v) s
+  | not (isZero (s - s')) = Left (NotRepresentable s')
+  | otherwise = case vrcBoundary v (vecabhFree1 (lengthN ss') sv) of
+      Left (Left t)   -> Left $ NotACycle $ cfsssy (hmgChainSet h) $ abhvecFree1 t
+      Left (Right t') -> Left $ NonTrivialHomologyClass $ AbElement t'
+      Right r         -> Right $ cfsssy (hmgChainSet'' h) $ abhvecFree1 r
+  where
+    ss' = hmgChainSet' h
+    sv  = ssycfs ss' s
+    s'  = cfsssy ss' sv
+
+{-
+c = complex kleinBottle
+ht = homology Truncated $ c
+hr = homology Regular c
+ht0 = chHomology (attest :: Any N0) ht
+hr0 = chHomology (attest :: Any N0) hr
+ht1 = chHomology (attest :: Any N1) ht
+hr1 = chHomology (attest :: Any N1) hr
+v s = ch (Simplex (s:|Nil)) :: Chain Z N1 Symbol
+-}

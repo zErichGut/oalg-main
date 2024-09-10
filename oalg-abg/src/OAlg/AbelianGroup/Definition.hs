@@ -26,7 +26,8 @@ module OAlg.AbelianGroup.Definition
   , abh, abh'
   , abhz, zabh
   , abhDensity
-
+  , abhSplitable
+  
     -- * Adjunction
   , abhFreeAdjunction
   , AbHomFree(..)
@@ -34,12 +35,16 @@ module OAlg.AbelianGroup.Definition
     -- * Limes
   , abhProducts, abhSums
 
-    -- * Generator
-  , abgGeneratorTo
 
+    -- * Finite Presentation
+  , abgFinPres
+
+    -- * Elements
+  , AbElement(..), AbElementForm(..), abge
+  , abhvecFree1, vecabhFree1
     -- * X
   , xAbHom, xAbHomTo, xAbHomFrom
-  , stdMaxDim
+  , stdMaxDim, xAbhSomeFreeSlice
 
     -- * Proposition
   , prpAbHom
@@ -58,6 +63,7 @@ import OAlg.Prelude
 import OAlg.Data.Canonical
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
+import OAlg.Data.FinitelyPresentable
 
 import OAlg.Category.Path as C
 
@@ -93,8 +99,7 @@ import OAlg.Entity.Sequence
 import OAlg.Entity.Matrix
 import OAlg.Entity.Product
 import OAlg.Entity.Slice
-
-import OAlg.Data.Generator
+import OAlg.Entity.Sum hiding (sy)
 
 import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
@@ -240,7 +245,7 @@ isSmithNormal (AbGroup g) = sn (amap1 fst ws) where
 -- | additive homomorphism between finitely generated abelian groups which are
 -- represented by matrices over 'ZModHom'.
 newtype AbHom = AbHom (Matrix ZModHom)
-  deriving (Show,Eq,Validable,Entity)
+  deriving (Show,Eq,Ord,Validable,Entity)
 
 --------------------------------------------------------------------------------
 -- abgDim -
@@ -528,6 +533,40 @@ abgMaybeFree g = case someNatural $ lengthN g of
 -- | number of free components.
 abgFrees :: AbGroup -> N
 abgFrees = lengthN . filter ((== ZMod 0) . fst) . abgxs
+
+--------------------------------------------------------------------------------
+-- abhSplit -
+
+-- | splitable property for 'AbHom' with free start point of any finite dimension.
+abhSplitable :: Splitable From Free AbHom
+abhSplitable = Splitable abhSplit
+
+abhSplit :: Slice From (Free k) AbHom -> FinList k (Slice From (Free N1) AbHom)
+abhSplit (SliceFrom (Free k) h@(AbHom h'))
+  = case maybeFinList k $ toAbHoms k 0 $ rowxs $ mtxRowCol h' of
+      Just xs -> xs
+      _       -> throw $ ImplementationError "abhSplit.maybeFinList"
+  where
+    r  = end h
+    n1 = Free attest :: Free N1 AbHom
+    z1 = abg 0 
+    
+    sZero :: Slice From (Free N1) AbHom
+    sZero = zero r
+
+    toAbHoms :: (j ~ N, i ~ N) => Any k -> j -> [(Col i ZModHom,j)] -> [Slice From (Free N1) AbHom]
+    toAbHoms W0 _ _                         = []
+    toAbHoms (SW k') j []                   = sZero : toAbHoms k' (succ j) []
+    toAbHoms (SW k') j cljs@((cl,j'):cljs') = case j `compare` j' of
+      LT -> sZero : toAbHoms k' (succ j) cljs
+      EQ -> toAbHom cl : toAbHoms k' (succ j) cljs'
+      _  -> throw $ ImplementationError "abhSplit.toAbHoms"
+
+
+    toAbHom :: i ~  N => Col i ZModHom -> Slice From (Free N1) AbHom
+    toAbHom cl = SliceFrom n1 h where
+      h = abh (z1 :> r) $ amap1 (\(x,i) -> (x,i,0)) $ colxs cl
+
   
 --------------------------------------------------------------------------------
 -- AbHomFree -
@@ -641,7 +680,7 @@ abhFreeAdjunction = Adjunction AbHomFree FreeAbHom u one where
 --
 -- __Property__ Let @a@ be in 'AbGroup', then holds
 -- @a '==' g@ where @'Generator' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
-abgGeneratorTo :: AbGroup -> Generator To AbHom
+abgGeneratorTo :: AbGroup -> FinitePresentation To Free AbHom
 abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
   (SomeNatural k',SomeNatural k'') -> GeneratorTo chn (Free k') (Free k'') coker ker lft
   where
@@ -703,8 +742,8 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
         castZHom :: ZMod -> ZModHom -> ZModHom
         castZHom g h = zmh (g :> end h) (toZ h)
 
-    lft :: Slice From (Free k) AbHom -> AbHom
-    lft (SliceFrom _ (AbHom (Matrix _ c xs))) = AbHom (Matrix (abgDim g') c xs') where
+    lft :: Slice From (Free k) AbHom -> Slice From (Free k) AbHom
+    lft (SliceFrom k (AbHom (Matrix _ c xs))) = SliceFrom k $ AbHom (Matrix (abgDim g') c xs') where
       xs' = crets $ Col $ PSequence $ lftRows 0 gs (listN $ etscr xs)
 
       lftRows :: (Ord i, Enum i)
@@ -715,6 +754,117 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
         | n == 1    = lftRows i'' gs rws
         | i == i'   = (amap1 (fromZ . toZ) rw,i''):lftRows (succ i'') gs rws'
         | otherwise = lftRows (succ i'') gs rws
+
+--------------------------------------------------------------------------------
+-- abgFinPres -
+
+-- | free finitely presentations for 'AbHom'. 
+abgFinPres :: FinitelyPresentable To Free AbHom
+abgFinPres = FinitelyPresentable abgGeneratorTo
+--------------------------------------------------------------------------------
+-- AbElementForm -
+
+-- | form for a 'AbElement'.
+data AbElementForm = AbElementForm AbGroup [(Z,N)] deriving (Eq)
+
+instance Show AbElementForm where
+  show (AbElementForm a zis) = shs zis ++ " :: " ++ show a where
+    shs []       = "0"
+    shs (zi:zis) = sh zi ++ shs' zis
+
+    shs' []       = ""
+    shs' (zi:zis) = " + " ++ sh zi ++ shs' zis
+
+    sh (1,i) = "e" ++ show i
+    sh (z,i) = show z ++ "!e" ++ show i
+
+--------------------------------------------------------------------------------
+-- AbElement -
+
+-- | elements of an finitely generated abelian group. There 'root' - which is an element of 'AbGroup' -
+--   gives there affiliated group. They are gererated via 'make'.
+newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Eq,Validable,Entity)
+
+instance Show AbElement where
+  show = show . form
+
+instance LengthN AbElement where
+  lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a
+  
+--------------------------------------------------------------------------------
+-- AbElement - Constructable -
+
+instance Exposable AbElement where
+  type Form AbElement = AbElementForm
+  form (AbElement (SliceFrom _ a)) = AbElementForm (end a) zis where
+    zis = amap1 (\(z,i,_) -> (z,i))
+        $ etsxs $ mtxxs $ abhz a
+  
+instance Constructable AbElement where
+  make (AbElementForm a zis)
+    = AbElement
+    $ SliceFrom (Free (SW W0))
+    $ abh' (abg 0 :> a)
+    $ amap1 (\(z,i) -> (z,i,0))
+    $ lcs
+    $ ssylc
+    $ sumSymbol
+    $ filter ((<n).snd)
+    $ zis
+    where n = lengthN a
+
+--------------------------------------------------------------------------------
+-- abge -
+
+-- | the @i@-th canonical generator of the given abelian group.
+abge :: AbGroup -> N -> AbElement
+abge a i = make (AbElementForm a [(1,i)])
+
+--------------------------------------------------------------------------------
+-- vecabhFree1 -
+
+-- | the abelian homomorphism with the free 'start' point of dimension @1@ and free
+-- 'end' point of the given dimension according to the given vector.
+vecabhFree1 :: N -> Vector Z -> Slice From (Free N1) AbHom
+vecabhFree1 r v = SliceFrom (Free attest :: Free N1 AbHom) (zabh h) where
+  h = matrixTtl r 1 $ amap1 (\(x,i) -> (x,i,0)) $ filter ((<r).snd) $ psqxs $ vecpsq v 
+
+--------------------------------------------------------------------------------
+-- abhvecFree1 -
+
+-- | the underlying 'Z'-vector.
+abhvecFree1 :: Slice From (Free N1) AbHom -> Vector Z
+abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
+  fstRow :: (i ~ N, j ~ N) => Row j (Col i r) -> Vector r
+  fstRow (Row (PSequence rs)) = case rs of
+    []            -> Vector psqEmpty
+    [(Col ris,0)] -> Vector ris
+    _             -> throw $ InvalidData "abhvecFree1"
+    
+--------------------------------------------------------------------------------
+-- AbElement - Abelian -
+
+instance Fibred AbElement where
+  type Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
+  root (AbElement a) = root a
+
+instance Additive AbElement where
+  zero g = AbElement (zero g)
+
+  AbElement a + AbElement b = AbElement (a+b)
+
+  ntimes n (AbElement a) = AbElement $ ntimes n a
+    
+instance Abelian AbElement where
+  negate (AbElement a) = AbElement $ negate a
+
+  AbElement a - AbElement b = AbElement (a-b)
+
+  ztimes z (AbElement a) = AbElement $ ztimes z a
+
+instance Vectorial AbElement where
+  type Scalar AbElement = Z
+  z ! AbElement a = AbElement (z!a)
 
 --------------------------------------------------------------------------------
 -- XSomeFreeSliceFromLiftable -
@@ -1109,3 +1259,15 @@ prpAbHom = Prp "AbHom" :<=>:
 xMltAbh :: XMlt AbHom
 xMltAbh = xoMlt xN (xStandardOrtOrientation :: XOrtOrientation AbHom)
 
+--------------------------------------------------------------------------------
+-- xAbhSomeFreeSlice -
+xAbhSomeFreeSlice :: N -> X (SomeFreeSlice From AbHom)
+xAbhSomeFreeSlice nMax = do
+  n <- xNB 0 nMax
+  g <- xStandard
+  h <- xAbHom 0.8 ((z1 ^ n) :> g)
+  case someNatural n of
+    SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
+  where z1 = abg 0
+
+    

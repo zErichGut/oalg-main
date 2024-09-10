@@ -22,8 +22,15 @@ module OAlg.AbelianGroup.Proposition
 
 import OAlg.Prelude
 
+import OAlg.Data.FinitelyPresentable
+
+import OAlg.Entity.Natural
+import OAlg.Entity.FinList
+import OAlg.Entity.Slice
+
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+import OAlg.AbelianGroup.Liftable
 
 --------------------------------------------------------------------------------
 -- prpAbelianGroups -
@@ -34,7 +41,13 @@ prpAbelianGroups = Prp "AbelianGroups"
   :<=>: And [ prpAbHom
             , Label "isoSmithNormal" :<=>: Forall xStandard (valid . isoSmithNormal)
             , Label "kernels" :<=>: valid abhKernels
-            , Label "cokernels liftable" :<=>: valid abhCokernelLftFree
+            , Label "cokernels liftable" :<=>: (valid $ clfLimes abhCokersLftFree)
+            , Label "splitable" :<=>: Forall (xAbhSomeFreeSlice 100) (valid . abhSplit)
+            , prpMatrixZLiftable
             ]
+  where
+    abhSplit :: SomeFreeSlice From AbHom -> SomeFinList (Slice From (Free N1) AbHom)
+    abhSplit (SomeFreeSlice hs) = SomeFinList $ split abhSplitable hs
+
 
 

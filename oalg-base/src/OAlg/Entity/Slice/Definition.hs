@@ -25,7 +25,7 @@
 module OAlg.Entity.Slice.Definition
   (
     -- * Slice
-    Slice(..), slice
+    Slice(..), slice, slSiteType
 
     -- * Factor
   , SliceFactor(..), slfFactor, slfIndex
@@ -66,6 +66,7 @@ import Control.Monad
 
 import Data.Typeable
 import Data.List ((++))
+import Data.Either
 
 import OAlg.Prelude
 
@@ -74,7 +75,11 @@ import OAlg.Data.Singleton
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
-import OAlg.Structure.Additive((-))
+import OAlg.Structure.Fibred
+import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
+import OAlg.Structure.Operational
+import OAlg.Structure.Vectorial
 
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
@@ -137,6 +142,14 @@ instance (Eq1 i, Eq c) => Eq (Slice s i c) where
 slice :: Slice s i c -> c
 slice (SliceFrom _ p) = p
 slice (SliceTo _ p)   = p
+
+--------------------------------------------------------------------------------
+-- slSiteType -
+
+-- | the 'Site' type of a slice.
+slSiteType :: Slice s i c -> Either (s :~: From) (s :~: To)
+slSiteType (SliceFrom _ _ ) = Left Refl
+slSiteType (SliceTo _ _)    = Right Refl
 
 --------------------------------------------------------------------------------
 -- Slice - Dual -
@@ -687,4 +700,49 @@ liftBase (LiftableTo c _) = c
 lift :: Liftable s i c -> Slice s i c -> Slice s i c
 lift (LiftableFrom _ l) = l
 lift (LiftableTo _ l) = l
+
+--------------------------------------------------------------------------------
+-- Slice - Structure -
+
+instance (Oriented c, Sliced i c, Typeable s) => Oriented (Slice s i c) where
+  type Point (Slice s i c) = Point c
+  orientation s = orientation $ slice s
+
+instance (Sliced i c, Ord c) => Ord (Slice s i c) where
+  compare (SliceFrom _ a ) (SliceFrom _ b) = compare a b
+  
+--------------------------------------------------------------------------------
+-- Slice From - OrientedOpl -
+
+instance Multiplicative c => Opl c (Slice From i c) where
+  f *> (SliceFrom i c) = SliceFrom i (f*c)
+
+instance (Multiplicative c, Sliced i c) => OrientedOpl c (Slice From i c)
+
+instance (Distributive d, Sliced i d, Typeable s) => Fibred (Slice s i d) where
+ type Root (Slice s i d) = Point d
+ root (SliceFrom _ s) = end s
+ root (SliceTo _ s)   = start s
+
+instance (Distributive d, Sliced i d) => Additive (Slice From i d) where
+  zero e = SliceFrom i (zero (slicePoint i :> e))
+    where i = i' e
+          i' :: Sliced i d => Point d -> i d
+          i' _ = unit1
+
+
+  SliceFrom i a + SliceFrom _ b = SliceFrom i (a+b)
+
+  ntimes n (SliceFrom i a) = SliceFrom i (ntimes n a)
+  
+instance (Distributive d, Abelian d, Sliced i d) => Abelian (Slice From i d) where
+  negate (SliceFrom i a) = SliceFrom i (negate a)
+
+  SliceFrom i a - SliceFrom _ b = SliceFrom i (a-b)
+  
+  ztimes z (SliceFrom i a) = SliceFrom i (ztimes z a)
+
+instance (Distributive d, Vectorial d, Sliced i d) => Vectorial (Slice From i d) where
+  type Scalar (Slice From i d) = Scalar d
+  x ! SliceFrom i a = SliceFrom i (x!a)
 
