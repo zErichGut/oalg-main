@@ -30,6 +30,7 @@ library
       OAlg.Homology.Complex
       OAlg.Homology.Definition
       OAlg.Homology.Group
+      OAlg.Homology.IO.Interactive
       OAlg.Homology.Simplex
       OAlg.Homology.Variance
   other-modules:
