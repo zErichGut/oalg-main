@@ -23,15 +23,18 @@
 module OAlg.Homology.IO.Interactive
   () where
 
+import Prelude (words)
 
 import Control.Monad
+import Control.Exception
 
 import System.IO
 
 import Data.List ((++),reverse,zip,repeat)
 import Data.Foldable (toList)
+import Data.Either
 
-import OAlg.Prelude hiding (Result(..))
+import OAlg.Prelude hiding (Result(..), It)
 
 import OAlg.Data.Canonical
 import OAlg.Data.Symbol
@@ -60,102 +63,156 @@ version ="1.0.0.0"
 
 putHelp :: Handle -> IO ()
 putHelp hOut = do
+  hPutStrLn hOut ""
   hPutStrLn hOut ("Homology Groups " ++ version)
   hPutStrLn hOut ("----------------" ++ (takeN (lengthN version) $ repeat '-'))
-  hPutStr   hOut "\n"
+  hPutStrLn hOut ""
+  hPutStrLn hOut "Exploring interactively the homology group of a complex"
+  hPutStrLn hOut ""
+  hPutStrLn hOut ""
+  hPutStrLn hOut "  d (n+1)         d n             d (n-1)     d (k+1)          d k        d 1          d 0"
+  hPutStrLn hOut "0 -------> H n n -----> H n (n-1) -------> .. -------> H n k -------> .. -----> H n 0 -----> *"
+  hPutStrLn hOut "                                                         ^"
+  hPutStrLn hOut "                                                  actual homology"
+  hPutStrLn hOut "" 
   hPutStrLn hOut "Commands:"
   hPutStrLn hOut (":q      " ++ "quit")
   hPutStrLn hOut (":help   " ++ "shows this help")
   hPutStrLn hOut (":v      " ++ "validates the actual homology")
-  hPutStr   hOut "\n"
+  hPutStrLn hOut ""
   hPutStrLn hOut "Operators:"
-  hPutStrLn hOut ("succ          " ++ "gets the following homology")
-  hPutStrLn hOut ("prev          " ++ "gets the previous homology")
+  hPutStrLn hOut ("it             " ++ "the previous result")
+  hPutStrLn hOut ("succ           " ++ "the following homology")
+  hPutStrLn hOut ("prev           " ++ "the previous homology")
+  hPutStrLn hOut ""
+  hPutStrLn hOut "Operators on the actual homology H n k:"
+  hPutStrLn hOut ("homology group " ++ "the homology group")
+  hPutStrLn hOut ("card chain     " ++ "the cardinality of the set of chains, generating the group of")
+  hPutStrLn hOut ("               " ++ "all chains")
+  hPutStrLn hOut ("card cycle     " ++ "the cardinality of a set of cycles, generating the")
+  hPutStrLn hOut ("               " ++ "sub group of all cycles. Note: The elements must not be")
+  hPutStrLn hOut ("               " ++ "linearly independent")
+  hPutStrLn hOut ("set chain      " ++ "the set of chains, generating the group of")
+  hPutStrLn hOut ("               " ++ "all chains")
   
 --------------------------------------------------------------------------------
 -- Command -
 
 data Command
-  = Quit
+  = Identity
+  | Quit
   | Help
+  | ValidActual
   | Operator Operator
+
+--------------------------------------------------------------------------------
+-- Carinality -
+
+data Cardinality
+  = ChainSet
+  deriving Show
 
 --------------------------------------------------------------------------------
 -- Operator -
 
 data Operator
-  = Succ
+  = It
+  | Succ
   | Prev
+  | EvalHomologyGroup
+  | EvalCardinality Cardinality
 
 --------------------------------------------------------------------------------
--- Modus -
+-- Result -
 
-data Modus
-  = Chains
-  | HGroup
-  deriving (Show)
+data Result
+  = Non
+  | HomologyGroup AbGroup
+  | Cardinality N
+  deriving Show
+
+--------------------------------------------------------------------------------
+-- Failure -
+
+type Failure = String
 
 --------------------------------------------------------------------------------
 -- Operand -
 
 data Operand where 
   Operand :: (Entity x, Ord x, Attestable n)
-    => Modus
-    -> N -- ^ the dimension of the homologies.
+    => N -- ^ the dimension of the homologies.
     -> (SomeHomology n x,N) -- ^ the actual homology.
     -> [(SomeHomology n x,N)] -- ^ the succesive homologies.
     -> [(SomeHomology n x,N)] -- ^ the previos homologies.
+    -> Result 
     -> Operand
 
 --------------------------------------------------------------------------------
--- opdModus -
+-- opdIt -
 
-opdModus :: Operand -> Modus
-opdModus (Operand m _ _ _ _) = m
-
---------------------------------------------------------------------------------
--- opdn-
-
--- | the dimension of the underlying homologies.
-opdn :: Operand -> N
-opdn (Operand _ n _ _ _) = n
+opdIt :: Operand -> Result
+opdIt (Operand _ _ _ _ it) = it
 
 --------------------------------------------------------------------------------
--- opdk -
+-- prpActualHomology -
 
--- | the dimension of the actual homology.
-opdk :: Operand -> N
-opdk (Operand _ _ (_,k) _ _) = k
+-- | validation of the actual homology.
+prpActualHomology :: Operand -> Statement
+prpActualHomology (Operand n (SomeHomology (Homology n' k' _ _),k) _ _ _) = Prp "ActualHomology" :<=>:
+  And [ Label "dimension" :<=>: valid n
+      , Label "actual homology" :<=>: And
+          [ Label "k <= n" :<=>: (k <= n) :?> Params ["n":=show n, "k":=show k]
+          , Label "dimensons correspondence" :<=>: And
+             [ Label "n" :<=>: (lengthN n' == n) :?> Params ["n'":= show n', "n":=show n]
+             , Label "k" :<=>: (lengthN k' == k) :?> Params ["k'":= show k', "k":=show k]
+             ]
+          ]
+      ]
+
+--------------------------------------------------------------------------------
+-- validateActual -
+
+-- | validates the actual homology.
+validateActual :: Handle -> Handle -> Operand -> IO ()
+validateActual hOut hErr hks = do
+    v <- validate $ prpActualHomology hks
+    hPutStrLn hOut ("validation result: " ++ show v)
+  `catch` algException
+  where
+    algException :: AlgebraicException -> IO ()
+    algException _ = return ()
 
 --------------------------------------------------------------------------------
 -- initOperand -
 
 -- | initialising an operand.
 initOperand :: (Entity x, Ord x, Attestable n)
-  => Modus -> Regular -> Complex n x -> Operand
-initOperand mds r c = Operand mds n h0 hks [] where
+  => Regular -> Complex n x -> Operand
+initOperand r c = Operand n h0 hks [] Non where
   n = lengthN $ cpxDim c
   ChainHomology hs = homology r c
   -- note: hs is not empty!
   h0:hks = (reverse $ toList hs) `zip` [0..]
 
 --------------------------------------------------------------------------------
--- Result -
-
-data Result
-  = REmpty
-  | RFailure String
-  deriving Show
-
---------------------------------------------------------------------------------
 -- parseCommand -
 
-parseCommand ::  Handle -> String -> IO (Maybe Command)
+parseCommand ::  Handle -> [String] -> IO (Maybe Command)
 parseCommand hErr str = case str of
-  ":q"    -> return $ Just Quit
-  ":help" -> return $ Just Help
-  "succ"  -> return $ Just $ Operator Succ
-  "prev"  -> return $ Just $ Operator Prev
+  
+  -- cmmands
+  []        -> return $ Just Identity
+  [":q"]    -> return $ Just Quit
+  [":help"] -> return $ Just Help
+  [":v"]    -> return $ Just ValidActual
+
+  -- operators
+  ["it"]    -> return $ Just $ Operator It
+  ["succ"]  -> return $ Just $ Operator Succ
+  ["prev"]  -> return $ Just $ Operator Prev
+  ["homology","group"] -> return $ Just $ Operator EvalHomologyGroup
+  ["card","chain"]     -> return $ Just $ Operator $ EvalCardinality ChainSet
   _       -> return Nothing
 
 --------------------------------------------------------------------------------
@@ -163,51 +220,72 @@ parseCommand hErr str = case str of
 
 getCommand :: Handle -> Handle -> Handle
   -> Operand -> IO (Maybe Command)
-getCommand hIn hOut hErr (Operand mds n (_,k) _ _) = do
-  hPutStr hOut (show mds ++ " " ++ show n ++ " " ++ show k ++ "> ")
+getCommand hIn hOut hErr (Operand n (_,k) _ _ _) = do
+  hPutStr hOut ("H " ++ show n ++ " " ++ show k ++ "> ")
   hFlush hOut
-  hGetLine hIn >>= parseCommand hErr
+  ln <- hGetLine hIn
+  parseCommand hErr (words ln)
 
 --------------------------------------------------------------------------------
 -- evalSucc -
 
-evalSucc :: Operand -> IO (Result,Operand)
-evalSucc hks@(Operand _ _ _ [] _)
-  = return (RFailure "there is no further homology!",hks)
-evalSucc (Operand m n h (h':hSuccs)  hPrevs)
-  = return (REmpty,Operand m n h' hSuccs (h:hPrevs))
+evalSucc :: Operand -> IO (Either Failure Operand)
+evalSucc hks@(Operand _ _ [] _ _)
+  = return $ Left "there is no further homology!"
+evalSucc (Operand n h (h':hSuccs)  hPrevs it)
+  = return $ Right $ Operand n h' hSuccs (h:hPrevs) it
 
 --------------------------------------------------------------------------------
 -- evalPrev -
 
-evalPrev :: Operand -> IO (Result,Operand)
-evalPrev hks@(Operand _ _ _ _ [])
-  = return (RFailure "there is now previous homology!",hks)
-evalPrev (Operand m n h hSuccs (h':hPrevs))
-  = return (REmpty,Operand m n h' (h:hSuccs) hPrevs)
+evalPrev :: Operand -> IO (Either Failure Operand)
+evalPrev hks@(Operand _ _ _ [] _)
+  = return $ Left "there is now previous homology!"
+evalPrev (Operand n h hSuccs (h':hPrevs) it)
+  = return $ Right $ Operand n h' (h:hSuccs) hPrevs it
+
+--------------------------------------------------------------------------------
+-- evalHomologyGroup -
+
+evalHomologyGroup :: Operand -> IO (Either Failure Operand)
+evalHomologyGroup (Operand n sh@(SomeHomology h,_)  hSucc hPrev _)
+  = return $ Right $ Operand n sh hSucc hPrev it where
+  it = HomologyGroup $ hmgGroup h
+
+--------------------------------------------------------------------------------
+-- evalCardinalityChainSet -
+
+evalCardinalityChainSet :: Operand -> IO (Either Failure Operand)
+evalCardinalityChainSet (Operand n sh@(SomeHomology h,_)  hSucc hPrev _)
+  = return $ Right $ Operand n sh hSucc hPrev it where
+  it = Cardinality $ lengthN $ hmgChainSet' h
 
 --------------------------------------------------------------------------------
 -- eval -
 
-eval :: Operator -> Operand -> IO (Result,Operand)
+eval :: Operator -> Operand -> IO (Either Failure Operand)
 eval opr hks = case opr of
-  Succ -> evalSucc hks
-  Prev -> evalPrev hks
+  It      -> return $ Right hks
+  Succ    -> evalSucc hks
+  Prev    -> evalPrev hks
+  EvalHomologyGroup -> evalHomologyGroup hks
+  EvalCardinality ChainSet-> evalCardinalityChainSet hks
 
 --------------------------------------------------------------------------------
 -- putFailure -
 
-putFailure :: Handle -> String -> IO ()
+putFailure :: Handle -> Failure -> IO ()
 putFailure hErr msg = do
   hPutStrLn hErr ("!!!Failure: " ++ msg)
-  
+
 --------------------------------------------------------------------------------
 -- putResult -
 
-putResult :: Handle -> Handle -> Result -> IO ()
-putResult hOut hErr res = case res of
-  REmpty       -> return ()
-  RFailure msg -> putFailure hErr msg
+putResult :: Handle -> Result -> IO ()
+putResult hOut res = case res of
+  Non             -> return ()
+  HomologyGroup h -> hPutStrLn hOut $ show h
+  Cardinality c   -> hPutStrLn hOut $ show c
 
 --------------------------------------------------------------------------------
 -- iComplex -
@@ -222,25 +300,35 @@ iComplex' :: (Entity x, Ord x, Attestable n)
   => Handle -> Handle -> Handle
   -> Regular -> Complex n x -> IO ()
 iComplex' hIn hOut hErr r c = rep hks where
-  hks = initOperand HGroup r c
+  hks = initOperand r c
 
   rep :: Operand -> IO ()
   rep hks = do
     mcmd <- getCommand hIn hOut hErr hks
     case mcmd of
-      Just Quit -> return ()
-      Just Help -> do
+      Just Identity -> rep hks
+      Just Quit     -> return ()
+      Just Help     -> do
         putHelp hOut
         rep hks
+      Just ValidActual -> do
+        validateActual hOut hErr hks
+        rep hks
       Just (Operator opr)  -> do
-        (res,hks') <- eval opr hks
-        putResult hOut hErr res
-        rep hks'
+        res <- eval opr hks
+        case res of
+          Right hks' -> do
+            putResult hOut $ opdIt hks'
+            rep hks'
+          Left err   -> do
+            putFailure hErr err
+            rep hks
       Nothing -> do
         hPutStrLn hOut "!!!unknown command"
         hPutStrLn hOut ""
         putHelp hOut
         hFlush hOut
         rep hks
+
 
 

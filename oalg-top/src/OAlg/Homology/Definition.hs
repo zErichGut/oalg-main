@@ -94,7 +94,7 @@ ssAny :: Attestable l => Set (Simplex l x) -> Any l
 ssAny _ = attest
 
 -- | the underlying set of @__k__@-simplices.
-hmgChainSet :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex k x)
+hmgChainSet :: (Entity x, Ord x) => Homology n k x -> Set (Simplex k x)
 hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
   _:|_:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
     Just Refl -> s
@@ -104,7 +104,7 @@ hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
     eqAny _ _ = eqT
 
 -- | the underlying set of @__k__ + 1@-simplices.
-hmgChainSet' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k+1) x)
+hmgChainSet' :: (Entity x, Ord x) => Homology n k x -> Set (Simplex (k+1) x)
 hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
   _:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
     Just Refl -> s
@@ -114,7 +114,7 @@ hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
     eqAny _ _ = eqT
 
 -- | the underlying set of @__k__ + 2@-simplices.
-hmgChainSet'' :: (Entity x, Ord x, Attestable k) => Homology n k x -> Set (Simplex (k + 2) x)
+hmgChainSet'' :: (Entity x, Ord x) => Homology n k x -> Set (Simplex (k + 2) x)
 hmgChainSet''  (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
   SimplexSet s:|_  -> case eqAny k (ssAny s) of
     Just Refl -> s
