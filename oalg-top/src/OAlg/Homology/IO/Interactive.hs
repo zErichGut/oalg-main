@@ -23,34 +23,29 @@
 module OAlg.Homology.IO.Interactive
   () where
 
-import Prelude (words)
-
 import Control.Monad
+import Control.Applicative
 import Control.Exception
 
 import System.IO
 
-import Data.List ((++),reverse,zip,repeat)
+import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
 import Data.Foldable (toList)
 import Data.Either
+import Data.Char (isSpace)
 
 import OAlg.Prelude hiding (Result(..), It)
 
-import OAlg.Data.Canonical
-import OAlg.Data.Symbol
-
 import OAlg.Entity.Natural hiding ((++))
-import OAlg.Entity.FinList hiding ((++),zip,repeat)
-import OAlg.Entity.Sequence
-import OAlg.Entity.Diagram
+import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sum
 
 import OAlg.AbelianGroup.Definition
-import OAlg.AbelianGroup.KernelsAndCokernels
 
 import OAlg.Homology.Definition as H
-import OAlg.Homology.Simplex
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
+import OAlg.Homology.Chain
 
 --------------------------------------------------------------------------------
 -- version -
@@ -67,7 +62,7 @@ putHelp hOut = do
   hPutStrLn hOut ("Homology Groups " ++ version)
   hPutStrLn hOut ("----------------" ++ (takeN (lengthN version) $ repeat '-'))
   hPutStrLn hOut ""
-  hPutStrLn hOut "Exploring interactively the homology group of a complex"
+  hPutStrLn hOut "Exploring interactively the homology of a chain complex:"
   hPutStrLn hOut ""
   hPutStrLn hOut ""
   hPutStrLn hOut "  d (n+1)         d n             d (n-1)     d (k+1)          d k        d 1          d 0"
@@ -80,20 +75,30 @@ putHelp hOut = do
   hPutStrLn hOut (":help   " ++ "shows this help")
   hPutStrLn hOut (":v      " ++ "validates the actual homology")
   hPutStrLn hOut ""
-  hPutStrLn hOut "Operators:"
+  hPutStrLn hOut "Operators on the chain complex \'H n\':"
   hPutStrLn hOut ("it             " ++ "the previous result")
   hPutStrLn hOut ("succ           " ++ "the following homology")
   hPutStrLn hOut ("prev           " ++ "the previous homology")
   hPutStrLn hOut ""
-  hPutStrLn hOut "Operators on the actual homology H n k:"
-  hPutStrLn hOut ("homology group " ++ "the homology group")
-  hPutStrLn hOut ("card chain     " ++ "the cardinality of the set of chains, generating the group of")
-  hPutStrLn hOut ("               " ++ "all chains")
-  hPutStrLn hOut ("card cycle     " ++ "the cardinality of a set of cycles, generating the")
-  hPutStrLn hOut ("               " ++ "sub group of all cycles. Note: The elements must not be")
-  hPutStrLn hOut ("               " ++ "linearly independent")
-  hPutStrLn hOut ("set chain      " ++ "the set of chains, generating the group of")
-  hPutStrLn hOut ("               " ++ "all chains")
+  hPutStrLn hOut "Operators on the actual homology \'H n k\':"
+  hPutStrLn hOut ("homology group " ++ "the homology group of \'H n k\'.")
+  hPutStrLn hOut ("gen chain      " ++ "the set of simplices of lenght k+1, which form the base of")
+  hPutStrLn hOut ("               " ++ "the free abelian group of all chains in \'H n k\'.")
+  hPutStrLn hOut ("gen cycle      " ++ "a sub set of all chains, which generate the sub group of all")
+  hPutStrLn hOut ("               " ++ "cycles in the group of all chains.")
+  hPutStrLn hOut ("gen class      " ++ "a sub set of all cycles, such that there homology class generate")
+  hPutStrLn hOut ("               " ++ "the homology group of \'H n k\'.")
+  hPutStrLn hOut ("card chain     " ++ "the cardinality of \'gen chain\'.")
+  hPutStrLn hOut ("card cycle     " ++ "the cardinality of \'gen cycle\'.")
+  hPutStrLn hOut ("card class     " ++ "the cardinality of \'gen class\'.")
+  hPutStrLn hOut ("s<i>           " ++ "the i-the element of the set \'gen chain\'.")
+  hPutStrLn hOut ("               " ++ "Example: s7 is the 7-th element.")
+  hPutStrLn hOut ("c<i>           " ++ "the i-the element of the set \'gen cycle\'.")
+  hPutStrLn hOut ("h<i>           " ++ "the i-the element of the set \'gen class\'.")
+  hPutStrLn hOut ("sum <ls>       " ++ "the sum of the linear combination \'ls\' of elements in \'gen\' and coefficients in Z.")
+  hPutStrLn hOut ("               " ++ "Example: lc s3+4!s8-c5+h0. (\'!\' denotes the scalar multiplication)")
+  
+
   
 --------------------------------------------------------------------------------
 -- Command -
@@ -106,30 +111,47 @@ data Command
   | Operator Operator
 
 --------------------------------------------------------------------------------
--- Carinality -
-
-data Cardinality
-  = ChainSet
-  deriving Show
-
---------------------------------------------------------------------------------
 -- Operator -
 
 data Operator
   = It
   | Succ
   | Prev
-  | EvalHomologyGroup
-  | EvalCardinality Cardinality
+  | Eval Function [Argument]
+
+--------------------------------------------------------------------------------
+-- Function -
+
+data Function
+  = FHomology
+  | FGen
+  | FCard
+  | FSum
+
+--------------------------------------------------------------------------------
+-- Index -
+
+data Index = Index Char N
+
+--------------------------------------------------------------------------------
+-- Argumant -
+
+data Argument
+  = AGroup
+  | AChain
+  | ACycle
+  | AClass
+  | ASumForm (SumForm Z Index)
 
 --------------------------------------------------------------------------------
 -- Result -
 
-data Result
-  = Non
-  | HomologyGroup AbGroup
-  | Cardinality N
-  deriving Show
+data Result where
+  Non           :: Result
+  HomologyGroup :: AbGroup -> Result
+  Cardinality   :: N -> Result
+  Generator     :: (Entity x, Ord x) => Set (Chain Z (k+1) x) -> Result
+  Chain         :: (Entity x, Ord x) => Chain Z (k+1) x -> Result
 
 --------------------------------------------------------------------------------
 -- Failure -
@@ -196,24 +218,64 @@ initOperand r c = Operand n h0 hks [] Non where
   h0:hks = (reverse $ toList hs) `zip` [0..]
 
 --------------------------------------------------------------------------------
+-- nextWord -
+
+nextWord :: String -> IO (String,String)
+nextWord str = return (w,dropWhile isSpace str') where
+  (w,str') = span (not . isSpace) $ dropWhile isSpace str
+
+--------------------------------------------------------------------------------
+-- parseCCC -
+
+parseCCC :: String -> IO (Maybe Argument)
+parseCCC str = do
+  ws <- nextWord str
+  case ws of
+    ("chain","") -> return $ Just AChain
+    ("cycle","") -> return $ Just ACycle
+    ("class","") -> return $ Just AClass
+    _            -> return Nothing
+    
+
+--------------------------------------------------------------------------------
 -- parseCommand -
 
-parseCommand ::  Handle -> [String] -> IO (Maybe Command)
-parseCommand hErr str = case str of
-  
-  -- cmmands
-  []        -> return $ Just Identity
-  [":q"]    -> return $ Just Quit
-  [":help"] -> return $ Just Help
-  [":v"]    -> return $ Just ValidActual
+parseCommand ::  String -> IO (Maybe Command)
+parseCommand str = do
+  ws <- nextWord str
+  case ws of
+    -- commands
+    ("","")      -> return $ Just Identity
+    (":q","")    -> return $ Just Quit
+    (":help","") -> return $ Just Help
+    (":v","")    -> return $ Just ValidActual
 
-  -- operators
-  ["it"]    -> return $ Just $ Operator It
-  ["succ"]  -> return $ Just $ Operator Succ
-  ["prev"]  -> return $ Just $ Operator Prev
-  ["homology","group"] -> return $ Just $ Operator EvalHomologyGroup
-  ["card","chain"]     -> return $ Just $ Operator $ EvalCardinality ChainSet
-  _       -> return Nothing
+    -- operators
+    ("it","")    -> return $ Just $ Operator It
+    ("succ","")  -> return $ Just $ Operator Succ
+    ("prev","")  -> return $ Just $ Operator Prev
+    ("homology",str') -> do
+      ws <- nextWord str'
+      case ws of
+        ("group","") -> return $ Just $ Operator $ Eval FHomology [AGroup]
+        _            -> return Nothing
+    ("gen",str') -> do
+      mc <- parseCCC str'
+      case mc of
+        Just c -> return $ Just $ Operator $ Eval FGen [c]
+        _      -> return Nothing
+    ("card",str') -> do
+      mc <- parseCCC str'
+      case mc of
+        Just c -> return $ Just $ Operator $ Eval FCard [c]
+        _      -> return Nothing
+{-        
+    ("sum",str') -> do
+      mc <- parseLinearCombination str'
+      case mc of
+        Just lc -> error "nyi"
+-}
+    _  -> return Nothing
 
 --------------------------------------------------------------------------------
 -- getCommand -
@@ -221,16 +283,16 @@ parseCommand hErr str = case str of
 getCommand :: Handle -> Handle -> Handle
   -> Operand -> IO (Maybe Command)
 getCommand hIn hOut hErr (Operand n (_,k) _ _ _) = do
-  hPutStr hOut ("H " ++ show n ++ " " ++ show k ++ "> ")
   hFlush hOut
+  hPutStr hOut ("H " ++ show n ++ " " ++ show k ++ "> ")
   ln <- hGetLine hIn
-  parseCommand hErr (words ln)
+  parseCommand ln
 
 --------------------------------------------------------------------------------
 -- evalSucc -
 
 evalSucc :: Operand -> IO (Either Failure Operand)
-evalSucc hks@(Operand _ _ [] _ _)
+evalSucc (Operand _ _ [] _ _)
   = return $ Left "there is no further homology!"
 evalSucc (Operand n h (h':hSuccs)  hPrevs it)
   = return $ Right $ Operand n h' hSuccs (h:hPrevs) it
@@ -239,7 +301,7 @@ evalSucc (Operand n h (h':hSuccs)  hPrevs it)
 -- evalPrev -
 
 evalPrev :: Operand -> IO (Either Failure Operand)
-evalPrev hks@(Operand _ _ _ [] _)
+evalPrev (Operand _ _ _ [] _)
   = return $ Left "there is now previous homology!"
 evalPrev (Operand n h hSuccs (h':hPrevs) it)
   = return $ Right $ Operand n h' (h:hSuccs) hPrevs it
@@ -253,13 +315,38 @@ evalHomologyGroup (Operand n sh@(SomeHomology h,_)  hSucc hPrev _)
   it = HomologyGroup $ hmgGroup h
 
 --------------------------------------------------------------------------------
--- evalCardinalityChainSet -
+-- evalCardChain -
 
-evalCardinalityChainSet :: Operand -> IO (Either Failure Operand)
-evalCardinalityChainSet (Operand n sh@(SomeHomology h,_)  hSucc hPrev _)
+evalCardChain :: Operand -> IO (Either Failure Operand)
+evalCardChain (Operand n sh@(SomeHomology h,_)  hSucc hPrev _)
   = return $ Right $ Operand n sh hSucc hPrev it where
   it = Cardinality $ lengthN $ hmgChainSet' h
 
+--------------------------------------------------------------------------------
+-- evalGen -
+
+evalGen :: Argument -> Operand -> IO (Either Failure Operand)
+evalGen arg (Operand k sh@(SomeHomology h@(Homology _ _ _ _),_)  hSucc hPrev _) = case arg of
+  AChain -> return $ Right $ Operand k sh hSucc hPrev it where
+    it = Generator $ set $ amap1 ch $ setxs $ hmgChainSet' h
+  ACycle -> return $ Right $ Operand k sh hSucc hPrev it where
+    it = Generator $ hmgCycleGenSet h
+  AClass -> return $ Right $ Operand k sh hSucc hPrev it where
+    it = Generator $ hmgGroupGenSet h
+  _      -> return $ Left "unknown argument for \'gen\'"
+
+--------------------------------------------------------------------------------
+-- evalCard -
+
+evalCard :: Argument -> Operand -> IO (Either Failure Operand)
+evalCard arg hks = do
+  mhks' <- evalGen arg hks
+  case mhks' of
+    Right (Operand k h hs hp (Generator gs)) -> return $ Right (Operand k h hs hp it) where
+      it = Cardinality $ lengthN gs
+    Right _ -> throw $ ImplementationError "evalCard"
+    f      -> return f
+    
 --------------------------------------------------------------------------------
 -- eval -
 
@@ -268,8 +355,10 @@ eval opr hks = case opr of
   It      -> return $ Right hks
   Succ    -> evalSucc hks
   Prev    -> evalPrev hks
-  EvalHomologyGroup -> evalHomologyGroup hks
-  EvalCardinality ChainSet-> evalCardinalityChainSet hks
+  Eval FHomology [AGroup] -> evalHomologyGroup hks
+  Eval FGen [arg]         -> evalGen arg hks 
+  Eval FCard [arg]        -> evalCard arg hks
+  _  -> return $ Left "unknown operator"                      
 
 --------------------------------------------------------------------------------
 -- putFailure -
@@ -286,6 +375,8 @@ putResult hOut res = case res of
   Non             -> return ()
   HomologyGroup h -> hPutStrLn hOut $ show h
   Cardinality c   -> hPutStrLn hOut $ show c
+  Generator gs    -> hPutStrLn hOut $ show gs
+  Chain c         -> hPutStrLn hOut $ show c
 
 --------------------------------------------------------------------------------
 -- iComplex -
@@ -325,10 +416,5 @@ iComplex' hIn hOut hErr r c = rep hks where
             rep hks
       Nothing -> do
         hPutStrLn hOut "!!!unknown command"
-        hPutStrLn hOut ""
-        putHelp hOut
-        hFlush hOut
         rep hks
-
-
 
