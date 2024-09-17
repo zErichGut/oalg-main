@@ -90,18 +90,18 @@ data Term
 
 data PrimitiveTerm
   = ZTerm Z
-  | CardTerm  -- ^ cardinality of a set.
-  | HomologyGroupTerm -- ^ homology group
+  | LengthTerm  -- ^ cardinality of a set.
+  | HomologyGroupSeqcTerm -- ^ sequence of homology group
   | DTerm -- ^ boundary operator
   | D'Term -- ^ \'inverse\' boundary operator
-  | ChainSetTerm GenTerm
+  | GenSeqcTerm GenSequenceType -- ^ sequence of generators
   deriving (Show,Eq,Ord)
 
-data GenTerm
-  = STerm -- ^ chains
-  | CTerm -- ^ cycles
-  | TTerm -- ^ cycles, generating homology group
-  | ETerm -- ^ homology class
+data GenSequenceType
+  = RSeqc -- ^ chains
+  | SSeqc -- ^ cycles
+  | TSeqc -- ^ cycles, generating homology group
+  | HSeqc -- ^ homology class
   deriving (Show,Eq,Ord)
 
 zTerm :: Z -> Term
@@ -202,13 +202,13 @@ instance Ord AbElement where
 
 data Value x
   = ZValue Z
-  | CardValue
-  | ChainSetValue GenTerm 
+  | LengthValue
+  | GenSeqcValue GenSequenceType 
   | ChainMapValue Z (M.Map Z (SomeChain x))
   | ChainValue Z (SomeChain x)
   | HomologyClassMapValue Z (M.Map Z AbElement)
-  -- | HomologyClassValue Z AbElement
-  | HomologyGroup'Value
+  | HomologyClassValue Z AbElement
+  | HomologyGroupSeqcValue
   | HomologyGroupValue Z AbGroup
   deriving (Show,Eq,Ord)
 
@@ -219,21 +219,14 @@ instance (Entity x, Ord x) => Entity (Value x)
 
 data ValueType
   = ZType
-  | CardType
-  | ChainSetType GenTerm
+  | LengthType
+  | GenSeqcType GenSequenceType
   | ChainMapType Z
   | ChainType Z
-  | HomologyGroup'Type
+  | HomologyGroupSeqcType
+  | HomologyClassType Z AbGroup
   | HomologyGroupType Z
   | HomologyClassMapType Z
-{-  
-  | SomeSetType
-  | SomeChainType
-  | SomeHomologyClassType
-  | ChainType Z
-  | HomologyClassType Z
-  | HomologyGroupType Z
--}
   deriving (Show, Eq, Ord)
 
 
@@ -248,11 +241,12 @@ instance (Entity x, Ord x) => Fibred (Value x) where
   type Root (Value x) = ValueType
   root v = case v of
     ZValue _                  -> ZType
-    CardValue                 -> CardType
-    ChainSetValue t           -> ChainSetType t
+    LengthValue               -> LengthType
+    GenSeqcValue t            -> GenSeqcType t
     ChainValue k _            -> ChainType k
     ChainMapValue k _         -> ChainMapType k
-    HomologyGroup'Value       -> HomologyGroup'Type
+    HomologyClassValue k h    -> HomologyClassType k (root h)
+    HomologyGroupSeqcValue    -> HomologyGroupSeqcType
     HomologyGroupValue k _    -> HomologyGroupType k
     HomologyClassMapValue k _ -> HomologyClassMapType k
 
@@ -314,62 +308,72 @@ rdcSumFormChain l s = foldl (+) (zero l) $ amap1 (uncurry sclMlt) $ lcs $ smflc 
         sclMlt z (ChainValue _ s) = z!s
         sclMlt _ _                = throw $ ImplementationError "rdcSumFormChain: precondition"
 
+-- | pre: root s = HomologyClassType k g
+rdcSumFormHomologyClass :: (Entity x, Ord x) => AbGroup -> SumForm Z (Value x) -> AbElement
+rdcSumFormHomologyClass g s = foldl (+) (zero g) $ amap1 (uncurry sclMlt) $ lcs $ smflc s
+  where sclMlt :: (Entity x, Ord x) => Z -> Value x -> AbElement
+        sclMlt z (HomologyClassValue _ h) = z!h
+        sclMlt _ _ = throw $ ImplementationError "rdcSumFormHomologyClass: precondition"
+
 -- | reduce a simple value to its normal form.
 rdcSumFormValue :: (Entity x, Ord x) => SumForm Z (Value x) -> SumForm Z (Value x)
 rdcSumFormValue s = case root s of
-  ZType       -> case evalZ s of
-    Right z   -> S (ZValue z)
-    Left _    -> throw $ ImplementationError "svReduce"
-  ChainType k -> S $ ChainValue k $ rdcSumFormChain (k+1) s
-  _           -> s
+  ZType                 -> case evalZ s of
+    Right z             -> S (ZValue z)
+    Left _              -> throw $ ImplementationError "svReduce"
+  ChainType k           -> S $ ChainValue k $ rdcSumFormChain (k+1) s
+  HomologyClassType k g -> S $ HomologyClassValue k $ rdcSumFormHomologyClass g s
+  _                     -> s
 
 instance (Entity x, Ord x) => Constructable (SumValue x) where
   make = SumValue . make . rdcSumFormValue
 
-genSetEmpty :: GenTerm -> Z -> Value x
-genSetEmpty t k = case t of
-  ETerm -> HomologyClassMapValue k M.empty
+genSqcEmpty :: GenSequenceType -> Z -> Value x
+genSqcEmpty t k = case t of
+  HSeqc -> HomologyClassMapValue k M.empty
   _     -> ChainMapValue k M.empty
 
-genSetChain :: (Entity x, Ord x) => Homology n k x -> Z -> Value x
-genSetChain h@(Homology _ _ _ _) k
+genSqcChain :: (Entity x, Ord x) => Homology n k x -> Z -> Value x
+genSqcChain h@(Homology _ _ _ _) k
   = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet' h))
 
-genSetCycle :: (Entity x, Ord x) => Homology n k x -> Z -> Value x
-genSetCycle h@(Homology _ _ _ _) k
+genSqcCycle :: (Entity x, Ord x) => Homology n k x -> Z -> Value x
+genSqcCycle h@(Homology _ _ _ _) k
   = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgCycleGenSet h))
 
-genSetT :: (Entity x, Ord x) => Homology n k x -> Z -> Value x
-genSetT h@(Homology _ _ _ _) k
+genSqcT :: (Entity x, Ord x) => Homology n k x -> Z -> Value x
+genSqcT h@(Homology _ _ _ _) k
   = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgGroupGenSet h))
 
-genSetE :: (Entity x, Ord x) => Z -> Value x
-genSetE = error "nyi"
+genSqcH :: (Entity x, Ord x) => EnvH n x -> Z -> Value x
+genSqcH hs k = HomologyClassMapValue k es 
+  where hg = homologyGroup hs k
+        n  = inj $ lengthN hg :: Z
+        es = M.fromAscList [(i,abge hg (prj i)) | i <- [0..(n-1)]] 
 
-genSetMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenTerm -> Value x
-genSetMinusOne h t = case t of
-  STerm                      -> ChainMapValue (-1) genS
-  CTerm                      -> ChainMapValue (-1) genS    -- d (-1) is zero
-  _     | lengthN genS' == 0 -> case t of
-    TTerm                    -> ChainMapValue (-1) genS    -- d 0 is zero
-    ETerm                    -> error "nyi"
-        | otherwise          -> case t of
-    TTerm                    -> ChainMapValue (-1) M.empty -- d 0 is surjective
-    ETerm                    -> HomologyClassMapValue (-1) M.empty
+-- | pre: t is in [RSeqc,SSeqc,TSeqc]
+genSqcChainMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenSequenceType -> Value x
+genSqcChainMinusOne h t = ChainMapValue (-1) $ case t of
+  RSeqc                      -> genS
+  SSeqc                      -> genS    -- d (-1) is zero
+  TSeqc | lengthN genS' == 0 -> genS    -- d 0 is zero
+        | otherwise          -> M.empty -- d 0 is surjective
+  _                          -> throw $ ImplementationError "genSqcChainMinusOne"
   
   where genS  = M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet h))
         genS' = hmgChainSet' h
 
-evalChainSet :: (Entity x, Ord x) => EnvH n x -> GenTerm -> Z -> Value x
-evalChainSet hs t k
-  | k == -1 = genSetMinusOne (getHomology0 hs) t
-  | k <  -1 = genSetEmpty t k
+evalGenSeqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> Z -> Value x
+evalGenSeqc hs HSeqc k = genSqcH hs k
+evalGenSeqc hs t k
+  | k == -1 = genSqcChainMinusOne (getHomology0 hs) t
+  | k <  -1 = genSqcEmpty t k
   | k >=  0 = case (prj k) `M.lookup` hs of
-      Nothing               -> genSetEmpty t k
+      Nothing               -> genSqcEmpty t k
       Just (SomeHomology h) -> case t of
-        STerm               -> genSetChain h k
-        CTerm               -> genSetCycle h k
-        TTerm               -> genSetT h k
+        RSeqc               -> genSqcChain h k
+        SSeqc               -> genSqcCycle h k
+        TSeqc               -> genSqcT h k
 
 homologyGroupMinusOne :: (Entity x, Ord x) => Homology n N0 x -> AbGroup
 homologyGroupMinusOne h
@@ -379,13 +383,16 @@ homologyGroupMinusOne h
   where genS  = hmgChainSet h
         genS' = hmgChainSet' h
 
-evalHomologyGroup :: (Entity x, Ord x) => EnvH n x -> Z -> Value x
-evalHomologyGroup hs k
-  | k == -1 = HomologyGroupValue k $ homologyGroupMinusOne $ getHomology0 hs
-  | k <  -1 = HomologyGroupValue k (one ())
-  | k >=  0 = HomologyGroupValue k $ case (prj k) `M.lookup` hs of
+homologyGroup :: (Entity x, Ord x) => EnvH n x -> Z -> AbGroup
+homologyGroup hs k
+  | k == -1 = homologyGroupMinusOne $ getHomology0 hs
+  | k <  -1 = one ()
+  | k >=  0 = case (prj k) `M.lookup` hs of
       Nothing               -> one ()
       Just (SomeHomology h) -> hmgGroup h
+
+evalHomologyGroup :: (Entity x, Ord x) => EnvH n x -> Z -> Value x
+evalHomologyGroup hs k = HomologyGroupValue k $ homologyGroup hs k
 
 evalChain :: (Entity x, Ord x) => M.Map Z (SomeChain x) -> Z -> Z -> Value x
 evalChain cs k i = case i `M.lookup` cs of
@@ -393,22 +400,28 @@ evalChain cs k i = case i `M.lookup` cs of
   Nothing -> ChainValue k (zero (k+1)) 
 
 -- | pre :: root s == ChainMapType _
-evalCardChainSet :: SumForm Z (Value x) -> E Z
-evalCardChainSet s 
+evalLengthChainSqc :: SumForm Z (Value x) -> E Z
+evalLengthChainSqc s 
   = amap1 (foldl (+) 0) $ sequence $ amap1 (uncurry crd) $ lcs $ smflc s where
 
   crd :: Z -> Value x -> E Z
   crd r v = case v of
     ChainMapValue _ m -> return $ (r*) $ inj $ M.size m
-    _                 -> throw $ ImplementationError "evalCardChainSet"
+    _                 -> throw $ ImplementationError "evalLengthChainSqc"
+
+evalHomologyClass :: (Entity x, Ord x) => EnvH n x -> M.Map Z AbElement -> Z -> Z -> Value x
+evalHomologyClass hs es k i = HomologyClassValue k $ case i `M.lookup` es of
+  Just h  -> h
+  Nothing -> zero $ homologyGroup hs k
 
 evalFormAppl :: (Entity x, Ord x)
   => EnvH n x -> SumForm Z (Value x) -> SumForm Z (Value x) -> E (SumForm Z (Value x))
 evalFormAppl hs f x = case (f,root x) of
-  (S (ChainSetValue t),ZType)    -> evalZ x >>= return . S . evalChainSet hs t
-  (S (ChainMapValue k cs),ZType) -> evalZ x >>= return . S . evalChain cs k
-  (S CardValue, ChainMapType _)  -> evalCardChainSet x >>= return . S . ZValue
-  (S HomologyGroup'Value,ZType)  -> evalZ x >>= return . S . evalHomologyGroup hs
+  (S (GenSeqcValue t),ZType)             -> evalZ x >>= return . S . evalGenSeqc hs t
+  (S (ChainMapValue k cs),ZType)         -> evalZ x >>= return . S . evalChain cs k
+  (S LengthValue, ChainMapType _)        -> evalLengthChainSqc x >>= return . S . ZValue
+  (S HomologyGroupSeqcValue,ZType)       -> evalZ x >>= return . S . evalHomologyGroup hs
+  (S (HomologyClassMapValue k es),ZType) -> evalZ x >>= return . S . evalHomologyClass hs es k
 
   (_,x') -> Left ("not applicable " ++ show (f,x'))
 
@@ -417,11 +430,11 @@ evalFormAppl hs f x = case (f,root x) of
 
 evalFormPrimitive :: EnvH n x -> PrimitiveTerm -> E (SumForm Z (Value x))
 evalFormPrimitive hs p = case p of
-  ZTerm z           -> return $ S $ ZValue z
-  CardTerm          -> return $ S $ CardValue
-  ChainSetTerm t    -> return $ S $ ChainSetValue t
-  HomologyGroupTerm -> return $ S $ HomologyGroup'Value
-  -- CardTerm  -> return $ S $ CardValue
+  ZTerm z               -> return $ S $ ZValue z
+  LengthTerm            -> return $ S $ LengthValue
+  GenSeqcTerm t         -> return $ S $ GenSeqcValue t
+  HomologyGroupSeqcTerm -> return $ S $ HomologyGroupSeqcValue
+
 
 -- | transformation to a value.
 evalForm :: (Entity x, Ord x) => EnvH n x -> Term -> E (SumForm Z (Value x))
@@ -448,23 +461,26 @@ evalForm hs t = case t of
   f :>> x -> do
     f' <- evalForm hs f
     x' <- evalForm hs x
-    evalFormAppl hs f' x' 
-
+    f' >> x' 
+  where (>>) = evalFormAppl hs
+  
 -- | evaluating a term according to the given environmente.
 eval :: (Entity x, Ord x) => Env x -> Term -> E (SumValue x)
 eval (Env vs hs itTerm) t
   = evalForm hs (subst vs (Let "it" itTerm t)) >>= return . make
 
 cmp = complex kleinBottle
+-- cmp = cpxEmpty :: Complex N2 N
 envt = initEnv Truncated cmp
 envr = initEnv Regular cmp
 
-s = PrimitiveTerm (ChainSetTerm STerm) 
-c = PrimitiveTerm (ChainSetTerm CTerm)
-t = PrimitiveTerm (ChainSetTerm TTerm)
+r = PrimitiveTerm (GenSeqcTerm RSeqc) 
+s = PrimitiveTerm (GenSeqcTerm SSeqc)
+t = PrimitiveTerm (GenSeqcTerm TSeqc)
+h = PrimitiveTerm (GenSeqcTerm HSeqc)
 z = zTerm
-crd = PrimitiveTerm CardTerm
-h = PrimitiveTerm HomologyGroupTerm
+lgth = PrimitiveTerm LengthTerm
+hg = PrimitiveTerm HomologyGroupSeqcTerm
 
 {-
 
