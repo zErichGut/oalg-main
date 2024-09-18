@@ -226,9 +226,6 @@ instance (Entity x, Ord x) => Vectorial (SomeChain x) where
   _ ! c           = c
 
 
-instance Ord AbElement where
-  AbElement a `compare` AbElement b = a `compare` b
-
 type K = Z
 
 

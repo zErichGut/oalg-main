@@ -42,11 +42,12 @@ import OAlg.Entity.FinList
 -- | simplex as a finite list of a given length @__l__@ of vertices in a space @__x__@.
 --
 --  __Note__ We allow also simplices with zero length, i.e. the empty simplex.
-newtype Simplex l x = Simplex (FinList l x) deriving (Eq, Ord, Validable, Entity,Foldable)
+newtype Simplex l x = Simplex (FinList l x) deriving (Show,Eq, Ord, Validable, Entity,Foldable)
 
+{-
 instance Show x => Show (Simplex l x) where
   show  = show . toList 
-
+-}
 --------------------------------------------------------------------------------
 -- simplex -
 

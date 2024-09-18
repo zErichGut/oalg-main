@@ -783,10 +783,7 @@ instance Show AbElementForm where
 
 -- | elements of an finitely generated abelian group. There 'root' - which is an element of 'AbGroup' -
 --   gives there affiliated group. They are gererated via 'make'.
-newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Eq,Validable,Entity)
-
-instance Show AbElement where
-  show = show . form
+newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Show,Eq,Ord,Validable,Entity)
 
 instance LengthN AbElement where
   lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a

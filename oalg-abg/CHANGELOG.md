@@ -22,10 +22,14 @@ and this project adheres to the
 - Liftable Z-Matrices
 - Elements of abelian groups
 
-## [1.5.0.0] - 2024-09-08
+## [1.5.0.1] - 2024-09-08
 ### Changed
 - adapted to oalg-base-2.0.0.0
 - replaced abgGeneratorTo and abgFinPres
 - replaced abhCokernelLftFree by abhCokersLftFree
 ### Added
 - abhSplitable, xAbhSomeFreeSlice
+
+## [1.5.0.2] - 2024-09-18
+### Added
+- AbElement is instance of Ord
