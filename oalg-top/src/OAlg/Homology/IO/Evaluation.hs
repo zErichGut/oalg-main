@@ -44,6 +44,7 @@ import OAlg.Entity.Natural hiding ((++),S)
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sum
 
+import OAlg.Structure.Oriented
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
@@ -68,62 +69,165 @@ import OAlg.Homology.IO.Term
 
 type EnvH n x = M.Map N (SomeHomology n x)
 
-type EnvV x = M.Map String (Term x)
+type EnvV x = M.Map String (Value x)
 
 data Env x where
-  Env :: N -> N -> EnvV x -> EnvH n x -> Value x -> Env x
+  Env :: EnvV x -> EnvH n x -> Env x
 
-initEnv :: (Entity x, Ord x, Attestable n) => N -> Regular -> Complex n x -> Env x
-initEnv dMax r c = Env 0 dMax M.empty mhs (ZValue 0) where
+initEnv :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> Env x
+initEnv r c = Env M.empty mhs where
   ChainHomology hs = homology r c
   mhs = M.fromAscList ([0..] `zip` (reverse $ toList hs))
 
 --------------------------------------------------------------------------------
--- envDepth -
-
-envDepth :: Env x -> N
-envDepth (Env d _ _ _ _) = d
-
---------------------------------------------------------------------------------
--- envDepthMax -
-
-envDepthMax :: Env x -> N
-envDepthMax (Env _ dMax _ _ _) = dMax
-
---------------------------------------------------------------------------------
--- envSucc -
-
-envSucc :: Env x -> Env x
-envSucc (Env d dMax vs hs it) = Env (succ d) dMax vs hs it
-
---------------------------------------------------------------------------------
 -- (??) -
 
-(??) :: Env x -> String -> Maybe (Term x)
-(??) (Env _ _ vs _ _) v = M.lookup v vs
+(??) :: Env x -> String -> Maybe (Value x)
+(??) (Env vs _) v = M.lookup v vs
 
 --------------------------------------------------------------------------------
 -- envInsert -
 
-envInsert :: Env x -> String -> Term x -> Env x
-envInsert (Env d dMax vs hs it) v t = Env d dMax vs' hs it where vs' = M.insert v t vs
+envInsert :: Env x -> String -> Value x -> Env x
+envInsert (Env vs hs) v t = Env vs' hs where vs' = M.insert v t vs
+
+--------------------------------------------------------------------------------
+-- envHomology -
+
+envHomology :: Attestable k => EnvH n x -> Any k -> Maybe (Homology n k x)
+envHomology hs k = do
+  sh <- lengthN k `M.lookup` hs
+  case sh of
+    SomeHomology h@(Homology _ _ _ _) -> case eq k h of
+      Just Refl -> Just h
+      Nothing   -> throw $ ImplementationError "envHomology: inconsitent environment"
+  where eq :: (Attestable k, Attestable k') => Any k -> Homology n k' x -> Maybe (k :~: k')
+        eq _ _ = eqT 
+
+envHomology0 :: EnvH n x -> Homology n N0 x
+envHomology0 hs = case envHomology hs W0 of
+  Just h  -> h
+  Nothing -> throw $ ImplementationError "envHomology0: inconsitent environment"
+  -- hs is never empty!
+  
+--------------------------------------------------------------------------------
+-- valHomologyGroup -
+
+homologyGroupMinusOne :: (Entity x, Ord x) => Homology n N0 x -> AbGroup
+homologyGroupMinusOne h
+  | lengthN genS == 0 = one ()
+  | lengthN genS' > 0 = one ()
+  | otherwise         = abg 0 -- empty complex
+  where genS  = hmgChainSet h
+        genS' = hmgChainSet' h
+
+homologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> AbGroup
+homologyGroup hs k
+  | k == -1 = homologyGroupMinusOne $ envHomology0 hs
+  | k <  -1 = one ()
+  | k >=  0 = case (prj k) `M.lookup` hs of
+      Nothing               -> one ()
+      Just (SomeHomology h) -> hmgGroup h
+
+valHomologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> Value x
+valHomologyGroup hs k = HomologyGroupValue k $ homologyGroup hs k
+
+--------------------------------------------------------------------------------
+-- valGenSeqc -
+
+valGenSeqcEmpty :: GenSequenceType -> K -> Value x
+valGenSeqcEmpty t k = case t of
+  HSeqc -> HomologyClassMapValue k M.empty
+  _     -> ChainMapValue k M.empty
+
+valGenSeqcChain :: (Entity x, Ord x) => Homology n k x -> K -> Value x
+valGenSeqcChain h@(Homology _ _ _ _) k
+  = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet' h))
+
+valGenSeqcCycle :: (Entity x, Ord x) => Homology n k x -> K -> Value x
+valGenSeqcCycle h@(Homology _ _ _ _) k
+  = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgCycleGenSet h))
+
+valGenSeqcT :: (Entity x, Ord x) => Homology n k x -> K -> Value x
+valGenSeqcT h@(Homology _ _ _ _) k
+  = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgGroupGenSet h))
+
+valGenSeqcH :: (Entity x, Ord x) => EnvH n x -> K -> Value x
+valGenSeqcH hs k = HomologyClassMapValue k es 
+  where hg = homologyGroup hs k
+        n  = inj $ lengthN hg :: Z
+        es = M.fromAscList [(i,abge hg (prj i)) | i <- [0..(n-1)]] 
+
+-- | pre: t is in [RSeqc,SSeqc,TSeqc]
+valGenSeqcChainMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenSequenceType -> Value x
+valGenSeqcChainMinusOne h t = ChainMapValue (-1) $ case t of
+  RSeqc                      -> genS
+  SSeqc                      -> genS    -- d (-1) is zero
+  TSeqc | lengthN genS' == 0 -> genS    -- d 0 is zero
+        | otherwise          -> M.empty -- d 0 is surjective
+  _                          -> throw $ ImplementationError "valGenSeqcChainMinusOne"
+  
+  where genS  = M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet h))
+        genS' = hmgChainSet' h
+
+valGenSeqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> K -> Value x
+valGenSeqc hs HSeqc k = valGenSeqcH hs k
+valGenSeqc hs t k
+  | k == -1 = valGenSeqcChainMinusOne (envHomology0 hs) t
+  | k <  -1 = valGenSeqcEmpty t k
+  | k >=  0 = case (prj k) `M.lookup` hs of
+      Nothing               -> valGenSeqcEmpty t k
+      Just (SomeHomology h) -> case t of
+        RSeqc               -> valGenSeqcChain h k
+        SSeqc               -> valGenSeqcCycle h k
+        TSeqc               -> valGenSeqcT h k
+
+
+--------------------------------------------------------------------------------
+-- valChain -
+
+valChain :: (Entity x, Ord x) => M.Map Z (SomeChain x) -> K -> Z -> Value x
+valChain cs k i = case i `M.lookup` cs of
+  Just c  -> ChainValue k c
+  Nothing -> ChainValue k (zero (k+1)) 
+
+--------------------------------------------------------------------------------
+-- valHomologyClass -
+
+valHomologyClass :: (Entity x, Ord x) => EnvH n x -> M.Map Z AbElement -> K -> Z -> Value x
+valHomologyClass hs es k i = HomologyClassValue k $ case i `M.lookup` es of
+  Just h  -> h
+  Nothing -> zero $ homologyGroup hs k
 
 --------------------------------------------------------------------------------
 -- EvaluationFailuer -
 
 data EvaluationFailure where
-  UnboundVariable :: Pretty t => t -> EvaluationFailure
-  NotAZValue :: Pretty t =>  t -> EvaluationFailure
-  MaxDepthReached :: N -> EvaluationFailure
+  UnboundVariable      :: String -> EvaluationFailure
+  RecursiveDefinition  :: String -> EvaluationFailure
+  NotAZValue           :: Pretty t =>  t -> EvaluationFailure
+  MaxDepthReached      :: N -> EvaluationFailure
+  NotAddableValue      :: ValueType -> ValueType -> EvaluationFailure
+  UndefinedSum         :: ValueType -> EvaluationFailure
+  UndefinedApplication :: (Entity x, Ord x) => ValueType -> Value x -> EvaluationFailure
 
   UnresolvedLet ::  Pretty t => t -> EvaluationFailure
-  NotAddableTerm :: Pretty t => t -> EvaluationFailure
   NotAValue :: Pretty t => t -> EvaluationFailure
   UndefinedFailure :: Pretty x => String -> x -> EvaluationFailure
 
 instance Pretty EvaluationFailure where
-  pshow (UndefinedFailure msg x) = "undefined failuer " ++ msg ++ ": " ++ pshow x
+  pshow f = case f of
+    UnboundVariable v        -> "undefined variable: " ++ v
+    RecursiveDefinition v    ->"recursive definition for " ++ v
+    NotAZValue t             -> "not a Z-value: " ++ pshow t
+    MaxDepthReached n        -> "maximal depth reached: " ++ pshow n
+    NotAddableValue r s      -> "not addable values of types " ++ pshow r ++ " and " ++ pshow s
+    UndefinedSum r           -> "undefined sum for value type " ++ pshow r
+    UndefinedApplication f x -> "undefined application: " ++ pshow f ++ " " ++ pshow x
 
+instance Show EvaluationFailure where
+  show = pshow
+  
 --------------------------------------------------------------------------------
 -- failure -
 
@@ -146,65 +250,126 @@ evalZValue e t = do
     _        -> failure $ NotAZValue t
 
 --------------------------------------------------------------------------------
--- ($>>) -
+-- evalAppl -
 
-($>>) :: (Entity x, Ord x) => Value x -> Value x -> Eval (Value x)
-($>>) = error "nyi"
+evalAppl :: (Entity x, Ord x) => Env x -> Value x -> Value x -> Eval (Value x)
+evalAppl (Env _ hs) f x = case (f,x) of
+  (LengthValue,ChainMapValue _ cs)     -> return $ ZValue $ inj $ M.size cs
+  (LengthValue,HomologyClassMapValue _ es) -> return $ ZValue $ inj $ M.size es
+  (GenSeqcValue t,ZValue k)             -> return $ valGenSeqc hs t k
+  (ChainMapValue k cs,ZValue i)         -> return $ valChain cs k i
+  (HomologyClassMapValue k es,ZValue i) -> return $ valHomologyClass hs es k i
+  (HomologyGroupSeqcValue,ZValue k)     -> return $ valHomologyGroup hs k
+  _                                     ->  failure $ UndefinedApplication (root f) x
 
 --------------------------------------------------------------------------------
 -- evalSumForm -
 
 evalSumForm :: (Entity x, Ord x) => Env x -> Term x -> Eval (SumForm Z (Value x))
-evalSumForm e _ | envDepthMax e <= envDepth e = failure $ MaxDepthReached $ envDepthMax e 
 evalSumForm e t                               = case t of
   z :!> a -> do
-    z' <- evalZValue e' z
-    a' <- evalSumForm e' a
+    z' <- evalZValue e z
+    a' <- evalSumForm e a
     return (z' :! a')
-    where e' = envSucc e
-    
+
   a :+> b -> do
-    a' <- evalSumForm e' a
-    b' <- evalSumForm e' b
+    a' <- evalSumForm e a
+    b' <- evalSumForm e b
     return (a' :+ b')
-    where e' = envSucc e
     
   _ -> eval e t >>= return . S
 
 --------------------------------------------------------------------------------
--- evalSum -
-evalSum :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval (Value x)
-evalSum = error "nyi"
+-- evalValueType -
 
+evalValueType :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval ValueType
+evalValueType = vt where
+  vt s = case s of
+    Zero r -> return r
+    S v    -> return $ root v
+    _ :! a -> evalValueType a
+    a :+ b -> do
+      aRoot <- evalValueType a
+      bRoot <- evalValueType b
+      case aRoot == bRoot of
+        True  -> return aRoot
+        False -> failure $ NotAddableValue aRoot bRoot
+
+--------------------------------------------------------------------------------
+-- sumValue -
+
+sumValue :: Additive a => Root a -> (Z -> Value x -> a) -> Sum Z (Value x) -> a
+sumValue r toA s = foldl (+) (zero r) $ amap1 (uncurry toA) $ lcs $ smlc s
+    
+--------------------------------------------------------------------------------
+-- evalSum -
+
+evalSum :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval (Value x)
+evalSum sf = do
+  r <- evalValueType sf
+  case r of
+    ZType -> return $ ZValue $ sumValue (():>()) toZ s where
+      toZ :: Z -> Value x -> Z
+      toZ r v = case v of
+        ZValue z -> r!z
+        _        -> throw $ ImplementationError "evalSum.toZ"
+    ChainType k -> return $ ChainValue k $ sumValue k toChain s where
+      toChain :: Z -> Value x -> SomeChain x
+      toChain = error "nyi"
+        
+    _ -> failure $ UndefinedSum r
+    where s = make sf
+    
 --------------------------------------------------------------------------------
 -- eval -
 
 eval :: (Entity x, Ord x) => Env x -> Term x -> Eval (Value x)
-eval e _ | envDepthMax e <= envDepth e = failure $ MaxDepthReached $ envDepthMax e 
-eval e t                               = case t of
+eval e t = case t of
   Free a -> case e ?? a of
-    Just t' -> eval e t'
-    Nothing -> failure $ UnboundVariable t
+    Just v  -> return v
+    Nothing -> failure $ UnboundVariable a
 
-  Let a t t' -> eval e' t' where e' = envInsert e a t
+  Let a t t' -> do
+    case eval e t of
+      Right v -> eval (envInsert e a v) t'
+      Left f  -> case f of
+        UnboundVariable b | a == b -> Left $ RecursiveDefinition a
+        _                          -> Left f
 
   Value v -> return v
 
   f :>> x -> do
-    f' <- eval e' f
-    x' <- eval e' x
+    f' <- eval e f
+    x' <- eval e x
     f' $>> x'
-    where e' = envSucc e
+    where ($>>) = evalAppl e
 
   z :!> a -> do
-    z' <- evalZValue e' z
-    a' <- evalSumForm e' a
+    z' <- evalZValue e z
+    a' <- evalSumForm e a
     evalSum (z' :! a')
-    where e' = envSucc e
+
 
   a :+> b -> do
-    a' <- evalSumForm e' a
-    b' <- evalSumForm e' b
+    a' <- evalSumForm e a
+    b' <- evalSumForm e b
     evalSum (a' :+ b')
-    where e' = envSucc e
 
+--------------------------------------------------------------------------------
+
+c = complex kleinBottle
+envr = initEnv Regular c
+envt = initEnv Truncated c
+
+
+
+hg = Value HomologyGroupSeqcValue
+z = Value . ZValue
+r = Value (GenSeqcValue RSeqc) 
+s = Value (GenSeqcValue SSeqc)
+t = Value (GenSeqcValue TSeqc)
+h = Value (GenSeqcValue HSeqc)
+
+lgth = Value LengthValue
+
+d = Value BoundaryValue

@@ -69,6 +69,106 @@ import OAlg.Homology.Simplex
 
 import OAlg.Homology.IO.Pretty 
 
+-------------------------------------------------------------------------------
+-- GenSequenceType -
+
+data GenSequenceType
+  = RSeqc -- ^ chains
+  | SSeqc -- ^ cycles
+  | TSeqc -- ^ cycles, generating homology group
+  | HSeqc -- ^ homology class
+  deriving (Show,Eq,Ord)
+
+instance Pretty GenSequenceType where
+  pshow t = case t of
+    RSeqc -> "r"
+    SSeqc -> "s"
+    TSeqc -> "t"
+    HSeqc -> "h"
+    
+--------------------------------------------------------------------------------
+-- Value -
+
+type K = Z
+
+data Value x
+  = ZValue Z
+  | LengthValue
+  | BoundaryValue
+  | GenSeqcValue GenSequenceType 
+  | ChainMapValue K (M.Map Z (SomeChain x))
+  | ChainValue K (SomeChain x)
+  | HomologyClassMapValue K (M.Map Z AbElement)
+  | HomologyClassValue K AbElement
+  | HomologyGroupSeqcValue
+  | HomologyGroupValue K AbGroup
+  deriving (Show,Eq,Ord)
+
+instance (Entity x, Ord x) => Validable (Value x) where
+  valid = error "nyi"
+
+instance (Entity x, Ord x) => Entity (Value x)
+
+--------------------------------------------------------------------------------
+-- Value - Pretty -
+
+instance (Entity x, Ord x) => Pretty (Value x) where
+  pshow v = case v of
+    ZValue z               -> pshow z
+    GenSeqcValue _         -> pshow $ root v
+    HomologyGroupSeqcValue -> pshow $ root v
+    HomologyGroupValue _ g -> pshow g
+    _                      -> show v
+    
+--------------------------------------------------------------------------------
+-- ValueType -
+
+data ValueType
+  = ZType
+  | LengthType
+  | BoundaryType
+  | GenSeqcType GenSequenceType
+  | ChainMapType K
+  | ChainType K
+  | HomologyGroupSeqcType
+  | HomologyClassType K AbGroup
+  | HomologyGroupType K
+  | HomologyClassMapType K
+  deriving (Show, Eq, Ord)
+
+instance Pretty ValueType where
+  pshow r = case r of
+    ZType                  -> "Z"
+    GenSeqcType t          -> pshow t
+    ChainMapType k         -> "ChainSequence " ++ pshow k
+    HomologyGroupSeqcType  -> "H"
+    HomologyGroupType k    -> "H " ++ pshow k
+    _                      -> show r
+
+
+instance Validable ValueType where
+  valid t = case t of
+    ZType       -> SValid
+    _           -> error "nyi"
+
+instance Entity ValueType
+
+instance (Entity x, Ord x) => Fibred (Value x) where
+  type Root (Value x) = ValueType
+  root v = case v of
+    ZValue _                  -> ZType
+    LengthValue               -> LengthType
+    BoundaryValue             -> BoundaryType
+    GenSeqcValue t            -> GenSeqcType t
+    ChainValue k _            -> ChainType k
+    ChainMapValue k _         -> ChainMapType k
+    HomologyClassValue k h    -> HomologyClassType k (root h)
+    HomologyGroupSeqcValue    -> HomologyGroupSeqcType
+    HomologyGroupValue k _    -> HomologyGroupType k
+    HomologyClassMapValue k _ -> HomologyClassMapType k
+
+instance (Entity x, Ord x) => OrdRoot (Value x)
+
 --------------------------------------------------------------------------------
 -- Term -
 
@@ -84,15 +184,6 @@ data Term x
   deriving (Show,Eq,Ord)
 
 instance (Entity x,Ord x) => Pretty (Term x)
---------------------------------------------------------------------------------
--- GenSequenceType -
-
-data GenSequenceType
-  = RSeqc -- ^ chains
-  | SSeqc -- ^ cycles
-  | TSeqc -- ^ cycles, generating homology group
-  | HSeqc -- ^ homology class
-  deriving (Show,Eq,Ord)
 
 -------------------------------------------------------------------------------
 -- L -
@@ -193,67 +284,4 @@ instance (Entity x, Ord x) => Vectorial (SomeChain x) where
   z ! SomeChain a = SomeChain (z!a)
   _ ! c           = c
 
---------------------------------------------------------------------------------
--- Value -
-
-type K = Z
-
-data Value x
-  = ZValue Z
-  | LengthValue
-  | BoundaryValue
-  | GenSeqcValue GenSequenceType 
-  | ChainMapValue K (M.Map Z (SomeChain x))
-  | ChainValue K (SomeChain x)
-  | HomologyClassMapValue K (M.Map Z AbElement)
-  | HomologyClassValue K AbElement
-  | HomologyGroupSeqcValue
-  | HomologyGroupValue K AbGroup
-  deriving (Show,Eq,Ord)
-
-instance (Entity x, Ord x) => Validable (Value x) where
-  valid = error "nyi"
-
-instance (Entity x, Ord x) => Entity (Value x)
-
-
---------------------------------------------------------------------------------
--- ValueType -
-
-data ValueType
-  = ZType
-  | LengthType
-  | BoundaryType
-  | GenSeqcType GenSequenceType
-  | ChainMapType K
-  | ChainType K
-  | HomologyGroupSeqcType
-  | HomologyClassType K AbGroup
-  | HomologyGroupType K
-  | HomologyClassMapType K
-  deriving (Show, Eq, Ord)
-
-
-instance Validable ValueType where
-  valid t = case t of
-    ZType       -> SValid
-    _           -> error "nyi"
-
-instance Entity ValueType
-
-instance (Entity x, Ord x) => Fibred (Value x) where
-  type Root (Value x) = ValueType
-  root v = case v of
-    ZValue _                  -> ZType
-    LengthValue               -> LengthType
-    BoundaryValue             -> BoundaryType
-    GenSeqcValue t            -> GenSeqcType t
-    ChainValue k _            -> ChainType k
-    ChainMapValue k _         -> ChainMapType k
-    HomologyClassValue k h    -> HomologyClassType k (root h)
-    HomologyGroupSeqcValue    -> HomologyGroupSeqcType
-    HomologyGroupValue k _    -> HomologyGroupType k
-    HomologyClassMapValue k _ -> HomologyClassMapType k
-
-instance (Entity x, Ord x) => OrdRoot (Value x)
 

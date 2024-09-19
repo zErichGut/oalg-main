@@ -58,3 +58,5 @@ instance Pretty Z
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pshow (Left a)  = "Left (" ++ pshow a ++ ")"
   pshow (Right b) = "Right (" ++ pshow b ++ ")"
+
+instance Pretty AbGroup
