@@ -133,54 +133,54 @@ valHomologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> Value x
 valHomologyGroup hs k = HomologyGroupValue k $ homologyGroup hs k
 
 --------------------------------------------------------------------------------
--- valGenSeqc -
+-- valGenSqc -
 
-valGenSeqcEmpty :: GenSequenceType -> K -> Value x
-valGenSeqcEmpty t k = case t of
-  HSeqc -> HomologyClassMapValue k M.empty
-  _     -> ChainMapValue k M.empty
+valGenSqcEmpty :: GenSequenceType -> K -> Value x
+valGenSqcEmpty t k = case t of
+  ESqc -> HomologyClassMapOperator k M.empty
+  _     -> ChainMapOperator k M.empty
 
-valGenSeqcChain :: (Entity x, Ord x) => Homology n k x -> K -> Value x
-valGenSeqcChain h@(Homology _ _ _ _) k
-  = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet' h))
+valGenSqcChain :: (Entity x, Ord x) => Homology n k x -> K -> Value x
+valGenSqcChain h@(Homology _ _ _ _) k
+  = ChainMapOperator k $ M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet' h))
 
-valGenSeqcCycle :: (Entity x, Ord x) => Homology n k x -> K -> Value x
-valGenSeqcCycle h@(Homology _ _ _ _) k
-  = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgCycleGenSet h))
+valGenSqcCycle :: (Entity x, Ord x) => Homology n k x -> K -> Value x
+valGenSqcCycle h@(Homology _ _ _ _) k
+  = ChainMapOperator k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgCycleGenSet h))
 
-valGenSeqcT :: (Entity x, Ord x) => Homology n k x -> K -> Value x
-valGenSeqcT h@(Homology _ _ _ _) k
-  = ChainMapValue k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgGroupGenSet h))
+valGenSqcT :: (Entity x, Ord x) => Homology n k x -> K -> Value x
+valGenSqcT h@(Homology _ _ _ _) k
+  = ChainMapOperator k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgGroupGenSet h))
 
-valGenSeqcH :: (Entity x, Ord x) => EnvH n x -> K -> Value x
-valGenSeqcH hs k = HomologyClassMapValue k es 
+valGenSqcH :: (Entity x, Ord x) => EnvH n x -> K -> Value x
+valGenSqcH hs k = HomologyClassMapOperator k es 
   where hg = homologyGroup hs k
         n  = inj $ lengthN hg :: Z
         es = M.fromAscList [(i,abge hg (prj i)) | i <- [0..(n-1)]] 
 
--- | pre: t is in [RSeqc,SSeqc,TSeqc]
-valGenSeqcChainMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenSequenceType -> Value x
-valGenSeqcChainMinusOne h t = ChainMapValue (-1) $ case t of
-  RSeqc                      -> genS
-  SSeqc                      -> genS    -- d (-1) is zero
-  TSeqc | lengthN genS' == 0 -> genS    -- d 0 is zero
-        | otherwise          -> M.empty -- d 0 is surjective
-  _                          -> throw $ ImplementationError "valGenSeqcChainMinusOne"
+-- | pre: t is in [RSqc,SSqc,TSqc]
+valGenSqcChainMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenSequenceType -> Value x
+valGenSqcChainMinusOne h t = ChainMapOperator (-1) $ case t of
+  RSqc                      -> genS
+  SSqc                      -> genS    -- d (-1) is zero
+  TSqc | lengthN genS' == 0 -> genS    -- d 0 is zero
+       | otherwise          -> M.empty -- d 0 is surjective
+  _                          -> throw $ ImplementationError "valGenSqcChainMinusOne"
   
   where genS  = M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet h))
         genS' = hmgChainSet' h
 
-valGenSeqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> K -> Value x
-valGenSeqc hs HSeqc k = valGenSeqcH hs k
-valGenSeqc hs t k
-  | k == -1 = valGenSeqcChainMinusOne (envHomology0 hs) t
-  | k <  -1 = valGenSeqcEmpty t k
+valGenSqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> K -> Value x
+valGenSqc hs ESqc k = valGenSqcH hs k
+valGenSqc hs t k
+  | k == -1 = valGenSqcChainMinusOne (envHomology0 hs) t
+  | k <  -1 = valGenSqcEmpty t k
   | k >=  0 = case (prj k) `M.lookup` hs of
-      Nothing               -> valGenSeqcEmpty t k
+      Nothing               -> valGenSqcEmpty t k
       Just (SomeHomology h) -> case t of
-        RSeqc               -> valGenSeqcChain h k
-        SSeqc               -> valGenSeqcCycle h k
-        TSeqc               -> valGenSeqcT h k
+        RSqc               -> valGenSqcChain h k
+        SSqc               -> valGenSqcCycle h k
+        TSqc               -> valGenSqcT h k
 
 
 --------------------------------------------------------------------------------
@@ -207,9 +207,9 @@ data EvaluationFailure where
   RecursiveDefinition  :: String -> EvaluationFailure
   NotAZValue           :: Pretty t =>  t -> EvaluationFailure
   MaxDepthReached      :: N -> EvaluationFailure
-  NotAddableValue      :: ValueType -> ValueType -> EvaluationFailure
-  UndefinedSum         :: ValueType -> EvaluationFailure
-  UndefinedApplication :: (Entity x, Ord x) => ValueType -> Value x -> EvaluationFailure
+  NotAddableValue      :: ValueRoot -> ValueRoot -> EvaluationFailure
+  UndefinedSum         :: ValueRoot -> EvaluationFailure
+  UndefinedApplication :: (Entity x, Ord x) => ValueRoot -> Value x -> EvaluationFailure
 
   UnresolvedLet ::  Pretty t => t -> EvaluationFailure
   NotAValue :: Pretty t => t -> EvaluationFailure
@@ -254,13 +254,14 @@ evalZValue e t = do
 
 evalAppl :: (Entity x, Ord x) => Env x -> Value x -> Value x -> Eval (Value x)
 evalAppl (Env _ hs) f x = case (f,x) of
-  (LengthValue,ChainMapValue _ cs)     -> return $ ZValue $ inj $ M.size cs
-  (LengthValue,HomologyClassMapValue _ es) -> return $ ZValue $ inj $ M.size es
-  (GenSeqcValue t,ZValue k)             -> return $ valGenSeqc hs t k
-  (ChainMapValue k cs,ZValue i)         -> return $ valChain cs k i
-  (HomologyClassMapValue k es,ZValue i) -> return $ valHomologyClass hs es k i
-  (HomologyGroupSeqcValue,ZValue k)     -> return $ valHomologyGroup hs k
-  _                                     ->  failure $ UndefinedApplication (root f) x
+  (SizeOperator,ChainMapOperator _ cs)         -> return $ ZValue $ inj $ M.size cs
+  (SizeOperator,HomologyClassMapOperator _ es) -> return $ ZValue $ inj $ M.size es
+  (BoundaryOperator,ChainValue k c)            -> return $ ChainValue (pred k) $ boundarySomeChain c
+  (GenSqcOperator t,ZValue k)                 -> return $ valGenSqc hs t k
+  (ChainMapOperator k cs,ZValue i)             -> return $ valChain cs k i
+  (HomologyClassMapOperator k es,ZValue i)     -> return $ valHomologyClass hs es k i
+  (HomologyGroupSqcOperator,ZValue k)         -> return $ valHomologyGroup hs k
+  _                                            -> failure $ UndefinedApplication (root f) x
 
 --------------------------------------------------------------------------------
 -- evalSumForm -
@@ -280,17 +281,17 @@ evalSumForm e t                               = case t of
   _ -> eval e t >>= return . S
 
 --------------------------------------------------------------------------------
--- evalValueType -
+-- evalValueRoot -
 
-evalValueType :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval ValueType
-evalValueType = vt where
+evalValueRoot :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval ValueRoot
+evalValueRoot = vt where
   vt s = case s of
     Zero r -> return r
     S v    -> return $ root v
-    _ :! a -> evalValueType a
+    _ :! a -> evalValueRoot a
     a :+ b -> do
-      aRoot <- evalValueType a
-      bRoot <- evalValueType b
+      aRoot <- evalValueRoot a
+      bRoot <- evalValueRoot b
       case aRoot == bRoot of
         True  -> return aRoot
         False -> failure $ NotAddableValue aRoot bRoot
@@ -306,16 +307,26 @@ sumValue r toA s = foldl (+) (zero r) $ amap1 (uncurry toA) $ lcs $ smlc s
 
 evalSum :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval (Value x)
 evalSum sf = do
-  r <- evalValueType sf
+  r <- evalValueRoot sf
   case r of
-    ZType -> return $ ZValue $ sumValue (():>()) toZ s where
+    
+    ZValueRoot -> return $ ZValue $ sumValue (():>()) toZ s where
       toZ :: Z -> Value x -> Z
       toZ r v = case v of
         ZValue z -> r!z
         _        -> throw $ ImplementationError "evalSum.toZ"
-    ChainType k -> return $ ChainValue k $ sumValue k toChain s where
-      toChain :: Z -> Value x -> SomeChain x
-      toChain = error "nyi"
+        
+    ChainValueRoot k -> return $ ChainValue k $ sumValue (k+1) toChain s where
+      toChain :: (Entity x, Ord x) => Z -> Value x -> SomeChain x
+      toChain r c = case c of
+        ChainValue _ v -> r!v
+        _              -> throw $ ImplementationError "evalSum.toChain"
+
+    HomologyClassValueRoot k g -> return $ HomologyClassValue k $ sumValue g toHgClass s where
+      toHgClass :: Z -> Value x -> AbElement
+      toHgClass r v = case v of
+        HomologyClassValue _ h -> r!h
+        _                      -> throw $ ImplementationError "evalSum.toHgClass"
         
     _ -> failure $ UndefinedSum r
     where s = make sf
@@ -363,13 +374,13 @@ envt = initEnv Truncated c
 
 
 
-hg = Value HomologyGroupSeqcValue
+hg = Value HomologyGroupSqcOperator
 z = Value . ZValue
-r = Value (GenSeqcValue RSeqc) 
-s = Value (GenSeqcValue SSeqc)
-t = Value (GenSeqcValue TSeqc)
-h = Value (GenSeqcValue HSeqc)
+r = Value (GenSqcOperator RSqc) 
+s = Value (GenSqcOperator SSqc)
+t = Value (GenSqcOperator TSqc)
+e = Value (GenSqcOperator ESqc)
 
-lgth = Value LengthValue
+size = Value SizeOperator
 
-d = Value BoundaryValue
+d = Value BoundaryOperator

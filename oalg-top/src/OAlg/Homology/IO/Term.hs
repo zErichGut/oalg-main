@@ -25,7 +25,7 @@ module OAlg.Homology.IO.Term
     Term(..)
 
     -- * Value
-  , Value(..), ValueType(..)
+  , Value(..), ValueRoot(..)
   , L, K, GenSequenceType(..)
 
     -- * SomeChain
@@ -73,35 +73,95 @@ import OAlg.Homology.IO.Pretty
 -- GenSequenceType -
 
 data GenSequenceType
-  = RSeqc -- ^ chains
-  | SSeqc -- ^ cycles
-  | TSeqc -- ^ cycles, generating homology group
-  | HSeqc -- ^ homology class
+  = RSqc -- ^ chains
+  | SSqc -- ^ cycles
+  | TSqc -- ^ cycles, generating homology group
+  | ESqc -- ^ homology class
   deriving (Show,Eq,Ord)
 
 instance Pretty GenSequenceType where
   pshow t = case t of
-    RSeqc -> "r"
-    SSeqc -> "s"
-    TSeqc -> "t"
-    HSeqc -> "h"
+    RSqc -> "r"
+    SSqc -> "s"
+    TSqc -> "t"
+    ESqc -> "e"
     
+--------------------------------------------------------------------------------
+-- ValueRoot -
+
+--------------------------------------------------------------------------------
+-- ValueRoot -
+
+data ValueRoot
+  = ZValueRoot
+  | SizeOperatorRoot
+  | BoundaryOperatorRoot
+  | HomologyClassOperatorRoot
+  | GenSqcOperatorRoot GenSequenceType
+  | ChainMapOperatorRoot K
+  | ChainValueRoot K
+  | HomologyGroupSqcOperatorRoot
+  | HomologyClassValueRoot K AbGroup
+  | HomologyGroupValueRoot K
+  | HomologyClassMapOperatorRoot K
+  deriving (Show, Eq, Ord)
+
+instance Pretty ValueRoot where
+  pshow r = case r of
+    ZValueRoot             -> "Z"
+    GenSqcOperatorRoot t          -> pshow t
+    ChainMapOperatorRoot k         -> "ChainSequence " ++ pshow k
+
+    HomologyGroupValueRoot k    -> "H " ++ pshow k
+    _                      -> show r
+
+
+instance Validable ValueRoot where
+  valid t = case t of
+    ZValueRoot       -> SValid
+    _           -> error "nyi"
+
+instance Entity ValueRoot
+
+
 --------------------------------------------------------------------------------
 -- Value -
 
 type K = Z
 
 data Value x
-  = ZValue Z
-  | LengthValue
-  | BoundaryValue
-  | GenSeqcValue GenSequenceType 
-  | ChainMapValue K (M.Map Z (SomeChain x))
+  = -- | a 'Z' value.
+    ZValue Z
+    
+    -- | assignes either to a sequence or to a simplex its length.
+  | SizeOperator
+
+    -- | assignes to a chain its boundary.
+  | BoundaryOperator
+
+    -- | assignes to a index its sequence according to the given generator type.
+  | GenSqcOperator GenSequenceType -- ^ assignes a sequence type its sequence
+
+    -- | assignes to a index its chain.
+  | ChainMapOperator K (M.Map Z (SomeChain x))
+
+    -- | a chain
   | ChainValue K (SomeChain x)
-  | HomologyClassMapValue K (M.Map Z AbElement)
+
+    -- | assignes to a cycle its homology class.
+  | HomologyClassOperator
+
+    -- | assignes to a index its homology class
+  | HomologyClassMapOperator K (M.Map Z AbElement)
+
+    -- | a homology class
   | HomologyClassValue K AbElement
-  | HomologyGroupSeqcValue
-  | HomologyGroupValue K AbGroup
+
+    -- | assignes to a index its homology group.
+  | HomologyGroupSqcOperator -- ^ H
+
+    -- | a homology group.
+  | HomologyGroupValue K AbGroup -- ^ H k
   deriving (Show,Eq,Ord)
 
 instance (Entity x, Ord x) => Validable (Value x) where
@@ -114,58 +174,26 @@ instance (Entity x, Ord x) => Entity (Value x)
 
 instance (Entity x, Ord x) => Pretty (Value x) where
   pshow v = case v of
-    ZValue z               -> pshow z
-    GenSeqcValue _         -> pshow $ root v
-    HomologyGroupSeqcValue -> pshow $ root v
-    HomologyGroupValue _ g -> pshow g
-    _                      -> show v
+    ZValue z                 -> pshow z
+    GenSqcOperator _         -> pshow $ root v
+    HomologyGroupSqcOperator -> pshow $ root v
+    HomologyGroupValue _ g   -> pshow g
+    _                        -> show v
     
---------------------------------------------------------------------------------
--- ValueType -
-
-data ValueType
-  = ZType
-  | LengthType
-  | BoundaryType
-  | GenSeqcType GenSequenceType
-  | ChainMapType K
-  | ChainType K
-  | HomologyGroupSeqcType
-  | HomologyClassType K AbGroup
-  | HomologyGroupType K
-  | HomologyClassMapType K
-  deriving (Show, Eq, Ord)
-
-instance Pretty ValueType where
-  pshow r = case r of
-    ZType                  -> "Z"
-    GenSeqcType t          -> pshow t
-    ChainMapType k         -> "ChainSequence " ++ pshow k
-    HomologyGroupSeqcType  -> "H"
-    HomologyGroupType k    -> "H " ++ pshow k
-    _                      -> show r
-
-
-instance Validable ValueType where
-  valid t = case t of
-    ZType       -> SValid
-    _           -> error "nyi"
-
-instance Entity ValueType
-
 instance (Entity x, Ord x) => Fibred (Value x) where
-  type Root (Value x) = ValueType
+  type Root (Value x) = ValueRoot
   root v = case v of
-    ZValue _                  -> ZType
-    LengthValue               -> LengthType
-    BoundaryValue             -> BoundaryType
-    GenSeqcValue t            -> GenSeqcType t
-    ChainValue k _            -> ChainType k
-    ChainMapValue k _         -> ChainMapType k
-    HomologyClassValue k h    -> HomologyClassType k (root h)
-    HomologyGroupSeqcValue    -> HomologyGroupSeqcType
-    HomologyGroupValue k _    -> HomologyGroupType k
-    HomologyClassMapValue k _ -> HomologyClassMapType k
+    ZValue _                     -> ZValueRoot
+    SizeOperator                 -> SizeOperatorRoot
+    BoundaryOperator             -> BoundaryOperatorRoot
+    GenSqcOperator t             -> GenSqcOperatorRoot t
+    ChainMapOperator k _         -> ChainMapOperatorRoot k
+    ChainValue k _               -> ChainValueRoot k
+    HomologyClassOperator        -> HomologyClassOperatorRoot
+    HomologyClassMapOperator k _ -> HomologyClassMapOperatorRoot k
+    HomologyClassValue k h       -> HomologyClassValueRoot k (root h)
+    HomologyGroupSqcOperator     -> HomologyGroupSqcOperatorRoot
+    HomologyGroupValue k _       -> HomologyGroupValueRoot k
 
 instance (Entity x, Ord x) => OrdRoot (Value x)
 
