@@ -94,8 +94,9 @@ instance Pretty GenSequenceType where
 
 data ValueRoot
   = ZValueRoot
-  | SizeOperatorRoot
+  | LengthOperatorRoot
   | BoundaryOperatorRoot
+  | HomologousOperatorRoot
   | HomologyClassOperatorRoot
   | GenSqcOperatorRoot GenSequenceType
   | ChainMapOperatorRoot K
@@ -133,11 +134,14 @@ data Value x
   = -- | a 'Z' value.
     ZValue Z
     
-    -- | assignes either to a sequence or to a simplex its length.
-  | SizeOperator
+    -- | evaluates the length either of a sequence or of a simplex.
+  | LengthOperator
 
-    -- | assignes to a chain its boundary.
+    -- | evaluates the boundary of a chain.
   | BoundaryOperator
+
+    -- | evaluates the boundary of a given cycle, having the homology class @0@.
+  | HomologousOperator
 
     -- | assignes to a index its sequence according to the given generator type.
   | GenSqcOperator GenSequenceType -- ^ assignes a sequence type its sequence
@@ -172,20 +176,24 @@ instance (Entity x, Ord x) => Entity (Value x)
 --------------------------------------------------------------------------------
 -- Value - Pretty -
 
-instance (Entity x, Ord x) => Pretty (Value x) where
+instance (Entity x, Ord x, Pretty x) => Pretty (Value x) where
   pshow v = case v of
     ZValue z                 -> pshow z
+    LengthOperator           -> "length"
+    BoundaryOperator         -> "boundary"
     GenSqcOperator _         -> pshow $ root v
     HomologyGroupSqcOperator -> pshow $ root v
     HomologyGroupValue _ g   -> pshow g
+    ChainValue _ c           -> pshow c
     _                        -> show v
     
 instance (Entity x, Ord x) => Fibred (Value x) where
   type Root (Value x) = ValueRoot
   root v = case v of
     ZValue _                     -> ZValueRoot
-    SizeOperator                 -> SizeOperatorRoot
+    LengthOperator               -> LengthOperatorRoot
     BoundaryOperator             -> BoundaryOperatorRoot
+    HomologousOperator           -> HomologousOperatorRoot
     GenSqcOperator t             -> GenSqcOperatorRoot t
     ChainMapOperator k _         -> ChainMapOperatorRoot k
     ChainValue k _               -> ChainValueRoot k
@@ -231,21 +239,11 @@ type L = Z
 data SomeChain x where
   SomeChain     :: Attestable l => Chain Z l x -> SomeChain x
   SomeChainZero :: Z -> SomeChain x  -- ^ for negative length
-  
-spxSomeChain :: (Entity x, Ord x, Attestable l) => Simplex l x -> SomeChain x
-spxSomeChain = SomeChain . ch
 
---------------------------------------------------------------------------------
--- boundarySomeChain -
-
--- | the boundary of some chain.
-boundarySomeChain :: (Entity x, Ord x) => SomeChain x -> SomeChain x
-boundarySomeChain s = case s of
-  SomeChainZero l -> SomeChainZero (l-1)
-  SomeChain c     -> d attest c where
-    d :: (Entity x, Ord x) => Any l -> Chain Z l x -> SomeChain x
-    d W0 _     = SomeChainZero (-1)
-    d (SW l) c = case ats l of {Ats -> SomeChain (boundary c)}
+instance (Entity x, Ord x, Pretty x) => Pretty (SomeChain x) where
+  pshow s = case s of
+    SomeChain c     -> pshow c
+    SomeChainZero _ -> "0" 
 
 deriving instance (Entity x, Ord x) => Show (SomeChain x)
 
@@ -312,4 +310,22 @@ instance (Entity x, Ord x) => Vectorial (SomeChain x) where
   z ! SomeChain a = SomeChain (z!a)
   _ ! c           = c
 
+
+--------------------------------------------------------------------------------
+-- spxSomeChain -
+
+spxSomeChain :: (Entity x, Ord x, Attestable l) => Simplex l x -> SomeChain x
+spxSomeChain = SomeChain . ch
+
+--------------------------------------------------------------------------------
+-- boundarySomeChain -
+
+-- | the boundary of some chain.
+boundarySomeChain :: (Entity x, Ord x) => SomeChain x -> SomeChain x
+boundarySomeChain s = case s of
+  SomeChainZero l -> SomeChainZero (l-1)
+  SomeChain c     -> d attest c where
+    d :: (Entity x, Ord x) => Any l -> Chain Z l x -> SomeChain x
+    d W0 _     = SomeChainZero (-1)
+    d (SW l) c = case ats l of {Ats -> SomeChain (boundary c)}
 

@@ -41,6 +41,7 @@ import OAlg.Data.Constructable
 import OAlg.Data.Either
 
 import OAlg.Entity.Natural hiding ((++),S)
+import OAlg.Entity.FinList (FinList(..))
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sum
 
@@ -58,7 +59,7 @@ import OAlg.AbelianGroup.Definition
 import OAlg.Homology.Definition as H
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
-import OAlg.Homology.Chain
+import OAlg.Homology.Chain hiding (boundary)
 import OAlg.Homology.Simplex
 
 import OAlg.Homology.IO.Pretty
@@ -111,13 +112,13 @@ envHomology0 hs = case envHomology hs W0 of
   -- hs is never empty!
   
 --------------------------------------------------------------------------------
--- valHomologyGroup -
+-- valHomologyGroupSqc -
 
 homologyGroupMinusOne :: (Entity x, Ord x) => Homology n N0 x -> AbGroup
 homologyGroupMinusOne h
-  | lengthN genS == 0 = one ()
-  | lengthN genS' > 0 = one ()
-  | otherwise         = abg 0 -- empty complex
+  | lengthN genS == 0 = one () -- Truncated case
+  | lengthN genS' > 0 = one () -- Regular case, with non empty simplex set 
+  | otherwise         = abg 0  -- Regular case, with empty simplex set
   where genS  = hmgChainSet h
         genS' = hmgChainSet' h
 
@@ -129,8 +130,8 @@ homologyGroup hs k
       Nothing               -> one ()
       Just (SomeHomology h) -> hmgGroup h
 
-valHomologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> Value x
-valHomologyGroup hs k = HomologyGroupValue k $ homologyGroup hs k
+valHomologyGroupSqc :: (Entity x, Ord x) => EnvH n x -> K -> Value x
+valHomologyGroupSqc hs k = HomologyGroupValue k $ homologyGroup hs k
 
 --------------------------------------------------------------------------------
 -- valGenSqc -
@@ -184,106 +185,148 @@ valGenSqc hs t k
 
 
 --------------------------------------------------------------------------------
--- valChain -
+-- valChainMap -
 
-valChain :: (Entity x, Ord x) => M.Map Z (SomeChain x) -> K -> Z -> Value x
-valChain cs k i = case i `M.lookup` cs of
+valChainMap :: (Entity x, Ord x) => M.Map Z (SomeChain x) -> K -> Z -> Value x
+valChainMap cs k i = case i `M.lookup` cs of
   Just c  -> ChainValue k c
   Nothing -> ChainValue k (zero (k+1)) 
 
 --------------------------------------------------------------------------------
--- valHomologyClass -
+-- valHomologyClassMap -
 
-valHomologyClass :: (Entity x, Ord x) => EnvH n x -> M.Map Z AbElement -> K -> Z -> Value x
-valHomologyClass hs es k i = HomologyClassValue k $ case i `M.lookup` es of
+valHomologyClassMap :: (Entity x, Ord x) => EnvH n x -> M.Map Z AbElement -> K -> Z -> Value x
+valHomologyClassMap hs es k i = HomologyClassValue k $ case i `M.lookup` es of
   Just h  -> h
   Nothing -> zero $ homologyGroup hs k
 
 --------------------------------------------------------------------------------
 -- EvaluationFailuer -
 
-data EvaluationFailure where
-  UnboundVariable      :: String -> EvaluationFailure
-  RecursiveDefinition  :: String -> EvaluationFailure
-  NotAZValue           :: Pretty t =>  t -> EvaluationFailure
-  MaxDepthReached      :: N -> EvaluationFailure
-  NotAddableValue      :: ValueRoot -> ValueRoot -> EvaluationFailure
-  UndefinedSum         :: ValueRoot -> EvaluationFailure
-  UndefinedApplication :: (Entity x, Ord x) => ValueRoot -> Value x -> EvaluationFailure
+data EvaluationFailure x where
+  UnboundVariable :: String -> EvaluationFailure x
+  RecursiveDefinition :: String -> EvaluationFailure x
+  NotAZValue :: Term x -> EvaluationFailure x
+  NotAddableValue :: ValueRoot -> ValueRoot -> EvaluationFailure x
+  UndefinedSum :: ValueRoot -> EvaluationFailure x
+  UndefinedApplication :: ValueRoot -> (Value x) -> EvaluationFailure x
+  NotACycle' :: Chain Z l x -> EvaluationFailure x
 
-  UnresolvedLet ::  Pretty t => t -> EvaluationFailure
-  NotAValue :: Pretty t => t -> EvaluationFailure
-  UndefinedFailure :: Pretty x => String -> x -> EvaluationFailure
+deriving instance (Entity x, Ord x) => Show (EvaluationFailure x)
 
-instance Pretty EvaluationFailure where
+
+instance (Entity x, Ord x, Pretty x) => Pretty (EvaluationFailure x) where
   pshow f = case f of
     UnboundVariable v        -> "undefined variable: " ++ v
-    RecursiveDefinition v    ->"recursive definition for " ++ v
+    RecursiveDefinition v    -> "recursive definition for " ++ v
     NotAZValue t             -> "not a Z-value: " ++ pshow t
-    MaxDepthReached n        -> "maximal depth reached: " ++ pshow n
     NotAddableValue r s      -> "not addable values of types " ++ pshow r ++ " and " ++ pshow s
     UndefinedSum r           -> "undefined sum for value type " ++ pshow r
     UndefinedApplication f x -> "undefined application: " ++ pshow f ++ " " ++ pshow x
-
-instance Show EvaluationFailure where
-  show = pshow
-  
---------------------------------------------------------------------------------
--- failure -
-
-failure :: EvaluationFailure -> Eval x
-failure = Left
+    NotACycle' c             -> "Not a cycle. It has the boundary: " ++ pshow c     
 
 --------------------------------------------------------------------------------
 -- Eval -
 
-type Eval x = Either EvaluationFailure x
+type Eval x y = Either (EvaluationFailure x) y
 
 --------------------------------------------------------------------------------
--- evalZValue -
+-- failure -
 
-evalZValue :: (Entity x, Ord x) => Env x -> Term x -> Eval Z
-evalZValue e t = do
-  v <- eval e t
-  case v of
-    ZValue z -> return z
-    _        -> failure $ NotAZValue t
+failure :: EvaluationFailure x -> Eval x y
+failure = Left
+
+--------------------------------------------------------------------------------
+-- evalHomologyClass -
+
+eqK :: Attestable l => Homology n k x -> Chain Z l x -> Maybe (l :~: (k+1))
+eqK (Homology _ _ _ _)  _ = eqT
+
+evalHomologyClassNonTrivial :: (Entity x, Ord x)
+  => K -> Homology n k x -> Chain Z (k+1) x -> Eval x (Value x)
+evalHomologyClassNonTrivial k h c = case homologyClass h c of
+  Right c' -> return $ HomologyClassValue k c'
+  Left f   -> case f of
+    NotACycle b -> Left $ NotACycle' b
+    _           -> throw $ ImplementationError "evalHomologyClassNonTrivial"
+
+valHomologyClassMinusOne :: (Entity x, Ord x) => Homology n N0 x -> Chain Z N0 x -> Value x
+valHomologyClassMinusOne h c
+  | lengthN genS == 0 = hClassZero  -- Truncated case
+  | lengthN genS' > 0 = hClassZero  -- Regular case, with non empty simplex set
+  | otherwise         = hClass c    -- Regular case, with empty simplex set
+  where genS  = hmgChainSet h
+        genS' = hmgChainSet' h
+        hClassZero = HomologyClassValue (-1) (zero $ one ())
+        hClass c = HomologyClassValue (-1) $ case lcs $ ssylc c of
+          []      -> zero g
+          [(r,_)] -> r!abge g 0
+          _       -> throw $ ImplementationError "valHomologyClassMinusOne"
+          where g = abg 0 -- Z
+
+
+evalHomologyClass :: (Entity x, Ord x) => EnvH n x -> K -> SomeChain x -> Eval x (Value x)
+evalHomologyClass hs k c = case k `compare` (-1) of
+  LT -> return zeroClass
+  EQ -> case c of
+    SomeChain c' -> case eq0  c' of
+      Just Refl  -> return $ valHomologyClassMinusOne (envHomology0 hs) c' 
+      Nothing    -> throw $ ImplementationError "evalHomologyClass.1"
+  GT -> case (prj k) `M.lookup` hs of
+    Nothing               -> return zeroClass
+    Just (SomeHomology h) -> case (h,c) of
+      (h,SomeChain c')    -> case eqK h c' of
+        Just Refl         -> evalHomologyClassNonTrivial k h c'
+        Nothing           -> throw $ ImplementationError "evalHomologyClass.2"
+      _                   -> throw $ ImplementationError "evalHomologyClass.3"
+    
+  where zeroClass = HomologyClassValue k $ zero $ one ()
+
+        eq0 :: Attestable l => Chain Z l x -> Maybe (l :~: N0)
+        eq0 _ = eqT
+
+--------------------------------------------------------------------------------
+-- evalHomologous -
+
+evalHomologousNonTrivial :: (Entity x, Ord x)
+  => K -> Homology n k x -> Chain Z (k+1) x -> Eval x (Value x)
+evalHomologousNonTrivial = error "nyi"
+
+evalHomologous :: (Entity x, Ord x) => EnvH n x -> K -> SomeChain x -> Eval x (Value x)
+evalHomologous hs k c = case k `compare` (-1) of
+  LT -> error "nyi"
+  EQ -> error "nyi"
+  GT -> case (prj k) `M.lookup` hs of
+    Nothing               -> return zeroH
+    Just (SomeHomology h) -> case (h,c) of
+      (h,SomeChain c')    -> case eqK h c' of
+        Just Refl         -> evalHomologousNonTrivial k h c'
+        Nothing           -> throw $ ImplementationError "evalHomologous.2"
+      _                   -> throw $ ImplementationError "evalHomologous.3"
+  where k' = succ k
+        zeroH = ChainValue k' (zero (succ k'))
 
 --------------------------------------------------------------------------------
 -- evalAppl -
 
-evalAppl :: (Entity x, Ord x) => Env x -> Value x -> Value x -> Eval (Value x)
+evalAppl :: (Entity x, Ord x) => Env x -> Value x -> Value x -> Eval x (Value x)
 evalAppl (Env _ hs) f x = case (f,x) of
-  (SizeOperator,ChainMapOperator _ cs)         -> return $ ZValue $ inj $ M.size cs
-  (SizeOperator,HomologyClassMapOperator _ es) -> return $ ZValue $ inj $ M.size es
-  (BoundaryOperator,ChainValue k c)            -> return $ ChainValue (pred k) $ boundarySomeChain c
-  (GenSqcOperator t,ZValue k)                 -> return $ valGenSqc hs t k
-  (ChainMapOperator k cs,ZValue i)             -> return $ valChain cs k i
-  (HomologyClassMapOperator k es,ZValue i)     -> return $ valHomologyClass hs es k i
-  (HomologyGroupSqcOperator,ZValue k)         -> return $ valHomologyGroup hs k
-  _                                            -> failure $ UndefinedApplication (root f) x
+  (LengthOperator,ChainMapOperator _ cs)         -> return $ ZValue $ inj $ M.size cs
+  (LengthOperator,HomologyClassMapOperator _ es) -> return $ ZValue $ inj $ M.size es
+  (BoundaryOperator,ChainValue k c)              -> return $ ChainValue (pred k) $ boundarySomeChain c
+  (HomologousOperator,ChainValue k c)            -> evalHomologous hs k c
+  (GenSqcOperator t,ZValue k)                    -> return $ valGenSqc hs t k
+  (ChainMapOperator k cs,ZValue i)               -> return $ valChainMap cs k i
+  (HomologyClassOperator,ChainValue k c)         -> evalHomologyClass hs k c
+  (HomologyClassMapOperator k es,ZValue i)       -> return $ valHomologyClassMap hs es k i
+  (HomologyGroupSqcOperator,ZValue k)            -> return $ valHomologyGroupSqc hs k
+  _                                              -> failure $ UndefinedApplication (root f) x
 
---------------------------------------------------------------------------------
--- evalSumForm -
-
-evalSumForm :: (Entity x, Ord x) => Env x -> Term x -> Eval (SumForm Z (Value x))
-evalSumForm e t                               = case t of
-  z :!> a -> do
-    z' <- evalZValue e z
-    a' <- evalSumForm e a
-    return (z' :! a')
-
-  a :+> b -> do
-    a' <- evalSumForm e a
-    b' <- evalSumForm e b
-    return (a' :+ b')
-    
-  _ -> eval e t >>= return . S
 
 --------------------------------------------------------------------------------
 -- evalValueRoot -
 
-evalValueRoot :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval ValueRoot
+evalValueRoot :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval x ValueRoot
 evalValueRoot = vt where
   vt s = case s of
     Zero r -> return r
@@ -305,7 +348,7 @@ sumValue r toA s = foldl (+) (zero r) $ amap1 (uncurry toA) $ lcs $ smlc s
 --------------------------------------------------------------------------------
 -- evalSum -
 
-evalSum :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval (Value x)
+evalSum :: (Entity x, Ord x) => SumForm Z (Value x) -> Eval x (Value x)
 evalSum sf = do
   r <- evalValueRoot sf
   case r of
@@ -330,11 +373,38 @@ evalSum sf = do
         
     _ -> failure $ UndefinedSum r
     where s = make sf
+
+--------------------------------------------------------------------------------
+-- evalSumForm -
+
+evalSumForm :: (Entity x, Ord x) => Env x -> Term x -> Eval x (SumForm Z (Value x))
+evalSumForm e t = case t of
+  z :!> a -> do
+    z' <- evalZValue e z
+    a' <- evalSumForm e a
+    return (z' :! a')
+
+  a :+> b -> do
+    a' <- evalSumForm e a
+    b' <- evalSumForm e b
+    return (a' :+ b')
     
+  _ -> eval e t >>= return . S
+
+--------------------------------------------------------------------------------
+-- evalZValue -
+
+evalZValue :: (Entity x, Ord x) => Env x -> Term x -> Eval x Z
+evalZValue e t = do
+  v <- eval e t
+  case v of
+    ZValue z -> return z
+    _        -> failure $ NotAZValue t
+
 --------------------------------------------------------------------------------
 -- eval -
 
-eval :: (Entity x, Ord x) => Env x -> Term x -> Eval (Value x)
+eval :: (Entity x, Ord x) => Env x -> Term x -> Eval x (Value x)
 eval e t = case t of
   Free a -> case e ?? a of
     Just v  -> return v
@@ -369,18 +439,23 @@ eval e t = case t of
 --------------------------------------------------------------------------------
 
 c = complex kleinBottle
+-- c = cpxEmpty :: Complex N2 N
+
 envr = initEnv Regular c
 envt = initEnv Truncated c
 
-
-
-hg = Value HomologyGroupSqcOperator
+g = Value HomologyGroupSqcOperator
+h = Value HomologyClassOperator
 z = Value . ZValue
 r = Value (GenSqcOperator RSqc) 
 s = Value (GenSqcOperator SSqc)
 t = Value (GenSqcOperator TSqc)
 e = Value (GenSqcOperator ESqc)
+c0 r = Value $ ChainValue (-1) (SomeChain (r!sc0))
+sc0 :: Chain Z N0 N
+sc0 = sy $ Simplex Nil
 
-size = Value SizeOperator
+l = Value LengthOperator
 
 d = Value BoundaryOperator
+
