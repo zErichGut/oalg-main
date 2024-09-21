@@ -14,34 +14,34 @@
 
 -- |
 -- Module      : OAlg.Homology.IO.Evaluation
--- Description : evaluation
+-- Description : evaluation of terms.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- 
+-- evaluatoin of 'Term's.
 module OAlg.Homology.IO.Evaluation
-  () where
+  ( -- * Evaluation
+    eval, Eval, EvaluationFailure(..)
+
+    -- * Environment
+  , Env(), initEnv
+  ) where
 
 import Control.Monad
--- import Control.Applicative
--- import Control.Exception
-
--- import System.IO
 
 import Data.Typeable
-import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
+import Data.List (head,(++),reverse,zip)
 import Data.Foldable (toList,foldl)
 import qualified Data.Map.Strict as M
 
-import OAlg.Prelude -- hiding (Result(..), It,(:>:))
+import OAlg.Prelude
 
 import OAlg.Data.Canonical
 import OAlg.Data.Constructable
 import OAlg.Data.Either
 
 import OAlg.Entity.Natural hiding ((++),S)
-import OAlg.Entity.FinList (FinList(..))
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sum
 
@@ -50,9 +50,6 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Vectorial
-import OAlg.Structure.Exception
-
-import OAlg.Hom.Oriented
 
 import OAlg.AbelianGroup.Definition
 
@@ -60,7 +57,6 @@ import OAlg.Homology.Definition as H
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain hiding (boundary)
-import OAlg.Homology.Simplex
 
 import OAlg.Homology.IO.Pretty
 import OAlg.Homology.IO.Term
@@ -211,6 +207,7 @@ data EvaluationFailure x where
   UndefinedSum :: ValueRoot -> EvaluationFailure x
   UndefinedApplication :: ValueRoot -> (Value x) -> EvaluationFailure x
   NotACycle' :: Chain Z l x -> EvaluationFailure x
+  NonTrivialHomologyClass' :: AbElement -> EvaluationFailure x
 
 deriving instance (Entity x, Ord x) => Show (EvaluationFailure x)
 
@@ -241,6 +238,9 @@ failure = Left
 
 eqK :: Attestable l => Homology n k x -> Chain Z l x -> Maybe (l :~: (k+1))
 eqK (Homology _ _ _ _)  _ = eqT
+
+eq0 :: Attestable l => Chain Z l x -> Maybe (l :~: N0)
+eq0 _ = eqT
 
 evalHomologyClassNonTrivial :: (Entity x, Ord x)
   => K -> Homology n k x -> Chain Z (k+1) x -> Eval x (Value x)
@@ -282,29 +282,46 @@ evalHomologyClass hs k c = case k `compare` (-1) of
     
   where zeroClass = HomologyClassValue k $ zero $ one ()
 
-        eq0 :: Attestable l => Chain Z l x -> Maybe (l :~: N0)
-        eq0 _ = eqT
-
 --------------------------------------------------------------------------------
--- evalHomologous -
+-- evalBoundary' -
 
-evalHomologousNonTrivial :: (Entity x, Ord x)
+evalBoundary'NonTrivial :: (Entity x, Ord x)
   => K -> Homology n k x -> Chain Z (k+1) x -> Eval x (Value x)
-evalHomologousNonTrivial = error "nyi"
+evalBoundary'NonTrivial k h@(Homology _ _ _ _) c = case hmgBoundary h c of
+  Right b -> return $ ChainValue (succ k) (SomeChain b)
+  Left f  -> case f of
+    NonTrivialHomologyClass h -> Left $ NonTrivialHomologyClass' h
+    _                         -> throw $ ImplementationError "evalBoundary'NonTrivial"
+  
+evalBoundary'MinusOne :: (Entity x, Ord x) => Homology n N0 x -> Chain Z N0 x -> Eval x (Value x)
+evalBoundary'MinusOne h c
+  | lengthN genS == 0 = return zeroB          -- Truncated case
+  | lengthN genS' > 0 = case lcs $ ssylc c of -- Regular case, with non empty simplex set
+      []      -> return zeroB
+      [(r,_)] -> return $ ChainValue 0 (SomeChain (r!(sy $ head $ setxs genS')))
+      _       -> throw $ ImplementationError "evalBoundary'MinusOne"
+  | otherwise         = return zeroB          -- Regular case, with empty simplex set
+  where genS  = hmgChainSet h
+        genS' = hmgChainSet' h
+        zeroB = ChainValue 0 (zero 1)
 
-evalHomologous :: (Entity x, Ord x) => EnvH n x -> K -> SomeChain x -> Eval x (Value x)
-evalHomologous hs k c = case k `compare` (-1) of
-  LT -> error "nyi"
-  EQ -> error "nyi"
+evalBoundary' :: (Entity x, Ord x) => EnvH n x -> K -> SomeChain x -> Eval x (Value x)
+evalBoundary' hs k c = case k `compare` (-1) of
+  LT -> return zeroB
+  EQ -> case c of
+    SomeChain c -> case eq0 c of
+      Just Refl -> evalBoundary'MinusOne (envHomology0 hs) c
+      Nothing   -> throw $ ImplementationError "evalBoundary'.1"
+    _           -> throw $ ImplementationError "evalBoundary'.2"
   GT -> case (prj k) `M.lookup` hs of
-    Nothing               -> return zeroH
+    Nothing               -> return zeroB
     Just (SomeHomology h) -> case (h,c) of
       (h,SomeChain c')    -> case eqK h c' of
-        Just Refl         -> evalHomologousNonTrivial k h c'
-        Nothing           -> throw $ ImplementationError "evalHomologous.2"
-      _                   -> throw $ ImplementationError "evalHomologous.3"
+        Just Refl         -> evalBoundary'NonTrivial k h c'
+        Nothing           -> throw $ ImplementationError "evalBoundary'.3"
+      _                   -> throw $ ImplementationError "evalBoundary'.5"
   where k' = succ k
-        zeroH = ChainValue k' (zero (succ k'))
+        zeroB = ChainValue k' (zero (succ k'))
 
 --------------------------------------------------------------------------------
 -- evalAppl -
@@ -314,14 +331,13 @@ evalAppl (Env _ hs) f x = case (f,x) of
   (LengthOperator,ChainMapOperator _ cs)         -> return $ ZValue $ inj $ M.size cs
   (LengthOperator,HomologyClassMapOperator _ es) -> return $ ZValue $ inj $ M.size es
   (BoundaryOperator,ChainValue k c)              -> return $ ChainValue (pred k) $ boundarySomeChain c
-  (HomologousOperator,ChainValue k c)            -> evalHomologous hs k c
+  (Boundary'Operator,ChainValue k c)             -> evalBoundary' hs k c
   (GenSqcOperator t,ZValue k)                    -> return $ valGenSqc hs t k
   (ChainMapOperator k cs,ZValue i)               -> return $ valChainMap cs k i
   (HomologyClassOperator,ChainValue k c)         -> evalHomologyClass hs k c
   (HomologyClassMapOperator k es,ZValue i)       -> return $ valHomologyClassMap hs es k i
   (HomologyGroupSqcOperator,ZValue k)            -> return $ valHomologyGroupSqc hs k
   _                                              -> failure $ UndefinedApplication (root f) x
-
 
 --------------------------------------------------------------------------------
 -- evalValueRoot -
@@ -438,6 +454,7 @@ eval e t = case t of
 
 --------------------------------------------------------------------------------
 
+{-
 c = complex kleinBottle
 -- c = cpxEmpty :: Complex N2 N
 
@@ -458,4 +475,5 @@ sc0 = sy $ Simplex Nil
 l = Value LengthOperator
 
 d = Value BoundaryOperator
-
+d' = Value Boundary'Operator
+-}

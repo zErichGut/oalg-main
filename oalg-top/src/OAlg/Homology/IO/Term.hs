@@ -96,7 +96,7 @@ data ValueRoot
   = ZValueRoot
   | LengthOperatorRoot
   | BoundaryOperatorRoot
-  | HomologousOperatorRoot
+  | Boundary'OperatorRoot
   | HomologyClassOperatorRoot
   | GenSqcOperatorRoot GenSequenceType
   | ChainMapOperatorRoot K
@@ -141,7 +141,7 @@ data Value x
   | BoundaryOperator
 
     -- | evaluates the boundary of a given cycle, having the homology class @0@.
-  | HomologousOperator
+  | Boundary'Operator
 
     -- | assignes to a index its sequence according to the given generator type.
   | GenSqcOperator GenSequenceType -- ^ assignes a sequence type its sequence
@@ -193,7 +193,7 @@ instance (Entity x, Ord x) => Fibred (Value x) where
     ZValue _                     -> ZValueRoot
     LengthOperator               -> LengthOperatorRoot
     BoundaryOperator             -> BoundaryOperatorRoot
-    HomologousOperator           -> HomologousOperatorRoot
+    Boundary'Operator            -> Boundary'OperatorRoot
     GenSqcOperator t             -> GenSqcOperatorRoot t
     ChainMapOperator k _         -> ChainMapOperatorRoot k
     ChainValue k _               -> ChainValueRoot k
