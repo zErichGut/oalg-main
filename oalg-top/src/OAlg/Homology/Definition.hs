@@ -21,7 +21,10 @@ module OAlg.Homology.Definition
 
     -- * Homology
     Homology(..)
-  , hmgChainSet'', hmgChainSet', hmgChainSet
+  , hmgChainSet''
+  , hmgChainSet'
+  , hmgChainSet'MinusOne
+  , hmgChainSet
   , hmgVariance
   , SomeHomology(..)
 
@@ -30,14 +33,14 @@ module OAlg.Homology.Definition
   , homology
 
     -- * Cycle
-  , hmgCycleGenSet
-  , hmgGroupGenSet
+  , hmgCycleGenSet, hmgCycleGenSetMinusOne
+  , hmgGroupGenSet, hmgGroupGenSetMinusOne
 
     -- * Boundary
   , hmgBoundary
   
     -- * Group
-  , hmgGroup, hmgGroups
+  , homologyGroup, homologyGroupMinusOne, homologyGroups
 
     -- * Class
   , homologyClass
@@ -54,6 +57,8 @@ import OAlg.Prelude
 import OAlg.Data.Either
 
 import OAlg.Structure.Additive
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 
 import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.FinList as F hiding ((++)) 
@@ -88,6 +93,24 @@ data Homology n k x where
     -> Homology n k x
 
 --------------------------------------------------------------------------------
+-- hmgVariance -
+
+-- | the underlying 'Variance'.
+hmgVariance :: Homology n k x -> Variance Free AbHom
+hmgVariance (Homology _ _ _ v) = v
+
+--------------------------------------------------------------------------------
+-- hmgVarianceMinusOne -
+
+-- | the induce 'Variance' for chains of length 0.
+hmgVarianceMinusOne :: Homology n N0 k -> Variance Free AbHom
+hmgVarianceMinusOne (Homology _ _ _ v) = ccxVarianceZ $ ccMinusOne v where
+  ccMinusOne (Variance d3x3 _ _ _ _) = ChainComplex $ DiagramChainFrom (start c') (c':|z:|Nil) where
+    DiagramChainFrom _ (_:|c:|Nil) = head $ dgPoints d3x3
+    c' = abhz c
+    z  = zero (end c' :> one ())
+    
+--------------------------------------------------------------------------------
 -- hmgChainSet -
 
 ssAny :: Attestable l => Set (Simplex l x) -> Any l
@@ -103,7 +126,8 @@ hmgChainSet (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
     eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe (k :~: l)
     eqAny _ _ = eqT
 
--- | the underlying set of @__k__ + 1@-simplices.
+-- | the underlying set of @__k__ + 1@-simplices, generating the free abelian group of the
+-- @__k__@ chain group.
 hmgChainSet' :: (Entity x, Ord x) => Homology n k x -> Set (Simplex (k+1) x)
 hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
   _:|SimplexSet s:|_  -> case eqAny k (ssAny s) of
@@ -112,6 +136,20 @@ hmgChainSet' (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
   where
     eqAny :: (Attestable k, Attestable l) => Any k -> Any l -> Maybe ((k + 1) :~: l)
     eqAny _ _ = eqT
+
+-- | the underlying set of @__0__@ simplices, generating the free abelian group of the
+-- @__k__ - 1@ chain group.
+hmgChainSet'MinusOne :: (Entity x, Ord x) => Homology n N0 x -> Set (Simplex N0 x)
+hmgChainSet'MinusOne = hmgChainSet
+{-
+hmgChainSet'MinusOne h
+  | s == one () = setEmpty
+  | otherwise   = hmgChainSet h
+  where
+    Variance d3x3 _ _ _ _ = hmgVarianceMinusOne h
+    DiagramChainFrom _ (d:|_) = head $ dgPoints d3x3
+    s = end d
+-}  
 
 -- | the underlying set of @__k__ + 2@-simplices.
 hmgChainSet'' :: (Entity x, Ord x) => Homology n k x -> Set (Simplex (k + 2) x)
@@ -124,18 +162,17 @@ hmgChainSet''  (Homology _ k (ChainComplex ds) _) = case dgPoints ds of
     eqAny _ _ = eqT
 
 --------------------------------------------------------------------------------
--- hmgVariance -
-
--- | the underlying 'Variance'.
-hmgVariance :: Homology n k x -> Variance Free AbHom
-hmgVariance (Homology _ _ _ v) = v
-
---------------------------------------------------------------------------------
--- hmgGroup -
+-- homologyGroup -
 
 -- | the homology group.
-hmgGroup :: Homology n k x -> AbGroup
-hmgGroup = vrcT' . hmgVariance
+homologyGroup :: Homology n k x -> AbGroup
+homologyGroup = vrcT' . hmgVariance
+
+--------------------------------------------------------------------------------
+-- hmgMinusOne -
+
+homologyGroupMinusOne :: Homology n N0 x -> AbGroup
+homologyGroupMinusOne = vrcT' . hmgVarianceMinusOne
 
 --------------------------------------------------------------------------------
 -- hmgCycleGenSet -
@@ -143,7 +180,16 @@ hmgGroup = vrcT' . hmgVariance
 -- | a set of generators for the @__k__ + 1@-cycles.
 hmgCycleGenSet :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
 hmgCycleGenSet h@(Homology _ _ _ v) = set $ amap1 (cfsssy s . abhvecFree1) $ setxs gs where
-  s   = hmgChainSet' h
+  s  = hmgChainSet' h
+  gs = vrcCyclesGen v abgFinPres abhSplitable
+
+--------------------------------------------------------------------------------
+-- hmgCycleGenSetMinusOne -
+
+hmgCycleGenSetMinusOne :: (Entity x, Ord x) => Homology n N0 x -> Set (C.Chain Z N0 x)
+hmgCycleGenSetMinusOne h = set $ amap1 (cfsssy s . abhvecFree1) $ setxs gs where
+  s  = hmgChainSet'MinusOne h
+  v  = hmgVarianceMinusOne h
   gs = vrcCyclesGen v abgFinPres abhSplitable
 
 --------------------------------------------------------------------------------
@@ -152,7 +198,16 @@ hmgCycleGenSet h@(Homology _ _ _ v) = set $ amap1 (cfsssy s . abhvecFree1) $ set
 -- | a set of @__k__ + 1@-cycles, generating the homology group via 'homologyClass'.
 hmgGroupGenSet :: (Entity x, Ord x) => Homology n k x -> Set (C.Chain Z (k+1) x)
 hmgGroupGenSet h@(Homology _ _ _ v) = set $ amap1 (cfsssy s . abhvecFree1) $ setxs gs where
-  s   = hmgChainSet' h
+  s  = hmgChainSet' h
+  gs = vrcHomologyGroupGen v abgFinPres abhSplitable
+
+--------------------------------------------------------------------------------
+-- hmgGroupGenSetMinusOne -
+
+hmgGroupGenSetMinusOne :: (Entity x, Ord x) => Homology n N0 x -> Set (C.Chain Z N0 x)
+hmgGroupGenSetMinusOne h = set $ amap1 (cfsssy s . abhvecFree1) $ setxs gs where
+  s  = hmgChainSet'MinusOne h
+  v  = hmgVarianceMinusOne h
   gs = vrcHomologyGroupGen v abgFinPres abhSplitable
 
 --------------------------------------------------------------------------------
@@ -224,12 +279,12 @@ data HomologyFailure r k h x
 type HomologyClass = AbElement
 
 --------------------------------------------------------------------------------
--- hmgGroups -
+-- homologyGroups -
 
 -- | the homology groups starting by @__n__@ to @__0__@.
-hmgGroups :: ChainHomology n x -> FinList (n+1) AbGroup
-hmgGroups (ChainHomology hs) = amap1 hg hs where
-  hg (SomeHomology h) = hmgGroup h
+homologyGroups :: ChainHomology n x -> FinList (n+1) AbGroup
+homologyGroups (ChainHomology hs) = amap1 hg hs where
+  hg (SomeHomology h) = homologyGroup h
 
 
 --------------------------------------------------------------------------------

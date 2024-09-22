@@ -110,76 +110,50 @@ envHomology0 hs = case envHomology hs W0 of
 --------------------------------------------------------------------------------
 -- valHomologyGroupSqc -
 
-homologyGroupMinusOne :: (Entity x, Ord x) => Homology n N0 x -> AbGroup
-homologyGroupMinusOne h
-  | lengthN genS == 0 = one () -- Truncated case
-  | lengthN genS' > 0 = one () -- Regular case, with non empty simplex set 
-  | otherwise         = abg 0  -- Regular case, with empty simplex set
-  where genS  = hmgChainSet h
-        genS' = hmgChainSet' h
-
-homologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> AbGroup
-homologyGroup hs k
+evlHomologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> AbGroup
+evlHomologyGroup hs k
   | k == -1 = homologyGroupMinusOne $ envHomology0 hs
   | k <  -1 = one ()
   | k >=  0 = case (prj k) `M.lookup` hs of
       Nothing               -> one ()
-      Just (SomeHomology h) -> hmgGroup h
+      Just (SomeHomology h) -> homologyGroup h
 
 valHomologyGroupSqc :: (Entity x, Ord x) => EnvH n x -> K -> Value x
-valHomologyGroupSqc hs k = HomologyGroupValue k $ homologyGroup hs k
+valHomologyGroupSqc hs k = HomologyGroupValue k $ evlHomologyGroup hs k
 
 --------------------------------------------------------------------------------
 -- valGenSqc -
 
-valGenSqcEmpty :: GenSequenceType -> K -> Value x
-valGenSqcEmpty t k = case t of
-  ESqc -> HomologyClassMapOperator k M.empty
-  _     -> ChainMapOperator k M.empty
-
-valGenSqcChain :: (Entity x, Ord x) => Homology n k x -> K -> Value x
-valGenSqcChain h@(Homology _ _ _ _) k
-  = ChainMapOperator k $ M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet' h))
-
-valGenSqcCycle :: (Entity x, Ord x) => Homology n k x -> K -> Value x
-valGenSqcCycle h@(Homology _ _ _ _) k
-  = ChainMapOperator k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgCycleGenSet h))
-
-valGenSqcT :: (Entity x, Ord x) => Homology n k x -> K -> Value x
-valGenSqcT h@(Homology _ _ _ _) k
-  = ChainMapOperator k $ M.fromAscList ([0..] `zip` (amap1 SomeChain $ setxs $ hmgGroupGenSet h))
-
-valGenSqcH :: (Entity x, Ord x) => EnvH n x -> K -> Value x
-valGenSqcH hs k = HomologyClassMapOperator k es 
-  where hg = homologyGroup hs k
+valGenSqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> K -> Value x
+valGenSqc hs ESqc k = HomologyClassMapOperator k es 
+  where hg = evlHomologyGroup hs k
         n  = inj $ lengthN hg :: Z
         es = M.fromAscList [(i,abge hg (prj i)) | i <- [0..(n-1)]] 
+valGenSqc hs t k = ChainMapOperator k $ case k `compare` (-1) of
+  LT -> M.empty
+  EQ -> valChainGenSqcMinusOne t
+  GT -> case (prj k) `M.lookup` hs of
+          Nothing               -> M.empty
+          Just (SomeHomology h) -> valChainGenSqc h t
+  where
 
--- | pre: t is in [RSqc,SSqc,TSqc]
-valGenSqcChainMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenSequenceType -> Value x
-valGenSqcChainMinusOne h t = ChainMapOperator (-1) $ case t of
-  RSqc                      -> genS
-  SSqc                      -> genS    -- d (-1) is zero
-  TSqc | lengthN genS' == 0 -> genS    -- d 0 is zero
-       | otherwise          -> M.empty -- d 0 is surjective
-  _                          -> throw $ ImplementationError "valGenSqcChainMinusOne"
-  
-  where genS  = M.fromAscList ([0..] `zip` (amap1 spxSomeChain $ setxs $ hmgChainSet h))
-        genS' = hmgChainSet' h
+    valChainGenSqcMinusOne t = M.fromAscList ([0..] `zip` cs t) where 
+      cs t = case t of
+        RSqc -> amap1 spxSomeChain $ setxs $ hmgChainSet'MinusOne h0
+        SSqc -> amap1 SomeChain $ setxs $ hmgCycleGenSetMinusOne h0
+        TSqc -> amap1 SomeChain $ setxs $ hmgGroupGenSetMinusOne h0
+        _    -> throw $ ImplementationError "valGenSqc.1"
+        where h0 = envHomology0 hs
 
-valGenSqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> K -> Value x
-valGenSqc hs ESqc k = valGenSqcH hs k
-valGenSqc hs t k
-  | k == -1 = valGenSqcChainMinusOne (envHomology0 hs) t
-  | k <  -1 = valGenSqcEmpty t k
-  | k >=  0 = case (prj k) `M.lookup` hs of
-      Nothing               -> valGenSqcEmpty t k
-      Just (SomeHomology h) -> case t of
-        RSqc               -> valGenSqcChain h k
-        SSqc               -> valGenSqcCycle h k
-        TSqc               -> valGenSqcT h k
-
-
+    valChainGenSqc :: (Entity x, Ord x)
+      => Homology n k x -> GenSequenceType -> M.Map Z (SomeChain x)
+    valChainGenSqc h@(Homology _ _ _ _) t = M.fromAscList ([0..] `zip` cs t) where
+      cs t = case t of
+        RSqc -> amap1 spxSomeChain $ setxs $ hmgChainSet' h
+        SSqc -> amap1 SomeChain $ setxs $ hmgCycleGenSet h
+        TSqc -> amap1 SomeChain $ setxs $ hmgGroupGenSet h
+        _    -> throw $ ImplementationError "valGenSqc.2"
+    
 --------------------------------------------------------------------------------
 -- valChainMap -
 
@@ -194,7 +168,7 @@ valChainMap cs k i = case i `M.lookup` cs of
 valHomologyClassMap :: (Entity x, Ord x) => EnvH n x -> M.Map Z AbElement -> K -> Z -> Value x
 valHomologyClassMap hs es k i = HomologyClassValue k $ case i `M.lookup` es of
   Just h  -> h
-  Nothing -> zero $ homologyGroup hs k
+  Nothing -> zero $ evlHomologyGroup hs k
 
 --------------------------------------------------------------------------------
 -- EvaluationFailuer -
