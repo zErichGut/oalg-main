@@ -65,3 +65,7 @@ has been defined by EmbeddingFrom.
 - vectorial structure for Slice From entities.
 - liftable cokernels for CokernelLiftableFree.
 - maybeFinList
+
+## [2.0.0.2] - 2024-09-22
+### Changed
+- data type Closer in module OAlg.Data.Ord changed to Closure.

@@ -347,7 +347,7 @@ ccxVarianceZ ccx = Variance d3x3 kUniv k'Univ b''Lft c'Lft where
     b''  = head $ dgArrows $ start u'
     b''Z = abhz b''
     
-    -- see the note of the Variance
+    -- see the note of Variance
     b''Lft :: S (Free k) AbHom -> R (Free k) AbHom
     b''Lft (SliceFrom k s'') = SliceFrom k (zabh rZ) where
       s''Z = abhz s''

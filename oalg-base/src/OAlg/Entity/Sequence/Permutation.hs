@@ -170,7 +170,7 @@ pmfOprPsy (ProductSymbol xjs) p = xis where
     -- Note: the span of p is within the first word w, and as such, applying p
     -- will not alter w.
 
-  opr' :: Closer N -> N -> [(u,I)] -> WordN u -> PermutationForm N -> WordN u
+  opr' :: Closure N -> N -> [(u,I)] -> WordN u -> PermutationForm N -> WordN u
   opr' _ _ uis [] p            = opr'' (PSequence uis) p
   opr' h k uis ws p | h < It k = opr'' (PSequence uis) p ++ ws
   opr' h k uis (w:ws) p        = opr' h (k+snd w) (uis ++ expand k w) ws p

@@ -30,7 +30,8 @@ module OAlg.AbelianGroup.Liftable
 
 import Control.Monad
 
-import Data.List (zip)
+import Data.List (zip,(++))
+import Data.Foldable (foldr)
 
 import OAlg.Prelude
 
@@ -43,8 +44,8 @@ import OAlg.Structure.Number
 import OAlg.Structure.Exponential
 
 import OAlg.Entity.Slice
-import OAlg.Entity.Natural
-import OAlg.Entity.FinList hiding (zip)
+import OAlg.Entity.Natural hiding ((++))
+import OAlg.Entity.FinList hiding (zip,(++))
 import OAlg.Entity.Diagram
 import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence.PSequence
@@ -56,7 +57,7 @@ import OAlg.AbelianGroup.Euclid
 --------------------------------------------------------------------------------
 -- abhLift -
 
--- | trying to solve the equation @a '*' x '==' y@, where @'end' y '==' 'end' a@ and @'start' y@ is
+-- | tries to solve the equation @a '*' x '==' y@, where @'end' y '==' 'end' a@ and @'start' y@ is
 -- free of some dimension @__k__@.
 --
 -- __Property__ Let @a@ be a abelian homomorphisms and @y@ a @'Slice' 'From' ('Free' __k__) 'AbHom'@
@@ -110,7 +111,7 @@ prpAbhLift = Prp "AbhLift" :<=>:
 --------------------------------------------------------------------------------
 -- zMatrixLift -
 
--- | trying to solve the equation @a '*' x '==' y@.
+-- | tries to solve the equation @a '*' x '==' y@.
 --
 -- __Property__ Let @a@ and @y@ be in @'Matrix' 'Z'@, then holds:
 --
@@ -119,33 +120,42 @@ prpAbhLift = Prp "AbhLift" :<=>:
 --
 -- (2) If @'end' y@ is equal to @'end' a@ and there exists an @x@ in @'Matrix' 'Z'@ such that
 -- @a '*' x '==' y@ then the result of @'zMatrixLift' a y@ is @'Just' x@ otherwise it
--- will be 'Nothing'.
+-- will be 'Nothing'. If there exists a non trivial solution, then @x@ will also be non trival.
 zMatrixLift :: Matrix Z -> Matrix Z -> Maybe (Matrix Z)
 zMatrixLift a y
   | end a /= end y = throw NotLiftable "end missmatch"
-  | otherwise = amap1 (r*) $ lft (start a) (ds `zip` [0..]) (s * y) where
+  | otherwise      = amap1 (r*) $ lft (start a) (ds `zip` [0..]) (s * y) where
   
   DiagonalForm ds (RowTrafo sRT) (ColTrafo rCT) = snfDiagonalForm $ smithNormalForm a
   Inv s _ = amap GLTGL sRT
   Inv r _ = amap GLTGL rCT
 
   lft :: Dim' Z -> [(Z,N)] -> Matrix Z -> Maybe (Matrix Z)
-  lft n ds (Matrix _ yCls ys) = do
-    y'rc <- lftCols ds (etsrc ys)
-    return (Matrix n yCls $ rcets y'rc)
+  lft aCls ds (Matrix _ yCls ys) = do
+    y'rc <- lftCols (lengthN aCls) (lengthN yCls) ds (etsrc ys)
+    return (Matrix aCls yCls $ rcets y'rc)
 
-  lftCols :: [(Z,N)] -> Row N (Col N Z) -> Maybe (Row N (Col N Z))
-  lftCols ds rc = do
-    rc' <- lftCols' ds $ rowxs rc
-    return (Row $ PSequence rc')
+  nonTrivialCol :: N -> N -> Closure N -> N -> [(Col N Z,N)]
+  nonTrivialCol r aCls yClsReached yCls
+    | aCls <= r = [] -- matrix a is injective
+    | j' < yCls = [(Col $ PSequence [(1,r)],j')]
+    | otherwise = []
+    where j' = case yClsReached of
+                 NegInf -> 0
+                 It j   -> succ j
 
-  lftCols' :: [(Z,N)] -> [(Col N Z,N)] -> Maybe [(Col N Z,N)]
-  lftCols' _ []           = Just []
-  lftCols' ds ((y,j):yjs) = do
-    y'js <- lftCols' ds yjs
-    y'   <- lftCol ds (colxs y)
-    return ((Col (PSequence y'),j):y'js)
-    
+
+  lftCols :: N -> N -> [(Z,N)] -> Row N (Col N Z) -> Maybe (Row N (Col N Z))
+  lftCols aCls yCls ds rc = do
+    (rc',yClsMax) <- foldr (addLftCol ds) (Just ([],NegInf)) $ rowxs rc
+    return (Row $ PSequence (rc' ++ nonTrivialCol (lengthN ds) aCls yClsMax yCls))
+
+  addLftCol :: [(Z,N)]
+    -> (Col N Z,N) -> Maybe ([(Col N Z,N)],Closure N) -> Maybe ([(Col N Z,N)],Closure N)
+  addLftCol ds (yi,j) mCls = do
+    (xis,jMax) <- mCls
+    xi         <- lftCol ds (colxs yi)
+    return ((Col $ PSequence xi,j):xis,It j `max` jMax)
 
   lftCol :: [(Z,N)] -> [(Z,N)] -> Maybe [(Z,N)]
   lftCol ((d,i):dis) yis@((y,i'):yis') = case i `compare` i' of
@@ -156,7 +166,7 @@ zMatrixLift a y
     -- the case GT should not occure, as the dis are succesive!
   lftCol [] (_:_) = Nothing
   lftCol _ _      = Just []
-        
+
 
 --------------------------------------------------------------------------------
 -- xLiftable -
@@ -176,7 +186,9 @@ prpMatrixZJustLiftable xTo = Prp "MatrixZJustLiftable" :<=>:
     (\(a,y) -> let mx = zMatrixLift a y in
         case mx of
           Just x -> Label "a * x == y"
-                      :<=>: (a * x == y) :?> Params ["a":=show a,"y":=show y,"x":=show x]
+                      :<=>: And [ valid x
+                                , (a * x == y) :?> Params ["a":=show a,"y":=show y,"x":=show x]
+                                ]
           _      -> Label "should be liftable"
                       :<=>: False :?> Params ["a":=show a,"y":=show y]
                      
@@ -197,7 +209,9 @@ prpMatrixZMaybeLiftable xz = Prp "MatrixZMaybeLiftable" :<=>: Forall ay test whe
   test (a0,a1,y) = case y `mod` (inj g) of
     0 -> Label "solvable"
            :<=>: case mx of
-                   Just x -> (a * x == y') :?> Params ["a":=show a,"y":=show y,"x":=show x]
+                   Just x -> And [ valid x
+                                 , (a * x == y') :?> Params ["a":=show a,"y":=show y,"x":=show x]
+                                 ]
                    _      -> Label "should be solvable"
                                :<=>: False :?> Params ["a":=show a,"y":=show y]
     _ -> Label "unsolvable"
@@ -220,6 +234,4 @@ prpMatrixZLiftable = Prp "MatrixZLiftable" :<=>:
   And [ prpMatrixZJustLiftable xStandardOrtSite
       , prpMatrixZMaybeLiftable (xZB (-1000) 1000)
       ]
-                   
-
 

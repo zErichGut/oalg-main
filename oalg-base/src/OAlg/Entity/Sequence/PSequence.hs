@@ -129,7 +129,7 @@ instance (Entity x, Entity i, Ord i) => ConstructableSequence (PSequence i) i x 
 -- psqFromMap -
 
 -- | constructs a partially defined sequence according to the given map and the bounds.
-psqFromMap :: (Enum i, Ord i) => i -> Closer i -> (i -> Maybe x) -> PSequence i x
+psqFromMap :: (Enum i, Ord i) => i -> Closure i -> (i -> Maybe x) -> PSequence i x
 psqFromMap i0 h f
   = PSequence
   $ map (\(mx,i) -> (fromJust mx,i)) 

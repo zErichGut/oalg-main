@@ -418,6 +418,12 @@ evalZValue e t = do
     _        -> failure $ NotAZValue t
 
 --------------------------------------------------------------------------------
+-- evalLinearCombination -
+
+evalLinearCombination :: (Entity x, Ord x) => Env x -> Term x -> Eval x (Value x)
+evalLinearCombination e t = evalSumForm e t >>= evalSum
+
+--------------------------------------------------------------------------------
 -- eval -
 
 eval :: (Entity x, Ord x) => Env x -> Term x -> Eval x (Value x)
@@ -441,20 +447,13 @@ eval e t = case t of
     f' $>> x'
     where ($>>) = evalAppl e
 
-  z :!> a -> do
-    z' <- evalZValue e z
-    a' <- evalSumForm e a
-    evalSum (z' :! a')
+  _ :!> _ -> evalLinearCombination e t
+  _ :+> _ -> evalLinearCombination e t
 
-
-  a :+> b -> do
-    a' <- evalSumForm e a
-    b' <- evalSumForm e b
-    evalSum (a' :+ b')
 
 --------------------------------------------------------------------------------
 
-{-
+
 c = complex kleinBottle
 -- c = cpxEmpty :: Complex N2 N
 
@@ -468,12 +467,12 @@ r = Value (GenSqcOperator RSqc)
 s = Value (GenSqcOperator SSqc)
 t = Value (GenSqcOperator TSqc)
 e = Value (GenSqcOperator ESqc)
-c0 r = Value $ ChainValue (-1) (SomeChain (r!sc0))
-sc0 :: Chain Z N0 N
-sc0 = sy $ Simplex Nil
+-- c0 r = Value $ ChainValue (-1) (SomeChain (r!sc0))
+-- sc0 :: Chain Z N0 N
+-- sc0 = sy $ Simplex Nil
 
 l = Value LengthOperator
 
 d = Value BoundaryOperator
 d' = Value Boundary'Operator
--}
+

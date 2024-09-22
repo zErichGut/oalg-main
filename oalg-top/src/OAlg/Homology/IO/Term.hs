@@ -208,7 +208,10 @@ instance (Entity x, Ord x) => OrdRoot (Value x)
 --------------------------------------------------------------------------------
 -- Term -
 
-infixl 0 :>>
+
+infixl 6 :+>
+infixr 8 :!>
+infixl 9 :>>
   
 data Term x
   = Free String -- ^ free variable.

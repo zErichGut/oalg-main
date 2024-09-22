@@ -12,7 +12,7 @@ module OAlg.Data.Ord
     module Ord
   , fcompare, wcompare, coCompare, compare2
   , sortFst, sortFstBy, sortSnd, sortSndBy
-  , Closer(..), cmin, cmax, cspan, Span, enumSpan
+  , Closure(..), cmin, cmax, cspan, Span, enumSpan
 
     -- * Partial
   , POrd(..)
@@ -81,10 +81,10 @@ sortSnd :: Ord b => [(a,b)] -> [(a,b)]
 sortSnd = sortSndBy compare
 
 --------------------------------------------------------------------------------
--- Closer -
+-- Closure -
 
 -- | the closer of a linear ordered @__x__@.
-data Closer x
+data Closure x
   = NegInf
   | It x
   | PosInf
@@ -97,7 +97,7 @@ data Closer x
 --
 --  __Property__ Let @xs@ be in @[__x__]@ for a linear ordered @__x__@, then holds:
 --  For all @x@ in @xs@ holds: @'It' x '<=' 'cmax' xs@.
-cmax :: Ord x => [x] -> Closer x
+cmax :: Ord x => [x] -> Closure x
 cmax []     = NegInf
 cmax (x:xs) = max (It x) (cmax xs)
 
@@ -108,7 +108,7 @@ cmax (x:xs) = max (It x) (cmax xs)
 --
 --  __Property__ Let @xs@ be in @[__x__]@ for a linear ordered @__x__@, then holds:
 --  For all @x@ in @xs@ holds: @'cmin' xs '<=' 'It' x@.
-cmin :: Ord x => [x] -> Closer x
+cmin :: Ord x => [x] -> Closure x
 cmin []     = PosInf
 cmin (x:xs) = min (It x) (cmin xs)
 
@@ -116,7 +116,7 @@ cmin (x:xs) = min (It x) (cmin xs)
 -- Span -
 
 -- | the span type.
-type Span x = (Closer x,Closer x)
+type Span x = (Closure x,Closure x)
 
 --------------------------------------------------------------------------------
 -- cspan -
@@ -139,7 +139,7 @@ cspan (x:xs) = (min (It x) l,max (It x) u) where (l,u) = cspan xs
 -- enumSpan -
 
 -- | @'enumSpan' i0 h@ enumerates the index, starting by @i0@ to @h@. 
-enumSpan :: (Enum i, Ord i) => i -> Closer i -> [i]
+enumSpan :: (Enum i, Ord i) => i -> Closure i -> [i]
 enumSpan i0 h | h < It i0 = []
 enumSpan i0 PosInf        = [i0..]
 enumSpan i0 (It h)        = [i0..h]

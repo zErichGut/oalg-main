@@ -33,3 +33,7 @@ and this project adheres to the
 ## [1.5.0.2] - 2024-09-18
 ### Added
 - AbElement is instance of Ord
+
+## [1.5.0.3] - 2024-09-22
+### Extended
+- zMatrixLft returns - if possible - non trivial solutions.
