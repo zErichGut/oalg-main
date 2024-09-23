@@ -61,6 +61,8 @@ import OAlg.Homology.Chain hiding (boundary)
 import OAlg.Homology.IO.Pretty
 import OAlg.Homology.IO.Term
 
+import OAlg.Data.Symbol (Symbol())
+
 --------------------------------------------------------------------------------
 -- Env -
 
@@ -153,7 +155,7 @@ valGenSqc hs t k = ChainMapOperator k $ case k `compare` (-1) of
         SSqc -> amap1 SomeChain $ setxs $ hmgCycleGenSet h
         TSqc -> amap1 SomeChain $ setxs $ hmgGroupGenSet h
         _    -> throw $ ImplementationError "valGenSqc.2"
-    
+
 --------------------------------------------------------------------------------
 -- valChainMap -
 
@@ -216,6 +218,7 @@ eqK (Homology _ _ _ _)  _ = eqT
 eq0 :: Attestable l => Chain Z l x -> Maybe (l :~: N0)
 eq0 _ = eqT
 
+-- | pre: c is a representable chain!
 evalHomologyClassNonTrivial :: (Entity x, Ord x)
   => K -> Homology n k x -> Chain Z (k+1) x -> Eval x (Value x)
 evalHomologyClassNonTrivial k h c = case homologyClass h c of
@@ -224,20 +227,12 @@ evalHomologyClassNonTrivial k h c = case homologyClass h c of
     NotACycle b -> Left $ NotACycle' b
     _           -> throw $ ImplementationError "evalHomologyClassNonTrivial"
 
-valHomologyClassMinusOne :: (Entity x, Ord x) => Homology n N0 x -> Chain Z N0 x -> Value x
-valHomologyClassMinusOne h c
-  | lengthN genS == 0 = hClassZero  -- Truncated case
-  | lengthN genS' > 0 = hClassZero  -- Regular case, with non empty simplex set
-  | otherwise         = hClass c    -- Regular case, with empty simplex set
-  where genS  = hmgChainSet h
-        genS' = hmgChainSet' h
-        hClassZero = HomologyClassValue (-1) (zero $ one ())
-        hClass c = HomologyClassValue (-1) $ case lcs $ ssylc c of
-          []      -> zero g
-          [(r,_)] -> r!abge g 0
-          _       -> throw $ ImplementationError "valHomologyClassMinusOne"
-          where g = abg 0 -- Z
-
+-- | pre: c is a representable chain!
+valHomologyClassMinusOne :: (Entity x, Ord x)
+  => Homology n N0 x -> Chain Z N0 x -> Value x
+valHomologyClassMinusOne h c = case homologyClassMinusOne h c of
+  Right c' -> HomologyClassValue (-1) c'
+  Left _   -> throw $ ImplementationError "evalHomologyClassMinusOne"
 
 evalHomologyClass :: (Entity x, Ord x) => EnvH n x -> K -> SomeChain x -> Eval x (Value x)
 evalHomologyClass hs k c = case k `compare` (-1) of
@@ -261,42 +256,44 @@ evalHomologyClass hs k c = case k `compare` (-1) of
 
 evalBoundary'NonTrivial :: (Entity x, Ord x)
   => K -> Homology n k x -> Chain Z (k+1) x -> Eval x (Value x)
-evalBoundary'NonTrivial k h@(Homology _ _ _ _) c = case hmgBoundary h c of
+evalBoundary'NonTrivial k h@(Homology _ _ _ _) c = case boundary' h c of
   Right b -> return $ ChainValue (succ k) (SomeChain b)
   Left f  -> case f of
     NonTrivialHomologyClass h -> Left $ NonTrivialHomologyClass' h
     _                         -> throw $ ImplementationError "evalBoundary'NonTrivial"
   
 evalBoundary'MinusOne :: (Entity x, Ord x) => Homology n N0 x -> Chain Z N0 x -> Eval x (Value x)
-evalBoundary'MinusOne h c
-  | lengthN genS == 0 = return zeroB          -- Truncated case
-  | lengthN genS' > 0 = case lcs $ ssylc c of -- Regular case, with non empty simplex set
-      []      -> return zeroB
-      [(r,_)] -> return $ ChainValue 0 (SomeChain (r!(sy $ head $ setxs genS')))
-      _       -> throw $ ImplementationError "evalBoundary'MinusOne"
-  | otherwise         = return zeroB          -- Regular case, with empty simplex set
-  where genS  = hmgChainSet h
-        genS' = hmgChainSet' h
-        zeroB = ChainValue 0 (zero 1)
+evalBoundary'MinusOne h c = case boundary'MinusOne h c of
+  Right b -> return $ ChainValue 0 (SomeChain b)
+  Left f  -> case f of
+    NonTrivialHomologyClass h -> Left $ NonTrivialHomologyClass' h
+    _                         -> throw $ ImplementationError "evalBoundary'NonTrivial"
+
+valBoundary'MinusTwo :: (Entity x, Ord x) => Homology n N0 x -> SomeChain x -> Value x
+valBoundary'MinusTwo h c
+  = ChainValue (-1) $ SomeChain $ boundary'MinusTwo h (z c)
+  where z _ = zero () :: ChainZero Z x
 
 evalBoundary' :: (Entity x, Ord x) => EnvH n x -> K -> SomeChain x -> Eval x (Value x)
-evalBoundary' hs k c = case k `compare` (-1) of
-  LT -> return zeroB
-  EQ -> case c of
+evalBoundary' hs k c
+  | k < -2    = return zeroB
+  | k == -2   = return $ valBoundary'MinusTwo (envHomology0 hs) c
+  | k == -1   = case c of
     SomeChain c -> case eq0 c of
       Just Refl -> evalBoundary'MinusOne (envHomology0 hs) c
       Nothing   -> throw $ ImplementationError "evalBoundary'.1"
     _           -> throw $ ImplementationError "evalBoundary'.2"
-  GT -> case (prj k) `M.lookup` hs of
+  | otherwise = case (prj k) `M.lookup` hs of
     Nothing               -> return zeroB
     Just (SomeHomology h) -> case (h,c) of
       (h,SomeChain c')    -> case eqK h c' of
         Just Refl         -> evalBoundary'NonTrivial k h c'
         Nothing           -> throw $ ImplementationError "evalBoundary'.3"
       _                   -> throw $ ImplementationError "evalBoundary'.5"
+  
   where k' = succ k
         zeroB = ChainValue k' (zero (succ k'))
-
+        
 --------------------------------------------------------------------------------
 -- evalAppl -
 
@@ -428,11 +425,12 @@ eval e t = case t of
 --------------------------------------------------------------------------------
 
 
-c = complex kleinBottle
--- c = cpxEmpty :: Complex N2 N
+c b = case b of
+  True  -> complex kleinBottle
+  False -> cpxEmpty :: Complex N2 Symbol
 
-envr = initEnv Regular c
-envt = initEnv Truncated c
+envr b = initEnv Regular $ c b
+envt b = initEnv Truncated $ c b
 
 g = Value HomologyGroupSqcOperator
 h = Value HomologyClassOperator

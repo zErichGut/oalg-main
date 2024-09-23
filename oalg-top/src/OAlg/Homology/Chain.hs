@@ -26,6 +26,7 @@ module OAlg.Homology.Chain
 
     -- * Chain
   , Chain, ch
+  , ChainZero
 
   ) where
 
@@ -51,6 +52,12 @@ import OAlg.Entity.Natural
 import OAlg.Entity.Sum as Sum hiding (S)
 
 import OAlg.Homology.Simplex
+
+--------------------------------------------------------------------------------
+-- ChainZero -
+
+-- | chains for empty simplex sets. For example chains with a /negative/ length.
+type ChainZero r x = SumSymbol r Empty
 
 --------------------------------------------------------------------------------
 -- Chain -
