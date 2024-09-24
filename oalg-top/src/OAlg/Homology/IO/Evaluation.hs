@@ -91,39 +91,6 @@ envInsert :: Env x -> String -> Value x -> Env x
 envInsert (Env vs hs) v t = Env vs' hs where vs' = M.insert v t vs
 
 --------------------------------------------------------------------------------
--- envHomology -
-
-envHomology :: Attestable k => EnvH n x -> Any k -> Maybe (Homology n k x)
-envHomology hs k = do
-  sh <- lengthN k `M.lookup` hs
-  case sh of
-    SomeHomology h@(Homology _ _ _ _) -> case eq k h of
-      Just Refl -> Just h
-      Nothing   -> throw $ ImplementationError "envHomology: inconsitent environment"
-  where eq :: (Attestable k, Attestable k') => Any k -> Homology n k' x -> Maybe (k :~: k')
-        eq _ _ = eqT 
-
-envHomology0 :: EnvH n x -> Homology n N0 x
-envHomology0 hs = case envHomology hs W0 of
-  Just h  -> h
-  Nothing -> throw $ ImplementationError "envHomology0: inconsitent environment"
-  -- hs is never empty!
-  
---------------------------------------------------------------------------------
--- valHomologyGroupSqc -
-
-evlHomologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> AbGroup
-evlHomologyGroup hs k
-  | k == -1 = homologyGroupMinusOne $ envHomology0 hs
-  | k <  -1 = one ()
-  | k >=  0 = case (prj k) `M.lookup` hs of
-      Nothing               -> one ()
-      Just (SomeHomology h) -> homologyGroup h
-
-valHomologyGroupSqc :: (Entity x, Ord x) => EnvH n x -> K -> Value x
-valHomologyGroupSqc hs k = HomologyGroupValue k $ evlHomologyGroup hs k
-
---------------------------------------------------------------------------------
 -- valGenSqc -
 
 valGenSqc :: (Entity x, Ord x) => EnvH n x -> GenSequenceType -> K -> Value x

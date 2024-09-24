@@ -21,7 +21,9 @@
 --
 -- 
 module OAlg.Homology.IO.Term
-  ( -- * Term
+  (
+{-
+    -- * Term
     Term(..)
 
     -- * Value
@@ -30,6 +32,7 @@ module OAlg.Homology.IO.Term
 
     -- * SomeChain
   , SomeChain(SomeChain), spxSomeChain, boundarySomeChain
+-}
   ) where
 
 import Control.Monad
@@ -41,7 +44,7 @@ import Control.Monad
 import Data.Typeable
 import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
 import Data.Foldable (toList,foldl)
-import qualified Data.Map.Strict as M
+
 
 import OAlg.Prelude -- hiding (Result(..), It,(:>:))
 
@@ -67,28 +70,11 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain
 import OAlg.Homology.Simplex
 
-import OAlg.Homology.IO.Pretty 
+import qualified OAlg.Homology.IO.Map as M
+import OAlg.Homology.IO.Pretty
 
--------------------------------------------------------------------------------
--- GenSequenceType -
 
-data GenSequenceType
-  = RSqc -- ^ chains
-  | SSqc -- ^ cycles
-  | TSqc -- ^ cycles, generating homology group
-  | ESqc -- ^ homology class
-  deriving (Show,Eq,Ord)
-
-instance Pretty GenSequenceType where
-  pshow t = case t of
-    RSqc -> "r"
-    SSqc -> "s"
-    TSqc -> "t"
-    ESqc -> "e"
-    
---------------------------------------------------------------------------------
--- ValueRoot -
-
+{-
 --------------------------------------------------------------------------------
 -- ValueRoot -
 
@@ -332,3 +318,4 @@ boundarySomeChain s = case s of
     d W0 _     = SomeChainZero (-1)
     d (SW l) c = case ats l of {Ats -> SomeChain (boundary c)}
 
+-}
