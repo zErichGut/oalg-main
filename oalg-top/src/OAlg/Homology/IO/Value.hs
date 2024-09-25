@@ -48,7 +48,7 @@ import OAlg.Data.Canonical
 import OAlg.Data.Either
 
 import OAlg.Entity.Natural hiding ((++),S)
--- import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.Set
 -- import OAlg.Entity.Sum
 
 import OAlg.Structure.Fibred
@@ -382,88 +382,131 @@ valSupport vs = SupportValue $ supp vs where
     (u,_) <- M.lookupMax vs
     return (l,u)
 
-------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- EnvH -
 
-type EnvH n x = [SomeHomology n x]
-
---------------------------------------------------------------------------------
--- envH -
-
-eqK :: (Attestable k, Attestable k') => Any k -> Homology n k' x -> Maybe (k :~: k')
-eqK _ _ = eqT 
+type EnvH n x = M.Map Z (SomeHomology n x)
 
 
--- |
+-- | the homology environment according to the given complex.
 --
 -- __Note__ 'envH' is never empty.
 envH :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> EnvH n x
-envH r c = reverse $ toList hs where ChainHomology hs = homology r c
+envH r c = M.fromAscList ([0..] `zip` (reverse $ toList hs)) where ChainHomology hs = homology r c
+
+--------------------------------------------------------------------------------
+-- envHomology -
+
+eqK :: (Attestable k, Attestable k') => Any k -> Homology n k' x -> Maybe (k :~: k')
+eqK _ _ = eqT
+
+envHomology :: Attestable k => EnvH n x -> Any k -> Maybe (Homology n k x)
+envHomology hs k = do
+  sh <- (inj $ lengthN k) `M.lookup` hs
+  case sh of
+    SomeHomology h@(Homology _ _ _ _) -> case eqK k h of
+      Just Refl -> Just h
+      Nothing   -> throw $ ImplementationError "envHomology: inconsitent environment"
 
 --------------------------------------------------------------------------------
 -- envHomology0 -
 
 envHomology0 :: EnvH n x -> Homology n N0 x
-envHomology0 hs = case head hs of
-  SomeHomology h@(Homology _ _ _ _) -> case eqK W0 h of
-    Just Refl -> h
-    Nothing   -> throw $ ImplementationError "envHomology0: inconsitent environment"
-  
-
-{-
---------------------------------------------------------------------------------
--- envHomology -
-
-envHomology :: Attestable k => EnvH n x -> Any k -> Maybe (Homology n k x)
-envHomology hs k = do
-  sh <- lengthN k `M.lookup` hs
-  case sh of
-    SomeHomology h@(Homology _ _ _ _) -> case eq k h of
-      Just Refl -> Just h
-      Nothing   -> throw $ ImplementationError "envHomology: inconsitent environment"
-  where eq :: (Attestable k, Attestable k') => Any k -> Homology n k' x -> Maybe (k :~: k')
-        eq _ _ = eqT 
-
---------------------------------------------------------------------------------
--- valHomologyGroupSqc -
-
-envHomologyGroup :: (Entity x, Ord x) => EnvH n x -> K -> AbGroup
-envHomologyGroup hs k
-  | k == -1 = homologyGroupMinusOne $ envHomology0 hs
-  | k <  -1 = one ()
-  | k >=  0 = case (prj k) `M.lookup` hs of
-      Nothing               -> one ()
-      Just (SomeHomology h) -> homologyGroup h
--}
-
-{-
-valHomologyGroupSqc :: (Entity x, Ord x) => EnvH n x -> K -> Value x
-valHomologyGroupSqc hs k = HomologyGroupValue k $ envHomologyGroup hs k
--}
+envHomology0 hs = case 0 `M.lookup` hs of
+  Nothing -> throw $ ImplementationError "envHomology0.1"
+  Just h0 -> case h0 of
+    SomeHomology h@(Homology _ _ _ _) -> case eqK W0 h of
+      Just Refl -> h
+      Nothing   -> throw $ ImplementationError "envHomology0.2"
+      
 --------------------------------------------------------------------------------
 -- valHomologyGroups -
 
+-- | 
 valHomologyGroups :: EnvH n x -> Value x
-valHomologyGroups hs = SequenceValue HomologyGroups (hGroups hs) where
-  hGroups hs = M.fromAscList
-             $ amap1 (\(k,g) -> (k,AbGroupValue g))
-             $ filter ((one ()/=) . snd)
-             $ ([-1..] `zip` (gMinOne hs:gs hs))
+valHomologyGroups hs = SequenceValue HomologyGroups hGroups where
+  hGroups = M.map AbGroupValue
+          $ M.insert (-1) (homologyGroupMinusOne $ envHomology0 hs)
+          $ M.map toHGroup hs
 
-  gs []     = []
-  gs (h:hs) = g h:gs hs
+  toHGroup (SomeHomology h) = homologyGroup h
 
-  gMinOne hs = homologyGroupMinusOne $ envHomology0 hs
+--------------------------------------------------------------------------------
+-- sqcIsEmpty -
+
+-- | pre: v is a sequence.
+valSqcIsEmpty :: Value x -> Bool
+valSqcIsEmpty v = case v of
+  SequenceValue _ vs -> M.null vs
+  _                  -> throw $ ImplementationError "valSqcIsEmpty"
+
+--------------------------------------------------------------------------------
+-- Generator -
+
+data Generator
+  = GenChains
+  | GenCycles
+  | GenHomologyGroupChain
+  | GenHomologyGroup
+  deriving (Show,Eq,Ord,Enum)
+
+--------------------------------------------------------------------------------
+-- valGenerators -
+
+valGenerators :: (Entity x, Ord x) => EnvH n x -> Generator -> Value x
+valGenerators hs g = SequenceValue (sqcGenCharacteristic hs g) cs where
+  cs = M.insert (-1) (valGenMinusOne g (envHomology0 hs))
+     $ M.map (valGen g) hs
+
+  sqcGenCharacteristic :: EnvH n x -> Generator -> SequencCharacteristic x
+  sqcGenCharacteristic hs g = case g of
+    GenHomologyGroup -> HomologyClasses $ hGroups hs where
+
+      hGroups :: EnvH n x -> M.Map Z AbGroup
+      hGroups hs = case valHomologyGroups hs of
+        SequenceValue HomologyGroups hgs -> M.map toGroup hgs
+        _ -> throw $ ImplementationError "valGenerator"
+
+      toGroup :: Value x -> AbGroup
+      toGroup v = case v of
+        AbGroupValue g -> g
+        _ -> throw $ ImplementationError "valGenerator"          
+    _                -> Chains
+
+  valGenHomologyGroup :: AbGroup -> Value x
+  valGenHomologyGroup g = SequenceValue (HomologyClass g) es where
+    n  = lengthN g
+    es = M.fromAscList [(i,AbElementValue $ abge g (prj i))| i <- [0 .. (inj n - 1)]]
+
+  valChain :: Attestable l => Any l -> Set (Chain Z l x) -> Value x
+  valChain l cs = SequenceValue (ChainsOfLength (inj l')) cs' where
+    l'  = lengthN l
+    cs' = M.fromAscList ([0..] `zip` (amap1 (ChainValue . SomeChain) $ setxs cs))
   
-  g sh = case sh of
-    SomeHomology h -> homologyGroup h
+  valGen :: (Entity x, Ord x) => Generator -> SomeHomology n x -> Value x
+  valGen g (SomeHomology h@(Homology _ k _ _)) = case g of
+    GenChains             -> valChain (SW k) (set $ amap1 ch $ setxs $ hmgChainSet' h)
+    GenCycles             -> valChain (SW k) (hmgCycleGenSet h)
+    GenHomologyGroupChain -> valChain (SW k) (hmgGroupGenSet h) 
+    GenHomologyGroup      -> valGenHomologyGroup (homologyGroup h)
+
+  valGenMinusOne :: (Entity x, Ord x) => Generator -> Homology n N0 x -> Value x
+  valGenMinusOne g h@(Homology _ _ _ _) = case g of
+    GenChains             -> valChain W0 (set $ amap1 ch $ setxs $ hmgChainSet'MinusOne h)
+    GenCycles             -> valChain W0 (hmgCycleGenSetMinusOne h)
+    GenHomologyGroupChain -> valChain W0 (hmgGroupGenSetMinusOne h) 
+    GenHomologyGroup      -> valGenHomologyGroup (homologyGroupMinusOne h)
 
 --------------------------------------------------------------------------------
 
+{-
 c b = case b of
   True  -> complex kleinBottle
   False -> cpxEmpty :: Complex N2 Symbol
+-}
 
+c n = complex $ sphere n (0::N)
+  
 envr b = envH Regular $ c b
 envt b = envH Truncated $ c b
 

@@ -32,8 +32,10 @@ library
       OAlg.Homology.Group
       OAlg.Homology.IO.Evaluation
       OAlg.Homology.IO.Interactive
+      OAlg.Homology.IO.Map
       OAlg.Homology.IO.Pretty
       OAlg.Homology.IO.Term
+      OAlg.Homology.IO.Value
       OAlg.Homology.Simplex
       OAlg.Homology.Variance
   other-modules:
