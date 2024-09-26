@@ -55,7 +55,7 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Vectorial
-import OAlg.Structure.Exception
+import OAlg.Structure.Exception (ArithmeticException(NotAddable))
 
 import OAlg.AbelianGroup.Definition
 
@@ -265,7 +265,7 @@ data SequencCharacteristic x
   | HomologyClass AbGroup
 
     -- | @k@-sequence of @i@-sequences of homology classes according to the given group.
-  | HomologyClasses (M.Map Z AbGroup)
+  | HomologyClasses (ZSequence AbGroup)
 
     -- | @k@-sequence of abelian groups.
   | HomologyGroups
@@ -288,35 +288,6 @@ valueRoot v = case v of
   SequenceValue t _     -> SequenceRoot t
   
 --------------------------------------------------------------------------------
--- defaultValue -
-
-defaultValue :: (Entity x, Ord x) => ValueRoot x -> Z -> Value x
-defaultValue r = case r of
-  SupportOperatorRoot       -> const $ SupportOperator
-  BoundaryOperatorRoot      -> const $ BoundaryOperator
-  Boundary'OperatorRoot     -> const $ Boundary'Operator
-  HomologyClassOperatorRoot -> const $ HomologyClassOperator
-  ZRoot                     -> const $ ZValue 0
-  SupportRoot               -> const $ SupportValue Nothing
-  AbElementRoot g           -> const $ AbElementValue $ zero g
-  AbGroupRoot               -> const $ AbGroupValue $ one ()
-  ChainRoot l               -> const $ ChainValue $ zero l
-  SequenceRoot c            -> defaultSequenceValue c
-
---------------------------------------------------------------------------------
--- defaultSequenceValue -
-
-defaultSequenceValue :: (Entity x, Ord x) => SequencCharacteristic x -> Z -> Value x
-defaultSequenceValue c = case c of
-  ChainsOfLength l   -> defaultValue (ChainRoot l)
-  Chains             -> \k -> defaultSequenceValue (ChainsOfLength (k+1)) k
-  HomologyClass g    -> defaultValue (AbElementRoot g)
-  HomologyClasses gs -> \k -> case k `M.lookup` gs of
-                          Just g  -> defaultValue (AbElementRoot g) k
-                          Nothing -> defaultValue AbGroupRoot k 
-  HomologyGroups     -> defaultValue AbGroupRoot
-  
---------------------------------------------------------------------------------
 -- characteristic -
 
 characteristic :: SequencCharacteristic x -> Z -> ValueRoot x
@@ -328,7 +299,119 @@ characteristic f = case f of
                           Just g  -> g
                           Nothing -> one ()
   HomologyGroups     -> const $ AbGroupRoot 
+
+
+--------------------------------------------------------------------------------
+-- defaultSequenceValue -
+
+defaultSequenceValue :: (Entity x, Ord x) => SequencCharacteristic x -> Z -> Value x
+defaultSequenceValue c = case c of
+  ChainsOfLength l   -> const $ ChainValue $ zero l
+  Chains             -> \k -> SequenceValue (ChainsOfLength (k+1)) M.empty
+
+
+--------------------------------------------------------------------------------
+-- prpDefaultValue -
+
+prpDefaultValue :: (Entity x, Ord x) => SequencCharacteristic x -> X Z -> Statement
+prpDefaultValue c xZ = Prp "DefultValie" :<=>:
+  Forall xZ (\k -> (characteristic c k == valueRoot (defaultSequenceValue c k))
+                     :?> Params ["c":=show c,"k":=show k]
+            )
+
+--------------------------------------------------------------------------------
+-- valSequence -
+
+valSequence :: (Entity x, Ord x) => SequencCharacteristic x -> ZSequence (Value x) -> Z -> Value x
+valSequence c vs k = case k `M.lookup` vs of
+  Just v  -> v
+  Nothing -> defaultSequenceValue c k
+
+
+--------------------------------------------------------------------------------
+-- rdcSequenceCharacteristic -
+
+rdcSequenceCharacteristic :: SequencCharacteristic x -> SequencCharacteristic x
+rdcSequenceCharacteristic c = case c of
+  HomologyClasses gs -> HomologyClasses $ M.filter (/=one ()) gs
+  _                  -> c
+
+--------------------------------------------------------------------------------
+-- rdcSequenceValue -
+
+rdcSequenceValue :: (Entity x, Ord x) => SequencCharacteristic x -> ZSequence (Value x) -> Value x
+rdcSequenceValue c vs = SequenceValue c' vs' where
+  c'  = rdcSequenceCharacteristic c
+  vs' = M.filterWithKey (isNotDefault c) vs
+
+  isNotDefault :: (Entity x, Ord x) => SequencCharacteristic x -> Z -> Value x -> Bool
+  isNotDefault c k v = v /= defaultSequenceValue c k
+
+--------------------------------------------------------------------------------
+-- rdcValue -
+
+rdcValue :: (Entity x, Ord x) => Value x -> Value x
+rdcValue v = case v of
+  SequenceValue t vs -> rdcSequenceValue t vs
+  _                  -> v
   
+{-
+--------------------------------------------------------------------------------
+-- defaultValue -
+
+defaultAbGroup :: AbGroup
+defaultAbGroup = one ()
+
+defaultValue :: (Entity x, Ord x) => ValueRoot x -> Z -> Value x
+defaultValue r = case r of
+  SupportOperatorRoot       -> const $ SupportOperator
+  BoundaryOperatorRoot      -> const $ BoundaryOperator
+  Boundary'OperatorRoot     -> const $ Boundary'Operator
+  HomologyClassOperatorRoot -> const $ HomologyClassOperator
+  ZRoot                     -> const $ ZValue 0
+  SupportRoot               -> const $ SupportValue Nothing
+  AbElementRoot g           -> const $ AbElementValue $ zero g
+  AbGroupRoot               -> const $ AbGroupValue $ defaultAbGroup
+  ChainRoot l               -> const $ ChainValue $ zero l
+  SequenceRoot c            -> defaultSequenceValue c
+
+--------------------------------------------------------------------------------
+-- defaultSequenceValue -
+
+defaultSequenceValue :: (Entity x, Ord x) => SequencCharacteristic x -> Z -> Value x
+defaultSequenceValue c = case c of
+  ChainsOfLength l   -> defaultValue (ChainRoot l)
+  Chains             -> \k -> SequenceValue (ChainsOfLength (k+1)) M.empty
+-}
+
+{-
+--------------------------------------------------------------------------------
+-- xValue -
+
+xValue :: X Z -> X N -> X (Value N)
+xValue xZ xN = xOneOfXW [ (1,xZValue)
+                        ] where
+  xZValue = amap1 ZValue xZ
+
+-}                                                
+{-  
+  Chains             -> \k -> defaultSequenceValue (ChainsOfLength (k+1)) k
+  HomologyClass _    -> const $ SequenceValue c M.empty
+  HomologyClasses gs -> \k -> defaultSequenceValue (HomologyClass $ valGroup $ defaultAbGroup c gs k) k
+    where
+      valGroup :: Value x -> AbGroup
+      valGroup v = case v of
+        AbGroupValue g -> g
+        _              -> throw $ ImplementationError "defaultSequenceValue"
+      
+      defaultAbGroup :: (Entity x, Ord x) => f x -> ZSequence AbGroup -> Z -> Value x
+      defaultAbGroup _ gs k = case k `M.lookup` gs of
+        Just g  -> AbGroupValue g 
+        Nothing -> defaultValue AbGroupRoot k
+
+  HomologyGroups     -> defaultValue AbGroupRoot
+-}
+{-
 --------------------------------------------------------------------------------
 -- Validable -
 
@@ -373,10 +456,45 @@ instance (Entity x, Ord x) => Fibred (Value x) where
   root = valueRoot
 
 --------------------------------------------------------------------------------
--- valSupport -
+-- valReduceSequenceCharacteristic -
 
-valSupport :: ZSequence v -> Value x
-valSupport vs = SupportValue $ supp vs where
+valReduceSequenceCharacteristic :: SequencCharacteristic x -> SequencCharacteristic x
+valReduceSequenceCharacteristic c = case c of
+  HomologyClasses gs -> HomologyClasses gs' where
+    gs' = M.filter (/= one ()) gs
+  _                  -> c
+
+--------------------------------------------------------------------------------
+-- valReduceSequence -
+
+valReduceSequence :: (Entity x, Ord x)
+  => SequencCharacteristic x -> ZSequence (Value x) -> Value x
+valReduceSequence t vs = SequenceValue t' vs' where
+  vs' = M.filter (not . isEmpty)
+      $ M.filterWithKey (isNotDefault (defaultSequenceValue t))
+      $ M.map valReduce vs
+
+  t' = valReduceSequenceCharacteristic t
+
+  isNotDefault :: (Entity x, Ord x) => (Z -> Value x) -> Z -> Value x -> Bool
+  isNotDefault d k v = v /= d k
+
+  isEmpty :: Value x -> Bool
+  isEmpty v = case v of
+    SequenceValue _ vs -> M.null vs
+    _                  -> False
+--------------------------------------------------------------------------------
+-- valReduce -
+
+valReduce :: (Entity x, Ord x) => Value x -> Value x
+valReduce v = case v of
+  SequenceValue t vs -> valReduceSequence t vs
+  _                  -> v
+--------------------------------------------------------------------------------
+-- valSupportZSequence -
+
+valSupportZSequence :: ZSequence v -> Value x
+valSupportZSequence vs = SupportValue $ supp vs where
   supp vs = do
     (l,_) <- M.lookupMin vs
     (u,_) <- M.lookupMax vs
@@ -498,6 +616,40 @@ valGenerators hs g = SequenceValue (sqcGenCharacteristic hs g) cs where
     GenHomologyGroup      -> valGenHomologyGroup (homologyGroupMinusOne h)
 
 --------------------------------------------------------------------------------
+-- ValueFailure -
+
+data ValueFailure x
+  = NotApplicable (ValueRoot x) (ValueRoot x)
+  deriving (Show, Eq)
+
+--------------------------------------------------------------------------------
+-- EvalV -
+
+type EvalV x y = Either (ValueFailure x) y
+
+--------------------------------------------------------------------------------
+-- valAt -
+
+valAt :: (Z -> Value x) -> ZSequence (Value x) -> Z -> Value x
+valAt df vs k = case k `M.lookup` vs of
+  Just v  -> v
+  Nothing -> df k
+ 
+--------------------------------------------------------------------------------
+-- valAppl -
+
+valAppl :: (Entity x, Ord x) => Value x -> Value x -> EvalV x (Value x)
+valAppl SupportOperator vs@(SequenceValue _ _) = return $ valSupportZSequence vs' where
+  vs' = case valReduce vs of
+    SequenceValue _ vs' -> vs'
+    _                   -> throw $ ImplementationError "valAppl"
+
+valAppl BoundaryOperator (ChainValue c) = return $ ChainValue $ boundarySomeChain c
+valAppl f@(SequenceValue _ vs) (ZValue k) = return $ valAt (defaultValue $ root f) vs k
+valAppl f x = Left $ NotApplicable (root f) (root x)
+
+
+--------------------------------------------------------------------------------
 
 {-
 c b = case b of
@@ -513,3 +665,4 @@ envt b = envH Truncated $ c b
 
 
 
+-}
