@@ -66,25 +66,9 @@ import OAlg.Homology.Chain
 import OAlg.Homology.Simplex
 
 import qualified OAlg.Homology.IO.Map as M
-import OAlg.Homology.IO.Pretty
+import OAlg.Homology.IO.SomeChain
 
 import OAlg.Data.Symbol (Symbol())
--------------------------------------------------------------------------------
--- GenSequenceType -
-
-data GenSequenceType
-  = RSqc -- ^ chains
-  | SSqc -- ^ cycles
-  | TSqc -- ^ cycles, generating homology group
-  | ESqc -- ^ homology class
-  deriving (Show,Eq,Ord)
-
-instance Pretty GenSequenceType where
-  pshow t = case t of
-    RSqc -> "r"
-    SSqc -> "s"
-    TSqc -> "t"
-    ESqc -> "e"
 
 -------------------------------------------------------------------------------
 -- L -
@@ -94,111 +78,29 @@ type L = Z
 type K = Z
 
 --------------------------------------------------------------------------------
--- SomeChain -
---
--- as the constructore SomeChainZero is hidden, the only way to generate SomeChain is via
--- zero or boundarySomeChain.
-
--- | a chain of simplices with some given lenght, where we also allow simplices with a negative length.
---   (note: the type of simplices with negative length is empty an hence the abelain group of it is
---   isomorphic to 0).
-data SomeChain x where
-  SomeChain     :: Attestable l => Chain Z l x -> SomeChain x
-  SomeChainZero :: Z -> SomeChain x  -- ^ for negative length
-
-instance (Entity x, Ord x, Pretty x) => Pretty (SomeChain x) where
-  pshow s = case s of
-    SomeChain c     -> pshow c
-    SomeChainZero _ -> "0" 
-
-deriving instance (Entity x, Ord x) => Show (SomeChain x)
-
-instance (Entity x, Ord x) => Eq (SomeChain x) where
-  SomeChainZero l == SomeChainZero l' = l == l'
-  SomeChain a == SomeChain b          = case eqAny (anyN a) (anyN b) of
-                                          Just Refl -> a == b
-                                          Nothing   -> False
-  _ == _                              = False
-
-instance (Entity x, Ord x) => Ord (SomeChain x) where
-  compare a b = case (a,b) of
-    (SomeChain _,SomeChainZero _)      -> LT
-    (SomeChainZero _,SomeChain _)      -> GT
-    (SomeChainZero l,SomeChainZero l') -> compare l l'
-    (SomeChain a,SomeChain b)          -> case eqAny aAny bAny of
-                                            Just Refl -> a `compare` b
-                                            Nothing   -> lengthN aAny `compare` lengthN bAny
-      where aAny = anyN a
-            bAny = anyN b
-
-instance Entity x => Validable (SomeChain x) where
-  valid s = Label "SomeChain" :<=>: case s of
-    SomeChain c     -> valid c
-    SomeChainZero l ->  And [ valid l
-                            , Label "length" :<=>: (l < 0) :?> Params ["l":=show l]
-                            ]
-
-instance (Entity x, Ord x) => Entity (SomeChain x)
-
-anyN :: Attestable l => Chain Z l x -> Any l
-anyN _ = attest
-
-eqAny :: (Attestable n, Attestable m) => Any n -> Any m -> Maybe (n :~: m)
-eqAny _ _ = eqT
-
-instance (Entity x, Ord x) => Fibred (SomeChain x) where
-  type Root (SomeChain x) = L
-  root s = case s of
-    SomeChain c     -> inj $ lengthN $ anyN c
-    SomeChainZero l -> l
-
-chZero :: (Entity x, Ord x, Attestable l) => Any l -> Chain Z l x
-chZero _ = zero ()
-
-instance (Entity x, Ord x) => Additive (SomeChain x) where
-  zero l | 0 <= l    = case someNatural (prj l) of
-                         SomeNatural l' -> SomeChain $ chZero l'
-         | otherwise = SomeChainZero l
-
-  SomeChainZero l + SomeChainZero l' | l == l' = SomeChainZero l
-  SomeChain a + SomeChain b                    = case eqAny (anyN a) (anyN b) of
-                                                   Just Refl -> SomeChain (a+b)
-                                                   Nothing   -> throw NotAddable
-  _ + _                                        = throw NotAddable
-  -- as SomeChainZero l must have a negative l to be valid, this implementation is ok
-
-instance (Entity x, Ord x) => Abelian (SomeChain x) where
-  negate (SomeChain c) = SomeChain (negate c)
-  negate s@(SomeChainZero _) = s
-
-instance (Entity x, Ord x) => Vectorial (SomeChain x) where
-  type Scalar (SomeChain x) = Z
-  z ! SomeChain a = SomeChain (z!a)
-  _ ! c           = c
-
-
---------------------------------------------------------------------------------
--- spxSomeChain -
-
-spxSomeChain :: (Entity x, Ord x, Attestable l) => Simplex l x -> SomeChain x
-spxSomeChain = SomeChain . ch
-
---------------------------------------------------------------------------------
--- boundarySomeChain -
-
--- | the boundary of some chain.
-boundarySomeChain :: (Entity x, Ord x) => SomeChain x -> SomeChain x
-boundarySomeChain s = case s of
-  SomeChainZero l -> SomeChainZero (l-1)
-  SomeChain c     -> d attest c where
-    d :: (Entity x, Ord x) => Any l -> Chain Z l x -> SomeChain x
-    d W0 _     = SomeChainZero (-1)
-    d (SW l) c = case ats l of {Ats -> SomeChain (boundary c)}
-
---------------------------------------------------------------------------------
 -- ZSequence -
 
 type ZSequence = M.Map Z
+
+--------------------------------------------------------------------------------
+-- SequencCharacteristic -
+
+data SequencCharacteristic x
+  = -- | @l@-sequence of chains with the given length.
+    ChainsOfLength L
+
+    -- | @k@-sequence of @k+1@-sequences of chains with the given length.
+  | Chains
+
+    -- | @i@-sequence of homology classes according to the given group.
+  | HomologyClass AbGroup
+
+    -- | @k@-sequence of @i@-sequences of homology classes according to the given group.
+  | HomologyClasses (ZSequence AbGroup)
+
+    -- | @k@-sequence of abelian groups.
+  | HomologyGroups
+  deriving (Show,Eq,Ord)
 
 --------------------------------------------------------------------------------
 -- Value -
@@ -252,26 +154,6 @@ data ValueRoot x
   deriving (Show,Eq,Ord)
 
 --------------------------------------------------------------------------------
--- SequencCharacteristic -
-
-data SequencCharacteristic x
-  = -- | @l@-sequence of chains with the given length.
-    ChainsOfLength L
-
-    -- | @k@-sequence of @k+1@-sequences of chains with the given length.
-  | Chains
-
-    -- | @i@-sequence of homology classes according to the given group.
-  | HomologyClass AbGroup
-
-    -- | @k@-sequence of @i@-sequences of homology classes according to the given group.
-  | HomologyClasses (ZSequence AbGroup)
-
-    -- | @k@-sequence of abelian groups.
-  | HomologyGroups
-  deriving (Show,Eq,Ord)
-
---------------------------------------------------------------------------------
 -- valueRoot -
 
 valueRoot :: (Entity x, Ord x) => Value x -> ValueRoot x
@@ -308,7 +190,12 @@ defaultSequenceValue :: (Entity x, Ord x) => SequencCharacteristic x -> Z -> Val
 defaultSequenceValue c = case c of
   ChainsOfLength l   -> const $ ChainValue $ zero l
   Chains             -> \k -> SequenceValue (ChainsOfLength (k+1)) M.empty
-
+  HomologyClass g    -> const $ AbElementValue $ zero g
+  HomologyClasses gs -> \k -> SequenceValue (HomologyClass (g gs k)) M.empty where
+    g gs k = case k `M.lookup` gs of
+      Just g  -> g
+      Nothing -> one () 
+  HomologyGroups     -> const $ AbGroupValue $ one ()
 
 --------------------------------------------------------------------------------
 -- prpDefaultValue -
@@ -326,7 +213,6 @@ valSequence :: (Entity x, Ord x) => SequencCharacteristic x -> ZSequence (Value 
 valSequence c vs k = case k `M.lookup` vs of
   Just v  -> v
   Nothing -> defaultSequenceValue c k
-
 
 --------------------------------------------------------------------------------
 -- rdcSequenceCharacteristic -
@@ -355,63 +241,14 @@ rdcValue v = case v of
   SequenceValue t vs -> rdcSequenceValue t vs
   _                  -> v
   
-{-
 --------------------------------------------------------------------------------
--- defaultValue -
+-- rdcValueRoot -
 
-defaultAbGroup :: AbGroup
-defaultAbGroup = one ()
-
-defaultValue :: (Entity x, Ord x) => ValueRoot x -> Z -> Value x
-defaultValue r = case r of
-  SupportOperatorRoot       -> const $ SupportOperator
-  BoundaryOperatorRoot      -> const $ BoundaryOperator
-  Boundary'OperatorRoot     -> const $ Boundary'Operator
-  HomologyClassOperatorRoot -> const $ HomologyClassOperator
-  ZRoot                     -> const $ ZValue 0
-  SupportRoot               -> const $ SupportValue Nothing
-  AbElementRoot g           -> const $ AbElementValue $ zero g
-  AbGroupRoot               -> const $ AbGroupValue $ defaultAbGroup
-  ChainRoot l               -> const $ ChainValue $ zero l
-  SequenceRoot c            -> defaultSequenceValue c
-
---------------------------------------------------------------------------------
--- defaultSequenceValue -
-
-defaultSequenceValue :: (Entity x, Ord x) => SequencCharacteristic x -> Z -> Value x
-defaultSequenceValue c = case c of
-  ChainsOfLength l   -> defaultValue (ChainRoot l)
-  Chains             -> \k -> SequenceValue (ChainsOfLength (k+1)) M.empty
--}
-
-{-
---------------------------------------------------------------------------------
--- xValue -
-
-xValue :: X Z -> X N -> X (Value N)
-xValue xZ xN = xOneOfXW [ (1,xZValue)
-                        ] where
-  xZValue = amap1 ZValue xZ
-
--}                                                
-{-  
-  Chains             -> \k -> defaultSequenceValue (ChainsOfLength (k+1)) k
-  HomologyClass _    -> const $ SequenceValue c M.empty
-  HomologyClasses gs -> \k -> defaultSequenceValue (HomologyClass $ valGroup $ defaultAbGroup c gs k) k
-    where
-      valGroup :: Value x -> AbGroup
-      valGroup v = case v of
-        AbGroupValue g -> g
-        _              -> throw $ ImplementationError "defaultSequenceValue"
-      
-      defaultAbGroup :: (Entity x, Ord x) => f x -> ZSequence AbGroup -> Z -> Value x
-      defaultAbGroup _ gs k = case k `M.lookup` gs of
-        Just g  -> AbGroupValue g 
-        Nothing -> defaultValue AbGroupRoot k
-
-  HomologyGroups     -> defaultValue AbGroupRoot
--}
-{-
+rdcValueRoot :: (Entity x, Ord x) => ValueRoot x -> ValueRoot x
+rdcValueRoot r = case r of
+  SequenceRoot c -> SequenceRoot (rdcSequenceCharacteristic c)
+  _              -> r
+  
 --------------------------------------------------------------------------------
 -- Validable -
 
@@ -451,54 +288,11 @@ instance Validable (SequencCharacteristic x) where
 instance (Entity x, Ord x) => Entity (Value x)
 instance (Entity x) => Entity (ValueRoot x)
 
+{-
 instance (Entity x, Ord x) => Fibred (Value x) where
   type Root (Value x) = ValueRoot x
   root = valueRoot
-
---------------------------------------------------------------------------------
--- valReduceSequenceCharacteristic -
-
-valReduceSequenceCharacteristic :: SequencCharacteristic x -> SequencCharacteristic x
-valReduceSequenceCharacteristic c = case c of
-  HomologyClasses gs -> HomologyClasses gs' where
-    gs' = M.filter (/= one ()) gs
-  _                  -> c
-
---------------------------------------------------------------------------------
--- valReduceSequence -
-
-valReduceSequence :: (Entity x, Ord x)
-  => SequencCharacteristic x -> ZSequence (Value x) -> Value x
-valReduceSequence t vs = SequenceValue t' vs' where
-  vs' = M.filter (not . isEmpty)
-      $ M.filterWithKey (isNotDefault (defaultSequenceValue t))
-      $ M.map valReduce vs
-
-  t' = valReduceSequenceCharacteristic t
-
-  isNotDefault :: (Entity x, Ord x) => (Z -> Value x) -> Z -> Value x -> Bool
-  isNotDefault d k v = v /= d k
-
-  isEmpty :: Value x -> Bool
-  isEmpty v = case v of
-    SequenceValue _ vs -> M.null vs
-    _                  -> False
---------------------------------------------------------------------------------
--- valReduce -
-
-valReduce :: (Entity x, Ord x) => Value x -> Value x
-valReduce v = case v of
-  SequenceValue t vs -> valReduceSequence t vs
-  _                  -> v
---------------------------------------------------------------------------------
--- valSupportZSequence -
-
-valSupportZSequence :: ZSequence v -> Value x
-valSupportZSequence vs = SupportValue $ supp vs where
-  supp vs = do
-    (l,_) <- M.lookupMin vs
-    (u,_) <- M.lookupMax vs
-    return (l,u)
+-}
 
 --------------------------------------------------------------------------------
 -- EnvH -
@@ -628,25 +422,18 @@ data ValueFailure x
 type EvalV x y = Either (ValueFailure x) y
 
 --------------------------------------------------------------------------------
--- valAt -
-
-valAt :: (Z -> Value x) -> ZSequence (Value x) -> Z -> Value x
-valAt df vs k = case k `M.lookup` vs of
-  Just v  -> v
-  Nothing -> df k
- 
---------------------------------------------------------------------------------
 -- valAppl -
 
 valAppl :: (Entity x, Ord x) => Value x -> Value x -> EvalV x (Value x)
+{-
 valAppl SupportOperator vs@(SequenceValue _ _) = return $ valSupportZSequence vs' where
-  vs' = case valReduce vs of
+  vs' = case rdcValue vs of
     SequenceValue _ vs' -> vs'
     _                   -> throw $ ImplementationError "valAppl"
-
+-}
 valAppl BoundaryOperator (ChainValue c) = return $ ChainValue $ boundarySomeChain c
-valAppl f@(SequenceValue _ vs) (ZValue k) = return $ valAt (defaultValue $ root f) vs k
-valAppl f x = Left $ NotApplicable (root f) (root x)
+valAppl (SequenceValue c vs) (ZValue k) = return $ valSequence c vs k
+valAppl f x = Left $ NotApplicable (valueRoot f) (valueRoot x)
 
 
 --------------------------------------------------------------------------------
@@ -662,7 +449,3 @@ c n = complex $ sphere n (0::N)
 envr b = envH Regular $ c b
 envt b = envH Truncated $ c b
 
-
-
-
--}
