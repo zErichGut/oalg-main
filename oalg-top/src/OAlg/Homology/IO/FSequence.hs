@@ -10,6 +10,7 @@
            , StandaloneDeriving
            , DataKinds
            , DeriveFoldable
+           , DeriveFunctor
 #-}
 
 
@@ -29,18 +30,26 @@
 --
 -- - values which may have a very time consuming evaluation. 
 module OAlg.Homology.IO.FSequence
-  ( 
+  ( -- * FSequence
+    FSequence(),fsq, fsqD, fsqForm, fsqMake
+
+    -- * Form
+  , FSequenceForm(..), rdcFSequenceForm
+
+    -- * Default Value
+  , DefaultValue(..)
   ) where
 
 import Control.Monad
 
-import Data.List ((++),filter,splitAt)
+import Data.List (head,(++),filter,splitAt)
 import Data.Foldable
 
 import Data.Maybe
 
 import OAlg.Prelude
 
+import OAlg.Data.Constructable
 import OAlg.Entity.Sequence.PSequence
 
 --------------------------------------------------------------------------------
@@ -52,43 +61,64 @@ class DefaultValue d i x where
 --------------------------------------------------------------------------------
 -- isDefaultValue -
 
-isDefaultValue :: (DefaultValue d i x, Eq x) => d -> i -> x -> Bool
-isDefaultValue d i x = x == defaultValue d i
+isDefaultValue :: (DefaultValue d i x, Eq x) => d -> (x,i) -> Bool
+isDefaultValue d (x,i) = x == defaultValue d i
 
 --------------------------------------------------------------------------------
 -- Tree -
 
 data Tree i x
-  = Empty
-  | Leaf x
+  = Leaf i x
   | Node i (Tree i x) (Tree i x)
-  deriving (Show,Eq,Ord,Foldable)
+  deriving (Show,Eq,Ord,Foldable,Functor)
 
 --------------------------------------------------------------------------------
 -- psqTree -
 
-psqTree :: PSequence i x -> Tree i x
-psqTree (PSequence xis) = toTree xis where
-  toTree []      = Empty
-  toTree [(x,i)] = Node i Empty (Leaf x)
-  toTree xis     = Node i (toTree l) (toTree r) where
-    (l,r@((_,i):_)) = splitAt (length xis `divInt` 2) xis
+psqTree :: PSequence i x -> Maybe (Tree i x)
+psqTree (PSequence [])  = Nothing
+psqTree (PSequence xis) = Just $ toTree xis where
+  toTree [(x,i)] = Leaf i x
+  toTree xis     = Node (snd $ head r) (toTree l) (toTree r) where
+    (l,r) = splitAt (length xis `divInt` 2) xis
 
 --------------------------------------------------------------------------------
 -- psqFromTree -
 
-psqFromTree :: Tree i x -> PSequence i x
-psqFromTree = error "nyi"
+psqFromTree :: Maybe (Tree i x) -> PSequence i x
+psqFromTree Nothing  = psqEmpty
+psqFromTree (Just t) = PSequence (ft t) where
+  ft (Leaf i x)   = [(x,i)]
+  ft (Node _ l r) = ft l ++ ft r
 
+--------------------------------------------------------------------------------
+-- Entity - Tree -
+
+instance (Entity i, Entity x, Ord i) => Validable (Tree i x) where
+  valid t = Label "Tree" :<=>: vld t where
+    vld (Node i l r)  = valid i && vldl i l && vldr i r
+    vld (Leaf i x)    = valid i && valid x
+
+    vldl i t = Label "l" :<=>: case t of
+      Leaf i' _   -> And [ vld t
+                         , (i' < i) :?> Params ["i":=show i,"i'":=show i']
+                         ]
+      Node i' l r -> valid i' && vldl i' l && vldr i' r
+      
+    vldr i t = Label "r" :<=>: case t of
+      Leaf i' _   -> And [ vld t
+                         , (i <= i') :?> Params ["i":=show i,"i'":=show i']
+                         ]
+      Node i' l r -> valid i' && vldl i' l && vldr i' r
+    
 --------------------------------------------------------------------------------
 -- lookup -
 
-lookup :: Ord i => i -> Tree i x -> Maybe x
-lookup i t = lk i t where
-  lk i t = case (i,t) of
-    (_,Empty)                  -> Nothing
-    (i,Node i' Empty (Leaf x)) -> if i == i' then Just x else Nothing
-    (i,Node i' l r)            -> if i <  i' then lk i l else lk i r
+lookup :: Ord i => i -> Maybe (Tree i x) -> Maybe x
+lookup _ Nothing  = Nothing
+lookup i (Just t) = lk i t where
+  lk i (Leaf i' x)   = if i == i' then Just x else Nothing
+  lk i (Node i' l r) = if i <  i' then lk i l else lk i r
 
 --------------------------------------------------------------------------------
 -- FSeqenceForm -
@@ -108,16 +138,19 @@ instance (Entity d, Entity i, Ord i, Entity x) => Entity (FSequenceForm d i x)
 -- rdcFSequenceForm -
 
 rdcFSequenceForm :: (DefaultValue d i x, Eq x) => FSequenceForm d i x -> FSequenceForm d i x
-rdcFSequenceForm f@(FSequenceForm d (PSequence xis)) = FSequenceForm d (PSequence xis') where
-  xis' = filter (notIsDefault f d) xis
+rdcFSequenceForm (FSequenceForm d (PSequence xis)) = FSequenceForm d (PSequence xis') where
+  xis' = filter (not . isDefaultValue d) xis
 
-  notIsDefault :: (DefaultValue d i x, Eq x) => f d i x -> d -> (x,i) -> Bool
-  notIsDefault _ d (x,i) = not $ isDefaultValue d i x
-                     
 --------------------------------------------------------------------------------
 -- FSequcne -
 
-data FSequence d i x = FSequence d (Tree i x)
+data FSequence d i x = FSequence d (Maybe (Tree i x)) deriving (Foldable, Functor)
+
+--------------------------------------------------------------------------------
+-- fsqD -
+
+fsqD :: FSequence d i x -> d
+fsqD (FSequence d _) = d
 
 --------------------------------------------------------------------------------
 -- fsq -
@@ -126,76 +159,43 @@ fsq :: (DefaultValue d i x, Ord i) => FSequence d i x -> i -> x
 fsq (FSequence d t) i = case i `lookup` t of
   Just x  -> x
   Nothing -> defaultValue d i
-  
+
 --------------------------------------------------------------------------------
 -- fsqForm -
 
 fsqForm :: (DefaultValue d i x, Eq x) => FSequence d i x -> FSequenceForm d i x
-fsqForm (FSequence d t) = FSequenceForm d (PSequence xis) where
-  xis = filter (notIsDefault d)
-      $ psqxs
-      $ psqFromTree t
-
-  notIsDefault :: (DefaultValue d i x, Eq x) => d -> (x,i) -> Bool
-  notIsDefault d (x,i) = not $ isDefaultValue d i x
-
-{-
---------------------------------------------------------------------------------
--- psqFromTree -
-
-psqFromTree :: Tree i (Maybe (x,i)) -> PSequence i x
-psqFromTree = PSequence . amap1 fromJust . filter isJust . toList
-
---------------------------------------------------------------------------------
--- psqTree -
-
-psqTree :: PSequence i x -> Maybe (Tree i (x,i))
-psqTree (PSequence [])  = Nothing
-{-
-psqTree (PSequence xis) = Just $ toTree xis where
-  toTree :: [(x,i)] -> Tree i x
-  toTree [(x,_)] = Leaf x
-  toTree xis     = Node i (toTree l) (toTree r) where
-    (l,r@((_,i):_)) = splitAt (length xis `divInt` 2) xis
--}
-
---------------------------------------------------------------------------------
--- fsqTree -
-
-fsqTree :: (DefaultValue d i x, Eq x) => d -> PSequence i x -> Maybe (Tree i (Maybe (x,i)))
-fsqTree d xis
-  = psqTree
-  $ PSequence
-  $ amap1 (\(x,i) -> (if isDefaultValue d i x then Nothing else Just (x,i),i))
-  $ psqxs xis
-
---------------------------------------------------------------------------------
--- fsqForm -
-
-fsqForm :: FSequence d i x -> FSequenceForm d i x
-fsqForm (FSequence d xs) = FSequenceForm d xs' where
-  xs' = case xs of
-          Nothing -> PSequence []
-          Just t  -> psqFromTree t
+fsqForm (FSequence d t) = rdcFSequenceForm $ FSequenceForm d (psqFromTree t)
 
 --------------------------------------------------------------------------------
 -- fsqMake -
 
-fsqMake :: (DefaultValue d i x, Eq x) => FSequenceForm d i x -> FSequence d i x
-fsqMake (FSequenceForm d xs) = FSequence d (fsqTree d xs)
+fsqMake :: FSequenceForm d i x -> FSequence d i x
+fsqMake (FSequenceForm d xis) = FSequence d (psqTree xis)
 
 --------------------------------------------------------------------------------
--- Entity -
+-- FSequence - Entity -
 
-instance (DefaultValue d i x, Eq x, Show d, Show i, Show x) => Show (FSequence d i x) where
-  show s = "FSequence " ++ show d ++ "(" ++ show xis ++ ")" where
-    FSequenceForm d xis = fsqForm s
+instance (DefaultValue d i x,Eq x, Show d, Show i, Show x) => Show (FSequence d i x) where
+  show f@(FSequence d _) = "FSequence (" ++ show d ++ ") (" ++ show xis ++ ")" where
+    FSequenceForm _ xis = fsqForm f
 
-instance (DefaultValue d i x, Eq d, Eq i,Eq x) => Eq (FSequence d i x) where
-  s == t = fsqForm s == fsqForm t
+instance (DefaultValue d i x,Eq d, Eq i,Eq x) => Eq (FSequence d i x) where
+  f == g = fsqForm f == fsqForm g
 
-instance (DefaultValue d i x, Ord d, Ord i,Ord x) => Ord (FSequence d i x) where
-  compare s t = compare (fsqForm s) (fsqForm t)
+instance (DefaultValue d i x,Ord d, Ord i,Ord x) => Ord (FSequence d i x) where
+  compare f g = compare (fsqForm f) (fsqForm g)
 
+instance (Entity d, Entity i, Entity x, Ord i) => Validable (FSequence d i x) where
+  valid (FSequence d t) = Label "FSequence" :<=>: valid d && valid t
 
--}
+instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i) => Entity (FSequence d i x)
+
+--------------------------------------------------------------------------------
+-- FSequence - Constructable -
+
+instance (DefaultValue d i x, Eq x) => Exposable (FSequence d i x) where
+  type Form (FSequence d i x) = FSequenceForm d i x
+  form = fsqForm
+
+instance (DefaultValue d i x, Eq x) => Constructable (FSequence d i x) where
+  make = fsqMake
