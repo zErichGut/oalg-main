@@ -41,6 +41,8 @@ module OAlg.Homology.IO.FSequence
     -- * Default Value
   , DefaultValue(..)
 
+    -- * Proposition
+  , relHomogenRoot
   ) where
 
 import Control.Monad
@@ -54,8 +56,10 @@ import Data.Maybe
 import OAlg.Prelude
 
 import OAlg.Data.Constructable
+
 import OAlg.Entity.Sequence.PSequence
 
+import OAlg.Structure.Fibred
 --------------------------------------------------------------------------------
 -- DefaultValue -
 
@@ -238,3 +242,16 @@ instance (DefaultValue d i x, Eq x) => Constructable (FSequence Strict d i x) wh
 instance (DefaultValue d i x, Eq x) => Constructable (FSequence Lazy d i x) where
   make = fsqMakeLazy
 
+--------------------------------------------------------------------------------
+-- relHomogenRoot -
+
+relHomogenRoot :: (DefaultValue d i x, Fibred x, Show i) => FSequence s d i x -> Statement
+relHomogenRoot f = case fsqT f of
+  Nothing -> SValid
+  Just t  -> vld (fsqD f) t where
+    vld :: (DefaultValue d i x, Fibred x, Show i) => d -> Tree i x -> Statement
+    vld d (Leaf i x)   = eqRoot (defaultValue d i) x :?> Params ["i":=show i,"x":=show x]
+    vld d (Node _ l r) = vld d l && vld d r
+    
+    eqRoot :: Fibred x => x -> x -> Bool
+    eqRoot a b = root a == root b

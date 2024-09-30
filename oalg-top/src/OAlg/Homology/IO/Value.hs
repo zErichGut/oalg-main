@@ -9,7 +9,6 @@
            , GADTs
            , StandaloneDeriving
            , DataKinds
-           , UndecidableInstances
 #-}
 
 
@@ -68,13 +67,6 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain
 import OAlg.Homology.Simplex
 
-{-
-import OAlg.Homology.IO.ZSequence as M
-  ( ZSequence,zsqSequence,zsqSupport,Map,map,null,fromAscList
-  , lookup,empty,filter,filterWithKey,assocs,insert
-  )
--}
-
 import OAlg.Homology.IO.FSequence
 import OAlg.Homology.IO.SomeChain
 
@@ -95,40 +87,158 @@ data DefaultAbGroup = DefaultAbGroup deriving (Show,Eq,Ord,Enum)
 instance Validable DefaultAbGroup where
   valid DefaultAbGroup = SValid
 
-instance Entity DefaultAbGroup
-
 instance DefaultValue DefaultAbGroup k AbGroup where
   defaultValue _ = const (one ())
 
+instance Entity DefaultAbGroup
+
 --------------------------------------------------------------------------------
--- DefaultSequenceValue -
+-- DefaultChainValue -
 
-data DefaultSequenceValue x
-  = -- | @i@-sequence of chains, having all the same length @l@.
+data DefaultChainValue x
+  = -- | sequence of chains, according to the given lenght.
     LChains L
-    -- | @k@-sequence of sequences of chains, havnig the length @k+1@
+    -- | @k@-sequence of @'LChain' (k+1)@-sequences.
   | KChains
-
-    -- | @i@-sequence of homology classes according to the given group.
-  | HClasses AbGroup
-
-    -- | sequence of sequences of 'HClasses'
-  | GClasses (FSequence Lazy DefaultAbGroup Z AbGroup)
   deriving (Show,Eq,Ord)
 
-instance Validable (DefaultSequenceValue x) where
-  valid s = Label "DefaultSequenceValue" :<=>: case s of
-    LChains l   -> valid l
-    HClasses g  -> valid g
-    GClasses gs -> valid gs
-    _           -> SValid
+instance Validable (DefaultChainValue x) where
+  valid d = Label "DefaultChainValue" :<=>: case d of
+    LChains l -> valid l
+    KChains   -> SValid
 
-instance Entity x => Entity (DefaultSequenceValue x)
+instance Typeable x => Entity (DefaultChainValue x)
 
 --------------------------------------------------------------------------------
--- Value -
+-- ChainValue -
 
-data Value x
+data ChainValue x
+  = ChainValueElement (SomeChain x)
+  | ChainValueSequence (FSequence Strict (DefaultChainValue x) Z (ChainValue x))
+  deriving (Show,Eq,Ord)
+
+instance (Entity x, Ord x) => DefaultValue (DefaultChainValue x) Z (ChainValue x) where
+  defaultValue c = case c of
+    LChains l -> const (ChainValueElement $ zero l)
+    KChains   -> \k -> ChainValueSequence (make (FSequenceForm (LChains (k+1)) psqEmpty))
+
+data ChainRoot x
+  = ChainRootElement L
+  | ChainRootSequence (DefaultChainValue x)
+  deriving (Show,Eq,Ord)
+
+instance Validable (ChainRoot x) where
+  valid r = Label "ChainRoot" :<=>: case r of
+    ChainRootElement l  -> valid l
+    ChainRootSequence d -> valid d
+
+instance Typeable x => Entity (ChainRoot x)
+
+instance (Entity x, Ord x) => Validable (ChainValue x) where
+  valid v = Label "ChainValue" :<=>: case v of
+    ChainValueElement c -> valid c
+    ChainValueSequence s -> valid s && relHomogenRoot s
+
+instance (Entity x, Ord x) => Entity (ChainValue x)
+
+instance (Entity x, Ord x) => Fibred (ChainValue x) where
+  type Root (ChainValue x) = ChainRoot x
+  root v = case v of
+    ChainValueElement c  -> ChainRootElement $ root c
+    ChainValueSequence s -> ChainRootSequence $ fsqD s
+
+--------------------------------------------------------------------------------
+-- DefaultHomologyClassValue -
+
+data DefaultHomologyClassValue
+  = -- | sequence of homology classes, according to the given group.
+    HClasses AbGroup
+    -- | @k@-sequence @'HClasses' (g k)@ sequences.
+  | GClasses (FSequence Lazy DefaultAbGroup Z AbGroup)
+  deriving (Show, Eq, Ord)
+
+instance Validable DefaultHomologyClassValue where
+  valid d = Label "DefaultHomologyClassValue" :<=>: case d of
+    HClasses g -> valid g
+    GClasses s -> valid s
+
+instance Entity DefaultHomologyClassValue
+
+--------------------------------------------------------------------------------
+-- HomologyClassValue -
+
+data HomologyClassValue
+  = HomologyClassElement AbElement
+  | HomologyClassSequence (FSequence Lazy DefaultHomologyClassValue Z HomologyClassValue)
+  deriving (Show,Eq,Ord)
+
+instance DefaultValue DefaultHomologyClassValue Z HomologyClassValue where
+  defaultValue d = case d of
+    HClasses g  -> const (HomologyClassElement (zero g))
+    GClasses gs -> \k -> HomologyClassSequence (make (FSequenceForm (HClasses $ fsq gs k) psqEmpty))
+
+data HomologyClassRoot
+  = HomologyClassRootElement AbGroup
+  | HomologyClassRootSequence DefaultHomologyClassValue
+  deriving (Show,Eq,Ord)
+
+instance Validable HomologyClassRoot where
+  valid r = Label "HomologyClassRoot" :<=>: case r of
+    HomologyClassRootElement g  -> valid g
+    HomologyClassRootSequence d -> valid d
+
+instance Entity HomologyClassRoot
+
+instance Validable HomologyClassValue where
+  valid v = Label "HomologyClassValue" :<=>: case v of
+    HomologyClassElement h  -> valid h
+    HomologyClassSequence s -> valid s && relHomogenRoot s
+
+instance Entity HomologyClassValue
+
+instance Fibred HomologyClassValue where
+  type Root HomologyClassValue = HomologyClassRoot
+  root v = case v of
+    HomologyClassElement h  -> HomologyClassRootElement $ root h
+    HomologyClassSequence s -> HomologyClassRootSequence $ fsqD s 
+    
+--------------------------------------------------------------------------------
+-- HomologyGroupValue -
+
+data HomologyGroupValue
+  = HomologyGroupElement AbGroup
+  | HomologyGroupSequence (FSequence Lazy DefaultAbGroup Z AbGroup)
+  deriving (Show,Eq,Ord)
+
+data HomologyGroupRoot
+  = HomologyGroupRootElement
+  | HomologyGroupRootSequence DefaultAbGroup
+  deriving (Show,Eq,Ord)
+
+instance Validable HomologyGroupRoot where
+  valid r = Label "HomologyGroupRoot" :<=>: case r of
+    HomologyGroupRootElement    -> SValid
+    HomologyGroupRootSequence d -> valid d
+
+instance Entity HomologyGroupRoot
+
+instance Validable HomologyGroupValue where
+  valid v = Label "HomologyGroupValue" :<=>: case v of
+    HomologyGroupElement g  -> valid g
+    HomologyGroupSequence s -> valid s
+
+instance Entity HomologyGroupValue
+
+instance Fibred HomologyGroupValue where
+  type Root HomologyGroupValue = HomologyGroupRoot
+  root v = case v of
+    HomologyGroupElement _  -> HomologyGroupRootElement
+    HomologyGroupSequence s -> HomologyGroupRootSequence $ fsqD s 
+
+--------------------------------------------------------------------------------
+-- OperatorValue -
+
+data OperatorValue
   = -- | evaluates the support of a sequence value.
     SupportOperator
 
@@ -140,119 +250,75 @@ data Value x
 
     -- | evaluates the homology class of a cycle.
   | HomologyClassOperator
-
-    -- | a 'Z' value.
-   | ZValue Z
-
-     -- | support of lower and upper bounds.
-   | SupportValue (Maybe (Z,Z))
-    
-    -- | a element of a abelien group.
-  | AbElementValue AbElement
-
-    -- | a abelian group.
-  | AbGroupValue AbGroup
-
-    -- | a chain.
-  | ChainValue (SomeChain x)
-
-    -- | a strict sequence - indexed by 'Z' of values, having the given definition of
-    -- default values.
-  | SequenceStrictValue (FSequence Strict (DefaultSequenceValue x) Z (Value x))
-
-    -- | a lazy sequence - indexed by 'Z' of values, having the given definition of
-    -- default values.
-  | SequenceLazyValue (FSequence Lazy (DefaultSequenceValue x) Z (Value x))
-
-deriving instance
-  (DefaultValue (DefaultSequenceValue x) Z (Value x), Entity x, Ord x, Eq (Value x))
-  => Show (Value x)
-
-deriving instance
-  (DefaultValue (DefaultSequenceValue x) Z (Value x), Entity x, Ord x)
-  => Eq (Value x)
-
-deriving instance
-  (DefaultValue (DefaultSequenceValue x) Z (Value x), Entity x, Ord x)
-  => Ord (Value x)
-
---------------------------------------------------------------------------------
--- valDefault
-
-valDefault :: (Entity x, Ord x) => DefaultSequenceValue x -> Z -> Value x
-valDefault d = case d of
-  LChains l   -> const (ChainValue (zero l))
-  KChains     -> \k -> SequenceStrictValue (make (FSequenceForm (LChains (k+1)) psqEmpty))
-  HClasses g  -> const (AbElementValue (zero g))
-  GClasses gs -> \k -> SequenceStrictValue (make (FSequenceForm (HClasses $ fsq gs k) psqEmpty))
-                    
-instance (Entity x, Ord x) => DefaultValue (DefaultSequenceValue x) Z (Value x) where
-  defaultValue = valDefault
-
---------------------------------------------------------------------------------
--- ValueRoot -
-
-data ValueRoot x
-  = SupportOperatorRoot
-  | BoundaryOperatorRoot
-  | Boundary'OperatorRoot
-  | HomologyClassOperatorRoot
-  | ZRoot
-  | SupportRoot
-  | AbElementRoot AbGroup
-  | AbGroupRoot
-  | ChainRoot L
-  | SequenceStrictRoot (DefaultSequenceValue x)
-  | SequenceLazyRoot (DefaultSequenceValue x)
   deriving (Show,Eq,Ord)
 
+instance Validable OperatorValue where
+  valid v = Label "OperatorValue" :<=>: case v of
+    SupportOperator -> SValid
+    _               -> SValid
+
+instance Entity OperatorValue
+
+instance Fibred OperatorValue where
+  type Root OperatorValue = OperatorValue
+  root = id
+  
 --------------------------------------------------------------------------------
--- valRoot -
+-- Value -
 
-valRoot :: (Entity x, Ord x) => Value x -> ValueRoot x
-valRoot v = case v of
-  SupportOperator       -> SupportOperatorRoot
-  BoundaryOperator      -> BoundaryOperatorRoot
-  Boundary'Operator     -> Boundary'OperatorRoot
-  HomologyClassOperator -> HomologyClassOperatorRoot
-  ZValue _              -> ZRoot
-  SupportValue _        -> SupportRoot
-  AbElementValue e      -> AbElementRoot $ root e
-  AbGroupValue _        -> AbGroupRoot
-  ChainValue c          -> ChainRoot $ root c
-  SequenceStrictValue s -> SequenceStrictRoot $ fsqD s
-  SequenceLazyValue s   -> SequenceLazyRoot $ fsqD s
+data Value x
+  =
+    -- | a 'Z' value.
+    ZValue Z
 
-instance Validable (ValueRoot x) where
-  valid r = Label "ValueRoot" :<=>: case r of
-    AbElementRoot g      -> valid g
-    ChainRoot l          -> valid l
-    SequenceStrictRoot c -> valid c
-    SequenceLazyRoot c   -> valid c    
-    _                    -> SValid
+     -- | support of lower and upper bounds.
+  | SupportValue (Maybe (Z,Z))
+  | OperatorValue OperatorValue
+  | ChainValue (ChainValue x)
+  | HomologyClassValue HomologyClassValue
+  | HomologyGroupValue HomologyGroupValue
+  deriving (Show,Eq,Ord)
 
 instance (Entity x, Ord x) => Validable (Value x) where
   valid v = Label "Value" :<=>: case v of
-    ZValue z              -> valid z
-    SupportValue s        -> valid s
-    AbElementValue e      -> valid e
-    AbGroupValue g        -> valid g
-    ChainValue c          -> valid c
-    SequenceStrictValue s -> valid s && zsqv (form s)
-    SequenceLazyValue s   -> valid s && zsqv (form s)    
-    _                     -> SValid
-    where
-      zsqv :: (Entity x, Ord x) => FSequenceForm (DefaultSequenceValue x) Z (Value x) -> Statement
-      zsqv (FSequenceForm d (PSequence xis)) = valid d && zsqv' d xis
-
-      zsqv' ::(Entity x, Ord x) => DefaultSequenceValue x -> [(Value x,Z)] -> Statement
-      zsqv' _ []          = SValid
-      zsqv' d ((v,i):vis) = And [ (valRoot v == (valRoot $ defaultValue d i))
-                                    :?> Params ["v":=show v,"i":=show i]
-                                , zsqv' d vis
-                                ]
+    ZValue z             -> valid z
+    SupportValue s       -> valid s
+    OperatorValue o      -> valid o
+    ChainValue c         -> valid c
+    HomologyClassValue h -> valid h
+    HomologyGroupValue g -> valid g
 
 instance (Entity x, Ord x) => Entity (Value x)
+
+data ValueRoot x
+  = ZRoot
+  | SupportRoot
+  | OperatorRoot (Root OperatorValue)
+  | ChainRoot (Root (ChainValue x))
+  | HomologyClassRoot HomologyClassRoot
+  | HomologyGroupRoot HomologyGroupRoot
+  deriving (Show,Eq,Ord)
+
+instance (Entity x, Ord x) => Validable (ValueRoot x) where
+  valid v = Label "ValueRoot" :<=>: case v of
+    OperatorRoot o      -> valid o
+    ChainRoot c         -> valid c
+    HomologyClassRoot h -> valid h
+    HomologyGroupRoot g -> valid g
+    _                   -> SValid
+
+instance (Entity x, Ord x) => Entity (ValueRoot x)
+
+instance (Entity x, Ord x) => Fibred (Value x) where
+  type Root (Value x) = ValueRoot x
+  root v = case v of
+    ZValue _             -> ZRoot
+    SupportValue _       -> SupportRoot
+    OperatorValue o      -> OperatorRoot $ root o
+    ChainValue c         -> ChainRoot $ root c
+    HomologyClassValue h -> HomologyClassRoot $ root h
+    HomologyGroupValue g -> HomologyGroupRoot $ root g
+    
 
 --------------------------------------------------------------------------------
 -- EnvH -
@@ -290,8 +356,6 @@ envHomology0 hs = case head hs of
   SomeHomology h@(Homology _ _ _ _) -> case eqK W0 h of
     Just Refl -> h
     Nothing   -> throw $ ImplementationError "envHomology0.2"
-  
-
 
 --------------------------------------------------------------------------------
 -- fsqHomologyGroups -
@@ -300,19 +364,30 @@ envHomology0 hs = case head hs of
 fsqHomologyGroups :: EnvH n x -> FSequence Lazy DefaultAbGroup Z AbGroup
 fsqHomologyGroups hs = make (FSequenceForm DefaultAbGroup (PSequence gs)) where
   gs = ((homologyGroupMinusOne $ envHomology0 hs): amap1 toHGroup hs) `zip` [(-1)..]
-
   toHGroup (SomeHomology h) = homologyGroup h
+
+--------------------------------------------------------------------------------
+-- valHomologyGroups -
+
+valHomologyGroups :: EnvH n x -> Value x
+valHomologyGroups = HomologyGroupValue . HomologyGroupSequence . fsqHomologyGroups
+
 
 --------------------------------------------------------------------------------
 -- Generator -
 
 data Generator
-  = GenChains
-  | GenCycles
-  | GenHGroupChain
-  | GenHGroup
+  = GenHomologyGroup
+  | GenChain GenChain
+  deriving (Show,Eq,Ord)
+
+data GenChain
+  = GenChainChains
+  | GenChainCycles
+  | GenChainHomologyGroup
   deriving (Show,Eq,Ord,Enum)
 
+{-
 --------------------------------------------------------------------------------
 -- genDefaultSequenceValue -
 
@@ -322,11 +397,28 @@ genDefaultSequenceValue hs g = case g of
   GenCycles      -> KChains
   GenHGroupChain -> KChains
   GenHGroup      -> GClasses $ fsqHomologyGroups hs
-  
+-}
+
 --------------------------------------------------------------------------------
 -- valGenerators -
 
+valGenHomologyGroup :: (Entity x, Ord x) => EnvH n x -> Value x
+valGenHomologyGroup hs = v where
+  gs = fsqHomologyGroups hs
+
+  v = HomologyClassValue
+    $ HomologyClassSequence
+    $ make
+    $ FSequenceForm (GClasses gs) (PSequence es)
+    
+  FSequenceForm _ (PSequence gs') = form gs
+  es = error "nyi"
+
 valGenerators :: (Entity x, Ord x) => EnvH n x -> Generator -> Value x
+valGenerators hs g = case g of
+  GenHomologyGroup -> valGenHomologyGroup hs
+
+{-
 valGenerators hs g = SequenceLazyValue (make (FSequenceForm d (PSequence xis))) where
   d   = genDefaultSequenceValue hs g
   xis = (valGenMinusOne (envHomology0 hs) g:amap1 (valGen g) hs) `zip` [(-1)..]
@@ -452,6 +544,6 @@ c n = complex $ sphere n (0::N)
   
 envr b = envH Regular $ c b
 envt b = envH Truncated $ c b
-
+-}
 
 
