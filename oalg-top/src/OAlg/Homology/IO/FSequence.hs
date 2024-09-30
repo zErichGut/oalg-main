@@ -30,18 +30,22 @@
 --
 -- - values which may have a very time consuming evaluation. 
 module OAlg.Homology.IO.FSequence
-  ( -- * FSequence
-    FSequence(),fsq, fsqD, fsqForm, fsqMake
+  (
+    -- * FSequence
+    FSequence(), SL(..)
+  ,fsq, fsqD, fsqForm, fsqMakeStrict, fsqMakeLazy 
 
     -- * Form
   , FSequenceForm(..), rdcFSequenceForm
 
     -- * Default Value
   , DefaultValue(..)
+
   ) where
 
 import Control.Monad
 
+import Data.Typeable
 import Data.List (head,(++),filter,splitAt)
 import Data.Foldable
 
@@ -142,60 +146,95 @@ rdcFSequenceForm (FSequenceForm d (PSequence xis)) = FSequenceForm d (PSequence 
   xis' = filter (not . isDefaultValue d) xis
 
 --------------------------------------------------------------------------------
+-- SL -
+
+data SL = Strict | Lazy deriving (Show,Eq,Ord,Enum)
+
+--------------------------------------------------------------------------------
 -- FSequcne -
 
-data FSequence d i x = FSequence d (Maybe (Tree i x)) deriving (Foldable, Functor)
+data FSequence s d i x where
+  FSequenceStrict :: d -> (Maybe (Tree i x)) -> FSequence Strict d i x
+  FSequenceLazy   :: d -> (Maybe (Tree i x)) -> FSequence Lazy d i x
+
+deriving instance Foldable (FSequence s d i)
+deriving instance Functor (FSequence s d i)
 
 --------------------------------------------------------------------------------
 -- fsqD -
 
-fsqD :: FSequence d i x -> d
-fsqD (FSequence d _) = d
+fsqD :: FSequence s d i x -> d
+fsqD (FSequenceStrict d _) = d
+fsqD (FSequenceLazy d _)   = d
+
+
+--------------------------------------------------------------------------------
+-- fsqT -
+
+fsqT :: FSequence s d i x -> Maybe (Tree i x)
+fsqT (FSequenceStrict _ t) = t
+fsqT (FSequenceLazy _ t)   = t
+
 
 --------------------------------------------------------------------------------
 -- fsq -
 
-fsq :: (DefaultValue d i x, Ord i) => FSequence d i x -> i -> x
-fsq (FSequence d t) i = case i `lookup` t of
+fsq :: (DefaultValue d i x, Ord i) => FSequence s d i x -> i -> x
+fsq xs i = case i `lookup` (fsqT xs) of
   Just x  -> x
-  Nothing -> defaultValue d i
+  Nothing -> defaultValue (fsqD xs) i
 
 --------------------------------------------------------------------------------
 -- fsqForm -
 
-fsqForm :: (DefaultValue d i x, Eq x) => FSequence d i x -> FSequenceForm d i x
-fsqForm (FSequence d t) = rdcFSequenceForm $ FSequenceForm d (psqFromTree t)
+fsqForm :: (DefaultValue d i x, Eq x) => FSequence s d i x -> FSequenceForm d i x
+fsqForm (FSequenceStrict d t) = FSequenceForm d (psqFromTree t)
+fsqForm (FSequenceLazy d t)   = rdcFSequenceForm $ FSequenceForm d (psqFromTree t)
 
 --------------------------------------------------------------------------------
--- fsqMake -
+-- fsqMakeStrict -
 
-fsqMake :: FSequenceForm d i x -> FSequence d i x
-fsqMake (FSequenceForm d xis) = FSequence d (psqTree xis)
+fsqMakeStrict :: (DefaultValue d i x, Eq x) => FSequenceForm d i x -> FSequence Strict d i x
+fsqMakeStrict f = FSequenceStrict d (psqTree xis) where
+  FSequenceForm d xis = rdcFSequenceForm f
+
+--------------------------------------------------------------------------------
+-- fsqMakeLazy -
+
+fsqMakeLazy :: FSequenceForm d i x -> FSequence Lazy d i x
+fsqMakeLazy (FSequenceForm d xis) = FSequenceLazy d (psqTree xis)
 
 --------------------------------------------------------------------------------
 -- FSequence - Entity -
 
-instance (DefaultValue d i x,Eq x, Show d, Show i, Show x) => Show (FSequence d i x) where
-  show f@(FSequence d _) = "FSequence (" ++ show d ++ ") (" ++ show xis ++ ")" where
-    FSequenceForm _ xis = fsqForm f
+instance (DefaultValue d i x,Eq x, Show d, Show i, Show x) => Show (FSequence s d i x) where
+  show f = "FSequence (" ++ show d ++ ") (" ++ show xis ++ ")" where
+    FSequenceForm d xis = fsqForm f
 
-instance (DefaultValue d i x,Eq d, Eq i,Eq x) => Eq (FSequence d i x) where
+
+instance (DefaultValue d i x,Eq d, Eq i,Eq x) => Eq (FSequence s d i x) where
   f == g = fsqForm f == fsqForm g
 
-instance (DefaultValue d i x,Ord d, Ord i,Ord x) => Ord (FSequence d i x) where
+instance (DefaultValue d i x,Ord d, Ord i,Ord x) => Ord (FSequence s d i x) where
   compare f g = compare (fsqForm f) (fsqForm g)
 
-instance (Entity d, Entity i, Entity x, Ord i) => Validable (FSequence d i x) where
-  valid (FSequence d t) = Label "FSequence" :<=>: valid d && valid t
 
-instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i) => Entity (FSequence d i x)
+instance (Entity d, Entity i, Entity x, Ord i) => Validable (FSequence s d i x) where
+  valid f = Label "FSequence" :<=>: (valid $ fsqD f) && (valid $ fsqT f)
+
+instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i, Typeable s)
+  => Entity (FSequence s d i x)
 
 --------------------------------------------------------------------------------
 -- FSequence - Constructable -
 
-instance (DefaultValue d i x, Eq x) => Exposable (FSequence d i x) where
-  type Form (FSequence d i x) = FSequenceForm d i x
+instance (DefaultValue d i x, Eq x) => Exposable (FSequence s d i x) where
+  type Form (FSequence s d i x) = FSequenceForm d i x
   form = fsqForm
 
-instance (DefaultValue d i x, Eq x) => Constructable (FSequence d i x) where
-  make = fsqMake
+instance (DefaultValue d i x, Eq x) => Constructable (FSequence Strict d i x) where
+  make = fsqMakeStrict
+
+instance (DefaultValue d i x, Eq x) => Constructable (FSequence Lazy d i x) where
+  make = fsqMakeLazy
+
