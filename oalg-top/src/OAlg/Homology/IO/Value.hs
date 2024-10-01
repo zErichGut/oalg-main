@@ -51,6 +51,7 @@ import OAlg.Data.Either
 import OAlg.Entity.Natural hiding ((++),S)
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.PSequence
+import OAlg.Entity.Sequence.FSequence
 -- import OAlg.Entity.Sum
 
 import OAlg.Structure.Fibred
@@ -67,7 +68,6 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain
 -- import OAlg.Homology.Simplex
 
-import OAlg.Homology.IO.FSequence
 import OAlg.Homology.IO.SomeChain
 
 import OAlg.Data.Symbol (Symbol())

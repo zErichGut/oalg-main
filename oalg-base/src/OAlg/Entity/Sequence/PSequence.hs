@@ -30,19 +30,24 @@ module OAlg.Entity.Sequence.PSequence
   , psqShear
   , psqSwap
 
+    -- * Tree
+  , PTree(..),psqTreeLookup, psqTree, psqFromTree, psqTreeMax, psqTreeMin, psqTreeSupport
+  
     -- * X
   , xPSequence
   ) where
 
 import Control.Monad 
 
+import Data.Monoid
 import Data.Foldable
 import Data.Typeable
 
-import Data.List (map,sortBy,groupBy,filter,head,tail,(++),zip)
+import Data.List (map,sortBy,groupBy,filter,head,tail,(++),zip,splitAt)
 
 import OAlg.Prelude
 
+import OAlg.Data.Tree
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Additive
@@ -372,3 +377,96 @@ xPSequence n m xx xi = do
   is <- xSet m xi
   return $ PSequence $ (xs `zip` setxs is)
 
+--------------------------------------------------------------------------------
+-- PTree -
+
+-- | binary tree for efficient retrieving elements of a partially defined sequence.
+newtype PTree i x = PTree (Maybe (Tree i (x,i))) deriving (Show,Eq,Ord)
+
+instance Functor (PTree i) where
+  fmap _ (PTree Nothing)  = PTree Nothing
+  fmap f (PTree (Just t)) = PTree $ Just $ tmap f t where
+    tmap f (Leaf (x,i)) = Leaf (f x,i)
+    tmap f (Node i l r) = Node i (tmap f l) (tmap f r)
+
+instance Foldable (PTree i) where
+  foldMap _ (PTree Nothing)  = mempty
+  foldMap f (PTree (Just t)) = fm f t where
+    fm f (Leaf (x,_)) = f x
+    fm f (Node _ l r) = fm f l <> fm f r
+  
+
+instance (Entity x, Entity i, Ord i) => Validable (PTree i x) where
+  valid (PTree mt) = Label "PTree" :<=>: case mt of
+    Nothing -> SValid
+    Just t  -> vld t where
+      vld (Node i l r)  = valid i && vldl i l && vldr i r
+      vld (Leaf (x,i))  = valid i && valid x
+  
+      vldl i t = Label "l" :<=>: case t of
+        Leaf (_,i') -> And [ vld t
+                           , (i' < i) :?> Params ["i":=show i,"i'":=show i']
+                           ]
+        Node i' l r -> valid i' && vldl i' l && vldr i' r
+        
+      vldr i t = Label "r" :<=>: case t of
+        Leaf (_,i') -> And [ vld t
+                           , (i <= i') :?> Params ["i":=show i,"i'":=show i']
+                           ]
+        Node i' l r -> valid i' && vldl i' l && vldr i' r
+    
+instance (Entity x, Entity i, Ord i) => Entity (PTree i x)
+      
+--------------------------------------------------------------------------------
+-- psqTree -
+
+-- | the induced tree.
+psqTree :: PSequence i x -> PTree i x
+psqTree (PSequence [])  = PTree Nothing
+psqTree (PSequence xis) = PTree $ Just $ toTree xis where
+  toTree [xi] = Leaf xi
+  toTree xis  = Node (snd $ head r) (toTree l) (toTree r) where
+    (l,r) = splitAt (length xis `divInt` 2) xis
+
+--------------------------------------------------------------------------------
+-- psqFromTree -
+
+-- | the induced partially sequence.
+psqFromTree :: PTree i x -> PSequence i x
+psqFromTree (PTree Nothing)  = psqEmpty
+psqFromTree (PTree (Just t)) = PSequence $ toList t
+
+--------------------------------------------------------------------------------
+-- psqTreeLookup -
+
+-- | retrieving a value from the tree.
+psqTreeLookup :: Ord i => PTree i x -> i -> Maybe x
+psqTreeLookup (PTree Nothing)  _ = Nothing
+psqTreeLookup (PTree (Just t)) i = if i' == i then Just x else Nothing where (x,i') = lookup t i
+
+--------------------------------------------------------------------------------
+-- psqTreeMin -
+
+-- | the minimal index.
+psqTreeMin :: PTree i x -> Closure i
+psqTreeMin (PTree Nothing)  = PosInf
+psqTreeMin (PTree (Just t)) = pmin t where
+  pmin (Leaf (_,i)) = It i
+  pmin (Node _ l _) = pmin l
+
+--------------------------------------------------------------------------------
+-- psqTreeMax -
+
+-- | the maximal index.
+psqTreeMax :: PTree i x -> Closure i
+psqTreeMax (PTree Nothing)  = NegInf
+psqTreeMax (PTree (Just t)) = pmax t where
+  pmax (Leaf (_,i)) = It i
+  pmax (Node _ _ r) = pmax r
+
+--------------------------------------------------------------------------------
+-- psqTreeSupport -
+
+-- | the support, i.e the minimal and the maximal index of the tree.
+psqTreeSupport :: PTree i x -> (Closure i,Closure i)
+psqTreeSupport t = (psqTreeMin t,psqTreeMax t)

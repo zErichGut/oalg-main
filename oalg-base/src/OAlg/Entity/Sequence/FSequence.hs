@@ -21,19 +21,19 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- Sequences with finite support, i.e total sequences of values according to a totally ordered index
--- where only finitely many values are unequal to the default value.
+-- Total sequences according to a index with finite support, i.e only finite many values are not equal
+-- to the default value.
 --
 -- The implementation is optimized for:
 --
 -- - retrieving the values by an index.
 --
 -- - values which may have a very time consuming evaluation. 
-module OAlg.Homology.IO.FSequence
+module OAlg.Entity.Sequence.FSequence
   (
     -- * FSequence
-    FSequence(), SL(..)
-  ,fsq, fsqD, fsqForm, fsqMakeStrict, fsqMakeLazy 
+    FSequence(), Behavior(..)
+  ,fsq, fsqSupport, fsqMin, fsqMax, fsqD, fsqForm, fsqMakeStrict, fsqMakeLazy 
 
     -- * Form
   , FSequenceForm(..), rdcFSequenceForm
@@ -43,94 +43,44 @@ module OAlg.Homology.IO.FSequence
 
     -- * Proposition
   , relHomogenRoot
+
   ) where
 
-import Control.Monad
+import Control.Monad(Functor(..))
 
 import Data.Typeable
-import Data.List (head,(++),filter,splitAt)
+import Data.List ((++),filter)
 import Data.Foldable
 
 import Data.Maybe
 
 import OAlg.Prelude
 
+import OAlg.Data.Tree
 import OAlg.Data.Constructable
 
 import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Structure.Fibred
+
 --------------------------------------------------------------------------------
 -- DefaultValue -
 
+-- | defining a default for every index.
 class DefaultValue d i x where
   defaultValue :: d -> i -> x
 
 --------------------------------------------------------------------------------
 -- isDefaultValue -
 
+-- | test for being the default value according to the given index.
 isDefaultValue :: (DefaultValue d i x, Eq x) => d -> (x,i) -> Bool
 isDefaultValue d (x,i) = x == defaultValue d i
 
 --------------------------------------------------------------------------------
--- Tree -
-
-data Tree i x
-  = Leaf i x
-  | Node i (Tree i x) (Tree i x)
-  deriving (Show,Eq,Ord,Foldable,Functor)
-
---------------------------------------------------------------------------------
--- psqTree -
-
-psqTree :: PSequence i x -> Maybe (Tree i x)
-psqTree (PSequence [])  = Nothing
-psqTree (PSequence xis) = Just $ toTree xis where
-  toTree [(x,i)] = Leaf i x
-  toTree xis     = Node (snd $ head r) (toTree l) (toTree r) where
-    (l,r) = splitAt (length xis `divInt` 2) xis
-
---------------------------------------------------------------------------------
--- psqFromTree -
-
-psqFromTree :: Maybe (Tree i x) -> PSequence i x
-psqFromTree Nothing  = psqEmpty
-psqFromTree (Just t) = PSequence (ft t) where
-  ft (Leaf i x)   = [(x,i)]
-  ft (Node _ l r) = ft l ++ ft r
-
---------------------------------------------------------------------------------
--- Entity - Tree -
-
-instance (Entity i, Entity x, Ord i) => Validable (Tree i x) where
-  valid t = Label "Tree" :<=>: vld t where
-    vld (Node i l r)  = valid i && vldl i l && vldr i r
-    vld (Leaf i x)    = valid i && valid x
-
-    vldl i t = Label "l" :<=>: case t of
-      Leaf i' _   -> And [ vld t
-                         , (i' < i) :?> Params ["i":=show i,"i'":=show i']
-                         ]
-      Node i' l r -> valid i' && vldl i' l && vldr i' r
-      
-    vldr i t = Label "r" :<=>: case t of
-      Leaf i' _   -> And [ vld t
-                         , (i <= i') :?> Params ["i":=show i,"i'":=show i']
-                         ]
-      Node i' l r -> valid i' && vldl i' l && vldr i' r
-    
---------------------------------------------------------------------------------
--- lookup -
-
-lookup :: Ord i => i -> Maybe (Tree i x) -> Maybe x
-lookup _ Nothing  = Nothing
-lookup i (Just t) = lk i t where
-  lk i (Leaf i' x)   = if i == i' then Just x else Nothing
-  lk i (Node i' l r) = if i <  i' then lk i l else lk i r
-
---------------------------------------------------------------------------------
 -- FSeqenceForm -
 
+-- | form for total sequences with finite support.
 data FSequenceForm d i x = FSequenceForm d (PSequence i x)
   deriving (Show,Eq,Ord)
 
@@ -149,21 +99,35 @@ instance (Entity d, Entity i, Ord i, Entity x) => Fibred (FSequenceForm d i x) w
 --------------------------------------------------------------------------------
 -- rdcFSequenceForm -
 
+-- | reducing a sequence form, i.e. eliminates all default values according to the given index.
 rdcFSequenceForm :: (DefaultValue d i x, Eq x) => FSequenceForm d i x -> FSequenceForm d i x
 rdcFSequenceForm (FSequenceForm d (PSequence xis)) = FSequenceForm d (PSequence xis') where
   xis' = filter (not . isDefaultValue d) xis
 
 --------------------------------------------------------------------------------
--- SL -
+-- Behavior -
 
-data SL = Strict | Lazy deriving (Show,Eq,Ord,Enum)
+-- | the evaluation behavior of a 'FSequence'.
+data Behavior = Strict | Lazy deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
 -- FSequcne -
 
+-- | total sequence according to the index @__i__@ with finite support, i.e only finite many values
+-- are not equal to the default value according to a given index.
+--
+-- It comes with to /flavors/ which defines the behavior of creating the sequence via 'make':
+--
+-- 'Strict': eliminates all default values from the form to create the sequence. In this case for
+-- example the testing of equality is efficient.
+--
+-- 'Lazy': takes all the values form the form to create the sequence. In this case for example
+-- the testing of equality is less efficient.
+--
+-- Both /flavors/ have equal 'form's.
 data FSequence s d i x where
-  FSequenceStrict :: d -> (Maybe (Tree i x)) -> FSequence Strict d i x
-  FSequenceLazy   :: d -> (Maybe (Tree i x)) -> FSequence Lazy d i x
+  FSequenceStrict :: d -> PTree i x -> FSequence Strict d i x
+  FSequenceLazy   :: d -> PTree i x -> FSequence Lazy d i x
 
 deriving instance Foldable (FSequence s d i)
 deriving instance Functor (FSequence s d i)
@@ -171,15 +135,16 @@ deriving instance Functor (FSequence s d i)
 --------------------------------------------------------------------------------
 -- fsqD -
 
+-- | the underlying definition.
 fsqD :: FSequence s d i x -> d
 fsqD (FSequenceStrict d _) = d
 fsqD (FSequenceLazy d _)   = d
 
-
 --------------------------------------------------------------------------------
 -- fsqT -
 
-fsqT :: FSequence s d i x -> Maybe (Tree i x)
+-- | the underlying tree.
+fsqT :: FSequence s d i x -> PTree i x
 fsqT (FSequenceStrict _ t) = t
 fsqT (FSequenceLazy _ t)   = t
 
@@ -187,14 +152,37 @@ fsqT (FSequenceLazy _ t)   = t
 --------------------------------------------------------------------------------
 -- fsq -
 
+-- | retrieving a value according to a given index.
 fsq :: (DefaultValue d i x, Ord i) => FSequence s d i x -> i -> x
-fsq xs i = case i `lookup` (fsqT xs) of
+fsq xs i = case psqTreeLookup (fsqT xs) i of
   Just x  -> x
   Nothing -> defaultValue (fsqD xs) i
 
 --------------------------------------------------------------------------------
+-- fsqMin -
+
+-- | the minimal index.
+fsqMin :: FSequence s d i x -> Closure i
+fsqMin = psqTreeMin . fsqT
+
+--------------------------------------------------------------------------------
+-- fsqMax -
+
+-- | the maxiaml index.
+fsqMax :: FSequence s d i x -> Closure i
+fsqMax = psqTreeMax . fsqT
+
+--------------------------------------------------------------------------------
+-- fsqSupport -
+
+-- | the support, i.e the minimal and the maximal index of the 'FSequence'.
+fsqSupport :: FSequence s d i x -> (Closure i,Closure i)
+fsqSupport = psqTreeSupport . fsqT
+
+--------------------------------------------------------------------------------
 -- fsqForm -
 
+-- | the underlying form.
 fsqForm :: (DefaultValue d i x, Eq x) => FSequence s d i x -> FSequenceForm d i x
 fsqForm (FSequenceStrict d t) = FSequenceForm d (psqFromTree t)
 fsqForm (FSequenceLazy d t)   = rdcFSequenceForm $ FSequenceForm d (psqFromTree t)
@@ -202,6 +190,7 @@ fsqForm (FSequenceLazy d t)   = rdcFSequenceForm $ FSequenceForm d (psqFromTree 
 --------------------------------------------------------------------------------
 -- fsqMakeStrict -
 
+-- | makes a 'FSequnce' with a strict behavior.
 fsqMakeStrict :: (DefaultValue d i x, Eq x) => FSequenceForm d i x -> FSequence Strict d i x
 fsqMakeStrict f = FSequenceStrict d (psqTree xis) where
   FSequenceForm d xis = rdcFSequenceForm f
@@ -209,6 +198,7 @@ fsqMakeStrict f = FSequenceStrict d (psqTree xis) where
 --------------------------------------------------------------------------------
 -- fsqMakeLazy -
 
+-- | makes a 'FSequnce' with a lazy behavior.
 fsqMakeLazy :: FSequenceForm d i x -> FSequence Lazy d i x
 fsqMakeLazy (FSequenceForm d xis) = FSequenceLazy d (psqTree xis)
 
@@ -254,13 +244,16 @@ instance (DefaultValue d i x, Eq x) => Constructable (FSequence Lazy d i x) wher
 --------------------------------------------------------------------------------
 -- relHomogenRoot -
 
+-- | relation for validating a 'Fsequnce' such that the 'root' of every element of the sequence
+-- is equal to the 'root' of the default value according to the index.
 relHomogenRoot :: (DefaultValue d i x, Fibred x, Show i) => FSequence s d i x -> Statement
 relHomogenRoot f = case fsqT f of
-  Nothing -> SValid
-  Just t  -> vld (fsqD f) t where
-    vld :: (DefaultValue d i x, Fibred x, Show i) => d -> Tree i x -> Statement
-    vld d (Leaf i x)   = eqRoot (defaultValue d i) x :?> Params ["i":=show i,"x":=show x]
+  PTree Nothing  -> SValid
+  PTree (Just t) -> vld (fsqD f) t where
+    vld :: (DefaultValue d i x, Fibred x, Show i) => d -> Tree i (x,i) -> Statement
+    vld d (Leaf (x,i)) = eqRoot (defaultValue d i) x :?> Params ["i":=show i,"x":=show x]
     vld d (Node _ l r) = vld d l && vld d r
     
     eqRoot :: Fibred x => x -> x -> Bool
     eqRoot a b = root a == root b
+

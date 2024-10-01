@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           oalg-base
-version:        2.0.0.2
+version:        2.0.0.3
 synopsis:       Algebraic structures on oriented entities and limits as a tool kit to solve algebraic problems.
 description:    Basic definition of algebraic structures on oriented entities.
                 .
@@ -110,6 +110,7 @@ library
       OAlg.Entity.Sequence
       OAlg.Entity.Sequence.CSequence
       OAlg.Entity.Sequence.Definition
+      OAlg.Entity.Sequence.FSequence
       OAlg.Entity.Sequence.Graph
       OAlg.Entity.Sequence.Permutation
       OAlg.Entity.Sequence.PSequence

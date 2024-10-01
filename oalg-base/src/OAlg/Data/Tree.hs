@@ -1,6 +1,6 @@
 
 {-# LANGUAGE
-  DeriveFoldable
+  DeriveFoldable, DeriveFunctor
 #-}
 
 -- |
@@ -23,7 +23,7 @@ import Prelude hiding (lookup)
 
 -- | binary tree with node element in @__i__@ and leaf element in @__x__@.
 data Tree i x = Node i (Tree i x) (Tree i x) | Leaf x
-  deriving (Show,Eq,Ord,Foldable)
+  deriving (Show,Eq,Ord,Foldable,Functor)
 
 --------------------------------------------------------------------------------
 -- lookup -
