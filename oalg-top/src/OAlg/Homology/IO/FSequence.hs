@@ -142,6 +142,10 @@ instance (Validable d, Entity i, Ord i, Entity x) => Validable (FSequenceForm d 
 
 instance (Entity d, Entity i, Ord i, Entity x) => Entity (FSequenceForm d i x)
 
+instance (Entity d, Entity i, Ord i, Entity x) => Fibred (FSequenceForm d i x) where
+  type Root (FSequenceForm d i x) = d
+  root (FSequenceForm d _) = d
+
 --------------------------------------------------------------------------------
 -- rdcFSequenceForm -
 
@@ -229,6 +233,11 @@ instance (Entity d, Entity i, Entity x, Ord i) => Validable (FSequence s d i x) 
 instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i, Typeable s)
   => Entity (FSequence s d i x)
 
+instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i, Typeable s)
+  => Fibred (FSequence s d i x) where
+  type Root (FSequence s d i x) = d
+  root = fsqD
+  
 --------------------------------------------------------------------------------
 -- FSequence - Constructable -
 
