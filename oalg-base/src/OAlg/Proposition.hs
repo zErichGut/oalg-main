@@ -51,5 +51,6 @@ prpOAlgBase = Prp "OAlgBase"
             , Label "Permutation" :<=>: prpPermutation
             , Label "Matrix"  :<=>: prpMatrixZ
             , Label "Vector"  :<=>: prpRepMatrixZ 8 15
+            , prpFSequence
             ]
 

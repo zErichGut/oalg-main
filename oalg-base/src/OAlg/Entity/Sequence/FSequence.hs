@@ -43,13 +43,14 @@ module OAlg.Entity.Sequence.FSequence
 
     -- * Proposition
   , relHomogenRoot
-
+  , prpFSequenceSupport
+  , prpFSequence
   ) where
 
-import Control.Monad(Functor(..))
+import Control.Monad(Monad(..),Functor(..))
 
 import Data.Typeable
-import Data.List ((++),filter)
+import Data.List (head,(++),filter,zip,sort,group)
 import Data.Foldable
 
 import Data.Maybe
@@ -62,6 +63,8 @@ import OAlg.Data.Constructable
 import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Structure.Fibred
+import OAlg.Structure.Oriented
+import OAlg.Structure.Additive
 
 --------------------------------------------------------------------------------
 -- DefaultValue -
@@ -162,22 +165,30 @@ fsq xs i = case psqTreeLookup (fsqT xs) i of
 -- fsqMin -
 
 -- | the minimal index.
-fsqMin :: FSequence s d i x -> Closure i
-fsqMin = psqTreeMin . fsqT
+fsqMin :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> Closure i
+fsqMin (FSequenceStrict _ t)              = psqTreeMin t
+fsqMin (FSequenceLazy _ (PTree Nothing))  = PosInf
+fsqMin (FSequenceLazy d (PTree (Just t))) = tmin PosInf t where
+  tmin m (Leaf xi@(_,i)) = if isDefaultValue d xi then m else min m (It i)
+  tmin m (Node _ l r)    = if ml < m then ml else tmin m r where ml = tmin m l 
 
 --------------------------------------------------------------------------------
 -- fsqMax -
 
 -- | the maxiaml index.
-fsqMax :: FSequence s d i x -> Closure i
-fsqMax = psqTreeMax . fsqT
+fsqMax :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> Closure i
+fsqMax (FSequenceStrict _ t) = psqTreeMax t
+fsqMax (FSequenceLazy _ (PTree Nothing))  = NegInf
+fsqMax (FSequenceLazy d (PTree (Just t))) = tmax NegInf t where
+  tmax m (Leaf xi@(_,i)) = if isDefaultValue d xi then m else max m (It i)
+  tmax m (Node _ l r)    = if mr > m then mr else tmax m l where mr = tmax m r 
 
 --------------------------------------------------------------------------------
 -- fsqSupport -
 
 -- | the support, i.e the minimal and the maximal index of the 'FSequence'.
-fsqSupport :: FSequence s d i x -> (Closure i,Closure i)
-fsqSupport = psqTreeSupport . fsqT
+fsqSupport :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> (Closure i,Closure i)
+fsqSupport f = (fsqMin f,fsqMax f)
 
 --------------------------------------------------------------------------------
 -- fsqForm -
@@ -242,6 +253,23 @@ instance (DefaultValue d i x, Eq x) => Constructable (FSequence Lazy d i x) wher
   make = fsqMakeLazy
 
 --------------------------------------------------------------------------------
+-- DefaultZeroValue -
+
+newtype DefaultZeroValue a = DefaultZeroValue (Root a)
+
+deriving instance Fibred a => Show (DefaultZeroValue a)
+deriving instance Fibred a => Eq (DefaultZeroValue a)
+deriving instance (Fibred a, OrdRoot a) => Ord (DefaultZeroValue a)
+
+instance Fibred a => Validable (DefaultZeroValue a) where
+  valid (DefaultZeroValue r) = Label "DefaultZeroValue" :<=>: valid r
+
+instance Fibred a => Entity (DefaultZeroValue a)
+
+instance Additive a => DefaultValue (DefaultZeroValue a) i a where
+  defaultValue (DefaultZeroValue r) _ = zero r
+  
+--------------------------------------------------------------------------------
 -- relHomogenRoot -
 
 -- | relation for validating a 'Fsequnce' such that the 'root' of every element of the sequence
@@ -257,3 +285,38 @@ relHomogenRoot f = case fsqT f of
     eqRoot :: Fibred x => x -> x -> Bool
     eqRoot a b = root a == root b
 
+--------------------------------------------------------------------------------
+-- prpFSequenceSupport -
+
+-- | support of the two flavors are equal.
+prpFSequenceSupport :: N -> Statement
+prpFSequenceSupport l = Prp ("FSequenceSupport " ++ show l)
+  :<=>: Forall (xForm l) (\xis -> ((fsqSupport $ fsqMakeStrict xis) == (fsqSupport $ fsqMakeLazy xis))
+                                       :?> Params ["xis":=show xis]
+                         )
+  where zForm :: PSequence N Z -> FSequenceForm (DefaultZeroValue Z) N Z
+        zForm = FSequenceForm (DefaultZeroValue (():>()))
+
+        xForm :: N -> X (FSequenceForm (DefaultZeroValue Z) N Z)
+        xForm l = amap1 zForm $ xis l
+
+        xis :: N -> X (PSequence N Z)
+        xis l = do
+          is <- xi l
+          zs <- xz l
+          return $ PSequence (zs `zip` is)
+
+        xi :: N -> X ([N])
+        xi l = do
+          is <- xTakeN l (xNB 0 1000)
+          return $ amap1 head $ group $ sort is
+
+        xz :: N -> X ([Z])
+        xz l = xTakeN l (xOneOfW [(5,0),(1,1)])
+
+--------------------------------------------------------------------------------
+-- prpFSequence -
+
+-- | validating 'FSequence'.
+prpFSequence :: Statement
+prpFSequence = Prp "FSequence" :<=>: prpFSequenceSupport 50
