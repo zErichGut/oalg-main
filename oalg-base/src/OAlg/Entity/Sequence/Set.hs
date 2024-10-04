@@ -162,7 +162,7 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
 -- Just 2
 setIndex :: Ord x => Set x -> x -> Maybe N
 setIndex (Set []) = const Nothing
--- setIndex (Set xs) = \x -> let (x',i) = lookup xs' x in if x' == x then Just i else Nothing
+-- setIndex (Set xs) = \x -> let (x',i) = trLookup xs' x in if x' == x then Just i else Nothing
 setIndex (Set xs) = lp (lt (xs `zip` [0..]))
   where
     -- xs' = lt (xs `zip` [0..])
@@ -172,7 +172,7 @@ setIndex (Set xs) = lp (lt (xs `zip` [0..]))
       (xisL,xisR) = splitAtN (lengthN xis `div` 2) xis
 
 lp :: Ord x => Tree x (x,y) -> x -> Maybe y
-lp t x = let (x',y) = lookup t x in if x' == x then Just y else Nothing
+lp t x = let (x',y) = trLookup t x in if x' == x then Just y else Nothing
 --------------------------------------------------------------------------------
 -- Set - POrd -
 
@@ -182,7 +182,7 @@ instance Ord x => POrd (Set x) where
 --------------------------------------------------------------------------------
 -- xSet -
 
--- | random variable of sets with maximal the given length.
+-- | random variable of sets with a maximal length of the given length.
 xSet :: Ord x => N -> X x -> X (Set x)
 xSet n xx = do
   xs <- xTakeN n xx

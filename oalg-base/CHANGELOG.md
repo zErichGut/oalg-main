@@ -70,7 +70,14 @@ has been defined by EmbeddingFrom.
 ### Changed
 - data type Closer in module OAlg.Data.Ord changed to Closure.
 
-## [2.0.0.4] - 2024-10-01
+## [2.0.0.6] - 2024-10-03
+
 ### Added
+- general mappings for PSequences.
 - FSequence for total sequences with finite support.
 - PTree for efficient retrieving values from a partially defiend sequence.
+- Validation for data Closure
+- trFilter in OAlg.Data.Tree
+
+### Changed
+- the function lookup in OAl.Data.Tree to trLookup

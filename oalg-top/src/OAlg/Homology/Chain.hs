@@ -19,10 +19,10 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- The 'boundary' of a 'Chain'.
+-- The boundary of a 'Chain'.
 module OAlg.Homology.Chain
   ( -- * Boundary
-    HomBoundary(..), boundary
+    HomBoundary(..), chBoundary
 
     -- * Chain
   , Chain, ch
@@ -80,12 +80,12 @@ rAlt :: Ring r => [r]
 rAlt = za rOne where za i = i:za (negate i)
 
 -------------------------------------------------------------------------------
--- boundary -
+-- chBoundary -
 
 -- | the boundary operator of a chain of order @__o__@. 
-boundary :: (Attestable o, Ring r, Commutative r, Entity x, Ord x)
+chBoundary :: (Attestable o, Ring r, Commutative r, Entity x, Ord x)
   => Chain r (o+1) x -> Chain r o x
-boundary = ssySum (f rAlt) where
+chBoundary = ssySum (f rAlt) where
   f :: [r] -> Simplex (n+1) x -> LinearCombination r (Simplex n x)
   f rs sn' = LinearCombination (rs `zip` (toList $ faces sn'))
  
@@ -129,7 +129,7 @@ instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) Add
 instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) (Vec r)
 
 instance (Ring r, Commutative r) => Applicative (HomBoundary r) where
-  amap HomBoundary     = boundary
+  amap HomBoundary     = chBoundary
   
 instance (Ring r, Commutative r) => HomFibred (HomBoundary r) where
   rmap HomBoundary     = const ()

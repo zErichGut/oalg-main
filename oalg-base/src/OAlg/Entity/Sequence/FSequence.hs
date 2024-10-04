@@ -10,7 +10,6 @@
            , StandaloneDeriving
            , DataKinds
            , DeriveFoldable
-           , DeriveFunctor
 #-}
 
 
@@ -31,26 +30,29 @@
 -- - values which may have a very time consuming evaluation. 
 module OAlg.Entity.Sequence.FSequence
   (
+
     -- * FSequence
-    FSequence(), Behavior(..)
-  ,fsq, fsqSupport, fsqMin, fsqMax, fsqD, fsqForm, fsqMakeStrict, fsqMakeLazy 
+    FSequence(), Behavior(..), fsqxs, fsqx
+  , fsqSpan, fsqMin, fsqMax, fsqD, fsqForm, fsqMakeStrict, fsqMakeLazy
+  , fsqMap, fsqMapShift
+  , fsqMapWithIndex, fsqMapWithIndexStrict, fsqMapWithIndexLazy
+  , fsqFilter
 
     -- * Form
   , FSequenceForm(..), rdcFSequenceForm
 
     -- * Default Value
-  , DefaultValue(..)
+  , DefaultValue(..), isDefaultValue
 
     -- * Proposition
   , relHomogenRoot
-  , prpFSequenceSupport
+  , prpFSequenceSpan
   , prpFSequence
+
   ) where
 
-import Control.Monad(Monad(..),Functor(..))
-
 import Data.Typeable
-import Data.List (head,(++),filter,zip,sort,group)
+import Data.List ((++),filter)
 import Data.Foldable
 
 import Data.Maybe
@@ -65,6 +67,7 @@ import OAlg.Entity.Sequence.PSequence
 import OAlg.Structure.Fibred
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
+import OAlg.Structure.Number
 
 --------------------------------------------------------------------------------
 -- DefaultValue -
@@ -133,7 +136,6 @@ data FSequence s d i x where
   FSequenceLazy   :: d -> PTree i x -> FSequence Lazy d i x
 
 deriving instance Foldable (FSequence s d i)
-deriving instance Functor (FSequence s d i)
 
 --------------------------------------------------------------------------------
 -- fsqD -
@@ -153,11 +155,11 @@ fsqT (FSequenceLazy _ t)   = t
 
 
 --------------------------------------------------------------------------------
--- fsq -
+-- fsqx -
 
 -- | retrieving a value according to a given index.
-fsq :: (DefaultValue d i x, Ord i) => FSequence s d i x -> i -> x
-fsq xs i = case psqTreeLookup (fsqT xs) i of
+fsqx :: (DefaultValue d i x, Ord i) => FSequence s d i x -> i -> x
+fsqx xs i = case ptrx (fsqT xs) i of
   Just x  -> x
   Nothing -> defaultValue (fsqD xs) i
 
@@ -166,7 +168,7 @@ fsq xs i = case psqTreeLookup (fsqT xs) i of
 
 -- | the minimal index.
 fsqMin :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> Closure i
-fsqMin (FSequenceStrict _ t)              = psqTreeMin t
+fsqMin (FSequenceStrict _ t)              = ptrMin t
 fsqMin (FSequenceLazy _ (PTree Nothing))  = PosInf
 fsqMin (FSequenceLazy d (PTree (Just t))) = tmin PosInf t where
   tmin m (Leaf xi@(_,i)) = if isDefaultValue d xi then m else min m (It i)
@@ -177,18 +179,67 @@ fsqMin (FSequenceLazy d (PTree (Just t))) = tmin PosInf t where
 
 -- | the maxiaml index.
 fsqMax :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> Closure i
-fsqMax (FSequenceStrict _ t) = psqTreeMax t
+fsqMax (FSequenceStrict _ t) = ptrMax t
 fsqMax (FSequenceLazy _ (PTree Nothing))  = NegInf
 fsqMax (FSequenceLazy d (PTree (Just t))) = tmax NegInf t where
   tmax m (Leaf xi@(_,i)) = if isDefaultValue d xi then m else max m (It i)
   tmax m (Node _ l r)    = if mr > m then mr else tmax m l where mr = tmax m r 
 
 --------------------------------------------------------------------------------
--- fsqSupport -
+-- fsqSpan -
 
 -- | the support, i.e the minimal and the maximal index of the 'FSequence'.
-fsqSupport :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> (Closure i,Closure i)
-fsqSupport f = (fsqMin f,fsqMax f)
+fsqSpan :: (DefaultValue d i x, Eq x, Ord i) => FSequence s d i x -> Span i
+fsqSpan f = (fsqMin f,fsqMax f)
+
+--------------------------------------------------------------------------------
+-- fsqFilter -
+
+-- | the sub sequence all values satisfying the given predicate.
+fsqFilter :: (x -> Bool) -> FSequence s d i x -> FSequence s d i x
+fsqFilter p xis = case xis of
+  FSequenceStrict d t -> FSequenceStrict d (ptrFilter p t)
+  FSequenceLazy d t   -> FSequenceLazy d (ptrFilter p t)
+
+--------------------------------------------------------------------------------
+-- fsqMapWithIndex -
+
+-- | maps a sequence according to the given mappings.
+fsqMapWithIndexStrict :: (DefaultValue e j y, Eq y)
+  => (d -> e) -> Monotone i j -> ((x,i) -> y) -> FSequence Strict d i x -> FSequence Strict e j y
+fsqMapWithIndexStrict e j y (FSequenceStrict d t) = FSequenceStrict d' t' where
+  d' = e d
+  t' = ptrFilterWithIndex (not . isDefaultValue d') $ ptrMapWithIndex j y t
+
+-- | maps a sequence according to the given mappings.
+fsqMapWithIndexLazy :: (d -> e) -> Monotone i j -> ((x,i) -> y)
+  -> FSequence Lazy d i x -> FSequence Lazy e j y
+fsqMapWithIndexLazy e j y (FSequenceLazy d t) = FSequenceLazy d' t' where
+  d' = e d
+  t' = ptrMapWithIndex j y t
+
+-- | maps a sequence according to the given mappings.
+fsqMapWithIndex :: (DefaultValue e j y, Eq y)
+  => (d -> e) -> Monotone i j -> ((x,i) -> y) -> FSequence s d i x -> FSequence s e j y
+fsqMapWithIndex e j y xis = case xis of
+  FSequenceStrict _ _ -> fsqMapWithIndexStrict e j y xis
+  FSequenceLazy _ _   -> fsqMapWithIndexLazy e j y xis
+
+--------------------------------------------------------------------------------
+-- fsqMapShift -
+
+-- | maps a sequence according to the given mappings.
+fsqMapShift :: (DefaultValue e i y, Eq y, Number i)
+  => (d -> e) -> i -> ((x,i) -> y) -> FSequence s d i x -> FSequence s e i y
+fsqMapShift e t = fsqMapWithIndex e (Monotone (+t))
+
+--------------------------------------------------------------------------------
+-- fsqMap -
+
+-- | maps a sequence according to the given mappings.
+fsqMap :: (DefaultValue d i y, Eq y)
+  => (x -> y) -> FSequence s d i x -> FSequence s d i y
+fsqMap f = fsqMapWithIndex id (Monotone id) (f . fst)
 
 --------------------------------------------------------------------------------
 -- fsqForm -
@@ -197,6 +248,13 @@ fsqSupport f = (fsqMin f,fsqMax f)
 fsqForm :: (DefaultValue d i x, Eq x) => FSequence s d i x -> FSequenceForm d i x
 fsqForm (FSequenceStrict d t) = FSequenceForm d (psqFromTree t)
 fsqForm (FSequenceLazy d t)   = rdcFSequenceForm $ FSequenceForm d (psqFromTree t)
+
+--------------------------------------------------------------------------------
+-- fsqxs -
+
+-- | the underlying list of non-default, indexed values, 
+fsqxs :: (DefaultValue d i x, Eq x) => FSequence s d i x -> [(x,i)]
+fsqxs xis = psqxs xis' where FSequenceForm _ xis' = fsqForm xis
 
 --------------------------------------------------------------------------------
 -- fsqMakeStrict -
@@ -286,12 +344,12 @@ relHomogenRoot f = case fsqT f of
     eqRoot a b = root a == root b
 
 --------------------------------------------------------------------------------
--- prpFSequenceSupport -
+-- prpFSequenceSpan -
 
 -- | support of the two flavors are equal.
-prpFSequenceSupport :: N -> Statement
-prpFSequenceSupport l = Prp ("FSequenceSupport " ++ show l)
-  :<=>: Forall (xForm l) (\xis -> ((fsqSupport $ fsqMakeStrict xis) == (fsqSupport $ fsqMakeLazy xis))
+prpFSequenceSpan :: N -> Statement
+prpFSequenceSpan l = Prp ("FSequenceSpan " ++ show l)
+  :<=>: Forall (xForm l) (\xis -> ((fsqSpan $ fsqMakeStrict xis) == (fsqSpan $ fsqMakeLazy xis))
                                        :?> Params ["xis":=show xis]
                          )
   where zForm :: PSequence N Z -> FSequenceForm (DefaultZeroValue Z) N Z
@@ -301,22 +359,12 @@ prpFSequenceSupport l = Prp ("FSequenceSupport " ++ show l)
         xForm l = amap1 zForm $ xis l
 
         xis :: N -> X (PSequence N Z)
-        xis l = do
-          is <- xi l
-          zs <- xz l
-          return $ PSequence (zs `zip` is)
-
-        xi :: N -> X ([N])
-        xi l = do
-          is <- xTakeN l (xNB 0 1000)
-          return $ amap1 head $ group $ sort is
-
-        xz :: N -> X ([Z])
-        xz l = xTakeN l (xOneOfW [(5,0),(1,1)])
+        xis n = xPSequence n n (xOneOfW [(2,0),(1,1)]) xN
 
 --------------------------------------------------------------------------------
 -- prpFSequence -
 
 -- | validating 'FSequence'.
 prpFSequence :: Statement
-prpFSequence = Prp "FSequence" :<=>: prpFSequenceSupport 50
+prpFSequence = Prp "FSequence" :<=>: prpFSequenceSpan 50
+

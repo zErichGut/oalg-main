@@ -66,7 +66,7 @@ import OAlg.Homology.Definition as H
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain
--- import OAlg.Homology.Simplex
+import OAlg.Homology.Simplex
 
 import OAlg.Homology.IO.SomeChain
 
@@ -181,7 +181,7 @@ data HomologyClassValue
 instance DefaultValue DefaultHomologyClassValue Z HomologyClassValue where
   defaultValue d = case d of
     HClasses g  -> const (HomologyClassElement (zero g))
-    GClasses gs -> \k -> HomologyClassSequenceStrict (make (FSequenceForm (HClasses $ fsq gs k) psqEmpty))
+    GClasses gs -> \k -> HomologyClassSequenceStrict (make (FSequenceForm (HClasses $ fsqx gs k) psqEmpty))
 
 data HomologyClassRoot
   = HomologyClassRootElement AbGroup
@@ -250,7 +250,7 @@ instance Fibred HomologyGroupValue where
 
 data OperatorValue
   = -- | evaluates the support of a sequence value.
-    SupportOperator
+    SpanOperator
 
     -- | evaluates the boundary of a chain.
   | BoundaryOperator
@@ -264,8 +264,8 @@ data OperatorValue
 
 instance Validable OperatorValue where
   valid v = Label "OperatorValue" :<=>: case v of
-    SupportOperator -> SValid
-    _               -> SValid
+    SpanOperator -> SValid
+    _            -> SValid
 
 instance Entity OperatorValue
 
@@ -282,7 +282,7 @@ data Value x
     ZValue Z
 
      -- | support of lower and upper bounds.
-  | SupportValue (Maybe (Z,Z))
+  | SpanValue (Span Z)
   | OperatorValue OperatorValue
   | ChainValue (ChainValue x)
   | HomologyClassValue HomologyClassValue
@@ -292,7 +292,7 @@ data Value x
 instance (Entity x, Ord x) => Validable (Value x) where
   valid v = Label "Value" :<=>: case v of
     ZValue z             -> valid z
-    SupportValue s       -> valid s
+    SpanValue s          -> valid s
     OperatorValue o      -> valid o
     ChainValue c         -> valid c
     HomologyClassValue h -> valid h
@@ -302,7 +302,7 @@ instance (Entity x, Ord x) => Entity (Value x)
 
 data ValueRoot x
   = ZRoot
-  | SupportRoot
+  | SpanRoot
   | OperatorRoot (Root OperatorValue)
   | ChainRoot (Root (ChainValue x))
   | HomologyClassRoot HomologyClassRoot
@@ -323,7 +323,7 @@ instance (Entity x, Ord x) => Fibred (Value x) where
   type Root (Value x) = ValueRoot x
   root v = case v of
     ZValue _             -> ZRoot
-    SupportValue _       -> SupportRoot
+    SpanValue _          -> SpanRoot
     OperatorValue o      -> OperatorRoot $ root o
     ChainValue c         -> ChainRoot $ root c
     HomologyClassValue h -> HomologyClassRoot $ root h
@@ -455,45 +455,70 @@ data ValueFailure x
 
 type EvalV x y = Either (ValueFailure x) y
 
-{-
 --------------------------------------------------------------------------------
--- evalSupport -
+-- evalSpan -
 
-evalSupport :: (Entity x, Ord x)
-  => SequenceRoot x -> ZSequence (Value x) -> EvalV x (Maybe (Z,Z))
-evalSupport t vs = case rdcSequenceValue t vs of
-  SequenceValue _ vs' -> return $ zsqSupport vs'
-  _                   -> throw $ ImplementationError "evalSupport"
--}
+evalSpan :: (DefaultValue d Z y, Eq y) => FSequence s d Z y -> EvalV x (Value x)
+evalSpan = return . SpanValue . fsqSpan
+
+--------------------------------------------------------------------------------
+-- evalSpanValue -
+
+evalSpanValue :: (Entity x, Ord x) => Value x -> EvalV x (Value x)
+evalSpanValue v = case v of
+  ChainValue (ChainValueSequenceLazy vs)              -> evalSpan vs
+  ChainValue (ChainValueSequenceStrict vs)            -> evalSpan vs
+  HomologyClassValue (HomologyClassSequenceLazy vs)   -> evalSpan vs
+  HomologyClassValue (HomologyClassSequenceStrict vs) -> evalSpan vs
+  HomologyGroupValue (HomologyGroupSequence vs)       -> evalSpan vs
+  _ -> Left $ NotApplicable (root (OperatorValue SpanOperator)) (root v)
+
+--------------------------------------------------------------------------------
+-- valBoundary -
+
+valBoundarySomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> SomeChain x
+valBoundarySomeChain _ s = error "nyi" -- boundarySomeChain s
+
+valBoundary :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> ChainValue x
+valBoundary hs c = case c of
+  ChainValueElement s         -> ChainValueElement $ valBoundarySomeChain hs s
+  ChainValueSequenceLazy cs   -> ChainValueSequenceLazy $ fsqMapWithIndex d t (b hs) cs
+  ChainValueSequenceStrict cs -> ChainValueSequenceStrict $ fsqMapWithIndex d t (b hs) cs
+  where d :: DefaultChainValue x -> DefaultChainValue x
+        d (LChains l) = LChains (pred l)
+        d KChains     = KChains
+
+        t :: Monotone Z Z
+        t = Monotone (+(-1))
+
+        b :: (Entity x, Ord x) => EnvH n x -> (ChainValue x, i) -> ChainValue x
+        b hs = valBoundary hs . fst
+
+--------------------------------------------------------------------------------
+-- evalOperatorValue -
+
+evalOperatorValue :: (Entity x, Ord x) => EnvH n x -> OperatorValue -> Value x -> EvalV x (Value x)
+evalOperatorValue hs o v = case (o,v) of
+  (SpanOperator, _)                -> evalSpanValue v
+  (BoundaryOperator, ChainValue c) -> return $ ChainValue $ valBoundary hs c
+  _ -> Left $ NotApplicable (root (OperatorValue o)) (root v)
+
 --------------------------------------------------------------------------------
 -- evalApplValue -
 
-evalApplValue :: (Entity x, Ord x) => Value x -> Value x -> EvalV x (Value x)
-evalApplValue f v = case (f,v) of
+evalApplValue :: (Entity x, Ord x) => EnvH n x -> Value x -> Value x -> EvalV x (Value x)
+evalApplValue hs f v = case (f,v) of
+  (OperatorValue o,v) -> evalOperatorValue hs o v
   (HomologyClassValue (HomologyClassSequenceLazy vs),ZValue k)
-    -> return $ HomologyClassValue $ fsq vs k
+    -> return $ HomologyClassValue $ fsqx vs k
   (HomologyClassValue (HomologyClassSequenceStrict vs),ZValue k)
-    -> return $ HomologyClassValue $ fsq vs k
+    -> return $ HomologyClassValue $ fsqx vs k
   (ChainValue (ChainValueSequenceLazy vs),ZValue k)
-    -> return $ ChainValue $ fsq vs k
+    -> return $ ChainValue $ fsqx vs k
   (ChainValue (ChainValueSequenceStrict vs),ZValue k)
-    -> return $ ChainValue $ fsq vs k
+    -> return $ ChainValue $ fsqx vs k
   _ -> Left $ NotApplicable (root f) (root v)
   
--- evalApplValue SupportOperator (SequenceValue t vs) = evalSupport t vs >>= return . SupportValue
-{-
-  where
-  vs' = case rdcValue vs of
-    SequenceValue _ vs' -> vs'
-    _                   -> throw $ ImplementationError "evalApplValue"
--}
--- evalApplValue BoundaryOperator (ChainValue c) = return $ ChainValue $ boundarySomeChain c
-
-{-
-evalApplValue (SequenceLazyValue vs) (ZValue k) = return $ fsq vs k
-evalApplValue f x = Left $ NotApplicable (valRoot f) (valRoot x)
--}
-
 --------------------------------------------------------------------------------
 
 {-
@@ -503,10 +528,12 @@ c b = case b of
 -}
 
 
-c n = complex $ sphere n (0::N)
+-- c n = complex $ sphere n (0::N)
+c n = complex $ Set [simplex n (0::N)]
   
 envr b = envH Regular $ c b
 envt b = envH Truncated $ c b
 
-
+span = OperatorValue SpanOperator
+bdy  = OperatorValue BoundaryOperator
 

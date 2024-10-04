@@ -254,7 +254,7 @@ homology r c = ChainHomology hs where
   hs = amap1 (uncurry $ shmg $ cpxDim c) ((ccxMap' ccxHead ds) `zip` (ccxMap' ccxVarianceZ vs))
   
   ds = chainComplex r c
-  vs = ccxMap HomBoundaryOperator ds
+  vs = ccxMap HomBoundaryOperatorRep ds
 
   shmg :: (Entity x, Ord x, Attestable n)
        => Any n
@@ -331,6 +331,17 @@ homologyClassMinusOne h s
     sv  = ssycfs ss' s
     s'  = cfsssy ss' sv
 
+
+--------------------------------------------------------------------------------
+-- boundary -
+
+boundary :: (Entity x, Ord x)
+  => Homology n k x
+  -> C.Chain Z (k+1) x
+  -> C.Chain Z k x
+boundary (Homology _ _ cc _) s = error "nyi" where
+  ChainComplex (DiagramChainFrom _ (_:|d:|_)) = cc
+  -- BoundaryOperatorRep _ (Representable d _ _) = c 
 
 --------------------------------------------------------------------------------
 -- boundary' -

@@ -23,7 +23,7 @@
 module OAlg.Homology.IO.SomeChain
   (
     -- * Some Chain
-  SomeChain(SomeChain), spxSomeChain, boundarySomeChain
+  SomeChain(SomeChain), spxSomeChain
 
   ) where
 
@@ -136,6 +136,7 @@ instance (Entity x, Ord x) => Vectorial (SomeChain x) where
 spxSomeChain :: (Entity x, Ord x, Attestable l) => Simplex l x -> SomeChain x
 spxSomeChain = SomeChain . ch
 
+{-
 --------------------------------------------------------------------------------
 -- boundarySomeChain -
 
@@ -147,4 +148,4 @@ boundarySomeChain s = case s of
     d :: (Entity x, Ord x) => Any l -> Chain Z l x -> SomeChain x
     d W0 _     = SomeChainZero (-1)
     d (SW l) c = case ats l of {Ats -> SomeChain (boundary c)}
-
+-}
