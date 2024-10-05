@@ -23,7 +23,7 @@
 module OAlg.Homology.IO.SomeChain
   (
     -- * Some Chain
-  SomeChain(SomeChain), spxSomeChain
+  SomeChain(SomeChain), spxSomeChain, smcBoundary
 
   ) where
 
@@ -50,7 +50,7 @@ import OAlg.Homology.IO.Pretty
 -- SomeChain -
 --
 -- as the constructore SomeChainZero is hidden, the only way to generate SomeChain is via
--- zero or boundarySomeChain.
+-- zero or smcBoundary.
 
 -- | a chain of simplices with some given lenght, where we also allow simplices with a negative length.
 --   (note: the type of simplices with negative length is empty an hence the abelain group of it is
@@ -136,16 +136,16 @@ instance (Entity x, Ord x) => Vectorial (SomeChain x) where
 spxSomeChain :: (Entity x, Ord x, Attestable l) => Simplex l x -> SomeChain x
 spxSomeChain = SomeChain . ch
 
-{-
+
 --------------------------------------------------------------------------------
--- boundarySomeChain -
+-- smcBoundary -
 
 -- | the boundary of some chain.
-boundarySomeChain :: (Entity x, Ord x) => SomeChain x -> SomeChain x
-boundarySomeChain s = case s of
+smcBoundary :: (Entity x, Ord x) => SomeChain x -> SomeChain x
+smcBoundary s = case s of
   SomeChainZero l -> SomeChainZero (l-1)
   SomeChain c     -> d attest c where
     d :: (Entity x, Ord x) => Any l -> Chain Z l x -> SomeChain x
     d W0 _     = SomeChainZero (-1)
     d (SW l) c = case ats l of {Ats -> SomeChain (boundary c)}
--}
+

@@ -349,6 +349,14 @@ eqK :: (Attestable k, Attestable k') => Any k -> Homology n k' x -> Maybe (k :~:
 eqK _ _ = eqT
 
 --------------------------------------------------------------------------------
+-- envHomology -
+
+envHomology :: EnvH n x -> K -> Maybe (SomeHomology n x)
+envHomology [] _     = Nothing
+envHomology (h:hs) 0 = Just h
+envHomology (_:hs) k = envHomology hs (pred k)
+
+--------------------------------------------------------------------------------
 -- envHomology0 -
 
 envHomology0 :: EnvH n x -> Homology n N0 x
@@ -363,8 +371,8 @@ envHomology0 hs = case head hs of
 -- | 
 fsqHomologyGroups :: EnvH n x -> FSequence Lazy DefaultAbGroup Z AbGroup
 fsqHomologyGroups hs = make (FSequenceForm DefaultAbGroup (PSequence gs)) where
-  gs = ((homologyGroupMinusOne $ envHomology0 hs): amap1 toHGroup hs) `zip` [(-1)..]
-  toHGroup (SomeHomology h) = homologyGroup h
+  gs = ((hmgGroupMinusOne $ envHomology0 hs): amap1 toHGroup hs) `zip` [(-1)..]
+  toHGroup (SomeHomology h) = hmgGroup h
 
 --------------------------------------------------------------------------------
 -- valHomologyGroups -
@@ -406,10 +414,10 @@ valGenHomologyGroup hs = v where
     es = PSequence [(HomologyClassElement $ abge g (prj i),i)| i <- [0 .. (inj n - 1)]]
 
   valGen :: SomeHomology n x -> HomologyClassValue
-  valGen (SomeHomology h) = valGenGroup (homologyGroup h)
+  valGen (SomeHomology h) = valGenGroup (hmgGroup h)
 
   valGenMinusOne :: Homology n N0 x -> HomologyClassValue
-  valGenMinusOne h = valGenGroup (homologyGroupMinusOne h)
+  valGenMinusOne h = valGenGroup (hmgGroupMinusOne h)
 
 valGenChain :: (Entity x, Ord x) => EnvH n x -> GenChain -> Value x
 valGenChain hs g = v where
@@ -476,20 +484,56 @@ evalSpanValue v = case v of
 --------------------------------------------------------------------------------
 -- valBoundary -
 
+schBoundaryMinusOne :: (Entity x, Ord x)
+  => Homology n N0 x -> Chain Z N0 x -> SomeChain x
+schBoundaryMinusOne h0 s = case hmgBoundaryMinusOne h0 s of
+  Right _ -> zero (-1)
+  Left _  -> throw $ ImplementationError "schBoundaryMinusOne"
+
+schBoundary :: (Entity x, Ord x)
+  => Homology n k x -> Chain Z (k+1) x -> SomeChain x
+schBoundary h@(Homology _ _ _ _) s = case hmgBoundary h s of
+  Right s' -> SomeChain s'
+  Left _   -> throw $ ImplementationError "schBoundary"
+
 valBoundarySomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> SomeChain x
-valBoundarySomeChain _ s = error "nyi" -- boundarySomeChain s
+valBoundarySomeChain hs s = case l `compare` 0 of
+  LT                        -> zero l'
+  EQ                        -> case s of
+    SomeChain c             -> case eqL W0 c of
+      Just Refl             -> schBoundaryMinusOne (envHomology0 hs) c
+      Nothing               -> throw $ ImplementationError "valBoundarySomeChain.1"
+    _                       -> throw $ ImplementationError "valBoundarySomeChain.2"
+  GT                        -> case s of
+    SomeChain c             -> case envHomology hs l' of
+      Just (SomeHomology h) -> case h of
+        Homology _ k _ _    -> case eqK k c of
+          Just Refl         -> schBoundary h c
+          Nothing           -> throw $ ImplementationError "valBoundarySomeChain.3"
+      Nothing               -> zero l'
+    _                       -> throw $ ImplementationError "valBoundarySomeChain.4"
+  where l  = root s
+        l' = pred l
+
+        eqL :: (Attestable k, Attestable k') => Any k -> Chain r k' x -> Maybe (k :~: k')
+        eqL _ _ = eqT
+
+        eqK :: (Attestable k, Attestable k')
+          => Any k -> Chain r k' x -> Maybe (k' :~: (k+1))
+        eqK _ _ = eqT
 
 valBoundary :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> ChainValue x
 valBoundary hs c = case c of
   ChainValueElement s         -> ChainValueElement $ valBoundarySomeChain hs s
-  ChainValueSequenceLazy cs   -> ChainValueSequenceLazy $ fsqMapWithIndex d t (b hs) cs
-  ChainValueSequenceStrict cs -> ChainValueSequenceStrict $ fsqMapWithIndex d t (b hs) cs
+  ChainValueSequenceLazy cs   -> ChainValueSequenceLazy $ fsqMapWithIndex d (t $ fsqD cs) (b hs) cs
+  ChainValueSequenceStrict cs -> ChainValueSequenceStrict $ fsqMapWithIndex d (t $ fsqD cs) (b hs) cs
   where d :: DefaultChainValue x -> DefaultChainValue x
         d (LChains l) = LChains (pred l)
         d KChains     = KChains
 
-        t :: Monotone Z Z
-        t = Monotone (+(-1))
+        t :: DefaultChainValue x -> Monotone Z Z
+        t (LChains _) = Monotone id
+        t KChains     = Monotone (+(-1))
 
         b :: (Entity x, Ord x) => EnvH n x -> (ChainValue x, i) -> ChainValue x
         b hs = valBoundary hs . fst
