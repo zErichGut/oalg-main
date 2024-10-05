@@ -353,7 +353,7 @@ eqK _ _ = eqT
 
 envHomology :: EnvH n x -> K -> Maybe (SomeHomology n x)
 envHomology [] _     = Nothing
-envHomology (h:hs) 0 = Just h
+envHomology (h:_) 0  = Just h
 envHomology (_:hs) k = envHomology hs (pred k)
 
 --------------------------------------------------------------------------------
@@ -384,21 +384,21 @@ valHomologyGroups = HomologyGroupValue . HomologyGroupSequence . fsqHomologyGrou
 -- Generator -
 
 data Generator
-  = GenHomologyGroup
-  | GenChain GenChain
+  = HomologyGroupGenerator
+  | ChainGenerator ChainGenerator
   deriving (Show,Eq,Ord)
 
-data GenChain
-  = GenChainChains
-  | GenChainCycles
-  | GenChainHomologyGroup
+data ChainGenerator
+  = ChainGenerator'
+  | CycleGenerator
+  | HomologyGroupGenerator'
   deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
 -- valGenerators -
 
-valGenHomologyGroup :: EnvH n x -> Value x
-valGenHomologyGroup hs = v where
+valHomologyGroupGenerator :: EnvH n x -> Value x
+valHomologyGroupGenerator hs = v where
   gs = fsqHomologyGroups hs
 
   v = HomologyClassValue
@@ -419,8 +419,8 @@ valGenHomologyGroup hs = v where
   valGenMinusOne :: Homology n N0 x -> HomologyClassValue
   valGenMinusOne h = valGenGroup (hmgGroupMinusOne h)
 
-valGenChain :: (Entity x, Ord x) => EnvH n x -> GenChain -> Value x
-valGenChain hs g = v where
+valChainGenerator :: (Entity x, Ord x) => EnvH n x -> ChainGenerator -> Value x
+valChainGenerator hs g = v where
   v = ChainValue
     $ ChainValueSequenceLazy
     $ make
@@ -433,29 +433,31 @@ valGenChain hs g = v where
     l'  = lengthN l
     cs' = PSequence (amap1 (ChainValueElement . SomeChain) (setxs cs) `zip` [0..])
 
-  valGenMinusOne :: (Entity x, Ord x) => Homology n N0 x -> GenChain -> ChainValue x
+  valGenMinusOne :: (Entity x, Ord x) => Homology n N0 x -> ChainGenerator -> ChainValue x
   valGenMinusOne h g = case g of
-    GenChainChains        -> valLChain W0 (set $ amap1 ch $ setxs $ hmgChainSet'MinusOne h)
-    GenChainCycles        -> valLChain W0 (hmgCycleGenSetMinusOne h)
-    GenChainHomologyGroup -> valLChain W0 (hmgGroupGenSetMinusOne h)    
+    ChainGenerator'         -> valLChain W0 (set $ amap1 ch $ setxs $ hmgChainSet'MinusOne h)
+    CycleGenerator          -> valLChain W0 (hmgCycleGenSetMinusOne h)
+    HomologyGroupGenerator' -> valLChain W0 (hmgGroupGenSetMinusOne h)    
 
-  valGen :: (Entity x, Ord x) => GenChain -> SomeHomology n x -> ChainValue x
+  valGen :: (Entity x, Ord x) => ChainGenerator -> SomeHomology n x -> ChainValue x
   valGen g (SomeHomology h@(Homology _ k _ _)) = case g of
-    GenChainChains        -> valLChain (SW k) (set $ amap1 ch $ setxs $ hmgChainSet' h)
-    GenChainCycles        -> valLChain (SW k) (hmgCycleGenSet h)
-    GenChainHomologyGroup -> valLChain (SW k) (hmgGroupGenSet h)
+    ChainGenerator'         -> valLChain (SW k) (set $ amap1 ch $ setxs $ hmgChainSet' h)
+    CycleGenerator          -> valLChain (SW k) (hmgCycleGenSet h)
+    HomologyGroupGenerator' -> valLChain (SW k) (hmgGroupGenSet h)
 
 
 valGenerators :: (Entity x, Ord x) => EnvH n x -> Generator -> Value x
 valGenerators hs g = case g of
-  GenHomologyGroup -> valGenHomologyGroup hs
-  GenChain g       -> valGenChain hs g
+  HomologyGroupGenerator -> valHomologyGroupGenerator hs
+  ChainGenerator g       -> valChainGenerator hs g
 
 --------------------------------------------------------------------------------
 -- ValueFailure -
 
 data ValueFailure x
   = NotApplicable (ValueRoot x) (ValueRoot x)
+  | NotACycle'
+  | NonTrivialHomologyClass' AbElement
   deriving (Show, Eq)
 
 --------------------------------------------------------------------------------
@@ -539,13 +541,53 @@ valBoundary hs c = case c of
         b hs = valBoundary hs . fst
 
 --------------------------------------------------------------------------------
+-- evalBoundary' -
+
+evalBoundary'SomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> EvalV x (SomeChain x)
+evalBoundary'SomeChain hs s = case l `compare` (-1) of
+  LT                          -> return $ zero l'
+  EQ                          -> return $ SomeChain $ hmgBoundary'MinusTwo (envHomology0 hs) (zero ())
+  GT                          -> case s of
+    SomeChain c               -> case eq0 c of
+      Just Refl               -> case hmgBoundary'MinusOne (envHomology0 hs) c of
+        Right c'              -> return $ SomeChain c'
+        Left e                -> case e of
+          NonTrivialHomologyClass e -> Left $ NonTrivialHomologyClass' e
+          _                   -> throw $ ImplementationError "evalBoundary'SomeChain.1"
+      Nothing                 -> case envHomology hs l' of
+        Just (SomeHomology h) -> case eqK h c of
+          Just Refl           -> case hmgBoundary' h c of
+            Right c'          -> return $ SomeChain c'
+            Left e            -> case e of
+              NotACycle _     -> Left $ NotACycle'
+              NonTrivialHomologyClass e -> Left $ NonTrivialHomologyClass' e
+              _               -> throw $ ImplementationError "evalBoundary'SomeChain.2"
+          Nothing             -> throw $ ImplementationError "evalBoundary'SomeChain.3"
+        Nothing               -> return $ zero l'
+    _                         -> throw $ ImplementationError "evalBoundary'SomeChain.4"
+            
+  where l  = root s
+        l' = succ l
+
+        eq0 :: Attestable l => Chain Z l x -> Maybe (l :~: N0)
+        eq0 _ = eqT
+
+        eqK :: Attestable l => Homology n k x -> Chain Z l x -> Maybe (l :~: (k+1))
+        eqK (Homology _ _ _ _) _ = eqT
+
+evalBoundary' :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> EvalV x (ChainValue x)
+evalBoundary' hs (ChainValueElement c) = evalBoundary'SomeChain hs c >>= return . ChainValueElement
+evalBoundary' _ v = Left $ NotApplicable (root (OperatorValue Boundary'Operator)) (root $ ChainValue v)
+
+--------------------------------------------------------------------------------
 -- evalOperatorValue -
 
 evalOperatorValue :: (Entity x, Ord x) => EnvH n x -> OperatorValue -> Value x -> EvalV x (Value x)
 evalOperatorValue hs o v = case (o,v) of
-  (SpanOperator, _)                -> evalSpanValue v
-  (BoundaryOperator, ChainValue c) -> return $ ChainValue $ valBoundary hs c
-  _ -> Left $ NotApplicable (root (OperatorValue o)) (root v)
+  (SpanOperator, _)                 -> evalSpanValue v
+  (BoundaryOperator, ChainValue c)  -> return $ ChainValue $ valBoundary hs c
+  (Boundary'Operator, ChainValue c) -> evalBoundary' hs c >>= return . ChainValue
+  _                                 -> Left $ NotApplicable (root (OperatorValue o)) (root v)
 
 --------------------------------------------------------------------------------
 -- evalApplValue -
@@ -580,4 +622,4 @@ envt b = envH Truncated $ c b
 
 span = OperatorValue SpanOperator
 bdy  = OperatorValue BoundaryOperator
-
+bdy' = OperatorValue Boundary'Operator

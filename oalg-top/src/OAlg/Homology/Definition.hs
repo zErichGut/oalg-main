@@ -427,11 +427,11 @@ hmgBoundary'MinusTwo :: (Entity x, Ord x)
   => Homology n N0 x
   -> ChainZero Z x
   -> C.Chain Z N0 x
--- c is 0 and hence alwas representable.
+-- c is 0 and hence always representable.
 hmgBoundary'MinusTwo h s = case vrcBoundary' v (vecabhFree1 (lengthN ss') sv) of
-      Left (Left _)  -> throw $ ImplementationError "hmgBoundary'MinusTwo.1" -- 0 is a cycle
-      Left (Right _) -> throw $ ImplementationError "hmgBoundary'MinusTwo.2" -- 0 has trivial homology class
-      Right r        -> cfsssy (hmgChainSet h) $ abhvecFree1 r
+  Left (Left _)  -> throw $ ImplementationError "hmgBoundary'MinusTwo.1" -- 0 is a cycle
+  Left (Right _) -> throw $ ImplementationError "hmgBoundary'MinusTwo.2" -- 0 has trivial homology class
+  Right r        -> cfsssy (hmgChainSet h) $ abhvecFree1 r
   where
     v   = hmgVarianceMinusTwo h
     ss' = setEmpty
