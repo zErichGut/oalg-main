@@ -586,14 +586,60 @@ evalBoundary' hs (ChainValueElement c) = evalBoundary'SomeChain hs c >>= return 
 evalBoundary' _ v = Left $ NotApplicable (root (OperatorValue Boundary'Operator)) (root $ ChainValue v)
 
 --------------------------------------------------------------------------------
+-- evalHomologyClassSomeChaine -
+
+evalHomologyClassSomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> EvalV x HomologyClass
+evalHomologyClassSomeChain hs s = case l `compare` 0 of
+  LT                        -> return $ zero $ one ()
+  EQ                        -> case s of
+    SomeChain c             -> case eq0 c of
+      Just Refl             -> case hmgClassMinusOne (envHomology0 hs) c of
+        Right h             -> return h
+        Left e              -> case e of
+          NotACycle _       -> Left NotACycle'
+          _                 -> throw $ ImplementationError "evalHomologyClassSomeChain"
+      Nothing               -> throw $ ImplementationError "evalHomologyClassSomeChain"
+    _                       -> throw $ ImplementationError "evalHomologyClassSomeChain"
+  GT                        -> case s of
+    SomeChain c             -> case envHomology hs l' of
+      Just (SomeHomology h) -> case eqH h c of
+        Just Refl           -> case hmgClass h c of
+          Right h           -> return h
+          Left e            -> case e of
+            NotACycle _     -> Left $ NotACycle'
+            _               -> throw $ ImplementationError "evalHomologyClassSomeChain"
+        Nothing             -> throw $ ImplementationError "evalHomologyClassSomeChain"
+      Nothing               -> return $ zero $ one ()
+    _                       -> throw $ ImplementationError "evalHomologyClassSomeChain"
+  where
+    l  = root s
+    l' = pred l
+
+    eq0 :: Attestable l => Chain r l x -> Maybe (l :~: N0)
+    eq0 _ = eqT
+
+    eqH :: Attestable l => Homology n k x -> Chain r l x -> Maybe (l :~: (k+1))
+    eqH (Homology _ _ _ _) _ = eqT
+
+--------------------------------------------------------------------------------
+-- evalHomologyClass -
+
+evalHomologyClass :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> EvalV x HomologyClassValue
+evalHomologyClass hs (ChainValueElement c)
+  = evalHomologyClassSomeChain hs c >>= return . HomologyClassElement
+evalHomologyClass _ v
+  = Left $ NotApplicable (root (OperatorValue Boundary'Operator)) (root $ ChainValue v)
+                     
+--------------------------------------------------------------------------------
 -- evalOperatorValue -
 
 evalOperatorValue :: (Entity x, Ord x) => EnvH n x -> OperatorValue -> Value x -> EvalV x (Value x)
 evalOperatorValue hs o v = case (o,v) of
-  (SpanOperator, _)                 -> evalSpanValue v
-  (BoundaryOperator, ChainValue c)  -> return $ ChainValue $ valBoundary hs c
-  (Boundary'Operator, ChainValue c) -> evalBoundary' hs c >>= return . ChainValue
-  _                                 -> Left $ NotApplicable (root (OperatorValue o)) (root v)
+  (SpanOperator, _)                     -> evalSpanValue v
+  (BoundaryOperator, ChainValue c)      -> return $ ChainValue $ valBoundary hs c
+  (Boundary'Operator, ChainValue c)     -> evalBoundary' hs c >>= return . ChainValue
+  (HomologyClassOperator, ChainValue c) -> evalHomologyClass hs c >>= return . HomologyClassValue
+  _                                     -> Left $ NotApplicable (root (OperatorValue o)) (root v)
 
 --------------------------------------------------------------------------------
 -- evalApplValue -
@@ -710,8 +756,8 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
       where
         relHasBoundary' :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> Statement
         relHasBoundary' hs c = case evalBoundary' hs c of
-          Right _ -> SValid
-          Left e  -> Label "hasNoBoundary'" :<=>: False :?> Params ["e":=show e]
+          Right c' -> (valBoundary hs c' == c) :?> Params ["c":=show c,"c'":=show c']
+          Left e   -> Label "hasNoBoundary'" :<=>: False :?> Params ["e":=show e]
 
     relExact :: (Entity x, Ord x) => EnvH n x -> AbGroup -> K -> Statement
     relExact hs g k
