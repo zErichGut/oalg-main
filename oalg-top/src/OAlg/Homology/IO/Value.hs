@@ -366,6 +366,12 @@ envHomology0 hs = case head hs of
     Nothing   -> throw $ ImplementationError "envHomology0.2"
 
 --------------------------------------------------------------------------------
+-- envN -
+
+envN :: EnvH n x -> Any n
+envN hs = n where Homology n _ _ _ = envHomology0 hs
+
+--------------------------------------------------------------------------------
 -- fsqHomologyGroups -
 
 -- | 
@@ -548,13 +554,13 @@ evalBoundary'SomeChain hs s = case l `compare` (-1) of
   LT                          -> return $ zero l'
   EQ                          -> return $ SomeChain $ hmgBoundary'MinusTwo (envHomology0 hs) (zero ())
   GT                          -> case s of
-    SomeChain c               -> case eq0 c of
+    SomeChain c               -> case eq0 c of  -- l == 0
       Just Refl               -> case hmgBoundary'MinusOne (envHomology0 hs) c of
         Right c'              -> return $ SomeChain c'
         Left e                -> case e of
           NonTrivialHomologyClass e -> Left $ NonTrivialHomologyClass' e
           _                   -> throw $ ImplementationError "evalBoundary'SomeChain.1"
-      Nothing                 -> case envHomology hs l' of
+      Nothing                 -> case envHomology hs (pred l) of -- l >= 1
         Just (SomeHomology h) -> case eqK h c of
           Just Refl           -> case hmgBoundary' h c of
             Right c'          -> return $ SomeChain c'
@@ -604,18 +610,159 @@ evalApplValue hs f v = case (f,v) of
   (ChainValue (ChainValueSequenceStrict vs),ZValue k)
     -> return $ ChainValue $ fsqx vs k
   _ -> Left $ NotApplicable (root f) (root v)
+
+--------------------------------------------------------------------------------
+-- fsqIsEmpty -
+
+fsqIsEmpty :: (DefaultValue d i x, Eq x) => FSequence s d i x -> Bool
+fsqIsEmpty f = psqIsEmpty xis where FSequenceForm _ xis = form f
+
+--------------------------------------------------------------------------------
+-- valIsEmpty -
+
+-- | is 'True' iff the given value is a empty sequence of values.
+valIsEmpty :: (Entity x, Ord x) => Value x -> Bool
+valIsEmpty v = case v of
+  ChainValue c                     -> case c of
+    ChainValueSequenceLazy xs      -> fsqIsEmpty xs
+    ChainValueSequenceStrict xs    -> fsqIsEmpty xs
+    _                              -> False
+  HomologyClassValue h             -> case h of
+    HomologyClassSequenceLazy xs   -> fsqIsEmpty xs
+    HomologyClassSequenceStrict xs -> fsqIsEmpty xs
+    _                              -> False
+  HomologyGroupValue g             -> case g of
+    HomologyGroupSequence xs       -> fsqIsEmpty xs
+    _                              -> False
+  _ -> False
+
+--------------------------------------------------------------------------------
+-- prpEvalValue -
+
+-- | validity of an environment according to some evaluations.
+prpEvalValue :: (Entity x, Ord x) => EnvH n x -> Statement
+prpEvalValue hs = Prp "EvalValue" :<=>: And
+  [ Label "Chains" :<=>: let c = valGenerators hs (ChainGenerator ChainGenerator') in And
+      [ valid c
+      , Label "span" :<=>: relSpan (It (-1),It n) c
+      , Label "d $> d" :<=>: let ev = (bdy $> c) >>= (bdy $>) in case ev of
+          Left e  -> False :?> Params ["e":=show e]
+          Right v -> And
+            [ valid v
+            , relSpan (It (-2),It (n-2)) v
+            , Label "isEmpty" :<=>: valIsEmpty v :?> Params ["v":=show v]
+            ]
+      ]
+  , Label "Cycles" :<=>: let c = valGenerators hs (ChainGenerator CycleGenerator) in And
+      [ valid c
+      , Label "span" :<=>: relSpan (It (-1),It n) c
+      , Label "d" :<=>: let ev = bdy $> c in case ev of
+          Left e  -> False :?> Params ["e":=show e]
+          Right v -> And
+            [ valid v
+            , relSpan (It (-2),It (n-2)) v
+            , Label "isEmpty" :<=>: valIsEmpty v :?> Params ["v":=show v]
+            ]
+      ]
+  , Label "HomologyGroup-Chain" :<=>: let c = valGenerators hs (ChainGenerator HomologyGroupGenerator')
+                                       in And
+      [ valid c
+      , Label "span" :<=>: relSpan (It (-1),It n) c
+      , Label "d" :<=>: let ev = bdy $> c in case ev of
+          Left e  -> False :?> Params ["e":=show e]
+          Right v -> And
+            [ valid v
+            , relSpan (It (-2),It (n-2)) v
+            , Label "isEmpty" :<=>: valIsEmpty v :?> Params ["v":=show v]
+            ]
+      ]
+  , Label "HomologyGroup-Group" :<=>: let c = valGenerators hs HomologyGroupGenerator in And
+      [ valid c
+      , Label "span" :<=>: relSpan (It (-1),It n) c
+      ]
+      
+  , Label "HomologyGroups" :<=>: let c = valHomologyGroups hs in And
+      [ valid c
+      , Label "span" :<=>: relSpan (It (-1),It n) c
+      , case c of
+          HomologyGroupValue h       -> case h of
+            HomologyGroupSequence gs -> Label "exact" :<=>:
+                                          Forall (xZB (-2) (n+1)) (\k -> relExact hs (fsqx gs k) k)
+            _                        -> Label "NotAGroupSequence" :<=>: False :?> Params ["h":=show h]
+          _                          -> Label "NotAHomologyGroupValue" :<=>:
+                                          False :?> Params ["c":=show c]
+      ]
+  ]
   
+  where
+    n = inj $ lengthN $ envN hs
+    ($>) = evalApplValue hs
+    span = OperatorValue SpanOperator
+    bdy  = OperatorValue BoundaryOperator
+
+    relBoundary'ExaxtCycles :: (Entity x, Ord x)
+      => EnvH n x -> FSequence s (DefaultChainValue x) Z (ChainValue x) -> Statement
+    relBoundary'ExaxtCycles hs cs = case fsqSpan cs of
+      (PosInf,NegInf) -> relHasBoundary' hs (fsqx cs 0)
+      (It l,It h)     -> Forall (xZB l h) (\i -> relHasBoundary' hs (fsqx cs i))
+      s               -> Label "ImplementatinError" :<=>: False :?> Params ["span":=show s]
+
+      where
+        relHasBoundary' :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> Statement
+        relHasBoundary' hs c = case evalBoundary' hs c of
+          Right _ -> SValid
+          Left e  -> Label "hasNoBoundary'" :<=>: False :?> Params ["e":=show e]
+
+    relExact :: (Entity x, Ord x) => EnvH n x -> AbGroup -> K -> Statement
+    relExact hs g k
+      | g /= one () = SValid
+      | otherwise   = let c   = valGenerators hs (ChainGenerator CycleGenerator)
+                          eck = evalApplValue hs c (ZValue k)
+                       in case eck of
+          Left e                          -> Label "ImplementationError" :<=>:
+                                               False :?> Params ["e":=show e]
+          Right ck                        -> case ck of 
+            ChainValue v                  -> case v of
+              ChainValueSequenceLazy xs   -> relBoundary'ExaxtCycles hs xs
+              ChainValueSequenceStrict xs -> relBoundary'ExaxtCycles hs xs
+              _                           -> Label "NotASequence" :<=>: False :?> Params ["v":=show v]
+            _                             -> Label "NotAChainValue" :<=>: False :?> Params []
+
+    relSpan (l',h') v = Label "span" :<=>: let es = span $> v in
+      case es of
+        Left e  -> False :?> Params ["e":=show e]
+        Right s -> case s of
+          SpanValue (l,h) -> And
+            [ Label "low" :<=>:
+                (l' <= l) :?> Params ["l'":=show l',"l":=show l]
+            , Label "high" :<=>:
+                (h <= h') :?> Params ["h'":=show h',"h":=show h]
+            ]
+          _ -> Label "NotSpanValue" :<=>: False :?> Params []
+  
+--------------------------------------------------------------------------------
+-- prpValue -
+
+-- | validates the proposition 'prpEvalValue' for some environments.
+prpValue :: Statement
+prpValue = Prp "Value" :<=>: And
+  [ prpEvalValue $ envH Regular   $ complex kleinBottle
+  , prpEvalValue $ envH Regular   $ (cpxEmpty :: Complex N3 Symbol)
+  , prpEvalValue $ envH Truncated $ (cpxEmpty :: Complex N3 Symbol)
+  , prpEvalValue $ envH Regular   $ complex $ sphere (attest :: Any N4) (0::N) 
+  , prpEvalValue $ envH Truncated $ complex $ sphere (attest :: Any N5) (0::N) 
+  ]
 --------------------------------------------------------------------------------
 
 {-
 c b = case b of
   True  -> complex kleinBottle
   False -> cpxEmpty :: Complex N2 Symbol
--}
+
 
 
 -- c n = complex $ sphere n (0::N)
-c n = complex $ Set [simplex n (0::N)]
+-- c n = complex $ Set [simplex n (0::N)]
   
 envr b = envH Regular $ c b
 envt b = envH Truncated $ c b
@@ -623,3 +770,4 @@ envt b = envH Truncated $ c b
 span = OperatorValue SpanOperator
 bdy  = OperatorValue BoundaryOperator
 bdy' = OperatorValue Boundary'Operator
+-}
