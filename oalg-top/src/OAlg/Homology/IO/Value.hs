@@ -67,7 +67,6 @@ import OAlg.Homology.Definition as H
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain
-import OAlg.Homology.Simplex
 
 import OAlg.Homology.IO.SomeChain
 
@@ -705,12 +704,31 @@ sumSheaf :: Additive a => Sheaf a -> a
 sumSheaf (Sheaf r as) = foldl (+) (zero r) as
 
 --------------------------------------------------------------------------------
--- sumLinearCombination -
+-- sumVectorSheaf -
 
-data VecSheaf v = VecSheaf (Root v) [(Scalar v,v)]
+-- | list of scalars and vectors, having all the same given root.
+--
+-- __Property__ Let @'VectorSheaf' r svs@ be in @'VectorSheaf' __v__@ for a 'Vectorial'-structure
+-- @__v__@, then holds: @'root' v '==' r@, for all @(_,v)@ in @svs@.  
+data VectorSheaf v = VectorSheaf (Root v) [(Scalar v,v)]
 
-sumVecSheaf :: Vectorial v => VecSheaf v -> v
-sumVecSheaf (VecSheaf r vs) = foldl (+!) (zero r) vs where a +! (r,b) = a + r!b
+deriving instance Vectorial v => Show (VectorSheaf v)
+deriving instance Vectorial v => Eq (VectorSheaf v)
+
+instance Vectorial v => Validable (VectorSheaf v) where
+  valid (VectorSheaf r xs) = Label "VectorSheaf" :<=>: valid r && vld r xs where
+    vld _ []         = SValid
+    vld r ((s,v):xs) = And [ valid s
+                           , valid v
+                           , (root v == r) :?> Params ["r":=show r,"v":=show v]
+                           , vld r xs
+                           ]
+
+instance Vectorial v => Entity (VectorSheaf v)
+
+-- | the sum of a 'VectorSheaf'.
+sumVectorSheaf :: Vectorial v => VectorSheaf v -> v
+sumVectorSheaf (VectorSheaf r vs) = foldl (+!) (zero r) vs where a +! (r,b) = a + r!b
 
 --------------------------------------------------------------------------------
 -- evalSumValue -
@@ -719,29 +737,54 @@ evalSumValue :: (Entity x, Ord x) => SumForm Z (Value x)  -> EvalV x (Value x)
 evalSumValue s = do
   r <- evalSumValueRoot s
   case r of
-    ZRoot                -> return $ ZValue $ sumSheaf $ Sheaf (():>()) $ amap1 toZ $ lcs $ smflc s
-    ChainRoot cr         -> case cr of
-      ChainRootElement l ->   return
-                            $ ChainValue
-                            $ ChainValueElement
-                            $ sumVecSheaf
-                            $ VecSheaf l
-                            $ amap1 toSomeChain
-                            $ lcs
-                            $ smflc s
-      _                  -> Left $ NotAddable r
-    _                    -> Left $ NotAddable r
+    ZRoot                        ->   return
+                                    $ ZValue
+                                    $ sumSheaf
+                                    $ Sheaf (():>())
+                                    $ amap1 toZ
+                                    $ lcs
+                                    $ smflc s
+                                    
+    ChainRoot cr                 -> case cr of
+      ChainRootElement l         ->   return
+                                    $ ChainValue
+                                    $ ChainValueElement
+                                    $ sumVectorSheaf
+                                    $ VectorSheaf l
+                                    $ amap1 toSomeChain
+                                    $ lcs
+                                    $ smflc s
+      _                          -> Left $ NotAddable r
+    HomologyClassRoot hr         -> case hr of
+      HomologyClassRootElement g ->   return
+                                    $ HomologyClassValue
+                                    $ HomologyClassElement
+                                    $ sumVectorSheaf
+                                    $ VectorSheaf g
+                                    $ amap1 toHomologyClass
+                                    $ lcs
+                                    $ smflc s
+      _                          -> Left $ NotAddable r
+    _                            -> Left $ NotAddable r
   where
 
     toZ :: (Z,Value x) -> Z
     toZ (r,ZValue z) = r!z
-    toZ _            = throw $ ImplementationError "evalSumValue"
+    toZ _            = throw $ ImplementationError "evalSumValue.1"
       
     toSomeChain :: (Z,Value x) -> (Z,SomeChain x)
     toSomeChain (r,v) = case v of
       ChainValue c -> case c of
         ChainValueElement s -> (r,s)
-        _                   -> throw $ ImplementationError "evalSumValue"
+        _                   -> throw $ ImplementationError "evalSumValue.2"
+      _                     -> throw $ ImplementationError "evalSumValue.3"
+
+    toHomologyClass :: (Z,Value x) -> (Z,HomologyClass)
+    toHomologyClass (r,v) = case v of
+      HomologyClassValue h     -> case h of
+        HomologyClassElement g -> (r,g)
+        _                      -> throw $ ImplementationError "evalSumValue.4"
+      _                        -> throw $ ImplementationError "evalSumValue.5"
 
 --------------------------------------------------------------------------------
 -- prpEvalValue -
@@ -899,14 +942,14 @@ prpValue = Prp "Value" :<=>: And
   ]
 --------------------------------------------------------------------------------
 
-
+{-
 c b = case b of
   True  -> complex kleinBottle
   False -> cpxEmpty :: Complex N2 Symbol
+-}
 
-
-
--- c n = complex $ sphere n (0::N)
+{-
+c n = complex $ sphere n (0::N)
 -- c n = complex $ Set [simplex n (0::N)]
   
 envr b = envH Regular $ c b
@@ -916,3 +959,6 @@ span = OperatorValue SpanOperator
 bdy  = OperatorValue BoundaryOperator
 bdy' = OperatorValue Boundary'Operator
 h    = OperatorValue HomologyClassOperator
+
+hg n = valHomologyGroups $ envt n
+-}

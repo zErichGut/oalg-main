@@ -76,7 +76,7 @@ import OAlg.Entity.FinList as F
 import OAlg.Entity.Diagram as D
 import OAlg.Entity.Matrix hiding (Transformation(..))
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Product
+import OAlg.Entity.Product as P
 import OAlg.Entity.Sum as S hiding (R)
 
 import OAlg.Homology.Complex
@@ -370,7 +370,6 @@ homBoundaryOperatorRep' = rep . form where
   rep (P d)   = case d of { BoundaryOperatorRep d' -> repMatrix d' }
   rep (d :^ n) = ntimes n (rep d)
   rep (d :* d') = rep d * rep d'
-
 
 homBoundaryOperatorRep :: ( Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r
                        , Vectorial r, Scalar r ~ r
