@@ -363,10 +363,9 @@ hmgBoundaryMinusOne :: (Entity x, Ord x)
   => Homology n N0 x
   -> C.Chain Z N0 x
   -> Either (HomologyFailure Z N1 AbHom x) (C.ChainZero Z x)
-hmgBoundaryMinusOne h@(Homology _ _ _ v) s 
+hmgBoundaryMinusOne h@(Homology _ _ _ _) s 
   | not (isZero (s - s')) = Left (NotRepresentableMinusOne s')
   | otherwise             = Right $ zero ()
-
   where
     ss' = hmgChainSet h
     sv  = ssycfs ss' s

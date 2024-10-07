@@ -39,7 +39,7 @@ import Control.Monad
 
 import Data.Typeable
 import Data.List (head,reverse,zip)
-import Data.Foldable (toList)
+import Data.Foldable (toList,foldl)
 
 
 import OAlg.Prelude
@@ -52,12 +52,13 @@ import OAlg.Entity.Natural hiding ((++),S)
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.FSequence
--- import OAlg.Entity.Sum
+import OAlg.Entity.Sum
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
--- import OAlg.Structure.Vectorial
+import OAlg.Structure.Vectorial
 
 
 import OAlg.AbelianGroup.Definition
@@ -329,6 +330,30 @@ instance (Entity x, Ord x) => Fibred (Value x) where
     HomologyClassValue h -> HomologyClassRoot $ root h
     HomologyGroupValue g -> HomologyGroupRoot $ root g
     
+--------------------------------------------------------------------------------
+-- fsqIsEmpty -
+
+fsqIsEmpty :: (DefaultValue d i x, Eq x) => FSequence s d i x -> Bool
+fsqIsEmpty f = psqIsEmpty xis where FSequenceForm _ xis = form f
+
+--------------------------------------------------------------------------------
+-- valIsEmpty -
+
+-- | is 'True' iff the given value is a empty sequence of values.
+valIsEmpty :: (Entity x, Ord x) => Value x -> Bool
+valIsEmpty v = case v of
+  ChainValue c                     -> case c of
+    ChainValueSequenceLazy xs      -> fsqIsEmpty xs
+    ChainValueSequenceStrict xs    -> fsqIsEmpty xs
+    _                              -> False
+  HomologyClassValue h             -> case h of
+    HomologyClassSequenceLazy xs   -> fsqIsEmpty xs
+    HomologyClassSequenceStrict xs -> fsqIsEmpty xs
+    _                              -> False
+  HomologyGroupValue g             -> case g of
+    HomologyGroupSequence xs       -> fsqIsEmpty xs
+    _                              -> False
+  _ -> False
 
 --------------------------------------------------------------------------------
 -- EnvH -
@@ -464,6 +489,8 @@ data ValueFailure x
   = NotApplicable (ValueRoot x) (ValueRoot x)
   | NotACycle'
   | NonTrivialHomologyClass' AbElement
+  | InconsistentRoot (ValueRoot x) (ValueRoot x)
+  | NotAddable (ValueRoot x)
   deriving (Show, Eq)
 
 --------------------------------------------------------------------------------
@@ -597,9 +624,9 @@ evalHomologyClassSomeChain hs s = case l `compare` 0 of
         Right h             -> return h
         Left e              -> case e of
           NotACycle _       -> Left NotACycle'
-          _                 -> throw $ ImplementationError "evalHomologyClassSomeChain"
-      Nothing               -> throw $ ImplementationError "evalHomologyClassSomeChain"
-    _                       -> throw $ ImplementationError "evalHomologyClassSomeChain"
+          _                 -> throw $ ImplementationError "evalHomologyClassSomeChain.1"
+      Nothing               -> throw $ ImplementationError "evalHomologyClassSomeChain.2"
+    _                       -> throw $ ImplementationError "evalHomologyClassSomeChain.3"
   GT                        -> case s of
     SomeChain c             -> case envHomology hs l' of
       Just (SomeHomology h) -> case eqH h c of
@@ -607,10 +634,10 @@ evalHomologyClassSomeChain hs s = case l `compare` 0 of
           Right h           -> return h
           Left e            -> case e of
             NotACycle _     -> Left $ NotACycle'
-            _               -> throw $ ImplementationError "evalHomologyClassSomeChain"
-        Nothing             -> throw $ ImplementationError "evalHomologyClassSomeChain"
+            _               -> throw $ ImplementationError "evalHomologyClassSomeChain.4"
+        Nothing             -> throw $ ImplementationError "evalHomologyClassSomeChain.5"
       Nothing               -> return $ zero $ one ()
-    _                       -> throw $ ImplementationError "evalHomologyClassSomeChain"
+    _                       -> throw $ ImplementationError "evalHomologyClassSomeChain.6"
   where
     l  = root s
     l' = pred l
@@ -658,29 +685,63 @@ evalApplValue hs f v = case (f,v) of
   _ -> Left $ NotApplicable (root f) (root v)
 
 --------------------------------------------------------------------------------
--- fsqIsEmpty -
+-- evalSumValueRoot -
 
-fsqIsEmpty :: (DefaultValue d i x, Eq x) => FSequence s d i x -> Bool
-fsqIsEmpty f = psqIsEmpty xis where FSequenceForm _ xis = form f
+evalSumValueRoot :: (Entity x, Ord x) => SumForm Z (Value x)  -> EvalV x (ValueRoot x)
+evalSumValueRoot s = evr s where
+  evr (Zero r) = return r
+  evr (S v)    = return $ root v
+  evr (_ :! v) = return $ root v
+  evr (a :+ b) = do
+    ra <- evr a
+    rb <- evr b
+    if ra == rb then return ra else Left $ InconsistentRoot ra rb
 
 --------------------------------------------------------------------------------
--- valIsEmpty -
+-- sumSheaf -
 
--- | is 'True' iff the given value is a empty sequence of values.
-valIsEmpty :: (Entity x, Ord x) => Value x -> Bool
-valIsEmpty v = case v of
-  ChainValue c                     -> case c of
-    ChainValueSequenceLazy xs      -> fsqIsEmpty xs
-    ChainValueSequenceStrict xs    -> fsqIsEmpty xs
-    _                              -> False
-  HomologyClassValue h             -> case h of
-    HomologyClassSequenceLazy xs   -> fsqIsEmpty xs
-    HomologyClassSequenceStrict xs -> fsqIsEmpty xs
-    _                              -> False
-  HomologyGroupValue g             -> case g of
-    HomologyGroupSequence xs       -> fsqIsEmpty xs
-    _                              -> False
-  _ -> False
+-- | the sum of a 'Sheaf'.
+sumSheaf :: Additive a => Sheaf a -> a
+sumSheaf (Sheaf r as) = foldl (+) (zero r) as
+
+--------------------------------------------------------------------------------
+-- sumLinearCombination -
+
+data VecSheaf v = VecSheaf (Root v) [(Scalar v,v)]
+
+sumVecSheaf :: Vectorial v => VecSheaf v -> v
+sumVecSheaf (VecSheaf r vs) = foldl (+!) (zero r) vs where a +! (r,b) = a + r!b
+
+--------------------------------------------------------------------------------
+-- evalSumValue -
+
+evalSumValue :: (Entity x, Ord x) => SumForm Z (Value x)  -> EvalV x (Value x)
+evalSumValue s = do
+  r <- evalSumValueRoot s
+  case r of
+    ZRoot                -> return $ ZValue $ sumSheaf $ Sheaf (():>()) $ amap1 toZ $ lcs $ smflc s
+    ChainRoot cr         -> case cr of
+      ChainRootElement l ->   return
+                            $ ChainValue
+                            $ ChainValueElement
+                            $ sumVecSheaf
+                            $ VecSheaf l
+                            $ amap1 toSomeChain
+                            $ lcs
+                            $ smflc s
+      _                  -> Left $ NotAddable r
+    _                    -> Left $ NotAddable r
+  where
+
+    toZ :: (Z,Value x) -> Z
+    toZ (r,ZValue z) = r!z
+    toZ _            = throw $ ImplementationError "evalSumValue"
+      
+    toSomeChain :: (Z,Value x) -> (Z,SomeChain x)
+    toSomeChain (r,v) = case v of
+      ChainValue c -> case c of
+        ChainValueElement s -> (r,s)
+        _                   -> throw $ ImplementationError "evalSumValue"
 
 --------------------------------------------------------------------------------
 -- prpEvalValue -
@@ -709,6 +770,12 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
             , relSpan (It (-2),It (n-2)) v
             , Label "isEmpty" :<=>: valIsEmpty v :?> Params ["v":=show v]
             ]
+      , Label "homology class" :<=>: let gs = fsqHomologyGroups hs in
+          Forall (xZB (-2) (n+1))
+            (\k -> case c $> (ZValue k) of
+                Right cs -> relHomologyClass hs k (fsqx gs k) cs
+                Left e   -> Label "ImplementationError" :<=>: False :?> Params ["e":=show e]
+            )
       ]
   , Label "HomologyGroup-Chain" :<=>: let c = valGenerators hs (ChainGenerator HomologyGroupGenerator')
                                        in And
@@ -743,8 +810,40 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
   where
     n = inj $ lengthN $ envN hs
     ($>) = evalApplValue hs
+    
+    span :: Value x
     span = OperatorValue SpanOperator
     bdy  = OperatorValue BoundaryOperator
+
+    implError :: ValueFailure x -> Statement
+    implError e = Label "ImplementatinError" :<=>: False :?> Params ["e":=show e]
+
+    relHomologyClassSomeChain :: (Entity x, Ord x)
+      => EnvH n x -> AbGroup -> SomeChain x -> Statement
+    relHomologyClassSomeChain hs g s = case evalHomologyClassSomeChain hs s of
+      Right h -> (root h == g) :?> Params ["g":=show g,"h":=show h]
+      Left e  -> implError e
+
+    relHomologyClass :: (Entity x, Ord x)
+      => EnvH n x -> K -> AbGroup -> Value x -> Statement
+    relHomologyClass hs k g cs = case evalApplValue hs span cs of
+      Right v             -> case v of
+        SpanValue s       -> case s of
+          (PosInf,NegInf) -> relHomologyClassSomeChain hs g (zero (k+1))
+          (It l,It h)     -> Forall (xZB (l-1) (h+1))
+                               (\i -> case evalApplValue hs cs (ZValue i) of
+                                   Right c                 -> case c of
+                                     ChainValue v          -> case v of
+                                       ChainValueElement s -> relHomologyClassSomeChain hs g s
+                                       v'                  -> Label "NotAChainValueElement" :<=>:
+                                                                False :?> Params ["v'":=show v']  
+                                     _                     -> Label "NotAChainValue" :<=>:
+                                                                False :?> Params ["v":=show v]  
+                                   Left e                  -> implError e
+                               )
+          _               -> Label "ImplementatinError" :<=>: False :?> Params ["span":=show s]
+        _                 -> Label "ImplementatinError" :<=>: False :?> Params ["v":=show v]
+      Left e              -> implError e
 
     relBoundary'ExaxtCycles :: (Entity x, Ord x)
       => EnvH n x -> FSequence s (DefaultChainValue x) Z (ChainValue x) -> Statement
@@ -800,7 +899,7 @@ prpValue = Prp "Value" :<=>: And
   ]
 --------------------------------------------------------------------------------
 
-{-
+
 c b = case b of
   True  -> complex kleinBottle
   False -> cpxEmpty :: Complex N2 Symbol
@@ -816,4 +915,4 @@ envt b = envH Truncated $ c b
 span = OperatorValue SpanOperator
 bdy  = OperatorValue BoundaryOperator
 bdy' = OperatorValue Boundary'Operator
--}
+h    = OperatorValue HomologyClassOperator
