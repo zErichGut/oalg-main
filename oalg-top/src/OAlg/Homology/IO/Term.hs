@@ -22,56 +22,72 @@
 -- 
 module OAlg.Homology.IO.Term
   (
-{-
-    -- * Term
-    Term(..)
-
-    -- * Value
-  , Value(..), ValueRoot(..)
-  , L, K, GenSequenceType(..)
-
-    -- * SomeChain
-  , SomeChain(SomeChain), spxSomeChain, boundarySomeChain
--}
   ) where
 
-import Control.Monad
+-- import Control.Monad
 -- import Control.Applicative
 -- import Control.Exception
 
 -- import System.IO
 
-import Data.Typeable
-import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
-import Data.Foldable (toList,foldl)
+-- import Data.Typeable
+-- import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
+-- import Data.Foldable (toList,foldl)
 
 
 import OAlg.Prelude -- hiding (Result(..), It,(:>:))
 
-import OAlg.Data.Canonical
+-- import OAlg.Data.Canonical
 -- import OAlg.Data.Constructable
-import OAlg.Data.Either
+-- import OAlg.Data.Either
 
-import OAlg.Entity.Natural hiding ((++),S)
-import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Sum
+-- import OAlg.Entity.Natural hiding ((++),S)
+-- import OAlg.Entity.Sequence.Set
+-- import OAlg.Entity.Sum
 
-import OAlg.Structure.Fibred
-import OAlg.Structure.Additive
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Vectorial
-import OAlg.Structure.Exception
+-- import OAlg.Structure.Fibred
+-- import OAlg.Structure.Additive
+-- import OAlg.Structure.Multiplicative
+-- import OAlg.Structure.Vectorial
+-- import OAlg.Structure.Exception
 
-import OAlg.AbelianGroup.Definition
+-- import OAlg.AbelianGroup.Definition
 
-import OAlg.Homology.Definition as H
-import OAlg.Homology.Complex
-import OAlg.Homology.ChainComplex
-import OAlg.Homology.Chain
-import OAlg.Homology.Simplex
+-- import OAlg.Homology.Definition as H
+-- import OAlg.Homology.Complex
+-- import OAlg.Homology.ChainComplex
+-- import OAlg.Homology.Chain
+-- import OAlg.Homology.Simplex
 
-import qualified OAlg.Homology.IO.Map as M
-import OAlg.Homology.IO.Pretty
+--------------------------------------------------------------------------------
+-- Term -
+
+data Term v
+  = Free String
+  | Bound N
+  | Value v
+  | (:>) String (Term v)   -- ^ abstraction
+  | (:$) (Term v) (Term v) -- ^ application
+  | (:!) (Term v) (Term v) -- ^ scalar multiplication
+  | (:+) (Term v) (Term v) -- ^ addition
+  deriving (Show,Eq,Ord)
+
+--------------------------------------------------------------------------------
+-- abstract -
+
+-- | @'abstract' i b t@ converts the occurences of @b@ to bound index @i@ in the term @t@.
+abstract :: N -> String -> Term v -> Term v
+abstract i b t = case t of
+  Free a  -> if a == b then Bound i else t
+  Bound _ -> t
+  Value _ -> t
+  a :> u  -> a :> abstract (succ i) b u
+  u :$ v  -> abstract i b u :$ abstract i b v
+  s :! u  -> abstract i b s :! abstract i b u
+  u :+ v  -> abstract i b u :+ abstract i b v
+
+
+
 
 
 {-

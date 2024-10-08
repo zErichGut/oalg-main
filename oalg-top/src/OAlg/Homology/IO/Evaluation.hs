@@ -21,13 +21,17 @@
 --
 -- evaluatoin of 'Term's.
 module OAlg.Homology.IO.Evaluation
-  ( -- * Evaluation
+  (
+{-
+    -- * Evaluation
     eval, Eval, EvaluationFailure(..)
 
     -- * Environment
   , Env(), initEnv
+-}
   ) where
 
+{-
 import Control.Monad
 
 import Data.Typeable
@@ -415,3 +419,4 @@ l = Value LengthOperator
 d = Value BoundaryOperator
 d' = Value Boundary'Operator
 
+-}

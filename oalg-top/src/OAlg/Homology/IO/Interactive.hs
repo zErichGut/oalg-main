@@ -22,7 +22,7 @@
 -- a intractive mode for handeling homologies.
 module OAlg.Homology.IO.Interactive
   () where
-
+{-
 import Control.Monad
 import Control.Applicative
 import Control.Exception
@@ -985,4 +985,5 @@ iComplex' hIn hOut hErr r c = rep hks where
         hPutStrLn hOut "!!!unknown command"
         rep hks
 
+-}
 -}
