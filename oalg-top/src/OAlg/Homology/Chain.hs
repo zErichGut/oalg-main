@@ -19,7 +19,7 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- The 'boundary' of a 'Chain'.
+-- The boundary of a 'Chain'.
 module OAlg.Homology.Chain
   ( -- * Boundary
     HomBoundary(..), boundary

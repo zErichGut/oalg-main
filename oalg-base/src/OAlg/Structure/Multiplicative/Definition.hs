@@ -162,9 +162,6 @@ instance Multiplicative c => Multiplicative (Op c) where
   Op f * Op g = Op (g * f)
   npower (Op f) n = Op (npower f n)
 
-instance Multiplicative c => Projectible c (Path c) where
-  prj pth = foldr (*) (one (start pth)) pth
-    
 --------------------------------------------------------------------------------
 -- one' -
 

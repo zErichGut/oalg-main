@@ -33,7 +33,10 @@ library
       OAlg.Homology.IO.Evaluation
       OAlg.Homology.IO.Interactive
       OAlg.Homology.IO.Pretty
+      OAlg.Homology.IO.SomeChain
       OAlg.Homology.IO.Term
+      OAlg.Homology.IO.Value
+      OAlg.Homology.IO.ZSequence
       OAlg.Homology.Simplex
       OAlg.Homology.Variance
   other-modules:
@@ -45,7 +48,7 @@ library
       base >=4.7 && <5
     , containers >=0.6
     , oalg-abg >=1.5.0.4
-    , oalg-base >=2.0.0.2
+    , oalg-base >=2.0.1.2
   default-language: Haskell2010
 
 test-suite oalg-top-test
@@ -60,6 +63,6 @@ test-suite oalg-top-test
       base >=4.7 && <5
     , containers >=0.6
     , oalg-abg >=1.5.0.4
-    , oalg-base >=2.0.0.2
+    , oalg-base >=2.0.1.2
     , oalg-top
   default-language: Haskell2010

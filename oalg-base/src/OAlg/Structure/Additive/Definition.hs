@@ -129,13 +129,7 @@ instance (Additive a, FibredOriented a) => Additive (Op a) where
   zero r = Op (zero $ transpose r)
   Op a + Op b = Op (a + b)
   ntimes n (Op a) = Op (ntimes n a)
-  
---------------------------------------------------------------------------------
--- Canonical - Sheaf -
 
-instance Additive a => Projectible a (Sheaf a) where
-  prj shf = foldr (+) (zero (root shf)) shf
-  
 --------------------------------------------------------------------------------
 -- zero' -
 

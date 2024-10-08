@@ -22,6 +22,7 @@ module OAlg.Entity.Sequence
   (   module D
     , module C
     , module P
+    , module F
     , module S
     , module G
     , module Prm
@@ -33,3 +34,4 @@ import OAlg.Entity.Sequence.Definition as D
 import OAlg.Entity.Sequence.CSequence as C
 import OAlg.Entity.Sequence.PSequence as P
 import OAlg.Entity.Sequence.Permutation as Prm
+import OAlg.Entity.Sequence.FSequence as F

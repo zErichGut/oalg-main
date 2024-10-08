@@ -32,9 +32,11 @@ import OAlg.Category.Definition hiding ((.))
 
 import OAlg.Data.Statement
 import OAlg.Data.Either
+import OAlg.Data.Ord
 import OAlg.Data.Number
 import OAlg.Data.Opposite
 import OAlg.Data.X
+
 
 import OAlg.Structure.Definition
 
@@ -105,7 +107,12 @@ instance Validable Z where
   valid = rnfValid
   
 instance Validable Q where
-  valid = rnfValid  
+  valid = rnfValid
+
+instance Validable x => Validable (Closure x) where
+  valid x' = case x' of
+    It x -> valid x
+    _    -> SValid
 
 instance Validable (Proxy x) where
   valid Proxy = SValid

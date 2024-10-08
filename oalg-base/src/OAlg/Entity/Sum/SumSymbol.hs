@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
@@ -29,6 +29,7 @@ import Data.Foldable
 
 import OAlg.Prelude
 
+import OAlg.Data.Canonical
 import OAlg.Data.Constructable
 
 import OAlg.Structure.Fibred
@@ -105,13 +106,31 @@ instance (Semiring r, Commutative r, Entity a, Ord a) => Euclidean (SumSymbol r 
     $ map fst
     $ psqxs
     $ psqInterlace (*) (const rZero) (const rZero) (ssypsq x) (ssypsq y)
+
+--------------------------------------------------------------------------------
+-- Canonical -
+
+instance (Entity a, Ord a, Semiring r, Commutative r) => Projectible (SumSymbol r a) [a] where
+  prj = SumSymbol . prj . Sheaf () . amap1 R
+
+instance (Entity a, Ord a, Semiring r, Commutative r)
+  => Projectible (SumSymbol r a) (LinearCombination r a) where
+  prj = SumSymbol . make . foldr (+!) (Zero ()) . lcs where (x,a) +! b = x :! S (R a) :+ b
+
+instance (Entity a, Ord a, Semiring r, Commutative r)
+  => Projectible (SumSymbol r a) (LinearCombination r (SumSymbol r a)) where
+  prj xs = SumSymbol
+         $ make
+         $ smfJoin
+         $ lcsmf ()
+         $ amap1 (\(SumSymbol s) -> form s) xs
     
 --------------------------------------------------------------------------------
 -- sumSymbol -
 
 -- | the induced free sum given by a list of scalars and symbols.
 sumSymbol :: (Semiring r, Commutative r, Entity a, Ord a) => [(r,a)] -> SumSymbol r a
-sumSymbol xs = SumSymbol $ make $ foldr (:+) (Zero ()) $ map (\(r,a) -> r :! (S $ R a)) xs
+sumSymbol = prj . LinearCombination
 
 --------------------------------------------------------------------------------
 -- sy -

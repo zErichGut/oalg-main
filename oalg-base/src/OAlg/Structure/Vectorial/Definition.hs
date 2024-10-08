@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE StandaloneKindSignatures, StandaloneDeriving #-}
 
 -- |
 -- Module      : OAlg.Structure.Vectorial.Definition
@@ -19,6 +19,9 @@
 module OAlg.Structure.Vectorial.Definition
   ( -- * Vectorial
     Vectorial(..), Vec, ForgetfulVec
+
+    -- ** Sheaf
+  , VectorSheaf(..)
 
     -- * Euclidean
   , Euclidean(..)
@@ -73,6 +76,31 @@ class (Semiring (Scalar v), Commutative (Scalar v), Additive v) => Vectorial v w
   -- | scalar multiplication of a vector.
   (!) :: Scalar v -> v -> v
 
+--------------------------------------------------------------------------------
+-- VectorSheaf -
+
+-- | list of scalars and vectors, having all the same given root.
+--
+-- __Property__ Let @'VectorSheaf' r svs@ be in @'VectorSheaf' __v__@ for a 'Vectorial'-structure
+-- @__v__@, then holds: @'root' v '==' r@, for all @(_,v)@ in @svs@.  
+data VectorSheaf v = VectorSheaf (Root v) [(Scalar v,v)]
+
+deriving instance Vectorial v => Show (VectorSheaf v)
+deriving instance Vectorial v => Eq (VectorSheaf v)
+
+instance Vectorial v => Validable (VectorSheaf v) where
+  valid (VectorSheaf r xs) = Label "VectorSheaf" :<=>: valid r && vld r xs where
+    vld _ []         = SValid
+    vld r ((s,v):xs) = And [ valid s
+                           , valid v
+                           , (root v == r) :?> Params ["r":=show r,"v":=show v]
+                           , vld r xs
+                           ]
+
+instance Vectorial v => Entity (VectorSheaf v)
+
+--------------------------------------------------------------------------------
+-- Instances -
 instance Vectorial () where
   type Scalar () = Q
   (!) = qtimes

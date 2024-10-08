@@ -32,9 +32,9 @@ module OAlg.Homology.Variance
   , ccxVariance'
 
   
-  , vrcHomologyClass, vrcBoundary
+  , vrcHomologyClass, vrcBoundary, vrcBoundary'
   , R, S, S', S'', T, T'
-  , vrcT', vrcT'', vrck
+  , vrcC, vrcT', vrcT'', vrck
 
     -- * Generators
   , vrcCyclesGen, vrcHomologyGroupGen
@@ -143,6 +143,14 @@ instance Distributive d => Validable (Variance i d) where
         ]
 
 --------------------------------------------------------------------------------
+-- vrcC -
+
+-- | the arrow @c@ in the diagram of 'Variance'.
+vrcC :: Distributive d => Variance i d -> d
+vrcC  (Variance (DiagramChainTo _ (u:|_)) _ _ _ _) = case end u of
+    DiagramChainFrom _ (_:|c:|_) -> c
+    
+--------------------------------------------------------------------------------
 -- vrcT' -
 
 -- | the point @t'@ in the diagram of 'Variance'.
@@ -233,7 +241,14 @@ vrcHomologyGroupGen v@(Variance _ _ _ _ c'Lft) gen sp = case t'Gen of
 --------------------------------------------------------------------------------
 -- vrcBoundary -
 
--- | tries to evaluates the boundary of a given chain.
+-- | evaluates the boundary of a given chain.
+vrcBoundary :: Distributive d => Variance i d -> S (i N1) d -> T (i N1) d
+vrcBoundary v c = vrcC v *> c
+
+--------------------------------------------------------------------------------
+-- vrcBoundary' -
+
+-- | tries to evaluates the boundary' of a given chain.
 --
 --  __Property__ Let @v@ be in @'Variance' __i__ __c__@ and @s@ in @'S' __i__ __c__@ with
 --  @end s == start c@ (see diagram in 'Variance'), then holds:
@@ -244,8 +259,8 @@ vrcHomologyGroupGen v@(Variance _ _ _ _ c'Lft) gen sp = case t'Gen of
 --  result is @'Left' ('Right' t')@, otherwise
 --
 --  (3) The result is @'Right' r@ such that @b *> r == s@,
-vrcBoundary :: Variance i d -> S (i N1) d -> Either (Either (T (i N1) d) (T' (i N1) d)) (R (i N1) d)
-vrcBoundary (Variance _ cKerUnv c'KerUnv b''Lft _) s
+vrcBoundary' :: Variance i d -> S (i N1) d -> Either (Either (T (i N1) d) (T' (i N1) d)) (R (i N1) d)
+vrcBoundary' (Variance _ cKerUnv c'KerUnv b''Lft _) s
   = case cKerUnv s of
       Left t      -> Left (Left t)
       Right s'    -> case c'KerUnv s' of

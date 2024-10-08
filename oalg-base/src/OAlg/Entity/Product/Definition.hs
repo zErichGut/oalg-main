@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
@@ -279,7 +280,7 @@ prfDepth p = case p of
 -- Word -
 
 -- | list of symbols in @__a__@ together with an exponent in @__r__@.
-newtype Word r a = Word [(a,r)] deriving (Show,Eq,Validable)
+newtype Word r a = Word [(a,r)] deriving (Show,Eq,Validable,Functor)
 
 --------------------------------------------------------------------------------
 -- fromWord -
@@ -494,6 +495,12 @@ instance Sequence (Product N) N a where
 ----------------------------------------
 -- Product - Canonical -
 
+instance (Oriented a, Integral r) => Projectible (Product r a) (Path a) where
+  prj (Path p as) = make $ foldr (*) (One p) as where c * p = P c  :* p
+
+instance (Oriented a, Total a, Integral r) => Projectible (Product r a) (Word r a) where
+  prj (Word as) = make $ foldr (*^) (One $ unit) as where (a,e) *^ p = P a :^ e :* p
+  
 instance (Oriented a, Integral r) => Embeddable a (Product r a) where
   inj a = make $ inj a
 

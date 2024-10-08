@@ -76,7 +76,7 @@ import OAlg.Entity.FinList as F
 import OAlg.Entity.Diagram as D
 import OAlg.Entity.Matrix hiding (Transformation(..))
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Product
+import OAlg.Entity.Product as P
 import OAlg.Entity.Sum as S hiding (R)
 
 import OAlg.Homology.Complex
@@ -359,11 +359,11 @@ chainComplexZ :: (Entity x, Ord x, Attestable n)
 chainComplexZ = chainComplex
 
 --------------------------------------------------------------------------------
--- homBoundaryOperator -
+-- homBoundaryOperatorRep -
 
-homBoundaryOperatorRep :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r)
+homBoundaryOperatorRep' :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r)
   => Product N (BoundaryOperatorRep r x) -> Matrix r
-homBoundaryOperatorRep = rep . form where
+homBoundaryOperatorRep' = rep . form where
   rep :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r)
     => ProductForm N (BoundaryOperatorRep r x) -> Matrix r
   rep (One s) = one (dim unit ^ lengthN s)
@@ -371,24 +371,25 @@ homBoundaryOperatorRep = rep . form where
   rep (d :^ n) = ntimes n (rep d)
   rep (d :* d') = rep d * rep d'
 
-
-homBoundaryOperator :: ( Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r
+homBoundaryOperatorRep :: ( Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r
                        , Vectorial r, Scalar r ~ r
                        )
   => BoundaryOperator r x -> Matrix r
-homBoundaryOperator (BoundaryOperator d) = rep $ form d where
+homBoundaryOperatorRep (BoundaryOperator d) = rep $ form d where
   rep :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r, Vectorial r, Scalar r ~ r)
       => SumForm r (Product N (BoundaryOperatorRep r x)) -> Matrix r
   rep (Zero (c:>r)) = zero ((d^lengthN c) :> (d^lengthN r)) where d = dim unit
-  rep (S.S d) = homBoundaryOperatorRep d
+  rep (S.S d) = homBoundaryOperatorRep' d
   rep (r :! d) = r ! rep d
   rep (f :+ g) = rep f + rep g
+
 
 --------------------------------------------------------------------------------
 -- HomBoundaryOperator -
 
 data HomBoundaryOperator r x y where
-  HomBoundaryOperator :: (Entity x, Ord x) => HomBoundaryOperator r (BoundaryOperator r x) (Matrix r)
+  HomBoundaryOperatorRep :: (Entity x, Ord x)
+    => HomBoundaryOperator r (BoundaryOperator r x) (Matrix r)
 
 deriving instance Show (HomBoundaryOperator r x y)
 instance Show2 (HomBoundaryOperator r)
@@ -397,7 +398,7 @@ deriving instance Eq (HomBoundaryOperator r x y)
 instance Eq2 (HomBoundaryOperator r)
 
 instance Validable (HomBoundaryOperator r x y) where
-  valid HomBoundaryOperator = SValid
+  valid HomBoundaryOperatorRep = SValid
 
 instance Validable2 (HomBoundaryOperator r)
 
@@ -407,7 +408,7 @@ instance Typeable r => Entity2 (HomBoundaryOperator r)
 instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
   => Morphism (HomBoundaryOperator r) where
   type ObjectClass (HomBoundaryOperator r) = Alg r
-  homomorphous HomBoundaryOperator = Struct :>: Struct
+  homomorphous HomBoundaryOperatorRep = Struct :>: Struct
 
 instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
   => EmbeddableMorphism (HomBoundaryOperator r) Typ
@@ -432,15 +433,15 @@ instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
 
 instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
   => Applicative (HomBoundaryOperator r) where
-  amap HomBoundaryOperator = homBoundaryOperator
+  amap HomBoundaryOperatorRep = homBoundaryOperatorRep
 
 instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
   => HomFibred (HomBoundaryOperator r) where
-  rmap HomBoundaryOperator (c :> r) = (d^lengthN c) :> (d^lengthN r) where d = dim unit
+  rmap HomBoundaryOperatorRep (c :> r) = (d^lengthN c) :> (d^lengthN r) where d = dim unit
 
 instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
   => HomOriented (HomBoundaryOperator r) where
-  pmap HomBoundaryOperator s = dim unit ^ lengthN s
+  pmap HomBoundaryOperatorRep s = dim unit ^ lengthN s
 
 instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
   => HomMultiplicative (HomBoundaryOperator r) 

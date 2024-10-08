@@ -1,6 +1,6 @@
 
 {-# LANGUAGE
-  DeriveFoldable
+  DeriveFoldable, DeriveFunctor
 #-}
 
 -- |
@@ -12,24 +12,36 @@
 --
 -- binary trees for lookup.
 module OAlg.Data.Tree
-  ( Tree(..), lookup
+  ( Tree(..), trLookup, trFilter
   )
   where
 
-import Prelude hiding (lookup)
+import Prelude
 
 --------------------------------------------------------------------------------
 -- Tree -
 
 -- | binary tree with node element in @__i__@ and leaf element in @__x__@.
 data Tree i x = Node i (Tree i x) (Tree i x) | Leaf x
-  deriving (Show,Eq,Ord,Foldable)
+  deriving (Show,Eq,Ord,Foldable,Functor)
 
 --------------------------------------------------------------------------------
--- lookup -
+-- trLookup -
 
 -- | lookup a value in a binary tree.
-lookup :: Ord i => Tree i x -> i -> x
-lookup (Leaf x) _     = x
-lookup (Node i l r) j = if j < i then lookup l j else lookup r j
+trLookup :: Ord i => Tree i x -> i -> x
+trLookup (Leaf x) _     = x
+trLookup (Node i l r) j = if j < i then trLookup l j else trLookup r j
 
+--------------------------------------------------------------------------------
+-- trFilter -
+
+-- | the sub tree containing all leafs satisfying the given predicate.
+trFilter :: (x -> Bool) -> Tree i x -> Maybe (Tree i x)
+trFilter p t = fltr t where
+  fltr (Leaf x)     = if p x then Just (Leaf x) else Nothing
+  fltr (Node i l r) = case (fltr l,fltr r) of
+    (Nothing,Just r') -> Just r'
+    (Just l',Nothing) -> Just l'
+    (Just l',Just r') -> Just $ Node i l' r'
+    _                 -> Nothing
