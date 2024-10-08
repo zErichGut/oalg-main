@@ -11,19 +11,20 @@
            , DataKinds
 #-}
 
-
 -- |
 -- Module      : OAlg.Homology.IO.Value
--- Description : the values
+-- Description : values for evaluation
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- the values.
+-- values for evaluation.
 module OAlg.Homology.IO.Value
-  ( -- * Value
+  (
+    -- * Value
     Value(..), ValueRoot(..), L, K
-  , valGenerators, valHomologyGroups
+  , valGenerator, Generator(..), ChainGenerator(..)
+  , valHomologyGroups
 
     -- ** Operators
   , OperatorValue(..)
@@ -38,11 +39,15 @@ module OAlg.Homology.IO.Value
   , HomologyGroupValue(..), HomologyGroupRoot(..), DefaultAbGroup(..)
   
     -- * Evaluation
+  , EvalV, ValueFailure(..)
   , evalApplValue, evalSumValue
   
     -- ** Environment
-  , EnvH, envH
-  
+  , EnvV, envV
+
+    -- * Propostion
+  , prpValue, prpEvalValue
+
   ) where
 
 import Control.Monad
@@ -358,16 +363,16 @@ valIsEmpty v = case v of
   _ -> False
 
 --------------------------------------------------------------------------------
--- EnvH -
+-- EnvV -
 
-type EnvH n x = [SomeHomology n x]
+newtype EnvV n x = EnvV [SomeHomology n x]
 
 
 -- | the homology environment according to the given complex.
 --
--- __Note__ 'envH' is never empty.
-envH :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> EnvH n x
-envH r c = reverse $ toList hs where ChainHomology hs = homology r c
+-- __Note__ 'envV' is never empty.
+envV :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> EnvV n x
+envV r c = EnvV $ reverse $ toList hs where ChainHomology hs = homology r c
 
 --------------------------------------------------------------------------------
 -- envHomology -
@@ -378,16 +383,17 @@ eqK _ _ = eqT
 --------------------------------------------------------------------------------
 -- envHomology -
 
-envHomology :: EnvH n x -> K -> Maybe (SomeHomology n x)
-envHomology [] _     = Nothing
-envHomology (h:_) 0  = Just h
-envHomology (_:hs) k = envHomology hs (pred k)
+envHomology :: EnvV n x -> K -> Maybe (SomeHomology n x)
+envHomology (EnvV hs) k = env hs k where
+  env [] _     = Nothing
+  env (h:_) 0  = Just h
+  env (_:hs) k = env hs (pred k)
 
 --------------------------------------------------------------------------------
 -- envHomology0 -
 
-envHomology0 :: EnvH n x -> Homology n N0 x
-envHomology0 hs = case head hs of
+envHomology0 :: EnvV n x -> Homology n N0 x
+envHomology0 (EnvV hs) = case head hs of
   SomeHomology h@(Homology _ _ _ _) -> case eqK W0 h of
     Just Refl -> h
     Nothing   -> throw $ ImplementationError "envHomology0.2"
@@ -395,22 +401,22 @@ envHomology0 hs = case head hs of
 --------------------------------------------------------------------------------
 -- envN -
 
-envN :: EnvH n x -> Any n
+envN :: EnvV n x -> Any n
 envN hs = n where Homology n _ _ _ = envHomology0 hs
 
 --------------------------------------------------------------------------------
 -- fsqHomologyGroups -
 
 -- | 
-fsqHomologyGroups :: EnvH n x -> FSequence Lazy DefaultAbGroup Z AbGroup
-fsqHomologyGroups hs = make (FSequenceForm DefaultAbGroup (PSequence gs)) where
-  gs = ((hmgGroupMinusOne $ envHomology0 hs): amap1 toHGroup hs) `zip` [(-1)..]
+fsqHomologyGroups :: EnvV n x -> FSequence Lazy DefaultAbGroup Z AbGroup
+fsqHomologyGroups e@(EnvV hs) = make (FSequenceForm DefaultAbGroup (PSequence gs)) where
+  gs = ((hmgGroupMinusOne $ envHomology0 e): amap1 toHGroup hs) `zip` [(-1)..]
   toHGroup (SomeHomology h) = hmgGroup h
 
 --------------------------------------------------------------------------------
 -- valHomologyGroups -
 
-valHomologyGroups :: EnvH n x -> Value x
+valHomologyGroups :: EnvV n x -> Value x
 valHomologyGroups = HomologyGroupValue . HomologyGroupSequence . fsqHomologyGroups
 
 --------------------------------------------------------------------------------
@@ -428,18 +434,18 @@ data ChainGenerator
   deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
--- valGenerators -
+-- valGenerator -
 
-valHomologyGroupGenerator :: EnvH n x -> Value x
-valHomologyGroupGenerator hs = v where
-  gs = fsqHomologyGroups hs
+valHomologyGroupGenerator :: EnvV n x -> Value x
+valHomologyGroupGenerator e@(EnvV hs) = v where
+  gs = fsqHomologyGroups e
 
   v = HomologyClassValue
     $ HomologyClassSequenceLazy
     $ make
     $ FSequenceForm (GClasses gs) (PSequence xis)
     
-  xis = (valGenMinusOne (envHomology0 hs):amap1 valGen hs) `zip` [(-1)..]
+  xis = (valGenMinusOne (envHomology0 e):amap1 valGen hs) `zip` [(-1)..]
 
   valGenGroup :: AbGroup -> HomologyClassValue
   valGenGroup g = HomologyClassSequenceStrict $ make (FSequenceForm (HClasses g) es) where
@@ -452,14 +458,14 @@ valHomologyGroupGenerator hs = v where
   valGenMinusOne :: Homology n N0 x -> HomologyClassValue
   valGenMinusOne h = valGenGroup (hmgGroupMinusOne h)
 
-valChainGenerator :: (Entity x, Ord x) => EnvH n x -> ChainGenerator -> Value x
-valChainGenerator hs g = v where
+valChainGenerator :: (Entity x, Ord x) => EnvV n x -> ChainGenerator -> Value x
+valChainGenerator e@(EnvV hs) g = v where
   v = ChainValue
     $ ChainValueSequenceLazy
     $ make
     $ FSequenceForm KChains (PSequence xis)
 
-  xis = (valGenMinusOne (envHomology0 hs) g :amap1 (valGen g) hs) `zip` [(-1)..]
+  xis = (valGenMinusOne (envHomology0 e) g :amap1 (valGen g) hs) `zip` [(-1)..]
 
   valLChain :: (Entity x, Ord x, Attestable l) => Any l -> Set (Chain Z l x) -> ChainValue x
   valLChain l cs = ChainValueSequenceStrict (make $ FSequenceForm (LChains (inj l')) cs') where
@@ -479,8 +485,8 @@ valChainGenerator hs g = v where
     HomologyGroupGenerator' -> valLChain (SW k) (hmgGroupGenSet h)
 
 
-valGenerators :: (Entity x, Ord x) => EnvH n x -> Generator -> Value x
-valGenerators hs g = case g of
+valGenerator :: (Entity x, Ord x) => EnvV n x -> Generator -> Value x
+valGenerator hs g = case g of
   HomologyGroupGenerator -> valHomologyGroupGenerator hs
   ChainGenerator g       -> valChainGenerator hs g
 
@@ -533,7 +539,7 @@ schBoundary h@(Homology _ _ _ _) s = case hmgBoundary h s of
   Right s' -> SomeChain s'
   Left _   -> throw $ ImplementationError "schBoundary"
 
-valBoundarySomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> SomeChain x
+valBoundarySomeChain :: (Entity x, Ord x) => EnvV n x -> SomeChain x -> SomeChain x
 valBoundarySomeChain hs s = case l `compare` 0 of
   LT                        -> zero l'
   EQ                        -> case s of
@@ -559,7 +565,7 @@ valBoundarySomeChain hs s = case l `compare` 0 of
           => Any k -> Chain r k' x -> Maybe (k' :~: (k+1))
         eqK _ _ = eqT
 
-valBoundary :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> ChainValue x
+valBoundary :: (Entity x, Ord x) => EnvV n x -> ChainValue x -> ChainValue x
 valBoundary hs c = case c of
   ChainValueElement s         -> ChainValueElement $ valBoundarySomeChain hs s
   ChainValueSequenceLazy cs   -> ChainValueSequenceLazy $ fsqMapWithIndex d (t $ fsqD cs) (b hs) cs
@@ -572,13 +578,13 @@ valBoundary hs c = case c of
         t (LChains _) = Monotone id
         t KChains     = Monotone (+(-1))
 
-        b :: (Entity x, Ord x) => EnvH n x -> (ChainValue x, i) -> ChainValue x
+        b :: (Entity x, Ord x) => EnvV n x -> (ChainValue x, i) -> ChainValue x
         b hs = valBoundary hs . fst
 
 --------------------------------------------------------------------------------
 -- evalBoundary' -
 
-evalBoundary'SomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> EvalV x (SomeChain x)
+evalBoundary'SomeChain :: (Entity x, Ord x) => EnvV n x -> SomeChain x -> EvalV x (SomeChain x)
 evalBoundary'SomeChain hs s = case l `compare` (-1) of
   LT                          -> return $ zero l'
   EQ                          -> return $ SomeChain $ hmgBoundary'MinusTwo (envHomology0 hs) (zero ())
@@ -610,14 +616,14 @@ evalBoundary'SomeChain hs s = case l `compare` (-1) of
         eqK :: Attestable l => Homology n k x -> Chain Z l x -> Maybe (l :~: (k+1))
         eqK (Homology _ _ _ _) _ = eqT
 
-evalBoundary' :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> EvalV x (ChainValue x)
+evalBoundary' :: (Entity x, Ord x) => EnvV n x -> ChainValue x -> EvalV x (ChainValue x)
 evalBoundary' hs (ChainValueElement c) = evalBoundary'SomeChain hs c >>= return . ChainValueElement
 evalBoundary' _ v = Left $ NotApplicable (root (OperatorValue Boundary'Operator)) (root $ ChainValue v)
 
 --------------------------------------------------------------------------------
 -- evalHomologyClassSomeChaine -
 
-evalHomologyClassSomeChain :: (Entity x, Ord x) => EnvH n x -> SomeChain x -> EvalV x HomologyClass
+evalHomologyClassSomeChain :: (Entity x, Ord x) => EnvV n x -> SomeChain x -> EvalV x HomologyClass
 evalHomologyClassSomeChain hs s = case l `compare` 0 of
   LT                        -> return $ zero $ one ()
   EQ                        -> case s of
@@ -653,7 +659,7 @@ evalHomologyClassSomeChain hs s = case l `compare` 0 of
 --------------------------------------------------------------------------------
 -- evalHomologyClass -
 
-evalHomologyClass :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> EvalV x HomologyClassValue
+evalHomologyClass :: (Entity x, Ord x) => EnvV n x -> ChainValue x -> EvalV x HomologyClassValue
 evalHomologyClass hs (ChainValueElement c)
   = evalHomologyClassSomeChain hs c >>= return . HomologyClassElement
 evalHomologyClass _ v
@@ -662,7 +668,7 @@ evalHomologyClass _ v
 --------------------------------------------------------------------------------
 -- evalOperatorValue -
 
-evalOperatorValue :: (Entity x, Ord x) => EnvH n x -> OperatorValue -> Value x -> EvalV x (Value x)
+evalOperatorValue :: (Entity x, Ord x) => EnvV n x -> OperatorValue -> Value x -> EvalV x (Value x)
 evalOperatorValue hs o v = case (o,v) of
   (SpanOperator, _)                     -> evalSpanValue v
   (BoundaryOperator, ChainValue c)      -> return $ ChainValue $ valBoundary hs c
@@ -673,7 +679,7 @@ evalOperatorValue hs o v = case (o,v) of
 --------------------------------------------------------------------------------
 -- evalApplValue -
 
-evalApplValue :: (Entity x, Ord x) => EnvH n x -> Value x -> Value x -> EvalV x (Value x)
+evalApplValue :: (Entity x, Ord x) => EnvV n x -> Value x -> Value x -> EvalV x (Value x)
 evalApplValue hs f v = case (f,v) of
   (OperatorValue o,v) -> evalOperatorValue hs o v
   (HomologyClassValue (HomologyClassSequenceLazy vs),ZValue k)
@@ -757,9 +763,9 @@ evalSumValue s = do
 -- prpEvalValue -
 
 -- | validity of an environment according to some evaluations.
-prpEvalValue :: (Entity x, Ord x) => EnvH n x -> Statement
+prpEvalValue :: (Entity x, Ord x) => EnvV n x -> Statement
 prpEvalValue hs = Prp "EvalValue" :<=>: And
-  [ Label "Chains" :<=>: let c = valGenerators hs (ChainGenerator ChainGenerator') in And
+  [ Label "Chains" :<=>: let c = valGenerator hs (ChainGenerator ChainGenerator') in And
       [ valid c
       , Label "span" :<=>: relSpan (It (-1),It n) c
       , Label "d $> d" :<=>: let ev = (bdy $> c) >>= (bdy $>) in case ev of
@@ -770,7 +776,7 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
             , Label "isEmpty" :<=>: valIsEmpty v :?> Params ["v":=show v]
             ]
       ]
-  , Label "Cycles" :<=>: let c = valGenerators hs (ChainGenerator CycleGenerator) in And
+  , Label "Cycles" :<=>: let c = valGenerator hs (ChainGenerator CycleGenerator) in And
       [ valid c
       , Label "span" :<=>: relSpan (It (-1),It n) c
       , Label "d" :<=>: let ev = bdy $> c in case ev of
@@ -787,7 +793,7 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
                 Left e   -> Label "ImplementationError" :<=>: False :?> Params ["e":=show e]
             )
       ]
-  , Label "HomologyGroup-Chain" :<=>: let c = valGenerators hs (ChainGenerator HomologyGroupGenerator')
+  , Label "HomologyGroup-Chain" :<=>: let c = valGenerator hs (ChainGenerator HomologyGroupGenerator')
                                        in And
       [ valid c
       , Label "span" :<=>: relSpan (It (-1),It n) c
@@ -799,7 +805,7 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
             , Label "isEmpty" :<=>: valIsEmpty v :?> Params ["v":=show v]
             ]
       ]
-  , Label "HomologyGroup-Group" :<=>: let c = valGenerators hs HomologyGroupGenerator in And
+  , Label "HomologyGroup-Group" :<=>: let c = valGenerator hs HomologyGroupGenerator in And
       [ valid c
       , Label "span" :<=>: relSpan (It (-1),It n) c
       ]
@@ -829,13 +835,13 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
     implError e = Label "ImplementatinError" :<=>: False :?> Params ["e":=show e]
 
     relHomologyClassSomeChain :: (Entity x, Ord x)
-      => EnvH n x -> AbGroup -> SomeChain x -> Statement
+      => EnvV n x -> AbGroup -> SomeChain x -> Statement
     relHomologyClassSomeChain hs g s = case evalHomologyClassSomeChain hs s of
       Right h -> (root h == g) :?> Params ["g":=show g,"h":=show h]
       Left e  -> implError e
 
     relHomologyClass :: (Entity x, Ord x)
-      => EnvH n x -> K -> AbGroup -> Value x -> Statement
+      => EnvV n x -> K -> AbGroup -> Value x -> Statement
     relHomologyClass hs k g cs = case evalApplValue hs span cs of
       Right v             -> case v of
         SpanValue s       -> case s of
@@ -856,22 +862,22 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
       Left e              -> implError e
 
     relBoundary'ExaxtCycles :: (Entity x, Ord x)
-      => EnvH n x -> FSequence s (DefaultChainValue x) Z (ChainValue x) -> Statement
+      => EnvV n x -> FSequence s (DefaultChainValue x) Z (ChainValue x) -> Statement
     relBoundary'ExaxtCycles hs cs = case fsqSpan cs of
       (PosInf,NegInf) -> relHasBoundary' hs (fsqx cs 0)
       (It l,It h)     -> Forall (xZB l h) (\i -> relHasBoundary' hs (fsqx cs i))
       s               -> Label "ImplementatinError" :<=>: False :?> Params ["span":=show s]
 
       where
-        relHasBoundary' :: (Entity x, Ord x) => EnvH n x -> ChainValue x -> Statement
+        relHasBoundary' :: (Entity x, Ord x) => EnvV n x -> ChainValue x -> Statement
         relHasBoundary' hs c = case evalBoundary' hs c of
           Right c' -> (valBoundary hs c' == c) :?> Params ["c":=show c,"c'":=show c']
           Left e   -> Label "hasNoBoundary'" :<=>: False :?> Params ["e":=show e]
 
-    relExact :: (Entity x, Ord x) => EnvH n x -> AbGroup -> K -> Statement
+    relExact :: (Entity x, Ord x) => EnvV n x -> AbGroup -> K -> Statement
     relExact hs g k
       | g /= one () = SValid
-      | otherwise   = let c   = valGenerators hs (ChainGenerator CycleGenerator)
+      | otherwise   = let c   = valGenerator hs (ChainGenerator CycleGenerator)
                           eck = evalApplValue hs c (ZValue k)
                        in case eck of
           Left e                          -> Label "ImplementationError" :<=>:
@@ -901,31 +907,11 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
 -- | validates the proposition 'prpEvalValue' for some environments.
 prpValue :: Statement
 prpValue = Prp "Value" :<=>: And
-  [ prpEvalValue $ envH Regular   $ complex kleinBottle
-  , prpEvalValue $ envH Regular   $ (cpxEmpty :: Complex N3 Symbol)
-  , prpEvalValue $ envH Truncated $ (cpxEmpty :: Complex N3 Symbol)
-  , prpEvalValue $ envH Regular   $ complex $ sphere (attest :: Any N4) (0::N) 
-  , prpEvalValue $ envH Truncated $ complex $ sphere (attest :: Any N5) (0::N) 
+  [ prpEvalValue $ envV Regular   $ complex kleinBottle
+  , prpEvalValue $ envV Regular   $ (cpxEmpty :: Complex N3 Symbol)
+  , prpEvalValue $ envV Truncated $ (cpxEmpty :: Complex N3 Symbol)
+  , prpEvalValue $ envV Regular   $ complex $ sphere (attest :: Any N4) (0::N) 
+  , prpEvalValue $ envV Truncated $ complex $ sphere (attest :: Any N5) (0::N) 
   ]
---------------------------------------------------------------------------------
 
-{-
-c b = case b of
-  True  -> complex kleinBottle
-  False -> cpxEmpty :: Complex N2 Symbol
--}
 
-{-
-c n = complex $ sphere n (0::N)
--- c n = complex $ Set [simplex n (0::N)]
-  
-envr b = envH Regular $ c b
-envt b = envH Truncated $ c b
-
-span = OperatorValue SpanOperator
-bdy  = OperatorValue BoundaryOperator
-bdy' = OperatorValue Boundary'Operator
-h    = OperatorValue HomologyClassOperator
-
-hg n = valHomologyGroups $ envt n
--}
