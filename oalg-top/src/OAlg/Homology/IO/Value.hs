@@ -21,25 +21,35 @@
 --
 -- the values.
 module OAlg.Homology.IO.Value
-  (
-{-
-    -- * Term
-    Term(..)
+  ( -- * Value
+    Value(..), ValueRoot(..), L, K
+  , valGenerators, valHomologyGroups
 
-    -- * Value
-  , Value(..), ValueRoot(..)
-  , L, K, GenSequenceType(..)
+    -- ** Operators
+  , OperatorValue(..)
 
-    -- * SomeChain
-  , SomeChain(SomeChain), spxSomeChain, boundarySomeChain
--}
+    -- ** Chains
+  , ChainValue(..), ChainRoot(..), DefaultChainValue(..)
+
+    -- ** Homology Classes
+  , HomologyClassValue(..), HomologyClassRoot(..), DefaultHomologyClassValue(..)
+
+    -- ** Homology Groups
+  , HomologyGroupValue(..), HomologyGroupRoot(..), DefaultAbGroup(..)
+  
+    -- * Evaluation
+  , evalApplValue, evalSumValue
+  
+    -- ** Environment
+  , EnvH, envH
+  
   ) where
 
 import Control.Monad
 
 import Data.Typeable
 import Data.List (head,reverse,zip)
-import Data.Foldable (toList,foldl)
+import Data.Foldable (toList,foldr)
 
 
 import OAlg.Prelude
@@ -56,7 +66,6 @@ import OAlg.Entity.Sum
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
-import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Vectorial
 
@@ -329,12 +338,6 @@ instance (Entity x, Ord x) => Fibred (Value x) where
     HomologyClassValue h -> HomologyClassRoot $ root h
     HomologyGroupValue g -> HomologyGroupRoot $ root g
     
---------------------------------------------------------------------------------
--- fsqIsEmpty -
-
-fsqIsEmpty :: (DefaultValue d i x, Eq x) => FSequence s d i x -> Bool
-fsqIsEmpty f = psqIsEmpty xis where FSequenceForm _ xis = form f
-
 --------------------------------------------------------------------------------
 -- valIsEmpty -
 
@@ -697,40 +700,6 @@ evalSumValueRoot s = evr s where
     if ra == rb then return ra else Left $ InconsistentRoot ra rb
 
 --------------------------------------------------------------------------------
--- sumSheaf -
-
--- | the sum of a 'Sheaf'.
-sumSheaf :: Additive a => Sheaf a -> a
-sumSheaf (Sheaf r as) = foldl (+) (zero r) as
-
---------------------------------------------------------------------------------
--- sumVectorSheaf -
-
--- | list of scalars and vectors, having all the same given root.
---
--- __Property__ Let @'VectorSheaf' r svs@ be in @'VectorSheaf' __v__@ for a 'Vectorial'-structure
--- @__v__@, then holds: @'root' v '==' r@, for all @(_,v)@ in @svs@.  
-data VectorSheaf v = VectorSheaf (Root v) [(Scalar v,v)]
-
-deriving instance Vectorial v => Show (VectorSheaf v)
-deriving instance Vectorial v => Eq (VectorSheaf v)
-
-instance Vectorial v => Validable (VectorSheaf v) where
-  valid (VectorSheaf r xs) = Label "VectorSheaf" :<=>: valid r && vld r xs where
-    vld _ []         = SValid
-    vld r ((s,v):xs) = And [ valid s
-                           , valid v
-                           , (root v == r) :?> Params ["r":=show r,"v":=show v]
-                           , vld r xs
-                           ]
-
-instance Vectorial v => Entity (VectorSheaf v)
-
--- | the sum of a 'VectorSheaf'.
-sumVectorSheaf :: Vectorial v => VectorSheaf v -> v
-sumVectorSheaf (VectorSheaf r vs) = foldl (+!) (zero r) vs where a +! (r,b) = a + r!b
-
---------------------------------------------------------------------------------
 -- evalSumValue -
 
 evalSumValue :: (Entity x, Ord x) => SumForm Z (Value x)  -> EvalV x (Value x)
@@ -739,8 +708,7 @@ evalSumValue s = do
   case r of
     ZRoot                        ->   return
                                     $ ZValue
-                                    $ sumSheaf
-                                    $ Sheaf (():>())
+                                    $ foldr (+) 0
                                     $ amap1 toZ
                                     $ lcs
                                     $ smflc s
@@ -749,7 +717,7 @@ evalSumValue s = do
       ChainRootElement l         ->   return
                                     $ ChainValue
                                     $ ChainValueElement
-                                    $ sumVectorSheaf
+                                    $ prj
                                     $ VectorSheaf l
                                     $ amap1 toSomeChain
                                     $ lcs
@@ -759,8 +727,7 @@ evalSumValue s = do
       HomologyClassRootElement g ->   return
                                     $ HomologyClassValue
                                     $ HomologyClassElement
-                                    $ sumVectorSheaf
-                                    $ VectorSheaf g
+                                    $ foldr (+) (zero g)
                                     $ amap1 toHomologyClass
                                     $ lcs
                                     $ smflc s
@@ -779,10 +746,10 @@ evalSumValue s = do
         _                   -> throw $ ImplementationError "evalSumValue.2"
       _                     -> throw $ ImplementationError "evalSumValue.3"
 
-    toHomologyClass :: (Z,Value x) -> (Z,HomologyClass)
+    toHomologyClass :: (Z,Value x) -> HomologyClass
     toHomologyClass (r,v) = case v of
       HomologyClassValue h     -> case h of
-        HomologyClassElement g -> (r,g)
+        HomologyClassElement g -> r!g
         _                      -> throw $ ImplementationError "evalSumValue.4"
       _                        -> throw $ ImplementationError "evalSumValue.5"
 

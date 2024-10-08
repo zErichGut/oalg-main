@@ -1,8 +1,8 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving, DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -28,6 +28,8 @@ module OAlg.Entity.Sum.Definition
   , LinearCombination(..), lcs, lcAggr, lcSort, lcSclFilter
 
   ) where
+
+import Control.Monad(Functor(..))
 
 import Data.List (map,groupBy,(++),filter)
 import Data.Foldable
@@ -159,7 +161,7 @@ instance LengthN (SumForm N a) where
 -- | list of symbols in @__a__@ together with a scalar in @__r__@.
 --
 -- __Note__ 'valid' linear combinations must not be sorted according to the second component!
-newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Validable)
+newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Validable,Functor)
 
 instance (Entity a, Entity r) => Entity (LinearCombination r a)
 
@@ -270,6 +272,17 @@ instance (Fibred a, Ord a, Ring r, Commutative r) => Abelian (Sum r a) where
 instance (Fibred a, Ord a, Semiring r, Commutative r) => Vectorial (Sum r a) where
   type Scalar (Sum r a) = r
   r ! (Sum a) = make (r :! a)
+
+--------------------------------------------------------------------------------
+-- Canonical -
+
+instance (Fibred a, Ord a, Semiring r, Commutative r) => Projectible (Sum r a) (Sheaf a) where
+  prj (Sheaf r as) = make $ foldr (+) (Zero r) as where a + s = S a :+ s
+
+instance ( Fibred a, Ord a, Scalar a ~ r
+         , Semiring r, Commutative r
+         ) => Projectible (Sum r a) (VectorSheaf a) where
+  prj (VectorSheaf r as) = make $ foldr (+!) (Zero r) as where (x,a) +! v = x :! S a :+ v
   
 --------------------------------------------------------------------------------
 -- smlc -

@@ -32,7 +32,8 @@ module OAlg.Entity.Sequence.FSequence
   (
 
     -- * FSequence
-    FSequence(), Behavior(..), fsqxs, fsqx
+    FSequence(), Behavior(..), fsqIsEmpty
+  , fsqxs, fsqx
   , fsqSpan, fsqMin, fsqMax, fsqD, fsqForm, fsqMakeStrict, fsqMakeLazy
   , fsqMap, fsqMapShift
   , fsqMapWithIndex, fsqMapWithIndexStrict, fsqMapWithIndexLazy
@@ -153,6 +154,11 @@ fsqT :: FSequence s d i x -> PTree i x
 fsqT (FSequenceStrict _ t) = t
 fsqT (FSequenceLazy _ t)   = t
 
+--------------------------------------------------------------------------------
+-- fsqIsEmpty -
+
+fsqIsEmpty :: (DefaultValue d i x, Eq x) => FSequence s d i x -> Bool
+fsqIsEmpty f = psqIsEmpty xis where FSequenceForm _ xis = form f
 
 --------------------------------------------------------------------------------
 -- fsqx -

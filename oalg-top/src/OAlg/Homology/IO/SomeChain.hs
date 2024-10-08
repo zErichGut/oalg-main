@@ -35,6 +35,7 @@ import OAlg.Prelude
 import OAlg.Data.Canonical
 
 import OAlg.Entity.Natural hiding ((++),S)
+import OAlg.Entity.Sum
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
@@ -129,6 +130,31 @@ instance (Entity x, Ord x) => Vectorial (SomeChain x) where
   z ! SomeChain a = SomeChain (z!a)
   _ ! c           = c
 
+
+--------------------------------------------------------------------------------
+-- Canonical -
+
+instance (Entity x, Ord x) => Projectible (SomeChain x) (VectorSheaf (SomeChain x)) where
+  prj (VectorSheaf l cs)
+    | l < 0     = zero l
+    | otherwise = case someNatural $ prj l of
+        SomeNatural l' ->  someChain l'
+                         $ prj
+                         $ LinearCombination
+                         $ amap1 (toChain l') cs
+    where
+      toChain :: Attestable l => Any l -> (Z,SomeChain x) -> (Z,Chain Z l x)
+      toChain l (x,s) = case s of
+        SomeChain c -> case eqL l c of
+          Just Refl -> (x,c)
+          Nothing   -> throw $ NotAddable
+        _           -> throw $ ImplementationError "prj of VectorSheaf (SomeChain x)"
+
+      eqL :: (Attestable l, Attestable l') => Any l -> Chain r l' x -> Maybe (l :~: l')
+      eqL _ _ = eqT
+
+      someChain :: Attestable l => Any l -> Chain Z l x -> SomeChain x
+      someChain _ = SomeChain
 
 --------------------------------------------------------------------------------
 -- spxSomeChain -

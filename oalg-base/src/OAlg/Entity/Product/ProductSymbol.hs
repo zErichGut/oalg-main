@@ -39,6 +39,7 @@ import Data.List (map,(++),filter)
 
 import OAlg.Prelude
 
+import OAlg.Data.Canonical
 import OAlg.Data.Constructable
 
 import OAlg.Structure.Oriented
@@ -65,23 +66,7 @@ instance Entity x => Oriented (U x) where
 
 instance OrdPoint (U x)
 
-{-
 instance Total (U a)
-
-instance Singelton a => Singelton (U a) where
-  unit = U unit
-
--- | gets the wraped 'a'.
-fromU :: U a -> a
-fromU (U a) = a
-
-instance (Multiplicative a, Total a) => Multiplicative (U a) where
-  one () = U (one unit)
-  U a * U b = U (a*b)
-
-instance Foldable U where
-  foldr (*>) b (U a) = a*>b
--}  
 
 -- | deconstructor.
 fromU :: U x -> x
@@ -165,6 +150,15 @@ instance Exposable (ProductSymbol x) where
 instance Entity x => Constructable (ProductSymbol x) where
   make p = ProductSymbol $ make p
 
+--------------------------------------------------------------------------------
+-- Canonical -
+
+instance Entity x => Projectible (ProductSymbol x) [x] where
+  prj = ProductSymbol . prj . Word . amap1 (\x -> (U x,1 :: N))
+
+instance Entity x => Projectible (ProductSymbol x) (Word N x) where
+  prj = ProductSymbol . prj  . amap1 U
+  
 --------------------------------------------------------------------------------
 -- nProxy -
 

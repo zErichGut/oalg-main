@@ -70,7 +70,7 @@ has been defined by EmbeddingFrom.
 ### Changed
 - data type Closer in module OAlg.Data.Ord changed to Closure.
 
-## [2.0.0.6] - 2024-10-03
+## [2.0.1.2] - 2024-10-08
 
 ### Added
 - general mappings for PSequences.
@@ -78,6 +78,11 @@ has been defined by EmbeddingFrom.
 - PTree for efficient retrieving values from a partially defiend sequence.
 - Validation for data Closure
 - trFilter in OAlg.Data.Tree
+- VectorSheaf
+- Projectible instances for Sheaf and Path
 
 ### Changed
 - the function lookup in OAl.Data.Tree to trLookup
+
+### Resolved
+- Orphan instance for Projectible Sheaf and Path by removing the general definition to Sum and Product.
