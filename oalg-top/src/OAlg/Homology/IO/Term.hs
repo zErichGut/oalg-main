@@ -33,40 +33,16 @@ import Data.Foldable (foldl,foldr)
 
 import qualified Data.Map.Lazy as M
 
-<<<<<<< HEAD
 import OAlg.Prelude
 
 import OAlg.Structure.Additive
-=======
--- import Data.Typeable
--- import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
+
 import Data.Foldable (foldl,foldr)
 
+import OAlg.Prelude
 
-import OAlg.Prelude -- hiding (Result(..), It,(:>:))
-
--- import OAlg.Data.Canonical
--- import OAlg.Data.Constructable
--- import OAlg.Data.Either
-
--- import OAlg.Entity.Natural hiding ((++),S)
--- import OAlg.Entity.Sequence.Set
--- import OAlg.Entity.Sum
-
--- import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
--- import OAlg.Structure.Multiplicative
--- import OAlg.Structure.Vectorial
--- import OAlg.Structure.Exception
 
--- import OAlg.AbelianGroup.Definition
-
--- import OAlg.Homology.Definition as H
--- import OAlg.Homology.Complex
--- import OAlg.Homology.ChainComplex
--- import OAlg.Homology.Chain
--- import OAlg.Homology.Simplex
->>>>>>> 94b91a8ba8d3933a0788dd3ebdda5f1bc5cedc0a
 
 --------------------------------------------------------------------------------
 -- Term -
@@ -93,50 +69,6 @@ abstract i b t = case t of
   u :!> v   -> abstract i b u :!> abstract i b v
   Opr o u v -> Opr o (abstract i b u) (abstract i b v)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 94b91a8ba8d3933a0788dd3ebdda5f1bc5cedc0a
---------------------------------------------------------------------------------
--- abstracts -
-
--- | abstractoin over several free variables
-abstracts :: [String] -> Term v -> Term v
-abstracts bs t = foldr (\b u -> b :> abstract 0 b u) t bs
-
---------------------------------------------------------------------------------
--- applys -
-
--- | application of t to several terms.
-applys :: Term v -> [Term v] -> Term v
-applys t us = foldl (\t u -> t :$ u) t us
-
---------------------------------------------------------------------------------
--- shift -
-
--- | @shift i d t@ shift a term's non-local indices by @i@.
-shift :: N -> N -> Term v -> Term v
-shift 0 _ u         = u
-shift _ _ (Free a)  = Free a
-shift i d (Bound j) = if j >= d then Bound (j + i) else Bound j
-shift _ _ (Value v) = Value v
-shift i d (a :> t)  = a :> shift i (succ d) t
-shift i d (u :$ v)  = shift i d u :$ shift i d v
-shift i d (u :! v)  = shift i d u :! shift i d v
-shift i d (u :+ v)  = shift i d u :+ shift i d v
-
---------------------------------------------------------------------------------
--- subst -
-
--- | @subst i u t@ substitutes @u@ for the bound variable index @i@ in @t@.
-subst :: N -> Term v -> Term v -> Term v
-subst = error "nyi"
-
-
-
-{-
->>>>>>> 94b91a8ba8d3933a0788dd3ebdda5f1bc5cedc0a
 --------------------------------------------------------------------------------
 -- abstracts -
 
