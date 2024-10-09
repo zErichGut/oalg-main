@@ -94,7 +94,10 @@ abstract i b t = case t of
   Opr o u v -> Opr o (abstract i b u) (abstract i b v)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 94b91a8ba8d3933a0788dd3ebdda5f1bc5cedc0a
 --------------------------------------------------------------------------------
 -- abstracts -
 
