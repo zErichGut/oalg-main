@@ -32,7 +32,7 @@ module OAlg.Homology.IO.Term
 
 -- import Data.Typeable
 -- import Data.List ((++),reverse,zip,repeat,dropWhile,span,words)
--- import Data.Foldable (toList,foldl)
+import Data.Foldable (foldl,foldr)
 
 
 import OAlg.Prelude -- hiding (Result(..), It,(:>:))
@@ -46,7 +46,7 @@ import OAlg.Prelude -- hiding (Result(..), It,(:>:))
 -- import OAlg.Entity.Sum
 
 -- import OAlg.Structure.Fibred
--- import OAlg.Structure.Additive
+import OAlg.Structure.Additive
 -- import OAlg.Structure.Multiplicative
 -- import OAlg.Structure.Vectorial
 -- import OAlg.Structure.Exception
@@ -86,7 +86,40 @@ abstract i b t = case t of
   s :! u  -> abstract i b s :! abstract i b u
   u :+ v  -> abstract i b u :+ abstract i b v
 
+--------------------------------------------------------------------------------
+-- abstracts -
 
+-- | abstractoin over several free variables
+abstracts :: [String] -> Term v -> Term v
+abstracts bs t = foldr (\b u -> b :> abstract 0 b u) t bs
+
+--------------------------------------------------------------------------------
+-- applys -
+
+-- | application of t to several terms.
+applys :: Term v -> [Term v] -> Term v
+applys t us = foldl (\t u -> t :$ u) t us
+
+--------------------------------------------------------------------------------
+-- shift -
+
+-- | @shift i d t@ shift a term's non-local indices by @i@.
+shift :: N -> N -> Term v -> Term v
+shift 0 _ u         = u
+shift _ _ (Free a)  = Free a
+shift i d (Bound j) = if j >= d then Bound (j + i) else Bound j
+shift _ _ (Value v) = Value v
+shift i d (a :> t)  = a :> shift i (succ d) t
+shift i d (u :$ v)  = shift i d u :$ shift i d v
+shift i d (u :! v)  = shift i d u :! shift i d v
+shift i d (u :+ v)  = shift i d u :+ shift i d v
+
+--------------------------------------------------------------------------------
+-- subst -
+
+-- | @subst i u t@ substitutes @u@ for the bound variable index @i@ in @t@.
+subst :: N -> Term v -> Term v -> Term v
+subst = error "nyi"
 
 
 
