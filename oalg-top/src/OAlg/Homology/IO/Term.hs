@@ -19,7 +19,11 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- terms an reducing them to normal form
+-- Terms and reducing them to normal form.
+--
+-- The implementation is given by the precious book
+-- [ML for the Working Programmer](https://www.cl.cam.ac.uk/~lp15/MLbook)
+-- (by L. C. Paulson) and adapted to our needs.
 module OAlg.Homology.IO.Term
   ( Term(..)
   , abstract, abstracts
@@ -37,16 +41,10 @@ import OAlg.Prelude
 
 import OAlg.Structure.Additive
 
-import Data.Foldable (foldl,foldr)
-
-import OAlg.Prelude
-
-import OAlg.Structure.Additive
-
-
 --------------------------------------------------------------------------------
 -- Term -
 
+-- | term according to a name-free lambda calculus.
 data Term o v
   = Free String
   | Bound N
@@ -115,13 +113,14 @@ subst i u (Opr o v w) = Opr o (subst i u v) (subst i u w)
 --------------------------------------------------------------------------------
 -- EnvT -
 
+-- | environment for instantiating terms.
 type EnvT o v = M.Map String (Term o v)
 
 --------------------------------------------------------------------------------
 -- envT -
 
 envT :: [(String,Term o v)] -> EnvT o v
-envT = error "nyi"
+envT = M.fromList
 
 --------------------------------------------------------------------------------
 -- inst -
@@ -152,7 +151,7 @@ headNF t           = t
 --------------------------------------------------------------------------------
 -- eval -
 
--- | reduces a term to normal form (if exists) by a call-by-name strategy.
+-- | reduces a term to its normal form - if exists - by a call-by-name strategy.
 eval :: Term o v -> Term o v
 eval (Opr o v w) = Opr o (eval v) (eval w)
 eval (Value v)   = Value v

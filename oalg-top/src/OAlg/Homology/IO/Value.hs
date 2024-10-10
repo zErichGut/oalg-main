@@ -690,6 +690,8 @@ evalApplValue hs f v = case (f,v) of
     -> return $ ChainValue $ fsqx vs k
   (ChainValue (ChainValueSequenceStrict vs),ZValue k)
     -> return $ ChainValue $ fsqx vs k
+  (HomologyGroupValue (HomologyGroupSequence gs),ZValue k)
+    -> return $ HomologyGroupValue $ HomologyGroupElement $ fsqx gs k
   _ -> Left $ NotApplicable (root f) (root v)
 
 --------------------------------------------------------------------------------
