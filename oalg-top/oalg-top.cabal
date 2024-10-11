@@ -32,6 +32,7 @@ library
       OAlg.Homology.Group
       OAlg.Homology.IO.Evaluation
       OAlg.Homology.IO.Interactive
+      OAlg.Homology.IO.Parser
       OAlg.Homology.IO.Pretty
       OAlg.Homology.IO.SomeChain
       OAlg.Homology.IO.Term

@@ -24,55 +24,9 @@ module OAlg.Homology.IO.Parser
 
 import Control.Applicative
 
---------------------------------------------------------------------------------
--- MAction -
+import Prelude hiding ((!!),repeat)
 
-newtype MAction s m x = MAction (s -> m (x,s))
-
---------------------------------------------------------------------------------
--- run -
-
-run :: MAction s m x -> s -> m (x,s)
-run (MAction p) = p
-
---------------------------------------------------------------------------------
--- Monad -
-
-instance Monad m => Functor (MAction s m) where
-  fmap f (MAction p) = MAction (\s -> p s >>= \(x,s) -> return (f x,s))
-
-instance Monad m => Applicative (MAction s m) where
-  pure x = MAction (\s -> return (x,s))
-  MAction f <*> MAction g
-    = MAction (\s -> do
-                  (x,s')   <- g s
-                  (f',s'') <- f s'
-                  return (f' x,s'')
-             )
-      
-instance Monad m => Monad (MAction s m) where
-  return = pure
-  MAction p >>= f
-    = MAction (\s -> do
-                  (x,s') <- p s -- p :: s -> m (x,s)
-                  run (f x) s'  -- f :: x -> MAction s y
-             )
-
-instance (Monad m, Alternative m) => Alternative (MAction s m) where
-  empty = MAction $ const empty
-  MAction p <|> MAction q = MAction (\s -> p s <|> q s)
-  
---------------------------------------------------------------------------------
--- setState -
-
-setState :: Monad m => s -> MAction s m ()
-setState s = MAction (const $ return ((),s))
-
---------------------------------------------------------------------------------
--- getState -
-
-getState :: Monad m => MAction s m s
-getState = MAction (\s -> return (s,s))
+import OAlg.Homology.IO.ActionM
 
 --------------------------------------------------------------------------------
 -- SyntayError -
@@ -80,43 +34,47 @@ getState = MAction (\s -> return (s,s))
 data ParserFailure
   = SyntaxError String
   | Failure String
+  | Unknown
   deriving (Show)
 
 instance Alternative (Either ParserFailure) where
-  empty = Left $ Failure ""
+  empty = Left $ Unknown
   Left _ <|> y = y
   r      <|> _ = r  
 
 --------------------------------------------------------------------------------
 -- Parser -
 
-type Parser s x = MAction s (Either ParserFailure) x 
+type Parser s x = ActionM s (Either ParserFailure) x 
 
 --------------------------------------------------------------------------------
--- syntaxError -
+-- failure -
 
-syntaxError :: String -> Parser s a
-syntaxError msg = MAction (const $ Left $ SyntaxError msg)
+failure :: ParserFailure -> Parser s a
+failure e = ActionM (const $ Left e)
 
 --------------------------------------------------------------------------------
 -- handle -
 
-handle :: (ParserFailure -> Parser s a) -> Parser s a -> Parser s a
-handle h pa = MAction (\s -> case run pa s of
+handle :: Parser s a -> (ParserFailure -> Parser s a) -> Parser s a
+handle pa h = ActionM (\s -> case run pa s of
                                Right as -> Right as
                                Left e   -> run (h e) s
                       )
                      
 --------------------------------------------------------------------------------
--- failure -
+-- syntaxError -
 
-failure :: String -> Parser s a
-failure msg = MAction (const $ Left $ Failure msg)
+syntaxError :: String -> Parser s a
+syntaxError msg = failure (SyntaxError msg)
 
+{-
 --------------------------------------------------------------------------------
--- Token -
+-- infix declaration -
 
-data Token = Id String | Key String deriving (Show)
+infix 6 $->
+infix 5 >->
+infix 0 <||>
 
 --------------------------------------------------------------------------------
 -- id -
@@ -133,6 +91,7 @@ id = do
 --------------------------------------------------------------------------------
 -- key -
 
+-- | @$@
 key :: String -> Parser [Token] String
 key a = do
   ts <- getState
@@ -145,11 +104,67 @@ key a = do
 
 
 --------------------------------------------------------------------------------
+-- (<||> -
+
+-- | @||@
+(<||>) :: Parser s a -> Parser s a -> Parser s a
+a <||> b = a `handle` isSyntaxError b where
+  isSyntaxError b (SyntaxError _) = b
+  isSyntaxError _ e               = failure e
+  
+--------------------------------------------------------------------------------
 -- (>->) -
 
+-- | @--@
 (>->) :: Parser s a -> Parser s b -> Parser s (a,b)
 pa >-> pb = do
   a <- pa
   b <- pb
   return (a,b)
   
+--------------------------------------------------------------------------------
+-- (!!) -
+
+(!!) :: Parser s a -> Parser s a
+(!!) a = a `handle` failed where
+  failed (SyntaxError msg) = failure (Failure msg)
+  failed e                 = failure e
+
+--------------------------------------------------------------------------------
+-- ($->) -
+
+-- | @$--@
+($->) :: String -> Parser [Token] a -> Parser [Token] a
+a $-> b = fmap snd (key a >-> (!!) b)
+
+--------------------------------------------------------------------------------
+-- repeat -
+
+repeat :: Parser s a -> Parser s [a]
+repeat a = fmap (uncurry (:)) (a >-> repeat a) <||> return []
+
+--------------------------------------------------------------------------------
+-- infixes -
+
+infixis :: (o -> Integer) -> (o -> a -> a -> a) -> Parser s o -> Parser s a -> Parser s a
+infixis prec appl po pa = infx 0 where
+  infx k = do
+    s <- getState
+    a <- pa
+    o <- po
+    let ko = prec o in case ko < k of
+      True -> setState s 
+-}
+
+{-
+infixis :: Parser [Token] a -> (String -> Integer) -> (String -> a -> a -> a) -> Parser [Token] a
+infixis pa prec appl = next 0 pa where
+  next k pa = do
+    x  <- pa
+    ts <- getState 
+    case ts of
+      (Key a:_) -> let ak = prec a in case ak < k of
+        True    -> setState ts >> return x
+        False   -> next k (fmap (appl a x) $ next ak pa)
+      _         -> return x
+-}
