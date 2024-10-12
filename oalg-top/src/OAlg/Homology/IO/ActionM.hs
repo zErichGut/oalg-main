@@ -25,12 +25,9 @@ module OAlg.Homology.IO.ActionM
 
     -- * Either Action
   , ActionE, failure, handle
-  , DefaultFailure(..)
   ) where
 
 import Control.Applicative
-
--- import Prelude hiding ((!!),repeat)
 
 --------------------------------------------------------------------------------
 -- ActionM -
@@ -86,35 +83,34 @@ getState :: Monad m => ActionM s m s
 getState = ActionM (\s -> return (s,s))
 
 --------------------------------------------------------------------------------
--- DefaultFailure -
+-- Either (Maybe e) -
 
-class DefaultFailure e where
-  defaultFailure :: e
-
-instance DefaultFailure e => Alternative (Either e) where
-  empty = Left defaultFailure
+instance Alternative (Either (Maybe e)) where
+  empty = Left Nothing
   Left _ <|> y = y
   r      <|> _ = r  
 
-instance DefaultFailure e => MonadFail (Either e) where
+instance MonadFail (Either (Maybe e)) where
   fail _ = empty
-
+  
 --------------------------------------------------------------------------------
 -- ActionE -
 
-type ActionE s e x = ActionM s (Either e) x 
+type ActionE s e = ActionM s (Either (Maybe e)) 
 
 --------------------------------------------------------------------------------
 -- failure -
 
-failure :: e -> ActionE s e a
-failure e = ActionM (const $ Left e)
+failure :: Maybe e -> ActionE s e a
+failure e = ActionM (const $ Left $ e)
 
 --------------------------------------------------------------------------------
 -- handle -
 
-handle :: ActionE s e a -> (e -> ActionE s e a) -> ActionE s e a
+handle :: ActionE s e a -> (Maybe e -> ActionE s e a) -> ActionE s e a
 handle pa h = ActionM (\s -> case run pa s of
                                Right as -> Right as
                                Left e   -> run (h e) s
                       )
+
+

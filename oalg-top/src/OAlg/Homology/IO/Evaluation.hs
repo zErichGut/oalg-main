@@ -22,7 +22,7 @@
 -- evaluatoin of 'Term's of 'Value's..
 module OAlg.Homology.IO.Evaluation
   ( evalValue, TermValue, VectorOperation(..)
-  , env, Env()
+  , env, envAdd, Env()
   , Eval, EvaluationFailure(..)
   ) where
 
@@ -78,6 +78,14 @@ env r c = Env (envT ts) hs where
 
   hgs = valHomologyGroups hs
   gch = valGenerator hs (ChainGenerator ChainGenerator')
+
+--------------------------------------------------------------------------------
+-- envAdd -
+
+envAdd :: Env n x -> String -> Value x -> Env n x
+envAdd (Env eT hs) s v = Env eT' hs where
+  eT' = envTAdd eT s (Value v)
+
 
 --------------------------------------------------------------------------------
 -- EvaluationFailure -

@@ -30,6 +30,7 @@ module OAlg.Homology.IO.Lexer
   , LexerFailure(..)
   ) where
 
+
 import Control.Applicative
 
 import Data.Char
@@ -48,37 +49,32 @@ data Token = Id String | Key String | Symbol String deriving (Show)
 -- LexerFailure -
 
 data LexerFailure
-  = Unknown
-  | Unexpected String
+  = Unexpected Integer String
   deriving (Show)
 
-instance DefaultFailure LexerFailure where
-  defaultFailure = Unknown
-
-instance Exception LexerFailure
-  
 --------------------------------------------------------------------------------
 -- Lexer -
 
-type Lexer = ActionM String (Either LexerFailure)
+type Lexer = ActionE [(Char,Integer)] LexerFailure
 
 --------------------------------------------------------------------------------
 -- startsWith -
-
-startsWith :: String -> Lexer String
+-- | pre: - the underlying string is not empty
+--        - the given name is not empty
+startsWith :: String -> Lexer (String,Integer)
 startsWith name = do
   s <- getState
   case splitAt (length name) s of
-    (s',s'') | s' == name -> setState s'' >> return name
-             | otherwise  -> empty
+    (s',s'') | map fst s' == name -> setState s'' >> return (name,snd $ head s')
+             | otherwise          -> empty
 
 --------------------------------------------------------------------------------
 -- prsSymbol -
 
 -- | pre: the underlying string is not empty
-prsSymbol :: Lexer Token
+prsSymbol :: Lexer (Token,Integer)
 prsSymbol = foldl (<|) empty symbols where
-  t <| s = t <|> (startsWith s >>= return . Symbol)
+  t <| s = t <|> (startsWith s >>= \(s,i) -> return (Symbol s,i))
 
 --------------------------------------------------------------------------------
 -- headSymbols -
@@ -96,52 +92,62 @@ isIdChar c = not (c `elem` headSymbols) && isAlphaNum c
 -- prsId -
 
 -- | pre: the underlying string is not empty
-prsId :: Lexer Token
+prsId :: Lexer (Token,Integer)
 prsId = do
   s <- getState
-  case span isIdChar s of
+  case span (isIdChar . fst) s of
     ([],_) -> empty
-    (k,s') -> setState s' >> return (Id k)
+    (k,s') -> setState s' >> return (Id $ map fst k, snd $ head k)
 
 --------------------------------------------------------------------------------
 -- prsKey -
 
 -- | pre: the underlying string is not empty
-prsKey :: Lexer Token
+prsKey :: Lexer (Token,Integer)
 prsKey = do
-  Id id <- prsId
+  (Id id,i) <- prsId
   case id `elem` alphas of
-    True  -> return (Key id)
+    True  -> return (Key id,i)
     False -> empty
 
 --------------------------------------------------------------------------------
 -- unexpectedString -
 
-unexpected :: Lexer Token
-unexpected = do
+-- | pre: the underlying string is not empty
+unexpectedChars :: Lexer a
+unexpectedChars = do
   s <- getState
-  failure $ Unexpected $ take 5 s
-  
+  let s' = take 5 $ map fst s
+      i  = snd $ head s
+   in failure $ Just $ Unexpected i s'
+    
 --------------------------------------------------------------------------------
 -- nextToken -
 
 -- | parses the next token.
-nextToken :: Lexer (Maybe Token)
+nextToken :: Lexer (Maybe (Token,Integer))
 nextToken = do
   s <- getState
-  case dropWhile isSpace s of
+  case dropWhile (isSpace . fst) s of
     [] -> setState [] >> return Nothing
-    s' -> setState s' >> (prsSymbol <|> prsKey <|> prsId <|> unexpected) >>= return . Just
+    s' -> setState s' >> (prsSymbol <|> prsKey <|> prsId <|> unexpectedChars) >>= return . Just
 
+--------------------------------------------------------------------------------
+-- tokens -
+
+tokens :: Lexer [(Token,Integer)]
+tokens = do
+  mt <- nextToken
+  case mt of
+    Nothing -> return []
+    Just t  -> tokens >>= return . (t:)
 
 --------------------------------------------------------------------------------
 -- scan -
 
-scan :: String -> [Token]
-scan s = case run nextToken s of
-  Right (mt,s') -> case mt of
-    Just t      -> t : scan s'
-    Nothing     -> []
-  Left e        -> throw e
-
-
+scan :: String -> Either LexerFailure [(Token,Integer)]
+scan s = case run tokens (s `zip` [0..]) of
+  Right (ts,_) -> return ts
+  Left me      -> case me of
+    Just e     -> Left e
+    Nothing    -> throw $ ImplementationError "scan: unknwon failure"

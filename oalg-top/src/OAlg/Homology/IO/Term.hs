@@ -29,7 +29,7 @@ module OAlg.Homology.IO.Term
   , abstract, abstracts
   , applys
   , subst
-  , inst, EnvT, envT
+  , inst, EnvT, envT, envTAdd
   , eval
   ) where
 
@@ -94,7 +94,6 @@ shift i d (a :-> t)   = a :-> shift i (succ d) t
 shift i d (u :!> v)   = shift i d u :!> shift i d v
 shift i d (Opr o u v) = Opr o (shift i d u) (shift i d v)
 
-
 --------------------------------------------------------------------------------
 -- subst -
 
@@ -121,6 +120,13 @@ type EnvT o v = M.Map String (Term o v)
 
 envT :: [(String,Term o v)] -> EnvT o v
 envT = M.fromList
+
+--------------------------------------------------------------------------------
+-- envTAdd -
+
+envTAdd :: EnvT o v -> String -> Term o v -> EnvT o v
+envTAdd env k t = M.alter (const (Just t)) k env
+
 
 --------------------------------------------------------------------------------
 -- inst -

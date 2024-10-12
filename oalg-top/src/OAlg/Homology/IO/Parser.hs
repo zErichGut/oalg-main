@@ -19,17 +19,20 @@
 --
 -- parsing
 module OAlg.Homology.IO.Parser
-  ( 
-  ) where
+  ( -- * Parser
+     parse, ParserFailure(..)
+     -- * Expression
+  , Expression(..), Command(..)
+   ) where
 
 import Control.Applicative
-import Control.Exception
 
-import Prelude hiding ((!!),repeat)
+import OAlg.Control.Exception
 
 import OAlg.Homology.IO.ActionM
 import OAlg.Homology.IO.Lexer
 import OAlg.Homology.IO.Evaluation
+import OAlg.Homology.IO.Term
 
 --------------------------------------------------------------------------------
 -- Command -
@@ -48,141 +51,84 @@ data Expression x
   deriving (Show)
            
 --------------------------------------------------------------------------------
--- SyntayError -
+-- ParserFailure -
 
 data ParserFailure
-  = UnknownParserFailure
-  | SyntaxError String
-  | Failure String
+  = UnexpectedToken (Token,Integer)
+  | LexerFailure LexerFailure
   deriving (Show)
-
-instance DefaultFailure ParserFailure where
-  defaultFailure = UnknownParserFailure
-
-instance Exception ParserFailure
 
 --------------------------------------------------------------------------------
 -- Parser -
 
-type Parser x = ActionE [Token] ParserFailure x
+type Parser = ActionE [(Token,Integer)] ParserFailure
+
+--------------------------------------------------------------------------------
+-- prsCommand -
+
+-- | pre: the underlying state is not empty.
+prsCommand :: Parser (Expression x)
+prsCommand = do
+  ts <- getState
+  case map fst ts of
+    [Symbol ":",t] -> case t of
+      Id "quit"     -> return $ Command Quit
+      Id "q"        -> return $ Command Quit
+      Id "help"     -> return $ Command Help
+      Id "h"        -> return $ Command Help
+      Symbol "?"    -> return $ Command Help
+      _             -> empty
+    _               -> empty
+
+--------------------------------------------------------------------------------
+-- prsFree -
+
+prsFree :: Parser (Expression x)
+prsFree = do
+  ts <- getState
+  case ts of
+    (Id v,_):ts' -> setState ts' >> (return $ TermValue $ Free v)
+    _            -> empty
+    
+--------------------------------------------------------------------------------
+-- prsTermValue -
+
+-- | pre: the underlying state is not empty.
+prsTermValue :: Parser (Expression x)
+prsTermValue = prsFree
+
+--------------------------------------------------------------------------------
+-- unexpectedToken -
+
+-- | pre: the underlying state is not empty.
+unexpectedToken :: Parser a
+unexpectedToken = do
+  ts <- getState
+  failure $ Just $ UnexpectedToken $ head ts
 
 --------------------------------------------------------------------------------
 -- prsExpression -
 
 prsExpression :: Parser (Expression x)
-prsExpression = error "nyi"
+prsExpression = do
+  ts <- getState
+  case ts of
+    [] -> empty
+    _  -> prsCommand <|> prsTermValue <|> unexpectedToken
+
 
 --------------------------------------------------------------------------------
 -- parse -
 
-parse :: String -> Expression x
-parse s = case run prsExpression $ scan s of
-  Right (e,_)  -> e
-  Left exp     -> throw exp
-{-
---------------------------------------------------------------------------------
--- syntaxError -
-
-syntaxError :: String -> Parser s a
-syntaxError msg = failure (SyntaxError msg)
+parse :: String -> Either ParserFailure (Expression x)
+parse s = case scan s of
+  Right ts      -> case run prsExpression ts of
+    Right (e,_) -> return e
+    Left me     -> case me of
+      Just e    -> Left e
+      Nothing   -> throw $ ImplementationError "parse: unknown failure"
+  Left e  -> Left $ LexerFailure e
 
 
---------------------------------------------------------------------------------
--- infix declaration -
-
-infix 6 $->
-infix 5 >->
-infix 0 <||>
-
---------------------------------------------------------------------------------
--- id -
-
-id :: Parser [Token] String
-id = do
-  ts <- getState
-  case ts of
-    Id s : ts' -> do
-      setState ts'
-      return s
-    _ -> syntaxError "Identifier expected"
-
---------------------------------------------------------------------------------
--- key -
-
--- | @$@
-key :: String -> Parser [Token] String
-key a = do
-  ts <- getState
-  case ts of
-    Key b : ts' | b == a    -> do
-                               setState ts'
-                               return b
-                | otherwise -> syntaxError a 
-    _                       -> syntaxError "Symbol expected"
 
 
---------------------------------------------------------------------------------
--- (<||> -
-
--- | @||@
-(<||>) :: Parser s a -> Parser s a -> Parser s a
-a <||> b = a `handle` isSyntaxError b where
-  isSyntaxError b (SyntaxError _) = b
-  isSyntaxError _ e               = failure e
-  
---------------------------------------------------------------------------------
--- (>->) -
-
--- | @--@
-(>->) :: Parser s a -> Parser s b -> Parser s (a,b)
-pa >-> pb = do
-  a <- pa
-  b <- pb
-  return (a,b)
-  
---------------------------------------------------------------------------------
--- (!!) -
-
-(!!) :: Parser s a -> Parser s a
-(!!) a = a `handle` failed where
-  failed (SyntaxError msg) = failure (Failure msg)
-  failed e                 = failure e
-
---------------------------------------------------------------------------------
--- ($->) -
-
--- | @$--@
-($->) :: String -> Parser [Token] a -> Parser [Token] a
-a $-> b = fmap snd (key a >-> (!!) b)
-
---------------------------------------------------------------------------------
--- repeat -
-
-repeat :: Parser s a -> Parser s [a]
-repeat a = fmap (uncurry (:)) (a >-> repeat a) <||> return []
-
---------------------------------------------------------------------------------
--- infixes -
-
-infixis :: (o -> Integer) -> (o -> a -> a -> a) -> Parser s o -> Parser s a -> Parser s a
-infixis prec appl po pa = infx 0 where
-  infx k = do
-    s <- getState
-    a <- pa
-    o <- po
-    let ko = prec o in case ko < k of
-      True -> setState s 
--}
-
-{-
-infixis :: Parser [Token] a -> (String -> Integer) -> (String -> a -> a -> a) -> Parser [Token] a
-infixis pa prec appl = next 0 pa where
-  next k pa = do
-    x  <- pa
-    ts <- getState 
-    case ts of
-      (Key a:_) -> let ak = prec a in case ak < k of
-        True    -> setState ts >> return x
-        False   -> next k (fmap (appl a x) $ next ak pa)
-      _         -> return x
--}
