@@ -23,52 +23,70 @@ module OAlg.Homology.IO.Parser
   ) where
 
 import Control.Applicative
+import Control.Exception
 
 import Prelude hiding ((!!),repeat)
 
 import OAlg.Homology.IO.ActionM
+import OAlg.Homology.IO.Lexer
+import OAlg.Homology.IO.Evaluation
 
+--------------------------------------------------------------------------------
+-- Command -
+
+data Command
+  = Quit
+  | Help
+  deriving (Show)
+
+--------------------------------------------------------------------------------
+-- Expression -
+
+data Expression x
+  = Command Command
+  | TermValue (TermValue x)
+  deriving (Show)
+           
 --------------------------------------------------------------------------------
 -- SyntayError -
 
 data ParserFailure
-  = SyntaxError String
+  = UnknownParserFailure
+  | SyntaxError String
   | Failure String
-  | Unknown
   deriving (Show)
 
-instance Alternative (Either ParserFailure) where
-  empty = Left $ Unknown
-  Left _ <|> y = y
-  r      <|> _ = r  
+instance DefaultFailure ParserFailure where
+  defaultFailure = UnknownParserFailure
+
+instance Exception ParserFailure
 
 --------------------------------------------------------------------------------
 -- Parser -
 
-type Parser s x = ActionM s (Either ParserFailure) x 
+type Parser x = ActionE [Token] ParserFailure x
 
 --------------------------------------------------------------------------------
--- failure -
+-- prsExpression -
 
-failure :: ParserFailure -> Parser s a
-failure e = ActionM (const $ Left e)
+prsExpression :: Parser (Expression x)
+prsExpression = error "nyi"
 
 --------------------------------------------------------------------------------
--- handle -
+-- parse -
 
-handle :: Parser s a -> (ParserFailure -> Parser s a) -> Parser s a
-handle pa h = ActionM (\s -> case run pa s of
-                               Right as -> Right as
-                               Left e   -> run (h e) s
-                      )
-                     
+parse :: String -> Expression x
+parse s = case run prsExpression $ scan s of
+  Right (e,_)  -> e
+  Left exp     -> throw exp
+{-
 --------------------------------------------------------------------------------
 -- syntaxError -
 
 syntaxError :: String -> Parser s a
 syntaxError msg = failure (SyntaxError msg)
 
-{-
+
 --------------------------------------------------------------------------------
 -- infix declaration -
 

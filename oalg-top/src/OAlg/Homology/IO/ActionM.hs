@@ -19,8 +19,13 @@
 --
 -- monadic actions.
 module OAlg.Homology.IO.ActionM
-  ( ActionM(..), run
+  ( -- * Monadic Action
+    ActionM(..), run
   , getState, setState
+
+    -- * Either Action
+  , ActionE, failure, handle
+  , DefaultFailure(..)
   ) where
 
 import Control.Applicative
@@ -67,6 +72,7 @@ instance (Monad m, Alternative m) => Alternative (ActionM s m) where
 
 instance MonadFail m => MonadFail (ActionM s m) where
   fail = ActionM . const . fail
+
 --------------------------------------------------------------------------------
 -- setState -
 
@@ -78,3 +84,37 @@ setState s = ActionM (const $ return ((),s))
 
 getState :: Monad m => ActionM s m s
 getState = ActionM (\s -> return (s,s))
+
+--------------------------------------------------------------------------------
+-- DefaultFailure -
+
+class DefaultFailure e where
+  defaultFailure :: e
+
+instance DefaultFailure e => Alternative (Either e) where
+  empty = Left defaultFailure
+  Left _ <|> y = y
+  r      <|> _ = r  
+
+instance DefaultFailure e => MonadFail (Either e) where
+  fail _ = empty
+
+--------------------------------------------------------------------------------
+-- ActionE -
+
+type ActionE s e x = ActionM s (Either e) x 
+
+--------------------------------------------------------------------------------
+-- failure -
+
+failure :: e -> ActionE s e a
+failure e = ActionM (const $ Left e)
+
+--------------------------------------------------------------------------------
+-- handle -
+
+handle :: ActionE s e a -> (e -> ActionE s e a) -> ActionE s e a
+handle pa h = ActionM (\s -> case run pa s of
+                               Right as -> Right as
+                               Left e   -> run (h e) s
+                      )

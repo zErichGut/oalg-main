@@ -23,15 +23,9 @@ module OAlg.Homology.IO.Keywords
     alphas
     
    -- * Symbols
-  , sympols
+  , symbols
   
   ) where
-
---------------------------------------------------------------------------------
--- keywords of commands -
-
-kwQuit = "quit"
-kwHelp = "help"
 
 --------------------------------------------------------------------------------
 -- keywords of expressions -
@@ -39,16 +33,11 @@ kwHomologyGroups = "H"
 kwSpan           = "span"
 
 alphas
-  = [ -- commands
-      kwQuit
-    , kwHelp
-    
-      -- expressions
-    , kwHomologyGroups
+  = [ kwHomologyGroups
     , kwSpan
     ]
 
-sympols
+symbols
   = [ "(",")"
     , ":"
     , "+","-"
