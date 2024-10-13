@@ -19,7 +19,8 @@
 --
 -- parsing
 module OAlg.Homology.IO.Parser
-  ( -- * Parser
+  (
+    -- * Parser
      parse, ParserFailure(..)
      -- * Expression
   , Expression(..), Command(..)
@@ -69,6 +70,100 @@ data ParserFailure
 
 type Parser = ActionE [(Token,Integer)] ParserFailure
 
+--------------------------------------------------------------------------------
+-- prsCommand -
+
+-- | pre: - the underlying list of tokens starts with a symbol.
+--        - the first symbol starts with the character @\':\'@.
+prsCommand :: Parser (Expression x)
+prsCommand = do
+  ts <- getState
+  case map fst ts of
+    [Symbol ":quit"] -> return $ Command Quit
+    [Symbol ":q"]    -> return $ Command Quit
+    [Symbol ":help"] -> return $ Command Help
+    [Symbol ":h"]    -> return $ Command Help
+    [Symbol ":?"]    -> return $ Command Help
+    _                -> failure $ Just $ UnknownCommand $ (map fst ts, snd $ head ts)
+
+--------------------------------------------------------------------------------
+-- prsFree -
+
+prsFree :: Parser (Expression x)
+prsFree = do
+  ts <- getState
+  case ts of
+    (Id v,_):ts'  -> setState ts' >> (return $ TermValue $ Free v)
+    (Key k,_):ts' -> setState ts' >> (return $ TermValue $ Free k)
+    _             -> empty
+    
+--------------------------------------------------------------------------------
+-- prsTermValue -
+
+-- | pre: the underlying state is not empty.
+prsTermValue :: Parser (Expression x)
+prsTermValue = prsFree
+
+--------------------------------------------------------------------------------
+-- unexpectedToken -
+
+-- | pre: the underlying state is not empty.
+unexpectedToken :: Parser a
+unexpectedToken = do
+  ts <- getState
+  failure $ Just $ UnexpectedToken $ head ts
+
+--------------------------------------------------------------------------------
+-- prsLet -
+
+-- | pre: the underlying tokens start with @'Key' \"let\"@.
+prsLet :: Parser (Expression x)
+prsLet = do
+  ts <- getState
+  case map fst ts of
+    Key "let" : Id _ : Symbol "=" : [] -> failure $ Just $ EmptyFailure
+    Key "let" : Id x : Symbol "=" : _ -> do
+      trm <- setState (drop 3 ts) >> prsTermValue
+      ts  <- getState
+      case map fst ts of
+        []            -> case trm of
+          TermValue v -> return $ Command $ Let x $ v
+          _           -> throw $ ImplementationError "prsLet"
+        _             -> error "nyi"
+                                           
+    Key "let" : Id _ : _ : _ -> failure $ Just $ Expected (Symbol "=") (head $ drop 2 ts)
+    Key "let" : _    : _     -> failure $ Just $ ExpectedId (head $ drop 1 ts)
+    _                        -> throw $ ImplementationError "prsLet"
+    
+--------------------------------------------------------------------------------
+-- prsExpression -
+
+prsExpression :: Parser (Expression x)
+prsExpression = do
+  ts <- getState
+  case map fst ts of
+    []                          -> return (Command Empty)
+    Symbol "-" : Symbol "-" : _ -> return $ Command Empty
+    Symbol (':':_) : _          -> prsCommand
+    Key "let" :_                -> prsLet
+    _                           -> prsTermValue
+
+--------------------------------------------------------------------------------
+-- parse -
+
+parse :: String -> Either ParserFailure (Expression x)
+parse s = case scan s of
+  Right ts        -> case run prsExpression ts of
+    Right (exp,_) -> return exp
+    Left me       -> case me of
+      Just f      -> Left f
+      Nothing     -> throw $ ImplementationError "parse: unknown failure"
+  Left e  -> Left $ LexerFailure e
+
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- prsCommand -
 
@@ -158,6 +253,4 @@ parse e s = case scan s of
       Nothing     -> throw $ ImplementationError "parse: unknown failure"
   Left e  -> Left $ LexerFailure e
 
-
-
-
+-}

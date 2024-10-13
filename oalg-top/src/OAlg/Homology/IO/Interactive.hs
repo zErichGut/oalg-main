@@ -21,6 +21,8 @@
 module OAlg.Homology.IO.Interactive
   () where
 
+import Control.Exception
+
 import System.IO
 
 import OAlg.Entity.Definition (Entity())
@@ -35,49 +37,87 @@ import OAlg.Homology.IO.Help
 import OAlg.Homology.IO.Value
 
 --------------------------------------------------------------------------------
--- iComplex -
+-- iEnv -
 
+iEnv :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> Env n x
+iEnv r c = foldl (<+) e0
+             [ ("it", ZValue 0)
+             , ("H",valHomologyGroups hs)
+             ]
+  where
+    e0 = env r c
+    hs = envV' e0
+
+    e <+ (k,v) = envAlter e k v  -- altering the environment dos not affect hs
+  
+
+--------------------------------------------------------------------------------
+-- iComplex -
+{-
 iComplex :: (Entity x, Ord x, Attestable n)
   => Handle -> Handle -> Handle
   -> Regular -> Complex n x -> IO ()
-iComplex hIn hOut hErr r c = rep $ e where
-  e0 = env r c
-  hs = envV' e0
-  e <+ (k,v) = envAlter e k v  -- altering the environment dos not affect hs
+iComplex hIn hOut hErr r c = rep' $ iEnv r c where
+-}
+
+data Mode = Interactive | Batch deriving (Show,Eq,Ord,Enum)
+
+rep :: Mode -> Handle -> Handle -> Handle -> IO ()
+rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) where
+
+  putPromt = case md of
+    Interactive -> do
+      hFlush hOut
+      hPutStr hOut "top> "
+    Batch -> return ()
+    
   
-  e = foldl (<+) e0
-      [ ("it", ZValue 0)
-      , ("H",valHomologyGroups hs)
-      ]
-
-
-  putFailure :: Show f => f -> IO ()
-  putFailure e = hPutStrLn hErr ("!!! Failure: " ++ show e)
+  putFailure :: Show f => Integer -> f -> IO ()
+  putFailure l e = case md of
+    Interactive -> hPutStrLn hErr ("!!! Failure: " ++ show e)
+    Batch       -> hPutStrLn hErr ("!!! Failure at line " ++ show l ++ ": " ++ show e)
 
   putHelp :: IO ()
   putHelp = hPutStrLn hOut help
 
-  putResult :: Show v => v -> IO ()
+  putResult :: (Entity x, Ord x) => Value x -> IO ()
   putResult v = hPutStrLn hOut $ show v
 
-  rep e = do
+  quit = do
     hFlush hOut
-    hPutStr hOut "top> "
-    ln <- hGetLine hIn
-    case parse e ln of
-      Right exp     -> case exp of
-        Command cmd -> case cmd of
-          Empty     -> rep e
-          Quit      -> return ()
-          Help      -> putHelp >> rep e
-          Let x t   -> case evalValue e t of
-            Right v -> rep (envAlter e x v)
-            Left f  -> putFailure f >> rep e
-        TermValue t -> case evalValue e t of
-          Right v   -> putResult v >> rep (envAlter e "it" v)
-          Left f    -> putFailure f >> rep e
-      Left f        -> putFailure f >> rep e
+    hFlush hErr
+
+  ep' l e ln = case parse ln of
+    Right exp     -> case exp of
+      Command cmd -> case cmd of
+        Empty     -> rep' l e
+        Quit      -> quit
+        Help      -> putHelp >> rep' l e
+        Let x t   -> case evalValue e t of
+          Right v -> rep' l (envAlter e x v)
+          Left f  -> putFailure l f >> rep' l e
+      TermValue t -> case evalValue e t of
+        Right v   -> putResult v >> rep' l (envAlter e "it" v)
+        Left f    -> putFailure l f >> rep' l e
+    Left f        -> putFailure l f >> rep' l e
       
+  rep' l e = do
+    putPromt
+    eof <- hIsEOF hIn
+    case eof of
+      True  -> quit
+      False -> hGetLine hIn >>= ep' (l+1) e
 
-ic r = iComplex stdin stdout stderr r (complex kleinBottle) 
+repi = rep Interactive stdin stdout stderr
 
+-- ic r = iComplex stdin stdout stderr r (complex kleinBottle) 
+repb = do
+  hIn <- openFile "c:/msys64/home/zeric/foo" ReadMode 
+  rep Batch hIn stdout stderr `catch` all
+  hClose hIn
+
+  where 
+    all :: SomeException -> IO ()
+    all e = hPutStrLn stderr $ show e
+  
+  
