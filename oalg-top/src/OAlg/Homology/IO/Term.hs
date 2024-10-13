@@ -29,7 +29,7 @@ module OAlg.Homology.IO.Term
   , abstract, abstracts
   , applys
   , subst
-  , inst, EnvT, envT, envTAdd
+  , inst, EnvT, envT, envTAlter
   , eval
   ) where
 
@@ -122,10 +122,10 @@ envT :: [(String,Term o v)] -> EnvT o v
 envT = M.fromList
 
 --------------------------------------------------------------------------------
--- envTAdd -
+-- envTAlter -
 
-envTAdd :: EnvT o v -> String -> Term o v -> EnvT o v
-envTAdd env k t = M.alter (const (Just t)) k env
+envTAlter :: EnvT o v -> String -> Term o v -> EnvT o v
+envTAlter env k t = M.alter (const (Just t)) k env
 
 
 --------------------------------------------------------------------------------

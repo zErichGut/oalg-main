@@ -21,7 +21,6 @@
 module OAlg.Homology.IO.Keywords
   ( -- * Alphas
     alphas
-    
    -- * Symbols
   , symbols
   
@@ -29,19 +28,20 @@ module OAlg.Homology.IO.Keywords
 
 --------------------------------------------------------------------------------
 -- keywords of expressions -
-kwHomologyGroups = "H"
-kwSpan           = "span"
 
 alphas
-  = [ kwHomologyGroups
-    , kwSpan
+  = [ "let"
+    , "H"
+    , "span"
     ]
 
 symbols
   = [ "(",")"
-    , ":"
+    , ":q", ":quit"
+    , ":h", ":help", ":?"
     , "+","-"
     , "!"
     , "?"
+    , "="
     ]
 

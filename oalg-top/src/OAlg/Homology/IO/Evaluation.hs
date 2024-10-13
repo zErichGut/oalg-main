@@ -22,7 +22,7 @@
 -- evaluatoin of 'Term's of 'Value's..
 module OAlg.Homology.IO.Evaluation
   ( evalValue, TermValue, VectorOperation(..)
-  , env, envAdd, Env()
+  , env, envV' , envAlter, Env()
   , Eval, EvaluationFailure(..)
   ) where
 
@@ -63,6 +63,12 @@ type TermValue x = Term VectorOperation (Value x)
 data Env n x = Env (EnvT VectorOperation (Value x)) (EnvV n x)
 
 --------------------------------------------------------------------------------
+-- envV' -
+
+envV' :: Env n x -> EnvV n x
+envV' (Env _ hs) = hs
+
+--------------------------------------------------------------------------------
 -- env -
 
 -- | creates the environment for a given complex.
@@ -80,11 +86,11 @@ env r c = Env (envT ts) hs where
   gch = valGenerator hs (ChainGenerator ChainGenerator')
 
 --------------------------------------------------------------------------------
--- envAdd -
+-- envAlter -
 
-envAdd :: Env n x -> String -> Value x -> Env n x
-envAdd (Env eT hs) s v = Env eT' hs where
-  eT' = envTAdd eT s (Value v)
+envAlter :: Env n x -> String -> Value x -> Env n x
+envAlter (Env eT hs) s v = Env eT' hs where
+  eT' = envTAlter eT s (Value v)
 
 
 --------------------------------------------------------------------------------

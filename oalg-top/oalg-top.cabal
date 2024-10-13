@@ -32,6 +32,7 @@ library
       OAlg.Homology.Group
       OAlg.Homology.IO.ActionM
       OAlg.Homology.IO.Evaluation
+      OAlg.Homology.IO.Help
       OAlg.Homology.IO.Interactive
       OAlg.Homology.IO.Keywords
       OAlg.Homology.IO.Lexer

@@ -41,7 +41,15 @@ iComplex :: (Entity x, Ord x, Attestable n)
   => Handle -> Handle -> Handle
   -> Regular -> Complex n x -> IO ()
 iComplex hIn hOut hErr r c = rep $ e where
-  e = envAdd (env r c) "it" (ZValue 0)
+  e0 = env r c
+  hs = envV' e0
+  e <+ (k,v) = envAlter e k v  -- altering the environment dos not affect hs
+  
+  e = foldl (<+) e0
+      [ ("it", ZValue 0)
+      , ("H",valHomologyGroups hs)
+      ]
+
 
   putFailure :: Show f => f -> IO ()
   putFailure e = hPutStrLn hErr ("!!! Failure: " ++ show e)
@@ -52,28 +60,23 @@ iComplex hIn hOut hErr r c = rep $ e where
   putResult :: Show v => v -> IO ()
   putResult v = hPutStrLn hOut $ show v
 
-
   rep e = do
     hFlush hOut
     hPutStr hOut "top> "
     ln <- hGetLine hIn
-    case parse ln of
+    case parse e ln of
       Right exp     -> case exp of
         Command cmd -> case cmd of
+          Empty     -> rep e
           Quit      -> return ()
-          Help      -> do
-                         putHelp
-                         rep e
+          Help      -> putHelp >> rep e
+          Let x t   -> case evalValue e t of
+            Right v -> rep (envAlter e x v)
+            Left f  -> putFailure f >> rep e
         TermValue t -> case evalValue e t of
-          Right v   -> do
-                         putResult v
-                         rep e
-          Left f    -> do
-                         putFailure f
-                         rep e
-      Left f        -> do
-                         putFailure f
-                         rep e
+          Right v   -> putResult v >> rep (envAlter e "it" v)
+          Left f    -> putFailure f >> rep e
+      Left f        -> putFailure f >> rep e
       
 
 ic r = iComplex stdin stdout stderr r (complex kleinBottle) 
