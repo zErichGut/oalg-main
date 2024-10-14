@@ -30,19 +30,17 @@ module OAlg.Homology.IO.Keywords
 -- keywords of expressions -
 
 alphas
-  = [ "let"
+  = [ "let", "in"
     , "H"
     , "span"
     ]
 
 symbols
   = [ "(",")"
-    , ":q", ":quit"
-    , ":h", ":help", ":?"
+    , ":quit", ":q" 
+    , ":help", ":h", ":?"
     , "+","-"
     , "!"
-    , "?"
     , "="
-    , ":"
     ]
 

@@ -24,14 +24,12 @@ module OAlg.Homology.IO.Help
 
 import Control.Monad
 
-tween :: a -> [[a]] -> [a]
-tween d as = tw d as where
-  tw :: a -> [[a]] -> [a]
-  tw _ []     = []
-  tw _ [a]    = a
-  tw d (a:as) = a ++ [d] ++ tw d as
+tween :: a -> [a] -> [a]
+tween _ []     = []
+tween _ [a]    = [a]
+tween d (a:as) = a : d : tween d as
 
-help = tween '\n'
+help = tween "\n"
   [ "Homology Groups"
   , "---------------"
   , ""
@@ -39,12 +37,13 @@ help = tween '\n'
   , ""
   , "  expression = command | value"
   , ""
-  , "  command    = [\':\' (quit | help) | cvarbind]"
+  , "  command    = [\':\' (quit | help) | varbind]"
   , "  quit       = \"quit\" | \'q\'"
   , "  help       = \"help\" | \'h\' | \'?\'"
-  , "  cvarbind   = \"let\" id \'=\' value"
+  , "  varbind    = \"let\" id \'=\' value"
   , ""
-  , "  value      ="
+  , "  value      = seq2 | seq1 | letdecl | zvalue"
+  , "  letdecl    = \"let\" id \'=\' value \"in\" value"
   , ""
   , "Description:"
   , ""

@@ -60,16 +60,42 @@ iComplex :: (Entity x, Ord x, Attestable n)
 iComplex hIn hOut hErr r c = rep' $ iEnv r c where
 -}
 
+--------------------------------------------------------------------------------
+-- Mode -
+
 data Mode = Interactive | Batch deriving (Show,Eq,Ord,Enum)
 
+--------------------------------------------------------------------------------
+-- Ln -
+
+-- | line number for batch mode.
+type Ln = Integer
+
+--------------------------------------------------------------------------------
+-- putFailure -
+
+putFailure :: Handle -> Mode -> Ln -> String -> IO ()
+putFailure hErr md l msg = case md of
+    Interactive -> hPutStrLn hErr ("!!! Failure: " ++ msg)
+    Batch       -> hPutStrLn hErr ("!!! Failure at line " ++ show l ++ ": " ++ msg)
+
+putParserFailure :: Handle -> Mode -> Ln -> ParserFailure -> IO ()
+putParserFailure hErr m l f = putFailure hErr m l (show f)
+
+putEvalFailure :: (Entity x, Ord x) => Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
+putEvalFailure hErr m l f = putFailure hErr m l (show f)
+
+--------------------------------------------------------------------------------
+-- rep
+
+-- | read-evaluate-print cycle.
 rep :: Mode -> Handle -> Handle -> Handle -> IO ()
 rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) where
 
-  putPromt = case md of
-    Interactive -> do
+  putPromt Interactive = do
       hFlush hOut
       hPutStr hOut "top> "
-    Batch -> return ()
+  putPromt Batch = return ()
     
   
   putFailure :: Show f => Integer -> f -> IO ()
@@ -95,14 +121,14 @@ rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) 
         Help      -> putHelp >> rep' l e
         Let x t   -> case evalValue e t of
           Right v -> rep' l (envAlter e x v)
-          Left f  -> putFailure l f >> rep' l e
+          Left f  -> putEvalFailure hErr md l f >> rep' l e
       TermValue t -> case evalValue e t of
         Right v   -> putResult v >> rep' l (envAlter e "it" v)
-        Left f    -> putFailure l f >> rep' l e
-    Left f        -> putFailure l f >> rep' l e
+        Left f    -> putEvalFailure hErr md l f >> rep' l e
+    Left f        -> putParserFailure hErr md l f >> rep' l e
       
   rep' l e = do
-    putPromt
+    putPromt md
     eof <- hIsEOF hIn
     case eof of
       True  -> quit
@@ -120,4 +146,4 @@ repb = do
     all :: SomeException -> IO ()
     all e = hPutStrLn stderr $ show e
   
-  
+

@@ -19,18 +19,22 @@
 --
 -- lexical analysis of strings.
 module OAlg.Homology.IO.Lexer
-  ( -- * Scanning Tokens
+  (
+    -- * Scanning Tokens
     scan
     
     -- * Token
-  , Token(..)
+  , Token(..), Tokens, Word
 
     -- * Lexer
-  , Lexer, nextToken
+  , Lexer, Pos
   , LexerFailure(..)
+
   ) where
 
+import Prelude hiding (Word)
 
+import Control.Monad
 import Control.Applicative
 
 import Data.Char
@@ -41,27 +45,60 @@ import OAlg.Homology.IO.Keywords
 import OAlg.Homology.IO.ActionM
 
 --------------------------------------------------------------------------------
+-- Pos -
+
+-- | line number and character number of the characters of a string.
+type Pos = (Integer,Integer)
+
+--------------------------------------------------------------------------------
+-- Word -
+
+-- | a string not containing white space.
+type Word = String
+
+--------------------------------------------------------------------------------
+-- Chars -
+
+-- | characters with there position.
+type Chars = [(Char,Pos)]
+
+--------------------------------------------------------------------------------
 -- Token -
 
-data Token = Id String | Key String | Symbol String deriving (Show)
+data Token = Id Word | Key Word | Symbol Word deriving (Show)
+
+--------------------------------------------------------------------------------
+-- Tokens -
+
+-- | tokens with there beginning position.
+type Tokens = [(Token,Pos)]
+
+--------------------------------------------------------------------------------
+-- chars -
+
+-- | the list of characters with there position in the stirng
+chars :: String -> Chars
+chars s = join $ map chp (lines s `zip` [1..]) where
+  chp :: (String,Integer) -> [(Char,Pos)]
+  chp (s,l) = s `zip` map (\p -> (l,p)) [1..] 
 
 --------------------------------------------------------------------------------
 -- LexerFailure -
 
 data LexerFailure
-  = Unexpected Integer String
+  = Unexpected Pos Word
   deriving (Show)
 
 --------------------------------------------------------------------------------
 -- Lexer -
 
-type Lexer = ActionE [(Char,Integer)] LexerFailure
+type Lexer = ActionE Chars LexerFailure
 
 --------------------------------------------------------------------------------
 -- startsWith -
--- | pre: - the underlying string is not empty
+-- | pre: - the underlying chars is not empty
 --        - the given name is not empty
-startsWith :: String -> Lexer (String,Integer)
+startsWith :: String -> Lexer (String,Pos)
 startsWith name = do
   s <- getState
   case splitAt (length name) s of
@@ -72,27 +109,21 @@ startsWith name = do
 -- prsSymbol -
 
 -- | pre: the underlying string is not empty
-prsSymbol :: Lexer (Token,Integer)
+prsSymbol :: Lexer (Token,Pos)
 prsSymbol = foldl (<|) empty symbols where
   t <| s = t <|> (startsWith s >>= \(s,i) -> return (Symbol s,i))
-
---------------------------------------------------------------------------------
--- headSymbols -
-
-headSymbols :: [Char]
-headSymbols = map head symbols
 
 --------------------------------------------------------------------------------
 -- isIdChar -
 
 isIdChar :: Char -> Bool
-isIdChar c = not (c `elem` headSymbols) && isAlphaNum c
+isIdChar = not . isSpace
 
 --------------------------------------------------------------------------------
 -- prsId -
 
 -- | pre: the underlying string is not empty
-prsId :: Lexer (Token,Integer)
+prsId :: Lexer (Token,Pos)
 prsId = do
   s <- getState
   case span (isIdChar . fst) s of
@@ -103,7 +134,7 @@ prsId = do
 -- prsKey -
 
 -- | pre: the underlying string is not empty
-prsKey :: Lexer (Token,Integer)
+prsKey :: Lexer (Token,Pos)
 prsKey = do
   (Id id,i) <- prsId
   case id `elem` alphas of
@@ -120,22 +151,35 @@ unexpectedChars = do
   let s' = take 5 $ map fst s
       i  = snd $ head s
    in failure $ Just $ Unexpected i s'
-    
+
+--------------------------------------------------------------------------------
+-- nextChars -
+
+-- | eliminates white space from the beginning and comments.
+nextChars :: Lexer Chars
+nextChars = do
+  chs <- getState
+  case dropWhile (isSpace . fst) chs of
+    ('-',p):('-',_):chs' -> setState chs'' >> return chs'' where
+      chs'' = dropWhile ((l==) . fst . snd) chs'
+      l     = fst p
+    chs'                 -> setState chs' >> return chs'
+
 --------------------------------------------------------------------------------
 -- nextToken -
 
 -- | parses the next token.
-nextToken :: Lexer (Maybe (Token,Integer))
+nextToken :: Lexer (Maybe (Token,Pos))
 nextToken = do
-  s <- getState
-  case dropWhile (isSpace . fst) s of
-    [] -> setState [] >> return Nothing
-    s' -> setState s' >> (prsSymbol <|> prsKey <|> prsId <|> unexpectedChars) >>= return . Just
+  s <- nextChars
+  case s of
+    [] -> return Nothing
+    _  -> (prsSymbol <|> prsKey <|> prsId <|> unexpectedChars) >>= return . Just
 
 --------------------------------------------------------------------------------
 -- tokens -
 
-tokens :: Lexer [(Token,Integer)]
+tokens :: Lexer [(Token,Pos)]
 tokens = do
   mt <- nextToken
   case mt of
@@ -145,9 +189,10 @@ tokens = do
 --------------------------------------------------------------------------------
 -- scan -
 
-scan :: String -> Either LexerFailure [(Token,Integer)]
-scan s = case run tokens (s `zip` [0..]) of
+scan :: String -> Either LexerFailure Tokens
+scan s = case run tokens $ chars s of
   Right (ts,_) -> return ts
   Left me      -> case me of
     Just e     -> Left e
     Nothing    -> throw $ ImplementationError "scan: unknwon failure"
+
