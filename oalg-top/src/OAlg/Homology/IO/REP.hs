@@ -11,14 +11,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Interactive
--- Description : intractive mode for handeling homologies.
+-- Module      : OAlg.Homology.IO.REP
+-- Description : read-eval-print cycle
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- a intractive mode for handeling homologies.
-module OAlg.Homology.IO.Interactive
+-- read-eval-print cycle for exploring the homology of a complex.
+module OAlg.Homology.IO.REP
   () where
 
 import Control.Exception
@@ -50,16 +50,6 @@ iEnv r c = foldl (<+) e0
 
     e <+ (k,v) = envAlter e k v  -- altering the environment dos not affect hs
   
-
---------------------------------------------------------------------------------
--- iComplex -
-{-
-iComplex :: (Entity x, Ord x, Attestable n)
-  => Handle -> Handle -> Handle
-  -> Regular -> Complex n x -> IO ()
-iComplex hIn hOut hErr r c = rep' $ iEnv r c where
--}
-
 --------------------------------------------------------------------------------
 -- Mode -
 
@@ -115,8 +105,8 @@ rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) 
 
   ep' l e ln = case parse ln of
     Right exp     -> case exp of
+      Empty       -> rep' l e
       Command cmd -> case cmd of
-        Empty     -> rep' l e
         Quit      -> quit
         Help      -> putHelp >> rep' l e
         Let x t   -> case evalValue e t of

@@ -87,8 +87,8 @@ getState = ActionM (\s -> return (s,s))
 
 instance Alternative (Either (Maybe e)) where
   empty = Left Nothing
-  Left _ <|> y = y
-  r      <|> _ = r  
+  Left Nothing <|> b = b
+  a            <|> _ = a  
 
 instance MonadFail (Either (Maybe e)) where
   fail _ = empty
