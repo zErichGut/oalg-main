@@ -31,12 +31,17 @@ import Prelude hiding (Word,(!!))
 
 import Control.Applicative
 
+import Data.Char
+
 import OAlg.Control.Exception
+
+import OAlg.Data.Number
 
 import OAlg.Homology.IO.ActionM
 import OAlg.Homology.IO.Lexer
 import OAlg.Homology.IO.Evaluation
 import OAlg.Homology.IO.Term
+import OAlg.Homology.IO.Value
 
 --------------------------------------------------------------------------------
 -- Command -
@@ -165,12 +170,47 @@ command :: Parser (Command x)
 command = quit <|> help <|> varbind
 
 --------------------------------------------------------------------------------
+-- num -
+
+num :: Parser Z
+num = do
+  ts <- getState
+  case map fst ts of
+    Id n :_ | isNum n -> setState (tail ts) >> (return $ fromInteger $ read n)
+    _                 -> empty
+  where isNum ds@(_:_) = and $ map ((DecimalNumber==) . generalCategory) ds
+        isNum _        = False
+
+--------------------------------------------------------------------------------
+-- sig -
+
+sig :: Parser Z
+sig = do
+  ts <- getState
+  case map fst ts of
+    Symbol "-" :_ -> setState (tail ts) >> return (-1)
+    _             -> return 1
+
+--------------------------------------------------------------------------------
+-- znum -
+
+znum :: Parser (TermValue x)
+znum =  (sig >>= \s -> num >>= return . Value . ZValue . (s*))
+    <|> (var >>= \x -> return $ Free x)
+
+--------------------------------------------------------------------------------
+-- zval -
+
+zval :: Parser (TermValue x)
+zval = znum
+--------------------------------------------------------------------------------
 -- value -
 
 value :: Parser (TermValue x)
 value
-  =   (key "H" >> return (Free "H"))
+   =  (key "H" >> return (Free "H"))
   <|> letdecl
+  <|> zval
   <|> (var >>= \x -> return $ Free x)
 
 --------------------------------------------------------------------------------
