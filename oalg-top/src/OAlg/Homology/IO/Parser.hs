@@ -87,6 +87,68 @@ repeat :: Parser x -> Parser [x]
 repeat px = (px >>= \x -> fmap (x:) $ repeat px) <|> return []
 
 --------------------------------------------------------------------------------
+-- infixesr -
+
+oprPrc :: Ord k => Parser o -> (o -> k) -> k -> Parser (o,k)
+oprPrc po prc k
+  = po >>= \o -> let k' = prc o in if k <= k' then return (o,k') else empty
+
+infixesr :: Ord k => Parser a -> Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a
+infixesr px po prc appl = over NegInf where
+  over k = px >>= next k
+
+  next k x = (oprPrc po prc' k >>= \(o,k') -> fmap (appl o x) (over k') >>= next k) <|> return x
+
+  prc' = It . prc
+
+--------------------------------------------------------------------------------
+-- infixesl -
+
+infixesl :: Ord k => Parser a -> Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a
+infixesl px po prc appl = over NegInf where
+  over k = px >>= next k
+
+  next k x = error "nyi"
+  -- (oprPrc po prc' k >>= \(o,k') -> over k' >>= return . (appl o x)) <|> return x 
+  
+  prc' = It . prc
+
+--------------------------------------------------------------------------------
+-- OprVec -
+
+data OprVec = Add | Sub | SMlt deriving (Show,Eq,Ord,Enum)
+
+--------------------------------------------------------------------------------
+-- oprVec -
+
+oprVec :: Parser OprVec
+oprVec = do
+  ts <- getState
+  case fmap fst ts of
+    []           -> empty
+    Symbol o : _ -> case o of
+      "+"        -> setState (tail ts) >> return Add
+      "-"        -> setState (tail ts) >> return Sub
+      "!"        -> setState (tail ts) >> return SMlt
+      _          -> empty
+    _            -> failure $ Just $ UnexpectedToken $ head ts
+
+--------------------------------------------------------------------------------
+-- prcVec -
+prcVec :: OprVec -> Z
+prcVec Add  = 0
+prcVec Sub  = 0
+prcVec SMlt = 1
+
+--------------------------------------------------------------------------------
+-- applVec -
+
+applVec :: OprVec -> TermValue x -> TermValue x -> TermValue x
+applVec Add a  = Opr Addition a
+applVec Sub a  = \b -> Opr Addition a (Opr ScalarMultiplication (Value (ZValue (-1))) b)
+applVec SMlt a = Opr ScalarMultiplication a
+
+--------------------------------------------------------------------------------
 -- (!!) -
 
 infixl 9 !!
@@ -98,6 +160,14 @@ p !! f = p `handle` expected where
       []    -> failure $ Just EmptyFailure
       t':_  -> failure $ Just $ f t'
   expected f = failure f 
+
+--------------------------------------------------------------------------------
+-- bracket -
+
+-- | the phrase @( a )@,
+bracket :: Parser a -> Parser a
+bracket a
+  = symbol "(" >> a >>= \z -> symbol ")" !! Expected (Symbol ")") >> return z 
 
 --------------------------------------------------------------------------------
 -- key -
@@ -203,32 +273,14 @@ sig = do
 
 znum :: Parser (TermValue x)
 znum =  sig >>= \s  -> (num >>= return . Value . ZValue . (s*))
-
---------------------------------------------------------------------------------
--- opr -
-
-data Opr = Add | Sub | SclMlt deriving (Show,Eq,Ord,Enum)
-
-opr :: Parser Opr
-opr = getState >>= \ts -> case map fst ts of
-        Symbol "+":_ -> setState (tail ts) >> return Add
-        Symbol "-":_ -> setState (tail ts) >> return Sub
-        Symbol "!":_ -> setState (tail ts) >> return SclMlt
-        _            -> empty
-
+    <|> fmap Free var
+    <|> bracket zval
+                       
 --------------------------------------------------------------------------------
 -- zval -
 
 zval :: Parser (TermValue x)
-zval = zval' id where
-  zval' xo
-    =  (znum >>= \x -> (opr >>= \o -> zval' (opr' o (xo x)) <|> return (xo x)))
-   <|> (symbol "(" >> zval' xo >>= \x -> (symbol ")" !! Expected (Symbol ")") >> return x))
-   <|> (znum >>= \x -> return (xo x))
-    
-  opr' Add x    = Opr Addition x
-  opr' Sub x    = Opr Addition (Opr ScalarMultiplication (Value (ZValue (-1))) x)
-  opr' SclMlt x = Opr ScalarMultiplication x
+zval = infixesr znum oprVec prcVec applVec
 
 --------------------------------------------------------------------------------
 -- atom -
@@ -239,9 +291,9 @@ atom
   <|> (key "C" >> return (Free "C"))
   <|> (key "D" >> return (Free "D"))
   <|> (key "L" >> return (Free "L"))
-  <|> znum
+  <|> zval
   <|> fmap Free var
-  <|> (symbol "(" >> value >>= \v -> (symbol ")" !! Expected (Symbol ")") >> return v))
+  <|> bracket value
 
 --------------------------------------------------------------------------------
 -- application -
