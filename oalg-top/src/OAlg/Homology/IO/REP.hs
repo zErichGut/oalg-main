@@ -43,6 +43,9 @@ iEnv :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> Env n x
 iEnv r c = foldl (<+) e0
              [ ("it", ZValue 0)
              , ("H",valHomologyGroups hs)
+             , ("C",valGenerator hs (ChainGenerator ChainGenerator'))             
+             , ("D",valGenerator hs (ChainGenerator CycleGenerator))             
+             , ("L",valGenerator hs (ChainGenerator HomologyGroupGenerator'))             
              ]
   where
     e0 = env r c

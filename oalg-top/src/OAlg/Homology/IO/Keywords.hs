@@ -33,6 +33,7 @@ alphas
   = [ "let", "in"
     , "H"
     , "span"
+    , "C", "D", "L" , "E"
     ]
 
 symbols

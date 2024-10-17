@@ -27,7 +27,7 @@ module OAlg.Homology.IO.Parser
 
    ) where
 
-import Prelude hiding (Word,(!!))
+import Prelude hiding (Word,(!!),repeat)
 
 import Control.Applicative
 
@@ -36,6 +36,7 @@ import Data.Char
 import OAlg.Control.Exception
 
 import OAlg.Data.Number
+import OAlg.Data.Ord
 
 import OAlg.Homology.IO.ActionM
 import OAlg.Homology.IO.Lexer
@@ -80,6 +81,12 @@ data ParserFailure
 type Parser = ActionE Tokens ParserFailure
 
 --------------------------------------------------------------------------------
+-- repeat -
+
+repeat :: Parser x -> Parser [x]
+repeat px = (px >>= \x -> fmap (x:) $ repeat px) <|> return []
+
+--------------------------------------------------------------------------------
 -- (!!) -
 
 infixl 9 !!
@@ -109,8 +116,8 @@ symbol :: Word -> Parser ()
 symbol s = do
   ts <- getState
   case map fst ts of
-    Symbol w:_ | w == s -> setState (tail ts) >> return ()
-    _                   -> empty
+    Symbol w :_ | w == s -> setState (tail ts) >> return ()
+    _                    -> empty
 
 --------------------------------------------------------------------------------
 -- var -
@@ -195,24 +202,68 @@ sig = do
 -- znum -
 
 znum :: Parser (TermValue x)
-znum =  (sig >>= \s -> num >>= return . Value . ZValue . (s*))
-    <|> (var >>= \x -> return $ Free x)
+znum =  sig >>= \s  -> (num >>= return . Value . ZValue . (s*))
+
+--------------------------------------------------------------------------------
+-- opr -
+
+data Opr = Add | Sub | SclMlt deriving (Show,Eq,Ord,Enum)
+
+opr :: Parser Opr
+opr = getState >>= \ts -> case map fst ts of
+        Symbol "+":_ -> setState (tail ts) >> return Add
+        Symbol "-":_ -> setState (tail ts) >> return Sub
+        Symbol "!":_ -> setState (tail ts) >> return SclMlt
+        _            -> empty
 
 --------------------------------------------------------------------------------
 -- zval -
 
 zval :: Parser (TermValue x)
-zval = znum
+zval = zval' id where
+  zval' xo
+    =  (znum >>= \x -> (opr >>= \o -> zval' (opr' o (xo x)) <|> return (xo x)))
+   <|> (symbol "(" >> zval' xo >>= \x -> (symbol ")" !! Expected (Symbol ")") >> return x))
+   <|> (znum >>= \x -> return (xo x))
+    
+  opr' Add x    = Opr Addition x
+  opr' Sub x    = Opr Addition (Opr ScalarMultiplication (Value (ZValue (-1))) x)
+  opr' SclMlt x = Opr ScalarMultiplication x
+
+--------------------------------------------------------------------------------
+-- atom -
+
+atom :: Parser (TermValue x)
+atom
+   =  (key "H" >> return (Free "H"))
+  <|> (key "C" >> return (Free "C"))
+  <|> (key "D" >> return (Free "D"))
+  <|> (key "L" >> return (Free "L"))
+  <|> znum
+  <|> fmap Free var
+  <|> (symbol "(" >> value >>= \v -> (symbol ")" !! Expected (Symbol ")") >> return v))
+
+--------------------------------------------------------------------------------
+-- application -
+
+application :: Parser (TermValue x)
+application = atom >>= \a -> repeat atom >>= \as -> return (applys a as)
+
+--------------------------------------------------------------------------------
+-- linearCombination -
+
+linearCombination :: Parser (TermValue x)
+linearCombination = error "nyi"
+
 --------------------------------------------------------------------------------
 -- value -
 
 value :: Parser (TermValue x)
-value
-   =  (key "H" >> return (Free "H"))
-  <|> letdecl
-  <|> zval
-  <|> (var >>= \x -> return $ Free x)
-
+value = 
+      letdecl
+  <|> application
+  <|> linearCombination
+  
 --------------------------------------------------------------------------------
 -- unexpected -
 
