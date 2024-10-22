@@ -19,23 +19,24 @@
 --
 -- keywords
 module OAlg.Homology.IO.Keywords
-  ( -- * Alphas
-    alphas
-   -- * Symbols
+  ( alphas
   , symbols
-  
+  , comment
   ) where
 
 --------------------------------------------------------------------------------
 -- keywords of expressions -
 
+-- | the key-words.
+alphas :: [String]
 alphas
   = [ "let", "in"
-    , "H"
+    , "C", "D", "E", "H", "L"
     , "span"
-    , "C", "D", "L" , "E"
     ]
 
+-- | the symbols.
+symbols :: [String]
 symbols
   = [ "(",")"
     , ":quit", ":q" 
@@ -45,3 +46,7 @@ symbols
     , "="
     ]
 
+-- | the comment-symbol string. Everything after this symbol will be ignored by the lexer until
+--   the end of line.
+comment :: String
+comment = "//"

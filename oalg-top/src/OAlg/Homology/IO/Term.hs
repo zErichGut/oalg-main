@@ -33,6 +33,7 @@ module OAlg.Homology.IO.Term
   , eval
   ) where
 
+import Control.Monad (Functor(..))
 import Data.Foldable (foldl,foldr)
 
 import qualified Data.Map.Lazy as M
@@ -54,6 +55,14 @@ data Term o v
   | Opr o (Term o v) (Term o v)
   deriving (Show,Eq,Ord)
 
+instance Functor (Term o) where
+  fmap _ (Free x)  = Free x
+  fmap _ (Bound n) = Bound n
+  fmap f (Value x) = Value (f x)
+  fmap f (x :-> t) = x :-> fmap f t
+  fmap f (s :!> t) = fmap f s :!> fmap f t
+  fmap f (Opr o s t) = Opr o (fmap f s) (fmap f t)
+    
 --------------------------------------------------------------------------------
 -- abstract -
 
@@ -159,9 +168,7 @@ headNF t           = t
 
 -- | reduces a term to its normal form - if exists - by a call-by-name strategy.
 eval :: Term o v -> Term o v
-eval (Opr o v w) = Opr o (eval v) (eval w)
-eval (Value v)   = Value v
-eval t           = args (headNF t)
+eval = args . headNF
 
 --------------------------------------------------------------------------------
 -- args -
@@ -169,5 +176,6 @@ eval t           = args (headNF t)
 args :: Term o v -> Term o v
 args (a :-> t)   = a :-> args t
 args (u :!> v)   = args u :!> eval v
+args (Opr o u v) = Opr o (args u) (eval v)
 args t           = t
 

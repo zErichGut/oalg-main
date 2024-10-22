@@ -32,6 +32,8 @@ import OAlg.Prelude
 
 import OAlg.Data.Either
 
+import OAlg.Structure.Fibred
+
 import OAlg.Entity.Natural hiding (S)
 import OAlg.Entity.Sum
 
@@ -55,6 +57,11 @@ data VectorOperation
 
 -- | value-term
 type TermValue x = Term VectorOperation (Value x)
+
+--------------------------------------------------------------------------------
+-- TermValueRoot -
+
+type TermValueRoot x = Term VectorOperation (ValueRoot x)
 
 --------------------------------------------------------------------------------
 -- Env -
@@ -98,9 +105,9 @@ envAlter (Env eT hs) s v = Env eT' hs where
 
 -- | failures of evaluating a value-term to its value.
 data EvaluationFailure x
-  = ValueFailure (ValueFailure x) (TermValue x)
-  | NotAValue (TermValue x)
-  | NotAZValue (Value x)
+  = ValueFailure (ValueFailure x) (TermValueRoot x)
+  | NotAValue (TermValueRoot x)
+  | NotAZValue (TermValueRoot x)
   deriving (Show)
 
 --------------------------------------------------------------------------------
@@ -109,16 +116,16 @@ data EvaluationFailure x
 -- | the evaluation-monad.
 type Eval x = Either (EvaluationFailure x)
 
-toEval :: TermValue x -> EvalV x y -> Eval x y
+toEval :: (Entity x, Ord x) => TermValue x -> EvalV x y -> Eval x y
 toEval _ (Right y) = Right y
-toEval t (Left e)  = Left $ ValueFailure e t
+toEval t (Left e)  = Left $ ValueFailure e $ fmap root t
 
 --------------------------------------------------------------------------------
 -- evalVZ -
 
-evalVZ :: Value x -> Eval x Z
+evalVZ :: (Entity x, Ord x) => Value x -> Eval x Z
 evalVZ (ZValue z) = return z
-evalVZ v          = Left $ NotAZValue v
+evalVZ v          = Left $ NotAZValue $ fmap root $ Value v
 
 --------------------------------------------------------------------------------
 -- evalVSumForm -
@@ -141,12 +148,10 @@ evalVSumForm hs t = evalV hs t >>= return . S
 --
 -- ["Pre"] the given value-term is in normal form.
 evalV :: (Entity x, Ord x) => EnvV n x -> TermValue x -> Eval x (Value x)
-evalV hs t@(Value u :!> Value v) = toEval t $ evalApplValue hs u v
-evalV hs (t :!> Value v) = evalV hs t >>= \u -> evalV hs (Value u :!> Value v)
-evalV hs (Value u :!> t) = evalV hs t >>= \v -> evalV hs (Value u :!> Value v)
-evalV hs t@(Opr _ _ _)   = evalVSumForm hs t >>= toEval t . evalSumValue
-evalV _ (Value v)        = return v
-evalV _ t                = Left $ NotAValue t
+evalV hs r@(s :!> t)   = evalV hs s >>= \u -> evalV hs t >>= \v -> toEval r $ evalApplValue hs u v
+evalV hs r@(Opr _ _ _) = evalVSumForm hs r >>= toEval r . evalSumValue
+evalV _ (Value v)      = return v
+evalV _ t              = Left $ NotAValue $ fmap root t
 
 --------------------------------------------------------------------------------
 -- evalValue -

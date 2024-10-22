@@ -116,8 +116,10 @@ prsSymbol = foldl (<|) empty symbols where
 --------------------------------------------------------------------------------
 -- isIdChar -
 
+symbolsHead = map head symbols
+
 isIdChar :: Char -> Bool
-isIdChar = not . isSpace
+isIdChar c = not (elem c symbolsHead || isSpace c)
 
 --------------------------------------------------------------------------------
 -- prsId -
@@ -158,12 +160,17 @@ unexpectedChars = do
 -- | eliminates white space from the beginning and comments.
 nextChars :: Lexer Chars
 nextChars = do
-  chs <- getState
-  case dropWhile (isSpace . fst) chs of
-    ('-',p):('-',_):chs' -> setState chs'' >> return chs'' where
-      chs'' = dropWhile ((l==) . fst . snd) chs'
-      l     = fst p
-    chs'                 -> setState chs' >> return chs'
+  chps <- getState
+  case dropWhile (isSpace . fst) chps of
+    chps'   -> case startsWithComment chps' of
+      True  -> setState chps'' >> return chps'' where
+                 chps'' = dropWhile ((l==) . fst . snd) chps'
+                 l      = fst $ snd $ head $ chps'
+      False -> setState chps' >> return chps'
+        
+
+  where startsWithComment chps
+          = comment == (map fst $ take (length comment) chps)
 
 --------------------------------------------------------------------------------
 -- nextToken -
@@ -179,7 +186,7 @@ nextToken = do
 --------------------------------------------------------------------------------
 -- tokens -
 
-tokens :: Lexer [(Token,Pos)]
+tokens :: Lexer Tokens
 tokens = do
   mt <- nextToken
   case mt of
@@ -191,8 +198,10 @@ tokens = do
 
 scan :: String -> Either LexerFailure Tokens
 scan s = case run tokens $ chars s of
-  Right (ts,_) -> return ts
-  Left me      -> case me of
-    Just e     -> Left e
-    Nothing    -> throw $ ImplementationError "scan: unknwon failure"
+  Right (ts,chs) -> case chs of
+    []           -> return ts
+    _            -> throw $ ImplementationError ("unscaned chars: " ++ show chs)
+  Left me        -> case me of
+    Just e       -> Left e
+    Nothing      -> throw $ ImplementationError "scan: unknwon failure"
 

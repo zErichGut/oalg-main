@@ -81,37 +81,106 @@ data ParserFailure
 type Parser = ActionE Tokens ParserFailure
 
 --------------------------------------------------------------------------------
+-- (!!) -
+
+infixl 9 !!
+  
+(!!) :: Parser x -> ((Token,Pos) ->  ParserFailure) -> Parser x
+p !! f = p `handle` expected where
+  expected Nothing  = getState >>= expc  where
+    expc ts  = case ts of
+      []    -> failure $ Just EmptyFailure
+      t':_  -> failure $ Just $ f t'
+  expected f = failure f
+
+--------------------------------------------------------------------------------
+-- (??) -
+
+-- | looking forward.
+(??) :: Parser a -> (a -> Bool) -> Parser Bool
+pa ?? p = do
+      ts <- getState
+      a  <- pa
+      setState ts
+      return (p a)
+
+--------------------------------------------------------------------------------
+-- bracket -
+
+-- | the phrase @( a )@,
+bracket :: Parser a -> Parser a
+bracket a
+  = symbol "(" >> a >>= \z -> symbol ")" !! Expected (Symbol ")") >> return z 
+
+--------------------------------------------------------------------------------
 -- repeat -
 
 repeat :: Parser x -> Parser [x]
 repeat px = (px >>= \x -> fmap (x:) $ repeat px) <|> return []
 
 --------------------------------------------------------------------------------
+-- <.> -
+
+(<.>) :: Parser a -> Parser b -> Parser (a,b)
+a <.> b = do
+  x <- a
+  y <- b
+  return (x,y)
+
+--------------------------------------------------------------------------------
 -- infixesr -
 
-oprPrc :: Ord k => Parser o -> (o -> k) -> k -> Parser (o,k)
-oprPrc po prc k
+oprMax :: Ord k => Parser o -> (o -> k) -> k -> Parser (o,k)
+oprMax po prc k
   = po >>= \o -> let k' = prc o in if k <= k' then return (o,k') else empty
 
 infixesr :: Ord k => Parser a -> Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a
 infixesr px po prc appl = over NegInf where
   over k = px >>= next k
 
-  next k x = (oprPrc po prc' k >>= \(o,k') -> fmap (appl o x) (over k') >>= next k) <|> return x
+  next k x = (oprMax po prc' k >>= \(o,k') -> fmap (appl o x) (over k') >>= next k) <|> return x
 
   prc' = It . prc
 
 --------------------------------------------------------------------------------
 -- infixesl -
 
-infixesl :: Ord k => Parser a -> Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a
-infixesl px po prc appl = over NegInf where
-  over k = px >>= next k
-
-  next k x = error "nyi"
-  -- (oprPrc po prc' k >>= \(o,k') -> over k' >>= return . (appl o x)) <|> return x 
-  
+infixesl :: Ord k => Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a -> Parser a
+infixesl po prc appl px = px >>= over NegInf where
   prc' = It . prc
+
+  po' k = po >>= \o -> if k < prc' o then return o else empty
+
+  next k x o y = do
+        dec <- po ?? (\o' -> prc' o' <= prc' o)
+        case dec of
+          True  -> over k (appl o x y)
+          False -> over (prc' o) y >>= over k . appl o x
+    <|> return (appl o x y)
+
+  -- all applications o with k < prc' o
+  over k x = do
+        o   <- po' k
+        y   <- px !! const EmptyFailure
+        next k x o y
+    <|> return x
+
+{-
+infixesl px po prc appl
+  = px >>= \x -> repeat (po <.> px) >>= return . fst . over NegInf x where
+
+  prc' = It . prc
+
+  dec o o' = prc' o' <= prc' o
+
+  over _ x []                        = (x,[])
+  over k x ((o,y):oas) | prc' o <= k = (x,(o,y):oas)
+  over _ x [(o,y)]                   = (appl o x y,[])
+  over k x ((o,y):oas@((o',_):_))
+    | dec o o'  = over k (appl o x y) oas
+    | otherwise = over k (appl o x y') oas'
+    where (y',oas') = over (prc' o) y oas
+-}
 
 --------------------------------------------------------------------------------
 -- OprVec -
@@ -131,10 +200,11 @@ oprVec = do
       "-"        -> setState (tail ts) >> return Sub
       "!"        -> setState (tail ts) >> return SMlt
       _          -> empty
-    _            -> failure $ Just $ UnexpectedToken $ head ts
+    _            -> empty -- failure $ Just $ UnexpectedToken $ head ts
 
 --------------------------------------------------------------------------------
 -- prcVec -
+
 prcVec :: OprVec -> Z
 prcVec Add  = 0
 prcVec Sub  = 0
@@ -149,25 +219,10 @@ applVec Sub a  = \b -> Opr Addition a (Opr ScalarMultiplication (Value (ZValue (
 applVec SMlt a = Opr ScalarMultiplication a
 
 --------------------------------------------------------------------------------
--- (!!) -
+-- linearCombination -
 
-infixl 9 !!
-  
-(!!) :: Parser x -> ((Token,Pos) ->  ParserFailure) -> Parser x
-p !! f = p `handle` expected where
-  expected Nothing  = getState >>= expc  where
-    expc ts  = case ts of
-      []    -> failure $ Just EmptyFailure
-      t':_  -> failure $ Just $ f t'
-  expected f = failure f 
-
---------------------------------------------------------------------------------
--- bracket -
-
--- | the phrase @( a )@,
-bracket :: Parser a -> Parser a
-bracket a
-  = symbol "(" >> a >>= \z -> symbol ")" !! Expected (Symbol ")") >> return z 
+linearCombination :: Parser (TermValue x) -> Parser (TermValue x)
+linearCombination = infixesl oprVec prcVec applVec
 
 --------------------------------------------------------------------------------
 -- key -
@@ -266,34 +321,31 @@ sig = do
   ts <- getState
   case map fst ts of
     Symbol "-" :_ -> setState (tail ts) >> return (-1)
-    _             -> return 1
+    Symbol "+" :_ -> setState (tail ts) >> return 1
+    _             -> empty
 
 --------------------------------------------------------------------------------
--- znum -
+-- value -
 
-znum :: Parser (TermValue x)
-znum =  sig >>= \s  -> (num >>= return . Value . ZValue . (s*))
-    <|> fmap Free var
-    <|> bracket zval
-                       
---------------------------------------------------------------------------------
--- zval -
-
-zval :: Parser (TermValue x)
-zval = infixesr znum oprVec prcVec applVec
+value :: Parser (TermValue x)
+value = linearCombination sigTerm
 
 --------------------------------------------------------------------------------
--- atom -
+-- sigTerm -
 
-atom :: Parser (TermValue x)
-atom
-   =  (key "H" >> return (Free "H"))
-  <|> (key "C" >> return (Free "C"))
-  <|> (key "D" >> return (Free "D"))
-  <|> (key "L" >> return (Free "L"))
-  <|> zval
-  <|> fmap Free var
-  <|> bracket value
+sigTerm :: Parser (TermValue x)
+sigTerm = do
+  s <- repeat sig
+  case foldl (*) 1 s of
+    -1 -> term >>= return . Opr (!) (Value $ ZValue (-1))
+    _  -> term
+  where (!) = ScalarMultiplication
+
+--------------------------------------------------------------------------------
+-- term -
+
+term :: Parser (TermValue x)
+term = letdecl <|> application
 
 --------------------------------------------------------------------------------
 -- application -
@@ -302,25 +354,25 @@ application :: Parser (TermValue x)
 application = atom >>= \a -> repeat atom >>= \as -> return (applys a as)
 
 --------------------------------------------------------------------------------
--- linearCombination -
+-- atom -
 
-linearCombination :: Parser (TermValue x)
-linearCombination = error "nyi"
+atom :: Parser (TermValue x)
+atom 
+   =  (key "C" >> return (Free "C"))
+  <|> (key "D" >> return (Free "D"))
+  <|> (key "E" >> return (Free "E"))
+  <|> (key "H" >> return (Free "H"))
+  <|> (key "L" >> return (Free "L"))
+  <|> fmap (Value . ZValue) num
+  <|> fmap Free var
+  <|> bracket value
 
---------------------------------------------------------------------------------
--- value -
-
-value :: Parser (TermValue x)
-value = 
-      letdecl
-  <|> application
-  <|> linearCombination
-  
 --------------------------------------------------------------------------------
 -- unexpected -
 
 unexpected :: Parser (Expression x)
 unexpected = getState >>= failure . Just . UnexpectedToken . head  
+
 
 --------------------------------------------------------------------------------
 -- expression -
@@ -331,6 +383,7 @@ expression
   <|> (command >>= return . Command)
   <|> (value >>= return . TermValue)
   <|> unexpected
+
 
 --------------------------------------------------------------------------------
 -- parse -
