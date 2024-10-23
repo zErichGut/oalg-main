@@ -30,7 +30,7 @@ import Data.Foldable (toList)
 import OAlg.Prelude
 
 import OAlg.Data.Either
-import OAlg.Data.Symbol
+import OAlg.Data.Symbol (Symbol())
 import OAlg.Data.Constructable
 
 import OAlg.Entity.Natural hiding ((++),S)
@@ -39,6 +39,7 @@ import OAlg.Entity.Sequence.FSequence
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sum
 import OAlg.Entity.Product
+import OAlg.Entity.Matrix.Vector
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Ring
@@ -70,6 +71,7 @@ class Pretty x where
 instance Pretty N
 instance Pretty Z
 instance Pretty Symbol
+instance Pretty Char
 instance Pretty a => Pretty [a] where
   pshow as = case as of
     []   -> "[]"
@@ -142,8 +144,26 @@ instance Pretty x => Pretty (Simplex l x) where
 -- Abelian Group
 
 instance Pretty AbGroup where
-  pshow (AbGroup g) = psyShow g
+  pshow (AbGroup g) = case lengthN g of
+    0 -> "0"
+    _ -> psyShow g
 
+--------------------------------------------------------------------------------
+-- AbElement -
+newtype H i = H i deriving (Show,Eq,Ord)
+
+instance Validable i => Validable (H i) where
+  valid (H i) = valid i
+
+instance Entity i => Entity (H i)
+
+instance Pretty i => Pretty (H i) where
+  pshow (H i) = "h" ++ pshow i
+
+instance Pretty AbElement where
+  pshow e@(AbElement es) = (pshow $ root e) ++ ": " ++ (pshow $ cfsssy hs $ abhvecFree1 es) where
+    hs = Set [H i | i <-  [0..lengthN e]]
+    
 --------------------------------------------------------------------------------
 -- OperatorValue -
 
@@ -162,6 +182,11 @@ instance Pretty (DefaultChainValue x) where
 
 instance Pretty DefaultAbGroup where
   pshow DefaultAbGroup = "abelian-groups"
+
+instance Pretty DefaultHomologyClassValue where
+  pshow (HClasses _) = "homology-classes"
+  pshow (GClasses _) = "homology-groups"
+  
 --------------------------------------------------------------------------------
 -- FSequence -
 
@@ -170,6 +195,9 @@ instance (Entity x, Ord x, Pretty x)
   pshow = pshow . form 
 
 instance Pretty (FSequence s DefaultAbGroup Z AbGroup) where
+  pshow = pshow . form
+
+instance Pretty (FSequence s DefaultHomologyClassValue Z HomologyClassValue) where
   pshow = pshow . form
   
 --------------------------------------------------------------------------------
@@ -187,6 +215,14 @@ instance Pretty HomologyGroupValue where
   pshow (HomologyGroupElement g)   = pshow g
   pshow (HomologyGroupSequence gs) = pshow gs
 
+--------------------------------------------------------------------------------
+-- HomologyClassValue -
+
+instance Pretty HomologyClassValue where
+  pshow (HomologyClassElement e)         = pshow e
+  pshow (HomologyClassSequenceLazy es)   = pshow es
+  pshow (HomologyClassSequenceStrict es) = pshow es
+  
 --------------------------------------------------------------------------------
 -- Span -
 
@@ -207,6 +243,7 @@ instance (Entity x, Ord x, Pretty x) => Pretty (Value x) where
   pshow (SpanValue s)          = pshow (Span' s)
   pshow (OperatorValue o)      = pshow o
   pshow (ChainValue c)         = pshow c
+  pshow (HomologyClassValue c) = pshow c
   pshow (HomologyGroupValue g) = pshow g
   pshow v                      = show v
 

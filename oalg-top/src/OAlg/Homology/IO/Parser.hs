@@ -348,11 +348,14 @@ application = atom >>= \a -> repeat atom >>= \as -> return (applys a as)
 
 atom :: Parser (TermValue x)
 atom 
-   =  (key "C" >> return (Free "C"))
-  <|> (key "D" >> return (Free "D"))
-  <|> (key "E" >> return (Free "E"))
+   =  (key "A" >> return (Free "A"))
+  <|> (key "B" >> return (Free "B"))
+  <|> (key "C" >> return (Free "C"))
   <|> (key "H" >> return (Free "H"))
-  <|> (key "L" >> return (Free "L"))
+  <|> (key "K" >> return (Free "K"))
+  <|> (key "d" >> return (Free "d"))
+  <|> (key "d'" >> return (Free "d'"))
+  <|> (key "h" >> return (Free "h"))
   <|> (symbol "#" >> return (Free "#"))
   <|> fmap (Value . ZValue) num
   <|> fmap Free var

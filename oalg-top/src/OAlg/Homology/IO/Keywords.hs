@@ -31,7 +31,8 @@ module OAlg.Homology.IO.Keywords
 alphas :: [String]
 alphas
   = [ "let", "in"
-    , "C", "D", "E", "H", "L"
+    , "A", "B", "C", "H", "K"
+    , "h", "d", "d'"
     ]
 
 -- | the symbols.

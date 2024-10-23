@@ -43,11 +43,15 @@ import OAlg.Homology.IO.Pretty
 iEnv :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> Env n x
 iEnv r c = foldl (<+) e0
              [ ("it", ZValue 0)
+             , ("A",valGenerator hs (ChainGenerator ChainGenerator'))             
+             , ("B",valGenerator hs (ChainGenerator CycleGenerator))             
+             , ("C",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
              , ("H",valHomologyGroups hs)
-             , ("C",valGenerator hs (ChainGenerator ChainGenerator'))             
-             , ("D",valGenerator hs (ChainGenerator CycleGenerator))             
-             , ("L",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
+             , ("K",valGenerator hs HomologyGroupGenerator)
              , ("#",OperatorValue SpanOperator)
+             , ("d",OperatorValue BoundaryOperator)
+             , ("d'",OperatorValue Boundary'Operator)
+             , ("h",OperatorValue HomologyClassOperator)
              ]
   where
     e0 = env r c
