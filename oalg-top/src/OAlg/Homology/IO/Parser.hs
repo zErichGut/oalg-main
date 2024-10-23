@@ -165,23 +165,6 @@ infixesl po prc appl px = px >>= over NegInf where
         next k x o y
     <|> return x
 
-{-
-infixesl px po prc appl
-  = px >>= \x -> repeat (po <.> px) >>= return . fst . over NegInf x where
-
-  prc' = It . prc
-
-  dec o o' = prc' o' <= prc' o
-
-  over _ x []                        = (x,[])
-  over k x ((o,y):oas) | prc' o <= k = (x,(o,y):oas)
-  over _ x [(o,y)]                   = (appl o x y,[])
-  over k x ((o,y):oas@((o',_):_))
-    | dec o o'  = over k (appl o x y) oas
-    | otherwise = over k (appl o x y') oas'
-    where (y',oas') = over (prc' o) y oas
--}
-
 --------------------------------------------------------------------------------
 -- OprVec -
 
@@ -225,6 +208,13 @@ linearCombination :: Parser (TermValue x) -> Parser (TermValue x)
 linearCombination = infixesl oprVec prcVec applVec
 
 --------------------------------------------------------------------------------
+-- unexpected -
+
+unexpected :: Parser a
+unexpected = getState >>= failure . Just . UnexpectedToken . head  
+
+
+--------------------------------------------------------------------------------
 -- key -
 
 key :: Word -> Parser ()
@@ -253,16 +243,16 @@ var = do
   case map fst ts of
     Id x:_ -> setState (tail ts) >> return x
     _      -> empty
-    
---------------------------------------------------------------------------------
--- empty' -
 
-empty' :: Parser (Expression x)
-empty' = do
+--------------------------------------------------------------------------------
+-- end -
+
+end :: Parser a -> a -> Parser a
+end e x = do
   ts <- getState
   case ts of
-    [] -> return Empty
-    _  -> empty
+    [] -> return x
+    _  -> e
 
 --------------------------------------------------------------------------------
 -- quit -
@@ -283,7 +273,7 @@ varbind :: Parser (Command x)
 varbind
   =   key "let" >> (var !! ExpectedId)
   >>= \x -> (symbol "=" !! Expected (Symbol "=")) >> (value !! ExpectedValue)
-  >>= \v -> empty' >> return (Let x v)
+  >>= \v -> end empty (Let x v)
 
 --------------------------------------------------------------------------------
 -- letdecl -
@@ -293,7 +283,7 @@ letdecl
   =   key "let" >> (var !! ExpectedId)
   >>= \x -> (symbol "=" !! Expected (Symbol "=")) >> (value !! ExpectedValue)
   >>= \v -> (key "in" !! Expected (Key "in")) >> (value !! ExpectedValue)
-  >>= \w -> empty' >> return (abstracts [x] w :!> v)
+  >>= \w -> return (abstracts [x] w :!> v)
 
 --------------------------------------------------------------------------------
 -- command -
@@ -363,26 +353,20 @@ atom
   <|> (key "E" >> return (Free "E"))
   <|> (key "H" >> return (Free "H"))
   <|> (key "L" >> return (Free "L"))
+  <|> (symbol "#" >> return (Free "#"))
   <|> fmap (Value . ZValue) num
   <|> fmap Free var
   <|> bracket value
-
---------------------------------------------------------------------------------
--- unexpected -
-
-unexpected :: Parser (Expression x)
-unexpected = getState >>= failure . Just . UnexpectedToken . head  
-
 
 --------------------------------------------------------------------------------
 -- expression -
 
 expression :: Parser (Expression x)
 expression
-  =   empty'
+  =   end empty Empty
   <|> (command >>= return . Command)
   <|> (value >>= return . TermValue)
-  <|> unexpected
+  >>= end unexpected
 
 
 --------------------------------------------------------------------------------

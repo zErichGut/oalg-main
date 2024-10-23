@@ -35,6 +35,7 @@ import OAlg.Homology.IO.Evaluation
 import OAlg.Homology.IO.Parser
 import OAlg.Homology.IO.Help
 import OAlg.Homology.IO.Value
+import OAlg.Homology.IO.Pretty
 
 --------------------------------------------------------------------------------
 -- iEnv -
@@ -45,7 +46,8 @@ iEnv r c = foldl (<+) e0
              , ("H",valHomologyGroups hs)
              , ("C",valGenerator hs (ChainGenerator ChainGenerator'))             
              , ("D",valGenerator hs (ChainGenerator CycleGenerator))             
-             , ("L",valGenerator hs (ChainGenerator HomologyGroupGenerator'))             
+             , ("L",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
+             , ("#",OperatorValue SpanOperator)
              ]
   where
     e0 = env r c
@@ -99,8 +101,8 @@ rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) 
   putHelp :: IO ()
   putHelp = hPutStrLn hOut help
 
-  putResult :: (Entity x, Ord x) => Value x -> IO ()
-  putResult v = hPutStrLn hOut $ show v
+  putResult :: (Entity x, Ord x, Pretty x) => Value x -> IO ()
+  putResult v = hPutStrLn hOut $ pshow v
 
   quit = do
     hFlush hOut

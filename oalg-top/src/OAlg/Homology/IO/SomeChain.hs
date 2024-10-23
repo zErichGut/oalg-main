@@ -45,8 +45,6 @@ import OAlg.Structure.Exception (ArithmeticException(NotAddable))
 import OAlg.Homology.Chain
 import OAlg.Homology.Simplex
 
-import OAlg.Homology.IO.Pretty
-
 --------------------------------------------------------------------------------
 -- SomeChain -
 --
@@ -59,11 +57,6 @@ import OAlg.Homology.IO.Pretty
 data SomeChain x where
   SomeChain     :: Attestable l => Chain Z l x -> SomeChain x
   SomeChainZero :: Z -> SomeChain x  -- ^ for negative length
-
-instance (Entity x, Ord x, Pretty x) => Pretty (SomeChain x) where
-  pshow s = case s of
-    SomeChain c     -> pshow c
-    SomeChainZero _ -> "0" 
 
 deriving instance (Entity x, Ord x) => Show (SomeChain x)
 

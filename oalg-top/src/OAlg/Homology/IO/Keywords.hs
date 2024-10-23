@@ -32,7 +32,6 @@ alphas :: [String]
 alphas
   = [ "let", "in"
     , "C", "D", "E", "H", "L"
-    , "span"
     ]
 
 -- | the symbols.
@@ -41,9 +40,8 @@ symbols
   = [ "(",")"
     , ":quit", ":q" 
     , ":help", ":h", ":?"
-    , "+","-"
-    , "!"
-    , "="
+    , "+","-", "!"
+    , "=", "#"
     ]
 
 -- | the comment-symbol string. Everything after this symbol will be ignored by the lexer until
