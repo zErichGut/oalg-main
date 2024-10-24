@@ -323,9 +323,9 @@ instance (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r)
 --------------------------------------------------------------------------------
 -- Regular -
 
--- | kind of the generated 'ChainComplex' of 'BoundaryOperator's. 'Regular' defines the last
--- boundary operator as the regular one ane 'Truncated' defines it as @0@. 
-data Regular = Regular | Truncated deriving (Show,Eq,Ord,Enum)
+-- | kind of the generated 'ChainComplex' of 'BoundaryOperator's. 'Extended' defines the last
+-- boundary operator as the extended one and 'Regular' defines it as @0@. 
+data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
 -- chainComplex -
@@ -351,8 +351,8 @@ chainComplex r = ChainComplex . cc r setEmpty where
   ds r W0 c = d0 :| Nil where
     s' = cpxSet c
     d0 = case r of
-      Regular   -> bdo (Representable HomBoundary s' s) where s = Set [Simplex Nil]
-      Truncated -> zero (SimplexSet s':> SimplexSet s) where s = setEmpty :: Set (Simplex N0 x)
+      Regular  -> zero (SimplexSet s':> SimplexSet s) where s = setEmpty :: Set (Simplex N0 x)
+      Extended -> bdo (Representable HomBoundary s' s) where s = Set [Simplex Nil]
 
 chainComplexZ :: (Entity x, Ord x, Attestable n)
   => Regular -> Complex n x -> ChainComplex From n (BoundaryOperator Z x)

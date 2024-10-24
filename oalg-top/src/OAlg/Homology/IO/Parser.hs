@@ -23,7 +23,7 @@ module OAlg.Homology.IO.Parser
     -- * Parser
      parse, ParserFailure(..)
      -- * Expression
-  , Expression(..), Command(..)
+  , Expression(..), Command(..), ComplexId(..)
 
    ) where
 
@@ -35,8 +35,11 @@ import Data.Char
 
 import OAlg.Control.Exception
 
+import OAlg.Data.Canonical
 import OAlg.Data.Number
 import OAlg.Data.Ord
+
+import OAlg.Homology.ChainComplex (Regular(..))
 
 import OAlg.Homology.IO.ActionM
 import OAlg.Homology.IO.Lexer
@@ -45,11 +48,20 @@ import OAlg.Homology.IO.Term
 import OAlg.Homology.IO.Value
 
 --------------------------------------------------------------------------------
+-- Load -
+
+data ComplexId
+  = EmptyComplex
+  | KleinBottle
+  | Sphere N
+  deriving (Show)
+--------------------------------------------------------------------------------
 -- Command -
 
 data Command x
   = Quit
   | Help
+  | Load Regular ComplexId
   | Let String (TermValue x)
   deriving (Show)
 
@@ -67,12 +79,12 @@ data Expression x
 
 data ParserFailure
   = LexerFailure LexerFailure
-  -- | UnknownCommand ([Token],Pos)
   | EmptyFailure -- ^ if more tokens are expected
   | UnexpectedToken (Token,Pos)
   | Expected Token (Token,Pos)
   | ExpectedId (Token,Pos)
   | ExpectedValue (Token,Pos)
+  | ExpectedNumber (Token,Pos)
   deriving (Show)
 
 --------------------------------------------------------------------------------
@@ -286,15 +298,56 @@ letdecl
   >>= \w -> return (abstracts [x] w :!> v)
 
 --------------------------------------------------------------------------------
+-- loadEmpty -
+
+loadEmpty :: Parser ComplexId
+loadEmpty = do
+  "empty" <- var
+  return EmptyComplex
+  
+--------------------------------------------------------------------------------
+-- loadKleinBottle -
+
+loadKleinBottle :: Parser ComplexId
+loadKleinBottle = do
+  "kleinBottle" <- var
+  return KleinBottle
+
+--------------------------------------------------------------------------------
+-- loadSphere -
+
+loadSphere :: Parser ComplexId
+loadSphere = do
+  "sphere" <- var
+  n        <- num !! ExpectedNumber
+  return (Sphere n)
+
+--------------------------------------------------------------------------------
+-- extended -
+
+extended :: Parser Regular
+extended = key "ext" >> return Extended
+   
+--------------------------------------------------------------------------------
+-- load -
+
+load :: Parser (Command x)
+load = (symbol ":load" <|> symbol ":l")
+    >> (   (extended <|> return Regular)
+       >>= \r -> (loadEmpty <|> loadKleinBottle <|> loadSphere)
+           >>= return . Load r
+       )  
+       
+--------------------------------------------------------------------------------
 -- command -
 
 command :: Parser (Command x)
-command = quit <|> help <|> varbind
+command = quit <|> help <|> load <|> varbind
 
 --------------------------------------------------------------------------------
 -- num -
 
-num :: Parser Z
+num :: Parser N
 num = do
   ts <- getState
   case map fst ts of
@@ -357,7 +410,7 @@ atom
   <|> (key "d'" >> return (Free "d'"))
   <|> (key "h" >> return (Free "h"))
   <|> (symbol "#" >> return (Free "#"))
-  <|> fmap (Value . ZValue) num
+  <|> fmap (Value . ZValue . inj) num
   <|> fmap Free var
   <|> bracket value
 

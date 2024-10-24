@@ -909,11 +909,11 @@ prpEvalValue hs = Prp "EvalValue" :<=>: And
 -- | validates the proposition 'prpEvalValue' for some environments.
 prpValue :: Statement
 prpValue = Prp "Value" :<=>: And
-  [ prpEvalValue $ envV Regular   $ complex kleinBottle
-  , prpEvalValue $ envV Regular   $ (cpxEmpty :: Complex N3 Symbol)
-  , prpEvalValue $ envV Truncated $ (cpxEmpty :: Complex N3 Symbol)
-  , prpEvalValue $ envV Regular   $ complex $ sphere (attest :: Any N4) (0::N) 
-  , prpEvalValue $ envV Truncated $ complex $ sphere (attest :: Any N5) (0::N) 
+  [ prpEvalValue $ envV Extended $ complex kleinBottle
+  , prpEvalValue $ envV Extended $ (cpxEmpty :: Complex N3 Symbol)
+  , prpEvalValue $ envV Regular  $ (cpxEmpty :: Complex N3 Symbol)
+  , prpEvalValue $ envV Extended $ complex $ sphere (attest :: Any N4) (0::N) 
+  , prpEvalValue $ envV Regular  $ complex $ sphere (attest :: Any N5) (0::N) 
   ]
 
 

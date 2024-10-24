@@ -30,7 +30,7 @@ module OAlg.Homology.IO.Keywords
 -- | the key-words.
 alphas :: [String]
 alphas
-  = [ "let", "in"
+  = [ "let", "in", "ext"
     , "A", "B", "C", "H", "K"
     , "h", "d", "d'"
     ]
@@ -41,6 +41,7 @@ symbols
   = [ "(",")"
     , ":quit", ":q" 
     , ":help", ":h", ":?"
+    , ":load", ":l"
     , "+","-", "!"
     , "=", "#"
     ]

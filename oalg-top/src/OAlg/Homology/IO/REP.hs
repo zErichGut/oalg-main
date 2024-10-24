@@ -25,8 +25,11 @@ import Control.Exception
 
 import System.IO
 
+import OAlg.Data.Number
+import OAlg.Data.Symbol (Symbol())
+
 import OAlg.Entity.Definition (Entity())
-import OAlg.Entity.Natural (Attestable(..))
+import OAlg.Entity.Natural (Attestable(..), SomeNatural(..), someNatural, N0)
 
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
@@ -38,27 +41,44 @@ import OAlg.Homology.IO.Value
 import OAlg.Homology.IO.Pretty
 
 --------------------------------------------------------------------------------
--- iEnv -
+-- SomeEnv -
 
-iEnv :: (Entity x, Ord x, Attestable n) => Regular -> Complex n x -> Env n x
-iEnv r c = foldl (<+) e0
-             [ ("it", ZValue 0)
-             , ("A",valGenerator hs (ChainGenerator ChainGenerator'))             
-             , ("B",valGenerator hs (ChainGenerator CycleGenerator))             
-             , ("C",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
-             , ("H",valHomologyGroups hs)
-             , ("K",valGenerator hs HomologyGroupGenerator)
-             , ("#",OperatorValue SpanOperator)
-             , ("d",OperatorValue BoundaryOperator)
-             , ("d'",OperatorValue Boundary'Operator)
-             , ("h",OperatorValue HomologyClassOperator)
-             ]
+data SomeEnv where
+  SomeEnv :: (Entity x, Ord x, Attestable n, Pretty x) => Env n x -> SomeEnv
+
+--------------------------------------------------------------------------------
+-- initSomeEnv -
+
+initSomeEnv :: (Entity x, Ord x, Attestable n, Pretty x) => Regular -> Complex n x -> SomeEnv
+initSomeEnv r c = SomeEnv $ foldl (<+) e0
+            [ ("it", ZValue 0)
+            , ("A",valGenerator hs (ChainGenerator ChainGenerator'))             
+            , ("B",valGenerator hs (ChainGenerator CycleGenerator))             
+            , ("C",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
+            , ("H",valHomologyGroups hs)
+            , ("K",valGenerator hs HomologyGroupGenerator)
+            , ("#",OperatorValue SpanOperator)
+            , ("d",OperatorValue BoundaryOperator)
+            , ("d'",OperatorValue Boundary'Operator)
+            , ("h",OperatorValue HomologyClassOperator)
+            ]
+             
   where
     e0 = env r c
     hs = envV' e0
 
     e <+ (k,v) = envAlter e k v  -- altering the environment dos not affect hs
-  
+
+--------------------------------------------------------------------------------
+-- someEnv -
+
+someEnv :: Regular -> ComplexId -> IO SomeEnv
+someEnv r c = case c of
+  EmptyComplex     -> return $ initSomeEnv r (cpxEmpty :: Complex N0 Symbol)
+  KleinBottle      -> return $ initSomeEnv r (complex kleinBottle)
+  Sphere n         -> case someNatural n of
+    SomeNatural n' -> return $ initSomeEnv r (complex $ sphere n' (0 :: N)) 
+
 --------------------------------------------------------------------------------
 -- Mode -
 
@@ -89,7 +109,7 @@ putEvalFailure hErr m l f = putFailure hErr m l (show f)
 
 -- | read-evaluate-print cycle.
 rep :: Mode -> Handle -> Handle -> Handle -> IO ()
-rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) where
+rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
 
   putPromt Interactive = do
       hFlush hOut
@@ -112,26 +132,33 @@ rep md hIn hOut hErr = rep' (0::Integer) $ iEnv Truncated (complex kleinBottle) 
     hFlush hOut
     hFlush hErr
 
-  ep' l e ln = case parse ln of
+  loadException :: SomeEnv -> SomeException -> IO SomeEnv
+  loadException se e = hPutStrLn hErr (show e) >> return se
+    
+
+  ep' l se@(SomeEnv e) ln = case parse ln of
     Right exp     -> case exp of
-      Empty       -> rep' l e
+      Empty       -> rep' l se
       Command cmd -> case cmd of
         Quit      -> quit
-        Help      -> putHelp >> rep' l e
+        Help      -> putHelp >> rep' l se
+        Load r c  -> do
+                     se' <- someEnv r c `catch` loadException se
+                     rep' l se'
         Let x t   -> case evalValue e t of
-          Right v -> rep' l (envAlter e x v)
-          Left f  -> putEvalFailure hErr md l f >> rep' l e
+          Right v -> rep' l (SomeEnv $ envAlter e x v)
+          Left f  -> putEvalFailure hErr md l f >> rep' l se
       TermValue t -> case evalValue e t of
-        Right v   -> putResult v >> rep' l (envAlter e "it" v)
-        Left f    -> putEvalFailure hErr md l f >> rep' l e
-    Left f        -> putParserFailure hErr md l f >> rep' l e
+        Right v   -> putResult v >> rep' l (SomeEnv $ envAlter e "it" v)
+        Left f    -> putEvalFailure hErr md l f >> rep' l se
+    Left f        -> putParserFailure hErr md l f >> rep' l se
       
-  rep' l e = do
+  rep' l se = do
     putPromt md
     eof <- hIsEOF hIn
     case eof of
       True  -> quit
-      False -> hGetLine hIn >>= ep' (l+1) e
+      False -> hGetLine hIn >>= ep' (l+1) se
 
 repi = rep Interactive stdin stdout stderr
 
