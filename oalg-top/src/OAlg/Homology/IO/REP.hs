@@ -35,7 +35,8 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
 
 import OAlg.Homology.IO.Evaluation
-import OAlg.Homology.IO.Parser
+import OAlg.Homology.IO.Parser.Definition (ParserFailure(..))
+import OAlg.Homology.IO.Parser.Expression
 import OAlg.Homology.IO.Help
 import OAlg.Homology.IO.Value
 import OAlg.Homology.IO.Pretty
@@ -136,7 +137,7 @@ rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
   loadException se e = hPutStrLn hErr (show e) >> return se
     
 
-  ep' l se@(SomeEnv e) ln = case parse ln of
+  ep' l se@(SomeEnv e) ln = case prsExpression ln of
     Right exp     -> case exp of
       Empty       -> rep' l se
       Command cmd -> case cmd of

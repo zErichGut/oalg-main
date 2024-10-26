@@ -11,21 +11,17 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Parser
--- Description : parsing
+-- Module      : OAlg.Homology.IO.Parser.Expression
+-- Description : parsing expressions.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- parsing
-module OAlg.Homology.IO.Parser
-  (
-    -- * Parser
-     parse, ParserFailure(..)
-     -- * Expression
+-- parsing expressions.
+module OAlg.Homology.IO.Parser.Expression
+  ( prsExpression
   , Expression(..), Command(..), ComplexId(..)
-
-   ) where
+  ) where
 
 import Prelude hiding (Word,(!!),repeat)
 
@@ -33,19 +29,46 @@ import Control.Applicative
 
 import Data.Char
 
-import OAlg.Control.Exception
-
 import OAlg.Data.Canonical
 import OAlg.Data.Number
-import OAlg.Data.Ord
 
 import OAlg.Homology.ChainComplex (Regular(..))
 
-import OAlg.Homology.IO.ActionM
-import OAlg.Homology.IO.Lexer
 import OAlg.Homology.IO.Evaluation
 import OAlg.Homology.IO.Term
 import OAlg.Homology.IO.Value
+
+import OAlg.Homology.IO.Parser.Definition
+import OAlg.Homology.IO.Parser.Lexer
+
+--------------------------------------------------------------------------------
+-- keys -
+
+-- | the keys for expressions.
+keys :: Keys
+keys = Keys comment alphas symbols where
+  alphas :: [String]
+  alphas
+    = [ "let", "in", "ext"
+      , "A", "B", "C", "H", "K"
+      , "h", "d", "d'"
+      ]
+  
+  -- | the symbols.
+  symbols :: [String]
+  symbols
+    = [ "(",")"
+      , ":quit", ":q" 
+      , ":help", ":h", ":?"
+      , ":load", ":l"
+      , "+","-", "!"
+      , "=", "#"
+      ]
+  
+  -- | the comment-symbol string. Everything after this symbol will be ignored by the lexer until
+  --   the end of line.
+  comment :: String
+  comment = "//"
 
 --------------------------------------------------------------------------------
 -- Load -
@@ -74,62 +97,7 @@ data Expression x
   | TermValue (TermValue x)
   deriving (Show)
            
---------------------------------------------------------------------------------
--- ParserFailure -
-
-data ParserFailure
-  = LexerFailure LexerFailure
-  | EmptyFailure -- ^ if more tokens are expected
-  | UnexpectedToken (Token,Pos)
-  | Expected Token (Token,Pos)
-  | ExpectedId (Token,Pos)
-  | ExpectedValue (Token,Pos)
-  | ExpectedNumber (Token,Pos)
-  deriving (Show)
-
---------------------------------------------------------------------------------
--- Parser -
-
-type Parser = ActionE Tokens ParserFailure
-
---------------------------------------------------------------------------------
--- (!!) -
-
-infixl 9 !!
-  
-(!!) :: Parser x -> ((Token,Pos) ->  ParserFailure) -> Parser x
-p !! f = p `handle` expected where
-  expected Nothing  = getState >>= expc  where
-    expc ts  = case ts of
-      []    -> failure $ Just EmptyFailure
-      t':_  -> failure $ Just $ f t'
-  expected f = failure f
-
---------------------------------------------------------------------------------
--- (??) -
-
--- | looking forward.
-(??) :: Parser a -> (a -> Bool) -> Parser Bool
-pa ?? p = do
-      ts <- getState
-      a  <- pa
-      setState ts
-      return (p a)
-
---------------------------------------------------------------------------------
--- bracket -
-
--- | the phrase @( a )@,
-bracket :: Parser a -> Parser a
-bracket a
-  = symbol "(" >> a >>= \z -> symbol ")" !! Expected (Symbol ")") >> return z 
-
---------------------------------------------------------------------------------
--- repeat -
-
-repeat :: Parser x -> Parser [x]
-repeat px = (px >>= \x -> fmap (x:) $ repeat px) <|> return []
-
+{-
 --------------------------------------------------------------------------------
 -- <.> -
 
@@ -138,44 +106,7 @@ a <.> b = do
   x <- a
   y <- b
   return (x,y)
-
---------------------------------------------------------------------------------
--- infixesr -
-
-oprMax :: Ord k => Parser o -> (o -> k) -> k -> Parser (o,k)
-oprMax po prc k
-  = po >>= \o -> let k' = prc o in if k <= k' then return (o,k') else empty
-
-infixesr :: Ord k => Parser a -> Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a
-infixesr px po prc appl = over NegInf where
-  over k = px >>= next k
-
-  next k x = (oprMax po prc' k >>= \(o,k') -> fmap (appl o x) (over k') >>= next k) <|> return x
-
-  prc' = It . prc
-
---------------------------------------------------------------------------------
--- infixesl -
-
-infixesl :: Ord k => Parser o -> (o -> k) -> (o -> a -> a -> a) -> Parser a -> Parser a
-infixesl po prc appl px = px >>= over NegInf where
-  prc' = It . prc
-
-  po' k = po >>= \o -> if k < prc' o then return o else empty
-
-  next k x o y = do
-        dec <- po ?? (\o' -> prc' o' <= prc' o)
-        case dec of
-          True  -> over k (appl o x y)
-          False -> over (prc' o) y >>= over k . appl o x
-    <|> return (appl o x y)
-
-  -- all applications o with k < prc' o
-  over k x = do
-        o   <- po' k
-        y   <- px !! const EmptyFailure
-        next k x o y
-    <|> return x
+-}
 
 --------------------------------------------------------------------------------
 -- OprVec -
@@ -187,13 +118,13 @@ data OprVec = Add | Sub | SMlt deriving (Show,Eq,Ord,Enum)
 
 oprVec :: Parser OprVec
 oprVec = do
-  ts <- getState
+  ts <- getTokens
   case fmap fst ts of
     []           -> empty
     Symbol o : _ -> case o of
-      "+"        -> setState (tail ts) >> return Add
-      "-"        -> setState (tail ts) >> return Sub
-      "!"        -> setState (tail ts) >> return SMlt
+      "+"        -> setTokens (tail ts) >> return Add
+      "-"        -> setTokens (tail ts) >> return Sub
+      "!"        -> setTokens (tail ts) >> return SMlt
       _          -> empty
     _            -> empty -- failure $ Just $ UnexpectedToken $ head ts
 
@@ -223,48 +154,7 @@ linearCombination = infixesl oprVec prcVec applVec
 -- unexpected -
 
 unexpected :: Parser a
-unexpected = getState >>= failure . Just . UnexpectedToken . head  
-
-
---------------------------------------------------------------------------------
--- key -
-
-key :: Word -> Parser ()
-key k = do
-  ts <- getState
-  case map fst ts of
-    Key w:_ | w == k -> setState (tail ts) >> return ()
-    _                -> empty
-
---------------------------------------------------------------------------------
--- symbol -
-
-symbol :: Word -> Parser ()
-symbol s = do
-  ts <- getState
-  case map fst ts of
-    Symbol w :_ | w == s -> setState (tail ts) >> return ()
-    _                    -> empty
-
---------------------------------------------------------------------------------
--- var -
-
-var :: Parser Word
-var = do
-  ts <- getState
-  case map fst ts of
-    Id x:_ -> setState (tail ts) >> return x
-    _      -> empty
-
---------------------------------------------------------------------------------
--- end -
-
-end :: Parser a -> a -> Parser a
-end e x = do
-  ts <- getState
-  case ts of
-    [] -> return x
-    _  -> e
+unexpected = getTokens >>= failure . Just . UnexpectedToken . head  
 
 --------------------------------------------------------------------------------
 -- quit -
@@ -278,13 +168,14 @@ quit = symbol ":quit" <|> symbol ":q" >> return Quit
 help :: Parser (Command x)
 help = symbol ":help" <|> symbol ":h" <|> symbol ":?" >> return Help
 
+
 --------------------------------------------------------------------------------
 -- varbind -
 
 varbind :: Parser (Command x)
 varbind
-  =   key "let" >> (var !! ExpectedId)
-  >>= \x -> (symbol "=" !! Expected (Symbol "=")) >> (value !! ExpectedValue)
+  =   key "let" >> (ident !! ExpectedIdent)
+  >>= \x -> (symbol "=" !! ExpectedToken (Symbol "=")) >> (value !! Expected "value")
   >>= \v -> end empty (Let x v)
 
 --------------------------------------------------------------------------------
@@ -292,9 +183,9 @@ varbind
 
 letdecl :: Parser (TermValue x)
 letdecl
-  =   key "let" >> (var !! ExpectedId)
-  >>= \x -> (symbol "=" !! Expected (Symbol "=")) >> (value !! ExpectedValue)
-  >>= \v -> (key "in" !! Expected (Key "in")) >> (value !! ExpectedValue)
+  =   key "let" >> (ident !! ExpectedIdent)
+  >>= \x -> (symbol "=" !! ExpectedToken (Symbol "=")) >> (value !! Expected "value")
+  >>= \v -> (key "in" !! ExpectedToken (Key "in")) >> (value !! Expected "value")
   >>= \w -> return (abstracts [x] w :!> v)
 
 --------------------------------------------------------------------------------
@@ -302,7 +193,7 @@ letdecl
 
 loadEmpty :: Parser ComplexId
 loadEmpty = do
-  "empty" <- var
+  "empty" <- ident
   return EmptyComplex
   
 --------------------------------------------------------------------------------
@@ -310,7 +201,7 @@ loadEmpty = do
 
 loadKleinBottle :: Parser ComplexId
 loadKleinBottle = do
-  "kleinBottle" <- var
+  "kleinBottle" <- ident
   return KleinBottle
 
 --------------------------------------------------------------------------------
@@ -318,8 +209,8 @@ loadKleinBottle = do
 
 loadSphere :: Parser ComplexId
 loadSphere = do
-  "sphere" <- var
-  n        <- num !! ExpectedNumber
+  "sphere" <- ident
+  n        <- num !! Expected "mumber"
   return (Sphere n)
 
 --------------------------------------------------------------------------------
@@ -349,9 +240,9 @@ command = quit <|> help <|> load <|> varbind
 
 num :: Parser N
 num = do
-  ts <- getState
+  ts <- getTokens
   case map fst ts of
-    Id n :_ | isNum n -> setState (tail ts) >> (return $ fromInteger $ read n)
+    Id n :_ | isNum n -> setTokens (tail ts) >> (return $ fromInteger $ read n)
     _                 -> empty
   where isNum ds@(_:_) = and $ map ((DecimalNumber==) . generalCategory) ds
         isNum _        = False
@@ -361,10 +252,10 @@ num = do
 
 sig :: Parser Z
 sig = do
-  ts <- getState
+  ts <- getTokens
   case map fst ts of
-    Symbol "-" :_ -> setState (tail ts) >> return (-1)
-    Symbol "+" :_ -> setState (tail ts) >> return 1
+    Symbol "-" :_ -> setTokens (tail ts) >> return (-1)
+    Symbol "+" :_ -> setTokens (tail ts) >> return 1
     _             -> empty
 
 --------------------------------------------------------------------------------
@@ -411,7 +302,7 @@ atom
   <|> (key "h" >> return (Free "h"))
   <|> (symbol "#" >> return (Free "#"))
   <|> fmap (Value . ZValue . inj) num
-  <|> fmap Free var
+  <|> fmap Free ident
   <|> bracket value
 
 --------------------------------------------------------------------------------
@@ -424,15 +315,9 @@ expression
   <|> (value >>= return . TermValue)
   >>= end unexpected
 
-
 --------------------------------------------------------------------------------
--- parse -
+-- prsExpression -
 
-parse :: String -> Either ParserFailure (Expression x)
-parse s = case scan s of
-  Right ts        -> case run expression ts of
-    Right (exp,_) -> return exp
-    Left me       -> case me of
-      Just f      -> Left f
-      Nothing     -> throw $ ImplementationError "parse: unknown failure"
-  Left e  -> Left $ LexerFailure e
+prsExpression :: String -> Either ParserFailure (Expression x)
+prsExpression = parse keys expression
+

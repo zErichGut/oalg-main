@@ -36,6 +36,9 @@ library
       OAlg.Homology.IO.Keywords
       OAlg.Homology.IO.Lexer
       OAlg.Homology.IO.Parser
+      OAlg.Homology.IO.Parser.ActionM
+      OAlg.Homology.IO.Parser.Definition
+      OAlg.Homology.IO.Parser.Lexer
       OAlg.Homology.IO.Pretty
       OAlg.Homology.IO.REP
       OAlg.Homology.IO.SomeChain

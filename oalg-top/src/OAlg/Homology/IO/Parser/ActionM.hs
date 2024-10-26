@@ -18,16 +18,22 @@
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- monadic actions.
-module OAlg.Homology.IO.ActionM
+module OAlg.Homology.IO.Parser.ActionM
   ( -- * Monadic Action
     ActionM(..), run
   , getState, setState
 
-    -- * Either Action
+    -- * ActionE
   , ActionE, failure, handle
-  ) where
+
+    -- * Utilities
+  , (??),(<.>), repeat, infixesr, infixesl   ) where
+
+import Prelude hiding (repeat)
 
 import Control.Applicative
+
+import OAlg.Data.Ord
 
 --------------------------------------------------------------------------------
 -- ActionM -
@@ -82,6 +88,7 @@ setState s = ActionM (const $ return ((),s))
 getState :: Monad m => ActionM s m s
 getState = ActionM (\s -> return (s,s))
 
+
 --------------------------------------------------------------------------------
 -- Either (Maybe e) -
 
@@ -93,6 +100,7 @@ instance Alternative (Either (Maybe e)) where
 instance MonadFail (Either (Maybe e)) where
   fail _ = empty
   
+
 --------------------------------------------------------------------------------
 -- ActionE -
 
@@ -113,4 +121,67 @@ handle pa h = ActionM (\s -> case run pa s of
                                Left e   -> run (h e) s
                       )
 
+--------------------------------------------------------------------------------
+-- (??) -
+
+-- | looking forward.
+(??) :: ActionE s e a -> (a -> Bool) -> ActionE s e Bool
+pa ?? p = do
+  ts <- getState
+  a  <- pa
+  setState ts
+  return (p a)
+
+--------------------------------------------------------------------------------
+-- repeat -
+
+repeat :: ActionE s e x -> ActionE s e [x]
+repeat px = (px >>= \x -> fmap (x:) $ repeat px) <|> return []
+
+--------------------------------------------------------------------------------
+-- <.> -
+
+(<.>) :: ActionE s e a -> ActionE s e b -> ActionE s e (a,b)
+a <.> b = do
+  x <- a
+  y <- b
+  return (x,y)
+
+--------------------------------------------------------------------------------
+-- infixesr -
+
+oprMax :: Ord k => ActionE s e o -> (o -> k) -> k -> ActionE s e (o,k)
+oprMax po prc k
+  = po >>= \o -> let k' = prc o in if k <= k' then return (o,k') else empty
+
+infixesr :: Ord k => ActionE s e a -> ActionE s e o -> (o -> k) -> (o -> a -> a -> a) -> ActionE s e a
+infixesr px po prc appl = over NegInf where
+  over k = px >>= next k
+
+  next k x = (oprMax po prc' k >>= \(o,k') -> fmap (appl o x) (over k') >>= next k) <|> return x
+
+  prc' = It . prc
+
+--------------------------------------------------------------------------------
+-- infixesl -
+
+infixesl :: Ord k => ActionE s e o -> (o -> k) -> (o -> a -> a -> a) -> ActionE s e a -> ActionE s e a
+infixesl po prc appl px = px >>= over NegInf where
+  prc' = It . prc
+
+  po' k = po >>= \o -> if k < prc' o then return o else empty
+
+  next k x o y = do
+        dec <- po ?? (\o' -> prc' o' <= prc' o)
+        case dec of
+          True  -> over k (appl o x y)
+          False -> over (prc' o) y >>= over k . appl o x
+    <|> return (appl o x y)
+
+  -- all applications o with k < prc' o
+  over k x = do
+        o   <- po' k
+        y   <- px
+        next k x o y
+    <|> return x
 
