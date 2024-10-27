@@ -34,8 +34,9 @@ import OAlg.Entity.Natural (Attestable(..), SomeNatural(..), someNatural, N0)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
 
+import OAlg.Homology.IO.Term (Term(..))
 import OAlg.Homology.IO.Evaluation
-import OAlg.Homology.IO.Parser.Definition (ParserFailure(..))
+import OAlg.Homology.IO.Parser.Definition (ParserFailure(..),LexerFailure(..),Pos, Token(..))
 import OAlg.Homology.IO.Parser.Expression
 import OAlg.Homology.IO.Help
 import OAlg.Homology.IO.Value
@@ -94,17 +95,51 @@ type Ln = Integer
 --------------------------------------------------------------------------------
 -- putFailure -
 
-putFailure :: Handle -> Mode -> Ln -> String -> IO ()
-putFailure hErr md l msg = case md of
-    Interactive -> hPutStrLn hErr ("!!! Failure: " ++ msg)
-    Batch       -> hPutStrLn hErr ("!!! Failure at line " ++ show l ++ ": " ++ msg)
+putFailure :: Handle -> String -> String -> IO ()
+putFailure hErr at msg = hPutStrLn hErr ("!!! Failure" ++ at ++ ": " ++ msg)
 
-putParserFailure :: Handle -> Mode -> Ln -> ParserFailure -> IO ()
-putParserFailure hErr m l f = putFailure hErr m l (show f)
+pshowToken :: Token -> String
+pshowToken t = case t of
+  Symbol w -> "symbol '" ++ w ++ "'"
+  Key w    -> "keyword '" ++ w ++ "'"
+  Id w     -> "identifier '" ++ w ++ "'"
+
+putParserFailure :: Handle -> Mode -> ParserFailure -> IO ()
+putParserFailure hErr m f = case f of
+  EmptyFailure          -> putFailure hErr "the end" ""
+  UnexpectedToken (t,p) -> putFailure hErr (pos m p) ("unexpected " ++ pshowToken t)
+  ExpectedToken e (t,p) -> putFailure hErr (pos m p) (  "expected " ++ pshowToken e
+                                                     ++ ", but saw " ++ pshowToken t
+                                                     )
+  ExpectedIdent (t,p)   -> putFailure hErr (pos m p) (  "expected identifier, but saw "
+                                                     ++ pshowToken t
+                                                     )
+  Expected e (t,p)      -> putFailure hErr (pos m p) (  "expected " ++ e
+                                                     ++ ", but saw " ++ pshowToken t
+                                                     )
+  LexerFailure u        -> case u of
+    UnexpectedChars chs -> putFailure hErr (pos m p) chs' where
+      p    = head $ map snd chs
+      chs' = (take 10 $ map fst chs) ++ ".."
+      
+  where
+    pos :: Mode -> Pos -> String
+    pos md (l,p)  = " at " ++ case md of
+      Interactive -> show p
+      Batch       -> show (l,p)
 
 putEvalFailure :: (Entity x, Ord x) => Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
-putEvalFailure hErr m l f = putFailure hErr m l (show f)
-
+putEvalFailure hErr m l f = case f of
+  NotAValue t -> case t of
+    Free x    -> putFailure hErr (pos m l) ("unbound variable '" ++ x ++"'")
+    _         -> putFailure hErr (pos m l) (show f)
+  _           -> putFailure hErr (pos m l) (show f)
+  where
+    pos :: Mode -> Ln -> String
+    pos md l = case md of
+      Interactive -> ""
+      Batch       -> " at line " ++ show l
+    
 --------------------------------------------------------------------------------
 -- rep
 
@@ -117,12 +152,6 @@ rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
       hPutStr hOut "top> "
   putPromt Batch = return ()
     
-  
-  putFailure :: Show f => Integer -> f -> IO ()
-  putFailure l e = case md of
-    Interactive -> hPutStrLn hErr ("!!! Failure: " ++ show e)
-    Batch       -> hPutStrLn hErr ("!!! Failure at line " ++ show l ++ ": " ++ show e)
-
   putHelp :: IO ()
   putHelp = hPutStrLn hOut help
 
@@ -152,7 +181,7 @@ rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
       TermValue t -> case evalValue e t of
         Right v   -> putResult v >> rep' l (SomeEnv $ envAlter e "it" v)
         Left f    -> putEvalFailure hErr md l f >> rep' l se
-    Left f        -> putParserFailure hErr md l f >> rep' l se
+    Left f        -> putParserFailure hErr md f >> rep' l se
       
   rep' l se = do
     putPromt md

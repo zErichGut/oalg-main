@@ -20,8 +20,8 @@
 -- general definitions and parser utilities.
 module OAlg.Homology.IO.Parser.Definition
   ( -- * Parsing
-    parse, Parser, ParserFailure(..)
-
+    parse, Parser, Token(..), Pos
+  , ParserFailure(..), LexerFailure(..)
     -- * Utilities
   , getTokens, setTokens
   , symbol, key, ident

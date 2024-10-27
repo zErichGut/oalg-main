@@ -30,14 +30,11 @@ library
       OAlg.Homology.Complex
       OAlg.Homology.Definition
       OAlg.Homology.Group
-      OAlg.Homology.IO.ActionM
       OAlg.Homology.IO.Evaluation
       OAlg.Homology.IO.Help
-      OAlg.Homology.IO.Keywords
-      OAlg.Homology.IO.Lexer
-      OAlg.Homology.IO.Parser
       OAlg.Homology.IO.Parser.ActionM
       OAlg.Homology.IO.Parser.Definition
+      OAlg.Homology.IO.Parser.Expression
       OAlg.Homology.IO.Parser.Lexer
       OAlg.Homology.IO.Pretty
       OAlg.Homology.IO.REP
