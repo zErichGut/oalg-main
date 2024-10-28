@@ -213,10 +213,14 @@ extended = key "ext" >> return Extended
 
 load :: Parser (Command x)
 load = (symbol ":load" <|> symbol ":l")
-    >> (   (extended <|> return Regular)
-       >>= \r -> (loadEmpty <|> loadKleinBottle <|> loadSphere)
-           >>= return . Load r
-       )  
+    >> (   (   (extended <|> return Regular)
+           >>= \r -> (   loadEmpty <|> loadKleinBottle <|> loadSphere
+                     <|> (failure $ Just $ Unknown "cpxId") 
+                     )
+               >>= return . Load r
+           )
+       <|> (failure $ Just $ Unknown "load") 
+       )
        
 --------------------------------------------------------------------------------
 -- command -

@@ -23,6 +23,7 @@
 -- pretty printing of values
 module OAlg.Homology.IO.Pretty
   ( Pretty(..)
+  , pshows
   ) where
 
 import Data.List ((++))
@@ -43,18 +44,17 @@ import OAlg.Entity.Matrix.Vector
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Ring
--- import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
--- import OAlg.Structure.Vectorial
--- import OAlg.Structure.Exception
 
 import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Chain
 import OAlg.Homology.Simplex
 
+import OAlg.Homology.IO.Term
 import OAlg.Homology.IO.Value
 import OAlg.Homology.IO.SomeChain
+import OAlg.Homology.IO.Evaluation
 
 --------------------------------------------------------------------------------
 -- Pretty -
@@ -72,13 +72,20 @@ instance Pretty N
 instance Pretty Z
 instance Pretty Symbol
 instance Pretty Char
-instance Pretty a => Pretty [a] where
-  pshow as = case as of
+
+--------------------------------------------------------------------------------
+-- pshowList -
+
+pshows :: (a -> String) -> [a] -> String
+pshows pa as = case as of
     []   -> "[]"
-    a:as -> "[" ++ pshow a ++ ps as ++ "]"
+    a:as -> "[" ++ pa a ++ ps as ++ "]"
     where
       ps []     = ""
-      ps (a:as) = "," ++ pshow a ++ ps as
+      ps (a:as) = "," ++ pa a ++ ps as
+      
+instance Pretty a => Pretty [a] where
+  pshow = pshows pshow
       
 instance (Pretty a, Pretty b) => Pretty (Either a b) where
   pshow (Left a)  = "Left (" ++ pshow a ++ ")"
@@ -255,3 +262,27 @@ instance Pretty x => Pretty (SomeChain x) where
     SomeChain c -> pshow c
     _           -> "0" 
 
+--------------------------------------------------------------------------------
+-- ValueRoot -
+
+instance Pretty (ValueRoot x) where
+  pshow ZRoot = "Z"
+  pshow SpanRoot = "Span"
+  pshow (OperatorRoot o) = case o of
+    SpanOperator          -> "#"
+    BoundaryOperator      -> "d"
+    Boundary'Operator     -> "d'"
+    HomologyClassOperator -> "h"
+  pshow (ChainRoot c) = case c of
+    ChainRootElement l        -> "chain " ++ show l
+    ChainRootSequenceLazy d   -> pshow d
+    ChainRootSequenceStrict d -> pshow d
+  pshow r = show r
+    
+  
+--------------------------------------------------------------------------------
+-- Term -
+
+instance Pretty (Term VectorOperation (ValueRoot x)) where
+  pshow (Free x) = "unbound variable " ++ x
+  pshow t = show t

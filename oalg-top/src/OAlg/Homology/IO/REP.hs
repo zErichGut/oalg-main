@@ -106,7 +106,7 @@ pshowToken t = case t of
 
 putParserFailure :: Handle -> Mode -> ParserFailure -> IO ()
 putParserFailure hErr m f = case f of
-  EmptyFailure          -> putFailure hErr "the end" ""
+  EmptyFailure          -> putFailure hErr "at the end" ""
   UnexpectedToken (t,p) -> putFailure hErr (pos m p) ("unexpected " ++ pshowToken t)
   ExpectedToken e (t,p) -> putFailure hErr (pos m p) (  "expected " ++ pshowToken e
                                                      ++ ", but saw " ++ pshowToken t
@@ -117,6 +117,10 @@ putParserFailure hErr m f = case f of
   Expected e (t,p)      -> putFailure hErr (pos m p) (  "expected " ++ e
                                                      ++ ", but saw " ++ pshowToken t
                                                      )
+  Unparsed t@(_,p) ts   -> putFailure hErr (pos m p) (  "unparsed "
+                                                     ++ take 10 (pshows pshowToken $ map fst (t:ts))
+                                                     )
+  Unknown msg           -> putFailure hErr "" ("unknown " ++ msg)
   LexerFailure u        -> case u of
     UnexpectedChars chs -> putFailure hErr (pos m p) chs' where
       p    = head $ map snd chs
@@ -130,10 +134,13 @@ putParserFailure hErr m f = case f of
 
 putEvalFailure :: (Entity x, Ord x) => Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
 putEvalFailure hErr m l f = case f of
-  NotAValue t -> case t of
-    Free x    -> putFailure hErr (pos m l) ("unbound variable '" ++ x ++"'")
-    _         -> putFailure hErr (pos m l) (show f)
-  _           -> putFailure hErr (pos m l) (show f)
+  NotAValue t         -> putFailure hErr (pos m l) (pshow t)
+  ValueFailure f' t   -> case f' of
+    NotApplicable a b -> putFailure hErr (pos m l) ( "not applicable " ++ pshow a ++ " on "
+                                                   ++ pshow b
+                                                   )
+    _                 -> putFailure hErr (pos m l) (show f)
+  _                   -> putFailure hErr (pos m l) (show f)
   where
     pos :: Mode -> Ln -> String
     pos md l = case md of

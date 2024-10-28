@@ -35,8 +35,6 @@ import Prelude hiding ((!!), repeat, Word)
 
 import Control.Applicative
 
-import OAlg.Control.Exception
-
 import OAlg.Homology.IO.Parser.ActionM
 import OAlg.Homology.IO.Parser.Lexer
 
@@ -50,6 +48,8 @@ data ParserFailure
   | ExpectedToken Token (Token,Pos)
   | ExpectedIdent (Token,Pos)
   | Expected String (Token,Pos)
+  | Unparsed (Token,Pos) Tokens
+  | Unknown String
   deriving (Show)
 
 --------------------------------------------------------------------------------
@@ -140,9 +140,11 @@ bracket a
 parse :: Keys -> Parser a -> String -> Either ParserFailure a
 parse ks p s = case scan ks s of
   Right ts        -> case run p ts of
-    Right (a,_)   -> return a
+    Right (a,ts)  -> case ts of
+      []          -> return a
+      t:ts        -> Left $ Unparsed t ts
     Left me       -> case me of
       Just f      -> Left f
-      Nothing     -> throw $ ImplementationError "parse: unknown failure"
+      Nothing     -> Left $ Unknown ""
   Left e          -> Left $ LexerFailure e
 
