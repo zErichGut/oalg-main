@@ -14,7 +14,7 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Interactive
+-- Module      : OAlg.Homology.IO.Pretty
 -- Description : pretty printing of values
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
@@ -30,11 +30,12 @@ import Data.List ((++))
 import Data.Foldable (toList)
 import OAlg.Prelude
 
+import OAlg.Data.Tree
 import OAlg.Data.Either
 import OAlg.Data.Symbol (Symbol())
 import OAlg.Data.Constructable
 
-import OAlg.Entity.Natural hiding ((++),S)
+import OAlg.Entity.Natural hiding ((++),S,Add)
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.FSequence
 import OAlg.Entity.Sequence.PSequence
@@ -252,7 +253,6 @@ instance (Entity x, Ord x, Pretty x) => Pretty (Value x) where
   pshow (ChainValue c)         = pshow c
   pshow (HomologyClassValue c) = pshow c
   pshow (HomologyGroupValue g) = pshow g
-  pshow v                      = show v
 
 --------------------------------------------------------------------------------
 -- SomeChain -
@@ -278,11 +278,64 @@ instance Pretty (ValueRoot x) where
     ChainRootSequenceLazy d   -> pshow d
     ChainRootSequenceStrict d -> pshow d
   pshow r = show r
+
+--------------------------------------------------------------------------------
+-- psTree -
+
+psTree' :: Ord k => (o -> k) -> (o -> String) -> (x -> String) -> Tree o x -> (String,Closure k)
+psTree' w so sx t = ps t where
+  ps (Leaf x)     = (sx x,NegInf)
+  ps (Node o l r) = case (wl < wo,wr < wo) of
+    (True,True)   -> ("(" ++ sl ++ ")" ++ so o ++ "(" ++ sr ++ ")",wo)
+    (False,True)  -> (sl ++ so o ++ "(" ++ sr ++ ")",wl)
+    (True,False)  -> ("(" ++ sl ++ ")" ++ so o ++ sr,wr)
+    (False,False) -> (sl ++ so o ++ sr,max wl wr)
+    where (sl,wl) = ps l
+          (sr,wr) = ps r
+          wo      = It $ w o
+
+psTree :: Ord k => (o -> k) -> (o -> String) -> (x -> String) -> Tree o x -> String
+psTree w so sx = fst . psTree' w so sx
+
+--------------------------------------------------------------------------------
+-- psTerm -
+
+data Opr = Abs | Apl | Add | SMt deriving (Show,Eq,Ord,Enum)
+
+data Vl v = Fr String | AbsFr String | Bn N | Vl v deriving (Show)
+
+trmTree :: Term VectorOperation v -> Tree Opr (Vl v)
+trmTree (Free x)    = Leaf (Fr x)
+trmTree (Bound n)   = Leaf (Bn n)
+trmTree (Value v)   = Leaf (Vl v)
+trmTree (x :-> t)   = Node Abs (Leaf $ AbsFr x) (trmTree $ eval (t :!> Free x))
+trmTree (r :!> s)   = Node Apl (trmTree r) (trmTree s)
+trmTree (Opr o l r) = Node (opr o) (trmTree l) (trmTree r) where
+  opr ScalarMultiplication = SMt
+  opr Addition             = Add
+
+instance Pretty v => Pretty (Tree Opr (Vl v)) where
+  pshow = psTree w so sv where
+    w :: Opr -> N
+    w Apl = 3
+    w SMt = 2
+    w Add = 1
+    w Abs = 0
     
-  
+    so Abs = " -> "
+    so Apl = " "
+    so Add = " + "
+    so SMt = "!"
+    
+    sv (Fr x)    = "unbound variable " ++ x
+    sv (AbsFr x) = "\\ " ++ x
+    sv (Bn n)    = "Bound" ++ pshow n
+    sv (Vl v)    = pshow v
+
+
 --------------------------------------------------------------------------------
 -- Term -
 
 instance Pretty (Term VectorOperation (ValueRoot x)) where
-  pshow (Free x) = "unbound variable " ++ x
-  pshow t = show t
+  pshow = pshow . trmTree
+

@@ -132,15 +132,28 @@ putParserFailure hErr m f = case f of
       Interactive -> show p
       Batch       -> show (l,p)
 
-putEvalFailure :: (Entity x, Ord x) => Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
+putEvalFailure :: (Entity x, Ord x)
+  => Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
 putEvalFailure hErr m l f = case f of
-  NotAValue t         -> putFailure hErr (pos m l) (pshow t)
   ValueFailure f' t   -> case f' of
-    NotApplicable a b -> putFailure hErr (pos m l) ( "not applicable " ++ pshow a ++ " on "
+    NotApplicable a b -> putFailure hErr (pos m l) ( "not applicable: " ++ pshow a ++ " on "
                                                    ++ pshow b
                                                    )
-    _                 -> putFailure hErr (pos m l) (show f)
-  _                   -> putFailure hErr (pos m l) (show f)
+    NotACycle'        -> putFailure hErr (pos m l) "not a cycle"
+    NonTrivialHomologyClass' h
+                      -> putFailure hErr (pos m l) (  "non-trivial homology class: "
+                                                   ++ pshow h
+                                                   )
+    InconsistentRoot a b
+                      -> putFailure hErr (pos m l) (  "inconsistent root "
+                                                   ++ pshow a ++ " and " ++ pshow b
+                                                   )
+    NotAddable a      -> putFailure hErr (pos m l) (  "not addable: "
+                                                   ++ pshow a
+                                                   )
+
+  NotAValue t         -> putFailure hErr (pos m l) (pshow t)
+  NotAZValue t        -> putFailure hErr (pos m l) ("Z-value expected, but: " ++ pshow t)
   where
     pos :: Mode -> Ln -> String
     pos md l = case md of
