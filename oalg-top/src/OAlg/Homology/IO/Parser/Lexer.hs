@@ -191,14 +191,10 @@ token ks = dropSpace >>
 
 scan :: Keys -> String -> Either LexerFailure [(Token,Pos)]
 scan ks s = case run (repeat $ token ks) (chars s) of
-  Right (mtks,cps) -> case cps of
+  Right (mtks,cps) -> case dropWhile (isSpace . fst) cps of
     []             -> Right $ catMaybes mtks
     _              -> Left $ UnexpectedChars cps
   Left me          -> case me of
     Nothing        -> throw $ ImplementationError "scan"
     Just e         -> Left e
-
-ks :: Keys
-ks = Keys "//" ["let"] ["(",")",":quit"] 
-
 

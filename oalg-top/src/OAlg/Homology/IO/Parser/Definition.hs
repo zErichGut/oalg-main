@@ -23,7 +23,7 @@ module OAlg.Homology.IO.Parser.Definition
     parse, Parser, Token(..), Pos
   , ParserFailure(..), LexerFailure(..)
     -- * Utilities
-  , getTokens, setTokens
+  , getTokens, setTokens, getPos
   , symbol, key, ident
   , repeat, bracket, infixesl, infixesr
   , failure, handle
@@ -49,6 +49,7 @@ data ParserFailure
   | ExpectedIdent (Token,Pos)
   | Expected String (Token,Pos)
   | Unparsed (Token,Pos) Tokens
+  | DuplicateVars Word Pos
   | Unknown String
   deriving (Show)
 
@@ -62,6 +63,16 @@ type Parser = ActionE Tokens ParserFailure
 
 getTokens :: Parser Tokens
 getTokens = getState
+
+--------------------------------------------------------------------------------
+-- getPos -
+
+getPos :: Parser Pos
+getPos = do
+  ts <- getState
+  case ts of
+    (_,p):_ -> return p
+    _       -> failure $ Just EmptyFailure
 
 --------------------------------------------------------------------------------
 -- setTokens -

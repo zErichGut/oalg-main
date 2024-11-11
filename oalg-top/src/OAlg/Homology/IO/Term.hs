@@ -29,7 +29,7 @@ module OAlg.Homology.IO.Term
   , abstract, abstracts
   , applys
   , subst
-  , inst, EnvT, envT, envTAlter
+  , inst, EnvT, envT, envTAlter, envTLookup
   , eval
   ) where
 
@@ -136,6 +136,13 @@ envT = M.fromList
 envTAlter :: EnvT o v -> String -> Term o v -> EnvT o v
 envTAlter env k t = M.alter (const (Just t)) k env
 
+--------------------------------------------------------------------------------
+-- envTLookup -
+
+envTLookup :: EnvT o v -> String -> Term o v
+envTLookup env a = case a `M.lookup` env of
+  Just t  -> t
+  Nothing -> Free a
 
 --------------------------------------------------------------------------------
 -- inst -

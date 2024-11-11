@@ -11,22 +11,23 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Parser.Expression
--- Description : parsing expressions.
+-- Module      : OAlg.Homology.IO.Parser.Instruction
+-- Description : parsing instructions.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- parsing expressions.
-module OAlg.Homology.IO.Parser.Expression
-  ( prsExpression
-  , Expression(..), Command(..), ComplexId(..)
+-- parsing instructions.
+module OAlg.Homology.IO.Parser.Instruction
+  ( prsInstruction
+  , Instruction(..), Command(..), ComplexId(..)
   ) where
 
 import Prelude hiding (Word,(!!),repeat)
 
 import Control.Applicative
 
+import Data.List (sort,group)
 import Data.Char
 
 import OAlg.Data.Canonical
@@ -44,14 +45,14 @@ import OAlg.Homology.IO.Parser.Lexer
 --------------------------------------------------------------------------------
 -- keys -
 
--- | the keys for expressions.
+-- | the keys for instructions.
 keys :: Keys
 keys = Keys comment alphas symbols where
   alphas :: [String]
   alphas
     = [ "let", "in", "ext"
-      , "A", "B", "C", "H", "K"
-      , "h", "d", "d'"
+      , "C", "D", "H", "K", "L"
+      , "b", "d", "h"
       ]
   
   -- | the symbols.
@@ -61,6 +62,7 @@ keys = Keys comment alphas symbols where
       , ":quit", ":q" 
       , ":help", ":h", ":?"
       , ":load", ":l"
+      , ":valid", ":v"
       , "+","-", "!"
       , "=", "#"
       ]
@@ -78,6 +80,7 @@ data ComplexId
   | KleinBottle
   | Sphere N
   deriving (Show)
+
 --------------------------------------------------------------------------------
 -- Command -
 
@@ -86,12 +89,13 @@ data Command x
   | Help
   | Load Regular ComplexId
   | Let String (TermValue x)
+  | Valid (Maybe (TermValue x))
   deriving (Show)
 
 --------------------------------------------------------------------------------
--- Expression -
+-- Instruction -
 
-data Expression x
+data Instruction x
   = Empty
   | Command (Command x)
   | TermValue (TermValue x)
@@ -157,15 +161,37 @@ quit = symbol ":quit" <|> symbol ":q" >> return Quit
 help :: Parser (Command x)
 help = symbol ":help" <|> symbol ":h" <|> symbol ":?" >> return Help
 
+--------------------------------------------------------------------------------
+-- vars -
+
+vars :: Parser (Word,[Word])
+vars = ident >>= \v0 -> repeat ident >>= \vs -> return (v0,vs)
 
 --------------------------------------------------------------------------------
 -- varbind -
 
 varbind :: Parser (Command x)
-varbind
-  =   key "let" >> (ident !! ExpectedIdent)
-  >>= \x -> (symbol "=" !! ExpectedToken (Symbol "=")) >> (value !! Expected "value")
-  >>= \v -> end empty (Let x v)
+varbind = do
+  key "let"
+  v  <- ident !! ExpectedIdent
+  symbol "=" !! ExpectedToken (Symbol "=")
+  e <- expression !! Expected "expression"
+  end empty $ Let v e 
+
+{-
+varbind = do
+  key "let"
+  p  <- getPos
+  v  <- ident
+  vs <- repeat ident 
+  case duplicates (v:vs) of
+    d:_ -> failure $ Just $ DuplicateVars (head d) p
+    []  -> do
+            symbol "=" !! ExpectedToken (Symbol "=")
+            e <- expression !! Expected "expression"
+            end empty $ Let v $ abstracts vs e 
+  where duplicates vs = filter ((>1) . length) $ group $ sort vs
+-}               
 
 --------------------------------------------------------------------------------
 -- letdecl -
@@ -173,8 +199,8 @@ varbind
 letdecl :: Parser (TermValue x)
 letdecl
   =   key "let" >> (ident !! ExpectedIdent)
-  >>= \x -> (symbol "=" !! ExpectedToken (Symbol "=")) >> (value !! Expected "value")
-  >>= \v -> (key "in" !! ExpectedToken (Key "in")) >> (value !! Expected "value")
+  >>= \x -> (symbol "=" !! ExpectedToken (Symbol "=")) >> (expression !! Expected "expression")
+  >>= \v -> (key "in" !! ExpectedToken (Key "in")) >> (expression !! Expected "expression")
   >>= \w -> return (abstracts [x] w :!> v)
 
 --------------------------------------------------------------------------------
@@ -221,12 +247,18 @@ load = (symbol ":load" <|> symbol ":l")
            )
        <|> (failure $ Just $ Unknown "load") 
        )
-       
+
+--------------------------------------------------------------------------------
+-- valid -
+
+valid :: Parser (Command x)
+valid = (symbol ":valid" <|> symbol ":v") >> end (fmap (Valid . Just) expression) (Valid Nothing) 
+
 --------------------------------------------------------------------------------
 -- command -
 
 command :: Parser (Command x)
-command = quit <|> help <|> load <|> varbind
+command = quit <|> help <|> load <|> varbind <|> valid
 
 --------------------------------------------------------------------------------
 -- num -
@@ -252,10 +284,10 @@ sig = do
     _             -> empty
 
 --------------------------------------------------------------------------------
--- value -
+-- expression -
 
-value :: Parser (TermValue x)
-value = linearCombination sigTerm
+expression :: Parser (TermValue x)
+expression = linearCombination sigTerm
 
 --------------------------------------------------------------------------------
 -- sigTerm -
@@ -285,32 +317,32 @@ application = atom >>= \a -> repeat atom >>= \as -> return (applys a as)
 
 atom :: Parser (TermValue x)
 atom 
-   =  (key "A" >> return (Free "A"))
-  <|> (key "B" >> return (Free "B"))
-  <|> (key "C" >> return (Free "C"))
+   =  (key "C" >> return (Free "C"))
+  <|> (key "D" >> return (Free "D"))
   <|> (key "H" >> return (Free "H"))
   <|> (key "K" >> return (Free "K"))
+  <|> (key "L" >> return (Free "L"))
   <|> (key "d" >> return (Free "d"))
-  <|> (key "d'" >> return (Free "d'"))
+  <|> (key "b" >> return (Free "b"))
   <|> (key "h" >> return (Free "h"))
   <|> (symbol "#" >> return (Free "#"))
   <|> fmap (Value . ZValue . inj) num
   <|> fmap Free ident
-  <|> bracket value
+  <|> bracket expression
 
 --------------------------------------------------------------------------------
--- expression -
+-- instruction -
 
-expression :: Parser (Expression x)
-expression
+instruction :: Parser (Instruction x)
+instruction
   =   end empty Empty
   <|> (command >>= return . Command)
-  <|> (value >>= return . TermValue)
+  <|> (expression >>= return . TermValue)
   >>= end unexpected
 
 --------------------------------------------------------------------------------
--- prsExpression -
+-- prsInstruction -
 
-prsExpression :: String -> Either ParserFailure (Expression x)
-prsExpression = parse keys expression
+prsInstruction :: String -> Either ParserFailure (Instruction x)
+prsInstruction = parse keys instruction
 

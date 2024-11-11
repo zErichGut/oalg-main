@@ -9,6 +9,7 @@
            , GADTs
            , StandaloneDeriving
            , DataKinds
+           , TupleSections
 #-}
 
 -- |
@@ -659,12 +660,29 @@ evalHomologyClassSomeChain hs s = case l `compare` 0 of
 --------------------------------------------------------------------------------
 -- evalHomologyClass -
 
+evalHomologyClassForm :: (Entity x, Ord x)
+  => EnvV n x -> FSequenceForm (DefaultChainValue x) Z (ChainValue x)
+  -> EvalV x (FSequenceForm DefaultHomologyClassValue Z HomologyClassValue)
+evalHomologyClassForm hs (FSequenceForm d vs)
+  = (sequence $ amap1 (hcv hs) $ psqxs vs) >>= return . FSequenceForm (dh gs d) . PSequence where
+
+  gs = fsqHomologyGroups hs
+
+  dh gs d = case d of
+    LChains l -> HClasses (fsqx gs (pred l))
+    KChains   -> GClasses gs
+
+  hcv :: (Entity x, Ord x) => EnvV n x -> (ChainValue x,Z) -> EvalV x (HomologyClassValue,Z)
+  hcv hs (v,i) = evalHomologyClass hs v >>= return . (,i)
+  
 evalHomologyClass :: (Entity x, Ord x) => EnvV n x -> ChainValue x -> EvalV x HomologyClassValue
 evalHomologyClass hs (ChainValueElement c)
   = evalHomologyClassSomeChain hs c >>= return . HomologyClassElement
-evalHomologyClass _ v
-  = Left $ NotApplicable (root (OperatorValue Boundary'Operator)) (root $ ChainValue v)
-                     
+evalHomologyClass hs (ChainValueSequenceLazy vs)
+  = evalHomologyClassForm hs (form vs) >>= return . HomologyClassSequenceLazy . make
+evalHomologyClass hs (ChainValueSequenceStrict vs)
+  = evalHomologyClassForm hs (form vs) >>= return . HomologyClassSequenceStrict . make
+
 --------------------------------------------------------------------------------
 -- evalOperatorValue -
 

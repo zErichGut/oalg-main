@@ -25,8 +25,12 @@ import Control.Exception
 
 import System.IO
 
+import OAlg.Control.Validate
+
 import OAlg.Data.Number
 import OAlg.Data.Symbol (Symbol())
+import OAlg.Data.Validable
+import qualified OAlg.Data.Statement.Definition as S
 
 import OAlg.Entity.Definition (Entity())
 import OAlg.Entity.Natural (Attestable(..), SomeNatural(..), someNatural, N0)
@@ -34,10 +38,9 @@ import OAlg.Entity.Natural (Attestable(..), SomeNatural(..), someNatural, N0)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
 
-import OAlg.Homology.IO.Term (Term(..))
 import OAlg.Homology.IO.Evaluation
 import OAlg.Homology.IO.Parser.Definition (ParserFailure(..),LexerFailure(..),Pos, Token(..))
-import OAlg.Homology.IO.Parser.Expression
+import OAlg.Homology.IO.Parser.Instruction
 import OAlg.Homology.IO.Help
 import OAlg.Homology.IO.Value
 import OAlg.Homology.IO.Pretty
@@ -54,14 +57,14 @@ data SomeEnv where
 initSomeEnv :: (Entity x, Ord x, Attestable n, Pretty x) => Regular -> Complex n x -> SomeEnv
 initSomeEnv r c = SomeEnv $ foldl (<+) e0
             [ ("it", ZValue 0)
-            , ("A",valGenerator hs (ChainGenerator ChainGenerator'))             
-            , ("B",valGenerator hs (ChainGenerator CycleGenerator))             
-            , ("C",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
+            , ("C",valGenerator hs (ChainGenerator ChainGenerator'))             
+            , ("D",valGenerator hs (ChainGenerator CycleGenerator))             
+            , ("L",valGenerator hs (ChainGenerator HomologyGroupGenerator'))
             , ("H",valHomologyGroups hs)
             , ("K",valGenerator hs HomologyGroupGenerator)
             , ("#",OperatorValue SpanOperator)
             , ("d",OperatorValue BoundaryOperator)
-            , ("d'",OperatorValue Boundary'Operator)
+            , ("b",OperatorValue Boundary'Operator)
             , ("h",OperatorValue HomologyClassOperator)
             ]
              
@@ -120,6 +123,7 @@ putParserFailure hErr m f = case f of
   Unparsed t@(_,p) ts   -> putFailure hErr (pos m p) (  "unparsed "
                                                      ++ take 10 (pshows pshowToken $ map fst (t:ts))
                                                      )
+  DuplicateVars w p     -> putFailure hErr (pos m p) (  "duplicate variables '" ++ w ++ "'")
   Unknown msg           -> putFailure hErr "" ("unknown " ++ msg)
   LexerFailure u        -> case u of
     UnexpectedChars chs -> putFailure hErr (pos m p) chs' where
@@ -132,10 +136,9 @@ putParserFailure hErr m f = case f of
       Interactive -> show p
       Batch       -> show (l,p)
 
-putEvalFailure :: (Entity x, Ord x)
-  => Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
+putEvalFailure :: Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
 putEvalFailure hErr m l f = case f of
-  ValueFailure f' t   -> case f' of
+  ValueFailure f' _   -> case f' of
     NotApplicable a b -> putFailure hErr (pos m l) ( "not applicable: " ++ pshow a ++ " on "
                                                    ++ pshow b
                                                    )
@@ -184,9 +187,16 @@ rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
 
   loadException :: SomeEnv -> SomeException -> IO SomeEnv
   loadException se e = hPutStrLn hErr (show e) >> return se
-    
 
-  ep' l se@(SomeEnv e) ln = case prsExpression ln of
+  getTermValue :: Env n x -> Maybe (TermValue x) -> IO (TermValue x)
+  getTermValue e mt = return $ case mt of
+    Nothing -> envLookup e "it"
+    Just t  -> t
+
+  putValidationResult :: Handle -> S.Valid -> IO ()
+  putValidationResult hOut v = hPutStrLn hOut ("Result: " ++ show v)
+
+  ep' l se@(SomeEnv e) ln = case prsInstruction ln of
     Right exp     -> case exp of
       Empty       -> rep' l se
       Command cmd -> case cmd of
@@ -198,6 +208,12 @@ rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
         Let x t   -> case evalValue e t of
           Right v -> rep' l (SomeEnv $ envAlter e x v)
           Left f  -> putEvalFailure hErr md l f >> rep' l se
+        Valid mt  -> do
+                     t <- getTermValue e mt
+                     case evalValue e t of
+                       Right v -> validate (valid v) >>= putValidationResult hOut
+                       Left f  -> putEvalFailure hErr md l f
+                     rep' l se
       TermValue t -> case evalValue e t of
         Right v   -> putResult v >> rep' l (SomeEnv $ envAlter e "it" v)
         Left f    -> putEvalFailure hErr md l f >> rep' l se
@@ -210,9 +226,10 @@ rep md hIn hOut hErr = someEnv Regular EmptyComplex >>= rep' (0::Integer) where
       True  -> quit
       False -> hGetLine hIn >>= ep' (l+1) se
 
+repi :: IO ()
 repi = rep Interactive stdin stdout stderr
 
--- ic r = iComplex stdin stdout stderr r (complex kleinBottle) 
+repb :: IO ()
 repb = do
   hIn <- openFile "c:/msys64/home/zeric/foo" ReadMode 
   rep Batch hIn stdout stderr `catch` all

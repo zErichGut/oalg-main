@@ -22,7 +22,7 @@
 -- evaluatoin of 'Term's of 'Value's..
 module OAlg.Homology.IO.Evaluation
   ( evalValue, TermValue, VectorOperation(..)
-  , env, envV' , envAlter, Env()
+  , env, envV' , envAlter, envLookup, Env()
   , Eval, EvaluationFailure(..)
   ) where
 
@@ -99,6 +99,11 @@ envAlter :: Env n x -> String -> Value x -> Env n x
 envAlter (Env eT hs) s v = Env eT' hs where
   eT' = envTAlter eT s (Value v)
 
+--------------------------------------------------------------------------------
+-- envLookup -
+
+envLookup :: Env n x -> String -> Term (VectorOperation) (Value x)
+envLookup (Env eT _) a = envTLookup eT a
 
 --------------------------------------------------------------------------------
 -- EvaluationFailure -
@@ -159,18 +164,3 @@ evalV _ t              = Left $ NotAValue $ fmap root t
 -- | evaluates a value-term to its value, according to the given environment.
 evalValue :: (Entity x, Ord x) => Env n x -> TermValue x -> Eval x (Value x)
 evalValue (Env vs hs) t = evalV hs (eval $ inst vs t)
-
-  
---------------------------------------------------------------------------------
-
-{-
--- e r = env r (complex kleinBottle)
-e r n = env r (complex (sphere n (0::N)))
-z x = Value (ZValue x)
-
-infixr 8 !
-infixr 6 +
-
-(!) = Opr ScalarMultiplication
-(+) = Opr Addition
--}

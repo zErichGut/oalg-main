@@ -34,7 +34,7 @@ library
       OAlg.Homology.IO.Help
       OAlg.Homology.IO.Parser.ActionM
       OAlg.Homology.IO.Parser.Definition
-      OAlg.Homology.IO.Parser.Expression
+      OAlg.Homology.IO.Parser.Instruction
       OAlg.Homology.IO.Parser.Lexer
       OAlg.Homology.IO.Pretty
       OAlg.Homology.IO.REP
