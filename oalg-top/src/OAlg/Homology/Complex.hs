@@ -14,12 +14,12 @@
 
 -- |
 -- Module      : OAlg.Homology.Complex
--- Description : definition of complexes.
+-- Description : definition of simplical complexes.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- definition of 'Complex'.
+-- definition of simplical 'Complex'.
 module OAlg.Homology.Complex
   (
     -- * Complex

@@ -27,7 +27,6 @@ import Prelude hiding (Word,(!!),repeat)
 
 import Control.Applicative
 
-import Data.List (sort,group)
 import Data.Char
 
 import OAlg.Data.Canonical
@@ -61,7 +60,7 @@ keys = Keys comment alphas symbols where
     = [ "(",")"
       , ":quit", ":q" 
       , ":help", ":h", ":?"
-      , ":load", ":l"
+      , ":complex", ":c"
       , ":valid", ":v"
       , "+","-", "!"
       , "=", "#"
@@ -73,12 +72,13 @@ keys = Keys comment alphas symbols where
   comment = "//"
 
 --------------------------------------------------------------------------------
--- Load -
+-- Complex -
 
 data ComplexId
   = EmptyComplex
   | KleinBottle
   | Sphere N
+  | Plane N N
   deriving (Show)
 
 --------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ data ComplexId
 data Command x
   = Quit
   | Help
-  | Load Regular ComplexId
+  | SetComplex Regular ComplexId
   | Let String (TermValue x)
   | Valid (Maybe (TermValue x))
   deriving (Show)
@@ -204,30 +204,40 @@ letdecl
   >>= \w -> return (abstracts [x] w :!> v)
 
 --------------------------------------------------------------------------------
--- loadEmpty -
+-- complexEmpty -
 
-loadEmpty :: Parser ComplexId
-loadEmpty = do
+complexEmpty :: Parser ComplexId
+complexEmpty = do
   "empty" <- ident
   return EmptyComplex
   
 --------------------------------------------------------------------------------
--- loadKleinBottle -
+-- complexKleinBottle -
 
-loadKleinBottle :: Parser ComplexId
-loadKleinBottle = do
+complexKleinBottle :: Parser ComplexId
+complexKleinBottle = do
   "kleinBottle" <- ident
   return KleinBottle
 
 --------------------------------------------------------------------------------
--- loadSphere -
+-- complexSphere -
 
-loadSphere :: Parser ComplexId
-loadSphere = do
+complexSphere :: Parser ComplexId
+complexSphere = do
   "sphere" <- ident
-  n        <- num !! Expected "mumber"
+  n        <- num !! Expected "mum"
   return (Sphere n)
 
+--------------------------------------------------------------------------------
+-- complexPlane -
+
+complexPlane :: Parser ComplexId
+complexPlane = do
+  "plane" <- ident
+  a       <- num !! Expected "num"
+  b       <- num !! Expected "num"
+  return (Plane a b)
+  
 --------------------------------------------------------------------------------
 -- extended -
 
@@ -235,17 +245,18 @@ extended :: Parser Regular
 extended = key "ext" >> return Extended
    
 --------------------------------------------------------------------------------
--- load -
+-- setComplex -
 
-load :: Parser (Command x)
-load = (symbol ":load" <|> symbol ":l")
+setComplex :: Parser (Command x)
+setComplex
+  =    (symbol ":complex" <|> symbol ":c")
     >> (   (   (extended <|> return Regular)
-           >>= \r -> (   loadEmpty <|> loadKleinBottle <|> loadSphere
+           >>= \r -> (   complexEmpty <|> complexKleinBottle <|> complexSphere <|> complexPlane
                      <|> (failure $ Just $ Unknown "cpxId") 
                      )
-               >>= return . Load r
+               >>= return . SetComplex r
            )
-       <|> (failure $ Just $ Unknown "load") 
+       <|> (failure $ Just $ Unknown "complex") 
        )
 
 --------------------------------------------------------------------------------
@@ -258,7 +269,7 @@ valid = (symbol ":valid" <|> symbol ":v") >> end (fmap (Valid . Just) expression
 -- command -
 
 command :: Parser (Command x)
-command = quit <|> help <|> load <|> varbind <|> valid
+command = quit <|> help <|> setComplex <|> varbind <|> valid
 
 --------------------------------------------------------------------------------
 -- num -
