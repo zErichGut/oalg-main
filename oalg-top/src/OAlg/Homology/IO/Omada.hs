@@ -117,33 +117,40 @@ pshowToken t = case t of
   Symbol w -> "symbol '" ++ w ++ "'"
   Key w    -> "keyword '" ++ w ++ "'"
   Id w     -> "identifier '" ++ w ++ "'"
+  Str w    -> "string \"" ++ w ++ "\""
 
-putParserFailure :: Handle -> Mode -> ParserFailure -> IO ()
-putParserFailure hErr m f = case f of
+putParserFailure :: Handle -> Mode -> Ln -> ParserFailure -> IO ()
+putParserFailure hErr m l f = case f of
   EmptyFailure          -> putFailure hErr "at the end" ""
-  UnexpectedToken (t,p) -> putFailure hErr (pos m p) ("unexpected " ++ pshowToken t)
-  ExpectedToken e (t,p) -> putFailure hErr (pos m p) (  "expected " ++ pshowToken e
-                                                     ++ ", but saw " ++ pshowToken t
-                                                     )
-  ExpectedIdent (t,p)   -> putFailure hErr (pos m p) (  "expected identifier, but saw "
-                                                     ++ pshowToken t
-                                                     )
-  Expected e (t,p)      -> putFailure hErr (pos m p) (  "expected " ++ e
-                                                     ++ ", but saw " ++ pshowToken t
-                                                     )
-  Unparsed t@(_,p) ts   -> putFailure hErr (pos m p) (  "unparsed "
-                                                     ++ take 10 (pshows pshowToken $ map fst (t:ts))
-                                                     )
-  DuplicateVars w p     -> putFailure hErr (pos m p) (  "duplicate variables '" ++ w ++ "'")
+  UnexpectedToken (t,p) -> putFailure hErr (pos m l p) ("unexpected " ++ pshowToken t)
+  ExpectedToken e (t,p) -> putFailure hErr (pos m l p) (  "expected " ++ pshowToken e
+                                                       ++ ", but saw " ++ pshowToken t
+                                                       )
+  ExpectedIdent (t,p)   -> putFailure hErr (pos m l p) (  "expected identifier, but saw "
+                                                       ++ pshowToken t
+                                                       )
+  ExpectedString (t,p)  -> putFailure hErr (pos m l p) (  "expected string, but saw "
+                                                       ++ pshowToken t
+                                                       )
+  Expected e (t,p)      -> putFailure hErr (pos m l p) (  "expected " ++ e
+                                                       ++ ", but saw " ++ pshowToken t
+                                                       )
+  Unparsed t@(_,p) ts   -> putFailure hErr (pos m l p) (  "unparsed "
+                                                       ++ take 10 (pshows pshowToken $ map fst (t:ts))
+                                                       )
+  DuplicateVars w p     -> putFailure hErr (pos m l p) (  "duplicate variables '" ++ w ++ "'")
   Unknown msg           -> putFailure hErr "" ("unknown " ++ msg)
   LexerFailure u        -> case u of
-    UnexpectedChars chs -> putFailure hErr (pos m p) chs' where
+    UnexpectedChars chs -> putFailure hErr (pos m l p) chs' where
       p    = head $ map snd chs
       chs' = (take 10 $ map fst chs) ++ ".."
+    ExpectedChar c p    -> putFailure hErr (pos m l p) ("expected character '" ++ [c] ++ "'")
+    UnexpectedChar c p  -> putFailure hErr (pos m l p) ("unexpected character '" ++ [c] ++ "'")
+    UnexpectedEnd       -> putFailure hErr "end of input" "unexpected end" 
       
   where
-    pos :: Mode -> Pos -> String
-    pos md (l,p)  = " at " ++ case md of
+    pos :: Mode -> Ln -> Pos -> String
+    pos md l (_,p)  = " at " ++ case md of
       Interactive -> show p
       Batch       -> show (l,p)
 
@@ -196,9 +203,6 @@ rep md hIn hOut hErr se = rep' (0::Integer) se where
     hFlush hOut
     hFlush hErr
 
-  loadException :: SomeEnv -> SomeException -> IO SomeEnv
-  loadException se e = hPutStrLn hErr (show e) >> return se
-
   getTermValue :: Env n x -> Maybe (TermValue x) -> IO (TermValue x)
   getTermValue e mt = return $ case mt of
     Nothing -> envLookup e "it"
@@ -220,8 +224,11 @@ rep md hIn hOut hErr se = rep' (0::Integer) se where
       Command cmd      -> case cmd of
         Quit           -> quit >> return se
         Help           -> putHelp >> rep' l se
+        Load f         -> do
+                          se' <- repb' f hOut hErr se `catch` someExcp hErr se
+                          rep' l se'
         SetComplex r c -> do
-                          se' <- someEnv r c `catch` loadException se
+                          se' <- someEnv r c `catch` someExcp hErr se
                           rep' l se'
         Let x t        -> case evalValue e t of
           Right v      -> rep' l (SomeEnv $ envAlter e x v)
@@ -235,18 +242,18 @@ rep md hIn hOut hErr se = rep' (0::Integer) se where
       TermValue t      -> case evalValue e t of
         Right v        -> putResult v >> rep' l (SomeEnv $ envAlter e "it" v)
         Left f         -> putEvalFailure hErr md l f >> rep' l se
-    Left f             -> putParserFailure hErr md f >> rep' l se
+    Left f             -> putParserFailure hErr md l f >> rep' l se
 
 
-someExcp :: Handle -> SomeEnv -> SomeException -> IO SomeEnv
-someExcp hErr se e = (hPutStrLn hErr $ show e) >> return se
+someExcp :: Handle -> x -> SomeException -> IO x
+someExcp hErr x e = (hPutStrLn hErr $ show e) >> return x
 
 repi :: IO ()
 repi = seEmpty >>= rep Interactive stdin stdout stderr >> return ()
 
 repb' :: FilePath -> Handle -> Handle -> SomeEnv -> IO SomeEnv
 repb' f hOut hErr se = do
-  hIn <- openFile f WriteMode
+  hIn <- openFile f ReadMode
   se' <- rep Batch hIn hOut hErr se `catch` someExcp hErr se
   hClose hIn
   return se'

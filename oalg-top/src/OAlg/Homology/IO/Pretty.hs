@@ -26,9 +26,9 @@ module OAlg.Homology.IO.Pretty
   , pshows
   ) where
 
-import Prelude ((+),(-))
-import Data.List ((++),map,length,take,repeat)
-import Data.Foldable (toList,maximum)
+import Prelude ((-))
+import Data.List ((++))
+import Data.Foldable (toList)
 import OAlg.Prelude
 
 import OAlg.Data.Tree
@@ -36,7 +36,6 @@ import OAlg.Data.Either
 import OAlg.Data.Symbol (Symbol())
 import OAlg.Data.Constructable
 
-import OAlg.Entity.Natural hiding ((++),S,Add)
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.FSequence
 import OAlg.Entity.Sequence.PSequence
@@ -50,7 +49,6 @@ import OAlg.Structure.Multiplicative
 
 import OAlg.AbelianGroup.Definition
 
-import OAlg.Homology.Chain
 import OAlg.Homology.Simplex
 
 import OAlg.Homology.IO.Term

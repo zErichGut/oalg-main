@@ -24,7 +24,7 @@ module OAlg.Homology.IO.Parser.Definition
   , ParserFailure(..), LexerFailure(..)
     -- * Utilities
   , getTokens, setTokens, getPos
-  , symbol, key, ident
+  , symbol, key, ident, string
   , repeat, bracket, infixesl, infixesr
   , failure, handle
   , (!!), (??)
@@ -47,6 +47,7 @@ data ParserFailure
   | UnexpectedToken (Token,Pos)
   | ExpectedToken Token (Token,Pos)
   | ExpectedIdent (Token,Pos)
+  | ExpectedString (Token,Pos)
   | Expected String (Token,Pos)
   | Unparsed (Token,Pos) Tokens
   | DuplicateVars Word Pos
@@ -126,6 +127,16 @@ ident = do
     Id x:_ -> setState (tail ts) >> return x
     _      -> empty
 
+--------------------------------------------------------------------------------
+-- string -
+
+string :: Parser Word
+string = do
+  ts <- getState
+  case map fst ts of
+    Str w:_ -> setState (tail ts) >> return w
+    _       -> empty
+    
 --------------------------------------------------------------------------------
 -- end -
 

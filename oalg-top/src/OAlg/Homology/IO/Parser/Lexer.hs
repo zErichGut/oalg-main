@@ -38,7 +38,6 @@ import Data.Char hiding (isAlpha)
 import Data.Maybe
 
 import OAlg.Control.Exception
-import OAlg.Data.Ord
 
 import OAlg.Homology.IO.Parser.ActionM
 
@@ -82,7 +81,7 @@ type Chars = [(Char,Pos)]
 --------------------------------------------------------------------------------
 -- Token -
 
-data Token = Id Word | Key Word | Symbol Word deriving (Show)
+data Token = Id Word | Key Word | Symbol Word | Str Word deriving (Show)
 
 --------------------------------------------------------------------------------
 -- Tokens -
@@ -104,6 +103,9 @@ chars s = join $ map chp (lines s `zip` [1..]) where
 
 data LexerFailure
   = UnexpectedChars Chars
+  | ExpectedChar Char Pos
+  | UnexpectedChar Char Pos
+  | UnexpectedEnd
   deriving (Show)
 
 --------------------------------------------------------------------------------
@@ -176,11 +178,38 @@ keyOrId ks = do
         False    -> return (Id w,p)
 
 --------------------------------------------------------------------------------
+-- char -
+
+char :: Integer -> Lexer Char
+char l = do
+  (c,(l',_)):cps  <- getState
+  if l' /= l then empty else case c of
+    '"'  -> empty
+    _    -> setState cps >> return c
+    
+--------------------------------------------------------------------------------
+-- sring -
+
+string :: Lexer (Token,Pos)
+string = do
+  ('"',p@(l,_)):cps <- getState
+  setState cps
+  cs <- repeat $ char l
+  cps' <- getState
+  case cps' of
+    []                  -> failure $ Just $ UnexpectedEnd
+    (c,p'@(l',_)):cps'' -> case c of
+      '"' | l == l'     -> setState cps'' >> return (Str cs,p)
+      _   | l == l'     -> failure $ Just $ ExpectedChar '"' p'
+      _                 -> failure $ Just $ UnexpectedChar c p'
+
+--------------------------------------------------------------------------------
 -- token -
 
 token :: Keys -> Lexer (Maybe (Token,Pos))
 token ks = dropSpace >>
          (   fmap (const Nothing) (comment ks)
+         <|> fmap Just string
          <|> fmap Just (symbol ks)
          <|> fmap Just (keyOrId ks)
          )

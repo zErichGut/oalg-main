@@ -60,6 +60,7 @@ keys = Keys comment alphas symbols where
     = [ "(",")"
       , ":quit", ":q" 
       , ":help", ":h", ":?"
+      , ":load", ":l"
       , ":complex", ":c"
       , ":valid", ":v"
       , "+","-", "!"
@@ -88,6 +89,7 @@ data Command x
   = Quit
   | Help
   | SetComplex Regular ComplexId
+  | Load FilePath
   | Let String (TermValue x)
   | Valid (Maybe (TermValue x))
   deriving (Show)
@@ -160,6 +162,14 @@ quit = symbol ":quit" <|> symbol ":q" >> return Quit
 
 help :: Parser (Command x)
 help = symbol ":help" <|> symbol ":h" <|> symbol ":?" >> return Help
+
+--------------------------------------------------------------------------------
+-- load -
+
+load :: Parser (Command x)
+load = do
+  symbol ":load" <|> symbol ":l"
+  (string !! ExpectedString) >>= return . Load
 
 --------------------------------------------------------------------------------
 -- vars -
@@ -269,7 +279,7 @@ valid = (symbol ":valid" <|> symbol ":v") >> end (fmap (Valid . Just) expression
 -- command -
 
 command :: Parser (Command x)
-command = quit <|> help <|> setComplex <|> varbind <|> valid
+command = quit <|> help <|> setComplex <|> load <|> varbind <|> valid
 
 --------------------------------------------------------------------------------
 -- num -
