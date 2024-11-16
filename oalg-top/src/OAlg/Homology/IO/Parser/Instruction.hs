@@ -78,6 +78,10 @@ keys = Keys comment alphas symbols where
 data ComplexId
   = EmptyComplex
   | KleinBottle
+  | MoebiusStrip
+  | Torus N
+  | ProjectiveSpace N
+  | Simplex N
   | Sphere N
   | Plane N N
   deriving (Show)
@@ -247,7 +251,42 @@ complexPlane = do
   a       <- num !! Expected "num"
   b       <- num !! Expected "num"
   return (Plane a b)
-  
+
+--------------------------------------------------------------------------------
+-- complexMoebiusStrip -
+
+complexMoebiusStrip :: Parser ComplexId
+complexMoebiusStrip = do
+  "moebiusStrip" <- ident
+  return MoebiusStrip
+
+--------------------------------------------------------------------------------
+-- complexTorus -
+
+complexTorus :: Parser ComplexId
+complexTorus = do
+  "torus" <- ident
+  n        <- num !! Expected "mum"
+  return (Torus n)
+
+--------------------------------------------------------------------------------
+-- complexProjectiveSpace -
+
+complexProjectiveSpace :: Parser ComplexId
+complexProjectiveSpace = do
+  "projectiveSpace" <- ident
+  n        <- num !! Expected "mum"
+  return (ProjectiveSpace n)
+
+--------------------------------------------------------------------------------
+-- complexSimplex -
+
+complexSimplex :: Parser ComplexId
+complexSimplex = do
+  "simplex" <- ident
+  n        <- num !! Expected "mum"
+  return (Simplex n)
+
 --------------------------------------------------------------------------------
 -- extended -
 
@@ -261,7 +300,9 @@ setComplex :: Parser (Command x)
 setComplex
   =    (symbol ":complex" <|> symbol ":c")
     >> (   (   (extended <|> return Regular)
-           >>= \r -> (   complexEmpty <|> complexKleinBottle <|> complexSphere <|> complexPlane
+           >>= \r -> (   complexEmpty <|> complexKleinBottle <|> complexMoebiusStrip
+                     <|> complexTorus <|> complexProjectiveSpace
+                     <|> complexSimplex <|> complexSphere <|> complexPlane
                      <|> (failure $ Just $ Unknown "cpxId") 
                      )
                >>= return . SetComplex r

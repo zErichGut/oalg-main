@@ -33,9 +33,10 @@ import OAlg.Data.Validable
 import qualified OAlg.Data.Statement.Definition as S
 
 import OAlg.Entity.Definition (Entity())
-import OAlg.Entity.Natural (Attestable(..), SomeNatural(..), someNatural, N0)
+import OAlg.Entity.Natural (Attestable(..), SomeNatural(..), someNatural, N0, W(SW))
 import OAlg.Entity.Sequence.Set
 
+import OAlg.Homology.Simplex (simplex)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
 
@@ -45,6 +46,15 @@ import OAlg.Homology.IO.Parser.Instruction
 import OAlg.Homology.IO.Help
 import OAlg.Homology.IO.Value
 import OAlg.Homology.IO.Pretty
+
+--------------------------------------------------------------------------------
+-- OmadaException -
+
+data OmadaException = NotYetImplemented
+
+instance Show OmadaException where show NotYetImplemented = "not yet implemented"
+
+instance Exception OmadaException
 
 --------------------------------------------------------------------------------
 -- SomeEnv -
@@ -82,12 +92,19 @@ someEnv :: Regular -> ComplexId -> IO SomeEnv
 someEnv r c = case c of
   EmptyComplex     -> return $ initSomeEnv r (cpxEmpty :: Complex N0 Symbol)
   KleinBottle      -> return $ initSomeEnv r (complex kleinBottle)
+  MoebiusStrip     -> return $ initSomeEnv r (complex moebiusStrip)
+  Torus n | n == 2 -> return $ initSomeEnv r (complex torus2)
+  ProjectiveSpace n | n == 2
+                   -> return $ initSomeEnv r (complex projectivePlane)
   Sphere n         -> case someNatural n of
     SomeNatural n' -> return $ initSomeEnv r (complex $ sphere n' (0 :: N))
+  Simplex n        -> case someNatural n of
+    SomeNatural n' -> return $ initSomeEnv r (complex $ Set [simplex (SW n') (0 :: N)])
   Plane a b        -> return $ initSomeEnv r (complex $ plane (s a) (s b)) where
     s :: N -> Set N
     s 0 = Set []
     s n = Set [0..pred n]
+  _                -> throw NotYetImplemented
     
 --------------------------------------------------------------------------------
 -- seEmpty -

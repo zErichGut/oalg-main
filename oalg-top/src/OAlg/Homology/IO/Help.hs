@@ -29,15 +29,27 @@ tween _ []     = []
 tween _ [a]    = [a]
 tween d (a:as) = a : d : tween d as
 
--- expression -> instruction
--- value -> expression
+logo :: String
+logo = join $ tween "\n" 
+  [ ""
+  , "                               o"
+  , "   o   o    o  o    oo o    ooo    oo o"
+  , "  o  o  o   o  o   o  o    o  o   o  o"
+  , "   oo oo    o o     oo o    oo     oo o"
+  , "           o"
+  ]
+
+version :: String
+version = "1.0"
 
 help :: String
 help = join $ tween "\n"
-  [ "Homology Groups"
-  , "---------------"
-  , ""
+  [ logo
+  , join $ tween "\n"
+  [ ""
   , "Exploring the homology groups of a chain complex, given by an `abstract` simplical complex."
+  , ""
+  , "versoin: " ++ version
   , ""
   , "Usage:"
   , ""
@@ -47,7 +59,9 @@ help = join $ tween "\n"
   , "  quit        = ':quit' | ':q'"
   , "  help        = ':help' | ':h' | ':?'"
   , "  setcpx      = (':complex' | ':c') cpxid"
-  , "  cpxid       = 'empty' | 'kleineBottle' | 'sphere' num | 'plane' num num"
+  , "  cpxid       = 'empty' | 'kleineBottle' | 'moebiusStrip'"
+  , "              | 'torus' num | 'projectiveSpace' num | 'simplex' num"
+  , "              | 'sphere' num | 'plane' num num"
   , "  load        = (':load' | ':l' ) filepth"
   , "  varbind     = 'let' var '=' expression"
   , ""
@@ -129,4 +143,5 @@ help = join $ tween "\n"
   , "       makes no sens!"
   , ""
   , "**** have fun ****"
+  ]
   ]
