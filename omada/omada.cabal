@@ -37,6 +37,7 @@ library
       Omada.Pretty
       Omada.SomeChain
       Omada.Term
+      Omada.Util
       Omada.Value
   other-modules:
       Paths_omada

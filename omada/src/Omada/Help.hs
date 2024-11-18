@@ -24,38 +24,11 @@ module Omada.Help
 
 import Control.Monad
 
-tween :: a -> [a] -> [a]
-tween _ []     = []
-tween _ [a]    = [a]
-tween d (a:as) = a : d : tween d as
-
-logo :: String
-logo = join $ tween "\n" 
-  [ ""
-  , "------------------------------------------"
-  , ""
-  , "                               o"
-  , "   o   o    o  o    oo o    ooo    oo o"
-  , "  o  o  o   o  o   o  o    o  o   o  o"
-  , "   oo oo    o o     oo o    oo     oo o"
-  , "           o"
-  , ""
-  , "------------------------------------------"
-  ]
-
-version :: String
-version = "1.0"
+import Omada.Util
 
 help :: String
 help = join $ tween "\n"
-  [ logo
-  , join $ tween "\n"
-  [ ""
-  , "Exploring the homology groups of the chain complex, given by an `abstract` simplical complex."
-  , ""
-  , "versoin: " ++ version
-  , ""
-  , "Usage:"
+  [ "Usage:"
   , ""
   , "  instruction = [command | expression]"
   , ""
@@ -145,7 +118,5 @@ help = join $ tween "\n"
   , "       parameters!"
   , "     - 'D d' will end up in a failure, because applying the matrix 'D' to the boundary operator"
   , "       makes no sens!"
-  , ""
-  , "**** have fun ****"
   ]
-  ]
+
