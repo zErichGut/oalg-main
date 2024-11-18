@@ -13,14 +13,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.SomeChain
+-- Module      : Omada.SomeChain
 -- Description : some chain
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- some chain
-module OAlg.Homology.IO.SomeChain
+module Omada.SomeChain
   (
     -- * Some Chain
   SomeChain(SomeChain), spxSomeChain, smcBoundary

@@ -11,14 +11,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Parser.Instruction
+-- Module      : Omada.Instruction
 -- Description : parsing instructions.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- parsing instructions.
-module OAlg.Homology.IO.Parser.Instruction
+module Omada.Instruction
   ( prsInstruction
   , Instruction(..), Command(..), ComplexId(..)
   ) where
@@ -34,12 +34,12 @@ import OAlg.Data.Number
 
 import OAlg.Homology.ChainComplex (Regular(..))
 
-import OAlg.Homology.IO.Evaluation
-import OAlg.Homology.IO.Term
-import OAlg.Homology.IO.Value
+import Omada.Parser.Definition
+import Omada.Parser.Lexer
 
-import OAlg.Homology.IO.Parser.Definition
-import OAlg.Homology.IO.Parser.Lexer
+import Omada.Term
+import Omada.Evaluation
+import Omada.Value
 
 --------------------------------------------------------------------------------
 -- keys -

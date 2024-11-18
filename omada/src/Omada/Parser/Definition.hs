@@ -11,14 +11,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Parser.Definition
+-- Module      : Omada.Parser.Definition
 -- Description : general definitions and parser utilities.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- general definitions and parser utilities.
-module OAlg.Homology.IO.Parser.Definition
+module Omada.Parser.Definition
   ( -- * Parsing
     parse, Parser, Token(..), Pos
   , ParserFailure(..), LexerFailure(..)
@@ -35,8 +35,8 @@ import Prelude hiding ((!!), repeat, Word)
 
 import Control.Applicative
 
-import OAlg.Homology.IO.Parser.ActionM
-import OAlg.Homology.IO.Parser.Lexer
+import Omada.Parser.ActionM
+import Omada.Parser.Lexer
 
 --------------------------------------------------------------------------------
 -- ParserFailure -

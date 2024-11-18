@@ -11,14 +11,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Parser.Lexer
+-- Module      : Omada.Parser.Lexer
 -- Description : lexing of strings.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- lexing of strings.
-module OAlg.Homology.IO.Parser.Lexer
+module Omada.Parser.Lexer
   (
     -- * Scanning
     scan, Token(..), Tokens
@@ -39,7 +39,7 @@ import Data.Maybe
 
 import OAlg.Control.Exception
 
-import OAlg.Homology.IO.Parser.ActionM
+import Omada.Parser.ActionM
 
 
 --------------------------------------------------------------------------------

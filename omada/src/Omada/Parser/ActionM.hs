@@ -11,14 +11,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.ActionM
+-- Module      : Omada,Parser.ActionM
 -- Description : monadic actions.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- monadic actions.
-module OAlg.Homology.IO.Parser.ActionM
+module Omada.Parser.ActionM
   ( -- * Monadic Action
     ActionM(..), run
   , getState, setState

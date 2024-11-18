@@ -1,65 +1,60 @@
-name:                oalg-main
-version:             1.3.0.2
-github:              "zErichGut/oalg-main"
-license:             BSD3
+name:                omada
+version:             1.0.0.0
+github:              "zErichGut/omada"
+license:             BSD-3-Clause
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
-copyright:           "Erich Gut"
+copyright:           "(c) Erich Gut"
 
 extra-source-files:
 - README.md
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:            Homology Groups for some Complexes.
-category:            Algebra, Simplical Homology, Category Theory
+synopsis:            homology groups
+category:            Math
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Simplical homology over simplices as finite list of vertices. Please also see the README on GitHub at <https://github.com/zErichGut/oalg-main#readme>
+description:         Please see the README on GitHub at <https://github.com/zErichGut/omada#readme>
 
 dependencies:
 - base >= 4.7 && < 5
-- deepseq >=1.4.4.0
-- random >=1.2.0
-- array >=0.5.4.0
-- time >=1.9.3
+- containers >= 0.6
 - oalg-base >= 2.0.1.2
 - oalg-abg >= 1.5.0.4
 - oalg-top >= 1.0.0.3
-- omada >= 1.0.0.0
 
 ghc-options:
 - -Wall
 - -Wcompat
-- -Wno-identities
+- -Widentities
 - -Wincomplete-record-updates
 - -Wincomplete-uni-patterns
 - -Wmissing-export-lists
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
-- -Wno-unticked-promoted-constructors
 - -Wno-name-shadowing
 - -Wno-unused-top-binds
 
 library:
   source-dirs: src
 
-# executables:
-#   oalg-exe:
-#     main:                Main.hs
-#     source-dirs:         app
-#     ghc-options:
-#     - -threaded
-#     - -rtsopts
-#     - -with-rtsopts=-N
-#     dependencies:
-#     - oalg-main
+executables:
+  omada:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - omada
 
 tests:
-  oalg-test:
+  omada-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -67,4 +62,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - oalg-main
+    - omada

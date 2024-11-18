@@ -29,18 +29,6 @@ library
       OAlg.Homology.ChainComplex
       OAlg.Homology.Complex
       OAlg.Homology.Definition
-      OAlg.Homology.Group
-      OAlg.Homology.IO.Evaluation
-      OAlg.Homology.IO.Help
-      OAlg.Homology.IO.Omada
-      OAlg.Homology.IO.Parser.ActionM
-      OAlg.Homology.IO.Parser.Definition
-      OAlg.Homology.IO.Parser.Instruction
-      OAlg.Homology.IO.Parser.Lexer
-      OAlg.Homology.IO.Pretty
-      OAlg.Homology.IO.SomeChain
-      OAlg.Homology.IO.Term
-      OAlg.Homology.IO.Value
       OAlg.Homology.Simplex
       OAlg.Homology.Variance
   other-modules:

@@ -13,7 +13,7 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Term
+-- Module      : Omada.Term
 -- Description : terms 
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
@@ -24,7 +24,7 @@
 -- The implementation is given by the precious book
 -- [ML for the Working Programmer](https://www.cl.cam.ac.uk/~lp15/MLbook)
 -- (by L. C. Paulson) and adapted to our needs.
-module OAlg.Homology.IO.Term
+module Omada.Term
   ( Term(..)
   , abstract, abstracts
   , applys

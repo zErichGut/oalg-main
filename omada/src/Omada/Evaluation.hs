@@ -13,14 +13,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Evaluation
+-- Module      : Omada.Evaluation
 -- Description : evaluation of terms.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- evaluatoin of 'Term's of 'Value's..
-module OAlg.Homology.IO.Evaluation
+module Omada.Evaluation
   ( evalValue, TermValue, VectorOperation(..)
   , env, envV' , envAlter, envLookup, Env()
   , Eval, EvaluationFailure(..)
@@ -40,8 +40,8 @@ import OAlg.Entity.Sum
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex (Regular(..))
 
-import OAlg.Homology.IO.Value
-import OAlg.Homology.IO.Term
+import Omada.Term
+import Omada.Value
 
 --------------------------------------------------------------------------------
 -- VectorOperation -

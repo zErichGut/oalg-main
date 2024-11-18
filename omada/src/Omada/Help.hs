@@ -11,14 +11,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Help
+-- Module      : Omada.Help
 -- Description : help page
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- help page.
-module OAlg.Homology.IO.Help
+module Omada.Help
   ( help
   ) where
 
@@ -32,11 +32,15 @@ tween d (a:as) = a : d : tween d as
 logo :: String
 logo = join $ tween "\n" 
   [ ""
+  , "------------------------------------------"
+  , ""
   , "                               o"
   , "   o   o    o  o    oo o    ooo    oo o"
   , "  o  o  o   o  o   o  o    o  o   o  o"
   , "   oo oo    o o     oo o    oo     oo o"
   , "           o"
+  , ""
+  , "------------------------------------------"
   ]
 
 version :: String
@@ -47,7 +51,7 @@ help = join $ tween "\n"
   [ logo
   , join $ tween "\n"
   [ ""
-  , "Exploring the homology groups of a chain complex, given by an `abstract` simplical complex."
+  , "Exploring the homology groups of the chain complex, given by an `abstract` simplical complex."
   , ""
   , "versoin: " ++ version
   , ""
@@ -84,7 +88,7 @@ help = join $ tween "\n"
   , "  :complex cpx       sets the 'cpx' as the actual simplical complex."
   , "  :quit | :q         exits the program."
   , "  :help | :h | :?    shows this help."
-  , "  :load \"foo\"      loads the instructions containing in the file 'foo'."
+  , "  :load \"foo\"        loads the instructions containing in the file 'foo'."
   , "  let x = 0          binds the variable 'x' to the expression zero."
   , ""
   , "  H                  sequence of homology groups of the chain complex, given by the actual"

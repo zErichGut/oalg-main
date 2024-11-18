@@ -11,15 +11,22 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Omada
--- Description : read-eval-print cycle for omada
+-- Module      : Omada.Definition
+-- Description : read-eval-print loop for omada
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- read-eval-print cycle for exploring the homology of a complex.
-module OAlg.Homology.IO.Omada
-  () where
+-- read-eval-print loop for exploring the homology groups of a simplical complex. Start for
+-- example 'repli' and enter @:help@ to get the help-page.
+module Omada.Definition
+  ( repl, repli, replb, Mode(..)
+
+  , someEnv, seEmpty, SomeEnv()
+
+    -- Exception
+  , OmadaException(..)
+  ) where
 
 import Control.Exception
 
@@ -40,16 +47,18 @@ import OAlg.Homology.Simplex (simplex)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
 
-import OAlg.Homology.IO.Evaluation
-import OAlg.Homology.IO.Parser.Definition (ParserFailure(..),LexerFailure(..),Pos, Token(..))
-import OAlg.Homology.IO.Parser.Instruction
-import OAlg.Homology.IO.Help
-import OAlg.Homology.IO.Value
-import OAlg.Homology.IO.Pretty
+import Omada.Parser.Definition (ParserFailure(..),LexerFailure(..),Pos, Token(..))
+
+import Omada.Evaluation
+import Omada.Instruction
+import Omada.Help
+import Omada.Value
+import Omada.Pretty
 
 --------------------------------------------------------------------------------
 -- OmadaException -
 
+-- | omada exceptions.
 data OmadaException = NotYetImplemented
 
 instance Show OmadaException where show NotYetImplemented = "not yet implemented"
@@ -59,12 +68,14 @@ instance Exception OmadaException
 --------------------------------------------------------------------------------
 -- SomeEnv -
 
+-- | some environment.
 data SomeEnv where
   SomeEnv :: (Entity x, Ord x, Attestable n, Pretty x) => Env n x -> SomeEnv
 
 --------------------------------------------------------------------------------
 -- initSomeEnv -
 
+-- | initial environment given by a complex.
 initSomeEnv :: (Entity x, Ord x, Attestable n, Pretty x) => Regular -> Complex n x -> SomeEnv
 initSomeEnv r c = SomeEnv $ foldl (<+) e0
             [ ("it", ZValue 0)
@@ -88,6 +99,7 @@ initSomeEnv r c = SomeEnv $ foldl (<+) e0
 --------------------------------------------------------------------------------
 -- someEnv -
 
+-- | initiates an environment by the given complex.
 someEnv :: Regular -> ComplexId -> IO SomeEnv
 someEnv r c = case c of
   EmptyComplex     -> return $ initSomeEnv r (cpxEmpty :: Complex N0 Symbol)
@@ -109,12 +121,14 @@ someEnv r c = case c of
 --------------------------------------------------------------------------------
 -- seEmpty -
 
+-- | empty environment,
 seEmpty :: IO SomeEnv
 seEmpty = someEnv Regular EmptyComplex
 
 --------------------------------------------------------------------------------
 -- Mode -
 
+-- | mode for the read-eval-print loop.
 data Mode = Interactive | Batch deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
@@ -126,9 +140,11 @@ type Ln = Integer
 --------------------------------------------------------------------------------
 -- putFailure -
 
+-- | puts a failure.
 putFailure :: Handle -> String -> String -> IO ()
 putFailure hErr at msg = hPutStrLn hErr ("!!! Failure" ++ at ++ ": " ++ msg)
 
+-- | pretty-show a token.
 pshowToken :: Token -> String
 pshowToken t = case t of
   Symbol w -> "symbol '" ++ w ++ "'"
@@ -136,6 +152,10 @@ pshowToken t = case t of
   Id w     -> "identifier '" ++ w ++ "'"
   Str w    -> "string \"" ++ w ++ "\""
 
+--------------------------------------------------------------------------------
+-- putParserFailure -
+
+-- | puts a parser failure.
 putParserFailure :: Handle -> Mode -> Ln -> ParserFailure -> IO ()
 putParserFailure hErr m l f = case f of
   EmptyFailure          -> putFailure hErr "at the end" ""
@@ -171,6 +191,10 @@ putParserFailure hErr m l f = case f of
       Interactive -> show p
       Batch       -> show (l,p)
 
+--------------------------------------------------------------------------------
+-- putEvalFailure -
+
+-- | puts a evaluation failure.
 putEvalFailure :: Handle -> Mode -> Ln -> EvaluationFailure x -> IO ()
 putEvalFailure hErr m l f = case f of
   ValueFailure f' _   -> case f' of
@@ -197,13 +221,21 @@ putEvalFailure hErr m l f = case f of
     pos md l = case md of
       Interactive -> ""
       Batch       -> " at line " ++ show l
-    
---------------------------------------------------------------------------------
--- rep
 
--- | read-evaluate-print cycle.
-rep :: Mode -> Handle -> Handle -> Handle -> SomeEnv -> IO SomeEnv
-rep md hIn hOut hErr se = rep' (0::Integer) se where
+--------------------------------------------------------------------------------
+-- someExcp -
+
+-- | handler for some exception.
+someExcp :: Handle -> x -> SomeException -> IO x
+someExcp hErr x e = (hPutStrLn hErr $ show e) >> return x
+
+--------------------------------------------------------------------------------
+-- repl
+
+-- | read-evaluate-print loop for @omada@ with a given mode, a input handle, a output handle and a
+--   error handle.
+repl :: Mode -> Handle -> Handle -> Handle -> SomeEnv -> IO SomeEnv
+repl md hIn hOut hErr se = repl' (0::Integer) se where
 
   putPromt Interactive = do
       hFlush hOut
@@ -228,8 +260,9 @@ rep md hIn hOut hErr se = rep' (0::Integer) se where
   putValidationResult :: Handle -> S.Valid -> IO ()
   putValidationResult hOut v = hPutStrLn hOut ("Result: " ++ show v)
 
-  rep' l se = do
+  repl' l se = do
     putPromt md
+    hFlush hOut
     eof <- hIsEOF hIn
     case eof of
       True  -> quit >> return se
@@ -237,45 +270,51 @@ rep md hIn hOut hErr se = rep' (0::Integer) se where
 
   ep' l se@(SomeEnv e) ln = case prsInstruction ln of
     Right exp          -> case exp of
-      Empty            -> rep' l se
+      Empty            -> repl' l se
       Command cmd      -> case cmd of
         Quit           -> quit >> return se
-        Help           -> putHelp >> rep' l se
+        Help           -> putHelp >> repl' l se
         Load f         -> do
-                          se' <- repb' f hOut hErr se `catch` someExcp hErr se
-                          rep' l se'
+                          se' <- replb' f hOut hErr se `catch` someExcp hErr se
+                          repl' l se'
         SetComplex r c -> do
                           se' <- someEnv r c `catch` someExcp hErr se
-                          rep' l se'
+                          repl' l se'
         Let x t        -> case evalValue e t of
-          Right v      -> rep' l (SomeEnv $ envAlter e x v)
-          Left f       -> putEvalFailure hErr md l f >> rep' l se
+          Right v      -> repl' l (SomeEnv $ envAlter e x v)
+          Left f       -> putEvalFailure hErr md l f >> repl' l se
         Valid mt       -> do
                           t <- getTermValue e mt
                           case evalValue e t of
                             Right v -> validate (valid v) >>= putValidationResult hOut
                             Left f  -> putEvalFailure hErr md l f
-                          rep' l se
+                          repl' l se
       TermValue t      -> case evalValue e t of
-        Right v        -> putResult v >> rep' l (SomeEnv $ envAlter e "it" v)
-        Left f         -> putEvalFailure hErr md l f >> rep' l se
-    Left f             -> putParserFailure hErr md l f >> rep' l se
+        Right v        -> putResult v >> repl' l (SomeEnv $ envAlter e "it" v)
+        Left f         -> putEvalFailure hErr md l f >> repl' l se
+    Left f             -> putParserFailure hErr md l f >> repl' l se
 
 
-someExcp :: Handle -> x -> SomeException -> IO x
-someExcp hErr x e = (hPutStrLn hErr $ show e) >> return x
+--------------------------------------------------------------------------------
+-- repli -
 
-repi :: IO ()
-repi = seEmpty >>= rep Interactive stdin stdout stderr >> return ()
+-- | interactive read-eval-print loop for @omada@,
+repli :: IO ()
+repli = seEmpty >>= repl Interactive stdin stdout stderr >> return ()
 
-repb' :: FilePath -> Handle -> Handle -> SomeEnv -> IO SomeEnv
-repb' f hOut hErr se = do
+--------------------------------------------------------------------------------
+-- replb -
+
+-- | batch read-eval-print loop for @omada@ on a given file, a output handle and an error handle.
+replb' :: FilePath -> Handle -> Handle -> SomeEnv -> IO SomeEnv
+replb' f hOut hErr se = do
   hIn <- openFile f ReadMode
-  se' <- rep Batch hIn hOut hErr se `catch` someExcp hErr se
+  se' <- repl Batch hIn hOut hErr se `catch` someExcp hErr se
   hClose hIn
   return se'
 
-repb :: FilePath -> IO ()
-repb f = seEmpty >>= repb' f stdout stderr >> return ()
+-- | batch read-eval-print loop for @omada@ on a given file for the standard output and error handle. 
+replb :: FilePath -> IO ()
+replb f = seEmpty >>= replb' f stdout stderr >> return ()
 
 

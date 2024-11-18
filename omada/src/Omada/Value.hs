@@ -13,14 +13,14 @@
 #-}
 
 -- |
--- Module      : OAlg.Homology.IO.Value
+-- Module      : Omada.Value
 -- Description : values for evaluation
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- values for evaluation.
-module OAlg.Homology.IO.Value
+module Omada.Value
   (
     -- * Value
     Value(..), ValueRoot(..), L, K
@@ -83,7 +83,7 @@ import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Chain
 
-import OAlg.Homology.IO.SomeChain
+import Omada.SomeChain
 
 import OAlg.Data.Symbol (Symbol())
 

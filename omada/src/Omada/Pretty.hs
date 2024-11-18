@@ -14,14 +14,14 @@
 
 
 -- |
--- Module      : OAlg.Homology.IO.Pretty
+-- Module      : Omada.Pretty
 -- Description : pretty printing of values
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- pretty printing of values
-module OAlg.Homology.IO.Pretty
+module Omada.Pretty
   ( Pretty(..)
   , pshows
   ) where
@@ -51,10 +51,10 @@ import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Simplex
 
-import OAlg.Homology.IO.Term
-import OAlg.Homology.IO.Value
-import OAlg.Homology.IO.SomeChain
-import OAlg.Homology.IO.Evaluation
+import Omada.Term
+import Omada.Value
+import Omada.SomeChain
+import Omada.Evaluation
 
 --------------------------------------------------------------------------------
 --
