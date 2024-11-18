@@ -11,3 +11,5 @@ finitely generated abelian groups.
 - [oalg-top](https://github.com/zErichGut/oalg-main/blob/main/oalg-top/README.md):
 evaluating the homology groups of complexes.
 
+- [omada](https://github.com/zErichGut/oalg-main/blob/main/omada/README.md):
+interactive application to explore homology groups.
