@@ -28,11 +28,10 @@ intro = join $ tween "\n"
   , ""
   , "Version: " ++ version
   , ""
-  , "Exploring the homology groups of the chain complex, given by an `abstract` simplical complex."
+  , "Exploring the homology groups of the chain complex derived from an `abstract` simplical complex."
   , ""
-  , "For further help enter ':help' and to quit the application ':quit'."
-  , ""
-  , "*** have fun ***"
+  , "For further help enter ':help' and to quit the application ':quit'. For a short introduction"
+  , "just enter ':tutorial'."
   , ""
   ]
 
