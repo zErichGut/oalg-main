@@ -245,6 +245,9 @@ repl md hIn hOut hErr se = repl' (0::Integer) se where
   putHelp :: IO ()
   putHelp = hPutStrLn hOut help
 
+  putTutorial :: IO ()
+  putTutorial = hPutStrLn hOut  tutorial
+
   putResult :: (Entity x, Ord x, Pretty x) => Value x -> IO ()
   putResult v = hPutStrLn hOut $ pshow v
 
@@ -289,6 +292,7 @@ repl md hIn hOut hErr se = repl' (0::Integer) se where
                             Right v -> validate (valid v) >>= putValidationResult hOut
                             Left f  -> putEvalFailure hErr md l f
                           repl' l se
+        Tutorial       -> putTutorial >> repl' l se
       TermValue t      -> case evalValue e t of
         Right v        -> putResult v >> repl' l (SomeEnv $ envAlter e "it" v)
         Left f         -> putEvalFailure hErr md l f >> repl' l se

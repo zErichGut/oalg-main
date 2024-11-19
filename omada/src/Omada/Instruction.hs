@@ -62,6 +62,7 @@ keys = Keys comment alphas symbols where
       , ":help", ":h", ":?"
       , ":load", ":l"
       , ":complex", ":c"
+      , ":tutorial"
       , ":valid", ":v"
       , "+","-", "!"
       , "=", "#"
@@ -95,6 +96,7 @@ data Command x
   | SetComplex Regular ComplexId
   | Load FilePath
   | Let String (TermValue x)
+  | Tutorial
   | Valid (Maybe (TermValue x))
   deriving (Show)
 
@@ -317,10 +319,16 @@ valid :: Parser (Command x)
 valid = (symbol ":valid" <|> symbol ":v") >> end (fmap (Valid . Just) expression) (Valid Nothing) 
 
 --------------------------------------------------------------------------------
+-- tutorial -
+
+tutorial :: Parser (Command x)
+tutorial = symbol ":tutorial" >> return Tutorial
+
+--------------------------------------------------------------------------------
 -- command -
 
 command :: Parser (Command x)
-command = quit <|> help <|> setComplex <|> load <|> varbind <|> valid
+command = quit <|> help <|> setComplex <|> load <|> varbind <|> valid <|> tutorial
 
 --------------------------------------------------------------------------------
 -- num -
