@@ -28,9 +28,10 @@ intro = join $ tween "\n"
   , ""
   , "Version: " ++ version
   , ""
-  , "Exploring the homology groups of the chain complex derived from an `abstract` simplical complex."
+  , "A Powerful Tool for Algebraic Topology: Explore the homology groups of the chain complex derived"
+  , "from an `abstract` simplical complex."
   , ""
-  , "For a short introduction just enter ':tutorial'and to quit the application ':quit'. For further"
+  , "For a short introduction enter ':tutorial' and to quit enter ':quit' or just ':q'. For further"
   , "help enter ':help'."
   , ""
   ]
