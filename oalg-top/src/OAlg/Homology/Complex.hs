@@ -166,15 +166,30 @@ cpxEmpty = ce attest where
 complex :: (Ord x, Attestable n) => Set (Simplex (n+1) x) -> Complex n x
 complex s = s <+ cpxEmpty
 
+--------------------------------------------------------------------------------
+-- ComplexMap -
+
+-- | /continous/ mapping between two complexes, i.e. the underlying mappin induces a mapping between
+--  the simplices of the given complexes.
+--
+--  __Property__ Let @f = 'ComplexMap' a b f'@ be in @'ComplexMap' __x__ __y__@, then holds:
+--
+data ComplexMap x y where
+  ComplexMap
+    :: ( Ord x, Entity x, Attestable n
+       , Ord y, Entity y, Attestable m
+       )
+     => Complex n x -> Complex m y -> (x -> y) -> ComplexMap x y
+
 
 {-
-{-
+
 --------------------------------------------------------------------------------
 -- cpxOrd -
 
 cpxOrd :: Simplical s x => Complex s n x -> Struct Ord' (s n x)
 cpxOrd _ = sOrd
--}
+
 
 --------------------------------------------------------------------------------
 -- cpxHomBoundary -

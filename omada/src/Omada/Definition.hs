@@ -48,9 +48,9 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Complex
 
 import Omada.Parser.Definition (ParserFailure(..),LexerFailure(..),Pos, Token(..))
+import Omada.Parser.Instruction
 
 import Omada.Evaluation
-import Omada.Instruction
 import Omada.Help
 import Omada.Value
 import Omada.Pretty
