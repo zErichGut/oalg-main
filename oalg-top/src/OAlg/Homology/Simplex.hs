@@ -21,21 +21,48 @@
 -- Simplices and there faces.
 module OAlg.Homology.Simplex
   (
+{-    
     -- * Simplex
     Simplex(..), simplex, (<:), spxEmpty
 
     -- * Face
   , faces
-
+-}
   ) where
 
 import Data.Foldable 
 
 import OAlg.Prelude
 
-import OAlg.Entity.Natural
-import OAlg.Entity.FinList
+import OAlg.Entity.Sequence.Set
 
+--------------------------------------------------------------------------------
+-- Simplex -
+
+-- | simplex as 'Z'-indexed sets of vertices in @__x__@.
+--
+-- __Property__ Let @s = 'Simplex' n xs@ be in @'Simplex' __x__@, then holds:
+--
+--  (1) For all @.. x,y ..@ in @xs@ holds: @x < y@.
+--
+--  (2) @'length' xs '==' n '+' 1@.
+data Simplex x = Simplex Z [x] deriving (Show,Eq,Ord)
+
+--------------------------------------------------------------------------------
+-- spxDim -
+
+-- | the spxDim of a simplex.
+spxDim :: Simplex x -> Z
+spxDim (Simplex n _) = n
+
+--------------------------------------------------------------------------------
+-- spxSet -
+
+-- | the underlying set of vertieces.
+spxSet :: Simplex x -> Set x
+spxSet (Simplex _ xs) = Set xs
+
+{-
 --------------------------------------------------------------------------------
 -- Simplex -
 
@@ -85,3 +112,4 @@ faces :: Simplex (l+1) x -> FinList (l+1) (Simplex l x)
 faces (Simplex (v:|vs)) = case vs of
   Nil  -> spxEmpty :| Nil
   _:|_ -> Simplex vs :| amap1 (v<:) (faces $ Simplex vs)
+-}
