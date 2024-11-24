@@ -22,6 +22,8 @@
 -- definition of simplical 'Complex'.
 module OAlg.Homology.Complex
   (
+
+{-    
     -- * Complex
     Complex(..)
   , cpxDim
@@ -46,14 +48,14 @@ module OAlg.Homology.Complex
 
     -- ** Dimension n
   , sphere
-
+-}
   ) where
 
 import Control.Monad (join)
 
 import Data.Typeable
-import Data.List as L (head)
-import Data.Foldable (toList)
+import Data.List as L (head, groupBy,reverse,(++))
+import Data.Foldable (toList,foldl,foldr)
 import Data.Maybe
 
 import OAlg.Prelude
@@ -62,13 +64,90 @@ import OAlg.Data.Symbol hiding (S)
 
 import OAlg.Hom.Distributive ()
 
-import OAlg.Entity.Natural as Nat hiding ((++))
-import OAlg.Entity.FinList as F hiding (zip,(++)) 
 import OAlg.Entity.Sequence
 
 import OAlg.Homology.Simplex
 
+--------------------------------------------------------------------------------
+-- Complex -
 
+-- | complex as a set of simplices with vertices in @__x__@ containing all the faces.
+--
+-- __Properties__ Let @c = 'Complex' ss@ be in @'Complex' __x__@, then holds:
+--
+-- (1) 'spxEmpty' is a element of @ss@.
+--
+-- (2) For all simplices @s@ in @ss@ holds: @'faces' s@ is a sub list of @ss@.
+newtype Complex x = Complex (Set (Simplex x)) deriving (Show,Eq,Ord)
+
+instance (Entity x, Ord x) => Validable (Complex x) where
+  valid (Complex (Set ss)) = Label "Complex" :<=>:
+    And [ valid (Set ss)
+        , Label "empty Simplex" :<=>: vldEmptySimplex ss
+        , Label "sub list" :<=>: foldl vldSubList SValid ss
+        ] where
+
+    vldEmptySimplex []    = SInvalid
+    vldEmptySimplex (s:_) = (s == spxEmpty) :?> Params ["s":=show s]
+    -- as simplices are first sorted by there length, the first simplex must be the empty simplex!
+
+    vldSubList v s = v && (And $ amap1 isElement $ faces s)
+
+    ssIndex = setIndex (Set ss)
+    
+    isElement s = case ssIndex s of
+      Nothing -> SInvalid
+      Just _  -> SValid
+
+--------------------------------------------------------------------------------
+-- cpxEmpty -
+
+cpxEmpty :: Complex x
+cpxEmpty = Complex (Set [spxEmpty])
+
+--------------------------------------------------------------------------------
+-- complex -
+
+-- | generates the complex, where all the faces of the given set of simplices are added.
+complex :: Ord x => Set (Simplex x) -> Complex x
+complex ss
+  = Complex
+  $ Set
+  $ join
+  $ reverse
+  $ amap1 setxs
+  $ adjFaces
+  $ reverse -- not expensive, because the dimension is in general very small
+  $ amap1 Set
+  $ groupBy (~)
+  $ setxs ss
+  where
+    a ~ b = lengthN a == lengthN b
+
+    -- adjFaces ss = ss' adjons to ss all the faces.
+    -- pre  : - ss is a list of non-empty simplex-sets having the same dimension an in descending order
+    -- post : - ss' is a list of non-empty simplex-sets having the same dimension an in descending
+    --          order
+    --        - ss' has all the faces adjoint
+    --        - ss' is not empty an its last entry is Set [Simplex []]
+    adjFaces :: Ord x => [Set (Simplex x)] -> [Set (Simplex x)]
+    adjFaces []       = [Set [spxEmpty]]
+    adjFaces [s]      = case dim s of
+      -1             -> [s]
+      0              -> s : [Set [spxEmpty]]
+      _              -> s : adjFaces [faces' s]
+    adjFaces (s:t:ss) = s : adjFaces ss' where
+      fs = faces' s
+      
+      ss' | dim fs == dim t = fs `setUnion` t : ss
+          | otherwise       = fs : t : ss
+
+    dim :: Set (Simplex x) -> Z
+    dim (Set (s:_)) = spxDim s
+
+
+ 
+{-
 --------------------------------------------------------------------------------
 -- Complex -
 
@@ -357,6 +436,6 @@ dh2 = set
   , trn A D B, trn D B E, trn B E A
   , trn C D E
   ]
-
+-}
 
 
