@@ -51,20 +51,25 @@ module OAlg.Homology.Complex
 -}
   ) where
 
-import Control.Monad (join)
+import Control.Monad
 
 import Data.Typeable
-import Data.List as L (head, groupBy,reverse,(++))
+import Data.List as L (head, groupBy,reverse,(++),span)
 import Data.Foldable (toList,foldl,foldr)
 import Data.Maybe
 
 import OAlg.Prelude
 
+import OAlg.Data.Canonical
+import OAlg.Data.Constructable
 import OAlg.Data.Symbol hiding (S)
+
+import OAlg.Structure.Number.Definition (mod)
 
 import OAlg.Hom.Distributive ()
 
-import OAlg.Entity.Sequence
+import OAlg.Entity.Sequence hiding (span)
+import OAlg.Entity.Sum
 
 import OAlg.Homology.Simplex
 
@@ -98,6 +103,20 @@ instance (Entity x, Ord x) => Validable (Complex x) where
     isElement s = case ssIndex s of
       Nothing -> SInvalid
       Just _  -> SValid
+
+instance (Entity x, Ord x) => Entity (Complex x)
+
+--------------------------------------------------------------------------------
+-- cpxSet -
+
+cpxSet :: Complex x -> Set (Simplex x)
+cpxSet (Complex s) = s
+
+--------------------------------------------------------------------------------
+-- cpxDim -
+
+cpxDim :: Complex x -> Z
+cpxDim = spxDim . head . reverse . setxs . cpxSet
 
 --------------------------------------------------------------------------------
 -- cpxEmpty -
@@ -145,8 +164,92 @@ complex ss
     dim :: Set (Simplex x) -> Z
     dim (Set (s:_)) = spxDim s
 
+--------------------------------------------------------------------------------
+-- Cycle -
 
- 
+-- | cycle over the index @__i__@, i.e. a monomorph list @i 0, i 1 .. i j, i (j+1)..,i (n-1),i n@
+--   where @1 <= n@ and represents the permutation where @i j@ maps to @i (j+1)@ for @j = 0..n.1@ and
+--   @j n@ maps to @i 0@.
+--
+--   __Properties__ Let @'Cycle' is@ be in @'Cycle' __i__@, then holds:
+--
+--  (1) @'length' is '>=' 2@.
+--
+--  (2) @is@ is monomorph.
+newtype Cycle i = Cycle [i] deriving (Show,Eq,Ord)
+
+instance (Show i, Ord i, Validable i) => Validable (Cycle i) where
+  valid (Cycle is) = Label "Cycle" :<=>:
+    And [ valid is
+        , Label "length" :<=>: (lengthN is >= 2) :?> Params ["length is":= (show $ lengthN is)]
+        , Label "monomorph" :<=>: (lengthN is == (lengthN $ set is)) :?> Params ["is":=show is]
+        ]
+
+--------------------------------------------------------------------------------
+-- splitCycle -
+
+splitCycle :: Eq i => Permutation i -> Maybe (Cycle i,Permutation i)
+splitCycle p = do
+  PermutationForm jis <- return $ form p
+  (c,jis')            <- splitCycle' jis
+  return (c,make $ PermutationForm jis')
+
+splitCycle' :: Eq i => PSequence i i -> Maybe (Cycle i,PSequence i i)
+splitCycle' (PSequence [])          = Nothing
+splitCycle' (PSequence ((j,i):jis)) = Just (Cycle $ reverse cs,PSequence jis') where
+  (cs,jis') = sc i j ([i],jis)
+
+  sc i j res | i == j = res
+  sc i j (cs,jis)     = case span ((j/=) . snd) jis of
+    (jis',jis'')     -> case jis'' of
+      (j',_):jis'''  -> sc i j' (j:cs,jis' ++ jis''')
+      _              -> throw $ InvalidData "splitCycle'"
+    
+--------------------------------------------------------------------------------
+-- cycles -
+
+cycles :: Eq i => Permutation i -> [Cycle i]
+cycles p = cyc is where
+  PermutationForm is = form p
+  
+  cyc is = case splitCycle' is of
+    Nothing      -> []
+    Just (c,is') -> c : cyc is'
+  
+--------------------------------------------------------------------------------
+-- pmtSign -
+
+-- | the signum of a permutation
+pmtSign :: Permutation N -> Z
+pmtSign p = if mod (lengthN $ cycles p) 2 == 0 then 1 else -1
+
+
+--------------------------------------------------------------------------------
+-- ComplexMap -
+
+data ComplexMap a b where
+  ComplexMap
+    :: (Entity x, Ord x, Entity y, Ord y)
+    => Complex x -> Complex y -> (x -> y) -> ComplexMap (Complex x) (Complex y)
+
+--------------------------------------------------------------------------------
+-- cpxMap -
+
+cpxMap :: ComplexMap (Complex x) (Complex y) -> Graph (Simplex x) (Simplex y,Permutation N)
+cpxMap (ComplexMap x _ f) = Graph [(x,spxMap f x) | x <- setxs $ cpxSet x]
+
+--------------------------------------------------------------------------------
+-- spxMap -
+
+fs :: Symbol -> Z
+fs A = 1
+fs B = 0
+fs s = inj $ fromEnum s
+
+spxMap :: (Entity y, Ord y) => (x -> y) -> Simplex x -> (Simplex y,Permutation N)
+spxMap f (Simplex (Set xs)) = (Simplex (Set ys),p) where
+  (ys,p) = permuteByN compare id (amap1 f xs) 
+
 {-
 --------------------------------------------------------------------------------
 -- Complex -
