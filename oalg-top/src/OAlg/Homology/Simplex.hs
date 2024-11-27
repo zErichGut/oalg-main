@@ -22,7 +22,7 @@
 module OAlg.Homology.Simplex
   (
     -- * Simplex
-    Simplex(..), simplex, spxDim, spxSet, spxEmpty
+    Simplex(..), simplex, spxDim, spxSet, spxEmpty, spxMap
 
     -- * Face
   , faces, faces'
@@ -31,12 +31,13 @@ module OAlg.Homology.Simplex
 import Control.Monad (join)
 
 import Data.Foldable 
+import Data.List (head,group)
 
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
 
-import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence
 
 --------------------------------------------------------------------------------
 -- Simplex -
@@ -79,6 +80,13 @@ spxSet (Simplex xs) = xs
 -- | the empty simplex.
 spxEmpty :: Simplex x
 spxEmpty = Simplex (Set [])
+
+--------------------------------------------------------------------------------
+-- spxMap -
+
+spxMap :: (Entity y, Ord y) => (x -> y) -> Simplex x -> (Simplex y,Permutation N)
+spxMap f (Simplex (Set xs)) = (Simplex $ Set $ amap1 head $ group ys,p) where
+  (ys,p) = permuteByN compare id (amap1 f xs)
 
 --------------------------------------------------------------------------------
 -- simplex -

@@ -64,7 +64,11 @@ import OAlg.Data.Canonical
 import OAlg.Data.Constructable
 import OAlg.Data.Symbol hiding (S)
 
+import OAlg.Structure.Exception
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Number.Definition (mod)
+
 
 import OAlg.Hom.Distributive ()
 
@@ -72,6 +76,70 @@ import OAlg.Entity.Sequence hiding (span)
 import OAlg.Entity.Sum
 
 import OAlg.Homology.Simplex
+
+--------------------------------------------------------------------------------
+
+deriving instance (Ord i, Ord x) => Ord (Graph i x)
+
+--------------------------------------------------------------------------------
+-- Cycle -
+
+-- | cycle over the index @__i__@, i.e. a monomorph list @i 0, i 1 .. i j, i (j+1)..,i (n-1),i n@
+--   where @1 <= n@ and represents the permutation where @i j@ maps to @i (j+1)@ for @j = 0..n.1@ and
+--   @j n@ maps to @i 0@.
+--
+--   __Properties__ Let @'Cycle' is@ be in @'Cycle' __i__@, then holds:
+--
+--  (1) @'length' is '>=' 2@.
+--
+--  (2) @is@ is monomorph.
+newtype Cycle i = Cycle [i] deriving (Show,Eq,Ord)
+
+instance (Show i, Ord i, Validable i) => Validable (Cycle i) where
+  valid (Cycle is) = Label "Cycle" :<=>:
+    And [ valid is
+        , Label "length" :<=>: (lengthN is >= 2) :?> Params ["length is":= (show $ lengthN is)]
+        , Label "monomorph" :<=>: (lengthN is == (lengthN $ set is)) :?> Params ["is":=show is]
+        ]
+
+--------------------------------------------------------------------------------
+-- splitCycle -
+
+splitCycle :: Eq i => Permutation i -> Maybe (Cycle i,Permutation i)
+splitCycle p = do
+  PermutationForm jis <- return $ form p
+  (c,jis')            <- splitCycle' jis
+  return (c,make $ PermutationForm jis')
+
+splitCycle' :: Eq i => PSequence i i -> Maybe (Cycle i,PSequence i i)
+splitCycle' (PSequence [])          = Nothing
+splitCycle' (PSequence ((j,i):jis)) = Just (Cycle $ reverse cs,PSequence jis') where
+  (cs,jis') = sc i j ([i],jis)
+
+  sc i j res | i == j = res
+  sc i j (cs,jis)     = case span ((j/=) . snd) jis of
+    (jis',jis'')     -> case jis'' of
+      (j',_):jis'''  -> sc i j' (j:cs,jis' ++ jis''')
+      _              -> throw $ InvalidData "splitCycle'"
+    
+--------------------------------------------------------------------------------
+-- splitCycles -
+
+splitCycles :: Eq i => Permutation i -> [Cycle i]
+splitCycles p = cyc is where
+  PermutationForm is = form p
+  
+  cyc is = case splitCycle' is of
+    Nothing      -> []
+    Just (c,is') -> c : cyc is'
+  
+--------------------------------------------------------------------------------
+-- pmtSign -
+
+-- | the signum of a permutation
+pmtSign :: Permutation N -> Z
+pmtSign p = if mod (lengthN $ splitCycles p) 2 == 0 then 1 else -1
+
 
 --------------------------------------------------------------------------------
 -- Complex -
@@ -105,6 +173,22 @@ instance (Entity x, Ord x) => Validable (Complex x) where
       Just _  -> SValid
 
 instance (Entity x, Ord x) => Entity (Complex x)
+
+--------------------------------------------------------------------------------
+-- vertices -
+
+-- | the set of vertices.
+vertices :: Complex x -> Set x
+vertices (Complex s)
+  = Set
+  $ vs
+  $ groupBy (~)
+  $ setxs s
+  where
+    a ~ b = lengthN a == lengthN b
+
+    vs (_:s0:_) = amap1 (\(Simplex (Set vs)) -> head vs) s0
+    vs _        = throw $ InvalidData "vertices"
 
 --------------------------------------------------------------------------------
 -- cpxSet -
@@ -165,90 +249,125 @@ complex ss
     dim (Set (s:_)) = spxDim s
 
 --------------------------------------------------------------------------------
--- Cycle -
-
--- | cycle over the index @__i__@, i.e. a monomorph list @i 0, i 1 .. i j, i (j+1)..,i (n-1),i n@
---   where @1 <= n@ and represents the permutation where @i j@ maps to @i (j+1)@ for @j = 0..n.1@ and
---   @j n@ maps to @i 0@.
---
---   __Properties__ Let @'Cycle' is@ be in @'Cycle' __i__@, then holds:
---
---  (1) @'length' is '>=' 2@.
---
---  (2) @is@ is monomorph.
-newtype Cycle i = Cycle [i] deriving (Show,Eq,Ord)
-
-instance (Show i, Ord i, Validable i) => Validable (Cycle i) where
-  valid (Cycle is) = Label "Cycle" :<=>:
-    And [ valid is
-        , Label "length" :<=>: (lengthN is >= 2) :?> Params ["length is":= (show $ lengthN is)]
-        , Label "monomorph" :<=>: (lengthN is == (lengthN $ set is)) :?> Params ["is":=show is]
-        ]
-
---------------------------------------------------------------------------------
--- splitCycle -
-
-splitCycle :: Eq i => Permutation i -> Maybe (Cycle i,Permutation i)
-splitCycle p = do
-  PermutationForm jis <- return $ form p
-  (c,jis')            <- splitCycle' jis
-  return (c,make $ PermutationForm jis')
-
-splitCycle' :: Eq i => PSequence i i -> Maybe (Cycle i,PSequence i i)
-splitCycle' (PSequence [])          = Nothing
-splitCycle' (PSequence ((j,i):jis)) = Just (Cycle $ reverse cs,PSequence jis') where
-  (cs,jis') = sc i j ([i],jis)
-
-  sc i j res | i == j = res
-  sc i j (cs,jis)     = case span ((j/=) . snd) jis of
-    (jis',jis'')     -> case jis'' of
-      (j',_):jis'''  -> sc i j' (j:cs,jis' ++ jis''')
-      _              -> throw $ InvalidData "splitCycle'"
-    
---------------------------------------------------------------------------------
--- cycles -
-
-cycles :: Eq i => Permutation i -> [Cycle i]
-cycles p = cyc is where
-  PermutationForm is = form p
-  
-  cyc is = case splitCycle' is of
-    Nothing      -> []
-    Just (c,is') -> c : cyc is'
-  
---------------------------------------------------------------------------------
--- pmtSign -
-
--- | the signum of a permutation
-pmtSign :: Permutation N -> Z
-pmtSign p = if mod (lengthN $ cycles p) 2 == 0 then 1 else -1
-
-
---------------------------------------------------------------------------------
 -- ComplexMap -
 
 data ComplexMap a b where
-  ComplexMap
-    :: (Entity x, Ord x, Entity y, Ord y)
-    => Complex x -> Complex y -> (x -> y) -> ComplexMap (Complex x) (Complex y)
+  ComplexMap :: Complex x -> Complex y -> (x -> y) -> ComplexMap (Complex x) (Complex y)
 
 --------------------------------------------------------------------------------
--- cpxMap -
+-- cpxMapGraphFull -
 
-cpxMap :: ComplexMap (Complex x) (Complex y) -> Graph (Simplex x) (Simplex y,Permutation N)
-cpxMap (ComplexMap x _ f) = Graph [(x,spxMap f x) | x <- setxs $ cpxSet x]
+cpxMapGraphFull :: (Entity y, Ord y)
+  => ComplexMap (Complex x) (Complex y) -> Graph (Simplex x) (Simplex y,Permutation N)
+cpxMapGraphFull (ComplexMap x _ f) = Graph [(x,spxMap f x) | x <- setxs $ cpxSet x]
 
 --------------------------------------------------------------------------------
--- spxMap -
+-- cpxMapGraph -
 
-fs :: Symbol -> Z
-fs A = 1
-fs B = 0
-fs s = inj $ fromEnum s
+cpxMapGraph :: ComplexMap (Complex x) (Complex y) -> Graph x y
+cpxMapGraph (ComplexMap x _ f) = Graph [(v,f v) | v <- setxs $ vertices x]
 
-spxMap :: (Entity y, Ord y) => (x -> y) -> Simplex x -> (Simplex y,Permutation N)
-spxMap f (Simplex (Set xs)) = (Simplex (Set ys),p) where
-  (ys,p) = permuteByN compare id (amap1 f xs) 
+--------------------------------------------------------------------------------
+-- ComplexMap - Entity -
+
+instance (Show x, Show y) => Show (ComplexMap (Complex x) (Complex y)) where
+  show f@(ComplexMap a b _)
+    = "ComplexMap (" ++ show a ++ ") (" ++ show b ++ ") (" ++ (show $ cpxMapGraph f) ++ ")"
+
+instance (Eq x, Eq y) => Eq (ComplexMap (Complex x) (Complex y)) where
+  f@(ComplexMap a b _) == g@(ComplexMap a' b' _) = (a,b,cpxMapGraph f) == (a',b',cpxMapGraph g)
+
+instance (Ord x, Ord y) => Ord (ComplexMap (Complex x) (Complex y)) where
+  compare f@(ComplexMap a b _) g@(ComplexMap a' b' _)
+    = compare (a,b,cpxMapGraph f) (a',b',cpxMapGraph g)
+
+instance (Entity x, Ord x, Entity y, Ord y) => Validable (ComplexMap (Complex x) (Complex y)) where
+  valid f@(ComplexMap a b _) = Label "ComplexMap" :<=>:
+    And [ valid a
+        , valid b
+        , valid (cpxMapGraph f)
+        , vldGraphFull b (cpxMapGraphFull f)
+        ]
+    where
+
+      vldGraphFull (Complex sy) (Graph assocs) = vld assocs where
+        iy = setIndex sy
+
+        vld []                 = SValid
+        vld ((x,(y,_)):assocs) = case iy y of
+          Just _ -> vld assocs
+          Nothing -> False :?> Params ["x":=show x,"y":=show y]
+
+instance (Entity x, Ord x, Entity y, Ord y) => Entity (ComplexMap (Complex x) (Complex y))
+
+--------------------------------------------------------------------------------
+-- cpxTerminal -
+
+cpxTerminal :: Complex ()
+cpxTerminal = complex (Set [simplex [()]])
+
+--------------------------------------------------------------------------------
+-- cpxMapTerminal -
+
+cpxMapTerminal :: (Entity x, Ord x) => Complex x -> ComplexMap (Complex x) (Complex ())
+cpxMapTerminal c = ComplexMap c cpxTerminal (const ())
+
+--------------------------------------------------------------------------------
+-- Space -
+
+data Space where
+  Space :: (Entity x, Ord x) => Complex x -> Space
+
+deriving instance Show Space
+
+eqV :: (Typeable x, Typeable y) => Complex x -> Complex y -> Maybe (x :~: y)
+eqV _ _ = eqT
+
+instance Eq Space where
+  Space x == Space y = case eqV x y of
+    Just Refl -> x == y
+    Nothing   -> False
+{-
+instance Ord Space where
+  compare (Space x) (Space y) = case eqV x y of
+    Just Refl ->
+-}
+
+instance Validable Space where valid (Space x) = valid x
+instance Entity Space
+
+--------------------------------------------------------------------------------
+-- Continous -
+
+data Continous where
+  Continous :: (Entity x, Ord x, Entity y, Ord y) => ComplexMap (Complex x) (Complex y) -> Continous
+
+deriving instance Show Continous
+
+instance Eq Continous where
+  Continous f@(ComplexMap x y _) == Continous g@(ComplexMap x' y' _)
+    = case (eqV x x',eqV y y') of
+        (Just Refl, Just Refl) -> f == g
+        _                      -> False
+
+instance Validable Continous where valid (Continous f) = valid f
+
+instance Entity Continous
+
+instance Oriented Continous where
+  type Point Continous = Space
+  orientation (Continous (ComplexMap x y _)) = Space x :> Space y
+
+instance Multiplicative Continous where
+  one (Space x) = Continous (ComplexMap x x id)
+
+  Continous f@(ComplexMap y' z f') * Continous g@(ComplexMap x y g') = case eqV y' y of
+    Just Refl | y' == y -> Continous $ ComplexMap x z (f' . g')
+    _                   -> throw NotMultiplicable
+  
+
+
+
 
 {-
 --------------------------------------------------------------------------------
