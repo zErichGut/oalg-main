@@ -21,24 +21,24 @@
 -- Simplices and there faces.
 module OAlg.Homology.Simplex
   (
+
     -- * Simplex
-    Simplex(..), simplex, spxDim, spxSet, spxEmpty, spxMap
+    Simplex(..), spxDim, spxxs, spxEmpty, spxMap
 
     -- * Face
   , faces, faces'
+
   ) where
 
 import Control.Monad (join)
 
 import Data.Foldable 
-import Data.List (head,group)
 
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
 
-import OAlg.Entity.Sequence
-
+import OAlg.Entity.Sequence.Set
 --------------------------------------------------------------------------------
 -- Simplex -
 
@@ -46,7 +46,7 @@ import OAlg.Entity.Sequence
 --
 -- __Note__ The ordering of simplices is adapted to comparing first there length, e.g.
 -- @'simplex' "b" '<=' 'simplex' "ab"@ is 'True'.
-newtype Simplex x = Simplex (Set x) deriving (Show,Eq,Foldable,Validable,Entity)
+newtype Simplex x = Simplex [x] deriving (Show,Eq,Foldable,Validable,Entity)
 
 --------------------------------------------------------------------------------
 -- Simplex - Ord -
@@ -68,46 +68,46 @@ spxDim :: Simplex x -> Z
 spxDim (Simplex xs) = pred $ inj $ length xs
 
 --------------------------------------------------------------------------------
--- spxSet -
+-- spxxs -
 
 -- | the underlying set of vertices.
-spxSet :: Simplex x -> Set x
-spxSet (Simplex xs) = xs
+spxxs :: Simplex x -> [x]
+spxxs (Simplex xs) = xs
 
 --------------------------------------------------------------------------------
 -- spxEmpty -
 
 -- | the empty simplex.
 spxEmpty :: Simplex x
-spxEmpty = Simplex (Set [])
+spxEmpty = Simplex []
 
 --------------------------------------------------------------------------------
 -- spxMap -
 
-spxMap :: (Entity y, Ord y) => (x -> y) -> Simplex x -> (Simplex y,Permutation N)
-spxMap f (Simplex (Set xs)) = (Simplex $ Set $ amap1 head $ group ys,p) where
-  (ys,p) = permuteByN compare id (amap1 f xs)
+spxMap :: (x -> y) -> Simplex x -> Simplex y
+spxMap f (Simplex xs) = Simplex $ amap1 f xs
 
 --------------------------------------------------------------------------------
--- simplex -
-
--- | the induced simplex.
-simplex :: Ord x => [x] -> Simplex x
-simplex = Simplex . set
-
+-- (<:) -
+infixr 5 <:
+  
+(<:) :: x -> Simplex x -> Simplex x
+x <: Simplex xs = Simplex (x:xs)
+  
 --------------------------------------------------------------------------------
 -- faces -
 
 -- | the faces of a simplex.
 faces :: Simplex x -> [Simplex x]
-faces (Simplex (Set []))     = []
-faces (Simplex (Set (x:xs))) = Simplex (Set xs) : amap1 (x<:) (faces $ Simplex $ Set xs) where
-  x <: Simplex (Set xs) = Simplex (Set (x:xs))
+faces (Simplex [])     = []
+faces (Simplex (x:xs)) = Simplex xs : amap1 (x<:) (faces $ Simplex xs) where
+
 
 --------------------------------------------------------------------------------
 -- faces' -
 
--- | the faces of as set of simplices.
+-- | the faces as set of simplices.
 faces' :: Ord x => Set (Simplex x) -> Set (Simplex x)
 faces' = set . join . amap1 faces . setxs
     
+
