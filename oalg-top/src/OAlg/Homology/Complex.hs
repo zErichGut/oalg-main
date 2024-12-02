@@ -55,7 +55,7 @@ module OAlg.Homology.Complex
 import Control.Monad
 
 import Data.Typeable
-import Data.List as L (head,tail,last, groupBy,reverse,(++),span,zip,dropWhile,repeat)
+import Data.List as L (head,tail,last, groupBy,reverse,(++),span,zip,dropWhile,take,repeat)
 import Data.Foldable (toList,foldl,foldr)
 import Data.Maybe
 
@@ -255,6 +255,12 @@ complex n' ss
     dim _           = throw $ ImplementationError "complex.dim"
 
 --------------------------------------------------------------------------------
+-- cpxSet -
+
+cpxSet :: Complex n x -> Set (Simplex x)
+cpxSet (Complex s) = s
+
+--------------------------------------------------------------------------------
 -- cpxSets -
 
 cpxSets :: Attestable n => Complex n x -> FinList (n+1) (Set (Simplex x))
@@ -273,73 +279,41 @@ cpxSets c@(Complex s) = sts (SW $ cpxAttest c) (amap1 Set $ groupBy (~) $ setxs 
 vertices :: Attestable n => Complex n x -> Set x
 vertices = Set . amap1 (L.head . spxxs) .  setxs . F.head . cpxSets
 
-{-
-  = Set
-  $ vs
-  $ groupBy (~)
-  $ setxs s
-  where
-
-
-    vs (_:s0:_) = amap1 (\(Simplex (Set vs)) -> head vs) s0
-    vs _        = throw $ InvalidData "vertices"
--}
-
-{-
---------------------------------------------------------------------------------
--- cpxSet -
-
-cpxSet :: Complex x -> Set (Simplex x)
-cpxSet (Complex s) = s
-
---------------------------------------------------------------------------------
--- cpxSets -
-
--- | list of simplex-sets, grouped by there dimension with increasing dimension.
-cpxSets :: Complex x ->[Set (Simplex x)]
-cpxSets (Complex (Set sxs)) = amap1 Set $ groupBy (~) $ sxs where
-  a ~ b = lengthN a == lengthN b
-
---------------------------------------------------------------------------------
--- cpxDim -
-
-cpxDim :: Complex x -> Z
-cpxDim = spxDim . head . reverse . setxs . cpxSet
-
 --------------------------------------------------------------------------------
 -- ComplexMap -
 
-data ComplexMap a b where
-  ComplexMap :: Complex x -> Complex y -> (x -> y) -> ComplexMap (Complex x) (Complex y)
+data ComplexMap n a b where
+  ComplexMap :: Complex n x -> Complex n y -> (x -> y) -> ComplexMap n (Complex n x) (Complex n y)
 
 --------------------------------------------------------------------------------
 -- cpxMapGraphFull -
 
-cpxMapGraphFull :: (Entity y, Ord y)
-  => ComplexMap (Complex x) (Complex y) -> Graph (Simplex x) (Simplex y,Permutation N)
+cpxMapGraphFull :: ComplexMap n (Complex n x) (Complex n y) -> Graph (Simplex x) (Simplex y)
 cpxMapGraphFull (ComplexMap x _ f) = Graph [(x,spxMap f x) | x <- setxs $ cpxSet x]
 
 --------------------------------------------------------------------------------
 -- cpxMapGraph -
 
-cpxMapGraph :: ComplexMap (Complex x) (Complex y) -> Graph x y
+cpxMapGraph :: Attestable n => ComplexMap n (Complex n x) (Complex n y) -> Graph x y
 cpxMapGraph (ComplexMap x _ f) = Graph [(v,f v) | v <- setxs $ vertices x]
+
 
 --------------------------------------------------------------------------------
 -- ComplexMap - Entity -
 
-instance (Show x, Show y) => Show (ComplexMap (Complex x) (Complex y)) where
+instance (Attestable n, Show x, Show y) => Show (ComplexMap n (Complex n x) (Complex n y)) where
   show f@(ComplexMap a b _)
     = "ComplexMap (" ++ show a ++ ") (" ++ show b ++ ") (" ++ (show $ cpxMapGraph f) ++ ")"
 
-instance (Eq x, Eq y) => Eq (ComplexMap (Complex x) (Complex y)) where
+instance (Attestable n, Eq x, Eq y) => Eq (ComplexMap n (Complex n x) (Complex n y)) where
   f@(ComplexMap a b _) == g@(ComplexMap a' b' _) = (a,b,cpxMapGraph f) == (a',b',cpxMapGraph g)
 
-instance (Ord x, Ord y) => Ord (ComplexMap (Complex x) (Complex y)) where
+instance (Attestable n, Ord x, Ord y) => Ord (ComplexMap n (Complex n x) (Complex n y)) where
   compare f@(ComplexMap a b _) g@(ComplexMap a' b' _)
     = compare (a,b,cpxMapGraph f) (a',b',cpxMapGraph g)
 
-instance (Entity x, Ord x, Entity y, Ord y) => Validable (ComplexMap (Complex x) (Complex y)) where
+instance (Attestable n, Entity x, Ord x, Entity y, Ord y)
+  => Validable (ComplexMap n (Complex n x) (Complex n y)) where
   valid f@(ComplexMap a b _) = Label "ComplexMap" :<=>:
     And [ valid a
         , valid b
@@ -352,18 +326,24 @@ instance (Entity x, Ord x, Entity y, Ord y) => Validable (ComplexMap (Complex x)
         iy = setIndex sy
 
         vld []                 = SValid
-        vld ((x,(y,_)):assocs) = case iy y of
+        vld ((x,y):assocs) = case iy y of
           Just _ -> vld assocs
           Nothing -> False :?> Params ["x":=show x,"y":=show y]
 
-instance (Entity x, Ord x, Entity y, Ord y) => Entity (ComplexMap (Complex x) (Complex y))
+instance (Attestable n, Entity x, Ord x, Entity y, Ord y)
+  => Entity (ComplexMap n (Complex n x) (Complex n y))
 
 --------------------------------------------------------------------------------
 -- cpxTerminal -
 
-cpxTerminal :: Complex ()
-cpxTerminal = complex (Set [simplex [()]])
-
+cpxTerminal :: Any n -> x -> Complex n x
+cpxTerminal n x = Complex $ Set $ amap1 Simplex $ units n x [] where
+  units :: Any n -> x -> [x] -> [[x]]
+  units n x us = let us' = x:us in
+                   us' : case n of
+                           W0    -> []
+                           SW n' -> units n' x us'
+{-
 --------------------------------------------------------------------------------
 -- cpxMapTerminal -
 
