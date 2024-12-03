@@ -282,9 +282,15 @@ vertices = Set . amap1 (L.head . spxxs) .  setxs . F.head . cpxSets
 --------------------------------------------------------------------------------
 -- ComplexMap -
 
+-- | _/continous function/_ between complexes, i.e. a mapping of the vertices such that these
+--   mapping induces a mapping of the simplces.
+--
+--   __Property__ Let @'ComplexMap' x y f@ be in
+--   @'ComplexMap' __n__ ('Complex' __n__ __x__) ('Complex' __n__ __y__)@, then holds:
+--   For all simplices @s@ in @'cpxSet' x@ holds: @'fst '$' 'spxMap' f@ is in @'cpxSet' y@.  
 data ComplexMap n a b where
   ComplexMap :: Complex n x -> Complex n y -> (x -> y) -> ComplexMap n (Complex n x) (Complex n y)
-
+{-
 --------------------------------------------------------------------------------
 -- cpxMapGraphFull -
 
@@ -343,7 +349,7 @@ cpxTerminal n x = Complex $ Set $ amap1 Simplex $ units n x [] where
                    us' : case n of
                            W0    -> []
                            SW n' -> units n' x us'
-{-
+
 --------------------------------------------------------------------------------
 -- cpxMapTerminal -
 
