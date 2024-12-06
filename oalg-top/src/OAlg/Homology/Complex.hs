@@ -55,7 +55,9 @@ module OAlg.Homology.Complex
 import Control.Monad
 
 import Data.Typeable
-import Data.List as L (head,tail,last, groupBy,reverse,(++),span,zip,dropWhile,take,repeat)
+import Data.List as L (head,tail,last, groupBy,reverse,(++),span,zip,dropWhile,take,repeat
+                      ,takeWhile
+                      )
 import Data.Foldable (toList,foldl,foldr)
 import Data.Maybe
 
@@ -143,59 +145,210 @@ splitCycles p = cyc is where
 pmtSign :: Permutation N -> Z
 pmtSign p = if mod (lengthN $ splitCycles p) 2 == 0 then 1 else -1
 
-
 --------------------------------------------------------------------------------
 -- Complex -
 
--- | complex as a set of simplices with vertices in @__x__@ and maximal dimension @__n__@,
---   containing all there faces.
+-- | complex over a simplex type @__s__@.
 --
--- __Properties__ Let @c = 'Complex' ss@ be in @'Complex' __n__ __x__@, then holds:
--- For all simplices @s@ in @ss@ holds:
+--  __Properties__ Let @c = 'Complex' zss@ be in @'Complex' __s__ __x__@ for a 'Simplical'-structure
+--  @__s__@, then holds:
 --
--- (1) @0 '<=' 'spxDim' s '<=' 'cpxDim' c@.
+--  (1) If @zss@ is not empty, then holds: @z0 '==' 0@ where @(z0,_) = 'head' zss@.
 --
--- (2) If @0 '<' 'spxDim' s'@ then @'faces' s@ is a sub list of @ss@.
-newtype Complex (n :: N') x = Complex (Set (Simplex x)) deriving (Show,Eq,Ord)
+--  (2) For all @(z,'Set' sxs)@ in @zss@ holds:
+--
+--    (1) @0 '<=' z@.
+--
+--    (2) @'dimension' sx '==' z@ for all @sx@ in @sxs@.
+--
+--  (3) For all @..(_,sxs)':'(_,sxs')..@ holds: @'faces' sx'@ is a sub-list of @sxs@ for all
+--      @sx'@ in @sxs'@. 
+newtype Complex s x = Complex [(Z,Set (s x))] deriving (Show,Eq,Ord)
+
+instance (Simplical s, Validable (s x), Ord (s x), Show (s x)) => Validable (Complex s x) where
+  valid (Complex zss) = Label "Complex" :<=>: case zss of
+    []             -> SValid
+    ((z,sxs):zss') -> And [ Label "1" :<=>: (z == 0) :?> Params ["z0" := show z]
+                          , valid sxs
+                          , Label "2.2" :<=>: vldDimension z sxs
+                          , Label "3" :<=>: vldFaces z sxs zss'
+                          ]
+    where
+      vldDimension z sxs = (foldl vDim True sxs) :?> Params ["z":=show z, "sxs" := show sxs] where
+        vDim b sx = b && (dimension sx == z)
+
+      vldFaces _ _ [] = SValid
+      vldFaces z sxs ((z',sxs'):zss')
+        = And [ valid sxs'
+              , Label "z < z'" :<=>: (z < z') :?> Params ["z":=show z, "z'":=show z']
+              , Label "2.2" :<=>: vldDimension z' sxs'
+              , vldSubList sxs sxs'
+              , vldFaces z' sxs' zss'
+              ]
+
+      vldSubList sxs sxs' = foldl isSubList SValid sxs' where
+        i = setIndex sxs
+        isSubList v sx = v && foldl isElement SValid (faces sx)
+
+        isElement v f = v && case i f of
+          Nothing -> SInvalid
+          _       -> SValid
+
+instance (Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x) => Entity (Complex s x)
 
 --------------------------------------------------------------------------------
--- cpxAttest -
+-- vertices -
 
-cpxAttest :: Attestable n => Complex n x -> Any n
-cpxAttest _ = attest
-
+vertices :: Complex s x -> Set (s x)
+vertices (Complex [])          = setEmpty
+vertices (Complex ((_,sxs):_)) = sxs
+  
 --------------------------------------------------------------------------------
--- cpxDim -
+-- cpxSet -
 
-cpxDim :: Attestable n => Complex n x -> Z
-cpxDim c = inj $ lengthN $ cpxAttest c
+cpxSet :: Complex s x -> Set (Z,s x)
+cpxSet (Complex zsx) = Set $ join $ amap1 (\(z,Set sx) -> amap1 (z,) sx) zsx
 
 --------------------------------------------------------------------------------
 -- cpxEmpty -
 
-cpxEmpty :: Complex n x
-cpxEmpty = Complex (Set [])
+cpxEmpty :: Complex s x
+cpxEmpty = Complex []
+
+--------------------------------------------------------------------------------
+-- cpxTerminal -
+
+cpxTerminal :: Simplical s => x -> Complex s x
+cpxTerminal v = Complex [(0,Set [vertex v])]
+
+--------------------------------------------------------------------------------
+-- complex -
+
+complex :: Simplical s => Set (s x) -> Complex s x
+complex (Set [])  = Complex []
+complex (Set sxs) = error "nyi"
+
+--------------------------------------------------------------------------------
+-- ComplexMap -
+
+-- | /continous mapping/ between complexes.
+--
+-- __Properties__ Let @'ComplexMap' cx cy f@ be in
+-- @'ComplexMap' __c__ __s__ ('Complex' __s__ __x__) ('Complex' __s__ __y__)@ where @__c__@
+-- is 'Applicative1' and @__s__@ is 'Simplcal', then holds:
+-- For all simplices @s@ in @cx@ holds: @'amap1' f s@ is an element of @cy@.
+data ComplexMap c s a b where
+  ComplexMap
+    :: (Entity (s x), Ord (s x), Entity (s y), Ord (s y))
+    => Complex s x -> Complex s y -> c x y -> ComplexMap c s (Complex s x) (Complex s y) 
+
+--------------------------------------------------------------------------------
+-- cpxMapGraph -
+
+cpxMapGraph :: (Applicative1 c s, Simplical s)
+  => ComplexMap c s (Complex s x) (Complex s y) -> Graph (Z,s x) (Z,s y)
+cpxMapGraph (ComplexMap cx _ f)
+  = Graph [((z,x),let y = amap1 f x in (dimension y,y)) | (z,x) <- setxs $ cpxSet cx]
+
+--------------------------------------------------------------------------------
+-- ComplexMap - Entity -
+
+instance (Applicative1 c s, Simplical s) => Show (ComplexMap c s a b) where
+  show f@(ComplexMap _ _ _) = "ComplexMap (" ++ (show $ cpxMapGraph f) ++ ")"
+
+instance (Applicative1 c s, Simplical s) => Eq (ComplexMap c s a b) where
+  f@(ComplexMap _ _ _) == g@(ComplexMap _ _ _) = cpxMapGraph f == cpxMapGraph g
+
+instance (Applicative1 c s, Simplical s) => Ord (ComplexMap c s a b) where
+  compare f@(ComplexMap _ _ _) g@(ComplexMap _ _ _) = compare (cpxMapGraph f) (cpxMapGraph g)
+
+
+instance (Applicative1 c s, Simplical s) => Validable (ComplexMap c s a b) where
+  valid f@(ComplexMap x y _) = Label "ComplexMap" :<=>:
+    And [ valid x
+        , valid y
+        , vldGraph (isElement (setIndex $ cpxSet y)) $ gphxs $ cpxMapGraph f
+        ]
+    where
+      vldGraph :: (Entity x, Entity y) =>  (y -> Bool) -> [(x,y)] -> Statement
+      vldGraph _ []          = SValid
+      vldGraph i ((x,y):xsy) = And [ valid x
+                                   , valid y
+                                   , Label "isElement" :<=>:
+                                       (i y) :?> Params ["x":=show x,"y":=show y] 
+                                   , vldGraph i xsy
+                                   ]
+                            
+      isElement i y = case i y of
+        Nothing -> False
+        _       -> True
+
+instance ( Applicative1 c s, Simplical s
+         , Typeable c, Typeable s, Typeable a, Typeable b
+         )
+  => Entity (ComplexMap c s a b)
+{-
+--------------------------------------------------------------------------------
+-- Complex -
+
+-- | complex as a set of simplices with vertices in @__x__@ such that the list of the faces of each
+--   simplex is a sublist of the given set of simplices.
+--
+-- __Properties__ Let @c = 'Complex' ss@ be in @'Complex' __x__@, then holds:
+-- For all simplices @s@ in @ss@ holds:
+--
+-- (1) @0 '<=' 'spxDim' s@
+--
+-- (2) if @0 '<' 'spxDim's@ then holds: @'faces' s@ is a sub list of @ss@,
+--
+-- __Note__ The set of simplices of a complex may be __infinite__! As a example see 'cpxTerminal'.
+-- For such complexes use 'cpxCut'.
+newtype Complex x = Complex (Set (Simplex x)) deriving (Show,Eq,Ord)
+
+--------------------------------------------------------------------------------
+-- cpxCut -
+
+-- | the subcomplex containing all simplices with maximal dimension of the given dimension.
+cpxCut :: Z -> Complex x -> Complex x
+cpxCut n (Complex (Set ss)) = Complex $ Set $ takeWhile ((<=n).spxDim) $ ss
+
+--------------------------------------------------------------------------------
+-- cpxTerminal -
+
+-- | the infinite complex generatet by the given point, i.e
+--   @'Simplex' [x],'Simplex' [x,x], 'Simplex' [x,x,x]..@
+cpxTerminal :: x -> Complex x
+cpxTerminal x = Complex $ Set $ amap1 Simplex $ units x [] where
+  units x us = us' : units x us' where us' = x:us 
+
+--------------------------------------------------------------------------------
+-- cpxEmpty -
+
+-- | the empty complex.
+cpxEmpty :: Complex x
+cpxEmpty = Complex setEmpty
 
 --------------------------------------------------------------------------------
 -- Complex - Entity -
 
-instance (Entity x, Ord x, Attestable n) => Validable (Complex n x) where
-  valid c@(Complex (Set ss)) = Label "Complex" :<=>:
+instance (Entity x, Ord x) => Validable (Complex x) where
+  valid (Complex (Set ss)) = Label "Complex" :<=>:
     case ss of
       []   -> SValid
       s:ss -> And [ valid s
+                  , Label "0 <= spxDim s" :<=>: valid s && (0 <= spxDim s) :?> Params ["s":=show s] 
                   , vldFaces s
-                  , Label "0 <= s"   :<=>: (0 <= spxDim s) :?> Params ["s":=show s]
                   , Label "setFaces" :<=>:  vldSetFaces s ss
                   ]
     where
       ssIndex = setIndex (Set ss)
-      
-      vldSetFaces s [] = Label "s <= cpxDim c" :<=>: (spxDim s <= cpxDim c) :?> Params ["s":=show s]
+
+
+      vldSetFaces _ [] = SValid
       vldSetFaces s (s':ss)
         = And [ valid s'
-              , vldFaces s'
               , Label "set" :<=>: (s < s') :?> Params ["s":=show s,"s'":=show s']
+              , vldFaces s'
               , vldSetFaces s' ss
               ]
 
@@ -207,29 +360,27 @@ instance (Entity x, Ord x, Attestable n) => Validable (Complex n x) where
         Just _  -> SValid
 
 
-instance (Entity x, Ord x, Attestable n) => Entity (Complex n x)
+instance (Entity x, Ord x) => Entity (Complex x)
+
 
 --------------------------------------------------------------------------------
 -- complex -
 
 -- | generates the complex, where all the faces of the given set of simplices are added.
-complex :: Ord x => Any n -> Set (Simplex x) -> Complex n x
-complex n' ss
+complex :: Ord x => Set (Simplex x) -> Complex x
+complex ss
   = Complex
   $ Set
   $ L.tail -- eliminiating the empty simplex
   $ join
   $ reverse
   $ amap1 setxs
-  $ dropWhile ((>n) . dim)
   $ adjFaces
   $ reverse -- not expensive, because the dimension is in general very small
   $ amap1 Set
   $ groupBy (~)
   $ setxs ss
   where
-    n = inj $ lengthN n'
-    
     a ~ b = lengthN a == lengthN b
 
     -- adjFaces ss = ss' adjons to ss all the faces.
@@ -253,7 +404,12 @@ complex n' ss
     dim :: Set (Simplex x) -> Z
     dim (Set (s:_)) = spxDim s
     dim _           = throw $ ImplementationError "complex.dim"
+-}
 
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- cpxSet -
 
@@ -290,7 +446,7 @@ vertices = Set . amap1 (L.head . spxxs) .  setxs . F.head . cpxSets
 --   For all simplices @s@ in @'cpxSet' x@ holds: @'fst '$' 'spxMap' f@ is in @'cpxSet' y@.  
 data ComplexMap n a b where
   ComplexMap :: Complex n x -> Complex n y -> (x -> y) -> ComplexMap n (Complex n x) (Complex n y)
-{-
+
 --------------------------------------------------------------------------------
 -- cpxMapGraphFull -
 
@@ -338,17 +494,6 @@ instance (Attestable n, Entity x, Ord x, Entity y, Ord y)
 
 instance (Attestable n, Entity x, Ord x, Entity y, Ord y)
   => Entity (ComplexMap n (Complex n x) (Complex n y))
-
---------------------------------------------------------------------------------
--- cpxTerminal -
-
-cpxTerminal :: Any n -> x -> Complex n x
-cpxTerminal n x = Complex $ Set $ amap1 Simplex $ units n x [] where
-  units :: Any n -> x -> [x] -> [[x]]
-  units n x us = let us' = x:us in
-                   us' : case n of
-                           W0    -> []
-                           SW n' -> units n' x us'
 
 --------------------------------------------------------------------------------
 -- cpxMapTerminal -
