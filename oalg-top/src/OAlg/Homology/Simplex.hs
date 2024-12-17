@@ -23,6 +23,8 @@ module OAlg.Homology.Simplex
   (
     -- * Simplical
     Simplical(..), faces'
+
+  , subsets
 {-    
     -- * Simplex
     Simplex(..), simplex, spxDim, spxxs, spxEmpty, spxMap
@@ -37,54 +39,197 @@ module OAlg.Homology.Simplex
 
 import Control.Monad (join)
 
+import Data.List (head,filter,sort,group,groupBy,(++),reverse)
+import Data.Foldable
+
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
 
 import OAlg.Entity.Sequence.Set
 
+import OAlg.Structure.Additive
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- Functorial1 -
+
+-- | representable categories, i.e. covariant functors from an 'Applicative1' category @__c__@ to
+-- @('->')@.
+--
+-- __Properties__ Let the pair @(__c__,__f__)@ be a type instance of 'Functorial1', then holds:
+--
+-- (1) For all types @__x___@ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
+-- @'amap1' ('cOne' d) = 'id'@.
+--
+-- (2) For all types @__x__@, @__y__@, @__z__@, @f@ in @__c__ __y__ __z__@ and
+-- @g@ in @__c__ __x__ __y__@ holds: @'amap1' (f '.' g) = 'amap1' f '.' 'amap1' g@.
+class (Category c, Applicative1 c f) => Functorial1 c f 
+
+--------------------------------------------------------------------------------
+-- combinations -
+
+combinations :: N -> [x] -> [[x]]
+combinations n xs = cbns n xs [[]] where
+  cbns 0 _ xss  = xss
+  cbns n xs xss = cbns (pred n) xs [x:cbs | x <- xs, cbs <- xss] 
+
+--------------------------------------------------------------------------------
+-- OrdMap -
+
+-- | mapping between orderd types.
+data OrdMap x y where
+  OrdMap :: (Ord x, Ord y) => (x -> y) -> OrdMap x y
+
+instance Morphism OrdMap where
+  type ObjectClass OrdMap = Ord'
+  homomorphous (OrdMap _) = Struct :>: Struct
+
+instance Category OrdMap where
+  cOne Struct = OrdMap id
+  OrdMap f . OrdMap g = OrdMap (f.g)
+
+instance Applicative1 OrdMap [] where
+  amap1 (OrdMap f) xs = amap1 f xs
+
+instance Functorial1 OrdMap []
+
+instance Transformable1 [] Ord' where
+  tau1 Struct = Struct
+
+instance Applicative1 OrdMap Set where
+  amap1 (OrdMap f) (Set xs) = set $ amap1 f xs
+
+instance Functorial1 OrdMap Set
+
+instance Transformable1 Set Ord' where
+  tau1 Struct = Struct
+  
+--------------------------------------------------------------------------------
+-- subsets -
+
+-- | the list of subsets of given set.
+subsets :: Ord x => Set x -> [Set x]
+subsets (Set [])     = [Set []]
+subsets (Set (x:xs)) = amap1 (x<:) ss ++ ss where
+  ss = subsets (Set xs)
+  x <: Set xs = Set (x:xs)
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+
 --------------------------------------------------------------------------------
 -- Simplical -
 
 -- | abstract simplex over @__x__@.
 --
---  __Properties__ Let @__s__@ be a type instance of the class 'Simplical', then holds:
+--  __Properties__ Let @__s__@ be a type instance of the class 'Simplical' and @__x__@ a type
+-- instance of 'Ord', then holds:
 --
--- (1) For all @__x__@ and @s@ in @__s__ __x__@ holds: @-1 '<=' 'dimension' s@.
+-- (1) For all @s@ in @__s__ __x__@ holds: @-1 '<=' 'dimension' s@.
 --
--- (2) For all @__x__@ holds: @'dimension' (empty :: __s__ __x__) '==' -1@.
+-- (2) @'dimension' ('spxEmpty' :: __s__ __x__) '==' -1@.
 --
--- (3) For all @__x__@ and @v@ in @__x__@ holds: @'dimension' ('vertex' v) '==' 0@.
+-- (3) For all @v@ in @__x__@ holds: @'dimension' ('vertex' v) '==' 0@.
 --
--- (3) For all @__x__@ and @s@ in @__s__ __x__@ holds:
+-- (4) For all @s@ in @__s__ __x__@ holds:
 --
 --    (1) @'dimension' f '==' 'dimension' s '-' 1@ for
 --        all @f@ in @'faces' s@.
 --
---    (2) If @'dimension' s '==' 0@ then holds: @'faces' s '==' [empty]@.
-class Simplical s where
+--    (2) If @'dimension' s '==' 0@ then holds: @'faces' s '==' ['spxEmpty']@.
+--
+-- (5) For all @s@ in @__s__ __x__@ holds: @'simplex' ('toList' s) '==' s@. 
+--
+-- (6) For all @__y__@, @f@ in @'OrdMap' __x__ __y__@ and @xs@ in @[__x__]@ holds:
+-- @ 'amap1' f ('simplex' xs) '==' 'simplex' ('amap1' f xs)@.
+class (Functorial1 OrdMap s, Foldable s, Transformable1 s Ord') => Simplical s where
   dimension :: s x -> Z
-  empty     :: s x
-  vertex    :: x -> s x
+  simplex   :: Ord x => [x] -> s x
   faces     :: s x -> [s x]
+
+--------------------------------------------------------------------------------
+-- spxEmpty -
+
+-- | the empty simplex.
+spxEmpty :: (Simplical s, Ord x) => s x
+spxEmpty = simplex []
+
+--------------------------------------------------------------------------------
+-- vertex -
+
+vertex :: (Simplical s, Ord x) => x -> s x
+vertex x = simplex [x]
+
+--------------------------------------------------------------------------------
+-- spxOrd -
+
+-- | infering the 'Ord'-structure,
+spxOrd :: (Simplical s, Ord x) => f (s x) -> Struct Ord' (s x)
+spxOrd _ = tau1 Struct
 
 --------------------------------------------------------------------------------
 -- faces' -
 
 -- | the faces as set of simplices.
-faces' :: (Simplical s, Ord (s x)) => Set (s x) -> Set (s x)
-faces' = set . join . amap1 faces . setxs
+faces' :: (Simplical s, Ord x) => Set (s x) -> Set (s x)
+faces' ss = case spxOrd ss of Struct -> set $ join $ amap1 faces $ setxs ss
+
+--------------------------------------------------------------------------------
+-- spxAdjDim -
+
+-- | adjoins the dimension to the given simplex.
+spxAdjDim :: Simplical s => s x -> (Z,s x)
+spxAdjDim s = (dimension s,s)
+
+--------------------------------------------------------------------------------
+-- spxDimSets -
+
+-- | the grouped simplices according to there dimension with increasing dimension.
+spxDimSets :: (Simplical s, Ord x) => [s x] -> [(Z,Set (s x))]
+spxDimSets ss = case spxOrd ss of Struct -> amap1 dsets $ groupBy (~) $ sort $ amap1 spxAdjDim ss
+  where
+
+    (d,_) ~ (d',_) = d == d'
+    
+    dsets :: [(z,s)] -> (z,Set s)
+    dsets zss = (d zss,Set $ amap1 snd zss) where d = fst . head
+
+--------------------------------------------------------------------------------
+-- [] - Simplical -
+
+instance Simplical [] where
+  dimension = pred . inj . lengthN
+  simplex      = id
+  faces []     = []
+  faces (x:xs) = xs : amap1 (x:) (faces xs) where
 
 --------------------------------------------------------------------------------
 -- Set - Simplical -
 
 instance Simplical Set where
-  dimension s        = pred $ inj $ lengthN s
-  empty              = setEmpty
-  vertex v           = Set [v]
-  faces (Set [])     = []
-  faces (Set (v:vs)) = Set vs : amap1 (v<:) (faces $ Set vs) where
-    v <: Set vs = Set (v:vs)
+  dimension s    = pred $ inj $ lengthN s
+  simplex        = set
+  faces (Set xs) = amap1 Set $ faces xs
+
+{-
+--------------------------------------------------------------------------------
+-- <*> -
+
+(<*>) :: (Ord x, Ord y) => Set x -> Set y -> [Set (x,y)]
+Set [] <*> _ = []
+_ <*> Set [] = []
+xs <*> ys    = setxs $ subsets d $ Set [(x,y) | x <- setxs xs, y <- setxs ys] where
+  d = prj (dimension xs + dimension ys + 1)
+-}
+
+
+
+
+
 
 
 
