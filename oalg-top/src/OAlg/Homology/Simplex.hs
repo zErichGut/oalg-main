@@ -22,9 +22,14 @@
 module OAlg.Homology.Simplex
   (
     -- * Simplical
-    Simplical(..), faces'
+    Simplical(..), faces', vertex, spxDimSets
+  , spxAdjDim
 
-  , subsets
+    -- * Asc
+  , Asc(..), ascxs, asc
+
+    -----------------------------------------
+  , OrdMap(..)
 {-    
     -- * Simplex
     Simplex(..), simplex, spxDim, spxxs, spxEmpty, spxMap
@@ -39,7 +44,7 @@ module OAlg.Homology.Simplex
 
 import Control.Monad (join)
 
-import Data.List (head,filter,sort,group,groupBy,(++),reverse)
+import Data.List (head,tail,filter,sort,group,groupBy,(++),reverse,zip)
 import Data.Foldable
 
 import OAlg.Prelude
@@ -69,12 +74,17 @@ import OAlg.Structure.Additive
 class (Category c, Applicative1 c f) => Functorial1 c f 
 
 --------------------------------------------------------------------------------
--- combinations -
+-- Simplex -
 
-combinations :: N -> [x] -> [[x]]
-combinations n xs = cbns n xs [[]] where
-  cbns 0 _ xss  = xss
-  cbns n xs xss = cbns (pred n) xs [x:cbs | x <- xs, cbs <- xss] 
+type Simplex = []
+
+--------------------------------------------------------------------------------
+-- spxCombinations -
+
+spxCombinations :: Set x -> [(Z,Set (Simplex x))]
+spxCombinations (Set vs) = cbns (-1) [[]] where
+  -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
+  cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
 
 --------------------------------------------------------------------------------
 -- OrdMap -
@@ -110,11 +120,14 @@ instance Transformable1 Set Ord' where
 --------------------------------------------------------------------------------
 -- subsets -
 
--- | the list of subsets of given set.
-subsets :: Ord x => Set x -> [Set x]
-subsets (Set [])     = [Set []]
-subsets (Set (x:xs)) = amap1 (x<:) ss ++ ss where
-  ss = subsets (Set xs)
+subsets :: Set x -> [(Z,Set (Set x))]
+subsets (Set []) = [(-1,Set [Set []])]
+subsets (Set (x:xs)) = (-1,Set [Set []]) : (x <<: subsets (Set xs)) where
+  (<<:) :: x -> [(Z,Set (Set x))] -> [(Z,Set (Set x))]
+  x <<: ((_,Set ss):(n,Set ss'):nss) = (n,Set (amap1 (x<:) ss ++ ss')) : (x <<: ((n,Set ss'):nss))
+  x <<: [(n,Set ss)]                 = [(succ n,Set $ amap1 (x<:) ss)]
+  _ <<: []                           = throw $ ImplementationError "subsets"
+
   x <: Set xs = Set (x:xs)
 
 --------------------------------------------------------------------------------
@@ -124,7 +137,8 @@ subsets (Set (x:xs)) = amap1 (x<:) ss ++ ss where
 --------------------------------------------------------------------------------
 -- Simplical -
 
--- | abstract simplex over @__x__@.
+-- | abstract simplices over @__x__@. We will call an element of @__s__ __x__@ a
+--  __/simplex/__ over @__x__@.
 --
 --  __Properties__ Let @__s__@ be a type instance of the class 'Simplical' and @__x__@ a type
 -- instance of 'Ord', then holds:
@@ -147,9 +161,15 @@ subsets (Set (x:xs)) = amap1 (x<:) ss ++ ss where
 -- (6) For all @__y__@, @f@ in @'OrdMap' __x__ __y__@ and @xs@ in @[__x__]@ holds:
 -- @ 'amap1' f ('simplex' xs) '==' 'simplex' ('amap1' f xs)@.
 class (Functorial1 OrdMap s, Foldable s, Transformable1 s Ord') => Simplical s where
-  dimension :: s x -> Z
-  simplex   :: Ord x => [x] -> s x
-  faces     :: s x -> [s x]
+  -- | the dimension of a simplex
+  dimension    :: s x -> Z
+  -- | the induced simplex given by a list of vertices.
+  simplex      :: Ord x => [x] -> s x
+  -- | the face of a simplex.
+  faces        :: s x -> [s x]
+  -- | all posible combinations together withe there dimension for the given set vertices
+  -- __Note__ This list may be infinite.
+  combinations :: Set x -> [(Z,Set (s x))] 
 
 --------------------------------------------------------------------------------
 -- spxEmpty -
@@ -175,8 +195,8 @@ spxOrd _ = tau1 Struct
 -- faces' -
 
 -- | the faces as set of simplices.
-faces' :: (Simplical s, Ord x) => Set (s x) -> Set (s x)
-faces' ss = case spxOrd ss of Struct -> set $ join $ amap1 faces $ setxs ss
+faces' :: (Simplical s, Ord (s x)) => Set (s x) -> Set (s x)
+faces' = set . join . amap1 faces . setxs
 
 --------------------------------------------------------------------------------
 -- spxAdjDim -
@@ -189,152 +209,106 @@ spxAdjDim s = (dimension s,s)
 -- spxDimSets -
 
 -- | the grouped simplices according to there dimension with increasing dimension.
-spxDimSets :: (Simplical s, Ord x) => [s x] -> [(Z,Set (s x))]
-spxDimSets ss = case spxOrd ss of Struct -> amap1 dsets $ groupBy (~) $ sort $ amap1 spxAdjDim ss
-  where
+spxDimSets :: (Simplical s, Ord (s x)) => [s x] -> [(Z,Set (s x))]
+spxDimSets ss = amap1 dsets $ groupBy (~) $ sort $ amap1 spxAdjDim ss where
 
-    (d,_) ~ (d',_) = d == d'
+  (d,_) ~ (d',_) = d == d'
     
-    dsets :: [(z,s)] -> (z,Set s)
-    dsets zss = (d zss,Set $ amap1 snd zss) where d = fst . head
+  dsets :: [(z,s)] -> (z,Set s)
+  dsets zss = (d zss,Set $ amap1 snd zss) where d = fst . head
 
 --------------------------------------------------------------------------------
 -- [] - Simplical -
 
 instance Simplical [] where
-  dimension = pred . inj . lengthN
+  dimension    = pred . inj . lengthN
   simplex      = id
   faces []     = []
-  faces (x:xs) = xs : amap1 (x:) (faces xs) where
+  faces (x:xs) = xs : amap1 (x:) (faces xs)
+  combinations = spxCombinations
 
 --------------------------------------------------------------------------------
 -- Set - Simplical -
 
 instance Simplical Set where
-  dimension s    = pred $ inj $ lengthN s
-  simplex        = set
-  faces (Set xs) = amap1 Set $ faces xs
+  dimension (Set xs) = dimension xs
+  simplex            = set
+  faces (Set xs)     = amap1 Set $ faces xs
+  combinations       = subsets
 
-{-
---------------------------------------------------------------------------------
--- <*> -
-
-(<*>) :: (Ord x, Ord y) => Set x -> Set y -> [Set (x,y)]
-Set [] <*> _ = []
-_ <*> Set [] = []
-xs <*> ys    = setxs $ subsets d $ Set [(x,y) | x <- setxs xs, y <- setxs ys] where
-  d = prj (dimension xs + dimension ys + 1)
--}
-
-
-
-
-
-
-
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- Simplex -
-
--- | simplex as a increasing list of vertices in @__x__@.
---
---  __Property__ Let @'Simplex' [v 0, v 1 .. v n]@ be in @'Simplex' __x__@, then holds:
---  @v i '<=' v (i+1)@ for @i = 0..n-1@,
---
--- __Note__ The ordering of simplices is adapted by comparing first there length, e.g.
--- @'simplex' "b" '<=' 'simplex' "ab"@ is 'True'.
-newtype Simplex x = Simplex [x] deriving (Show,Eq,Foldable,Entity)
-
-instance (Ord x, Validable x, Show x) => Validable (Simplex x) where
-  valid (Simplex [])     = SValid
-  valid (Simplex (v:vs)) = valid v && vldInc v vs where
-    vldInc _ []     = SValid
-    vldInc v (w:vs) = And [ valid w
-                          , Label "inc" :<=>:
-                              (v <= w) :?> Params ["v":=show v,"w":=show w]
-                          , vldInc w vs
-                          ] 
-                              
---------------------------------------------------------------------------------
--- Simplex - Ord -
-
-instance Ord x => Ord (Simplex x) where
-  compare (Simplex xs) (Simplex ys) = compare (length xs,xs) (length ys,ys)
-
---------------------------------------------------------------------------------
--- Simplex - LengthN -
-
-instance LengthN (Simplex x) where
-  lengthN (Simplex xs) = lengthN xs
-
---------------------------------------------------------------------------------
--- simplex -
-
--- | the induced simplex together with its permutation to sort it.
---
---  __Property__ Let @xs@ be in @[__x__]@ and @'Simplex' xs',p) = 'simplex' xs@, then holds:
---  @xs '<*' p '==' xs'@. 
-simplex :: (Entity x, Ord x) => [x] -> (Simplex x,Permutation N)
-simplex xs = (Simplex xs',p) where
-  (xs',p) = permuteByN compare id xs
-
---------------------------------------------------------------------------------
--- prpSimplex -
-
--- | validity of 'simplex'.
-prpSimplex :: N -> Statement
-prpSimplex n = Prp "Simplex" :<=>: Forall (xs n) vldSpx where
-  xs :: N -> X [Symbol]
-  xs n = do
-    n' <- xNB 0 n
-    xTakeN n' xStandard
-
-  vldSpx xs = valid s && (xs <* p == spxxs s) :?> Params ["xs":=show xs] where
-    (s,p) = simplex xs 
   
 --------------------------------------------------------------------------------
--- spxDim -
+-- Asc -
 
--- | the dimension of a simplex.
-spxDim :: Simplex x -> Z
-spxDim (Simplex xs) = pred $ inj $ length xs
+-- | ascending list with elements in @__x__@.
+--
+-- __Property__ Let @'Asc' xs@ be in @'Asc' __x__@, then holds:
+-- For all @..x':'y..@ in @xs@ holds: @x '<=' y@.
+newtype Asc x = Asc [x] deriving (Show,Eq,Ord,Foldable,LengthN)
 
---------------------------------------------------------------------------------
--- spxxs -
+instance (Validable x, Ord x, Show x) => Validable (Asc x) where
+  valid (Asc xs) = Label "Asc" :<=>: case xs of
+    []    -> SValid
+    x:xs' -> valid x && vldAsc (0::N) x xs'
+    where
+      vldAsc _ _ []     = SValid
+      vldAsc i x (y:xs) = And [ valid y
+                              , (x <= y) :?> Params ["i":=show i, "x":=show x, "y":=show y]
+                              , vldAsc (succ i) y xs
+                              ]
 
--- | the underlying increasing list of vertices.
-spxxs :: Simplex x -> [x]
-spxxs (Simplex xs) = xs
-
---------------------------------------------------------------------------------
--- spxEmpty -
-
--- | the empty simplex.
-spxEmpty :: Simplex x
-spxEmpty = Simplex []
-
-
---------------------------------------------------------------------------------
--- spxMap -
-
--- | maps the given simplex according to the mapping function.
-spxMap :: (Entity y, Ord y) => (x -> y) -> Simplex x -> (Simplex y, Permutation N)
-spxMap f (Simplex xs) = simplex $ amap1 f xs
-
+instance (Entity x, Ord x) => Entity (Asc x)
 
 --------------------------------------------------------------------------------
--- faces -
+-- ascxs -
 
--- | the faces of a simplex.
-faces :: Simplex x -> [Simplex x]
-faces (Simplex [])     = []
-faces (Simplex (x:xs)) = Simplex xs : amap1 (x<:) (faces $ Simplex xs) where
-    x <: Simplex xs = Simplex (x:xs)
+ascxs :: Asc x -> [x]
+ascxs (Asc xs) = xs
 
+--------------------------------------------------------------------------------
+-- asc -
 
--}
+asc :: Ord x => [x] -> Asc x
+asc = Asc . sort
 
+--------------------------------------------------------------------------------
+-- ascCombinations -
+
+ascCombinations :: Set x -> [(Z,Set (Asc x))]
+ascCombinations (Set xs) = cbs xs where
+  cbs []     = (-1,Set [Asc []]) : es 0
+  cbs (x:xs) = (-1,Set [Asc []]) : amap1 (uncurry (<+>)) (adj x cbs' `zip` tail cbs') where
+    cbs' = cbs xs
+
+  es z = (z,Set []): es (succ z) 
+
+  (<+>) :: (Z,Set (Asc x)) -> (Z,Set (Asc x)) -> (Z,Set (Asc x))
+  (z,Set as) <+> (_,Set bs) = (z,Set (as ++ bs))
+  
+  
+  -- adjoins 1 to n x to the sequence
+  adj :: x -> [(Z,Set (Asc x))] -> [(Z,Set (Asc x))] 
+  adj x zs = head zs' : amap1 (uncurry (<+>)) (adj x zs' `zip` tail zs' ) where
+    zs'  = amap1 (\(z,s) -> (succ z, x <+ s)) zs
+  
+    (<+) :: x -> Set (Asc x) -> Set (Asc x)
+    x <+ Set as = Set $ amap1 (x<:) as
+  
+    (<:) :: x -> Asc x -> Asc x
+    x <: Asc xs = Asc (x:xs)
+
+--------------------------------------------------------------------------------
+-- Asc - Simplical -
+
+instance Applicative1 OrdMap Asc where
+  amap1 (OrdMap f) (Asc xs) = Asc $ sort $ amap1 f xs
+
+instance Functorial1 OrdMap Asc
+
+instance Transformable1 Asc Ord' where tau1 Struct = Struct
+
+instance Simplical Asc where
+  dimension (Asc xs) = dimension xs
+  simplex            = asc
+  faces (Asc xs)     = amap1 Asc $ faces xs
+  combinations       = ascCombinations
