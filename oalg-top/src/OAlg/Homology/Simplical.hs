@@ -12,24 +12,25 @@
 #-}
 
 -- |
--- Module      : OAlg.Homology.Simplex
+-- Module      : OAlg.Homology.Simplical
 -- Description : simplices and there faces.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- Simplices and there faces.
-module OAlg.Homology.Simplex
+module OAlg.Homology.Simplical
   (
     -- * Simplical
-    Simplical(..), faces', vertex, spxDimSets
-  , spxAdjDim
+    Simplical(..), faces', spxDimSets
+  , spxAdjDim, spxFilter
+  , vertex
 
     -- * Asc
   , Asc(..), ascxs, asc
 
     -----------------------------------------
-  , OrdMap(..)
+  , OrdMap(..), subsets
 {-    
     -- * Simplex
     Simplex(..), simplex, spxDim, spxxs, spxEmpty, spxMap
@@ -74,14 +75,9 @@ import OAlg.Structure.Additive
 class (Category c, Applicative1 c f) => Functorial1 c f 
 
 --------------------------------------------------------------------------------
--- Simplex -
-
-type Simplex = []
-
---------------------------------------------------------------------------------
 -- spxCombinations -
 
-spxCombinations :: Set x -> [(Z,Set (Simplex x))]
+spxCombinations :: Set x -> [(Z,Set [x])]
 spxCombinations (Set vs) = cbns (-1) [[]] where
   -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
   cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
@@ -140,37 +136,23 @@ subsets (Set (x:xs)) = (-1,Set [Set []]) : (x <<: subsets (Set xs)) where
 -- | abstract simplices over @__x__@. We will call an element of @__s__ __x__@ a
 --  __/simplex/__ over @__x__@.
 --
---  __Properties__ Let @__s__@ be a type instance of the class 'Simplical' and @__x__@ a type
--- instance of 'Ord', then holds:
---
--- (1) For all @s@ in @__s__ __x__@ holds: @-1 '<=' 'dimension' s@.
---
--- (2) @'dimension' ('spxEmpty' :: __s__ __x__) '==' -1@.
---
--- (3) For all @v@ in @__x__@ holds: @'dimension' ('vertex' v) '==' 0@.
---
--- (4) For all @s@ in @__s__ __x__@ holds:
---
---    (1) @'dimension' f '==' 'dimension' s '-' 1@ for
---        all @f@ in @'faces' s@.
---
---    (2) If @'dimension' s '==' 0@ then holds: @'faces' s '==' ['spxEmpty']@.
---
--- (5) For all @s@ in @__s__ __x__@ holds: @'simplex' ('toList' s) '==' s@. 
---
--- (6) For all @__y__@, @f@ in @'OrdMap' __x__ __y__@ and @xs@ in @[__x__]@ holds:
--- @ 'amap1' f ('simplex' xs) '==' 'simplex' ('amap1' f xs)@.
-class (Functorial1 OrdMap s, Foldable s, Transformable1 s Ord') => Simplical s where
+--  __Properties__ Let @__s__@ be a type instance of the class 'Simplical' and @s@ in @__s__ __x__@,
+-- then holds: @'dimension' f '==' 'dimension' s '-' 1@ for  all @f@ in @'faces' s@.
+class Simplical s where
   -- | the dimension of a simplex
-  dimension    :: s x -> Z
-  -- | the induced simplex given by a list of vertices.
-  simplex      :: Ord x => [x] -> s x
+  dimension :: s x -> Z
+  -- | the underlying set of vertices.
+  vertices  :: Ord x => s x -> Set x
   -- | the face of a simplex.
-  faces        :: s x -> [s x]
-  -- | all posible combinations together withe there dimension for the given set vertices
-  -- __Note__ This list may be infinite.
-  combinations :: Set x -> [(Z,Set (s x))] 
+  faces     :: s x -> [s x]
 
+--------------------------------------------------------------------------------
+-- vertex -
+
+vertex :: x -> Set x
+vertex x = Set [x]
+
+{-
 --------------------------------------------------------------------------------
 -- spxEmpty -
 
@@ -190,7 +172,7 @@ vertex x = simplex [x]
 -- | infering the 'Ord'-structure,
 spxOrd :: (Simplical s, Ord x) => f (s x) -> Struct Ord' (s x)
 spxOrd _ = tau1 Struct
-
+-}
 --------------------------------------------------------------------------------
 -- faces' -
 
@@ -218,24 +200,30 @@ spxDimSets ss = amap1 dsets $ groupBy (~) $ sort $ amap1 spxAdjDim ss where
   dsets zss = (d zss,Set $ amap1 snd zss) where d = fst . head
 
 --------------------------------------------------------------------------------
+-- spxFilter
+
+-- | filtering of a simplex list according the given predicate.
+spxFilter :: ((Z,s) -> Bool) -> [(Z,Set s)] -> [(Z,Set s)]
+spxFilter p = amap1 (setFilter p) where
+  setFilter :: ((Z,s) -> Bool) -> (Z,Set s) -> (Z,Set s)
+  setFilter p (z,Set ss) = (z,Set $ filter (\s -> p (z,s)) ss)
+
+--------------------------------------------------------------------------------
 -- [] - Simplical -
 
 instance Simplical [] where
   dimension    = pred . inj . lengthN
-  simplex      = id
+  vertices     = set
   faces []     = []
   faces (x:xs) = xs : amap1 (x:) (faces xs)
-  combinations = spxCombinations
 
 --------------------------------------------------------------------------------
 -- Set - Simplical -
 
 instance Simplical Set where
   dimension (Set xs) = dimension xs
-  simplex            = set
+  vertices           = id
   faces (Set xs)     = amap1 Set $ faces xs
-  combinations       = subsets
-
   
 --------------------------------------------------------------------------------
 -- Asc -
@@ -309,6 +297,5 @@ instance Transformable1 Asc Ord' where tau1 Struct = Struct
 
 instance Simplical Asc where
   dimension (Asc xs) = dimension xs
-  simplex            = asc
+  vertices (Asc xs)  = set xs
   faces (Asc xs)     = amap1 Asc $ faces xs
-  combinations       = ascCombinations
