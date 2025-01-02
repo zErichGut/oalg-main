@@ -47,8 +47,9 @@ import Control.Monad
 import Data.Kind
 import Data.Typeable
 import Data.Foldable (toList)
+import Data.List as L (head,tail,filter,repeat,(++)) 
 
-import OAlg.Prelude hiding (T)
+import OAlg.Prelude hiding (T,empty)
 
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
@@ -89,9 +90,19 @@ import OAlg.Homology.Simplical
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
-newtype ChainComplex n d = ChainComplex (Diagram (D.Chain To) (n+3) (n+2) d)
+newtype ChainComplex t n d = ChainComplex (Diagram (D.Chain t) (n+3) (n+2) d)
   deriving (Show,Eq)
 
+--------------------------------------------------------------------------------
+-- ccxPoints -
+
+ccxPoints :: Oriented d => ChainComplex t n d -> FinList (n+1) (Point d)
+ccxPoints (ChainComplex ds) = dropLast $ F.tail $ dgPoints ds where
+  dropLast :: FinList (n + 1) a -> FinList n a
+  dropLast (_ :| Nil)     = Nil
+  dropLast (x :| y :| xs) = x :| dropLast (y:|xs)
+
+{-
 --------------------------------------------------------------------------------
 -- ccxPred -
 
@@ -122,15 +133,18 @@ ccxMap' :: Oriented a => (forall k . ChainComplex k a -> b) -> ChainComplex n a 
 ccxMap' f c@(ChainComplex d) = case dgArrows d of
   _:|_:|Nil  -> f c :| Nil
   _:|_:|_:|_ -> f c :| ccxMap' f (ccxPred c)
+-}
+
 
 --------------------------------------------------------------------------------
 -- ChainComplex - Entity -
 
-instance Distributive d => Validable (ChainComplex n d) where
+instance Distributive d => Validable (ChainComplex t n d) where
   valid (ChainComplex ds) = valid ds && vldZeros ds where
     
-    vldZeros :: Distributive d => Diagram (D.Chain To) (n+3) (n+2) d -> Statement
-    vldZeros d@(DiagramChainTo _ _) = vldZerosTo 0 d
+    vldZeros :: Distributive d => Diagram (D.Chain t) (n+3) (n+2) d -> Statement
+    vldZeros d@(DiagramChainTo _ _)   = vldZerosTo 0 d
+    vldZeros d@(DiagramChainFrom _ _) = vldZerosTo 0 (coDiagram d)
 
     vldZerosTo :: Distributive d => N -> Diagram (D.Chain To) (n+3) (n+2) d -> Statement
     vldZerosTo i (DiagramChainTo _ (f:|g:|Nil)) = vldZeroTo i f g 
@@ -141,196 +155,13 @@ instance Distributive d => Validable (ChainComplex n d) where
     vldZeroTo i f g = Label (show i) :<=>: (isZero (f*g))
           :?> Params ["i":=show i,"f":=show f,"g":=show g]
 
-{-                      
 --------------------------------------------------------------------------------
--- SimplexSet -
+-- ccxCards -
 
--- | set of simplices as a set with list in @__x__@, having all the same length given by the first
--- parameter.
-data SimplexSet (s :: Type -> Type) x where
-  SimplexSet :: Set (s x) -> SimplexSet s x
+ccxCards :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
+  => ChainComplex t n (BoundaryOperator r s x) -> FinList (n+1) N
+ccxCards = amap1 lengthN . ccxPoints
 
-instance LengthN (SimplexSet x) where
-  lengthN (SimplexSet s) = lengthN s
-
------------------------------------------------------------------------------------------
--- sstLst -
-
--- | the underlying Set of lists with the given length.
-sstLst :: SimplexSet x -> (N,Set [x])
-sstLst (SimplexSet ss) = (l ss attest, Set $ amap1 toList $ toList ss) where
-  l :: Set (Simplex l x) -> Any l -> N
-  l _ = lengthN
-
---------------------------------------------------------------------------------
--- SimplexSet - Entity -
-
-deriving instance Show x => Show (SimplexSet x)
-
-instance Eq x => Eq (SimplexSet x) where
-  s == t = sstLst s == sstLst t
-
-instance Ord x => Ord (SimplexSet x) where
-  s `compare` t = sstLst s `compare` sstLst t 
-
-instance (Entity x, Ord x) => Validable (SimplexSet x) where
-  valid (SimplexSet s) = valid s
-
-instance (Entity x, Ord x) => Entity (SimplexSet x)
--}
-
---------------------------------------------------------------------------------
--- BoundaryOperator -
-
-data BoundaryOperatorRep r (s :: Type -> Type) x where
-  BoundaryOperatorRep
-    :: Representable r (HomBoundary r s) (C.Chain r s x) (C.Chain r s x)
-    -> BoundaryOperatorRep r s x
-
---------------------------------------------------------------------------------
--- borOrientation -
-
-borOrientation :: BoundaryOperatorRep r s x -> Orientation (Set (s x))
-borOrientation (BoundaryOperatorRep (Representable HomBoundary s' s)) = s' :> s
-
---------------------------------------------------------------------------------
--- BoundaryOperatorRep - FibredOriented -
-
-
-deriving instance Show (BoundaryOperatorRep r s x)
-
-instance Eq (s x) => Eq (BoundaryOperatorRep r s x) where
-  f == g = borOrientation f == borOrientation g
-
-instance Ord (s x) => Ord (BoundaryOperatorRep r s x) where
-  f `compare` g = borOrientation f `compare` borOrientation g
-
-instance Validable (BoundaryOperatorRep r s x) where
-  valid (BoundaryOperatorRep d) = valid d
-
-instance (Entity (s x), Typeable r, Typeable s, Typeable x) => Entity (BoundaryOperatorRep r s x)
-
-
-instance (Entity (s x), Ord (s x), Typeable r, Typeable s, Typeable x)
-  => Oriented (BoundaryOperatorRep r s x) where
-  type Point (BoundaryOperatorRep r s x) = Set (s x)
-  orientation = borOrientation
-
-instance Ord (s x) => OrdPoint (BoundaryOperatorRep r s x)
-
-
---------------------------------------------------------------------------------
--- ProductForm N (BoundaryOperatorRep r s x) - FibredOreiende -
-
-instance (Entity (s x), Ord (s x), Typeable r, Typeable s, Typeable x)
-  => Fibred (Product N (BoundaryOperatorRep r s x)) where
-  type Root (Product N (BoundaryOperatorRep r s x)) = Orientation (Set (s x))
-
-instance (Entity (s x), Ord (s x), Typeable r, Typeable s, Typeable x)
-  => FibredOriented (Product N (BoundaryOperatorRep r s x))
-
---------------------------------------------------------------------------------
--- BoundaryOperator -
-
-newtype BoundaryOperator r s x = BoundaryOperator (Sum r (Product N (BoundaryOperatorRep r s x)))
-  deriving (Show,Eq,Validable,Entity)
-
-instance Exposable (BoundaryOperator r s x) where
-  type Form (BoundaryOperator r s x) = SumForm r (Product N (BoundaryOperatorRep r s x))
-  form (BoundaryOperator d) = form d
-
-rdcBdOprPrd :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Form (BoundaryOperator r s x) -> Rdc (Form (BoundaryOperator r s x))
-rdcBdOprPrd sf = case (sf, root sf) of
-  (Zero _,_)   -> return sf
-  (_, r@(s :> t)) | lengthN s == 0 || lengthN t == 0 -> reducesTo (Zero r )
-  (S.S p, r)   -> case form p of
-                    _ :* _ -> reducesTo (Zero r)
-                    _      -> return $ S.S p
-  (x :! sf',_) -> rdcBdOprPrd sf' >>= return . (x:!)
-  (sr :+ st,_) -> do
-    sr' <- rdcBdOprPrd sr
-    st' <- rdcBdOprPrd st
-    return (sr' :+ st')
-
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Constructable (BoundaryOperator r s x) where
-  make = BoundaryOperator . make . reduceWith rdcBdOprPrd
-
---------------------------------------------------------------------------------
--- bdo -
-
-bdo :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-    => Representable r (HomBoundary r s) (C.Chain r s x) (C.Chain r s x)
-    -> BoundaryOperator r s x
-bdo = make . S.S . make . P . BoundaryOperatorRep
-{-
---------------------------------------------------------------------------------
--- bdoDim -
-
--- | the dimension of the middle set of simplices.
-bdoDim :: (Entity x, Ord x) => ChainComplex From N0 (BoundaryOperator Z x) -> SomeNatural
-bdoDim (ChainComplex (DiagramChainFrom _ (_:|d:|_))) = case end d of
-  SimplexSet s -> SomeNatural $ k s where
-    k :: Attestable k => Set (Simplex k x) -> Any k
-    k _ = attest
--}
-
---------------------------------------------------------------------------------
--- BoundaryOperator - Algebraic -
-
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Oriented (BoundaryOperator r s x) where
-  type Point (BoundaryOperator r s x) = Set (s x)
-  orientation (BoundaryOperator d) = root d
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Fibred (BoundaryOperator r s x) where
-  type Root (BoundaryOperator r s x) = Orientation (Set (s x))
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => FibredOriented (BoundaryOperator r s x)
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Multiplicative (BoundaryOperator r s x) where
-
-  one = make . form . sOne where
-    sOne :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-         => Set (s x) -> Sum r (Product N (BoundaryOperatorRep r s x))
-    sOne = one
-
-  BoundaryOperator f * BoundaryOperator g = make $ form (f * g)
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Additive (BoundaryOperator r s x) where
-  zero = make . Zero
-
-  f@(BoundaryOperator fs) + g@(BoundaryOperator gs)
-    | root f /= root g = throw NotAddable
-    | otherwise = make (form fs :+ form gs)
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Abelian (BoundaryOperator r s x) where
-  negate (BoundaryOperator d) = make $ form $ negate d
-
-  BoundaryOperator f - BoundaryOperator g
-    | root f /= root g = throw NotAddable
-    | otherwise        = make $ form (f - g)
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Distributive (BoundaryOperator r s x)
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Vectorial (BoundaryOperator r s x) where
-  type Scalar (BoundaryOperator r s x) = r
-
-  r ! (BoundaryOperator f) = make (r :! form f)
-
-instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => Algebraic (BoundaryOperator r s x)
-  
 --------------------------------------------------------------------------------
 -- Regular -
 
@@ -342,8 +173,44 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 -- chainComplex -
 
 chainComplex :: Simplical s
-  => Regular -> Any n -> Complex x -> ChainComplex n (BoundaryOperator r s x)
+  => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r s x)
 chainComplex r n c = error "nyi"
+
+ccpLst :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
+  => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r s x)
+ccpLst r n c = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n (elg c) l0 sxs) where
+  lMinOne:l0:sxs = (amap1 snd $ simplices $ cpxVertexSet c) L.++ L.repeat setEmpty
+  
+  d0 = case r of
+    Regular  -> zero (l0 :> setEmpty)
+    Extended -> bdo (Representable HomBoundary l0 lMinOne)
+
+  ds :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
+     => Any n -> (s x -> Bool) -> Set (s x) -> [Set (s x)]
+     -> FinList (n+1) (BoundaryOperator r s x)
+  ds W0 elg l sxs = d :| Nil where
+    d  = bdo (Representable HomBoundary l' l)
+    l' = Set $ filter elg $ setxs $ L.head sxs -- sxs is a infinite list!    
+  ds (SW n) elg l sxs = d :| ds n elg l' (L.tail sxs) where
+    d  = bdo (Representable HomBoundary l' l)
+    l' = Set $ filter elg $ setxs $ L.head sxs -- sxs is a infinite list!
+
+  elg :: (Simplical s, Ord x) => Complex x -> s x -> Bool
+  elg c = isSimplex c . vertices
+
+ccl :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z [] N)
+ccl r n m = ccpLst r n (complex [Set [1..m]]) 
+
+ccs :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Set N)
+ccs r n m = ccpLst r n (complex [Set [1..m]]) 
+
+cca :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Asc N)
+cca r n m = ccpLst r n (complex [Set [1..m]]) 
+
+
+ff :: Typeable s => [(Z,Set (s x))] -> Maybe (s :~: Set)
+ff _ = eqT
+
 
 
 {-
