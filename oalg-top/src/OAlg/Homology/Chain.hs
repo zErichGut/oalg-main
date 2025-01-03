@@ -23,15 +23,19 @@
 -- The boundary of a 'Chain'.
 module OAlg.Homology.Chain
   (
+
     -- * Boundary
     HomBoundary(..), boundary
 
     -- * Chain
   , Chain, ch
 
-    -- * BoundaryOperator
+    -- * Boundary Operator
   , BoundaryOperator(), bdo
   , BoundaryOperatorRep(..)
+
+    -- * Hom Boundary Operator
+  , HomBoundaryOperator(..)
   ) where
 
 import Control.Monad
@@ -45,6 +49,7 @@ import OAlg.Prelude
 
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
+import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Fibred
@@ -52,13 +57,18 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Exponential
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 import OAlg.Structure.Algebraic
 
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
+import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
+import OAlg.Hom.Algebraic
 
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sum
@@ -96,10 +106,11 @@ boundary = ssySum (bdr rAlt) where
   bdr :: Simplical s => [r] -> s x -> LinearCombination r (s x)
   bdr rs s = LinearCombination (rs `zip` faces s)
 
+
 --------------------------------------------------------------------------------
 -- HomBoundary -
 
--- | the 'boundary' operator as homomorphism.
+-- | the 'boundary' operator as homomorphism between 'Chain's.
 data HomBoundary r (s :: Type -> Type) x y where
   HomBoundary :: (Entity (s x), Ord (s x)) 
     => HomBoundary r s (Chain r s x) (Chain r s x)
@@ -124,16 +135,16 @@ instance (Typeable r, Typeable s) => Entity2 (HomBoundary r s)
 --------------------------------------------------------------------------------
 -- HomBoundary - HomVectorial -
 
-instance (Ring r, Commutative r) => Morphism (HomBoundary r s) where
+
+instance (Ring r, Commutative r, Simplical s) => Morphism (HomBoundary r s) where
   type ObjectClass (HomBoundary r s) = Vec r
   homomorphous HomBoundary = Struct :>: Struct
 
-
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) Typ
-instance (Ring r, Commutative r) => EmbeddableMorphismTyp (HomBoundary r s) 
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) Fbr
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) Add
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r s) (Vec r)
+instance (Ring r, Commutative r, Simplical s) => EmbeddableMorphism (HomBoundary r s) Typ
+instance (Ring r, Commutative r, Simplical s) => EmbeddableMorphismTyp (HomBoundary r s) 
+instance (Ring r, Commutative r, Simplical s) => EmbeddableMorphism (HomBoundary r s) Fbr
+instance (Ring r, Commutative r, Simplical s) => EmbeddableMorphism (HomBoundary r s) Add
+instance (Ring r, Commutative r, Simplical s) => EmbeddableMorphism (HomBoundary r s) (Vec r)
 
 instance (Ring r, Commutative r, Simplical s) => Applicative (HomBoundary r s) where
   amap HomBoundary = boundary
@@ -152,7 +163,6 @@ data BoundaryOperatorRep r (s :: Type -> Type) x where
     :: Representable r (HomBoundary r s) (Chain r s x) (Chain r s x)
     -> BoundaryOperatorRep r s x
 
-
 --------------------------------------------------------------------------------
 -- borOrientation -
 
@@ -165,22 +175,24 @@ borOrientation (BoundaryOperatorRep (Representable HomBoundary s' s)) = s' :> s
 
 deriving instance Show (BoundaryOperatorRep r s x)
 
-instance Eq (s x) => Eq (BoundaryOperatorRep r s x) where
-  f == g = borOrientation f == borOrientation g
+instance Eq (BoundaryOperatorRep r s x) where
+  f@(BoundaryOperatorRep (Representable HomBoundary _ _)) == g = borOrientation f == borOrientation g
 
-instance Ord (s x) => Ord (BoundaryOperatorRep r s x) where
-  f `compare` g = borOrientation f `compare` borOrientation g
+instance Ord (BoundaryOperatorRep r s x) where
+  f@(BoundaryOperatorRep (Representable HomBoundary _ _)) `compare` g
+    = borOrientation f `compare` borOrientation g
 
 instance Validable (BoundaryOperatorRep r s x) where
   valid (BoundaryOperatorRep d) = valid d
 
-instance (Entity (s x), Typeable r, Typeable s, Typeable x) => Entity (BoundaryOperatorRep r s x)
+instance (Typeable s, Typeable r, Typeable x) => Entity (BoundaryOperatorRep r s x)
 
 
-instance (Entity (s x), Ord (s x), Typeable r, Typeable s, Typeable x)
+instance (Typeable s, Typeable r, Typeable x, Entity (s x), Ord (s x))
   => Oriented (BoundaryOperatorRep r s x) where
   type Point (BoundaryOperatorRep r s x) = Set (s x)
   orientation = borOrientation
+
 
 instance Ord (s x) => OrdPoint (BoundaryOperatorRep r s x)
 
@@ -197,6 +209,7 @@ instance (Entity (s x), Ord (s x), Typeable r, Typeable s, Typeable x)
 --------------------------------------------------------------------------------
 -- BoundaryOperator -
 
+-- | the boundary operator as a 'Algebraic'-structure
 newtype BoundaryOperator r s x = BoundaryOperator (Sum r (Product N (BoundaryOperatorRep r s x)))
   deriving (Show,Eq,Validable,Entity)
 
@@ -222,7 +235,6 @@ rdcBdOprPrd sf = case (sf, root sf) of
 instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
   => Constructable (BoundaryOperator r s x) where
   make = BoundaryOperator . make . reduceWith rdcBdOprPrd
-
 
 --------------------------------------------------------------------------------
 -- bdo -
@@ -285,4 +297,110 @@ instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x
 instance (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
   => Algebraic (BoundaryOperator r s x)
 
+
+--------------------------------------------------------------------------------
+-- homBoundaryOperatorRep -
+
+homBoundaryOperatorRep' :: (Entity (s x), Ord (s x), Ring r, Commutative r, Ord r, OrdPoint r)
+  => Product N (BoundaryOperatorRep r s x) -> Matrix r
+homBoundaryOperatorRep' = rep . form where
+  rep :: (Entity (s x), Ord (s x), Ring r, Commutative r, Ord r, OrdPoint r)
+    => ProductForm N (BoundaryOperatorRep r s x) -> Matrix r
+  rep (One s)   = one (dim unit ^ lengthN s)
+  rep (P d)     = case d of { BoundaryOperatorRep d' -> repMatrix d' }
+  rep (d :^ n)  = ntimes n (rep d)
+  rep (d :* d') = rep d * rep d'
+
+
+homBoundaryOperatorRep
+  :: ( Entity (s x), Ord (s x), Ring r, Commutative r, Ord r, OrdPoint r
+     , Vectorial r, Scalar r ~ r
+     )
+  => BoundaryOperator r s x -> Matrix r
+homBoundaryOperatorRep (BoundaryOperator d) = rep $ form d where
+  rep :: (Entity (s x), Ord (s x), Ring r, Commutative r, Ord r, OrdPoint r, Vectorial r, Scalar r ~ r)
+      => SumForm r (Product N (BoundaryOperatorRep r s x)) -> Matrix r
+  rep (Zero (c:>r)) = zero ((d^lengthN c) :> (d^lengthN r)) where d = dim unit
+  rep (S d)         = homBoundaryOperatorRep' d
+  rep (r :! d)      = r ! rep d
+  rep (f :+ g)      = rep f + rep g
+
+--------------------------------------------------------------------------------
+-- HomBoundaryOperator -
+
+-- | the assignment of a boundary operator to its representation matrix as a homomorphism between
+-- 'Algebraic'-structures.
+data HomBoundaryOperator r s x y where
+  HomBoundaryOperatorRep :: (Entity (s x), Ord (s x), Typeable x)
+    => HomBoundaryOperator r s (BoundaryOperator r s x) (Matrix r)
+
+deriving instance Show (HomBoundaryOperator r s x y)
+instance Show2 (HomBoundaryOperator r s)
+
+deriving instance Eq (HomBoundaryOperator r s x y)
+instance Eq2 (HomBoundaryOperator r s)
+
+instance Validable (HomBoundaryOperator r s x y) where
+  valid HomBoundaryOperatorRep = SValid
+
+instance Validable2 (HomBoundaryOperator r s)
+
+instance (Typeable r, Typeable s, Typeable x, Typeable y) => Entity (HomBoundaryOperator r s x y)
+instance (Typeable r, Typeable s) => Entity2 (HomBoundaryOperator r s)
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => Morphism (HomBoundaryOperator r s) where
+  type ObjectClass (HomBoundaryOperator r s) = Alg r
+  homomorphous HomBoundaryOperatorRep = Struct :>: Struct
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) Typ
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphismTyp (HomBoundaryOperator r s)
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) Fbr
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) Ort
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) Mlt
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) Add
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) Dst
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) FbrOrt
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) (Vec r)
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => EmbeddableMorphism (HomBoundaryOperator r s) (Alg r)
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
+  => Applicative (HomBoundaryOperator r s) where
+  amap HomBoundaryOperatorRep = homBoundaryOperatorRep
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomFibred (HomBoundaryOperator r s) where
+  rmap HomBoundaryOperatorRep (c :> r) = (d^lengthN c) :> (d^lengthN r) where d = dim unit
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomOriented (HomBoundaryOperator r s) where
+  pmap HomBoundaryOperatorRep s = dim unit ^ lengthN s
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomMultiplicative (HomBoundaryOperator r s) 
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomAdditive (HomBoundaryOperator r s) 
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomFibredOriented (HomBoundaryOperator r s) 
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomDistributive (HomBoundaryOperator r s) 
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomVectorial r (HomBoundaryOperator r s) 
+
+instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r, Typeable s)
+  => HomAlgebraic r (HomBoundaryOperator r s) 
 

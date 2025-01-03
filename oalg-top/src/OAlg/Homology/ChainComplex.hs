@@ -53,7 +53,7 @@ import OAlg.Prelude hiding (T,empty)
 
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
-import OAlg.Data.Singleton
+
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -172,13 +172,11 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 --------------------------------------------------------------------------------
 -- chainComplex -
 
-chainComplex :: Simplical s
+chainComplex
+  :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
   => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r s x)
-chainComplex r n c = error "nyi"
-
-ccpLst :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
-  => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r s x)
-ccpLst r n c = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n (elg c) l0 sxs) where
+chainComplex r n c
+  = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n (cpxIndex c) l0 sxs) where
   lMinOne:l0:sxs = (amap1 snd $ simplices $ cpxVertexSet c) L.++ L.repeat setEmpty
   
   d0 = case r of
@@ -186,30 +184,55 @@ ccpLst r n c = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n (elg c) l0 sxs
     Extended -> bdo (Representable HomBoundary l0 lMinOne)
 
   ds :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
-     => Any n -> (s x -> Bool) -> Set (s x) -> [Set (s x)]
+     => Any n -> ((Z,Set x) -> Maybe N) -> Set (s x) -> [Set (s x)]
      -> FinList (n+1) (BoundaryOperator r s x)
-  ds W0 elg l sxs = d :| Nil where
+  ds W0 ivs l sxs = d :| Nil where
     d  = bdo (Representable HomBoundary l' l)
-    l' = Set $ filter elg $ setxs $ L.head sxs -- sxs is a infinite list!    
-  ds (SW n) elg l sxs = d :| ds n elg l' (L.tail sxs) where
+    l' = Set $ filter (elg ivs) $ setxs $ L.head sxs -- sxs is a infinite list!    
+  ds (SW n) ivs l sxs = d :| ds n ivs l' (L.tail sxs) where
     d  = bdo (Representable HomBoundary l' l)
-    l' = Set $ filter elg $ setxs $ L.head sxs -- sxs is a infinite list!
+    l' = Set $ filter (elg ivs) $ setxs $ L.head sxs -- sxs is a infinite list!
 
-  elg :: (Simplical s, Ord x) => Complex x -> s x -> Bool
-  elg c = isSimplex c . vertices
+  elg :: (Simplical s, Ord x) => ((Z,Set x) -> Maybe N) -> s x -> Bool
+  elg i sx = case i (spxAdjDim $ vertices sx) of
+    Nothing -> False
+    _       -> True
+
+chainComplexSet
+  :: (Ring r, Commutative r, Entity x, Ord x)
+  => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r Set x)
+chainComplexSet r n c = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n l0 sxs) where
+  lMinOne:l0:sxs = (amap1 snd $ cpxxs c) L.++ L.repeat setEmpty
+  
+  d0 = case r of
+    Regular  -> zero (l0 :> setEmpty)
+    Extended -> bdo (Representable HomBoundary l0 lMinOne)
+
+  ds :: (Ring r, Commutative r, Entity x, Ord x)
+     => Any n -> Set (Set x) -> [Set (Set x)]
+     -> FinList (n+1) (BoundaryOperator r Set x)
+  ds W0 l sxs = d :| Nil where
+    d  = bdo (Representable HomBoundary l' l)
+    l' = L.head sxs -- sxs is a infinite list!    
+  ds (SW n) l sxs = d :| ds n l' (L.tail sxs) where
+    d  = bdo (Representable HomBoundary l' l)
+    l' = L.head sxs -- sxs is a infinite list!= chainComplex
 
 ccl :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z [] N)
-ccl r n m = ccpLst r n (complex [Set [1..m]]) 
+ccl r n m = chainComplex r n (complex [Set [1..m]]) 
 
 ccs :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Set N)
-ccs r n m = ccpLst r n (complex [Set [1..m]]) 
+ccs r n m = chainComplex r n (complex [Set [1..m]])
+
+ccs' :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Set N)
+ccs' r n m = chainComplexSet r n (complex [Set [1..m]])
+
+eq r n m = ccs r n m == ccs' r n m
 
 cca :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Asc N)
-cca r n m = ccpLst r n (complex [Set [1..m]]) 
+cca r n m = chainComplex r n (complex [Set [1..m]]) 
 
 
-ff :: Typeable s => [(Z,Set (s x))] -> Maybe (s :~: Set)
-ff _ = eqT
 
 
 

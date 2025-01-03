@@ -30,8 +30,11 @@ module OAlg.Homology.Simplical
     -- * Asc
   , Asc(..), ascxs, asc
 
+  , EntOrd
     -----------------------------------------
   , OrdMap(..)
+
+    
 {-    
     -- * Simplex
     Simplex(..), simplex, spxDim, spxxs, spxEmpty, spxMap
@@ -46,6 +49,7 @@ module OAlg.Homology.Simplical
 
 import Control.Monad (join)
 
+import Data.Typeable
 import Data.List (head,tail,filter,sort,groupBy,(++),zip)
 import Data.Foldable
 
@@ -128,6 +132,12 @@ subsets (Set (x:xs)) = (-1,Set [Set []]) : (x <<: subsets (Set xs)) where
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------
+-- EntOrd -
+
+data EntOrd
+
+type instance Structure EntOrd x = (Entity x, Ord x)
 
 --------------------------------------------------------------------------------
 -- Simplical -
@@ -145,7 +155,7 @@ subsets (Set (x:xs)) = (-1,Set [Set []]) : (x <<: subsets (Set xs)) where
 --
 -- (3) For all @f@ in @'OrdMap' __x__ __y__@ and @sx@ in @__s__ __x__@ holds:
 -- @'vertices' ('amap1' f sx) '==' 'amap1' f ('vertices' sx)@.
-class (Functorial1 OrdMap s, Transformable1 s Ord')  => Simplical s where
+class Functorial1 OrdMap s => Simplical s where
   -- | the dimension of a simplex
   dimension :: s x -> Z
   -- | the empty simplex.
@@ -156,44 +166,17 @@ class (Functorial1 OrdMap s, Transformable1 s Ord')  => Simplical s where
   simplices :: Set x -> [(Z,Set (s x))] 
 
 --------------------------------------------------------------------------------
--- spxStructOrd -
-
-spxStructOrd :: (Simplical s, Ord x) => f (s x) -> Struct Ord' (s x)
-spxStructOrd _ = tau1 Struct
-
---------------------------------------------------------------------------------
 -- vertex -
 
 vertex :: x -> Set x
 vertex x = Set [x]
 
-{-
---------------------------------------------------------------------------------
--- spxEmpty -
-
--- | the empty simplex.
-spxEmpty :: (Simplical s, Ord x) => s x
-spxEmpty = simplex []
-
---------------------------------------------------------------------------------
--- vertex -
-
-vertex :: (Simplical s, Ord x) => x -> s x
-vertex x = simplex [x]
-
---------------------------------------------------------------------------------
--- spxOrd -
-
--- | infering the 'Ord'-structure,
-spxOrd :: (Simplical s, Ord x) => f (s x) -> Struct Ord' (s x)
-spxOrd _ = tau1 Struct
--}
 --------------------------------------------------------------------------------
 -- faces' -
 
 -- | the faces as set of simplices.
-faces' :: (Simplical s, Ord x) => Set (s x) -> Set (s x)
-faces' sx = case spxStructOrd sx of Struct -> set $ join $ amap1 faces $ setxs sx
+faces' :: (Simplical s, Ord (s x)) => Set (s x) -> Set (s x)
+faces' = set . join . amap1 faces . setxs
 
 
 --------------------------------------------------------------------------------
@@ -207,13 +190,12 @@ spxAdjDim s = (dimension s,s)
 -- spxDimSets -
 
 -- | the grouped simplices according to there dimension with increasing dimension.
-spxDimSets :: (Simplical s, Ord x) => [s x] -> [(Z,Set (s x))]
-spxDimSets ss = case spxStructOrd ss of Struct -> amap1 dsets $ groupBy (~) $ sort $ amap1 spxAdjDim ss
-  where
-    (d,_) ~ (d',_) = d == d'
+spxDimSets :: (Simplical s, Ord (s x)) => [s x] -> [(Z,Set (s x))]
+spxDimSets = amap1 dsets . groupBy (~) . sort . amap1 spxAdjDim  where
+  (d,_) ~ (d',_) = d == d'
       
-    dsets :: [(z,s)] -> (z,Set s)
-    dsets zss = (d zss,Set $ amap1 snd zss) where d = fst . head
+  dsets :: [(z,s)] -> (z,Set s)
+  dsets zss = (d zss,Set $ amap1 snd zss) where d = fst . head
 
 --------------------------------------------------------------------------------
 -- spxFilter
@@ -227,6 +209,8 @@ spxFilter p = amap1 (setFilter p) where
 --------------------------------------------------------------------------------
 -- [] - Simplical -
 
+instance Transformable1 [] EntOrd where tau1 Struct = Struct
+
 instance Simplical [] where
   dimension    = pred . inj . lengthN
   vertices     = set
@@ -236,6 +220,8 @@ instance Simplical [] where
 
 --------------------------------------------------------------------------------
 -- Set - Simplical -
+
+instance Transformable1 Set EntOrd where tau1 Struct = Struct
 
 instance Simplical Set where
   dimension (Set xs) = dimension xs
@@ -312,9 +298,11 @@ instance Applicative1 OrdMap Asc where
 instance Functorial1 OrdMap Asc
 
 instance Transformable1 Asc Ord' where tau1 Struct = Struct
+instance Transformable1 Asc EntOrd where tau1 Struct = Struct
 
 instance Simplical Asc where
   dimension (Asc xs) = dimension xs
   vertices (Asc xs)  = set xs
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = ascCombinations
+

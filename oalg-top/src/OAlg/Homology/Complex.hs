@@ -25,8 +25,8 @@ module OAlg.Homology.Complex
   (
 
     -- * Complex
-    Complex(..), isSimplex, cpxxs, complex, cpxSet, cpxVertexSet
-  , cpxEmpty
+    Complex(..), cpxxs, complex, cpxSet, cpxVertexSet
+  , cpxEmpty, cpxIndex
 {-    
     -- * Complex
     Complex(..)
@@ -207,7 +207,7 @@ cpxVertices (Complex zsx) = case tail zsx of
 --------------------------------------------------------------------------------
 -- isVertex -
 
-isVertex :: Ord x  => x -> Complex x -> Bool
+isVertex :: Ord x => x -> Complex x -> Bool
 isVertex x c = Set [vertex x] `isSubSet` cpxVertices c
 
 --------------------------------------------------------------------------------
@@ -217,13 +217,10 @@ cpxSet :: Complex x -> Set (Z,Set x)
 cpxSet (Complex zsx) = Set $ join $ amap1 (\(z,Set sx) -> amap1 (z,) sx) zsx
 
 --------------------------------------------------------------------------------
--- isSimplex -
+-- cpxIndex -
 
-isSimplex :: Ord x => Complex x -> Set x -> Bool
-isSimplex c x = case i (dimension x,x) of
-  Nothing -> False
-  _       -> True
-  where i = setIndex $ cpxSet c
+cpxIndex :: Ord x => Complex x -> (Z,Set x) -> Maybe N
+cpxIndex = setIndex . cpxSet
 
 --------------------------------------------------------------------------------
 -- cpxCards -
