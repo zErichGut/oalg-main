@@ -27,10 +27,14 @@ module OAlg.Homology.Simplical
   , spxAdjDim, spxFilter
   , vertex
 
+    -- * Homological
+  , Homological(..)
+
     -- * Asc
   , Asc(..), ascxs, asc
 
   , EntOrd
+
     -----------------------------------------
   , OrdMap(..)
 
@@ -207,6 +211,17 @@ spxFilter p = amap1 (setFilter p) where
   setFilter p (z,Set ss) = (z,Set $ filter (\s -> p (z,s)) ss)
 
 --------------------------------------------------------------------------------
+-- Homological -
+
+-- | simplical structures, where the application of a 'OrdMap' preserves the 'dimension' of the
+-- simplices.
+--
+-- __Property__ Let @__s__@ be a instance of 'Homological', then holds:
+-- For each @f@ in @'OrdMap' __x__ __y__@ and @s@ in @__s__ __x__@ holds:
+-- @'dimension' ('amap1' f s) '==' 'dimension' s@.
+class Simplical s => Homological s
+
+--------------------------------------------------------------------------------
 -- [] - Simplical -
 
 instance Transformable1 [] EntOrd where tau1 Struct = Struct
@@ -217,6 +232,8 @@ instance Simplical [] where
   faces []     = []
   faces (x:xs) = xs : amap1 (x:) (faces xs)
   simplices    = spxCombinations
+
+instance Homological []
 
 --------------------------------------------------------------------------------
 -- Set - Simplical -
@@ -306,3 +323,4 @@ instance Simplical Asc where
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = ascCombinations
 
+instance Homological Asc

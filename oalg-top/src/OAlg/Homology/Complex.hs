@@ -27,6 +27,10 @@ module OAlg.Homology.Complex
     -- * Complex
     Complex(..), cpxxs, complex, cpxSet, cpxVertexSet
   , cpxEmpty, cpxIndex
+
+    -- * Complex Map
+  , ComplexMap(..)
+  
 {-    
     -- * Complex
     Complex(..)

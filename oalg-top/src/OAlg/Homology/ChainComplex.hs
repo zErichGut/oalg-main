@@ -51,6 +51,7 @@ import Data.List as L (head,tail,filter,repeat,(++))
 
 import OAlg.Prelude hiding (T,empty)
 
+import OAlg.Data.Canonical
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 
@@ -61,6 +62,7 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
+import OAlg.Structure.Number
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
@@ -96,11 +98,14 @@ newtype ChainComplex t n d = ChainComplex (Diagram (D.Chain t) (n+3) (n+2) d)
 --------------------------------------------------------------------------------
 -- ccxPoints -
 
-ccxPoints :: Oriented d => ChainComplex t n d -> FinList (n+1) (Point d)
-ccxPoints (ChainComplex ds) = dropLast $ F.tail $ dgPoints ds where
-  dropLast :: FinList (n + 1) a -> FinList n a
-  dropLast (_ :| Nil)     = Nil
-  dropLast (x :| y :| xs) = x :| dropLast (y:|xs)
+ccxPoints :: Oriented d => ChainComplex t n d -> FinList (n+3) (Point d)
+ccxPoints (ChainComplex ds) = dgPoints ds
+
+--------------------------------------------------------------------------------
+-- ccxBoundaryOperators -
+
+ccxBoundaryOperators :: ChainComplex t n d -> FinList (n+2) d
+ccxBoundaryOperators (ChainComplex ds) = dgArrows ds
 
 {-
 --------------------------------------------------------------------------------
@@ -120,13 +125,6 @@ ccxHead (ChainComplex (DiagramChainTo e (d':|d:|_)))
   = ChainComplex (DiagramChainTo e  (d':|d:|Nil))
 
 --------------------------------------------------------------------------------
--- ccxMap -
-
--- | mapping according to the given distributive homomorphism.
-ccxMap :: Hom Dst h => h a b -> ChainComplex n a -> ChainComplex n b
-ccxMap h (ChainComplex c) = ChainComplex (dgMap h c)
-
---------------------------------------------------------------------------------
 -- ccxMap' -
 
 ccxMap' :: Oriented a => (forall k . ChainComplex k a -> b) -> ChainComplex n a -> FinList (n+1) b
@@ -135,6 +133,12 @@ ccxMap' f c@(ChainComplex d) = case dgArrows d of
   _:|_:|_:|_ -> f c :| ccxMap' f (ccxPred c)
 -}
 
+--------------------------------------------------------------------------------
+-- ccxMap -
+
+-- | mapping according to the given distributive homomorphism.
+ccxMap :: Hom Dst h => h a b -> ChainComplex t n a -> ChainComplex t n b
+ccxMap h (ChainComplex c) = ChainComplex (dgMap h c)
 
 --------------------------------------------------------------------------------
 -- ChainComplex - Entity -
@@ -159,7 +163,7 @@ instance Distributive d => Validable (ChainComplex t n d) where
 -- ccxCards -
 
 ccxCards :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => ChainComplex t n (BoundaryOperator r s x) -> FinList (n+1) N
+  => ChainComplex t n (BoundaryOperator r s x) -> FinList (n+3) N
 ccxCards = amap1 lengthN . ccxPoints
 
 --------------------------------------------------------------------------------
@@ -232,10 +236,55 @@ eq r n m = ccs r n m == ccs' r n m
 cca :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Asc N)
 cca r n m = chainComplex r n (complex [Set [1..m]]) 
 
+ddZ :: (Typeable s, Entity (s x), Ord (s x), Typeable x)
+  => ChainComplex To n (BoundaryOperator Z s x) -> FinList (n+2) (Matrix Z)
+ddZ = ccxBoundaryOperators . ccxMap BORepresentation
 
+bdoZ :: (Typeable s, Entity (s x), Ord (s x), Typeable x)
+  => ChainComplex To n (BoundaryOperator Z s x) -> ChainComplex To n (Matrix Z)
+bdoZ = ccxMap BORepresentation
 
+dns :: Matrix Z -> (N,N,String)
+dns m = (lengthN c,cr,sh dgs) where
+  c :> r = orientation m
+  cr = lengthN r * lengthN c
+  dgs :: Maybe (Digits 10 Q)
+  dgs = amap1 toDigits $ mtxDensity m
 
+  sh Nothing    = ""
+  sh (Just (Digits _ [] fs)) = "0." L.++ (join $ amap1 show $ takeN 6 fs)
+  sh (Just (Digits _ _ _))   = "1"
 
+--------------------------------------------------------------------------------
+-- ChainComplexMap -
+
+-- | map between chain complexes, i.e. transformation of the underlying diagrams.
+newtype ChainComplexMap t n d = ChainComplexMap (Transformation (D.Chain t) (n+3) (n+2) d)
+  deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- ccmOrientation -
+
+ccmOrientation :: (Multiplicative d, Typeable t, Typeable n)
+  => ChainComplexMap t n d -> Orientation (ChainComplex t n d)
+ccmOrientation (ChainComplexMap t) = ChainComplex a :> ChainComplex b where a :> b = orientation t 
+
+--------------------------------------------------------------------------------
+-- ChainComplexMap - Structure -
+
+instance (Distributive d, Typeable t, Typeable n) => Validable (ChainComplexMap t n d) where
+  valid f@(ChainComplexMap t) = Label "ChainComplexMap"
+    :<=>: And [ valid t
+              , valid $ ccmOrientation f
+              ]
+
+--------------------------------------------------------------------------------
+-- chainComplexMap -
+
+chainComplexMap
+  :: Regular -> Any n -> ComplexMap (Complex x) (Complex y)
+  -> ChainComplexMap To n (Matrix r)
+chainComplexMap = error "nyi"
 {-
 --------------------------------------------------------------------------------
 -- chainComplex -
