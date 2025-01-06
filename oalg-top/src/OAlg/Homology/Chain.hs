@@ -28,6 +28,10 @@ module OAlg.Homology.Chain
 
     -- * Chain Homomorphism
   , ChainHom(..), chainHomRep
+
+  --------------------------------------
+  --------------------------------------
+  , setDifference
   ) where
 
 import Control.Monad
@@ -73,6 +77,23 @@ setDifference (Set xs) (Set ys) = Set $ diff xs ys where
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+
+f :: Char -> Char
+f 'a' = 'b'
+f 'b' = 'a'
+f c   = c
+
+chZ :: (Entity (s x), Ord (s x))
+  => ([x] -> s x) -> [x] -> Chain Z s x
+chZ s = ch . s
+
+fd :: (Simplical s, Ord x, Entity (s x), Ord (s x))
+  => ([x] -> s x) -> (x -> x) -> [x] -> Chain Z s x
+fd s f = chainMap (OrdMap f) . boundary . ch . s
+
+df :: (Simplical s, Ord x, Entity (s x), Ord (s x))
+  => ([x] -> s x) -> (x -> x) -> [x] -> Chain Z s x
+df s f = boundary . chainMap (OrdMap f) . ch . s
 
 
 --------------------------------------------------------------------------------

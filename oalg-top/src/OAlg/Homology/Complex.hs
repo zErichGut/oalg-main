@@ -157,7 +157,7 @@ pmtSign p = if mod (lengthN $ splitCycles p) 2 == 0 then 1 else -1
 --
 --  (2) @z0 '==' -1@ where @(z0,_) = 'head' zsx@.
 --
---  (3) For all @(z,'Set' sxs)@ in @zsx@ holds: @'dimension' sx '==' z@ for all @sx@ in @sxs@.
+--  (3) For all @(z,'Set' sxs)@ in @zssx@ holds: @'dimension' sx '==' z@ for all @sx@ in @sxs@.
 --
 --  (4) For all @..(z,su)':'(z',sv)..@ in @zsx@ holds:
 --
