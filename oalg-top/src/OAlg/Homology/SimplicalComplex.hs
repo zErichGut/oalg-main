@@ -52,7 +52,7 @@ import OAlg.Entity.Sequence.Set
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
-import OAlg.Homology.Chain
+
 
 --------------------------------------------------------------------------------
 -- SimplicalComplex -
@@ -123,6 +123,7 @@ instance ( Simplical s, Typeable s, Entity (s x), Ord (s x), Entity x, Ord x, Ty
 --------------------------------------------------------------------------------
 -- simplicalComplexSet -
 
+-- | the embedding of a complex into a simplical complex.
 simplicalComplexSet :: Any n -> Complex x -> SimplicalComplex Set n x
 simplicalComplexSet n c@(Complex zssx) = SimplicalComplex c (zssx' n (-1) ssx) where
   ssx = amap1 snd zssx L.++ L.repeat setEmpty

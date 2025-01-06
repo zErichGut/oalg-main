@@ -30,6 +30,9 @@ module OAlg.Homology.Complex
 
     -- * Complex Map
   , ComplexMap(..)
+
+  --------------------
+  , setDifference
   
 {-    
     -- * Complex
@@ -61,7 +64,7 @@ module OAlg.Homology.Complex
 
 import Control.Monad
 
-import Data.List as L (head,tail,last,reverse,(++),span,filter)
+import Data.List as L (head,tail,zip,last,reverse,repeat,(++),span,filter)
 import Data.Foldable (toList,foldl)
 import Data.Maybe
 
@@ -81,7 +84,21 @@ import OAlg.Homology.Simplical
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------
+-- Set -
+
 deriving instance (Ord i, Ord x) => Ord (Graph i x)
+
+--------------------------------------------------------------------------------
+-- setDifference -
+setDifference :: Ord x => Set x -> Set x -> Set x
+setDifference (Set xs) (Set ys) = Set $ diff xs ys where
+  diff [] _          = []
+  diff xs []         = xs
+  diff (x:xs) (y:ys) = case x `compare` y of
+    LT -> x : diff xs (y:ys)
+    EQ -> diff xs ys
+    GT -> diff (x:xs) ys
 
 --------------------------------------------------------------------------------
 -- Cycle -
@@ -221,6 +238,17 @@ cpxSet :: Complex x -> Set (Z,Set x)
 cpxSet (Complex zsx) = Set $ join $ amap1 (\(z,Set sx) -> amap1 (z,) sx) zsx
 
 --------------------------------------------------------------------------------
+-- cpxSetMax -
+
+-- | the maximal simplices for each dimension which are not faces. They form a generator set
+-- of the complex.
+cpxSetMax :: Ord x => Complex x -> Set (Z,Set (Set x))
+cpxSetMax (Complex zsx)
+  = Set $ filter ((setEmpty /=).snd) $ amap1 (uncurry diff) (zsx `zip` tail zsx') where
+    zsx' = amap1 (\(_,sx) -> (faces' sx)) zsx ++ repeat setEmpty
+    diff (z,sx) sx' = (z,sx `setDifference` sx')
+
+--------------------------------------------------------------------------------
 -- cpxIndex -
 
 cpxIndex :: Ord x => Complex x -> (Z,Set x) -> Maybe N
@@ -231,12 +259,6 @@ cpxIndex = setIndex . cpxSet
 
 cpxCards :: Complex x -> [(Z,N)]
 cpxCards (Complex zsx) = amap1 (\(z,s) -> (z,lengthN s)) zsx
-
---------------------------------------------------------------------------------
--- cpxSetMax -
-
-cpxSetMax :: Complex x -> (Z,Set (Set x))
-cpxSetMax (Complex sxs) = last sxs 
 
 --------------------------------------------------------------------------------
 -- cpxEmpty -
@@ -287,14 +309,14 @@ cpxVertexSet = Set . amap1 (head . toList) . setxs . cpxVertices
 --------------------------------------------------------------------------------
 -- cpxProduct -
 
-{-
+
 Just a = cpxBorder $ complex $ [set "abc"]
 Just b = cpxBorder $ complex $ [set [0::N .. 2]]
 c = cpxProduct a b
 
 p1 = ComplexMap c a (OrdMap fst)
 p2 = ComplexMap c b (OrdMap snd)
--}
+
 
 cpxProduct :: (Ord x, Ord y) => Complex x -> Complex y -> Complex (x,y)
 cpxProduct a b
@@ -324,6 +346,9 @@ cpxProduct a b
 -- __Properties__ Let @'ComplexMap' cx cy f@ be in
 -- @'ComplexMap' ('Complex' __x__) ('Complex' __y__)@ then for all simplices @s@ in @cx@ holds: 
 -- @'amap1' f s@ is an element of @cy@.
+--
+-- __Note__ If @cx@ and @cy@ are 'valid' then it is sufficient to thest the property on the
+-- maximal simplexes @s@, given by @'cpxSetMax' cx@.
 data ComplexMap a b where
   ComplexMap
     :: Complex x -> Complex y
@@ -331,62 +356,48 @@ data ComplexMap a b where
     -> ComplexMap (Complex x) (Complex y) 
 
 --------------------------------------------------------------------------------
--- cpxMapGraph -
-
-cpxMapGraph :: ComplexMap (Complex x) (Complex y) -> Graph (Z,Set x) (Z,Set y)
-cpxMapGraph (ComplexMap cx _ f)
-  = Graph [((z,x),let y = amap1 f x in spxAdjDim y) | (z,x) <- setxs $ cpxSet cx]
-
---------------------------------------------------------------------------------
--- cpxMapStructOrd -
-
-cpxMapStructOrd :: ComplexMap (Complex x) (Complex y) -> (Struct Ord' x,Struct Ord' y)
-cpxMapStructOrd (ComplexMap _ _ (OrdMap _)) = (Struct,Struct)
-
---------------------------------------------------------------------------------
 -- ComplexMap - Entity -
 
 instance (Show x, Show y) => Show (ComplexMap (Complex x) (Complex y)) where
-  show f = "ComplexMap (" ++ (show $ cpxMapGraph f) ++ ")"
+  show (ComplexMap a b f) = "ComplexMap (" ++ show a ++ ") (" ++ show b ++ ") (VertexMap "
+                          ++ show [(v,amap1 f v) | v <- setxs $ cpxVertices a] ++ ")"
 
 instance Eq (ComplexMap (Complex x) (Complex y)) where
-  f == g = case cpxMapStructOrd f of (Struct,Struct) -> cpxMapGraph f == cpxMapGraph g
+  ComplexMap a b f@(OrdMap _) == ComplexMap a' b' f'
+    = (a,b,[amap1 f v | v <- vs]) == (a',b',[amap1 f' v | v <- vs])
+    where vs = setxs $ cpxVertices a
 
 instance Ord (ComplexMap (Complex x) (Complex y)) where
-  compare f g = case cpxMapStructOrd f of (Struct,Struct) -> compare (cpxMapGraph f) (cpxMapGraph g)
-  
+  compare (ComplexMap a b f@(OrdMap _)) (ComplexMap a' b' f')
+    = compare (a,b,[amap1 f $ v | v <- vs a]) (a',b',[amap1 f' v | v <- vs a'])
+    where vs = setxs . cpxVertices
 
 instance (Entity x, Entity y) => Validable (ComplexMap (Complex x) (Complex y)) where
-  valid f@(ComplexMap x y _) = case cpxMapStructOrd f of
-    (Struct,Struct) -> Label "ComplexMap" :<=>:
-                         And [ valid x
-                             , valid y
-                             , vldGraph (isElement (setIndex $ cpxSet y)) (gphxs $ cpxMapGraph f)
-                             ]
+  valid (ComplexMap cx cy f@(OrdMap _ )) = Label "ComplexMap" :<=>:
+    And [ valid cx
+        , valid cy
+        , vldMapSet (cpxIndex cy) f (amap1 snd $ setxs $ cpxSetMax cx)
+        ]
     where
-      vldGraph :: (Entity x, Ord x, Entity y, Ord y)
-        => ((Z,Set y) -> Bool) -> [((Z,Set x),(Z,Set y))] -> Statement
-      vldGraph _ []          = SValid
-      vldGraph i ((x,y):xys) = And [ valid x
-                                   , valid y
-                                   , Label "isElement" :<=>:
-                                       (i y) :?> Params ["x":=show x,"y":=show y]
-                                   , vldGraph i xys
-                                   ]
-                               
-      isElement i y = case i y of
-        Nothing -> False
-        _       -> True
+      vldMapSet _ _ [] = SValid
+      vldMapSet elg f (ssx:ssxs)
+        = And [ vldMap elg f ssx
+              , vldMapSet elg f ssxs
+              ]
+
+      vldMap _ _ (Set [])         = SValid
+      vldMap elg f (Set (sx:sxs)) = case elg $ spxAdjDim $ amap1 f sx of
+        Nothing -> False :?> Params ["sx":=show sx]
+        Just _  -> vldMap elg f (Set sxs)
 
 instance (Entity x, Entity y) => Entity (ComplexMap (Complex x) (Complex y))
-
+  
 --------------------------------------------------------------------------------
 -- cpxMapTerminal -
 
 cpxMapTerminal :: Ord x
   => Complex x -> ComplexMap (Complex x) (Complex ())
 cpxMapTerminal c = ComplexMap c (cpxTerminal ()) (OrdMap $ const ())
-
 
 --------------------------------------------------------------------------------
 -- cpxMapVertex -
@@ -396,13 +407,3 @@ cpxMapVertex :: Ord x
 cpxMapVertex x c = case isVertex x c of
   True  -> Just $ ComplexMap (cpxTerminal ()) c (OrdMap $ const x)
   False -> Nothing
-
-
-
-
-
-
-
-
-  
-

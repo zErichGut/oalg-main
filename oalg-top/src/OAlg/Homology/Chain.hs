@@ -29,9 +29,6 @@ module OAlg.Homology.Chain
     -- * Chain Homomorphism
   , ChainHom(..), chainHomRep
 
-  --------------------------------------
-  --------------------------------------
-  , setDifference
   ) where
 
 import Control.Monad
@@ -57,23 +54,6 @@ import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sum
 import OAlg.Entity.Matrix
 import OAlg.Homology.Simplical
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Set -
-
-deriving instance (Ord i, Ord x) => Ord (Graph i x)
-
---------------------------------------------------------------------------------
--- setDifference -
-setDifference :: Ord x => Set x -> Set x -> Set x
-setDifference (Set xs) (Set ys) = Set $ diff xs ys where
-  diff [] _          = []
-  diff xs []         = xs
-  diff (x:xs) (y:ys) = case x `compare` y of
-    LT -> x : diff xs (y:ys)
-    EQ -> diff xs ys
-    GT -> diff (x:xs) ys
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
