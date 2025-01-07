@@ -53,7 +53,9 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sum
 import OAlg.Entity.Matrix
+
 import OAlg.Homology.Simplical
+import OAlg.Homology.Complex (setDifference)
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
