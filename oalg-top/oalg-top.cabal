@@ -28,9 +28,9 @@ library
       OAlg.Homology.Chain
       OAlg.Homology.ChainComplex
       OAlg.Homology.Complex
+      OAlg.Homology.ComplexSimplical
       OAlg.Homology.Definition
       OAlg.Homology.Simplical
-      OAlg.Homology.SimplicalComplex
       OAlg.Homology.Variance
   other-modules:
       Paths_oalg_top

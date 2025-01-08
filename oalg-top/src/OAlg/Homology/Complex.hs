@@ -340,8 +340,8 @@ cpxProduct a b
 --------------------------------------------------------------------------------
 -- ComplexMap -
 
--- | homomorphism between complexes, where the underlying function induces a map between the two
--- given sets.
+-- | mapping between complexes, where the underlying map induces a map between the two
+-- given simpliex sets.
 --
 -- __Properties__ Let @'ComplexMap' cx cy f@ be in
 -- @'ComplexMap' ('Complex' __x__) ('Complex' __y__)@ then for all simplices @s@ in @cx@ holds: 
