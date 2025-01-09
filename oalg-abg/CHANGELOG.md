@@ -37,3 +37,7 @@ and this project adheres to the
 ## [1.5.0.3] - 2024-09-22
 ### Extended
 - zMatrixLft returns - if possible - non trivial solutions.
+
+## [1.5.1.0] - 2025-09-01
+### Adaption
+- adaption to oalg-base-2.0.2.0

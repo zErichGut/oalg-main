@@ -33,69 +33,8 @@ import Data.List (filter)
 import OAlg.Prelude 
 
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Sequence.Graph
 
 import OAlg.Homology.Simplical
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Set -
-
-deriving instance (Ord i, Ord x) => Ord (Graph i x)
-
---------------------------------------------------------------------------------
--- setFilter -
-
-setFilter :: (x -> Bool) -> Set x -> Set x
-setFilter p (Set xs) = Set $ filter p xs
-
---------------------------------------------------------------------------------
--- setIsEmpty -
-
-setIsEmpty :: Set x -> Bool
-setIsEmpty (Set xs) = case xs of
-  [] -> True
-  _  -> False
-  
---------------------------------------------------------------------------------
--- setDifference -
-setDifference :: Ord x => Set x -> Set x -> Set x
-setDifference (Set xs) (Set ys) = Set $ diff xs ys where
-  diff [] _          = []
-  diff xs []         = xs
-  diff (x:xs) (y:ys) = case x `compare` y of
-    LT -> x : diff xs (y:ys)
-    EQ -> diff xs ys
-    GT -> diff (x:xs) ys
-
---------------------------------------------------------------------------------
--- setIntersection -
-
-setIntersection :: Ord x => Set x -> Set x -> Set x
-setIntersection (Set xs) (Set ys) = Set $ intr xs ys where
-  intr (x:xs) (y:ys) = case x `compare` y of
-    LT -> intr xs (y:ys)
-    EQ -> x : intr xs ys
-    GT -> intr (x:xs) ys
-  intr _ _ = []
-
-instance Ord x => Lattice (Set x) where
-  (<|>) = setUnion
-  (<&>) = setIntersection
-
---------------------------------------------------------------------------------
--- ErasabelLattice -
-
-class Lattice a => ErasabelLattice a where
-  -- | difference
-  (</>) :: a -> a -> a
-
-instance Ord x => ErasabelLattice (Set x) where
-  (</>) = setDifference
-
---------------------------------------------------------------------------------
------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- SimplexSet -
@@ -180,12 +119,14 @@ isSubSimplexSet = error "nyi"
 instance POrd (SimplexSet s x) where
   (<<=) = isSubSimplexSet
 
-instance Lattice (SimplexSet s x) where
-  (<|>) = error "nyi"
-  (<&>) = error "nyi"
+instance Logical (SimplexSet s x) where
+  (||) = error "nyi"
+  (&&) = error "nyi"
+
+instance Lattice (SimplexSet s x)
 
 instance ErasabelLattice (SimplexSet s x) where
-  (</>) = ssDifference
+  (//) = ssDifference
 
 --------------------------------------------------------------------------------
 -- ssFilterSimpliex -

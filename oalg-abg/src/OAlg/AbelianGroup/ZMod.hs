@@ -53,7 +53,7 @@ import Control.Exception
 
 import Data.List ((++),foldl)
 
-import OAlg.Prelude
+import OAlg.Prelude hiding ((//))
 
 import OAlg.Control.Solver
 

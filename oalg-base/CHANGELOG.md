@@ -87,9 +87,13 @@ has been defined by EmbeddingFrom.
 ### Resolved
 - Orphan instance for Projectible Sheaf and Path by removing the general definition to Sum and Product.
 
-## [2.0.1.3] - 2025-01-09
+## [2.0.2.0] - 2025-01-09
 
 ### Added
 - the class Functorial1
-- structure EntOrd.
-- class Lattice, PLattice, ErasabelPLattice in OAlg.Data.Ord.
+- structure EntOrd for orderd entities.
+- class Logical as base class for Boolean.
+- class Lettice, ErasabelPLattice in OAlg.Data.Ord.
+- for the module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference,
+  instance ErasabelLattice (Set x), OrdMap, EntOrdMap.
+- for the modlue OAlg.Entity.Sequence.Graph: instance Ord (Graph i x).

@@ -36,17 +36,6 @@ module OAlg.Homology.Simplical
     -----------------------------------------
   , EntOrdMap(..)
 
-    
-{-    
-    -- * Simplex
-    Simplex(..), simplex, spxDim, spxxs, spxEmpty, spxMap
-
-    -- * Face
-  , faces, faces'
-
-    -- * Propostion
-  , prpSimplex
--}
   ) where
 
 import Control.Monad (join)
@@ -70,47 +59,6 @@ spxCombinations :: Set x -> [(Z,Set [x])]
 spxCombinations (Set vs) = cbns (-1) [[]] where
   -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
   cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
-
---------------------------------------------------------------------------------
--- EntOrdMap -
-
--- | mapping between orderd entity types.
-data EntOrdMap x y where
-  EntOrdMap :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> EntOrdMap x y
-
-instance Morphism EntOrdMap where
-  type ObjectClass EntOrdMap = EntOrd
-  homomorphous (EntOrdMap _) = Struct :>: Struct
-
-instance Category EntOrdMap where
-  cOne Struct = EntOrdMap id
-  EntOrdMap f . EntOrdMap g = EntOrdMap (f.g)
-
-instance Applicative1 EntOrdMap [] where
-  amap1 (EntOrdMap f) xs = amap1 f xs
-
-instance Functorial1 EntOrdMap []
-
-instance Applicative1 EntOrdMap Set where
-  amap1 (EntOrdMap f) (Set xs) = set $ amap1 f xs
-
-instance Functorial1 EntOrdMap Set
-
-instance Transformable1 Set EntOrd where
-  tau1 Struct = Struct
-
---------------------------------------------------------------------------------
--- subsets -
-
-subsets :: Set x -> [(Z,Set (Set x))]
-subsets (Set []) = [(-1,Set [Set []])]
-subsets (Set (x:xs)) = (-1,Set [Set []]) : (x <<: subsets (Set xs)) where
-  (<<:) :: x -> [(Z,Set (Set x))] -> [(Z,Set (Set x))]
-  x <<: ((_,Set ss):(n,Set ss'):nss) = (n,Set (amap1 (x<:) ss ++ ss')) : (x <<: ((n,Set ss'):nss))
-  x <<: [(n,Set ss)]                 = [(succ n,Set $ amap1 (x<:) ss)]
-  _ <<: []                           = throw $ ImplementationError "subsets"
-
-  x <: Set xs = Set (x:xs)
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -139,6 +87,8 @@ class (Functorial1 EntOrdMap s, Transformable1 s EntOrd)  => Simplical s where
   -- | the face of a simplex.
   faces :: s x -> [s x]
   -- | all simplices for the given set of vertices, starting with 'dimension' @-1@.
+  --
+  -- __Note__ This maybe an invinite list, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
   simplices :: Set x -> [(Z,Set (s x))] 
 
 --------------------------------------------------------------------------------
@@ -212,7 +162,7 @@ instance Simplical Set where
   dimension (Set xs) = dimension xs
   vertices           = id
   faces (Set xs)     = amap1 Set $ faces xs
-  simplices          = subsets
+  simplices          = amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
   
 --------------------------------------------------------------------------------
 -- Asc -

@@ -38,7 +38,7 @@ import OAlg.Entity.Sequence.Set
 -- (1) For all @..(i,_)':'(j,_)..@ in @ixs@ holds: @i '<' j@.
 --
 -- (2) @'lengthN' g '==' 'lengthN' ixs@.
-newtype Graph i x = Graph [(i,x)] deriving (Show,Eq,LengthN)
+newtype Graph i x = Graph [(i,x)] deriving (Show,Eq,Ord,LengthN)
 
 relGraph :: (Entity x, Entity i, Ord i) => Graph i x -> Statement
 relGraph (Graph [])       = SValid

@@ -3,6 +3,7 @@
 
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -18,9 +19,13 @@ module OAlg.Entity.Sequence.Set
   ( 
     -- * Set
     Set(..), set, setSpan, setxs, setSqc, setMap, isSubSet
+  , setPower, setFilter
 
     -- * Operations
-  , setEmpty, setUnion
+  , setEmpty, setIsEmpty, setUnion, setIntersection, setDifference
+
+    -- * Applications
+  , OrdMap(..), EntOrdMap(..)
 
     -- * Lookup
   , setIndex 
@@ -36,7 +41,7 @@ module OAlg.Entity.Sequence.Set
 import Control.Monad
 
 import Data.Foldable
-import Data.List (head,sort,group,map,filter,zip)
+import Data.List (head,sort,group,map,filter,zip,(++))
 
 import OAlg.Prelude
 
@@ -119,11 +124,44 @@ setSqc mx (Set is)
   $ map mx is
 
 --------------------------------------------------------------------------------
+-- setFilter -
+
+-- | filtering a set according to a given predicate.
+setFilter :: (x -> Bool) -> Set x -> Set x
+setFilter p (Set xs) = Set $ filter p xs
+
+
+--------------------------------------------------------------------------------
+-- setIsEmpty -
+
+-- | checking for the empty set.
+setIsEmpty :: Set x -> Bool
+setIsEmpty (Set xs) = case xs of
+  [] -> True
+  _  -> False
+  
+--------------------------------------------------------------------------------
 -- setEmpty -
 
 -- | the empty set.
 setEmpty :: Set x
 setEmpty = Set []
+
+--------------------------------------------------------------------------------
+-- setPower -
+
+-- | the power set of a given set, grouped by there length.
+setPower :: Set x -> Set (N,Set (Set x))
+setPower = Set . spwr where
+  spwr (Set [])     = [(0,Set [Set []])]
+  spwr (Set (x:xs)) = (0,Set [Set []]) : (x <<: spwr (Set xs))
+  
+  (<<:) :: x -> [(N,Set (Set x))] -> [(N,Set (Set x))]
+  x <<: ((_,Set ss):(n,Set ss'):nss) = (n,Set (amap1 (x<:) ss ++ ss')) : (x <<: ((n,Set ss'):nss))
+  x <<: [(n,Set ss)]                 = [(succ n,Set $ amap1 (x<:) ss)]
+  _ <<: []                           = throw $ ImplementationError "spwr"
+
+  x <: Set xs = Set (x:xs)
 
 --------------------------------------------------------------------------------
 -- setUnion -
@@ -139,6 +177,31 @@ setUnion (Set xs) (Set ys) = Set $ un xs ys where
     GT -> y:un xs  ys'
 
 --------------------------------------------------------------------------------
+-- setDifference -
+
+-- | difference of two sets.
+setDifference :: Ord x => Set x -> Set x -> Set x
+setDifference (Set xs) (Set ys) = Set $ diff xs ys where
+  diff [] _          = []
+  diff xs []         = xs
+  diff (x:xs) (y:ys) = case x `compare` y of
+    LT -> x : diff xs (y:ys)
+    EQ -> diff xs ys
+    GT -> diff (x:xs) ys
+
+--------------------------------------------------------------------------------
+-- setIntersection -
+
+-- | intersection of two sets.
+setIntersection :: Ord x => Set x -> Set x -> Set x
+setIntersection (Set xs) (Set ys) = Set $ intr xs ys where
+  intr (x:xs) (y:ys) = case x `compare` y of
+    LT -> intr xs (y:ys)
+    EQ -> x : intr xs ys
+    GT -> intr (x:xs) ys
+  intr _ _ = []
+
+--------------------------------------------------------------------------------
 -- isSubSet -
 
 -- | checks for being a sub set.
@@ -150,6 +213,19 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
     LT -> False
     EQ -> sbs xs' ys'
     GT -> sbs xs ys'
+
+--------------------------------------------------------------------------------
+-- Set - ErasableLattice -
+
+instance Ord x => POrd (Set x) where (<<=) = isSubSet
+
+instance Ord x => Logical (Set x) where
+  (||) = setUnion
+  (&&) = setIntersection
+
+instance Ord x => Lattice (Set x)
+
+instance Ord x => ErasabelLattice (Set x) where (//) = setDifference
 
 --------------------------------------------------------------------------------
 -- setIndex -
@@ -173,12 +249,63 @@ setIndex (Set xs) = lp (lt (xs `zip` [0..]))
 
 lp :: Ord x => Tree x (x,y) -> x -> Maybe y
 lp t x = let (x',y) = trLookup t x in if x' == x then Just y else Nothing
+
 --------------------------------------------------------------------------------
--- Set - POrd -
+-- OrdMap -
 
-instance Ord x => POrd (Set x) where
-  (<<=) = isSubSet  
+-- | mapping between ordered types.
+data OrdMap x y where
+  OrdMap :: (Ord x, Ord y) => (x -> y) -> OrdMap x y
 
+instance Morphism OrdMap where
+  type ObjectClass OrdMap = Ord'
+  homomorphous (OrdMap _) = Struct :>: Struct
+
+instance Category OrdMap where
+  cOne Struct = OrdMap id
+  OrdMap f . OrdMap g = OrdMap (f.g)
+
+instance Applicative1 OrdMap [] where
+  amap1 (OrdMap f) xs = amap1 f xs
+
+instance Functorial1 OrdMap []
+
+instance Applicative1 OrdMap Set where
+  amap1 (OrdMap f) (Set xs) = set $ amap1 f xs
+
+instance Functorial1 OrdMap Set
+
+instance Transformable1 Set Ord' where
+  tau1 Struct = Struct
+
+
+--------------------------------------------------------------------------------
+-- EntOrdMap -
+
+-- | mapping between ordered entities.
+data EntOrdMap x y where
+  EntOrdMap :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> EntOrdMap x y
+
+instance Morphism EntOrdMap where
+  type ObjectClass EntOrdMap = EntOrd
+  homomorphous (EntOrdMap _) = Struct :>: Struct
+
+instance Category EntOrdMap where
+  cOne Struct = EntOrdMap id
+  EntOrdMap f . EntOrdMap g = EntOrdMap (f.g)
+
+instance Applicative1 EntOrdMap [] where
+  amap1 (EntOrdMap f) xs = amap1 f xs
+
+instance Functorial1 EntOrdMap []
+
+instance Applicative1 EntOrdMap Set where
+  amap1 (EntOrdMap f) = amap1 (OrdMap f)
+
+instance Functorial1 EntOrdMap Set
+
+instance Transformable1 Set EntOrd where
+  tau1 Struct = Struct
 --------------------------------------------------------------------------------
 -- xSet -
 

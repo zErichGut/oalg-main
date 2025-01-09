@@ -31,9 +31,6 @@ module OAlg.Homology.Complex
     -- * Complex Map
   , ComplexMap(..)
 
-  --------------------
-  , setDifference
-  
 {-    
     -- * Complex
     Complex(..)
