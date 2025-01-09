@@ -45,6 +45,7 @@ module OAlg.Category.Definition
   
     -- * Functorial
   , Functorial
+  , Functorial1
 
     -- * Forget
   , Forget(..)
@@ -274,6 +275,21 @@ instance Category c => Category (Op2 c) where
 --   (1) #Fnc2#For all types __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
 --   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amap' (f '.' g) = 'amap' f '.' 'amap' g@. 
 class (Applicative c, Category c) => Functorial c
+
+--------------------------------------------------------------------------------
+-- Functorial1 -
+
+-- | representable categories, i.e. covariant functors from an 'Applicative1' category @__c__@ to
+-- @('->')@.
+--
+-- __Properties__ Let the pair @(__c__,__f__)@ be a type instance of 'Functorial1', then holds:
+--
+-- (1) For all types @__x___@ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
+-- @'amap1' ('cOne' d) = 'id'@.
+--
+-- (2) For all types @__x__@, @__y__@, @__z__@, @f@ in @__c__ __y__ __z__@ and
+-- @g@ in @__c__ __x__ __y__@ holds: @'amap1' (f '.' g) = 'amap1' f '.' 'amap1' g@.
+class (Category c, Applicative1 c f) => Functorial1 c f 
 
 --------------------------------------------------------------------------------
 -- Cayleyan2 -

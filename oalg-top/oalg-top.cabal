@@ -30,6 +30,7 @@ library
       OAlg.Homology.Complex
       OAlg.Homology.ComplexSimplical
       OAlg.Homology.Definition
+      OAlg.Homology.SimplexSet
       OAlg.Homology.Simplical
       OAlg.Homology.Variance
   other-modules:

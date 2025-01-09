@@ -4,7 +4,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE  GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- |
 -- Module      : OAlg.Entity.Definition
@@ -20,7 +21,7 @@
 module OAlg.Entity.Definition
   (
     -- * Entity
-    Entity, Ent
+    Entity, Ent, EntOrd
 
     -- * Entity1
   , Entity1
@@ -77,6 +78,16 @@ instance (Entity a,Entity b) => Entity (a,b)
 data Ent
 
 type instance Structure Ent x = Entity x 
+
+--------------------------------------------------------------------------------
+-- EntOrd -
+
+-- | indexing orderd entities.
+data EntOrd
+
+type instance Structure EntOrd x = (Entity x, Ord x)
+
+instance Transformable1 [] EntOrd where tau1 Struct = Struct
 
 --------------------------------------------------------------------------------
 -- Entity1 -

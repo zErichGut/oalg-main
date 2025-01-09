@@ -44,7 +44,6 @@ import OAlg.Data.Opposite
 import OAlg.Data.Number
 import OAlg.Data.Boolean
 
-
 --------------------------------------------------------------------------------
 -- Path -
 

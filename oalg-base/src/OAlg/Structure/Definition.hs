@@ -27,7 +27,7 @@ module OAlg.Structure.Definition
   , ForgetfulTyp
 
     -- * Some Structure Types
-  , Typ, Ord'   
+  , Typ, Ord', Bol
 
   ) where
 
@@ -35,6 +35,7 @@ import Data.Kind
 import Data.Typeable
 import Data.Type.Equality
 
+import OAlg.Data.Boolean.Definition
 import OAlg.Data.Show
 import OAlg.Data.Equal
 import OAlg.Data.Ord
@@ -84,6 +85,14 @@ type instance Structure Type x = ()
 data Ord'
 
 type instance Structure Ord' x = Ord x
+
+--------------------------------------------------------------------------------
+-- Bol -
+
+-- | type representing 'Boolean' structures.
+data Bol
+
+type instance Structure Bol x = Boolean x
 
 --------------------------------------------------------------------------------
 -- Transformable -

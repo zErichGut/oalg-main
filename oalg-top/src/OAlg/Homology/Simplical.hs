@@ -28,15 +28,13 @@ module OAlg.Homology.Simplical
   , vertex
 
     -- * Homological
-  , Homological(..)
+  , Homological
 
     -- * Asc
   , Asc(..), ascxs, asc
 
-  , EntOrd
-
     -----------------------------------------
-  , OrdMap(..)
+  , EntOrdMap(..)
 
     
 {-    
@@ -53,7 +51,6 @@ module OAlg.Homology.Simplical
 
 import Control.Monad (join)
 
-import Data.Typeable
 import Data.List (head,tail,filter,sort,groupBy,(++),zip)
 import Data.Foldable
 
@@ -67,21 +64,6 @@ import OAlg.Entity.Sequence.Set
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
--- Functorial1 -
-
--- | representable categories, i.e. covariant functors from an 'Applicative1' category @__c__@ to
--- @('->')@.
---
--- __Properties__ Let the pair @(__c__,__f__)@ be a type instance of 'Functorial1', then holds:
---
--- (1) For all types @__x___@ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
--- @'amap1' ('cOne' d) = 'id'@.
---
--- (2) For all types @__x__@, @__y__@, @__z__@, @f@ in @__c__ __y__ __z__@ and
--- @g@ in @__c__ __x__ __y__@ holds: @'amap1' (f '.' g) = 'amap1' f '.' 'amap1' g@.
-class (Category c, Applicative1 c f) => Functorial1 c f 
-
---------------------------------------------------------------------------------
 -- spxCombinations -
 
 spxCombinations :: Set x -> [(Z,Set [x])]
@@ -90,34 +72,31 @@ spxCombinations (Set vs) = cbns (-1) [[]] where
   cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
 
 --------------------------------------------------------------------------------
--- OrdMap -
+-- EntOrdMap -
 
--- | mapping between orderd types.
-data OrdMap x y where
-  OrdMap :: (Ord x, Ord y) => (x -> y) -> OrdMap x y
+-- | mapping between orderd entity types.
+data EntOrdMap x y where
+  EntOrdMap :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> EntOrdMap x y
 
-instance Morphism OrdMap where
-  type ObjectClass OrdMap = Ord'
-  homomorphous (OrdMap _) = Struct :>: Struct
+instance Morphism EntOrdMap where
+  type ObjectClass EntOrdMap = EntOrd
+  homomorphous (EntOrdMap _) = Struct :>: Struct
 
-instance Category OrdMap where
-  cOne Struct = OrdMap id
-  OrdMap f . OrdMap g = OrdMap (f.g)
+instance Category EntOrdMap where
+  cOne Struct = EntOrdMap id
+  EntOrdMap f . EntOrdMap g = EntOrdMap (f.g)
 
-instance Applicative1 OrdMap [] where
-  amap1 (OrdMap f) xs = amap1 f xs
+instance Applicative1 EntOrdMap [] where
+  amap1 (EntOrdMap f) xs = amap1 f xs
 
-instance Functorial1 OrdMap []
+instance Functorial1 EntOrdMap []
 
-instance Transformable1 [] Ord' where
-  tau1 Struct = Struct
+instance Applicative1 EntOrdMap Set where
+  amap1 (EntOrdMap f) (Set xs) = set $ amap1 f xs
 
-instance Applicative1 OrdMap Set where
-  amap1 (OrdMap f) (Set xs) = set $ amap1 f xs
+instance Functorial1 EntOrdMap Set
 
-instance Functorial1 OrdMap Set
-
-instance Transformable1 Set Ord' where
+instance Transformable1 Set EntOrd where
   tau1 Struct = Struct
 
 --------------------------------------------------------------------------------
@@ -137,13 +116,6 @@ subsets (Set (x:xs)) = (-1,Set [Set []]) : (x <<: subsets (Set xs)) where
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
--- EntOrd -
-
-data EntOrd
-
-type instance Structure EntOrd x = (Entity x, Ord x)
-
---------------------------------------------------------------------------------
 -- Simplical -
 
 -- | abstract simplices over @__x__@. We will call an element of @__s__ __x__@ a
@@ -157,9 +129,9 @@ type instance Structure EntOrd x = (Entity x, Ord x)
 -- (2) For all @sx@ in @'Set' __x__@ and @..(_,ssu)':'(_,ssv)..@ in @'simplices' sx@ holds:
 -- @'faces'' ssv '==' ssu@.
 --
--- (3) For all @f@ in @'OrdMap' __x__ __y__@ and @sx@ in @__s__ __x__@ holds:
+-- (3) For all @f@ in @'EntOrdMap' __x__ __y__@ and @sx@ in @__s__ __x__@ holds:
 -- @'vertices' ('amap1' f sx) '==' 'amap1' f ('vertices' sx)@.
-class Functorial1 OrdMap s => Simplical s where
+class (Functorial1 EntOrdMap s, Transformable1 s EntOrd)  => Simplical s where
   -- | the dimension of a simplex
   dimension :: s x -> Z
   -- | the empty simplex.
@@ -194,8 +166,8 @@ spxAdjDim s = (dimension s,s)
 -- spxDimSets -
 
 -- | the grouped simplices according to there dimension with increasing dimension.
-spxDimSets :: (Simplical s, Ord (s x)) => [s x] -> [(Z,Set (s x))]
-spxDimSets = amap1 dsets . groupBy (~) . sort . amap1 spxAdjDim  where
+spxDimSets :: (Simplical s, Ord (s x)) => [s x] -> Set ((Z,Set (s x)))
+spxDimSets = Set . amap1 dsets . groupBy (~) . sort . amap1 spxAdjDim  where
   (d,_) ~ (d',_) = d == d'
       
   dsets :: [(z,s)] -> (z,Set s)
@@ -213,18 +185,16 @@ spxFilter p = amap1 (setFilter p) where
 --------------------------------------------------------------------------------
 -- Homological -
 
--- | simplical structures, where the application of a 'OrdMap' preserves the 'dimension' of the
+-- | simplical structures, where the application of a 'EntOrdMap' preserves the 'dimension' of the
 -- simplices.
 --
 -- __Property__ Let @__s__@ be a instance of 'Homological', then holds:
--- For each @f@ in @'OrdMap' __x__ __y__@ and @s@ in @__s__ __x__@ holds:
+-- For each @f@ in @'EntOrdMap' __x__ __y__@ and @s@ in @__s__ __x__@ holds:
 -- @'dimension' ('amap1' f s) '==' 'dimension' s@.
 class Simplical s => Homological s
 
 --------------------------------------------------------------------------------
 -- [] - Simplical -
-
-instance Transformable1 [] EntOrd where tau1 Struct = Struct
 
 instance Simplical [] where
   dimension    = pred . inj . lengthN
@@ -237,8 +207,6 @@ instance Homological []
 
 --------------------------------------------------------------------------------
 -- Set - Simplical -
-
-instance Transformable1 Set EntOrd where tau1 Struct = Struct
 
 instance Simplical Set where
   dimension (Set xs) = dimension xs
@@ -309,10 +277,10 @@ ascCombinations (Set xs) = cbs xs where
 --------------------------------------------------------------------------------
 -- Asc - Simplical -
 
-instance Applicative1 OrdMap Asc where
-  amap1 (OrdMap f) (Asc xs) = Asc $ sort $ amap1 f xs
+instance Applicative1 EntOrdMap Asc where
+  amap1 (EntOrdMap f) (Asc xs) = Asc $ sort $ amap1 f xs
 
-instance Functorial1 OrdMap Asc
+instance Functorial1 EntOrdMap Asc
 
 instance Transformable1 Asc Ord' where tau1 Struct = Struct
 instance Transformable1 Asc EntOrd where tau1 Struct = Struct

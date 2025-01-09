@@ -152,7 +152,7 @@ module OAlg.Control.Validate
   )
   where
 
-import Prelude(Ord(..),Enum(..),Bounded,seq,Int,Integer,Double,Num(..),Fractional(..))
+import Prelude(Enum(..),Bounded,seq,Int,Integer,Double,Num(..),Fractional(..))
 import Control.Monad
 import Control.Exception
 import System.IO (IO,hFlush,stdout,putStrLn)
@@ -167,6 +167,7 @@ import OAlg.Category.Definition
 import OAlg.Control.Verbose
 import OAlg.Control.HNFData
 
+import OAlg.Data.Ord
 import OAlg.Data.Statement
 
 import OAlg.Data.Boolean

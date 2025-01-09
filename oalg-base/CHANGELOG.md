@@ -86,3 +86,10 @@ has been defined by EmbeddingFrom.
 
 ### Resolved
 - Orphan instance for Projectible Sheaf and Path by removing the general definition to Sum and Product.
+
+## [2.0.1.3] - 2025-01-09
+
+### Added
+- the class Functorial1
+- structure EntOrd.
+- class Lattice, PLattice, ErasabelPLattice in OAlg.Data.Ord.

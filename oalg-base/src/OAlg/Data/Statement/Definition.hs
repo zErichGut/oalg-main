@@ -74,7 +74,7 @@ module OAlg.Data.Statement.Definition
   )
   where
 
-import Prelude (Num(..),Ord(..),Ordering(..),Bounded(..))
+import Prelude (Num(..),Bounded(..))
 
 import Control.Monad
 import Control.Exception
@@ -93,6 +93,7 @@ import OAlg.Control.HNFData
 import OAlg.Control.Verbose
 
 import OAlg.Data.Boolean.Definition
+import OAlg.Data.Ord
 import OAlg.Data.Equal
 import OAlg.Data.X
 import OAlg.Data.Show 
@@ -226,14 +227,16 @@ data Statement where
 
   -- | the exist constructor.
   Exist    :: X x -> (x -> Statement) -> Statement
-    
+
+instance Logical Statement where
+  (||)  = (:||)
+  (&&)  = (:&&)
+  
 instance Boolean Statement where
   false = SInvalid
   true  = SValid
   not   = Not
-  (||)  = (:||)
   or    = Or
-  (&&)  = (:&&)
   and   = And
   (~>)  = (:=>)
   eqvl  = Eqvl
@@ -300,10 +303,7 @@ instance NFData Valid where
   rnf Invalid = ()
   rnf _       = ()
 
-instance Boolean Valid where
-  false = Invalid
-  true  = Valid
-  not t = toEnum (fromEnum Valid - fromEnum t)
+instance Logical Valid where
   a || b  | a == Valid = a -- to make (||) in its first argument lazy
           | otherwise  = case a `compare`b of
                            GT -> a
@@ -312,6 +312,11 @@ instance Boolean Valid where
           | otherwise   = case a `compare` b of
                             LT -> a
                             _  -> b
+  
+instance Boolean Valid where
+  false = Invalid
+  true  = Valid
+  not t = toEnum (fromEnum Valid - fromEnum t)
 
 instance Projectible Bool Valid where
   prj Valid            = True

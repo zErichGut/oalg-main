@@ -81,6 +81,20 @@ import OAlg.Entity.Sequence hiding (span)
 
 import OAlg.Homology.Simplical
 
+-- | set of simplices over @__x__@ according to @__s__@.
+--
+-- __Properties__ Let @'SimplexSet' zssx@ be in @'SimplexSet' __s__ __x__@ for a 'Simplical' structure
+-- @__s__@, then holds:
+--
+-- (1) For all @(z,ssx)@ in @zssx@ holds:
+--
+--    (1) @ssx@ is not empty.
+--
+--    (2) @'dimension' sx '==' z@ for all @sx@ in @ssx@.
+--
+-- (2) For all @..(z,ssx):(z',ssx')..@ in @zssx@ holds: @z < z'@.
+data SimplexSet s x = SimplexSet [(Z,Set (s x))]
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
@@ -204,7 +218,8 @@ instance (Entity x, Ord x) => Validable (Complex x) where
         = And [ valid sv
               , Label "4.1'" :<=>: (z' == succ z) :?> Params ["z":=show z, "z'":=show z']
               , vldDimension z' sv
-              , Label "4.2" :<=>: (faces' sv `isSubSet` su) :?> Params ["su":=show su,"sv":=show sv]
+              , Label "4.2" :<=>: let fsv = faces' sv in
+                  (fsv `isSubSet` su) :?> Params ["fsv":=show (fsv `setDifference` su)]
               , vldFaces z' sv zsx'
               ]
 
@@ -310,14 +325,6 @@ cpxVertexSet = Set . amap1 (head . toList) . setxs . cpxVertices
 -- cpxProduct -
 
 
-Just a = cpxBorder $ complex $ [set "abc"]
-Just b = cpxBorder $ complex $ [set [0::N .. 2]]
-c = cpxProduct a b
-
-p1 = ComplexMap c a (OrdMap fst)
-p2 = ComplexMap c b (OrdMap snd)
-
-
 cpxProduct :: (Ord x, Ord y) => Complex x -> Complex y -> Complex (x,y)
 cpxProduct a b
   = Complex
@@ -377,8 +384,22 @@ instance (Entity x, Entity y) => Validable (ComplexMap (Complex x) (Complex y)) 
     And [ valid cx
         , valid cy
         , vldMapSet (cpxIndex cy) f (amap1 snd $ setxs $ cpxSetMax cx)
+{-        
+        , vldElg (Set $ cpxxs cy)
+                 (spxDimSets $ join $ amap1 (setxs . smap f . snd) $ setxs $ cpxSetMax cx)
+-}
         ]
     where
+
+      smap :: OrdMap x y -> Set (Set x) -> Set (Set y)
+      smap f@(OrdMap _) = amap1 (OrdMap $ amap1 f)
+
+      setJoin :: [Set x] -> [x]
+      setJoin = join . amap1 setxs
+
+      vldElg :: (Entity y, Ord y) => Set ((Z,Set (Set y))) -> Set ((Z,Set (Set y))) -> Statement
+      vldElg cy fx = (fx `isSubSet` cy) :?> Params ["fx":=show (fx `setDifference` cy)]
+      
       vldMapSet _ _ [] = SValid
       vldMapSet elg f (ssx:ssxs)
         = And [ vldMap elg f ssx
@@ -407,3 +428,17 @@ cpxMapVertex :: Ord x
 cpxMapVertex x c = case isVertex x c of
   True  -> Just $ ComplexMap (cpxTerminal ()) c (OrdMap $ const x)
   False -> Nothing
+
+--------------------------------------------------------------------------------
+Just a = cpxBorder $ complex $ [set "abc"]
+Just b = cpxBorder $ complex $ [set [0::N .. 2]]
+c = cpxProduct a b
+
+p1 = ComplexMap c a (OrdMap fst)
+p2 = ComplexMap c b (OrdMap snd)
+
+u = complex [Set "abe"]
+v = complex [Set "abc",Set "bce",Set "ae"]
+
+f = ComplexMap u v (OrdMap id)
+

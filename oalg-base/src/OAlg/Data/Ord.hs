@@ -8,19 +8,25 @@
 --
 -- "Data.Ord" enriched with some additional elements.
 module OAlg.Data.Ord
-  ( -- * Total
+  ( -- * Total Ordering
     module Ord
   , fcompare, wcompare, coCompare, compare2
   , sortFst, sortFstBy, sortSnd, sortSndBy
   , Closure(..), cmin, cmax, cspan, Span, enumSpan
 
-    -- * Partial
+    -- * Partial Ordering
   , POrd(..)
+
+    -- * Lattices
+  , Lattice, ErasabelLattice(..)
   )
   where
+import Prelude as P hiding ((||),(&&))
 
 import Data.List (sortBy)
 import Data.Ord as Ord
+
+import OAlg.Data.Boolean.Definition
 
 --------------------------------------------------------------------------------
 -- fcompare -
@@ -163,3 +169,43 @@ class Eq a => POrd a where
 
   infix 4 <<=
   (<<=) :: a -> a -> Bool
+
+--------------------------------------------------------------------------------
+-- Lattice -
+
+-- | lattices on partially orderd sets.
+--
+-- __Properties__ Let @__a__@ be an instance of 'Lattice', then holds:
+--
+-- (1) For all @x@ and @y@ in @__a__@ holds:
+--
+--     (1) @x '<<=' (x '||' y)@ and @y '<<=' (x '||' y)@.
+--
+--     (2) For all @z@ with @x '<<=' z@ and @y '<<=' z@ holds: @(x '||' y) '<<=' z@. 
+--
+-- (2) For all @x@ and @y@ in @__a__@ holds:
+--
+--     (1) @x '&&' y '<<=' x@ and @x '&&' y '<<=' y@
+--
+--     (2) For all @z@ with @z '<<=' x@ and @z '<<=' y@ holds: @z '<<=' (x '&&' y) @. 
+class (POrd a, Logical a) => Lattice a 
+
+instance POrd Bool where
+  (<<=) = (<=)
+
+instance Lattice Bool
+
+--------------------------------------------------------------------------------
+-- ErasableLattice -
+
+
+-- | lattices admitting an erasor-operator.
+--
+-- __Properties__ Let @__a__@ be an instance of 'ErasabelLattice', then
+-- for all @x@ and @y@ in @__a__@ holds:
+--
+-- (1) @x // y '<<=' x@.
+class Lattice a => ErasabelLattice a where
+  infixl 4 //
+  -- | difference
+  (//) :: a -> a -> a

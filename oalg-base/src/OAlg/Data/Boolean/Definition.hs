@@ -1,7 +1,7 @@
 
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE  MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 
 -- |
@@ -13,27 +13,41 @@
 -- 
 -- boolean structure for multivalent logic. 
 module OAlg.Data.Boolean.Definition
-  (
+  (    
     -- * Boolean
-    Boolean(..)
+    Boolean(..), Logical(..)
 
     -- * Bool
   , B.Bool(..), B.otherwise
 
     -- * Structure
-  , Bol
+  -- , Bol
   )
   where
 
 import Prelude as P hiding (not,(||),(&&),or,and)
 import qualified Data.Bool as B
-import OAlg.Structure.Definition
+
+--------------------------------------------------------------------------------
+-- Lagical -
+
+-- | logical structures admitting a general definition for /disjunctions/ and /conjunctions/.
+class Logical a where
+  infixr 2 ||
+  -- | disjunction
+  (||) :: a -> a -> a
+  
+  infixr 3 &&  
+  -- | conjunction
+  (&&) :: a -> a -> a
+
+instance Logical Bool where
+  (||)  = (B.||)
+  (&&)  = (B.&&)
 
 --------------------------------------------------------------------------------
 -- Boolean -
 
-infixr 3 &&
-infixr 2 ||
 infixr 1 ~>, <~>
 
 -- | types with a 'Boolean' structure, allowing multivalent logic.
@@ -43,22 +57,16 @@ infixr 1 ~>, <~>
 --   (as there are min and max bounds the operator ('||') and @('&&')@ should be
 --    implemented with a lazy variant of 'min' and 'max') and
 --    @'not' b = 'toEnum' ('fromEnum' 'maxBound' '-' 'fromEnum' t)@.
-class Boolean b where
-  {-# MINIMAL true, false, not, ((||), (&&) | or, and) #-}
+class Logical b => Boolean b where
+  {-# MINIMAL true, false, not #-}
   false :: b 
   true  :: b
 
   not   :: b -> b
   
-  (||)  :: b -> b -> b
-  a || b = or [a,b]
-  
   or    :: [b] -> b
   or []     = false
   or (a:as) = a || or as
-  
-  (&&)  :: b -> b -> b
-  a && b = and [a,b]
   
   and   :: [b] -> b
   and []     = true
@@ -80,15 +88,4 @@ instance Boolean Bool where
   false = False  
   true  = True
   not   = B.not
-  (||)  = (B.||)
-  (&&)  = (B.&&)
   (<~>) = (==)
-
---------------------------------------------------------------------------------
--- Bol -
-
--- | type representing 'Boolean' structures.
-data Bol
-
-type instance Structure Bol x = Boolean x
-
