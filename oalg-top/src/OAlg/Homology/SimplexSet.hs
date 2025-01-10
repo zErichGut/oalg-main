@@ -37,6 +37,60 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Homology.Simplical
 
 --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- prpLatticeDisjunction -
+
+-- | validity of disjunction in a lattice.
+prpLatticeDisjunction :: (Lattice a, Show a) => a -> a -> a -> Statement
+prpLatticeDisjunction a b c = Label "LatticeDisjunction" :<=>:
+  And [ Label "a <<= (a || b)"
+          :<=>: (a <<= ab) :?> Params ["a":=show a,"b":=show b]
+      , Label "b <<= (a || b)"
+          :<=>: (b <<= ab) :?> Params ["a":=show a,"b":=show b]
+      , Label "(a <<= z) && (b <<= z) ~> (a || b) <<= z"
+        :<=>:     (((a <<= z) && (b <<= z)) :?> Params ["a":=show a,"b":=show b,"z":=show z])
+              :=> (ab <<= z) :?> Params ["a":=show a,"b":=show b,"z":=show z]
+      ]
+  where ab = a || b
+        z  = ab || c
+
+--------------------------------------------------------------------------------
+-- prpLatticeConjunction -
+
+-- | validity of conjunction in a lattice.
+prpLatticeConjunction :: (Lattice a, Show a) => a -> a -> a -> Statement
+prpLatticeConjunction a b c = Label "LatticeDisjunction" :<=>:
+  And [ Label "(a && b) <<= a"
+          :<=>: (ab <<= a) :?> Params ["a":=show a,"b":=show b]
+      , Label "(a && b) <<= b"
+          :<=>: (ab <<= b) :?> Params ["a":=show a,"b":=show b]
+      , Label "(z <<= a) && (z <<= b) ~> z <<= (a && b)"
+        :<=>:     (((z <<= a) && (z <<= b)) :?> Params ["a":=show a,"b":=show b,"z":=show z])
+              :=> (z <<= ab) :?> Params ["a":=show a,"b":=show b,"z":=show z]
+      ]
+  where ab = a && b
+        z  = ab && c
+
+--------------------------------------------------------------------------------
+-- prpLattice -
+
+-- | validity of a lattice.
+prpLattice :: (Lattice a,Show a) => X a -> Statement
+prpLattice xa = Prp "Lattice" :<=>:
+  And [ Forall xaaa
+          (\(a,b,c) -> And [ prpLatticeDisjunction a b c
+                           , prpLatticeConjunction a b c
+                           ]
+          )
+      ]
+  where xaaa = xTupple3 xa xa xa
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
 -- SimplexSet -
 
 -- | set of simplices over @__x__@ according to @__s__@.
@@ -95,6 +149,29 @@ simplexSet :: (Simplical s, Entity (s x), Ord (s x)) => [s x] -> SimplexSet s x
 simplexSet sxs = SimplexSet $ setxs $ spxDimSets sxs
 
 --------------------------------------------------------------------------------
+-- ssUnion -
+
+ssUnion :: SimplexSet s x -> SimplexSet s x -> SimplexSet s x
+ssUnion (SimplexSet zssx) (SimplexSet zssy) = SimplexSet $ uni zssx zssy where
+  uni [] zssy = zssy
+  uni zssx [] = zssx
+  uni ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
+    LT -> (u,ssx) : uni ussx ((v,ssy):vssy)
+    EQ -> (u,ssx || ssy) : uni ussx vssy
+    GT -> (v,ssy) : uni ((u,ssx):ussx) vssy
+
+--------------------------------------------------------------------------------
+-- ssIntersection -
+
+ssIntersection :: SimplexSet s x -> SimplexSet s x -> SimplexSet s x
+ssIntersection (SimplexSet zssx) (SimplexSet zssy)
+  = SimplexSet $ filter (not . setIsEmpty . snd) $ intr zssx zssy where
+  intr ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
+    LT -> intr ussx ((v,ssy):vssy)
+    EQ -> (u,ssx && ssy) : intr ussx vssy
+    GT -> intr ((u,ssx):ussx) vssy
+  intr _ _ = []
+--------------------------------------------------------------------------------
 -- ssDifference -
 
 ssDifference :: SimplexSet s x -> SimplexSet s x -> SimplexSet s x
@@ -102,16 +179,22 @@ ssDifference (SimplexSet zssx) (SimplexSet zssy)
   = SimplexSet $ filter (not . setIsEmpty . snd) $ diff zssx zssy where
   diff [] _    = []
   diff zssx [] = zssx
-  diff ((z,ssx):zssx) ((z',ssy):zssy) = case z `compare` z' of
-    LT -> (z,ssx):diff zssx ((z',ssy):zssy)
-    EQ -> (z,ssx `setDifference` ssy) : diff zssx zssy
-    GT -> diff ((z,ssx):zssx) zssy
+  diff ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
+    LT -> (u,ssx):diff zssx ((v,ssy):vssy)
+    EQ -> (u,ssx // ssy) : diff ussx vssy
+    GT -> diff ((u,ssx):ussx) vssy
 
 --------------------------------------------------------------------------------
 -- isSubSimplexSet -
 
 isSubSimplexSet :: SimplexSet s x -> SimplexSet s x -> Bool
-isSubSimplexSet = error "nyi"
+isSubSimplexSet (SimplexSet zssx) (SimplexSet zssy) = sub zssx zssy where
+  sub [] _ = True
+  sub _ [] = False
+  sub ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
+    LT -> False
+    EQ -> (ssx <<= ssy) && sub ussx vssy
+    GT -> sub ((u,ssx):ussx) vssy
 
 --------------------------------------------------------------------------------
 -- SimplexSet - Lattice -
@@ -120,8 +203,8 @@ instance POrd (SimplexSet s x) where
   (<<=) = isSubSimplexSet
 
 instance Logical (SimplexSet s x) where
-  (||) = error "nyi"
-  (&&) = error "nyi"
+  (||) = ssUnion
+  (&&) = ssIntersection
 
 instance Lattice (SimplexSet s x)
 
@@ -192,3 +275,26 @@ instance Simplical s => Functorial1 EntOrdMap (SimplexSet s)
 ss :: N -> N -> SimplexSet [] N
 ss d n = SimplexSet $ takeN (succ d) $ simplices $ Set [1..n]
 
+--------------------------------------------------------------------------------
+-- X -
+
+-- | random variable of 'SimplexSet' generated by the maximal given number of simplices.
+xSimplexSet :: (Simplical s, Entity (s x), Ord (s x)) => N -> X (s x) -> X (SimplexSet s x)
+xSimplexSet n xsx = amap1 simplexSet $ xTakeB 0 n xsx
+
+--------------------------------------------------------------------------------
+-- prpSimplexSet -
+
+-- | validity of the implementation of 'SimplexSet'
+prpSimplexSet :: Statement
+prpSimplexSet = Label "SimplexSet" :<=>:
+  And [ Label "s ~ Set" :<=>: prpLattice xSimplexSetSet
+      , Label "s ~ []" :<=>: prpLattice xSimplexSetLst
+      ]
+  where
+    maxDim = 10
+    maxGen = 20
+    xv      = xOneOf ['a'..'z']
+    
+    xSimplexSetSet = xSimplexSet maxGen (xSet (succ maxDim) xv)
+    xSimplexSetLst = xSimplexSet maxGen (xTakeB 0 (succ maxDim) xv)
