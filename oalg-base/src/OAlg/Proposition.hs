@@ -33,6 +33,7 @@ prpOAlgBase = Prp "OAlgBase"
                 And [ prpBool
                     , prpValidTautologies
                     , prpStatement
+                    , prpOrd
                     ]
             , Label "Structure" :<=>:
                 And [ prpStructureN

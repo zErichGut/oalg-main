@@ -32,7 +32,7 @@ import OAlg.Category.Definition hiding ((.))
 
 import OAlg.Data.Statement
 import OAlg.Data.Either
-import OAlg.Data.Ord
+import OAlg.Data.Ord.Definition
 import OAlg.Data.Number
 import OAlg.Data.Opposite
 import OAlg.Data.X

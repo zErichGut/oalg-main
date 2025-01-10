@@ -38,7 +38,7 @@ import Data.Type.Equality
 import OAlg.Data.Boolean.Definition
 import OAlg.Data.Show
 import OAlg.Data.Equal
-import OAlg.Data.Ord
+import OAlg.Data.Ord.Definition
 import OAlg.Data.Singular
 import OAlg.Data.Maybe
 import OAlg.Data.Opposite

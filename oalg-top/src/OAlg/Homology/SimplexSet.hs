@@ -37,60 +37,6 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Homology.Simplical
 
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- prpLatticeDisjunction -
-
--- | validity of disjunction in a lattice.
-prpLatticeDisjunction :: (Lattice a, Show a) => a -> a -> a -> Statement
-prpLatticeDisjunction a b c = Label "LatticeDisjunction" :<=>:
-  And [ Label "a <<= (a || b)"
-          :<=>: (a <<= ab) :?> Params ["a":=show a,"b":=show b]
-      , Label "b <<= (a || b)"
-          :<=>: (b <<= ab) :?> Params ["a":=show a,"b":=show b]
-      , Label "(a <<= z) && (b <<= z) ~> (a || b) <<= z"
-        :<=>:     (((a <<= z) && (b <<= z)) :?> Params ["a":=show a,"b":=show b,"z":=show z])
-              :=> (ab <<= z) :?> Params ["a":=show a,"b":=show b,"z":=show z]
-      ]
-  where ab = a || b
-        z  = ab || c
-
---------------------------------------------------------------------------------
--- prpLatticeConjunction -
-
--- | validity of conjunction in a lattice.
-prpLatticeConjunction :: (Lattice a, Show a) => a -> a -> a -> Statement
-prpLatticeConjunction a b c = Label "LatticeDisjunction" :<=>:
-  And [ Label "(a && b) <<= a"
-          :<=>: (ab <<= a) :?> Params ["a":=show a,"b":=show b]
-      , Label "(a && b) <<= b"
-          :<=>: (ab <<= b) :?> Params ["a":=show a,"b":=show b]
-      , Label "(z <<= a) && (z <<= b) ~> z <<= (a && b)"
-        :<=>:     (((z <<= a) && (z <<= b)) :?> Params ["a":=show a,"b":=show b,"z":=show z])
-              :=> (z <<= ab) :?> Params ["a":=show a,"b":=show b,"z":=show z]
-      ]
-  where ab = a && b
-        z  = ab && c
-
---------------------------------------------------------------------------------
--- prpLattice -
-
--- | validity of a lattice.
-prpLattice :: (Lattice a,Show a) => X a -> Statement
-prpLattice xa = Prp "Lattice" :<=>:
-  And [ Forall xaaa
-          (\(a,b,c) -> And [ prpLatticeDisjunction a b c
-                           , prpLatticeConjunction a b c
-                           ]
-          )
-      ]
-  where xaaa = xTupple3 xa xa xa
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 -- SimplexSet -
 
 -- | set of simplices over @__x__@ according to @__s__@.
@@ -180,7 +126,7 @@ ssDifference (SimplexSet zssx) (SimplexSet zssy)
   diff [] _    = []
   diff zssx [] = zssx
   diff ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
-    LT -> (u,ssx):diff zssx ((v,ssy):vssy)
+    LT -> (u,ssx) : diff ussx ((v,ssy):vssy)
     EQ -> (u,ssx // ssy) : diff ussx vssy
     GT -> diff ((u,ssx):ussx) vssy
 
@@ -208,7 +154,7 @@ instance Logical (SimplexSet s x) where
 
 instance Lattice (SimplexSet s x)
 
-instance ErasabelLattice (SimplexSet s x) where
+instance ErasableLattice (SimplexSet s x) where
   (//) = ssDifference
 
 --------------------------------------------------------------------------------
@@ -288,13 +234,17 @@ xSimplexSet n xsx = amap1 simplexSet $ xTakeB 0 n xsx
 -- | validity of the implementation of 'SimplexSet'
 prpSimplexSet :: Statement
 prpSimplexSet = Label "SimplexSet" :<=>:
-  And [ Label "s ~ Set" :<=>: prpLattice xSimplexSetSet
-      , Label "s ~ []" :<=>: prpLattice xSimplexSetLst
+  And [ Label "s ~ Set" :<=>: And [ prpLattice xSimplexSetSet
+                                  , prpErasableLattice xSimplexSetSet
+                                  ]
+      , Label "s ~ []" :<=>: And [ prpLattice xSimplexSetLst
+                                 , prpErasableLattice xSimplexSetLst
+                                 ]
       ]
   where
-    maxDim = 10
+    maxDim = 6
     maxGen = 20
-    xv      = xOneOf ['a'..'z']
+    xv     = xOneOf ['a'..'z']
     
     xSimplexSetSet = xSimplexSet maxGen (xSet (succ maxDim) xv)
     xSimplexSetLst = xSimplexSet maxGen (xTakeB 0 (succ maxDim) xv)

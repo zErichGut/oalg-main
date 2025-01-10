@@ -17,8 +17,13 @@ module OAlg.Data.Opposite
       
   ) where
 
+import Prelude hiding ((&&),(||))
+
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.Ord.Definition
+import OAlg.Data.Boolean.Definition
+
 --------------------------------------------------------------------------------
 -- Op -
 
@@ -33,7 +38,15 @@ fromOp (Op x) = x
 fromOpOp :: Op (Op x) -> x
 fromOpOp (Op (Op x)) = x
 
-
+--------------------------------------------------------------------------------
+-- Op - some instances -
+instance Ord x => Ord (Op x) where Op x `compare` Op y = y `compare` x
+instance POrd x => POrd (Op x) where Op x <<= Op y = y <<= x
+instance Logical a => Logical (Op a) where
+  Op a || Op b = Op (a && b)
+  Op a && Op b = Op (a || b)
+instance Lattice a => Lattice (Op a)
+  
 --------------------------------------------------------------------------------
 -- Op2 -
 

@@ -93,7 +93,12 @@ has been defined by EmbeddingFrom.
 - the class Functorial1
 - structure EntOrd for orderd entities.
 - class Logical as base class for Boolean.
-- class Lettice, ErasabelPLattice in OAlg.Data.Ord.
+- class Lettice, ErasabelPLattice in OAlg.Data.Ord.Definition.
 - for the module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference,
-  instance ErasabelLattice (Set x), OrdMap, EntOrdMap.
+  setFilter, instance ErasableLattice (Set x), OrdMap, EntOrdMap.
 - for the modlue OAlg.Entity.Sequence.Graph: instance Ord (Graph i x).
+- Propositions for lattices, see OAlg.Data.Ord.Proposition
+- instances Ord and POrd for Op.
+
+### Changed
+- The module OAlg.Data.Ord has been moved to OAlg.Data.Ord.Definition

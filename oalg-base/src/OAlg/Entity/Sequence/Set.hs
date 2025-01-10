@@ -225,7 +225,7 @@ instance Ord x => Logical (Set x) where
 
 instance Ord x => Lattice (Set x)
 
-instance Ord x => ErasabelLattice (Set x) where (//) = setDifference
+instance Ord x => ErasableLattice (Set x) where (//) = setDifference
 
 --------------------------------------------------------------------------------
 -- setIndex -
