@@ -32,7 +32,11 @@ import Data.List (filter)
 
 import OAlg.Prelude 
 
+import OAlg.Data.POrd
+
 import OAlg.Entity.Sequence.Set
+
+import OAlg.Structure.Lattice
 
 import OAlg.Homology.Simplical
 
@@ -111,7 +115,7 @@ ssUnion (SimplexSet zssx) (SimplexSet zssy) = SimplexSet $ uni zssx zssy where
 
 ssIntersection :: SimplexSet s x -> SimplexSet s x -> SimplexSet s x
 ssIntersection (SimplexSet zssx) (SimplexSet zssy)
-  = SimplexSet $ filter (not . setIsEmpty . snd) $ intr zssx zssy where
+  = SimplexSet $ filter (not . isEmpty . snd) $ intr zssx zssy where
   intr ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
     LT -> intr ussx ((v,ssy):vssy)
     EQ -> (u,ssx && ssy) : intr ussx vssy
@@ -122,7 +126,7 @@ ssIntersection (SimplexSet zssx) (SimplexSet zssy)
 
 ssDifference :: SimplexSet s x -> SimplexSet s x -> SimplexSet s x
 ssDifference (SimplexSet zssx) (SimplexSet zssy)
-  = SimplexSet $ filter (not . setIsEmpty . snd) $ diff zssx zssy where
+  = SimplexSet $ filter (not . isEmpty . snd) $ diff zssx zssy where
   diff [] _    = []
   diff zssx [] = zssx
   diff ((u,ssx):ussx) ((v,ssy):vssy) = case u `compare` v of
@@ -148,6 +152,11 @@ isSubSimplexSet (SimplexSet zssx) (SimplexSet zssy) = sub zssx zssy where
 instance POrd (SimplexSet s x) where
   (<<=) = isSubSimplexSet
 
+instance (Entity (s x), Ord (s x)) => Empty (SimplexSet s x) where
+  empty = SimplexSet []
+  isEmpty (SimplexSet []) = True
+  isEmpty _               = False
+
 instance Logical (SimplexSet s x) where
   (||) = ssUnion
   (&&) = ssIntersection
@@ -162,7 +171,7 @@ instance ErasableLattice (SimplexSet s x) where
 
 ssFilterSimplex :: (s x -> Bool) -> SimplexSet s x -> SimplexSet s x
 ssFilterSimplex p (SimplexSet zssx)
-  = SimplexSet $ filter (not . setIsEmpty . snd) $ amap1 (\(z,ssx) -> (z,setFilter p ssx)) zssx 
+  = SimplexSet $ filter (not . isEmpty . snd) $ amap1 (\(z,ssx) -> (z,setFilter p ssx)) zssx 
 
 --------------------------------------------------------------------------------
 -- ssFilterVertex -

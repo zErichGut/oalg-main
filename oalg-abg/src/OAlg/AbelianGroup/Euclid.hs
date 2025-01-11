@@ -14,7 +14,7 @@ module OAlg.AbelianGroup.Euclid
   )
   where
 
-import OAlg.Prelude hiding ((//))
+import OAlg.Prelude
 
 import Data.List (foldl)
 
