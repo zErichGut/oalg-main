@@ -44,6 +44,7 @@ import Data.Proxy
 
 import OAlg.Prelude
 
+import OAlg.Data.POrd
 import OAlg.Data.Canonical
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable

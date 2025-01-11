@@ -42,7 +42,7 @@ import Data.List (map,(++),take,repeat)
 import OAlg.Control.Exception
 import OAlg.Category.Definition
 
-import OAlg.Data.Ord.Definition
+import OAlg.Data.Ord
 import OAlg.Data.Show
 import OAlg.Data.Equal
 import OAlg.Data.Statistics

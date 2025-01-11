@@ -93,7 +93,7 @@ import OAlg.Control.HNFData
 import OAlg.Control.Verbose
 
 import OAlg.Data.Boolean.Definition
-import OAlg.Data.Ord.Definition
+import OAlg.Data.Ord
 import OAlg.Data.Equal
 import OAlg.Data.X
 import OAlg.Data.Show 

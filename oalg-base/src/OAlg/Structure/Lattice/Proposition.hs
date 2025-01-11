@@ -4,14 +4,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 -- |
--- Module      : OAlg.Data.Ord.Proposition
--- Description : propositions on ordered structures and lattices.
+-- Module      : OAlg.Structure.Lattice.Proposition
+-- Description : propositions on lattices.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- propositions on ordered structures and lattices.
-module OAlg.Data.Ord.Proposition
+-- propositions on lattices.
+module OAlg.Structure.Lattice.Proposition
   ( -- * Lattice
     prpLattice, prpLatticeDisjunction, prpLatticeConjunction
 
@@ -19,19 +19,16 @@ module OAlg.Data.Ord.Proposition
   , prpErasableLattice
 
     -- * Bool
-  , prpOrdBool
+  , prpLatticeBool
 
-    -- * Ord
-  , prpOrd
   )
   where
 
-import OAlg.Data.Ord.Definition
-import OAlg.Data.Opposite
-import OAlg.Data.Show
-import OAlg.Data.Boolean.Definition
-import OAlg.Data.Statement.Definition
-import OAlg.Data.X
+import OAlg.Prelude
+
+import OAlg.Data.POrd
+
+import OAlg.Structure.Lattice.Definition
 
 --------------------------------------------------------------------------------
 -- prpLatticeDisjunction -
@@ -83,20 +80,12 @@ prpErasableLattice xa = Prp "ErasableLattice" :<=>:
   where xaa = xTupple2 xa xa
 
 --------------------------------------------------------------------------------
--- prpOrdBool -
+-- prpLatticeBool -
 
 -- | validity of 'Bool as a erasable lattice
-prpOrdBool :: Statement
-prpOrdBool = Prp "OrdBool" :<=>:
+prpLatticeBool :: Statement
+prpLatticeBool = Prp "LatticeBool" :<=>:
   And [ prpLattice xBool
       , prpErasableLattice xBool
       ]
 
---------------------------------------------------------------------------------
--- prpOrd -
-
--- | propositions for ordered structures and lattices.
-prpOrd :: Statement
-prpOrd = Prp "Ord" :<=>:
-  And [ prpOrdBool
-      ]

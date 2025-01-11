@@ -48,7 +48,8 @@ import OAlg.Prelude
 import OAlg.Data.Tree
 
 import OAlg.Structure.Number
-
+import OAlg.Data.POrd
+import OAlg.Structure.Lattice.Definition
 --------------------------------------------------------------------------------
 -- Set -
 
@@ -218,6 +219,10 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
 -- Set - ErasableLattice -
 
 instance Ord x => POrd (Set x) where (<<=) = isSubSet
+instance Ord x => Empty (Set x) where
+  empty = setEmpty
+  isEmpty (Set []) = True
+  isEmpty (Set _)  = False
 
 instance Ord x => Logical (Set x) where
   (||) = setUnion

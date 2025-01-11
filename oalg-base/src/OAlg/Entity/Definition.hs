@@ -31,7 +31,7 @@ module OAlg.Entity.Definition
 
     -- * Basic Entities
     -- ** Empty
-  , Empty(), empty, Empty2(), empty2
+  , EntEmpty(), fromEmpty, EntEmpty2(), fromEmpty2
   )
   where
 
@@ -104,40 +104,40 @@ instance Entity1 Proxy
 class (Show2 h, Eq2 h, Validable2 h, Typeable h) => Entity2 h
 
 --------------------------------------------------------------------------------
--- Empty -
+-- EntEmpty -
 
 -- | the empty entity.
-data Empty deriving (Eq, Ord, Show)
+data EntEmpty deriving (Eq, Ord, Show)
 
 -- | the empty function.
-empty :: Empty -> x
-empty = const undefined
+fromEmpty :: EntEmpty -> x
+fromEmpty = const undefined
 
-instance Validable Empty where
-  valid = empty
+instance Validable EntEmpty where
+  valid = fromEmpty
 
-instance Entity Empty
+instance Entity EntEmpty
 
 --------------------------------------------------------------------------------
--- Empty2 -
+-- EntEmpty2 -
 
 -- | the empty entity2.
-data Empty2 a b deriving (Eq, Show)
+data EntEmpty2 a b deriving (Eq, Show)
 
 -- | the empty function.
-empty2 :: Empty2 a b -> x
-empty2 = const undefined
+fromEmpty2 :: EntEmpty2 a b -> x
+fromEmpty2 = const undefined
 
-instance Validable (Empty2 x y) where
-  valid = empty2
+instance Validable (EntEmpty2 x y) where
+  valid = fromEmpty2
 
-instance Show2 Empty2
+instance Show2 EntEmpty2
 
-instance Eq2 Empty2
+instance Eq2 EntEmpty2
 
-instance Validable2 Empty2
+instance Validable2 EntEmpty2
 
-instance Entity2 Empty2
+instance Entity2 EntEmpty2
 
 --------------------------------------------------------------------------------
 -- Entity2 - Instance -

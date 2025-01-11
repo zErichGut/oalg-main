@@ -90,15 +90,18 @@ has been defined by EmbeddingFrom.
 ## [2.0.2.0] - 2025-01-09
 
 ### Added
-- the class Functorial1
+- class Functorial1
 - structure EntOrd for orderd entities.
 - class Logical as base class for Boolean.
-- class Lettice, ErasabelPLattice in OAlg.Data.Ord.Definition.
+- class Lettice, ErasabelPLattice in OAlg.Structure.Lattice.
 - for the module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference,
   setFilter, instance ErasableLattice (Set x), OrdMap, EntOrdMap.
 - for the modlue OAlg.Entity.Sequence.Graph: instance Ord (Graph i x).
-- Propositions for lattices, see OAlg.Data.Ord.Proposition
+- Propositions for lattices, see OAlg.Structure.Lattice.Proposition
 - instances Ord and POrd for Op.
+- classes Empty and Full in OAlg.Data.POrd.
 
 ### Changed
-- The module OAlg.Data.Ord has been moved to OAlg.Data.Ord.Definition
+- the class POrd has been moved from OAlg.Data.Ord to OAlg.Data.POrd
+- in the module OAlg.Entity.Definition: Empty to EntEmpty, empty to fromEmpty,
+Empty2 to EntEmpty2, empty2 to fromEmpty2.

@@ -73,8 +73,7 @@ library
       OAlg.Data.Number
       OAlg.Data.Opposite
       OAlg.Data.Ord
-      OAlg.Data.Ord.Definition
-      OAlg.Data.Ord.Proposition
+      OAlg.Data.POrd
       OAlg.Data.Reducible
       OAlg.Data.Show
       OAlg.Data.Singleton
@@ -168,6 +167,9 @@ library
       OAlg.Structure.Fibred
       OAlg.Structure.Fibred.Definition
       OAlg.Structure.Fibred.Proposition
+      OAlg.Structure.Lattice
+      OAlg.Structure.Lattice.Definition
+      OAlg.Structure.Lattice.Proposition
       OAlg.Structure.Multiplicative
       OAlg.Structure.Multiplicative.Definition
       OAlg.Structure.Multiplicative.Proposition
