@@ -87,7 +87,7 @@ has been defined by EmbeddingFrom.
 ### Resolved
 - Orphan instance for Projectible Sheaf and Path by removing the general definition to Sum and Product.
 
-## [2.0.2.0] - 2025-01-09
+## [2.0.2.0] - 2025-01-13
 
 ### Added
 - class Functorial1
