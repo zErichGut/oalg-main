@@ -28,7 +28,6 @@ module OAlg.Homology.SimplexSet
 import Control.Monad
 
 import Data.Typeable
-import Data.List (filter)
 
 import OAlg.Prelude 
 
@@ -163,7 +162,7 @@ instance Logical (SimplexSet s x) where
 
 instance Lattice (SimplexSet s x)
 
-instance ErasableLattice (SimplexSet s x) where
+instance (Entity (s x), Ord (s x)) => Erasable (SimplexSet s x) where
   (//) = ssDifference
 
 --------------------------------------------------------------------------------
@@ -171,7 +170,7 @@ instance ErasableLattice (SimplexSet s x) where
 
 ssFilterSimplex :: (s x -> Bool) -> SimplexSet s x -> SimplexSet s x
 ssFilterSimplex p (SimplexSet zssx)
-  = SimplexSet $ filter (not . isEmpty . snd) $ amap1 (\(z,ssx) -> (z,setFilter p ssx)) zssx 
+  = SimplexSet $ filter (not . isEmpty . snd) $ amap1 (\(z,ssx) -> (z,filter p ssx)) zssx 
 
 --------------------------------------------------------------------------------
 -- ssFilterVertex -
@@ -183,6 +182,10 @@ ssFilterVertex p (SimplexSet zssx)
   $ join
   $ amap1 (setxs . snd) zssx
 
+
+instance Filterable (SimplexSet Set) x where
+  filter = ssFilterVertex
+  
 --------------------------------------------------------------------------------
 -- ssDimSimplices -
 

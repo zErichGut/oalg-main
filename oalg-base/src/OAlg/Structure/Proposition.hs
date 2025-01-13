@@ -11,7 +11,8 @@
 -- propositions on basic algebraic structures.
 module OAlg.Structure.Proposition
   ( -- * Proposition
-    prpStructureN, prpStructureZ, prpStructureQ
+    prpStructure
+  , prpStructureN, prpStructureZ, prpStructureQ
   , prpStructureOS
   )
 
@@ -20,6 +21,7 @@ module OAlg.Structure.Proposition
 import OAlg.Prelude
 
 
+import OAlg.Structure.Lattice
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
@@ -82,3 +84,15 @@ prpStructureOS = Prp "StructureOS" :<=>:
       , prpDst (xStandardDst :: XDst OS)
       ]
 
+--------------------------------------------------------------------------------
+-- prpStructure -
+
+-- | validity of some structures.
+prpStructure :: Statement
+prpStructure = Prp "Structure" :<=>:
+  And [ prpLatticeBool
+      , prpStructureN
+      , prpStructureZ
+      , prpStructureQ
+      , prpStructureOS
+      ]

@@ -66,6 +66,7 @@ library
       OAlg.Data.Dualisable
       OAlg.Data.Either
       OAlg.Data.Equal
+      OAlg.Data.Filterable
       OAlg.Data.FinitelyPresentable
       OAlg.Data.Generator
       OAlg.Data.Identity
@@ -73,7 +74,6 @@ library
       OAlg.Data.Number
       OAlg.Data.Opposite
       OAlg.Data.Ord
-      OAlg.Data.POrd
       OAlg.Data.Reducible
       OAlg.Data.Show
       OAlg.Data.Singleton
@@ -179,6 +179,9 @@ library
       OAlg.Structure.Oriented
       OAlg.Structure.Oriented.Definition
       OAlg.Structure.Oriented.Proposition
+      OAlg.Structure.PartiallyOrdered
+      OAlg.Structure.PartiallyOrdered.Definition
+      OAlg.Structure.PartiallyOrdered.Proposition
       OAlg.Structure.Proposition
       OAlg.Structure.Ring
       OAlg.Structure.Ring.Definition

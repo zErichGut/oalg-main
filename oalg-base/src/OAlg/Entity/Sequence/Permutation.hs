@@ -38,13 +38,13 @@ module OAlg.Entity.Sequence.Permutation
 
 import Control.Monad hiding (sequence)
 
-import Data.List (map,filter,zip,repeat,(++),head,tail,splitAt)
+import Data.List (map,zip,repeat,(++),head,tail,splitAt)
 import Data.Foldable
 import Data.Proxy
 
 import OAlg.Prelude
 
-import OAlg.Data.POrd
+import OAlg.Data.Filterable
 import OAlg.Data.Canonical
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
@@ -57,6 +57,7 @@ import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.CSequence
 import OAlg.Entity.Sequence.Set
 
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive

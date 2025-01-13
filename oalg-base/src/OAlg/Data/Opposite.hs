@@ -21,8 +21,6 @@ import Prelude hiding ((&&),(||))
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
-import OAlg.Data.POrd
-import OAlg.Data.Boolean.Definition
 
 --------------------------------------------------------------------------------
 -- Op -
@@ -30,21 +28,24 @@ import OAlg.Data.Boolean.Definition
 -- | Predicate for the opposite of a type @__x__@. 
 newtype Op x = Op x deriving (Show,Read,Eq)
 
+--------------------------------------------------------------------------------
+-- Op (x) - Ord -
+
+instance Ord x => Ord (Op x) where Op x `compare` Op y = y `compare` x
+
+--------------------------------------------------------------------------------
+-- fromOp -
 -- | from @'Op' x@.
 fromOp :: Op x -> x
 fromOp (Op x) = x
+
+--------------------------------------------------------------------------------
+-- fromOpOp -
 
 -- | from @'Op' ('Op' x)@.
 fromOpOp :: Op (Op x) -> x
 fromOpOp (Op (Op x)) = x
 
-instance Ord x => Ord (Op x) where Op x `compare` Op y = y `compare` x
-instance POrd x => POrd (Op x) where Op x <<= Op y = y <<= x
-instance Logical a => Logical (Op a) where
-  Op a || Op b = Op (a && b)
-  Op a && Op b = Op (a || b)
-
-  
 --------------------------------------------------------------------------------
 -- Op2 -
 

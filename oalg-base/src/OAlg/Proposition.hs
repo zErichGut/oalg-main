@@ -15,7 +15,6 @@ module OAlg.Proposition
 
 import OAlg.Prelude
 import OAlg.Structure.Proposition
-import OAlg.Structure.Lattice.Proposition
 import OAlg.Hom.Proposition
 import OAlg.Limes.Proposition
 
@@ -34,14 +33,8 @@ prpOAlgBase = Prp "OAlgBase"
                 And [ prpBool
                     , prpValidTautologies
                     , prpStatement
-                    , prpLatticeBool
                     ]
-            , Label "Structure" :<=>:
-                And [ prpStructureN
-                    , prpStructureZ
-                    , prpStructureQ
-                    , prpStructureOS
-                    ]
+            , prpStructure
             , Label "Hom" :<=>:
                 And [ prpIdHom
                     , prpHomOp

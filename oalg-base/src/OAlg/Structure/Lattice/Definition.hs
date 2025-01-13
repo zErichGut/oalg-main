@@ -17,13 +17,13 @@
 -- lattices
 module OAlg.Structure.Lattice.Definition
   (
-    Lattice, ErasableLattice(..)
+    Lattice
   )
   where
 
 import OAlg.Prelude
 
-import OAlg.Data.POrd
+import OAlg.Structure.PartiallyOrdered.Definition
 
 --------------------------------------------------------------------------------
 -- Lattice -
@@ -43,25 +43,8 @@ import OAlg.Data.POrd
 --     (1) @x '&&' y '<<=' x@ and @x '&&' y '<<=' y@
 --
 --     (2) For all @z@ with @z '<<=' x@ and @z '<<=' y@ holds: @z '<<=' (x '&&' y) @. 
-class (POrd a, Logical a) => Lattice a 
+class (PartiallyOrdered a, Logical a) => Lattice a 
 
 instance Lattice Bool
 instance Lattice a => Lattice (Op a)
 
---------------------------------------------------------------------------------
--- ErasableLattice -
-
-
--- | lattices admitting an erasor-operator.
---
--- __Properties__ Let @__a__@ be an instance of 'ErasableLattice', then
--- for all @x@ and @y@ in @__a__@ holds:
---
--- (1) @x // y '<<=' x@.
-class Lattice a => ErasableLattice a where
-  infixl 4 //
-  -- | difference
-  (//) :: a -> a -> a
-
-instance ErasableLattice Bool where
-  a // b = a && not b

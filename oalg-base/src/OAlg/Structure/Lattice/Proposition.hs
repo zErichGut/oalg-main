@@ -16,7 +16,7 @@ module OAlg.Structure.Lattice.Proposition
     prpLattice, prpLatticeDisjunction, prpLatticeConjunction
 
     -- * Erasable Lattice
-  , prpErasableLattice
+  -- , prpErasableLattice
 
     -- * Bool
   , prpLatticeBool
@@ -26,7 +26,7 @@ module OAlg.Structure.Lattice.Proposition
 
 import OAlg.Prelude
 
-import OAlg.Data.POrd
+import OAlg.Structure.PartiallyOrdered
 
 import OAlg.Structure.Lattice.Definition
 
@@ -70,22 +70,10 @@ prpLattice xa = Prp "Lattice" :<=>:
   where xaaa = xTupple3 xa xa xa
 
 --------------------------------------------------------------------------------
--- prpErasableLattice -
-
--- | validity of a erasable lattice.
-prpErasableLattice :: (ErasableLattice a, Show a) => X a -> Statement
-prpErasableLattice xa = Prp "ErasableLattice" :<=>:
-  And [ Forall xaa (\(a,b) -> ((a // b) <<= a) :?> Params ["a":=show a,"b":=show b])
-      ]
-  where xaa = xTupple2 xa xa
-
---------------------------------------------------------------------------------
 -- prpLatticeBool -
 
 -- | validity of 'Bool as a erasable lattice
 prpLatticeBool :: Statement
-prpLatticeBool = Prp "LatticeBool" :<=>:
-  And [ prpLattice xBool
-      , prpErasableLattice xBool
-      ]
+prpLatticeBool = Prp "LatticeBool" :<=>: prpLattice xBool
+
 

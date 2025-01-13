@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DefaultSignatures #-}
 
 
 -- |
@@ -13,9 +14,11 @@
 -- 
 -- boolean structure for multivalent logic. 
 module OAlg.Data.Boolean.Definition
-  (    
+  ( -- * Logical Operators
+    Logical(..), Erasable(..)
+    
     -- * Boolean
-    Boolean(..), Logical(..)
+  , Boolean(..)
 
     -- * Bool
   , B.Bool(..), B.otherwise
@@ -27,6 +30,8 @@ module OAlg.Data.Boolean.Definition
 
 import Prelude as P hiding (not,(||),(&&),or,and)
 import qualified Data.Bool as B
+
+import OAlg.Data.Opposite
 
 --------------------------------------------------------------------------------
 -- Lagical -
@@ -44,6 +49,30 @@ class Logical a where
 instance Logical Bool where
   (||)  = (B.||)
   (&&)  = (B.&&)
+
+instance Logical a => Logical (Op a) where
+  Op a || Op b = Op (a && b)
+  Op a && Op b = Op (a || b)
+
+--------------------------------------------------------------------------------
+-- Erasable -
+
+-- | erasor-operator.
+class Erasable a where
+  infixl 4 //
+  -- | difference
+  (//) :: a -> a -> a
+  default (//) :: Boolean a => a -> a -> a
+  a // b = a && not b
+
+instance Erasable Bool
+
+instance Eq x => Erasable [x] where
+  xs // [] = xs
+  [] // _  = []
+  (x:xs) // (y:ys) = case x == y of
+    True  -> xs // ys
+    False -> x : (xs // (y:ys))
 
 --------------------------------------------------------------------------------
 -- Boolean -

@@ -41,15 +41,16 @@ module OAlg.Entity.Sequence.Set
 import Control.Monad
 
 import Data.Foldable
-import Data.List (head,sort,group,map,filter,zip,(++))
+import Data.List as L (head,sort,group,map,zip,(++))
 
 import OAlg.Prelude
 
 import OAlg.Data.Tree
-
+import OAlg.Data.Filterable
 import OAlg.Structure.Number
-import OAlg.Data.POrd
+import OAlg.Structure.PartiallyOrdered as P
 import OAlg.Structure.Lattice.Definition
+
 --------------------------------------------------------------------------------
 -- Set -
 
@@ -62,7 +63,7 @@ import OAlg.Structure.Lattice.Definition
 --
 --  (2) @'lengthN' s '==' 'lengthN' xs@.
 --
---  __Note__ The canonical ordering 'Ord' and the subset ordering 'POrd' are not equivalent.
+--  __Note__ The canonical ordering 'Ord' and the subset ordering 'PartiallyOrdered' are not equivalent.
 newtype Set x = Set [x] deriving (Show,Eq,Ord,LengthN,Foldable)
 
 relSet :: (Validable x, Ord x, Show x) => Set x -> Statement
@@ -131,6 +132,8 @@ setSqc mx (Set is)
 setFilter :: (x -> Bool) -> Set x -> Set x
 setFilter p (Set xs) = Set $ filter p xs
 
+instance Filterable Set x where
+  filter = setFilter
 
 --------------------------------------------------------------------------------
 -- setIsEmpty -
@@ -218,7 +221,7 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
 --------------------------------------------------------------------------------
 -- Set - ErasableLattice -
 
-instance Ord x => POrd (Set x) where (<<=) = isSubSet
+instance Ord x => PartiallyOrdered (Set x) where (<<=) = isSubSet
 instance Ord x => Empty (Set x) where
   empty = setEmpty
   isEmpty (Set []) = True
@@ -230,7 +233,7 @@ instance Ord x => Logical (Set x) where
 
 instance Ord x => Lattice (Set x)
 
-instance Ord x => ErasableLattice (Set x) where (//) = setDifference
+instance Ord x => Erasable (Set x) where (//) = setDifference
 
 --------------------------------------------------------------------------------
 -- setIndex -
