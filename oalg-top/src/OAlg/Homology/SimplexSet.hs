@@ -31,10 +31,11 @@ import Data.Typeable
 
 import OAlg.Prelude 
 
-import OAlg.Data.POrd
+import OAlg.Data.Filterable
 
 import OAlg.Entity.Sequence.Set
 
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Lattice
 
 import OAlg.Homology.Simplical
@@ -148,7 +149,7 @@ isSubSimplexSet (SimplexSet zssx) (SimplexSet zssy) = sub zssx zssy where
 --------------------------------------------------------------------------------
 -- SimplexSet - Lattice -
 
-instance POrd (SimplexSet s x) where
+instance PartiallyOrdered (SimplexSet s x) where
   (<<=) = isSubSimplexSet
 
 instance (Entity (s x), Ord (s x)) => Empty (SimplexSet s x) where
@@ -162,7 +163,7 @@ instance Logical (SimplexSet s x) where
 
 instance Lattice (SimplexSet s x)
 
-instance (Entity (s x), Ord (s x)) => Erasable (SimplexSet s x) where
+instance Erasable (SimplexSet s x) where
   (//) = ssDifference
 
 --------------------------------------------------------------------------------
@@ -247,10 +248,10 @@ xSimplexSet n xsx = amap1 simplexSet $ xTakeB 0 n xsx
 prpSimplexSet :: Statement
 prpSimplexSet = Label "SimplexSet" :<=>:
   And [ Label "s ~ Set" :<=>: And [ prpLattice xSimplexSetSet
-                                  , prpErasableLattice xSimplexSetSet
+                                  , prpErasable xSimplexSetSet
                                   ]
       , Label "s ~ []" :<=>: And [ prpLattice xSimplexSetLst
-                                 , prpErasableLattice xSimplexSetLst
+                                 , prpErasable xSimplexSetLst
                                  ]
       ]
   where
