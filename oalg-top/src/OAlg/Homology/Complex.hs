@@ -64,13 +64,12 @@ import Control.Monad
 
 import Data.List as L (head,tail,zip,last,reverse,repeat,(++),span,filter)
 import Data.Foldable (toList,foldl)
-import Data.Maybe
 
 import OAlg.Prelude
 
 import OAlg.Hom.Distributive ()
 
-import OAlg.Entity.Sequence hiding (span)
+import OAlg.Entity.Sequence hiding (span,isEmpty)
 
 import OAlg.Structure.PartiallyOrdered
 
@@ -83,11 +82,15 @@ import OAlg.Homology.Simplical
 --
 --  __Properties__ Let @c = 'Complex' ('Graph' zxs)@ be in @'Complex' __x__@, then holds:
 --
---  (1) @zxs@ is not empty..
+--  (1) @zxs@ is not empty.
 --
 --  (2) @z0 '==' -1@ where @(z0,_) = 'head' zxs@.
 --
---  (3) For all @(z,'Set' sxs)@ in @zsx@ holds: @'dimension' sx '==' z@ for all @sx@ in @sxs@.
+--  (3) For all @(z,'Set' sxs)@ in @zsx@ holds:
+--
+--     (1) @xsx@ is not empty.
+--
+--     (2) @'dimension' sx '==' z@ for all @sx@ in @sxs@.
 --
 --  (4) For all @..(z,su)':'(z',sv)..@ in @zsx@ holds:
 --
@@ -109,9 +112,11 @@ instance (Entity x, Ord x) => Validable (Complex x) where
                          , vldFaces z sx zsx'
                          ]
     where
-      vldDimension z sx = Label "3" :<=>:
-        (foldl vDim True sx) :?> Params ["z":=show z, "sx" := show sx]
-          where vDim b sx = b && (dimension sx == z)
+      vldDimension z sx
+        = And [ Label "3.1" :<=>: (not $ isEmpty sx) :?> Params ["sx":=show sx]
+              , Label "3.2" :<=>: let vDim b sx = b && (dimension sx == z) in
+                  (foldl vDim True sx) :?> Params ["z":=show z, "sx" := show sx]
+              ]
 
       vldFaces _ _ [] = SValid
       vldFaces z su ((z',sv):zsx')
@@ -126,21 +131,51 @@ instance (Entity x, Ord x) => Validable (Complex x) where
 --------------------------------------------------------------------------------
 -- cpxgph -
 
+-- | the underlying graph.
 cpxgph :: Complex x -> Graph Z (Set (Set x))
 cpxgph (Complex g) = g
 
+--------------------------------------------------------------------------------
+-- cpxElem -
+
+-- | checking for being a simplex of the given complex.
+cpxElem :: (Entity x, Ord x) => Complex x -> Set x -> Bool
+cpxElem (Complex g) = isElem $ setIndex $ gphset g where
+  isElem :: (Entity x, Ord x) => ((Z,Set x) -> Maybe n) -> Set x -> Bool
+  isElem i = isJust . i . spxAdjDim
+
+cpx :: N -> Complex N
+cpx n = complex [Set [1..n]]
 
 --------------------------------------------------------------------------------
 -- complex -
 
+-- | the induced complex given by a list of simplices.
 complex :: (Entity x, Ord x) => [Set x] -> Complex x
 complex = Complex . foldl (||) empty . amap1 simplices
 
 --------------------------------------------------------------------------------
+-- cpxVertices -
+
+-- | the set of vertices of the given complex.
+cpxVertices :: Complex x -> Set x
+cpxVertices (Complex g) = case gphxs g of
+  _ : (0,vs) : _ -> Set $ join $ amap1 setxs $ setxs vs
+  _              -> Set []
+
+--------------------------------------------------------------------------------
 -- cpxGenerators -
 
-cpxGenerators :: (Entity x, Ord x) => Complex x -> Graph Z (Set (Set x))
-cpxGenerators (Complex g) = g // gphFaces g
+-- | a list of generators for the given complex.
+cpxGenerators :: (Entity x, Ord x) => Complex x -> Set (Z,Set x)
+cpxGenerators (Complex g) = gphset (g // gphFaces g)
+
+--------------------------------------------------------------------------------
+-- cpxProduct -
+
+cpxProduct :: Complex x -> Complex y -> Complex (x,y)
+cpxProduct a b = error "nyi" where
+  -- gp = simplices $ Set [(x,y) | x <- setxs $ cpxVertices a, y <- setxs $ cpxVertices b] 
 
 
 {-

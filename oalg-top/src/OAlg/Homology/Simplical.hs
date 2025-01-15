@@ -26,6 +26,7 @@ module OAlg.Homology.Simplical
 
     -- * Simplical
     Simplical(..), faces', gphFaces
+  , spxAdjDim
 
     -- * Simplical Transformable
   , SimplicalTransformable
@@ -115,6 +116,13 @@ instance (Entity x, Ord x) => Simplical Set x where
 -- | the faces as set of simplices.
 faces' :: Simplical s x => Set (s x) -> Set (s x)
 faces' = set . join . amap1 faces . setxs
+
+--------------------------------------------------------------------------------
+-- spxAdjDim -
+
+-- | adjoins the dimension to the given simplex.
+spxAdjDim :: Simplical s x => s x -> (Z,s x)
+spxAdjDim s = (dimension s,s)
 
 --------------------------------------------------------------------------------
 -- gphFaces -
@@ -445,13 +453,6 @@ vertex :: x -> Set x
 vertex x = Set [x]
 
 
-
---------------------------------------------------------------------------------
--- spxAdjDim -
-
--- | adjoins the dimension to the given simplex.
-spxAdjDim :: Simplical s => s x -> (Z,s x)
-spxAdjDim s = (dimension s,s)
 
 --------------------------------------------------------------------------------
 -- spxDimSets -
