@@ -25,7 +25,7 @@ module OAlg.Homology.Simplical
   (
 
     -- * Simplical
-    Simplical(..), faces'
+    Simplical(..), faces', gphFaces
 
     -- * Simplical Transformable
   , SimplicalTransformable
@@ -54,6 +54,7 @@ import OAlg.Category.Map
 import OAlg.Data.Canonical
 
 import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.Graph
 
 import OAlg.Structure.PartiallyOrdered
 
@@ -86,10 +87,11 @@ class (Entity (s x), Ord (s x), PartiallyOrdered (s x), Empty (s x), Erasable (s
   vertices :: s x -> Set x
   -- | the face of a set of simplices.
   faces :: s x -> [s x]
-  -- | all possible simplices for the given set of vertices, starting with 'dimension' @-1@.
+  -- | all possible simplices for the given set of vertices as a graph of dimensions and there
+  -- simplices.
   --
   -- __Note__ This maybe an infinite list, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
-  simplices :: Set x -> [(Z,Set (s x))] 
+  simplices :: Set x -> Graph Z (Set (s x)) 
   
 
 instance (Entity x, Ord x) => Simplical [] x where
@@ -97,7 +99,7 @@ instance (Entity x, Ord x) => Simplical [] x where
   vertices = set
   faces []     = []
   faces (x:xs) = xs : amap1 (x:) (faces xs)
-  simplices (Set vs) = cbns (-1) [[]] where
+  simplices (Set vs) = Graph $ cbns (-1) [[]] where
     -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
     cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
 
@@ -105,7 +107,7 @@ instance (Entity x, Ord x) => Simplical Set x where
   dimension (Set vs) = dimension vs
   vertices = id
   faces (Set vs) = amap1 Set $ faces vs
-  simplices = amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
+  simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
 --------------------------------------------------------------------------------
 -- faces' -
@@ -115,14 +117,37 @@ faces' :: Simplical s x => Set (s x) -> Set (s x)
 faces' = set . join . amap1 faces . setxs
 
 --------------------------------------------------------------------------------
+-- gphFaces -
+
+-- | the faces.
+gphFaces :: Simplical s x => Graph Z (Set (s x)) -> Graph Z (Set (s x))
+gphFaces (Graph zs) = Graph $ amap1 (\(z,s) -> (pred z,faces' s)) zs
+
+--------------------------------------------------------------------------------
+-- relDimSimplex -
+
+-- | validates according to:
+--
+-- __Propoerty__ Let @(z,s)@ be in @'Set' ('Z',___s___ __x__)@, the holds:
+-- @z '==' 'dimension' s@.
+relDimSimplex :: Simplical s x => Set (Z,s x) -> Statement
+relDimSimplex (Set zss) = foldl vldDim SValid zss where
+  vldDim :: Simplical s x => Statement -> (Z,s x) -> Statement
+  vldDim v (z,s) = v && (z == dimension s) :?> Params ["z":=show z, "s":=show s]
+
+--------------------------------------------------------------------------------
 -- prpSimplical -
 
 -- | validity of 'Simplical'-structure.
-prpSimplical :: Simplical s x => X (s x) -> Statement
-prpSimplical xsx = Prp "Simplical" :<=>:
+prpSimplical :: Simplical s x => X (s x) -> X (Set x) -> Statement
+prpSimplical xsx xvx = Prp "Simplical" :<=>:
   And [ Label "1" :<=>: (dimension (spxEmpty xsx) == -1) :?> Params ["empty":= show (spxEmpty xsx)]
-      , Forall xsx vldFaces 
+      , Forall xsx vldFaces
+      , vldSimplices (xSimplices xsx xvx)
       ] where
+
+    xSimplices :: Simplical s x => X (s x) -> X (Set x) -> X (Graph Z (Set (s x)))
+    xSimplices _ xvx = amap1 simplices xvx
   
     spxEmpty :: Simplical s x => X (s x) -> s x
     spxEmpty _ = empty
@@ -135,6 +160,14 @@ prpSimplical xsx = Prp "Simplical" :<=>:
                         , Label "2.1" :<=>: (dimension f == d) :?> Params ["s":=show s, "f":=show f]
                         , Label "2.2" :<=>: (f <<= s) :?> Params ["s":=show s, "f":=show f]
                         ]
+
+    vldSimplices :: Simplical s x => X (Graph Z (Set (s x))) -> Statement
+    vldSimplices xg = Forall xg
+      (\g -> And [ Label "3.1" :<=>: Forall (xOneOf $ setxs $ setTakeN 10000 $ gphset g)
+                     (\(z,s) -> (z == dimension s) :?> Params ["z":=show z, "s":=show s])
+                 -- tbd!!
+                 ]
+      )
     
 --------------------------------------------------------------------------------
 -- SimplicalTransformable -
@@ -250,7 +283,7 @@ instance (Entity x, Ord x) => Simplical Asc x where
   dimension (Asc xs) = dimension xs
   vertices (Asc xs)  = set xs
   faces (Asc xs)     = amap1 Asc $ faces xs
-  simplices          = ascCombinations
+  simplices          = Graph . ascCombinations
 
 
 

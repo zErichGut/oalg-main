@@ -96,9 +96,10 @@ has been defined by EmbeddingFrom.
 - module OAlg.Boolean.Definition: class Logical as base class for Booleans, class Erasable.
 - classes PartiallyOrdered, Empty, Full in OAlg.Structure.PartiallyOrdered.Definition
 - class Lattice in OAlg.Structure.Lattice.Definition.
-- module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference,
+- module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference, setTakeN
   setFilter, instance Erasable Set x, OrdMap, EntOrdMap.
-- module OAlg.Entity.Sequence.Graph: instance Ord (Graph i x).
+- module OAlg.Entity.Sequence.Graph: gphTakeN, gphset, setgph, gphUnion, gphIntersection,
+gphDifference, isSubGraph, instance Ord (Graph i x), Lattice (Graph a (Set b)).
 - Propositions for lattices, see OAlg.Structure.Lattice.Proposition
 - instances Ord and PartiallyOrdered for Op.
 

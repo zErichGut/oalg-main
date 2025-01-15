@@ -19,7 +19,7 @@ module OAlg.Entity.Sequence.Set
   ( 
     -- * Set
     Set(..), set, setSpan, setxs, setSqc, setMap, isSubSet
-  , setPower, setFilter
+  , setPower, setFilter, setTakeN
 
     -- * Operations
   , setEmpty, setIsEmpty, setUnion, setIntersection, setDifference
@@ -93,6 +93,13 @@ set = Set . amap1 head . group . sort
 -- | the elements of a set.
 setxs :: Set x -> [x]
 setxs (Set xs) = xs
+
+--------------------------------------------------------------------------------
+-- setTakeN -
+
+-- | takes the first @n@ elements.
+setTakeN :: N -> Set x -> Set x
+setTakeN n (Set xs) = Set $ takeN n xs
 
 --------------------------------------------------------------------------------
 -- setSpan -

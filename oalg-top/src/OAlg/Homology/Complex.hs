@@ -23,14 +23,15 @@
 -- definition of simplical 'Complex'.
 module OAlg.Homology.Complex
   (
-
+{-
     -- * Complex
     Complex(..), cpxxs, complex, cpxSet, cpxVertexSet
   , cpxEmpty, cpxIndex
 
     -- * Complex Map
   , ComplexMap(..)
-
+-}
+    
 {-    
     -- * Complex
     Complex(..)
@@ -67,138 +68,40 @@ import Data.Maybe
 
 import OAlg.Prelude
 
-import OAlg.Data.Constructable
-
-import OAlg.Structure.Number.Definition (mod)
-
-
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Sequence hiding (span)
 
+import OAlg.Structure.PartiallyOrdered
+
 import OAlg.Homology.Simplical
-
--- | set of simplices over @__x__@ according to @__s__@.
---
--- __Properties__ Let @'SimplexSet' zssx@ be in @'SimplexSet' __s__ __x__@ for a 'Simplical' structure
--- @__s__@, then holds:
---
--- (1) For all @(z,ssx)@ in @zssx@ holds:
---
---    (1) @ssx@ is not empty.
---
---    (2) @'dimension' sx '==' z@ for all @sx@ in @ssx@.
---
--- (2) For all @..(z,ssx):(z',ssx')..@ in @zssx@ holds: @z < z'@.
-data SimplexSet s x = SimplexSet [(Z,Set (s x))]
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- Set -
-
-deriving instance (Ord i, Ord x) => Ord (Graph i x)
-
---------------------------------------------------------------------------------
--- setDifference -
-setDifference :: Ord x => Set x -> Set x -> Set x
-setDifference (Set xs) (Set ys) = Set $ diff xs ys where
-  diff [] _          = []
-  diff xs []         = xs
-  diff (x:xs) (y:ys) = case x `compare` y of
-    LT -> x : diff xs (y:ys)
-    EQ -> diff xs ys
-    GT -> diff (x:xs) ys
-
---------------------------------------------------------------------------------
--- Cycle -
-
--- | cycle over the index @__i__@, i.e. a monomorph list @i 0, i 1 .. i j, i (j+1)..,i (n-1),i n@
---   where @1 <= n@ and represents the permutation where @i j@ maps to @i (j+1)@ for @j = 0..n.1@ and
---   @j n@ maps to @i 0@.
---
---   __Properties__ Let @'Cycle' is@ be in @'Cycle' __i__@, then holds:
---
---  (1) @'length' is '>=' 2@.
---
---  (2) @is@ is monomorph.
-newtype Cycle i = Cycle [i] deriving (Show,Eq,Ord)
-
-instance (Show i, Ord i, Validable i) => Validable (Cycle i) where
-  valid (Cycle is) = Label "Cycle" :<=>:
-    And [ valid is
-        , Label "length" :<=>: (lengthN is >= 2) :?> Params ["length is":= (show $ lengthN is)]
-        , Label "monomorph" :<=>: (lengthN is == (lengthN $ set is)) :?> Params ["is":=show is]
-        ]
-
---------------------------------------------------------------------------------
--- splitCycle -
-
-splitCycle :: Eq i => Permutation i -> Maybe (Cycle i,Permutation i)
-splitCycle p = do
-  PermutationForm jis <- return $ form p
-  (c,jis')            <- splitCycle' jis
-  return (c,make $ PermutationForm jis')
-
-splitCycle' :: Eq i => PSequence i i -> Maybe (Cycle i,PSequence i i)
-splitCycle' (PSequence [])          = Nothing
-splitCycle' (PSequence ((j,i):jis)) = Just (Cycle $ reverse cs,PSequence jis') where
-  (cs,jis') = sc i j ([i],jis)
-
-  sc i j res | i == j = res
-  sc i j (cs,jis)     = case span ((j/=) . snd) jis of
-    (jis',jis'')     -> case jis'' of
-      (j',_):jis'''  -> sc i j' (j:cs,jis' ++ jis''')
-      _              -> throw $ InvalidData "splitCycle'"
-    
---------------------------------------------------------------------------------
--- splitCycles -
-
-splitCycles :: Eq i => Permutation i -> [Cycle i]
-splitCycles p = cyc is where
-  PermutationForm is = form p
-  
-  cyc is = case splitCycle' is of
-    Nothing      -> []
-    Just (c,is') -> c : cyc is'
-  
---------------------------------------------------------------------------------
--- pmtSign -
-
--- | the signum of a permutation
-pmtSign :: Permutation N -> Z
-pmtSign p = if mod (lengthN $ splitCycles p) 2 == 0 then 1 else -1
-
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- Complex -
 
 -- | complex over a vertex type @__x__@.
 --
---  __Properties__ Let @c = 'Complex' zssx@ be in @'Complex' __x__@, then holds:
+--  __Properties__ Let @c = 'Complex' ('Graph' zxs)@ be in @'Complex' __x__@, then holds:
 --
---  (1) @zssx@ is a non empty list.
+--  (1) @zxs@ is not empty..
 --
---  (2) @z0 '==' -1@ where @(z0,_) = 'head' zsx@.
+--  (2) @z0 '==' -1@ where @(z0,_) = 'head' zxs@.
 --
---  (3) For all @(z,'Set' sxs)@ in @zssx@ holds: @'dimension' sx '==' z@ for all @sx@ in @sxs@.
+--  (3) For all @(z,'Set' sxs)@ in @zsx@ holds: @'dimension' sx '==' z@ for all @sx@ in @sxs@.
 --
 --  (4) For all @..(z,su)':'(z',sv)..@ in @zsx@ holds:
 --
 --    (1) @z' '==' z '+' 1@.
 --
 --    (2) @'faces'' sv'@ is a subset of @su@.
-newtype Complex x = Complex [(Z,Set (Set x))] deriving (Show,Eq,Ord)
+newtype Complex x = Complex (Graph Z (Set (Set x))) deriving (Show,Eq,Ord)
+
 
 --------------------------------------------------------------------------------
 -- Complex - Set - Entity -
 
 instance (Entity x, Ord x) => Validable (Complex x) where
-  valid (Complex zsx) = Label "Complex" :<=>: case zsx of
+  valid (Complex (Graph zsx)) = Label "Complex" :<=>: case zsx of
     []            -> Label "1" :<=>: SInvalid
     ((z,sx):zsx') -> And [ Label "2" :<=>: (z == -1) :?> Params ["z0" := show z]
                          , valid sx
@@ -216,11 +119,31 @@ instance (Entity x, Ord x) => Validable (Complex x) where
               , Label "4.1'" :<=>: (z' == succ z) :?> Params ["z":=show z, "z'":=show z']
               , vldDimension z' sv
               , Label "4.2" :<=>: let fsv = faces' sv in
-                  (fsv `isSubSet` su) :?> Params ["fsv":=show (fsv `setDifference` su)]
+                  (fsv <<= su) :?> Params ["fsv":=show (fsv // su)]
               , vldFaces z' sv zsx'
               ]
 
+--------------------------------------------------------------------------------
+-- cpxgph -
 
+cpxgph :: Complex x -> Graph Z (Set (Set x))
+cpxgph (Complex g) = g
+
+
+--------------------------------------------------------------------------------
+-- complex -
+
+complex :: (Entity x, Ord x) => [Set x] -> Complex x
+complex = Complex . foldl (||) empty . amap1 simplices
+
+--------------------------------------------------------------------------------
+-- cpxGenerators -
+
+cpxGenerators :: (Entity x, Ord x) => Complex x -> Graph Z (Set (Set x))
+cpxGenerators (Complex g) = g // gphFaces g
+
+
+{-
 instance (Entity x, Ord x) => Entity (Complex x)
 
 --------------------------------------------------------------------------------
@@ -300,11 +223,6 @@ Complex as <|> Complex bs = Complex $ uni as bs where
   uni ((z,sx):zsx) ((_,sy):zsy) = (z,sx `setUnion` sy):uni zsx zsy
 
 
---------------------------------------------------------------------------------
--- complex -
-
-complex :: Ord x => [Set x] -> Complex x
-complex = foldl (<|>) cpxEmpty . amap1 (Complex . simplices)
 
 --------------------------------------------------------------------------------
 -- cpxTerminal -
@@ -439,3 +357,4 @@ v = complex [Set "abc",Set "bce",Set "ae"]
 
 f = ComplexMap u v (OrdMap id)
 
+-}
