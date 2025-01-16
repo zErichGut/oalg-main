@@ -24,14 +24,12 @@
 module OAlg.Homology.Chain
   (
     -- * Chain
-    Chain, ch, boundary, chainMap
+    Chain, ch, chZ, boundary, chainMap
 
     -- * Chain Homomorphism
   , ChainHom(..), chainHomRep
 
   ) where
-
-import Control.Monad
 
 import Data.Typeable
 
@@ -39,6 +37,9 @@ import Data.List as L (zip,(++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Map
+
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
@@ -50,33 +51,10 @@ import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
 
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sum
 import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplical
-import OAlg.Homology.Complex (setDifference)
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-f :: Char -> Char
-f 'a' = 'b'
-f 'b' = 'a'
-f c   = c
-
-chZ :: (Entity (s x), Ord (s x))
-  => ([x] -> s x) -> [x] -> Chain Z s x
-chZ s = ch . s
-
-fd :: (Simplical s, Ord x, Entity (s x), Ord (s x))
-  => ([x] -> s x) -> (x -> x) -> [x] -> Chain Z s x
-fd s f = chainMap (OrdMap f) . boundary . ch . s
-
-df :: (Simplical s, Ord x, Entity (s x), Ord (s x))
-  => ([x] -> s x) -> (x -> x) -> [x] -> Chain Z s x
-df s f = boundary . chainMap (OrdMap f) . ch . s
-
 
 --------------------------------------------------------------------------------
 -- Chain -
@@ -87,9 +65,13 @@ type Chain r s x = SumSymbol r (s x)
 --------------------------------------------------------------------------------
 -- ch -
 
--- | simplex as a chain.
-ch :: (Ring r, Commutative r, Entity (s x), Ord (s x)) => s x -> Chain r s x
+-- | a simplex as a @__r__@-chain.
+ch :: (Ring r, Commutative r, Simplical s x) => s x -> Chain r s x
 ch = sy
+
+-- | a simplces as a 'Z'-chain.
+chZ :: Simplical s x => s x -> Chain Z s x
+chZ = ch
 
 --------------------------------------------------------------------------------
 -- rAlt -
@@ -101,19 +83,19 @@ rAlt = za rOne where za i = i:za (negate i)
 -- boundary -
 
 -- | the boundary operator of chains.
-boundary :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x))
+boundary :: (Ring r, Commutative r, Simplical s x)
   => Chain r s x -> Chain r s x
 boundary = ssySum (bdr rAlt) where
-  bdr :: Simplical s => [r] -> s x -> LinearCombination r (s x)
+  bdr :: Simplical s x => [r] -> s x -> LinearCombination r (s x)
   bdr rs s = LinearCombination (rs `zip` faces s)
 
 --------------------------------------------------------------------------------
 -- chainMap -
 
-chainMap :: (Ring r, Commutative r, Simplical s, Entity (s y), Ord (s y))
-  => OrdMap x y -> Chain r s x -> Chain r s y
+chainMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
+  => Map EntOrd x y -> Chain r s x -> Chain r s y
 chainMap f = ssySum (chMap f) where
-  chMap :: (Ring r, Simplical s) => OrdMap x y -> s x -> LinearCombination r (s y)
+  chMap :: (Ring r, SimplicalTransformable s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
 
 --------------------------------------------------------------------------------
@@ -131,18 +113,18 @@ chainMap f = ssySum (chMap f) where
 -- @'amap1' f sx@ is an element of @ssy@.
 data ChainHom r s x y where
   Boundary
-    :: (Entity (s x), Ord (s x))
+    :: Simplical s x
     => Set (s x) -> Set (s x)
     -> ChainHom r s (Chain r s x) (Chain r s x)
   ChainMap
-    :: (Entity (s x), Ord (s x), Entity (s y), Ord (s y))
-    => Set (s x) -> Set (s y) -> OrdMap x y
+    :: SimplicalTransformable s x y
+    => Set (s x) -> Set (s y) -> Map EntOrd x y
     -> ChainHom r s (Chain r s x) (Chain r s y)
 
 --------------------------------------------------------------------------------
 -- ChainHom - Hom (Vec r) -
 
-instance (Ring r, Commutative r, Simplical s) => Applicative (ChainHom r s) where
+instance (Ring r, Commutative r) => Applicative (ChainHom r s) where
   amap (Boundary _ _)   = boundary
   amap (ChainMap _ _ f) = chainMap f
 
@@ -151,55 +133,59 @@ instance Show (ChainHom r s x y) where
   show (ChainMap sx sy _) = "ChainMap (" ++ show sx ++ ") (" ++ show sy ++ ")"
 instance Show2 (ChainHom r s)
 
-instance Simplical s => Eq (ChainHom r s x y) where
+instance Eq (ChainHom r s x y) where
   Boundary s s' == Boundary t t' = s == t && s' == t'
   ChainMap sx sy f == ChainMap sx' sy' f'
     = sx == sx' && sy == sy' && and [amap1 f s == amap1 f' s | s <- setxs sx]
   _ == _ = False
-instance Simplical s => Eq2 (ChainHom r s)
+instance Eq2 (ChainHom r s)
 
-instance Simplical s => Validable (ChainHom r s x y) where
+instance Validable (ChainHom r s x y) where
   valid (Boundary ssx ssx') = Label "Boundary" :<=>:
     And [ valid ssx
         , valid ssx'
         , Label "1" :<=>: let fs = faces' ssx in
-            (fs `isSubSet` ssx') :?> Params ["fs":= show (fs `setDifference` ssx')]
+            (fs <<= ssx') :?> Params ["fs":= show (fs // ssx')]
         ]
   valid (ChainMap ssx ssy f) = Label "ChainMap" :<=>:
     And [ valid ssx
         , valid ssy
-        , Label "2" :<=>: let ssy' = amap1 (OrdMap $ amap1 f) ssx in
-            (ssy' `isSubSet` ssy) :?> Params ["ssy'" := show (ssy' `setDifference` ssy)]
+        , Label "2" :<=>: let ssy' = amap1 (map f) ssx in
+            (ssy' <<= ssy) :?> Params ["ssy'" := show (ssy' // ssy)]
         ]
-instance Simplical s => Validable2 (ChainHom r s)
+    where map :: SimplicalTransformable s x y => Map EntOrd x y -> Map EntOrd (s x) (s y)
+          map = Map . amap1
+instance Validable2 (ChainHom r s)
 
-instance (Simplical s, Typeable r, Typeable s, Typeable x, Typeable y)
+instance (Typeable r, Typeable s, Typeable x, Typeable y)
   => Entity (ChainHom r s x y)
-instance (Simplical s, Typeable r, Typeable s) => Entity2 (ChainHom r s)
 
-instance (Ring r, Commutative r, Simplical s, Typeable s) => Morphism (ChainHom r s) where
+instance (Typeable r, Typeable s) => Entity2 (ChainHom r s)
+
+
+instance (Ring r, Commutative r, Typeable s) => Morphism (ChainHom r s) where
   type ObjectClass (ChainHom r s) = Vec r
   homomorphous (Boundary _ _)   = Struct :>: Struct
   homomorphous (ChainMap _ _ _) = Struct :>: Struct
 
-instance (Ring r, Commutative r, Simplical s, Typeable s) => EmbeddableMorphism (ChainHom r s) Fbr
-instance (Ring r, Commutative r, Simplical s, Typeable s) => EmbeddableMorphism (ChainHom r s) Typ
-instance (Ring r, Commutative r, Simplical s, Typeable s) => EmbeddableMorphismTyp (ChainHom r s)
-instance (Ring r, Commutative r, Simplical s, Typeable s) => HomFibred (ChainHom r s) where
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Fbr
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Typ
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphismTyp (ChainHom r s)
+instance (Ring r, Commutative r, Typeable s) => HomFibred (ChainHom r s) where
   rmap (Boundary _ _)   = const ()
   rmap (ChainMap _ _ _) = const ()
 
-instance (Ring r, Commutative r, Simplical s, Typeable s) => EmbeddableMorphism (ChainHom r s) Add
-instance (Ring r, Commutative r, Simplical s, Typeable s) => HomAdditive (ChainHom r s)
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Add
+instance (Ring r, Commutative r, Typeable s) => HomAdditive (ChainHom r s)
 
-instance (Ring r, Commutative r, Simplical s, Typeable s) => EmbeddableMorphism (ChainHom r s) (Vec r)
-instance (Ring r, Commutative r, Simplical s, Typeable s) => HomVectorial r (ChainHom r s)
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) (Vec r)
+instance (Ring r, Commutative r, Typeable s) => HomVectorial r (ChainHom r s)
 
 --------------------------------------------------------------------------------
 -- chainHomRep -
 
 chainHomRep
-  :: (Ring r, Commutative r, Simplical s, Typeable s)
+  :: (Ring r, Commutative r, Typeable s)
   => ChainHom r s (Chain r s x) (Chain r s y)
   -> Representable r (ChainHom r s) (Chain r s x) (Chain r s y)
 chainHomRep h@(Boundary s s')    = Representable h s s'

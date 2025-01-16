@@ -23,45 +23,17 @@
 -- definition of simplical 'Complex'.
 module OAlg.Homology.Complex
   (
-{-
     -- * Complex
-    Complex(..), cpxxs, complex, cpxSet, cpxVertexSet
-  , cpxEmpty, cpxIndex
+    Complex(..), cpxElem, complex
+  , cpxVertices, cpxSimplices, cpxGenerators
 
-    -- * Complex Map
+    -- * Map
   , ComplexMap(..)
--}
-    
-{-    
-    -- * Complex
-    Complex(..)
-  , cpxDim
-  , cpxSet, cpxSucc, cpxPred
-  , cpxIndex
-  -- , cpxMapBoundary, cpxHomBoundary'
-
-    -- ** Construction
-  , cpxEmpty, (<+), complex
-  -- , SomeComplex(..)
-
-    -- * Examples
-    -- ** Dimension 1
-  , segment
-
-    -- ** Dimension 2
-  , triangle, plane, torus, torus2
-  , kleinBottle, moebiusStrip
-  , projectivePlane
-
-  , dh0, dh1, dh2
-
-    -- ** Dimension n
-  , sphere
--}
   ) where
 
 import Control.Monad
 
+import Data.Typeable
 import Data.List as L ((++)) -- head,tail,zip,last,reverse,repeat,(++),span)
 import Data.Foldable (foldl)
 
@@ -241,6 +213,17 @@ instance Validable (ComplexMap a b) where
       map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
       map = Map
 
+instance (Typeable a, Typeable b) => Entity (ComplexMap a b)
+
+--------------------------------------------------------------------------------
+
+a = complex [Set "ab",Set "bc",Set "ac"] :: Complex Char
+b = complex [Set [0,1],Set [1,2], Set [0,2]] :: Complex N
+
+c = cpxProduct a b
+
+p1 = ComplexMap c a (Map fst)
+p2 = ComplexMap c b (Map snd)
 
   
 {-
