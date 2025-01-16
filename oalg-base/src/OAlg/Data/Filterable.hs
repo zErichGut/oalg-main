@@ -22,8 +22,8 @@ import qualified Data.List as L
 -- Filterable -
 
 -- | filtering.
-class Filterable s x where
+class Filterable s where
   filter :: (x -> Bool) -> s x -> s x
 
-instance Filterable [] x where
+instance Filterable [] where
   filter = L.filter

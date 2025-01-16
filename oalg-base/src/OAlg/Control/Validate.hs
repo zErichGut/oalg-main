@@ -167,6 +167,7 @@ import OAlg.Category.Definition
 import OAlg.Control.Verbose
 import OAlg.Control.HNFData
 
+import OAlg.Data.Logical
 import OAlg.Data.Ord
 import OAlg.Data.Statement
 

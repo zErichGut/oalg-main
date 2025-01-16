@@ -18,6 +18,7 @@
 module OAlg.Entity.Sequence.Graph
   ( -- * Graph
     Graph(..), gphLength, gphxs, gphSqc, gphLookup, gphTakeN
+  , gphSetFilter
 
     -- ** Lattice
   , gphUnion, gphIntersection, gphDifference, isSubGraph
@@ -28,9 +29,11 @@ module OAlg.Entity.Sequence.Graph
 
 import Control.Monad hiding (sequence)
 
-import Data.List (head,map,filter,groupBy)
+import Data.List (head,map,groupBy)
 
 import OAlg.Prelude
+
+import OAlg.Data.Filterable
 
 import OAlg.Entity.Sequence.Set
 
@@ -66,7 +69,17 @@ instance (Entity x, Entity i, Ord i) => Entity (Graph i x)
 
 instance Functor (Graph i) where
   fmap f (Graph ixs) = Graph $ map (\(i,x) -> (i, f x)) ixs
-  
+
+instance Filterable (Graph i) where
+  filter p (Graph ixs) = Graph $ filter (p . snd) ixs
+
+--------------------------------------------------------------------------------
+-- gphSetFilter -
+
+-- | filtering elements of the associated sets.
+gphSetFilter :: (b -> Bool) -> Graph a (Set b) -> Graph a (Set b)
+gphSetFilter p (Graph asb) = Graph $ amap1 (\(x,ys) -> (x,filter p ys)) asb
+
 --------------------------------------------------------------------------------
 -- gphLookup -
 

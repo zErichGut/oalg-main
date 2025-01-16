@@ -62,10 +62,14 @@ module OAlg.Homology.Complex
 
 import Control.Monad
 
-import Data.List as L (head,tail,zip,last,reverse,repeat,(++),span,filter)
-import Data.Foldable (toList,foldl)
+import Data.List as L ((++)) -- head,tail,zip,last,reverse,repeat,(++),span)
+import Data.Foldable (foldl)
 
 import OAlg.Prelude
+
+import OAlg.Category.Map
+
+import OAlg.Data.Filterable
 
 import OAlg.Hom.Distributive ()
 
@@ -127,13 +131,22 @@ instance (Entity x, Ord x) => Validable (Complex x) where
                   (fsv <<= su) :?> Params ["fsv":=show (fsv // su)]
               , vldFaces z' sv zsx'
               ]
+                                
+instance (Entity x, Ord x) => Entity (Complex x)
 
 --------------------------------------------------------------------------------
--- cpxgph -
+-- cpxSimplices -
 
--- | the underlying graph.
-cpxgph :: Complex x -> Graph Z (Set (Set x))
-cpxgph (Complex g) = g
+-- | the simplices of the given complex.
+cpxSimplices :: Complex x -> Graph Z (Set (Set x))
+cpxSimplices (Complex g) = g
+
+--------------------------------------------------------------------------------
+-- cpxGenerators -
+
+-- | the generators for the given complex.
+cpxGenerators :: (Entity x, Ord x) => Complex x -> Graph Z (Set (Set x))
+cpxGenerators (Complex g) = g // gphFaces g
 
 --------------------------------------------------------------------------------
 -- cpxElem -
@@ -164,22 +177,113 @@ cpxVertices (Complex g) = case gphxs g of
   _              -> Set []
 
 --------------------------------------------------------------------------------
--- cpxGenerators -
-
--- | a list of generators for the given complex.
-cpxGenerators :: (Entity x, Ord x) => Complex x -> Set (Z,Set x)
-cpxGenerators (Complex g) = gphset (g // gphFaces g)
-
---------------------------------------------------------------------------------
 -- cpxProduct -
 
-cpxProduct :: Complex x -> Complex y -> Complex (x,y)
-cpxProduct a b = error "nyi" where
-  -- gp = simplices $ Set [(x,y) | x <- setxs $ cpxVertices a, y <- setxs $ cpxVertices b] 
+cpxProduct :: (Entity x, Ord x, Entity y, Ord y) => Complex x -> Complex y -> Complex (x,y)
+cpxProduct a b = Complex $ filter (not . isEmpty) $ gphSetFilter (elig a b) gp where
+  gp = simplices $ Set [(x,y) | x <- setxs $ cpxVertices a, y <- setxs $ cpxVertices b]
+
+  map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
+  map = Map
+
+  elig :: (Entity x, Ord x, Entity y, Ord y) => Complex x -> Complex y -> Set (x,y) -> Bool
+  elig a b = (cpxElem a . amap1 (map fst)) && (cpxElem b . amap1 (map snd))
 
 
+--------------------------------------------------------------------------------
+-- ComplexMap -
+
+-- | mapping between complexes, where the underlying map induces a map between the two
+-- given simpliex sets.
+--
+-- __Property__ Let @'ComplexMap' cx cy f@ be in
+-- @'ComplexMap' ('Complex' __x__) ('Complex' __y__)@ then holds:
+--
+-- (1) for all simplices @s@ in @cx@ holds: @'amap1' f s@ is an element of @cy@.
+--
+-- __Note__ If @cx@ and @cy@ are 'valid' then it is sufficient to test the property on the
+-- generators, given by @'cpxGenerators' cx@.
+data ComplexMap a b where
+  ComplexMap
+    :: Complex x -> Complex y
+    -> Map EntOrd x y
+    -> ComplexMap (Complex x) (Complex y) 
+
+
+--------------------------------------------------------------------------------
+-- ComplexMap - Entity -
+
+instance Show (ComplexMap a b) where
+  show (ComplexMap a b (Map f))
+    = "ComplexMap (" ++ show a ++ ") (" ++ show b ++ ") ("
+                     ++ (show $ Graph [(v,f v) | v <- setxs $ cpxVertices a]) ++ ")"
+
+instance Eq (ComplexMap a b) where
+  ComplexMap a b (Map f) == ComplexMap a' b' (Map f')
+    = (a,b,[f v | v <- vs]) == (a',b',[f' v | v <- vs])
+    where vs = setxs $ cpxVertices a
+
+instance Ord (ComplexMap a b) where
+  compare (ComplexMap a b (Map f)) (ComplexMap a' b' (Map f'))
+    = compare (a,b,[f v | v <- vs a]) (a',b',[f' v | v <- vs a'])
+    where vs = setxs . cpxVertices
+
+instance Validable (ComplexMap a b) where
+  valid (ComplexMap a b f@(Map _)) = Label "ComplexMap" :<=>:
+    And [ valid a
+        , valid b
+        , Label "1" :<=>: (fa <<= sb) :?> Params ["fa":= show (fa // sb)]
+        ]
+    where
+      fa = setgph $ amap1 (map spxAdjDim . Map (amap1 f) . map snd) $ gphset $ cpxGenerators a
+      sb = cpxSimplices b
+
+      map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
+      map = Map
+
+
+  
 {-
-instance (Entity x, Ord x) => Entity (Complex x)
+instance (Entity x, Entity y) => Validable (ComplexMap (Complex x) (Complex y)) where
+  valid (ComplexMap cx cy f@(OrdMap _ )) = Label "ComplexMap" :<=>:
+    And [ valid cx
+        , valid cy
+        , vldMapSet (cpxIndex cy) f (amap1 snd $ setxs $ cpxSetMax cx)
+{-        
+        , vldElg (Set $ cpxxs cy)
+                 (spxDimSets $ join $ amap1 (setxs . smap f . snd) $ setxs $ cpxSetMax cx)
+-}
+        ]
+    where
+
+      smap :: OrdMap x y -> Set (Set x) -> Set (Set y)
+      smap f@(OrdMap _) = amap1 (OrdMap $ amap1 f)
+
+      setJoin :: [Set x] -> [x]
+      setJoin = join . amap1 setxs
+
+      vldElg :: (Entity y, Ord y) => Set ((Z,Set (Set y))) -> Set ((Z,Set (Set y))) -> Statement
+      vldElg cy fx = (fx `isSubSet` cy) :?> Params ["fx":=show (fx `setDifference` cy)]
+      
+      vldMapSet _ _ [] = SValid
+      vldMapSet elg f (ssx:ssxs)
+        = And [ vldMap elg f ssx
+              , vldMapSet elg f ssxs
+              ]
+
+      vldMap _ _ (Set [])         = SValid
+      vldMap elg f (Set (sx:sxs)) = case elg $ spxAdjDim $ amap1 f sx of
+        Nothing -> False :?> Params ["sx":=show sx]
+        Just _  -> vldMap elg f (Set sxs)
+
+instance (Entity x, Entity y) => Entity (ComplexMap (Complex x) (Complex y))
+
+-}
+
+--------------------------------------------------------------------------------
+-- ComplexMap - Entity -
+{-
+
 
 --------------------------------------------------------------------------------
 -- cpxxs -

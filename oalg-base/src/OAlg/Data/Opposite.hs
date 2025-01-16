@@ -21,6 +21,7 @@ import Prelude hiding ((&&),(||))
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.Logical
 
 --------------------------------------------------------------------------------
 -- Op -
@@ -29,9 +30,13 @@ import OAlg.Data.Equal
 newtype Op x = Op x deriving (Show,Read,Eq)
 
 --------------------------------------------------------------------------------
--- Op (x) - Ord -
+-- Op (x) - Instances -
 
 instance Ord x => Ord (Op x) where Op x `compare` Op y = y `compare` x
+
+instance Logical a => Logical (Op a) where
+  Op a || Op b = Op (a && b)
+  Op a && Op b = Op (a || b)
 
 --------------------------------------------------------------------------------
 -- fromOp -

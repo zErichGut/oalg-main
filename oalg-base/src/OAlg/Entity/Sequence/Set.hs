@@ -139,7 +139,7 @@ setSqc mx (Set is)
 setFilter :: (x -> Bool) -> Set x -> Set x
 setFilter p (Set xs) = Set $ filter p xs
 
-instance Filterable Set x where
+instance Filterable Set where
   filter = setFilter
 
 --------------------------------------------------------------------------------

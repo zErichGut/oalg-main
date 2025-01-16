@@ -92,6 +92,7 @@ import OAlg.Control.Exception
 import OAlg.Control.HNFData
 import OAlg.Control.Verbose
 
+import OAlg.Data.Logical
 import OAlg.Data.Boolean.Definition
 import OAlg.Data.Ord
 import OAlg.Data.Equal

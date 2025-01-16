@@ -71,6 +71,7 @@ library
       OAlg.Data.FinitelyPresentable
       OAlg.Data.Generator
       OAlg.Data.Identity
+      OAlg.Data.Logical
       OAlg.Data.Maybe
       OAlg.Data.Number
       OAlg.Data.Opposite

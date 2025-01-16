@@ -93,13 +93,15 @@ has been defined by EmbeddingFrom.
 - class Functorial1
 - class Filterable in OAlg.Data.Filterable.
 - structure EntOrd for ordered entities.
+- module OAlg.Data.Logical
 - module OAlg.Boolean.Definition: class Logical as base class for Booleans, class Erasable.
 - classes PartiallyOrdered, Empty, Full in OAlg.Structure.PartiallyOrdered.Definition
 - class Lattice in OAlg.Structure.Lattice.Definition.
 - module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference, setTakeN
   setFilter, instance Erasable Set x, OrdMap, EntOrdMap.
 - module OAlg.Entity.Sequence.Graph: gphTakeN, gphset, setgph, gphUnion, gphIntersection,
-gphDifference, isSubGraph, instance Ord (Graph i x), Lattice (Graph a (Set b)).
+gphSetFilter, gphDifference, isSubGraph, instance Ord (Graph i x), Lattice (Graph a (Set b)),
+instance Filterable (Graph i).
 - Propositions for lattices, see OAlg.Structure.Lattice.Proposition
 - instances Ord and PartiallyOrdered for Op.
 
