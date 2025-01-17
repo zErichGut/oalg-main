@@ -27,9 +27,9 @@ library
   exposed-modules:
       OAlg.Homology.Chain
       OAlg.Homology.ChainComplex
-      OAlg.Homology.Complex
       OAlg.Homology.ComplexSimplical
       OAlg.Homology.Definition
+      OAlg.Homology.SetComplex
       OAlg.Homology.Simplical
       OAlg.Homology.Variance
   other-modules:

@@ -30,14 +30,7 @@ module OAlg.Homology.Simplical
 
     -- * Simplical Transformable
   , SimplicalTransformable
-{-
-  , spxDimSets
-  , spxAdjDim, spxFilter
-  , vertex
 
-    -- * Homological
-  , Homological
--}
     -- * Asc
   , Asc(..), ascxs, asc
 
