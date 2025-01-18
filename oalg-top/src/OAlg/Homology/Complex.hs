@@ -172,26 +172,26 @@ cpxs' :: Any n -> N -> Complex Set n N
 cpxs' n m = simplicalComplex n (setComplex [Set [1..m]])
 
 --------------------------------------------------------------------------------
--- cpxsBoundaryRep -
+-- cpxBoundaryRep -
 
 -- | representing boundary operator according to the given comlex.
 --
 -- __Note__ From the 'Complex'-property 3.2 follwos, that if the given complex is 'valid', then its
 -- boundary representations given by 'cpxBoundaryRep' is 'valid'
-cpxsBoundaryRep :: (Ring r, Commutative r, Simplical s x, Typeable s)
+cpxBoundaryRep :: (Ring r, Commutative r, Simplical s x)
   => Complex s n x
   -> FinList (n+2) (Representable r (ChainHom r s) (Chain r s x) (Chain r s x))
-cpxsBoundaryRep c = repBoundary (amap1 snd $ cpxxs c) where
-  repBoundary :: (Ring r, Commutative r, Simplical s x, Typeable s)
+cpxBoundaryRep c = repBoundary (amap1 snd $ cpxxs c) where
+  repBoundary :: (Ring r, Commutative r, Simplical s x)
     => FinList (n+1) (Set (s x))
     -> FinList n (Representable r (ChainHom r s) (Chain r s x) (Chain r s x))
   repBoundary (_:|Nil)       = Nil
   repBoundary (sx:|sx':|sxs) = chainHomRep (Boundary sx' sx) :| repBoundary (sx':|sxs)
 
-cpxsBoundaryRepZ :: (r ~ Z, Simplical s x, Typeable s)
+cpxBoundaryRepZ :: (r ~ Z, Simplical s x)
   => Complex s n x
   -> FinList (n+2) (Representable r (ChainHom r s) (Chain r s x) (Chain r s x))
-cpxsBoundaryRepZ = cpxsBoundaryRep
+cpxBoundaryRepZ = cpxBoundaryRep
 
 --------------------------------------------------------------------------------
 -- ComplexMap -
@@ -205,21 +205,22 @@ cpxsBoundaryRepZ = cpxsBoundaryRep
 -- @'amap1' f s@ is an element of @csy@.
 --
 -- __Note__ Because of the 'SimplicalTransformable'-property and the 'Complex'-property 4 it is
--- sufficient that the induced set-complex map - given by 'cpxSetComplexMap' - is 'valid'. 
+-- sufficient that the induced set-complex map - given by 'cpxetComplexMap' - is 'valid'. 
 data ComplexMap s n x y where
   ComplexMap
-    :: Complex s n x -> Complex s n y
+    :: Homological s x y
+    => Complex s n x -> Complex s n y
     -> Map EntOrd x y
     -> ComplexMap s n (Complex s n x) (Complex s n y)
 
 -- deriving instance (Show x, Show y) => Show (ComplexMap s n (Complex s n x) (Complex s n y))
 
 --------------------------------------------------------------------------------
--- cpxSetComplexMap -
+-- cpxetComplexMap -
 
-cpxSetComplexMap :: ComplexMap s n (Complex s n x) (Complex s n y)
+cpxetComplexMap :: ComplexMap s n (Complex s n x) (Complex s n y)
   -> SetComplexMap (SetComplex x) (SetComplex y)
-cpxSetComplexMap (ComplexMap (Complex cx _) (Complex cy _) f)
+cpxetComplexMap (ComplexMap (Complex cx _) (Complex cy _) f)
   = SetComplexMap cx cy f
 
 --------------------------------------------------------------------------------
@@ -230,7 +231,7 @@ instance SimplicalTransformable s x y
   valid f@(ComplexMap csx csy (Map _)) = Label "ComplexMap" :<=>:
     And [ valid csx
         , valid csy
-        , valid $ cpxSetComplexMap f
+        , valid $ cpxetComplexMap f
         ]
 {-
 n :: Any N4
@@ -245,24 +246,23 @@ f n = ComplexMap (singularComplex n a) (singularComplex n b) (OrdMap id)
 -}
 
 --------------------------------------------------------------------------------
--- cpxsChainMapRep -
+-- cpxChainMapRep -
 
-cpxsChainMapRep :: ( Ring r, Commutative r, SimplicalTransformable s x y, Typeable s
-                   )
+cpxChainMapRep :: (Ring r, Commutative r, SimplicalTransformable s x y)
   => ComplexMap s n (Complex s n x) (Complex s n y)
   -> FinList (n+3) (Representable r (ChainHom r s) (Chain r s x) (Chain r s y))
-cpxsChainMapRep (ComplexMap csx csy f)
+cpxChainMapRep (ComplexMap csx csy f)
   = amap1 (uncurry (rep f)) (amap1 snd (cpxxs csx) `F.zip` amap1 snd (cpxxs csy)) where
 
-  rep :: ( Ring r, Commutative r, SimplicalTransformable s x y, Typeable s)
+  rep :: (Ring r, Commutative r, SimplicalTransformable s x y)
     => Map EntOrd x y -> Set (s x) -> Set (s y)
     -> Representable r (ChainHom r s) (Chain r s x) (Chain r s y)
   rep f ssx ssy = chainHomRep (ChainMap ssx ssy f)
 
-cpxsChainMapRepZ :: (r ~ Z, SimplicalTransformable s x y, Typeable s)
+cpxChainMapRepZ :: (r ~ Z, SimplicalTransformable s x y)
   => ComplexMap s n (Complex s n x) (Complex s n y)
   -> FinList (n+3) (Representable r (ChainHom r s) (Chain r s x) (Chain r s y))
-cpxsChainMapRepZ = cpxsChainMapRep
+cpxChainMapRepZ = cpxChainMapRep
 
 
 a = setComplex [Set [(0,0),(0,1),(1,1)],Set [(0,0),(1,0),(1,1)]] :: SetComplex (N,N)
@@ -271,5 +271,5 @@ b = setComplex [Set [0,1]] :: SetComplex N
 p1 = SetComplexMap a b (Map fst)
 p2 = SetComplexMap a b (Map snd)
 
-f :: s ~  [] => Any n -> ComplexMap s n (Complex s n (N,N)) (Complex s n N) 
+f :: s ~ [] => Any n -> ComplexMap s n (Complex s n (N,N)) (Complex s n N) 
 f n = ComplexMap (singularComplex n a) (singularComplex n b) (Map fst)
