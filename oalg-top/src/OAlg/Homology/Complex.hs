@@ -272,4 +272,4 @@ p1 = SetComplexMap a b (Map fst)
 p2 = SetComplexMap a b (Map snd)
 
 f :: s ~ [] => Any n -> ComplexMap s n (Complex s n (N,N)) (Complex s n N) 
-f n = ComplexMap (singularComplex n a) (singularComplex n b) (Map fst)
+f n = ComplexMap (singularComplex n a) (singularComplex n b) (Map snd)

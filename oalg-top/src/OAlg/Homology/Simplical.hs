@@ -39,7 +39,7 @@ module OAlg.Homology.Simplical
 
   ) where
 
-import Control.Monad (join)
+import Control.Monad (join,return)
 
 import Data.Typeable
 import Data.List (head,tail,sort,(++),zip)
@@ -61,26 +61,36 @@ import OAlg.Structure.PartiallyOrdered
 
 -- | simplical structer over a given vertex-set @__x__@.
 --
---  __Properties__ Let @__s__ __x__@ be an instance of the class @'Simplical' __s__ __x__@, then holds:
+-- __Properties__ Let the pair @(__s__,__x__)@ be an instance of @'Simplical' __s__ __x__@, then holds:
 --
 -- (1) @'dimension' 'empty' '==' -1@.
 --
--- (2) For @s@ in @__s__ __x__@ and @f@ in @'faces' s@ holds:
+-- (2) For all @s@, @t@ in @__s__ __x__@ holds: If @s '<<=' t@ then @'vertices' s '<<=' 'vertices' t@.
 --
---    (2.1) @'dimension' f '==' 'dimension' s '-' 1@.
+-- (3) For all @s@ in @__s__ __x__@:
 --
---    (2.2) @f '<<=' s@.
+--    (3.1) @-1 '<=' 'dimension' s@.
 --
---    (2.3) If @t@ is in @__s__ __x__@ with @t '<<=' s@ and @'dimension' t '==' 'dimension' s '-' 1@,
---    then  @t@ is an elment of @'faces' s@.
+--    (3.2) @s@ is 'empty' iff @'vertices' s@ is 'empty'.
 --
--- (3) Let @vs@ be in @Set x@ and @zs = 'simplices' vs@, then holds:
+--    (3.3) @'dimension' f '==' 'dimension' s '-' 1@ for all @f@ in @'faces' s@.
 --
---    (3.1) @'dimension' s '==' z@ where @(z,ss)@ is in @zs@ and @s@ in @ss@.
+--    (3.4) For all @f@ in @__s__ __x__@ with @'dimension' f '==' 'dimension' s '-' 1@ holds:
+--    @'vertices' f '<<=' 'vertices' s@ iff @f@ is in @'faces' s@.
 --
---    (3.2) Let @..(_,ss):(_,st)..@ in @zs@, then holds: @'faces'' st '==' ss@.
+--  (4) For all @x@ in @__x__@ holds: @'vertices' ('vertex' x) '==' 'Set' [x]@.
 --
---    (3.3) If @s@ is in @s x@ with @'vertices' s '<<=' vs@ then holds: @s@ is in @zs@.
+--  (5) For all @sv@ in @'Set' __x__@ holds: Let @g = 'simplieces' sv@ in
+--
+--    (5.1) @(-1,'Set' ['empty'])@ is in @g@.
+--
+--    (5.2) For all @(z,sx)@ in @g@ and @s@ in @sx@ holds:
+--
+--        (5.2.1) @'dimension' s '==' z@.
+--
+--        (5.2.2) @'vertices' s '<<=' sv@.
+--
+--    (5.3) For all @s@ in @__s__ __x__@ with @'verteices' s '<<=' sv@ holds: @s@ is in @g@.
 class ( Entity x, Ord x
       , Entity (s x), Ord (s x), PartiallyOrdered (s x), Empty (s x), Erasable (s x)
       , Typeable s
@@ -91,6 +101,8 @@ class ( Entity x, Ord x
   vertices :: s x -> Set x
   -- | the face of a set of simplices.
   faces :: s x -> [s x]
+  -- | 
+  vertex :: x -> s x
   -- | all possible simplices for the given set of vertices as a graph of dimensions and there
   -- simplices.
   --
@@ -101,6 +113,7 @@ class ( Entity x, Ord x
 instance (Entity x, Ord x) => Simplical [] x where
   dimension = pred . inj . lengthN
   vertices = set
+  vertex   = return
   faces []     = []
   faces (x:xs) = xs : amap1 (x:) (faces xs)
   simplices (Set vs) = Graph $ cbns (-1) [[]] where
@@ -110,6 +123,7 @@ instance (Entity x, Ord x) => Simplical [] x where
 instance (Entity x, Ord x) => Simplical Set x where
   dimension (Set vs) = dimension vs
   vertices = id
+  vertex = Set . return
   faces (Set vs) = amap1 Set $ faces vs
   simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
@@ -119,6 +133,13 @@ instance (Entity x, Ord x) => Simplical Set x where
 -- | the faces as set of simplices.
 faces' :: Simplical s x => Set (s x) -> Set (s x)
 faces' = set . join . amap1 faces . setxs
+
+--------------------------------------------------------------------------------
+-- setVertices -
+
+-- | the elements of the given set as a set of vertices.
+setVertices :: Simplical s x => Set x -> Set (s x)
+setVertices = set . amap1 vertex . setxs
 
 --------------------------------------------------------------------------------
 -- spxAdjDim -
@@ -316,6 +337,7 @@ instance Eq x => Erasable (Asc x) where
 instance (Entity x, Ord x) => Simplical Asc x where
   dimension (Asc xs) = dimension xs
   vertices (Asc xs)  = set xs
+  vertex             = Asc . return
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = Graph . ascCombinations
 
