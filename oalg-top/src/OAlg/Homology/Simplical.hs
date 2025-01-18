@@ -82,7 +82,7 @@ import OAlg.Structure.PartiallyOrdered
 --
 --  (5) For all @sv@ in @'Set' __x__@ holds: Let @g = 'simplieces' sv@ in
 --
---    (5.1) @(-1,'Set' ['empty'])@ is in @g@.
+--    (5.1) @'empty'@ is in @g@.
 --
 --    (5.2) For all @(z,sx)@ in @g@ and @s@ in @sx@ holds:
 --

@@ -57,23 +57,20 @@ import OAlg.Homology.Simplical
 
 -- | complex of set-simplices over a vertex type @__x__@.
 --
---  __Properties__ Let @c = 'SetComplex' ('Graph' zxs)@ be in @'SetComplex' __x__@, then holds:
+-- __Properties__ Let @c = 'SetComplex' g@ be in @'SetComlex' __x__@, then holds:
 --
---  (1) @zxs@ is not empty.
+-- (1) 'empty' is in @g@.
 --
---  (2) @z0 '==' -1@ where @(z0,_) = 'head' zxs@.
+-- (2) For all @(z,sx)@ in @g@ and @s@ in @sx@ holds:
 --
---  (3) For all @(z,'Set' sxs)@ in @zsx@ holds:
+--     (2.1) @'dimension' s '==' z@.
 --
---     (1) @sxs@ is not empty.
+--     (2.2) @s '<<=' 'scxVertices' c@.
 --
---     (2) @'dimension' sx '==' z@ for all @sx@ in @sxs@.
+-- (3) For all @..(_,su)':'(_,sv)..@ holds:: @'faces'' sv '<<=' su@.
 --
---  (4) For all @..(z,su)':'(z',sv)..@ in @zsx@ holds:
---
---    (1) @z' '==' z '+' 1@.
---
---    (2) @'faces'' sv'@ is a subset of @su@.
+-- __Note__ From the property 3 above follows: If @s@ is a set-simplex in @c@ and @t '<<=' s@ then
+-- @t@ is in @c@.
 newtype SetComplex x = SetComplex (Graph Z (Set (Set x))) deriving (Show,Eq,Ord)
 
 
@@ -81,30 +78,32 @@ newtype SetComplex x = SetComplex (Graph Z (Set (Set x))) deriving (Show,Eq,Ord)
 -- SetComplex - Entity -
 
 instance (Entity x, Ord x) => Validable (SetComplex x) where
-  valid (SetComplex (Graph zsx)) = Label "SetComplex" :<=>: case zsx of
-    []            -> Label "1" :<=>: SInvalid
-    ((z,sx):zsx') -> And [ Label "2" :<=>: (z == -1) :?> Params ["z0" := show z]
-                         , valid sx
-                         , vldDimension z sx
-                         , vldFaces z sx zsx'
-                         ]
+  valid c@(SetComplex g@(Graph zsx)) = Label "SetComplex" :<=>: case zsx of
+    [] -> Label "1" :<=>: False :?> Params ["g":=show g]
+    _  -> vldGraph zsx
     where
-      vldDimension z sx
-        = And [ Label "3.1" :<=>: (not $ isEmpty sx) :?> Params ["sx":=show sx]
-              , Label "3.2" :<=>: let vDim b sx = b && (dimension sx == z) in
-                  (foldl vDim True sx) :?> Params ["z":=show z, "sx" := show sx]
+      vs = scxVertices c
+      
+      vldGraph [] = SValid
+      vldGraph ((z,sx):zsx)
+        = And [ vldDim vs z (setxs sx)
+              , vldFaces sx zsx
+              , vldGraph zsx
               ]
 
-      vldFaces _ _ [] = SValid
-      vldFaces z su ((z',sv):zsx')
-        = And [ valid sv
-              , Label "4.1'" :<=>: (z' == succ z) :?> Params ["z":=show z, "z'":=show z']
-              , vldDimension z' sv
-              , Label "4.2" :<=>: let fsv = faces' sv in
-                  (fsv <<= su) :?> Params ["fsv":=show (fsv // su)]
-              , vldFaces z' sv zsx'
+      vldDim _ _ [] = SValid
+      vldDim sv z (s:sx)
+        = And [ Label "2.1" :<=>: (dimension s == z) :?> Params ["z":=show z, "s":=show s]
+              , Label "2.2" :<=>: (s <<= sv) :?> Params ["s // sv" := show (s // sv)]
+              , vldDim sv z sx
               ]
-                                
+
+      vldFaces _ [] = SValid
+      vldFaces su ((_,sv):_)
+        = Label "3" :<=>: let fs = faces' sv in
+            (fs <<= su) :?> Params ["faces' sv // su" := show (fs // su)]
+
+
 instance (Entity x, Ord x) => Entity (SetComplex x)
 
 --------------------------------------------------------------------------------
@@ -119,7 +118,7 @@ scxSimplices (SetComplex g) = g
 
 -- | the generators for the given complex.
 scxGenerators :: (Entity x, Ord x) => SetComplex x -> Graph Z (Set (Set x))
-scxGenerators (SetComplex g) = g // gphFaces g
+scxGenerators (SetComplex g) = filter (not . isEmpty) (g // gphFaces g)
 
 --------------------------------------------------------------------------------
 -- scxElem -
@@ -134,7 +133,7 @@ scx :: N -> SetComplex N
 scx n = setComplex [Set [1..n]]
 
 --------------------------------------------------------------------------------
--- complex -
+-- setComplex -
 
 -- | the induced complex given by a list of simplices.
 setComplex :: (Entity x, Ord x) => [Set x] -> SetComplex x
@@ -183,7 +182,6 @@ data SetComplexMap a b where
     -> Map EntOrd x y
     -> SetComplexMap (SetComplex x) (SetComplex y) 
 
-
 --------------------------------------------------------------------------------
 -- SetComplexMap - Entity -
 
@@ -206,7 +204,7 @@ instance Validable (SetComplexMap a b) where
   valid (SetComplexMap a b f@(Map _)) = Label "SetComplexMap" :<=>:
     And [ valid a
         , valid b
-        , Label "1" :<=>: (fa <<= sb) :?> Params ["fa":= show (fa // sb)]
+        , Label "1" :<=>: (fa <<= sb) :?> Params ["fa // sb":= show (fa // sb)]
         ]
     where
       fa = setgph $ amap1 (map spxAdjDim . Map (amap1 f) . map snd) $ gphset $ scxGenerators a
