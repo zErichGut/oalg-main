@@ -39,7 +39,7 @@ module OAlg.Homology.Simplical
 
   ) where
 
-import Control.Monad (join,return)
+import Control.Monad (join)
 
 import Data.Typeable
 import Data.List (head,tail,sort,(++),zip)
@@ -101,10 +101,7 @@ class ( Entity x, Ord x
   vertices :: s x -> Set x
   -- | the face of a set of simplices.
   faces :: s x -> [s x]
-  -- | 
-  vertex :: x -> s x
-  -- | all possible simplices for the given set of vertices as a graph of dimensions and there
-  -- simplices.
+  -- | set of all simplices with vertices in the given set.
   --
   -- __Note__ This maybe an infinite list, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
   simplices :: Set x -> Graph Z (Set (s x)) 
@@ -113,7 +110,6 @@ class ( Entity x, Ord x
 instance (Entity x, Ord x) => Simplical [] x where
   dimension = pred . inj . lengthN
   vertices = set
-  vertex   = return
   faces []     = []
   faces (x:xs) = xs : amap1 (x:) (faces xs)
   simplices (Set vs) = Graph $ cbns (-1) [[]] where
@@ -123,7 +119,6 @@ instance (Entity x, Ord x) => Simplical [] x where
 instance (Entity x, Ord x) => Simplical Set x where
   dimension (Set vs) = dimension vs
   vertices = id
-  vertex = Set . return
   faces (Set vs) = amap1 Set $ faces vs
   simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
@@ -133,13 +128,6 @@ instance (Entity x, Ord x) => Simplical Set x where
 -- | the faces as set of simplices.
 faces' :: Simplical s x => Set (s x) -> Set (s x)
 faces' = set . join . amap1 faces . setxs
-
---------------------------------------------------------------------------------
--- setVertices -
-
--- | the elements of the given set as a set of vertices.
-setVertices :: Simplical s x => Set x -> Set (s x)
-setVertices = set . amap1 vertex . setxs
 
 --------------------------------------------------------------------------------
 -- spxAdjDim -
@@ -347,7 +335,6 @@ instance Eq x => Erasable (Asc x) where
 instance (Entity x, Ord x) => Simplical Asc x where
   dimension (Asc xs) = dimension xs
   vertices (Asc xs)  = set xs
-  vertex             = Asc . return
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = Graph . ascCombinations
 
