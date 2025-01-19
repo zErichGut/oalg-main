@@ -35,7 +35,7 @@ module OAlg.Homology.Simplical
   , Homological
   
     -- * Asc
-  , Asc(..), ascxs, asc
+  , Asc(..), isAsc, ascxs, asc
 
   ) where
 
@@ -275,14 +275,24 @@ instance (Entity x, Ord x) => Entity (Asc x)
 --------------------------------------------------------------------------------
 -- ascxs -
 
+-- | the underlying list.
 ascxs :: Asc x -> [x]
 ascxs (Asc xs) = xs
 
 --------------------------------------------------------------------------------
 -- asc -
 
+-- | constructs a ascending list according to the given list.
 asc :: Ord x => [x] -> Asc x
 asc = Asc . sort
+
+--------------------------------------------------------------------------------
+-- isAsc -
+
+-- | checks if the given list is in ascending order.
+isAsc :: Ord x => [x] -> Bool
+isAsc (x:x':xs) = x <= x' && isAsc (x':xs)
+isAsc _         = True
 
 --------------------------------------------------------------------------------
 -- ascCombinations -

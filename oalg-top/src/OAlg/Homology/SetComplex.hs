@@ -148,7 +148,6 @@ scxVertices (SetComplex g) = case gphxs g of
   _ : (0,vs) : _ -> Set $ join $ amap1 setxs $ setxs vs
   _              -> Set []
 
-{-
 --------------------------------------------------------------------------------
 -- scxProduct -
 
@@ -160,49 +159,110 @@ scxProduct a b = SetComplex $ filter (not . isEmpty) $ gphSetFilter (elig a b) g
   map = Map
 
   elig :: (Entity x, Ord x, Entity y, Ord y) => SetComplex x -> SetComplex y -> Set (x,y) -> Bool
-  elig a b = (scxElem a . amap1 (map fst)) && (scxElem b . amap1 (map snd))
--}
+  elig a b =  (scxElem a . amap1 (map fst)) && (scxElem b . amap1 (map snd))
+           && isFaithful isAsc (map fst) && isFaithful isAsc (map snd)
+
+--------------------------------------------------------------------------------
+-- isFaithful -
+
+-- | checks if the mapped list of the underlying list respects the given predicate.
+isFaithful :: ([y] -> Bool) -> Map EntOrd x y -> Set x -> Bool
+isFaithful p f (Set xs) = p $ amap1 f xs
 
 --------------------------------------------------------------------------------
 -- SetComplexMap -
 
--- | mapping between complexes, where the underlying map induces a map between the two
--- given simpliex sets.
+-- | mapping between complexes, where the given map of vertices induces a mapping between the two
+-- given set-simplex sets. Such a mapping is called __/faithfully oriented/__ if the induced mapping
+-- of the set-simplices respects also the given orientation, i.e. @'isFaithful' 'isAsc'@.
 --
--- __Property__ Let @'SetComplexMap' cx cy f@ be in
--- @'SetComplexMap' ('SetComplex' __x__) ('SetComplex' __y__)@ then holds:
+-- __Properties__ Let @m@ be in @'SetComplexMap' __s__ ('SetComplex' __x__) ('SetComplex' __y__), then
+-- holds: Let @f = 'scmMap' m@ in
 --
--- (1) for all simplices @s@ in @cx@ holds: @'amap1' f s@ is an element of @cy@.
+--  (1) For all set-simplices @s@ in @'scmDomain' m@ holds:
+--  @'amap1' f s@ is an element of @'scmRange' m@, where 
 --
--- __Note__ If @cx@ and @cy@ are 'valid' then it is sufficient to test the property on the
--- generators, given by @'scxGenerators' cx@.
-data SetComplexMap a b where
+--  (2) If @m@ matches @'SetComplexMapAsc' _ _ _@ then for all set-simplices
+--  @s@ in @'scmDomain' m@ holds: @'isFaithful' 'isAsc' f s@.
+--
+-- __Note__ If @'scmDomain' m@ and @'scmRange' m@ are 'valid' then it is sufficient to test the
+-- properties above on the generators @'scxGenerators' ('scmDomain' m)@.
+data SetComplexMap s a b where
   SetComplexMap
     :: SetComplex x -> SetComplex y
     -> Map EntOrd x y
-    -> SetComplexMap (SetComplex x) (SetComplex y) 
+    -> SetComplexMap [] (SetComplex x) (SetComplex y)
+  SetComplexMapAsc
+    :: SetComplex x -> SetComplex y
+    -> Map EntOrd x y
+    -> SetComplexMap Asc (SetComplex x) (SetComplex y)
+
+--------------------------------------------------------------------------------
+-- scmForget -
+
+-- | forgets eventually the faithfully oriented constraint.
+scmForget :: SetComplexMap s a b -> SetComplexMap [] a b
+scmForget m@(SetComplexMap _ _ _)  = m
+scmForget (SetComplexMapAsc a b f) = SetComplexMap a b f   
+
+--------------------------------------------------------------------------------
+-- scmDomain -
+
+-- | the domain of a set-complex map.
+scmDomain :: SetComplexMap s (SetComplex x) (SetComplex y) -> SetComplex x
+scmDomain (SetComplexMap a _ _)    = a
+scmDomain (SetComplexMapAsc a _ _) = a
+
+--------------------------------------------------------------------------------
+-- scmRange -
+
+-- | the range of a set-complex map.
+scmRange :: SetComplexMap s (SetComplex x) (SetComplex y) -> SetComplex y
+scmRange (SetComplexMap _ b _)    = b
+scmRange (SetComplexMapAsc _ b _) = b
+
+--------------------------------------------------------------------------------
+-- scmMap -
+
+-- | the underling mapping of vertices.
+scmMap :: SetComplexMap s (SetComplex x) (SetComplex y) -> Map EntOrd x y
+scmMap (SetComplexMap _ _ f)    = f
+scmMap (SetComplexMapAsc _ _ f) = f
+
+--------------------------------------------------------------------------------
+-- scmGraph -
+
+-- | the graph of the induced mapping of the vertices.
+scmGraph :: SetComplexMap s (SetComplex x) (SetComplex y) -> Graph x y
+scmGraph m = Graph [(v,f v) | v <- setxs $ scxVertices $ scmDomain m] where Map f = scmMap m
 
 --------------------------------------------------------------------------------
 -- SetComplexMap - Entity -
 
-instance Show (SetComplexMap a b) where
-  show (SetComplexMap a b (Map f))
-    = "SetComplexMap (" ++ show a ++ ") (" ++ show b ++ ") ("
-                     ++ (show $ Graph [(v,f v) | v <- setxs $ scxVertices a]) ++ ")"
+instance Show (SetComplexMap s a b) where
+  show m = case m of
+    SetComplexMap _ _ (Map _)    -> "SetComplexMap" ++ shCmps m
+    SetComplexMapAsc _ _ (Map _) -> "SetComplexMapAsc" ++ shCmps m
+    where 
+      shCmps m = " (" ++ (show $ scmDomain m) ++ ") (" ++ (show $ scmRange m)
+             ++ ") (" ++ (show $ scmGraph m) ++ ")"
 
-instance Eq (SetComplexMap a b) where
-  SetComplexMap a b (Map f) == SetComplexMap a' b' (Map f')
-    = (a,b,[f v | v <- vs]) == (a',b',[f' v | v <- vs])
-    where vs = setxs $ scxVertices a
+instance Eq (SetComplexMap s a b) where
+  f@(SetComplexMap a b (Map _)) == g@(SetComplexMap a' b' _) = (a,b,scmGraph f) == (a',b',scmGraph g)
+  f == g                                                     = scmForget f == scmForget g
 
-instance Ord (SetComplexMap a b) where
-  compare (SetComplexMap a b (Map f)) (SetComplexMap a' b' (Map f'))
-    = compare (a,b,[f v | v <- vs a]) (a',b',[f' v | v <- vs a'])
-    where vs = setxs . scxVertices
 
-instance Validable (SetComplexMap a b) where
-  valid (SetComplexMap a b f@(Map _)) = Label "SetComplexMap" :<=>:
-    And [ valid a
+
+instance Ord (SetComplexMap s a b) where
+  compare f@(SetComplexMap a b (Map _)) g@(SetComplexMap a' b' _)
+    = compare (a,b,scmGraph f) (a',b',scmGraph g)
+  compare f g = compare (scmForget f) (scmForget g)
+
+
+-- | validity according to property 1.
+relSetComplexMap :: SetComplexMap [] a b -> Statement
+relSetComplexMap (SetComplexMap a b f@(Map _))
+  = And [ valid a
         , valid b
         , Label "1" :<=>: (fa <<= sb) :?> Params ["fa // sb":= show (fa // sb)]
         ]
@@ -213,16 +273,34 @@ instance Validable (SetComplexMap a b) where
       map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
       map = Map
 
-instance (Typeable a, Typeable b) => Entity (SetComplexMap a b)
+
+instance Validable (SetComplexMap s a b) where
+  valid m@(SetComplexMap _ _ _)            = Label "SetComplexMap" :<=>: relSetComplexMap m
+  valid m@(SetComplexMapAsc cx _ f@(Map _)) = Label "SetComplexMapAsc" :<=>:
+    And [ relSetComplexMap (scmForget m)
+        , vldFaithfulAsc f (amap1 snd $ setxs $ gphset $ scxGenerators cx)
+        ]
+    where
+      vldFaithfulAsc _ [] = SValid
+      vldFaithfulAsc f (s:ss)
+        = And [ Label "2" :<=>: isFaithful isAsc f s :?> Params ["s":= show s]
+              , vldFaithfulAsc f ss
+              ] 
+
+instance (Typeable s, Typeable a, Typeable b) => Entity (SetComplexMap s a b)
 
 --------------------------------------------------------------------------------
 
-a = setComplex [Set "ab",Set "bc",Set "ac"] :: SetComplex Char
-b = setComplex [Set [0,1],Set [1,2], Set [0,2]] :: SetComplex N
-{-
+-- a = setComplex [Set "ab",Set "bc",Set "ac"] :: SetComplex Char
+-- b = setComplex [Set [0,1],Set [1,2], Set [0,2]] :: SetComplex N
+
+a = setComplex [Set "ab"]
+b = setComplex [Set [0,1]] :: SetComplex N
+
 c = scxProduct a b
 
 p1 = SetComplexMap c a (Map fst)
 p2 = SetComplexMap c b (Map snd)
--}
+
   
+
