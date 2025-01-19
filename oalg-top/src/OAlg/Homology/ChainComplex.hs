@@ -47,10 +47,11 @@ import Control.Monad
 import Data.Kind
 import Data.Typeable
 import Data.Foldable (toList)
-import Data.List as L (head,tail,filter,repeat,(++)) 
+import Data.List as L (head,tail,repeat,(++),zip) 
 
 import OAlg.Prelude hiding (T,empty)
 
+{-
 import OAlg.Data.Canonical
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
@@ -77,18 +78,106 @@ import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
 import OAlg.Hom.Algebraic
 
-import OAlg.Entity.Natural as N
-import OAlg.Entity.FinList as F 
 import OAlg.Entity.Diagram as D
 import OAlg.Entity.Matrix hiding (Transformation(..))
-import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Product as P
 import OAlg.Entity.Sum as S hiding (R)
+-}
+
+import OAlg.Category.Map
+
+import OAlg.Data.Filterable
+
+import OAlg.Structure.PartiallyOrdered
+
+import OAlg.Entity.Natural as N
+import OAlg.Entity.FinList as F 
+import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.Graph
 
 import OAlg.Homology.Complex
 import OAlg.Homology.Chain as C
 import OAlg.Homology.Simplical
 
+--------------------------------------------------------------------------------
+-- toFinList3 -
+
+-- | maps a infinite list to a finite list of @__n__ + 3@.
+toFinList3 :: Any n -> [x] -> FinList (n+3) x
+toFinList3 W0 (x:x':x'':_) = x:|x':|x'':|Nil
+toFinList3 (SW n) (x:xs)   = x :| toFinList3 n xs
+toFinList3 _ _             = throw $ ImplementationError "toFinList3"
+
+{-
+--------------------------------------------------------------------------------
+-- ccxSimplical -
+
+-- | sequence of sets of set-simplices over the given complex.
+ccxSimplical :: Any n -> Complex x -> FinList (n+3) (Z,Set (Set x))
+ccxSimplical n c = error "nyi"
+-}
+
+--------------------------------------------------------------------------------
+-- ccxSimplices -
+
+-- | sequence of sets of simplices over the given complex.
+--
+-- __Property__ Let @n@ be in @'Any' __n__@ and @c@ in @'Complex' __x__@, then holds:
+--
+--  (1) For @(z,ssx)@ in @'ccxSimplices' n c@ holds: @'dimension' s '==' z@ for all @s@ in @ssx@.
+--
+--  (2) For all @s@ in @__s__ __x__@ holds: @s@ is in @'ccxSimplices' n c@ iff
+--  @'vertices' s@ is in @c@.
+ccxSimplices :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
+ccxSimplices n c = toFinList3 n ([-1..] `L.zip` ssx) where
+  ssx = amap1 (filter (elg c)) ((amap1 snd $ gphxs $ simplices $ cpxVertices c) L.++ L.repeat empty)
+
+  elg :: Simplical s x => Complex x -> s x -> Bool
+  elg c = cpxElem c . vertices
+
+--------------------------------------------------------------------------------
+-- ccxBoundary -
+
+ccxBoundary :: Simplical s x => Any n -> Complex x
+  -> FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)) 
+ccxBoundary n c = toBnd $ ccxSimplices n c where
+  toBnd :: Simplical s x
+    => FinList (n+1) (Z,Set (s x)) -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
+  toBnd (_:|Nil) = Nil
+  toBnd (zs:|zs':|zss) = Boundary (snd zs') (snd zs) :| toBnd (zs':|zss)
+
+ccxBoundaryAscZ :: (r ~ Z, s ~  Asc, Entity x, Ord x)
+  => Any n -> Complex x -> FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x))
+ccxBoundaryAscZ = ccxBoundary
+
+--------------------------------------------------------------------------------
+-- ccxChainMap -
+
+ccxChainMap :: Homological s x y
+  => Any n -> ComplexMap s (Complex x) (Complex y)
+  -> FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
+ccxChainMap n f = toChnMap (cpmMap f) (ccxSimplices n $ cpmDomain f) (ccxSimplices n $ cpmRange f)
+  where
+    toChnMap :: SimplicalTransformable s x y
+      => Map EntOrd x y -> FinList n (Z,Set (s x)) -> FinList n (Z,Set (s y))
+      -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s y))
+    toChnMap _ Nil Nil                 = Nil
+    toChnMap f (zsx:|zsxs) (zsy:|zsys) = ChainMap (snd zsx) (snd zsy) f :| toChnMap f zsxs zsys
+
+ccxChainMapAscZ :: (r ~  Z, s ~ Asc, Homological s x y)
+  => Any n -> ComplexMap s (Complex x) (Complex y)
+  -> FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
+ccxChainMapAscZ = ccxChainMap
+
+a = complex [Set "abc"]
+b = complex [Set [0,1]] :: Complex N
+
+c = cpxProductAsc b a
+
+p1 = ComplexMapAsc c b (Map fst)
+p2 = ComplexMapAsc c a (Map snd)
+
+{-
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
@@ -285,6 +374,10 @@ chainComplexMap
   :: Regular -> Any n -> ComplexMap (Complex x) (Complex y)
   -> ChainComplexMap To n (Matrix r)
 chainComplexMap = error "nyi"
+-}
+
+
+
 {-
 --------------------------------------------------------------------------------
 -- chainComplex -

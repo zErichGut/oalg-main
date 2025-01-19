@@ -27,8 +27,12 @@ module OAlg.Homology.Complex
     Complex(..), cpxElem, complex
   , cpxVertices, cpxSimplices, cpxGenerators
 
+    -- * Constructions
+  , cpxProduct, cpxProductAsc
+
     -- * Map
-  , ComplexMap(..)
+  , ComplexMap(..), cpmForget, cpmDomain, cpmRange
+  , cpmMap, cpmGraph
 
   ) where
 
@@ -184,16 +188,16 @@ isFaithful p f (Set xs) = p $ amap1 f xs
 -- of the set-simplices respects also the given orientation, i.e. @'isFaithful' 'isAsc'@.
 --
 -- __Properties__ Let @m@ be in @'ComplexMap' __s__ ('Complex' __x__) ('Complex' __y__), then
--- holds: Let @f = 'scmMap' m@ in
+-- holds: Let @f = 'cpmMap' m@ in
 --
---  (1) For all set-simplices @s@ in @'scmDomain' m@ holds:
---  @'amap1' f s@ is an element of @'scmRange' m@, where 
+--  (1) For all set-simplices @s@ in @'cpmDomain' m@ holds:
+--  @'amap1' f s@ is an element of @'cpmRange' m@, where 
 --
 --  (2) If @m@ matches @'ComplexMapAsc' _ _ _@ then for all set-simplices
---  @s@ in @'scmDomain' m@ holds: @'isFaithful' 'isAsc' f s@.
+--  @s@ in @'cpmDomain' m@ holds: @'isFaithful' 'isAsc' f s@.
 --
--- __Note__ If @'scmDomain' m@ and @'scmRange' m@ are 'valid' then it is sufficient to test the
--- properties above on the generators @'cpxGenerators' ('scmDomain' m)@.
+-- __Note__ If @'cpmDomain' m@ and @'cpmRange' m@ are 'valid' then it is sufficient to test the
+-- properties above on the generators @'cpxGenerators' ('cpmDomain' m)@.
 data ComplexMap s a b where
   ComplexMap
     :: Complex x -> Complex y
@@ -205,43 +209,43 @@ data ComplexMap s a b where
     -> ComplexMap Asc (Complex x) (Complex y)
 
 --------------------------------------------------------------------------------
--- scmForget -
+-- cpmForget -
 
 -- | forgets eventually the faithfully oriented constraint.
-scmForget :: ComplexMap s a b -> ComplexMap [] a b
-scmForget m@(ComplexMap _ _ _)  = m
-scmForget (ComplexMapAsc a b f) = ComplexMap a b f   
+cpmForget :: ComplexMap s a b -> ComplexMap [] a b
+cpmForget m@(ComplexMap _ _ _)  = m
+cpmForget (ComplexMapAsc a b f) = ComplexMap a b f   
 
 --------------------------------------------------------------------------------
--- scmDomain -
+-- cpmDomain -
 
 -- | the domain of a set-complex map.
-scmDomain :: ComplexMap s (Complex x) (Complex y) -> Complex x
-scmDomain (ComplexMap a _ _)    = a
-scmDomain (ComplexMapAsc a _ _) = a
+cpmDomain :: ComplexMap s (Complex x) (Complex y) -> Complex x
+cpmDomain (ComplexMap a _ _)    = a
+cpmDomain (ComplexMapAsc a _ _) = a
 
 --------------------------------------------------------------------------------
--- scmRange -
+-- cpmRange -
 
 -- | the range of a set-complex map.
-scmRange :: ComplexMap s (Complex x) (Complex y) -> Complex y
-scmRange (ComplexMap _ b _)    = b
-scmRange (ComplexMapAsc _ b _) = b
+cpmRange :: ComplexMap s (Complex x) (Complex y) -> Complex y
+cpmRange (ComplexMap _ b _)    = b
+cpmRange (ComplexMapAsc _ b _) = b
 
 --------------------------------------------------------------------------------
--- scmMap -
+-- cpmMap -
 
 -- | the underling mapping of vertices.
-scmMap :: ComplexMap s (Complex x) (Complex y) -> Map EntOrd x y
-scmMap (ComplexMap _ _ f)    = f
-scmMap (ComplexMapAsc _ _ f) = f
+cpmMap :: ComplexMap s (Complex x) (Complex y) -> Map EntOrd x y
+cpmMap (ComplexMap _ _ f)    = f
+cpmMap (ComplexMapAsc _ _ f) = f
 
 --------------------------------------------------------------------------------
--- scmGraph -
+-- cpmGraph -
 
 -- | the graph of the induced mapping of the vertices.
-scmGraph :: ComplexMap s (Complex x) (Complex y) -> Graph x y
-scmGraph m = Graph [(v,f v) | v <- setxs $ cpxVertices $ scmDomain m] where Map f = scmMap m
+cpmGraph :: ComplexMap s (Complex x) (Complex y) -> Graph x y
+cpmGraph m = Graph [(v,f v) | v <- setxs $ cpxVertices $ cpmDomain m] where Map f = cpmMap m
 
 --------------------------------------------------------------------------------
 -- ComplexMap - Entity -
@@ -251,19 +255,19 @@ instance Show (ComplexMap s a b) where
     ComplexMap _ _ (Map _)    -> "ComplexMap" ++ shCmps m
     ComplexMapAsc _ _ (Map _) -> "ComplexMapAsc" ++ shCmps m
     where 
-      shCmps m = " (" ++ (show $ scmDomain m) ++ ") (" ++ (show $ scmRange m)
-             ++ ") (" ++ (show $ scmGraph m) ++ ")"
+      shCmps m = " (" ++ (show $ cpmDomain m) ++ ") (" ++ (show $ cpmRange m)
+             ++ ") (" ++ (show $ cpmGraph m) ++ ")"
 
 instance Eq (ComplexMap s a b) where
-  f@(ComplexMap a b (Map _)) == g@(ComplexMap a' b' _) = (a,b,scmGraph f) == (a',b',scmGraph g)
-  f == g                                                     = scmForget f == scmForget g
+  f@(ComplexMap a b (Map _)) == g@(ComplexMap a' b' _) = (a,b,cpmGraph f) == (a',b',cpmGraph g)
+  f == g                                               = cpmForget f == cpmForget g
 
 
 
 instance Ord (ComplexMap s a b) where
   compare f@(ComplexMap a b (Map _)) g@(ComplexMap a' b' _)
-    = compare (a,b,scmGraph f) (a',b',scmGraph g)
-  compare f g = compare (scmForget f) (scmForget g)
+    = compare (a,b,cpmGraph f) (a',b',cpmGraph g)
+  compare f g = compare (cpmForget f) (cpmForget g)
 
 
 -- | validity according to property 1.
@@ -284,7 +288,7 @@ relComplexMap (ComplexMap a b f@(Map _))
 instance Validable (ComplexMap s a b) where
   valid m@(ComplexMap _ _ _)            = Label "ComplexMap" :<=>: relComplexMap m
   valid m@(ComplexMapAsc cx _ f@(Map _)) = Label "ComplexMapAsc" :<=>:
-    And [ relComplexMap (scmForget m)
+    And [ relComplexMap (cpmForget m)
         , vldFaithfulAsc f (amap1 snd $ setxs $ gphset $ cpxGenerators cx)
         ]
     where
