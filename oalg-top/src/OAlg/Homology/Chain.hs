@@ -27,7 +27,8 @@ module OAlg.Homology.Chain
     Chain, ch, chZ, boundary, chainMap
 
     -- * Chain Homomorphism
-  , ChainHom(..), chainHomRep
+  , ChainHom(..), chDomainSet, chRangeSet
+  , chainHomRep
 
   ) where
 
@@ -132,6 +133,21 @@ data ChainHom r s x y where
     => Set (s x) -> Set (s y) -> Map EntOrd x y
     -> ChainHom r s (Chain r s x) (Chain r s y)
 
+--------------------------------------------------------------------------------
+-- chDomainSet -
+
+chDomainSet :: ChainHom r s (Chain r s x) (Chain r s y) -> Set (s x)
+chDomainSet (ZeroHom sx _)    = sx
+chDomainSet (Boundary sx _)   = sx
+chDomainSet (ChainMap sx _ _) = sx
+
+--------------------------------------------------------------------------------
+-- chRangeSet -
+
+chRangeSet :: ChainHom r s (Chain r s x) (Chain r s y) -> Set (s y)
+chRangeSet (ZeroHom _ sy)    = sy
+chRangeSet (Boundary _ sy)   = sy
+chRangeSet (ChainMap _ sy _) = sy
 --------------------------------------------------------------------------------
 -- ChainHom - Hom (Vec r) -
 
