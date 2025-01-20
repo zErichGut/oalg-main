@@ -57,19 +57,13 @@ import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 
 
-import OAlg.Structure.Oriented
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Fibred
-import OAlg.Structure.Additive
-import OAlg.Structure.Distributive
-import OAlg.Structure.Ring
+
 import OAlg.Structure.Number
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Exception
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
 import OAlg.Hom.Oriented
@@ -78,8 +72,8 @@ import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
 import OAlg.Hom.Algebraic
 
-import OAlg.Entity.Diagram as D
-import OAlg.Entity.Matrix hiding (Transformation(..))
+
+
 import OAlg.Entity.Product as P
 import OAlg.Entity.Sum as S hiding (R)
 -}
@@ -89,11 +83,21 @@ import OAlg.Category.Map
 import OAlg.Data.Filterable
 
 import OAlg.Structure.PartiallyOrdered
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
+import OAlg.Structure.Fibred
+import OAlg.Structure.Additive
 
+import OAlg.Entity.Diagram as D
 import OAlg.Entity.Natural as N
 import OAlg.Entity.FinList as F 
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
+import OAlg.Entity.Matrix hiding (Transformation(..))
+
+import OAlg.Hom.Definition
 
 import OAlg.Homology.Complex
 import OAlg.Homology.Chain as C
@@ -107,15 +111,6 @@ toFinList3 :: Any n -> [x] -> FinList (n+3) x
 toFinList3 W0 (x:x':x'':_) = x:|x':|x'':|Nil
 toFinList3 (SW n) (x:xs)   = x :| toFinList3 n xs
 toFinList3 _ _             = throw $ ImplementationError "toFinList3"
-
-{-
---------------------------------------------------------------------------------
--- ccxSimplical -
-
--- | sequence of sets of set-simplices over the given complex.
-ccxSimplical :: Any n -> Complex x -> FinList (n+3) (Z,Set (Set x))
-ccxSimplical n c = error "nyi"
--}
 
 --------------------------------------------------------------------------------
 -- ccxSimplices -
@@ -136,38 +131,67 @@ ccxSimplices n c = toFinList3 n ([-1..] `L.zip` ssx) where
   elg c = cpxElem c . vertices
 
 --------------------------------------------------------------------------------
+-- Regular -
+
+-- | kind of the generated 'ChainComplex' of 'BoundaryOperator's. 'Extended' defines the last
+-- boundary operator as the extended one and 'Regular' defines it as @0@. 
+data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
+
+--------------------------------------------------------------------------------
 -- ccxBoundary -
 
-ccxBoundary :: Simplical s x => Any n -> Complex x
+-- | the list of boundary operators, where in the 'Regualr' case the first operator
+-- is addapted to @'ZeroHom' s 'empty'@.
+ccxBoundary :: Simplical s x => Regular -> Any n -> Complex x
   -> FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)) 
-ccxBoundary n c = toBnd $ ccxSimplices n c where
-  toBnd :: Simplical s x
-    => FinList (n+1) (Z,Set (s x)) -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
-  toBnd (_:|Nil) = Nil
-  toBnd (zs:|zs':|zss) = Boundary (snd zs') (snd zs) :| toBnd (zs':|zss)
+ccxBoundary r n c = case r of
+  Regular  -> zeroBnd (F.head ds) :| F.tail ds
+  Extended -> ds
+  where
+    ds = toBnd $ ccxSimplices n c
+
+    zeroBnd :: ChainHom r s (C.Chain r s x) (C.Chain r s x)
+      -> ChainHom r s (C.Chain r s x) (C.Chain r s x)
+    zeroBnd (Boundary s _) = ZeroHom s empty
+    zeroBnd _              = throw $ ImplementationError "ccxBoundary.zeroBnd"
+    
+    toBnd :: Simplical s x
+      => FinList (n+1) (Z,Set (s x)) -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
+    toBnd (_:|Nil) = Nil
+    toBnd (zs:|zs':|zss) = Boundary (snd zs') (snd zs) :| toBnd (zs':|zss)
 
 ccxBoundaryAscZ :: (r ~ Z, s ~  Asc, Entity x, Ord x)
-  => Any n -> Complex x -> FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x))
+  => Regular -> Any n -> Complex x -> FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x))
 ccxBoundaryAscZ = ccxBoundary
+
 
 --------------------------------------------------------------------------------
 -- ccxChainMap -
 
 ccxChainMap :: Homological s x y
-  => Any n -> ComplexMap s (Complex x) (Complex y)
+  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-ccxChainMap n f = toChnMap (cpmMap f) (ccxSimplices n $ cpmDomain f) (ccxSimplices n $ cpmRange f)
+ccxChainMap r n f = case r of
+  Regular  -> zeroChnMap (F.head fs) :| F.tail fs
+  Extended -> fs
   where
+
+    fs = toChnMap (cpmMap f) (ccxSimplices n $ cpmDomain f) (ccxSimplices n $ cpmRange f)
+
+    zeroChnMap :: ChainHom r s (C.Chain r s x) (C.Chain r s y)
+      -> ChainHom r s (C.Chain r s x) (C.Chain r s y)
+    zeroChnMap (ChainMap _ _ _) = ZeroHom empty empty
+    
     toChnMap :: SimplicalTransformable s x y
       => Map EntOrd x y -> FinList n (Z,Set (s x)) -> FinList n (Z,Set (s y))
       -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s y))
     toChnMap _ Nil Nil                 = Nil
     toChnMap f (zsx:|zsxs) (zsy:|zsys) = ChainMap (snd zsx) (snd zsy) f :| toChnMap f zsxs zsys
 
-ccxChainMapAscZ :: (r ~  Z, s ~ Asc, Homological s x y)
-  => Any n -> ComplexMap s (Complex x) (Complex y)
+ccxChainMapZ :: (r ~  Z, Homological s x y)
+  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-ccxChainMapAscZ = ccxChainMap
+ccxChainMapZ = ccxChainMap
 
 a = complex [Set "abc"]
 b = complex [Set [0,1]] :: Complex N
@@ -177,7 +201,11 @@ c = cpxProductAsc b a
 p1 = ComplexMapAsc c b (Map fst)
 p2 = ComplexMapAsc c a (Map snd)
 
-{-
+c' = cpxProduct b a
+
+p1' = ComplexMap c b (Map fst)
+p2' = ComplexMap c a (Map snd)
+
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
@@ -233,7 +261,7 @@ ccxMap h (ChainComplex c) = ChainComplex (dgMap h c)
 -- ChainComplex - Entity -
 
 instance Distributive d => Validable (ChainComplex t n d) where
-  valid (ChainComplex ds) = valid ds && vldZeros ds where
+  valid (ChainComplex ds) = Label "ChainComplex" :<=>: valid ds && vldZeros ds where
     
     vldZeros :: Distributive d => Diagram (D.Chain t) (n+3) (n+2) d -> Statement
     vldZeros d@(DiagramChainTo _ _)   = vldZerosTo 0 d
@@ -248,19 +276,115 @@ instance Distributive d => Validable (ChainComplex t n d) where
     vldZeroTo i f g = Label (show i) :<=>: (isZero (f*g))
           :?> Params ["i":=show i,"f":=show f,"g":=show g]
 
+instance (Distributive d, Typeable t, Typeable n) => Entity (ChainComplex t n d)
+
+--------------------------------------------------------------------------------
+-- ChainComplexRep --
+
+-- | predicate for the boundary operator and its representation.
+--
+--  __Properties__ Let @c = 'ChainComplexRep' ds ms@ be in @'ChainComplexRep' __r__ __s__ __n__ __x__@,
+-- where @__r__@ is a 'Commutative' 'Ring', then holds:
+--
+-- (1) @'repMatrix' ('chainHomRep' d) '==' m@ for all @(d,m)@ in @ds `'F.zip'` ms@.
+data ChainComplexRep r s n x
+  = ChainComplexRep
+      (FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)))
+      (FinList (n+2) (Matrix r))
+  deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- chainComplex -
+
+-- | the underlying chain complex.
+chainComplex :: (Ring r, Commutative r) => ChainComplexRep r s n x -> ChainComplex To n (Matrix r)
+chainComplex (ChainComplexRep _ ms)
+  = ChainComplex (DiagramChainTo (end $ F.head ms) ms) 
+
+--------------------------------------------------------------------------------
+-- ChainComplexRep - Validable -
+
+instance (Ring r, Commutative r, Typeable s) => Validable (ChainComplexRep r s n x) where
+  valid c@(ChainComplexRep ds ms) = Label "ChainComplexRep" :<=>:
+    And [ valid ds
+        , valid (chainComplex c)
+        , vldRep 0 ds ms
+        ]
+    where
+      vldRep :: (Ring r, Commutative r, Typeable s)
+        => N
+        -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
+        -> FinList n (Matrix r)
+        -> Statement
+      vldRep _ Nil Nil = SValid
+      vldRep i (d:|ds) (m:|ms)
+        = And [ Label "1" :<=>: (repMatrix (chainHomRep d) == m) :?> Params ["i":=show i]
+              , vldRep (succ i) ds ms
+              ]
+
+--------------------------------------------------------------------------------
+-- chainComplexRep -
+
+chainComplexRep :: (Ring r, Commutative r, Simplical s x)
+  => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
+chainComplexRep r n c = ChainComplexRep ds (amap1 (repMatrix . chainHomRep) ds) where
+  ds = ccxBoundary r n c
+
+ccxSetZ :: (r ~ Z, s ~ Set, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
+ccxSetZ = chainComplexRep
+
+ccxLstZ :: (r ~ Z, s ~ [], Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
+ccxLstZ = chainComplexRep
+
+ccxAscZ :: (r ~ Z, s ~ Asc, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
+ccxAscZ = chainComplexRep
+
+--------------------------------------------------------------------------------
+-- ChainComplexTrafo -
+
+newtype ChainComplexTrafo t n d = ChainComplexTrafo (Transformation (D.Chain t) (n+3) (n+2) d)
+  deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- cctStart -
+
+cctStart :: (Distributive d, Typeable t, Typeable n) => ChainComplexTrafo t n d -> ChainComplex t n d
+cctStart (ChainComplexTrafo t) = ChainComplex $ start t
+
+--------------------------------------------------------------------------------
+-- cctEnd -
+
+cctEnd :: (Distributive d, Typeable t, Typeable n) => ChainComplexTrafo t n d -> ChainComplex t n d
+cctEnd (ChainComplexTrafo t) = ChainComplex $ end t
+
+--------------------------------------------------------------------------------
+-- ChainComplexTrafo - Entity -
+
+instance (Distributive d, Typeable t, Typeable n) => Validable (ChainComplexTrafo t n d) where
+  valid f@(ChainComplexTrafo t) = Label "ChainComplexTrafo" :<=>:
+    And [ valid t
+        , valid $ cctStart f
+        , valid $ cctEnd f
+        ]
+
+instance (Distributive d, Typeable t, Typeable n) => Entity (ChainComplexTrafo t n d)
+
+--------------------------------------------------------------------------------
+-- ChainComplexTrafo - Distributive -
+
+instance (Distributive d, Typeable t, Typeable n) => Oriented (ChainComplexTrafo t n d) where
+  type Point (ChainComplexTrafo t n d) = ChainComplex t n d
+  orientation t = cctStart t :> cctEnd t 
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- ccxCards -
 
 ccxCards :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
   => ChainComplex t n (BoundaryOperator r s x) -> FinList (n+3) N
 ccxCards = amap1 lengthN . ccxPoints
-
---------------------------------------------------------------------------------
--- Regular -
-
--- | kind of the generated 'ChainComplex' of 'BoundaryOperator's. 'Extended' defines the last
--- boundary operator as the extended one and 'Regular' defines it as @0@. 
-data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
 -- chainComplex -

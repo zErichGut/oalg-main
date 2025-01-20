@@ -29,7 +29,6 @@ library
       OAlg.Homology.ChainComplex
       OAlg.Homology.Complex
       OAlg.Homology.Definition
-      OAlg.Homology.SetComplex
       OAlg.Homology.Simplical
       OAlg.Homology.Variance
   other-modules:

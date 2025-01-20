@@ -80,6 +80,14 @@ rAlt :: Ring r => [r]
 rAlt = za rOne where za i = i:za (negate i)
 
 --------------------------------------------------------------------------------
+-- zeroHom -
+
+-- | the zero homomorphism.
+zeroHom :: (Ring r, Commutative r, Simplical s y)
+  => Chain r s x -> Chain r s y
+zeroHom = ssySum (const $ LinearCombination [])
+
+--------------------------------------------------------------------------------
 -- boundary -
 
 -- | the boundary operator of chains.
@@ -112,6 +120,9 @@ chainMap f = ssySum (chMap f) where
 -- (2) In case where @h@ matches @'ChainMap' ssx ssy f@ then for all @sx@ in @ssx@ holds:
 -- @'amap1' f sx@ is an element of @ssy@.
 data ChainHom r s x y where
+  ZeroHom :: (Simplical s x, Simplical s y)
+    => Set (s x) -> Set (s y)
+    -> ChainHom r s (Chain r s x) (Chain r s y)
   Boundary
     :: Simplical s x
     => Set (s x) -> Set (s x)
@@ -125,15 +136,18 @@ data ChainHom r s x y where
 -- ChainHom - Hom (Vec r) -
 
 instance (Ring r, Commutative r) => Applicative (ChainHom r s) where
+  amap (ZeroHom _ _)    = zeroHom
   amap (Boundary _ _)   = boundary
   amap (ChainMap _ _ f) = chainMap f
 
 instance Show (ChainHom r s x y) where
+  show (ZeroHom sx sy)    = "ZeroHom (" ++ show sx ++ ") (" ++ show sy ++ ")"
   show (Boundary s s')    = "Boundary (" ++ show s ++ ") (" ++ show s' ++ ")"
   show (ChainMap sx sy _) = "ChainMap (" ++ show sx ++ ") (" ++ show sy ++ ")"
 instance Show2 (ChainHom r s)
 
 instance Eq (ChainHom r s x y) where
+  ZeroHom sx sy == ZeroHom sx' sy' = sx == sx' && sy == sy'
   Boundary s s' == Boundary t t' = s == t && s' == t'
   ChainMap sx sy f == ChainMap sx' sy' f'
     = sx == sx' && sy == sy' && and [amap1 f s == amap1 f' s | s <- setxs sx]
@@ -141,6 +155,7 @@ instance Eq (ChainHom r s x y) where
 instance Eq2 (ChainHom r s)
 
 instance Validable (ChainHom r s x y) where
+  valid (ZeroHom ssx ssy) = Label "ZeroHom" :<=>: valid ssx && valid ssy
   valid (Boundary ssx ssx') = Label "Boundary" :<=>:
     And [ valid ssx
         , valid ssx'
@@ -165,6 +180,7 @@ instance (Typeable r, Typeable s) => Entity2 (ChainHom r s)
 
 instance (Ring r, Commutative r, Typeable s) => Morphism (ChainHom r s) where
   type ObjectClass (ChainHom r s) = Vec r
+  homomorphous (ZeroHom _ _)    = Struct :>: Struct
   homomorphous (Boundary _ _)   = Struct :>: Struct
   homomorphous (ChainMap _ _ _) = Struct :>: Struct
 
@@ -172,6 +188,7 @@ instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s
 instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Typ
 instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphismTyp (ChainHom r s)
 instance (Ring r, Commutative r, Typeable s) => HomFibred (ChainHom r s) where
+  rmap (ZeroHom _ _)    = const ()
   rmap (Boundary _ _)   = const ()
   rmap (ChainMap _ _ _) = const ()
 
@@ -188,6 +205,7 @@ chainHomRep
   :: (Ring r, Commutative r, Typeable s)
   => ChainHom r s (Chain r s x) (Chain r s y)
   -> Representable r (ChainHom r s) (Chain r s x) (Chain r s y)
+chainHomRep h@(ZeroHom sx sy)     = Representable h sx sy
 chainHomRep h@(Boundary s s')    = Representable h s s'
 chainHomRep h@(ChainMap sx sy _) = Representable h sx sy
 
