@@ -125,11 +125,25 @@ toFinList3 _ _             = throw $ ImplementationError "toFinList3"
 --  (2) For all @s@ in @__s__ __x__@ holds: @s@ is in @'ccxSimplices' n c@ iff
 --  @'vertices' s@ is in @c@.
 ccxSimplices :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
-ccxSimplices n c = toFinList3 n ([-1..] `L.zip` ssx) where
-  ssx = amap1 (filter (elg c)) ((amap1 snd $ gphxs $ simplices $ cpxVertices c) L.++ L.repeat empty)
+ccxSimplices n c = case mSet (ccs n c) of
+  (Just Refl,_) -> ccsSet n c -- more economic and faster
+  (Nothing,s)   -> s
+  where
 
-  elg :: Simplical s x => Complex x -> s x -> Bool
-  elg c = cpxElem c . vertices
+    mSet :: Typeable s => FinList n (Z,Set (s x)) -> (Maybe (s :~: Set),FinList n (Z,Set (s x)))
+    mSet s = (eqT,s)
+  
+    ccsSet :: Ord x => Any n -> Complex x -> FinList (n+3) (Z,Set (Set x))
+    ccsSet n c = toFinList3 n ([-1..] `L.zip` ssx) where
+      ssx = (amap1 snd $ gphxs $ cpxSimplices c) L.++ L.repeat empty
+  
+    ccs :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
+    ccs n c = toFinList3 n ([-1..] `L.zip` ssx) where
+      ssx = amap1 (filter (elg c))
+          $ ((amap1 snd $ gphxs $ simplices $ cpxVertices c) L.++ L.repeat empty  )
+  
+      elg :: Simplical s x => Complex x -> s x -> Bool
+      elg c = cpxElem c . vertices
 
 --------------------------------------------------------------------------------
 -- Regular -
@@ -221,10 +235,10 @@ ccxPoints :: Oriented d => ChainComplex t n d -> FinList (n+3) (Point d)
 ccxPoints (ChainComplex ds) = dgPoints ds
 
 --------------------------------------------------------------------------------
--- ccxBoundaryOperators -
+-- ccxArrows -
 
-ccxBoundaryOperators :: ChainComplex t n d -> FinList (n+2) d
-ccxBoundaryOperators (ChainComplex ds) = dgArrows ds
+ccxArrows :: ChainComplex t n d -> FinList (n+2) d
+ccxArrows (ChainComplex ds) = dgArrows ds
 
 {-
 --------------------------------------------------------------------------------
@@ -283,54 +297,82 @@ instance (Distributive d, Typeable t, Typeable n) => Entity (ChainComplex t n d)
 --------------------------------------------------------------------------------
 -- ChainComplexRep --
 
--- | predicate for the boundary operator and its representation.
+-- | predicate for being a list of eligible boundary operators.
 --
---  __Properties__ Let @c = 'ChainComplexRep' ds ms@ be in @'ChainComplexRep' __r__ __s__ __n__ __x__@,
+--  __Properties__ Let @c = 'ChainComplexRep' ds@ be in @'ChainComplexRep' __r__ __s__ __n__ __x__@,
 -- where @__r__@ is a 'Commutative' 'Ring', then holds:
 --
--- (1) @'repMatrix' ('chainHomRep' d) '==' m@ for all @(d,m)@ in @ds `'F.zip'` ms@.
+-- (1) For all @..d'|'d'..@ in @ds@ holds: @'chDomainSet' d '==' 'chRangeSet' d'@.
+--
+-- (2) Let @d = 'F.head' c@, then holds:
+--
+--     (2.1) If @d@ matches @'ZeroHom' _ s0@ then @s0@ is 'empty'. (for the 'Regualr' case)
+--
+--     (2.2) If @d@ matches @'Boundary' _ _@ then @d@ is 'valid'.
+--
+--     (2.3) otherwise @d@ is not 'valid'.
+--
+-- (3) Let @d@ be in @'F.tail' ds@, then holds:
+--
+--     (3.1) If @d@ matches @'Boundary' _ _@ then @d@ is 'valid'.
+--
+--     (3.2) otherwise @d@ is not 'valid'.
 data ChainComplexRep r s n x
-  = ChainComplexRep
-      (FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)))
-      (FinList (n+2) (Matrix r))
+  = ChainComplexRep (FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)))
   deriving (Show,Eq)
-
---------------------------------------------------------------------------------
--- chainComplex -
-
--- | the underlying chain complex.
-chainComplex :: Ring r => ChainComplexRep r s n x -> ChainComplex To n (Matrix r)
-chainComplex (ChainComplexRep _ ms)
-  = ChainComplex (DiagramChainTo (end $ F.head ms) ms) 
 
 --------------------------------------------------------------------------------
 -- ChainComplexRep - Validable -
 
-instance (Ring r, Commutative r, Typeable s) => Validable (ChainComplexRep r s n x) where
-  valid c@(ChainComplexRep ds ms) = Label "ChainComplexRep" :<=>:
-    And [ valid ds
-        , valid (chainComplex c)
-        , vldRep 0 ds ms
+instance (Ring r, Commutative r, Simplical s x) => Validable (ChainComplexRep r s n x) where
+  valid c@(ChainComplexRep ds) = Label "ChainComplexRep" :<=>:
+    And [ vldBnd0 d0
+        , vldBnds 0 d0 (F.tail ds)
         ]
     where
-      vldRep :: (Ring r, Commutative r, Typeable s)
+      d0 = F.head ds
+      
+      vldBnd0 d = And [ valid d
+                      , case d of
+                          ZeroHom _ s0 -> Label "2.1" :<=>: isEmpty s0 :?> Params ["s0":=show s0]
+                          Boundary _ _ -> SValid
+                          _            -> Label "2.3" :<=>: SInvalid
+                      ]
+                  
+      vldBnd d = And [ valid d
+                      , case d of
+                         Boundary _ _ -> SValid
+                         _            -> Label "3.2" :<=>: SInvalid
+                     ]
+
+      vldBnds :: Simplical s x
         => N
-        -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
-        -> FinList n (Matrix r)
+        -> ChainHom r s (C.Chain r s x) (C.Chain r s x)
+        -> FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s x))
         -> Statement
-      vldRep _ Nil Nil = SValid
-      vldRep i (d:|ds) (m:|ms)
-        = And [ Label "1" :<=>: (repMatrix (chainHomRep d) == m) :?> Params ["i":=show i]
-              , vldRep (succ i) ds ms
+      vldBnds _ _ (d:|Nil) = vldBnd d
+      vldBnds i d (d':|d'':|ds)
+        = And [ vldBnd d'
+              , Label "1" :<=>: (chDomainSet d == chRangeSet d') :?> Params ["i":=show i]
+              , vldBnds (succ i) d' (d'':|ds)
               ]
+    
+--------------------------------------------------------------------------------
+-- chainComplex -
+
+-- | the underlying chain complex.
+chainComplex :: (Ring r, Commutative r, Simplical s x)
+  => ChainComplexRep r s n x -> ChainComplex To n (Matrix r)
+chainComplex (ChainComplexRep ds) = ChainComplex (DiagramChainTo (end $ F.head ms) ms) where
+  ms = amap1 (repMatrix . chainHomRep) ds
 
 --------------------------------------------------------------------------------
 -- chainComplexRep -
 
-chainComplexRep :: (Ring r, Commutative r, Simplical s x)
+chainComplexRep :: Simplical s x
   => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
-chainComplexRep r n c = ChainComplexRep ds (amap1 (repMatrix . chainHomRep) ds) where
-  ds = ccxBoundary r n c
+chainComplexRep r n c = ChainComplexRep (ccxBoundary r n c)
+
 
 ccxSetZ :: (r ~ Z, s ~ Set, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
 ccxSetZ = chainComplexRep
@@ -341,9 +383,11 @@ ccxLstZ = chainComplexRep
 ccxAscZ :: (r ~ Z, s ~ Asc, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
 ccxAscZ = chainComplexRep
 
+
 --------------------------------------------------------------------------------
 -- ChainComplexTrafo -
 
+-- | transformation between chain complexes.
 newtype ChainComplexTrafo t n d = ChainComplexTrafo (Transformation (D.Chain t) (n+3) (n+2) d)
   deriving (Show,Eq)
 
@@ -378,113 +422,86 @@ instance (Distributive d, Typeable t, Typeable n) => Oriented (ChainComplexTrafo
   type Point (ChainComplexTrafo t n d) = ChainComplex t n d
   orientation t = cctStart t :> cctEnd t 
 
+
 --------------------------------------------------------------------------------
 -- ChainComplexTrafoRep -
 
--- | predicate for chain map operators and its repsresentation.
+-- | predicate for beeing a list of eligible chain map operators.
 --
---  __Property__ Let @t = 'ChainComplexTrafoRep' fs ms@ be in
+--  __Property__ Let @r@ be in
 --  @'ChainComplexTrafoRep' __r__ __s__ __n__ __x__ __y__@, where @__r__@ is a 'Commutative' 'Ringe',
---  then holds:
---
---  (1) @'repMatrix' ('chainHomRep' f) '==' m@ for all @(f,m)@ in @fs `'F.zip'` ms@
+--  then holds: The induced chain comples transformation @'chainComplexTrafo' r@ is 'valid'.
 data ChainComplexTrafoRep r s n x y
   = ChainComplexTrafoRep
       (FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y)))
-      (FinList (n+3) (Matrix r))
   deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- cctDomainRep -
+
+-- | the induced boundary operators according to the domain.
+cctDomainRep :: Simplical s x
+  => ChainComplexTrafoRep r s n x y -> ChainComplexRep r s n x
+cctDomainRep (ChainComplexTrafoRep (f0:|f1:|fs)) = ChainComplexRep (d0 f0 f1:|ds (f1:|fs)) where
+  d0 (ZeroHom s0 _) f1 = ZeroHom (chDomainSet f1) s0
+  d0 f0 f1             = Boundary (chDomainSet f1) (chDomainSet f0)
+
+  ds :: Simplical s x
+    => FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
+    -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
+  ds (_:|Nil) = Nil
+  ds (f:|f':|fs) = Boundary (chDomainSet f') (chDomainSet f) :| ds (f':|fs)
+
+--------------------------------------------------------------------------------
+-- cctRangeRep -
+
+-- | the induced boundary operators according to the range.
+cctRangeRep :: Simplical s y
+  => ChainComplexTrafoRep r s n x y -> ChainComplexRep r s n y
+cctRangeRep (ChainComplexTrafoRep (f0:|f1:|fs)) = ChainComplexRep (d0 f0 f1:|ds (f1:|fs)) where
+  d0 (ZeroHom _ s0) f1 = ZeroHom (chRangeSet f1) s0
+  d0 f0 f1             = Boundary (chRangeSet f1) (chRangeSet f0)
+
+  ds :: Simplical s y
+    => FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
+    -> FinList n (ChainHom r s (C.Chain r s y) (C.Chain r s y))
+  ds (_:|Nil) = Nil
+  ds (f:|f':|fs) = Boundary (chRangeSet f') (chRangeSet f) :| ds (f':|fs)
 
 --------------------------------------------------------------------------------
 -- chainComplexTrafo -
 
-chainComplexTrafo :: (Ring r, Commutative r, SimplicalTransformable s x y)
+-- | the induced transformation between chain complexes.
+chainComplexTrafo :: (Ring r, Commutative r, Homological s x y)
   => ChainComplexTrafoRep r s n x y -> ChainComplexTrafo To n (Matrix r)
-chainComplexTrafo t@(ChainComplexTrafoRep fs ms)
-  = ChainComplexTrafo (Transformation mx my (m0 (F.head fs) (F.head ms):|F.tail ms)) where
-  
-  (dx,dy) = cctDomainRepRangeRep t
-
-  ChainComplex mx = chainComplex dx
-  ChainComplex my = chainComplex dy
-
-  -- addapting the first matrix according to Regular respectively Extended definition.
-  m0 :: Ring r
-    => ChainHom r s (C.Chain r s x) (C.Chain r s y)
-    -> Matrix r
-    -> Matrix r
-  m0 (ZeroHom sx sy) _ = zero (dx:>dy) where
-    dx = dim unit ^ lengthN sx
-    dy = dim unit ^ lengthN sy
-    
-  m0 _ m = m
-
-cctDomainRepRangeRep :: (Ring r, Commutative r, SimplicalTransformable s x y)
-  => ChainComplexTrafoRep r s n x y -> (ChainComplexRep r s n x, ChainComplexRep r s n y)
-cctDomainRepRangeRep (ChainComplexTrafoRep fs _)
-  = ( ChainComplexRep dx (amap1 (repMatrix . chainHomRep) dx)
-    , ChainComplexRep dy (amap1 (repMatrix . chainHomRep) dy)
-    )
-  where
-    (dx,dy) = cc fs
-
-    cc :: (Ring r, Commutative r, SimplicalTransformable s x y)
-      => FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-      -> ( FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
-         , FinList n (ChainHom r s (C.Chain r s y) (C.Chain r s y))
-         )
-    cc (_:|Nil)    = (Nil,Nil)
-    cc (f:|f':|fs) = hh f f' >: cc (f':|fs)
-
-    (a,b) >: (as,bs) = (a:|as,b:|bs)
-
-    hh :: SimplicalTransformable s x y
-      => ChainHom r s (C.Chain r s x) (C.Chain r s y)
-      -> ChainHom r s (C.Chain r s x) (C.Chain r s y)
-      -> ( ChainHom r s (C.Chain r s x) (C.Chain r s x)
-         , ChainHom r s (C.Chain r s y) (C.Chain r s y)
-         )
-    hh f@(ZeroHom _ _) f' = ( ZeroHom (chDomainSet f') (chDomainSet f)
-                            , ZeroHom (chRangeSet f') (chRangeSet f)
-                            )
-    hh f f' = ( Boundary (chDomainSet f') (chDomainSet f)
-              , Boundary (chRangeSet f') (chRangeSet f)
-              )
+chainComplexTrafo r@(ChainComplexTrafoRep fs) = ChainComplexTrafo (Transformation dDom dRng ms) where
+  ChainComplex dDom = chainComplex $ cctDomainRep r
+  ChainComplex dRng = chainComplex $ cctRangeRep r
+  ms = amap1 (repMatrix . chainHomRep) fs
 
 --------------------------------------------------------------------------------
--- ChainComplexTrafoRep - Validable -
+-- ChainComplexTafoRep - Validable -
 
-instance (Ring r, Commutative r, SimplicalTransformable s x y, Typeable n)
+instance (Ring r, Commutative r, Homological s x y, Typeable n)
   => Validable (ChainComplexTrafoRep r s n x y) where
-  valid t@(ChainComplexTrafoRep fs ms) = Label "ChainComplexTrafoRep" :<=>:
-    And [ valid fs
-        , valid (chainComplexTrafo t)
-        , vldRep 0 fs ms
-        ]
-    where
-      vldRep :: (Ring r, Commutative r, Typeable s)
-        => N
-        -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-        -> FinList n (Matrix r)
-        -> Statement
-      vldRep _ Nil Nil = SValid
-      vldRep i (f:|fs) (m:|ms)
-        = And [ Label "1" :<=>: (repMatrix (chainHomRep f) == m) :?> Params ["i":=show i]
-              , vldRep (succ i) fs ms
-              ]
-
+  valid r = Label "ChainComplexTrafoRep" :<=>: (valid $ chainComplexTrafo r)
+  
 --------------------------------------------------------------------------------
 -- chainComplexTrafoRep -
 
-chainComplexTrafoRep :: (Ring r, Commutative r, Homological s x y)
+chainComplexTrafoRep :: Homological s x y
   => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexTrafoRep r s n x y
-chainComplexTrafoRep r n f = ChainComplexTrafoRep fs (amap1 (repMatrix . chainHomRep) fs) where
-  fs = ccxChainMap r n f
+chainComplexTrafoRep r n f = ChainComplexTrafoRep (ccxChainMap r n f)
 
 chainComplexTrafoRepZ :: Homological s x y
   => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexTrafoRep Z s n x y
 chainComplexTrafoRepZ = chainComplexTrafoRep
+
+
+
+
 
 
 {-
@@ -560,7 +577,7 @@ cca r n m = chainComplex r n (complex [Set [1..m]])
 
 ddZ :: (Typeable s, Entity (s x), Ord (s x), Typeable x)
   => ChainComplex To n (BoundaryOperator Z s x) -> FinList (n+2) (Matrix Z)
-ddZ = ccxBoundaryOperators . ccxMap BORepresentation
+ddZ = ccxArrows . ccxMap BORepresentation
 
 bdoZ :: (Typeable s, Entity (s x), Ord (s x), Typeable x)
   => ChainComplex To n (BoundaryOperator Z s x) -> ChainComplex To n (Matrix Z)
