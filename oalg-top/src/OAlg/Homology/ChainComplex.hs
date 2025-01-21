@@ -23,23 +23,20 @@
 --
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
-  (
+  ( -- * Chain Complex
+    ChainComplex(..), ccxPoints, ccxArrows, ccxMap
+  , chainComplex
 
-{-
-    -- * Chain Complex
-    ChainComplex(..), ccxHead, ccxPred
-  , chainComplex, chainComplexZ, Regular(..)
+    -- ** Representation
+  , ChainComplexRep(..), chainComplexRep, Regular(..)
 
-    -- ** Mapping
-  , ccxMap, ccxMap'
+    -- * Transformation
+  , ChainComplexTrafo(..), cctStart, cctEnd
+  , chainComplexTrafo
 
-    -- * BoundaryOperator
-  , BoundaryOperator(), BoundaryOperatorRep(..), bdo, bdoDim
-  , HomBoundaryOperator(..)
-
-    -- * Simplex Set
-  , SimplexSet(..)
--}
+    -- ** Representation
+  , ChainComplexTrafoRep(..), cctDomainRep, cctRangeRep
+  , chainComplexTrafoRep
   ) where
 
 import Control.Monad
@@ -50,32 +47,6 @@ import Data.Foldable (toList)
 import Data.List as L (head,tail,repeat,(++),zip) 
 
 import OAlg.Prelude hiding (T,empty)
-
-{-
-import OAlg.Data.Canonical
-import OAlg.Data.Constructable
-import OAlg.Data.Reducible
-
-
-
-import OAlg.Structure.Number
-import OAlg.Structure.Vectorial
-import OAlg.Structure.Algebraic
-import OAlg.Structure.Exception
-
-import OAlg.Hom.Fibred
-import OAlg.Hom.Additive
-import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
-import OAlg.Hom.Distributive
-import OAlg.Hom.Vectorial
-import OAlg.Hom.Algebraic
-
-
-
-import OAlg.Entity.Product as P
-import OAlg.Entity.Sum as S hiding (R)
--}
 
 import OAlg.Category.Map
 
