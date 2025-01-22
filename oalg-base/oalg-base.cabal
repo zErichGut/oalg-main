@@ -1,11 +1,11 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
 name:           oalg-base
-version:        2.0.1.2
+version:        2.0.2.1
 synopsis:       Algebraic structures on oriented entities and limits as a tool kit to solve algebraic problems.
 description:    Basic definition of algebraic structures on oriented entities.
                 .
@@ -49,6 +49,7 @@ library
       OAlg.Adjunction.Limes
       OAlg.Category.Applicative
       OAlg.Category.Definition
+      OAlg.Category.Map
       OAlg.Category.Path
       OAlg.Category.Proposition
       OAlg.Category.Unify
@@ -66,9 +67,11 @@ library
       OAlg.Data.Dualisable
       OAlg.Data.Either
       OAlg.Data.Equal
+      OAlg.Data.Filterable
       OAlg.Data.FinitelyPresentable
       OAlg.Data.Generator
       OAlg.Data.Identity
+      OAlg.Data.Logical
       OAlg.Data.Maybe
       OAlg.Data.Number
       OAlg.Data.Opposite
@@ -166,6 +169,9 @@ library
       OAlg.Structure.Fibred
       OAlg.Structure.Fibred.Definition
       OAlg.Structure.Fibred.Proposition
+      OAlg.Structure.Lattice
+      OAlg.Structure.Lattice.Definition
+      OAlg.Structure.Lattice.Proposition
       OAlg.Structure.Multiplicative
       OAlg.Structure.Multiplicative.Definition
       OAlg.Structure.Multiplicative.Proposition
@@ -175,6 +181,9 @@ library
       OAlg.Structure.Oriented
       OAlg.Structure.Oriented.Definition
       OAlg.Structure.Oriented.Proposition
+      OAlg.Structure.PartiallyOrdered
+      OAlg.Structure.PartiallyOrdered.Definition
+      OAlg.Structure.PartiallyOrdered.Proposition
       OAlg.Structure.Proposition
       OAlg.Structure.Ring
       OAlg.Structure.Ring.Definition

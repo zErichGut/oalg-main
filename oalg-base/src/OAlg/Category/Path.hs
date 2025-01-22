@@ -35,6 +35,7 @@ import OAlg.Category.Definition
 import OAlg.Structure.Definition
 import OAlg.Entity.Definition
 
+import OAlg.Data.Logical
 import OAlg.Data.Equal
 import OAlg.Data.Validable
 import OAlg.Data.Maybe
@@ -43,7 +44,6 @@ import OAlg.Data.Dualisable
 import OAlg.Data.Opposite
 import OAlg.Data.Number
 import OAlg.Data.Boolean
-
 
 --------------------------------------------------------------------------------
 -- Path -

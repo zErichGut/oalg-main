@@ -10,353 +10,308 @@
   , GADTs
   , StandaloneDeriving
   , DataKinds
+  , TupleSections
 #-}
 
 -- |
 -- Module      : OAlg.Homology.Complex
--- Description : definition of simplical complexes.
+-- Description : definition of complexes of sets.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- definition of simplical 'Complex'.
+-- ddefinition of complexes of sets.
 module OAlg.Homology.Complex
   (
-    -- * Complex
-    Complex(..)
-  , cpxDim
-  , cpxSet, cpxSucc, cpxPred
-  , cpxIndex
-  -- , cpxHomBoundary, cpxHomBoundary'
+    -- * Complex of Sets
+    Complex(..), cpxElem, complex
+  , cpxVertices, cpxSimplices, cpxGenerators
 
-    -- ** Construction
-  , cpxEmpty, (<+), complex
-  -- , SomeComplex(..)
+    -- * Constructions
+  , cpxProduct, cpxProductAsc
 
-    -- * Examples
-    -- ** Dimension 1
-  , segment
-
-    -- ** Dimension 2
-  , triangle, plane, torus, torus2
-  , kleinBottle, moebiusStrip
-  , projectivePlane
-
-  , dh0, dh1, dh2
-
-    -- ** Dimension n
-  , sphere
+    -- * Map
+  , ComplexMap(..), cpmForget, cpmDomain, cpmRange
+  , cpmMap, cpmGraph
 
   ) where
 
-import Control.Monad (join)
+import Control.Monad
 
 import Data.Typeable
-import Data.List as L (head)
-import Data.Foldable (toList)
-import Data.Maybe
+import Data.List as L ((++))
+import Data.Foldable (foldl)
 
 import OAlg.Prelude
 
-import OAlg.Data.Symbol hiding (S)
+import OAlg.Category.Map
+
+import OAlg.Data.Filterable
 
 import OAlg.Hom.Distributive ()
 
-import OAlg.Entity.Natural as Nat hiding ((++))
-import OAlg.Entity.FinList as F hiding (zip,(++)) 
-import OAlg.Entity.Sequence
+import OAlg.Entity.Sequence hiding (span,isEmpty)
 
-import OAlg.Homology.Simplex
+import OAlg.Structure.PartiallyOrdered
 
+import OAlg.Homology.Simplical
 
 --------------------------------------------------------------------------------
 -- Complex -
 
--- | complex of dimension @__n__@ over @__x__@.
-data Complex n x where
-  Vertices :: Set x -> Complex N0 x
-  Complex  :: Set (Simplex (S (S n)) x) -> Complex n x -> Complex (S n) x
+-- | complex of set-simplices over a vertex type @__x__@.
+--
+-- __Properties__ Let @c = 'Complex' g@ be in @'SetComlex' __x__@, then holds:
+--
+-- (1) 'empty' is in @g@.
+--
+-- (2) For all @(z,sx)@ in @g@ and @s@ in @sx@ holds:
+--
+--     (2.1) @'dimension' s '==' z@.
+--
+--     (2.2) @s '<<=' 'cpxVertices' c@.
+--
+-- (3) For all @..(_,su)':'(_,sv)..@ holds:: @'faces'' sv '<<=' su@.
+--
+-- __Note__ From the property 3 above follows: If @s@ is a set-simplex in @c@ and @t '<<=' s@ then
+-- @t@ is in @c@.
+newtype Complex x = Complex (Graph Z (Set (Set x))) deriving (Show,Eq,Ord)
+
 
 --------------------------------------------------------------------------------
--- cpxDim -
+-- Complex - Entity -
 
--- | the dimension of the complex space.
-cpxDim :: Complex n x -> Any n
-cpxDim (Vertices _)  = W0
-cpxDim (Complex _ c) = SW $ cpxDim c
+instance (Entity x, Ord x) => Validable (Complex x) where
+  valid c@(Complex g@(Graph zsx)) = Label "Complex" :<=>: case zsx of
+    [] -> Label "1" :<=>: False :?> Params ["g":=show g]
+    _  -> vldGraph zsx
+    where
+      vs = cpxVertices c
+      
+      vldGraph [] = SValid
+      vldGraph ((z,sx):zsx)
+        = And [ vldDim vs z (setxs sx)
+              , vldFaces sx zsx
+              , vldGraph zsx
+              ]
 
---------------------------------------------------------------------------------
--- cpxSet -
+      vldDim _ _ [] = SValid
+      vldDim sv z (s:sx)
+        = And [ Label "2.1" :<=>: (dimension s == z) :?> Params ["z":=show z, "s":=show s]
+              , Label "2.2" :<=>: (s <<= sv) :?> Params ["s // sv" := show (s // sv)]
+              , vldDim sv z sx
+              ]
 
-cpxSet :: Complex n x -> Set (Simplex (n+1) x)
-cpxSet (Vertices (Set xs))  = Set $ amap1 (Simplex . (:|Nil)) xs
-cpxSet (Complex s _)        = s
+      vldFaces _ [] = SValid
+      vldFaces su ((_,sv):_)
+        = Label "3" :<=>: let fs = faces' sv in
+            (fs <<= su) :?> Params ["faces' sv // su" := show (fs // su)]
 
---------------------------------------------------------------------------------
--- cpxIndex -
 
-cpxIndex :: Ord x => Complex n x -> Simplex (n+1) x -> Maybe N
-cpxIndex = setIndex . cpxSet
-
---------------------------------------------------------------------------------
--- cpxSucc -
-
-cpxSucc :: Complex n x -> Complex (n+1) x
-cpxSucc c = Complex setEmpty c
-
---------------------------------------------------------------------------------
--- cpxPred -
-
-cpxPred :: Complex (n+1) x -> Complex n x
-cpxPred (Complex _ c) = c
-
---------------------------------------------------------------------------------
--- Comlex - Entity -
-
-deriving instance Show x => Show (Complex n x)
-
-deriving instance Eq x => Eq (Complex n x)
-
-instance (Entity x, Ord x) => Validable (Complex n x) where
-  valid (Vertices xs) = valid xs
-  valid (Complex xs@(Set xs') c') = valid xs && valid c' && vldSimplices 0 xs' (cpxIndex c') where
-
-      vldSimplices :: (Entity x, Ord x)
-        => N -> [Simplex (n+1) x] -> (Simplex n x -> Maybe N) -> Statement
-      vldSimplices _ [] _      = SValid
-      vldSimplices i (s:ss) fs = vldFaces i 0 (faces s) fs && vldSimplices (succ i) ss fs
-
-      vldFaces :: (Entity x, Ord x)
-        => N -> N -> FinList m (Simplex n x) -> (Simplex n x -> Maybe N) -> Statement
-      vldFaces _ _ Nil _      = SValid
-      vldFaces i j (s:|ss) fs = case fs s of
-        Just _  -> vldFaces i (succ j) ss fs
-        Nothing -> False :?> Params ["index (simplex,face)":=show (i,j), "simplex":=show s]
-
-instance (Entity x, Ord x, Typeable n) => Entity (Complex n x)
+instance (Entity x, Ord x) => Entity (Complex x)
 
 --------------------------------------------------------------------------------
--- (<+) -
+-- cpxSimplices -
 
-infixr 5 <+
+-- | the simplices of the given complex.
+cpxSimplices :: Complex x -> Graph Z (Set (Set x))
+cpxSimplices (Complex g) = g
 
--- | merging a set of simpliex with a complex.
-(<+) :: Ord x => Set (Simplex (n+1) x) -> Complex n x -> Complex n x
-Set xs <+ Vertices s' = Vertices (Set (amap1 x xs) `setUnion` s') where
-  x :: Simplex N1 x -> x
-  x (Simplex x') = F.head x'
-s@(Set xs) <+ Complex s' c = Complex s'' (fs <+ c) where
-  s'' = s `setUnion` s'
-  fs  = set $ join $ amap1 (toList . faces) xs
-  
-  
 --------------------------------------------------------------------------------
--- cpxEmpty -
+-- cpxGenerators -
 
-cpxEmpty :: Attestable n => Complex n x
-cpxEmpty = ce attest where
-  ce :: Any n -> Complex n x
-  ce W0 = Vertices setEmpty
-  ce (SW n) = Complex setEmpty (ce n)
+-- | the generators for the given complex.
+cpxGenerators :: (Entity x, Ord x) => Complex x -> Graph Z (Set (Set x))
+cpxGenerators (Complex g) = filter (not . isEmpty) (g // gphFaces g)
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- cpxElem -
+
+-- | checking for being a simplex of the given complex.
+cpxElem :: (Entity x, Ord x) => Complex x -> Set x -> Bool
+cpxElem (Complex g) = isElem $ setIndex $ gphset g where
+  isElem :: (Entity x, Ord x) => ((Z,Set x) -> Maybe n) -> Set x -> Bool
+  isElem i = isJust . i . spxAdjDim
+
+cpx :: N -> Complex N
+cpx n = complex [Set [1..n]]
+
+--------------------------------------------------------------------------------
 -- complex -
 
--- | generates a complex by the given set of simplices.
-complex :: (Ord x, Attestable n) => Set (Simplex (n+1) x) -> Complex n x
-complex s = s <+ cpxEmpty
+-- | the induced complex given by a list of simplices.
+complex :: (Entity x, Ord x) => [Set x] -> Complex x
+complex = Complex . foldl (||) empty . amap1 simplices
+
+--------------------------------------------------------------------------------
+-- cpxVertices -
+
+-- | the set of vertices of the given complex.
+cpxVertices :: Complex x -> Set x
+cpxVertices (Complex g) = case gphxs g of
+  _ : (0,vs) : _ -> Set $ join $ amap1 setxs $ setxs vs
+  _              -> Set []
+
+--------------------------------------------------------------------------------
+-- cpxProduct -
+
+cpxProduct' :: (Entity x, Ord x, Entity y, Ord y)
+  => ([x] -> Bool) -> ([y] -> Bool) -> Complex x -> Complex y -> Complex (x,y)
+cpxProduct' px py a b = Complex $ filter (not . isEmpty) $ gphSetFilter (elig px py a b) gp where
+  gp = simplices $ Set [(x,y) | x <- setxs $ cpxVertices a, y <- setxs $ cpxVertices b]
+
+  map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
+  map = Map
+
+  elig :: (Entity x, Ord x, Entity y, Ord y)
+    => ([x] -> Bool) -> ([y] -> Bool) -> Complex x -> Complex y -> Set (x,y) -> Bool
+  elig px py a b =  (cpxElem a . amap1 (map fst)) && (cpxElem b . amap1 (map snd))
+                 && isFaithful px (map fst) && isFaithful py (map snd)
+
+cpxProduct :: (Entity x, Ord x, Entity y, Ord y) => Complex x -> Complex y -> Complex (x,y)
+cpxProduct = cpxProduct' (const True) (const True)
+
+cpxProductAsc :: (Entity x, Ord x, Entity y, Ord y) => Complex x -> Complex y -> Complex (x,y)
+cpxProductAsc = cpxProduct' isAsc isAsc
+--------------------------------------------------------------------------------
+-- isFaithful -
+
+-- | checks if the mapped list of the underlying list respects the given predicate.
+isFaithful :: ([y] -> Bool) -> Map EntOrd x y -> Set x -> Bool
+isFaithful p f (Set xs) = p $ amap1 f xs
 
 --------------------------------------------------------------------------------
 -- ComplexMap -
 
--- | /continous/ mapping between two complexes, i.e. the underlying mappin induces a mapping between
---  the simplices of the given complexes.
+-- | mapping between complexes, where the given map of vertices induces a mapping between the two
+-- given set-simplex sets. Such a mapping is called __/faithfully oriented/__ if the induced mapping
+-- of the set-simplices respects also the given orientation, i.e. @'isFaithful' 'isAsc'@.
 --
---  __Property__ Let @f = 'ComplexMap' a b f'@ be in @'ComplexMap' __x__ __y__@, then holds:
+-- __Properties__ Let @m@ be in @'ComplexMap' __s__ ('Complex' __x__) ('Complex' __y__), then
+-- holds: Let @f = 'cpmMap' m@ in
 --
-data ComplexMap x y where
+--  (1) For all set-simplices @s@ in @'cpmDomain' m@ holds:
+--  @'amap1' f s@ is an element of @'cpmRange' m@, where 
+--
+--  (2) If @m@ matches @'ComplexMapAsc' _ _ _@ then for all set-simplices
+--  @s@ in @'cpmDomain' m@ holds: @'isFaithful' 'isAsc' f s@.
+--
+-- __Note__ If @'cpmDomain' m@ and @'cpmRange' m@ are 'valid' then it is sufficient to test the
+-- properties above on the generators @'cpxGenerators' ('cpmDomain' m)@.
+data ComplexMap s a b where
   ComplexMap
-    :: ( Ord x, Entity x, Attestable n
-       , Ord y, Entity y, Attestable m
-       )
-     => Complex n x -> Complex m y -> (x -> y) -> ComplexMap x y
-
-
-{-
-
---------------------------------------------------------------------------------
--- cpxOrd -
-
-cpxOrd :: Simplical s x => Complex s n x -> Struct Ord' (s n x)
-cpxOrd _ = sOrd
-
+    :: Complex x -> Complex y
+    -> Map EntOrd x y
+    -> ComplexMap [] (Complex x) (Complex y)
+  ComplexMapAsc
+    :: Complex x -> Complex y
+    -> Map EntOrd x y
+    -> ComplexMap Asc (Complex x) (Complex y)
 
 --------------------------------------------------------------------------------
--- cpxHomBoundary -
+-- cpmForget -
 
-cpxHomBoundary :: (Ring r, Commutative r, Entity x, Ord x, Attestable n)
-  => Complex (n+1) x -> Representable r (HomBoundary r) (Chain r (n+1) x) (Chain r n x)
-cpxHomBoundary (Complex sn' c) = Representable HomBoundary sn' (cpxSet c)
-
-cpxHomBoundary' :: (Ring r, Commutative r, Entity x, Ord x, Attestable n)
-  => p r -> Complex (n+1) x -> Representable r (HomBoundary r) (Chain r (n+1) x) (Chain r n x)
-cpxHomBoundary' _ = cpxHomBoundary
--}
-
+-- | forgets eventually the faithfully oriented constraint.
+cpmForget :: ComplexMap s a b -> ComplexMap [] a b
+cpmForget m@(ComplexMap _ _ _)  = m
+cpmForget (ComplexMapAsc a b f) = ComplexMap a b f   
 
 --------------------------------------------------------------------------------
--- triangle -
+-- cpmDomain -
 
--- | triangle given by the three points.
-trn :: v -> v -> v -> Simplex N3 v
-trn a b c = Simplex (a:|b:|c:|Nil)
-
--- | the square devided into two simplices.
---
--- @
---    c ---> d
---    ^    ^ ^
---    |   /  |
---    |  /   | 
---    | /    |
---    a ---> b
--- @
-ru :: v -> v -> v -> v -> [Simplex N3 v]
-ru a b c d = [trn a c d, trn a b d]
-
--- | the square devided into two simplices.
---
--- @
---    c ---> d
---    ^    ^ |
---    |   /  |
---    |  /   | 
---    | /    v
---    a ---> b
--- @
-rd :: v -> v -> v -> v -> [Simplex N3 v]
-rd a b c d = [trn a c d, trn a d b]
-
--- | the square devided into two simplices.
---
--- @
---    c <--- d
---    ^    ^ ^
---    |   /  |
---    |  /   | 
---    | /    |
---    a ---> b
--- @
-lu :: v -> v -> v -> v -> [Simplex N3 v]
-lu a b c d = [trn a d c, trn a b d]
-
--- | the square devided into two simplices.
---
--- @
---    c <--- d
---    ^    ^ |
---    |   /  |
---    |  /   | 
---    | /    v
---    a ---> b
--- @
-ld :: v -> v -> v -> v -> [Simplex N3 v]
-ld a b c d = [trn a d c, trn a d b]
-
-
--- | the simplex-set of the triangle given by the tree points.
-triangle :: v -> v -> v -> Set (Simplex N3 v)
-triangle a b c = Set [trn a b c]
+-- | the domain of a set-complex map.
+cpmDomain :: ComplexMap s (Complex x) (Complex y) -> Complex x
+cpmDomain (ComplexMap a _ _)    = a
+cpmDomain (ComplexMapAsc a _ _) = a
 
 --------------------------------------------------------------------------------
--- segment -
+-- cpmRange -
 
-segment :: v -> v -> Set (Simplex N2 v)
-segment a b = Set [Simplex (a:|b:|Nil)]
+-- | the range of a set-complex map.
+cpmRange :: ComplexMap s (Complex x) (Complex y) -> Complex y
+cpmRange (ComplexMap _ b _)    = b
+cpmRange (ComplexMapAsc _ b _) = b
 
 --------------------------------------------------------------------------------
--- plane -
+-- cpmMap -
 
-pln :: [a] -> [b] -> [Simplex N3 (a,b)]
-pln as bs = plnas as bs where
+-- | the underling mapping of vertices.
+cpmMap :: ComplexMap s (Complex x) (Complex y) -> Map EntOrd x y
+cpmMap (ComplexMap _ _ f)    = f
+cpmMap (ComplexMapAsc _ _ f) = f
+
+--------------------------------------------------------------------------------
+-- cpmGraph -
+
+-- | the graph of the induced mapping of the vertices.
+cpmGraph :: ComplexMap s (Complex x) (Complex y) -> Graph x y
+cpmGraph m = Graph [(v,f v) | v <- setxs $ cpxVertices $ cpmDomain m] where Map f = cpmMap m
+
+--------------------------------------------------------------------------------
+-- ComplexMap - Entity -
+
+instance Show (ComplexMap s a b) where
+  show m = case m of
+    ComplexMap _ _ (Map _)    -> "ComplexMap" ++ shCmps m
+    ComplexMapAsc _ _ (Map _) -> "ComplexMapAsc" ++ shCmps m
+    where 
+      shCmps m = " (" ++ (show $ cpmDomain m) ++ ") (" ++ (show $ cpmRange m)
+             ++ ") (" ++ (show $ cpmGraph m) ++ ")"
+
+instance Eq (ComplexMap s a b) where
+  f@(ComplexMap a b (Map _)) == g@(ComplexMap a' b' _) = (a,b,cpmGraph f) == (a',b',cpmGraph g)
+  f == g                                               = cpmForget f == cpmForget g
+
+
+
+instance Ord (ComplexMap s a b) where
+  compare f@(ComplexMap a b (Map _)) g@(ComplexMap a' b' _)
+    = compare (a,b,cpmGraph f) (a',b',cpmGraph g)
+  compare f g = compare (cpmForget f) (cpmForget g)
+
+
+-- | validity according to property 1.
+relComplexMap :: ComplexMap [] a b -> Statement
+relComplexMap (ComplexMap a b f@(Map _))
+  = And [ valid a
+        , valid b
+        , Label "1" :<=>: (fa <<= sb) :?> Params ["fa // sb":= show (fa // sb)]
+        ]
+    where
+      fa = setgph $ amap1 (map spxAdjDim . Map (amap1 f) . map snd) $ gphset $ cpxGenerators a
+      sb = cpxSimplices b
+
+      map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
+      map = Map
+
+
+instance Validable (ComplexMap s a b) where
+  valid m@(ComplexMap _ _ _)            = Label "ComplexMap" :<=>: relComplexMap m
+  valid m@(ComplexMapAsc cx _ f@(Map _)) = Label "ComplexMapAsc" :<=>:
+    And [ relComplexMap (cpmForget m)
+        , vldFaithfulAsc f (amap1 snd $ setxs $ gphset $ cpxGenerators cx)
+        ]
+    where
+      vldFaithfulAsc _ [] = SValid
+      vldFaithfulAsc f (s:ss)
+        = And [ Label "2" :<=>: isFaithful isAsc f s :?> Params ["s":= show s]
+              , vldFaithfulAsc f ss
+              ] 
+
+instance (Typeable s, Typeable a, Typeable b) => Entity (ComplexMap s a b)
+
+--------------------------------------------------------------------------------
+
+-- a = complex [Set "ab",Set "bc",Set "ac"] :: Complex Char
+-- b = complex [Set [0,1],Set [1,2], Set [0,2]] :: Complex N
+
+a = complex [Set "abc"]
+b = complex [Set [0,1]] :: Complex N
+
+c = cpxProductAsc b a
+
+p1 = ComplexMapAsc c b (Map fst)
+p2 = ComplexMapAsc c a (Map snd)
+
   
-  plnas (a0:a1:as') bs@(b0:b1:_)
-    = trn (a0,b0) (a1,b0) (a1,b1) : trn (a0,b0) (a0,b1) (a1,b1) : plnas (a1:as') bs
-  plnas [_] (_:b1:bs) = plnas as (b1:bs)
-  plnas _ _           = []
-
-plane :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N3 (a,b))
-plane (Set as) (Set bs) = set $ pln as bs
-
---------------------------------------------------------------------------------
--- torus -
-
-torus :: (Ord a, Ord b) => Set a -> Set b -> Set (Simplex N3 (a,b))
-torus (Set as) (Set bs) = set $ pln (join [as,[L.head as]]) (join [bs,[L.head bs]]) 
-
-
---------------------------------------------------------------------------------
--- sphere -
-
-sphere :: (Enum v, Ord v) => Any n -> v -> Set (Simplex (n+1) v)
-sphere n v = set $ toList $ faces $ simplex (SW n) v
-
---------------------------------------------------------------------------------
--- torus2 -
-
-torus2 :: Set (Simplex N3 Symbol)
-torus2 = set $ join
-  [ ru A B D F, ru B C F G, ru C A G D
-  , ru D F E H, ru F G H I, ru G D I E
-  , ru E H A B, ru H I B C, ru I E C A
-  ]
-
---------------------------------------------------------------------------------
--- projectivePlane -
-
-projectivePlane :: Set (Simplex N3 Symbol)
-projectivePlane = set $ join
-  [ ru V A C E, ru A B E F, rd B W F D
-  , ru C E D G, ru E F G H, rd F D H C
-  , lu D G W B, lu G H B A, ld H C A V
-  ]
-
---------------------------------------------------------------------------------
--- kleinBottle -
-
-kleinBottle :: Set (Simplex N3 Symbol)
-kleinBottle = set $ join
-  [ ru A B D F, ru B C F G, rd C A G E
-  , ru D F E H, ru F G H I, rd G E I D
-  , ru E H A B, ru H I B C, rd I D C A
-  ]
-
---------------------------------------------------------------------------------
--- moebiusStrip -
-
-moebiusStrip :: Set (Simplex N3 Symbol)
-moebiusStrip = set $ join
-  [ ru A B E F, ru B C F G, ru C D G H
-  , ru E F I J, ru F G J K, ru G H K L
-  , lu I J D C, lu J K C B, lu K L B A
-  ]
-
---------------------------------------------------------------------------------
--- dunceHat -
-
-dh0 :: Set (Simplex N3 Symbol)
-dh0 = Set [trn A A A]
-
-dh1 :: Set (Simplex N3 Symbol)
-dh1 = set [trn A B B, trn B B B, trn B A B, trn B B A]
-
-dh2 :: Set (Simplex N3 Symbol)
-dh2 = set
-  [ trn A B C, trn B C D, trn B A D
-  , trn A C B, trn C E B, trn E B A
-  , trn A D B, trn D B E, trn B E A
-  , trn C D E
-  ]
-
-
 

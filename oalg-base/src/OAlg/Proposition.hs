@@ -34,12 +34,7 @@ prpOAlgBase = Prp "OAlgBase"
                     , prpValidTautologies
                     , prpStatement
                     ]
-            , Label "Structure" :<=>:
-                And [ prpStructureN
-                    , prpStructureZ
-                    , prpStructureQ
-                    , prpStructureOS
-                    ]
+            , prpStructure
             , Label "Hom" :<=>:
                 And [ prpIdHom
                     , prpHomOp

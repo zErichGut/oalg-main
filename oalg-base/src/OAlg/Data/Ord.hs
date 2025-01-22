@@ -8,14 +8,10 @@
 --
 -- "Data.Ord" enriched with some additional elements.
 module OAlg.Data.Ord
-  ( -- * Total
-    module Ord
+  ( module Ord
   , fcompare, wcompare, coCompare, compare2
   , sortFst, sortFstBy, sortSnd, sortSndBy
   , Closure(..), cmin, cmax, cspan, Span, enumSpan
-
-    -- * Partial
-  , POrd(..)
   )
   where
 
@@ -145,21 +141,3 @@ enumSpan i0 PosInf        = [i0..]
 enumSpan i0 (It h)        = [i0..h]
 enumSpan _ NegInf         = []
 
---------------------------------------------------------------------------------
--- POrd -
-
--- | partially ordered types.
---
---  __Properties__ Let @__a__@ be an instance of 'POrd', then holds:
---
---  (1) For all @x@ in @__a__@ holds: @x '<<=' x@.
---
---  (2) For all @x@, @y@ in @__a__@ holds: If @x '<<=' y@ and @y '<<=' x@ then
---  @x '==' y@.
---
---  (3) For all @x@, @y@, @z@ in @__a__@ holds: If @x '<<=' y@ and @y '<<=' z@ then
---  @x '<<=' z@.
-class Eq a => POrd a where
-
-  infix 4 <<=
-  (<<=) :: a -> a -> Bool

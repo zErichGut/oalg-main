@@ -46,6 +46,7 @@ import Data.List(take,repeat)
 
 import OAlg.Category.Definition
 
+import OAlg.Data.Logical
 import OAlg.Data.Canonical
 import OAlg.Data.Number
 import OAlg.Data.Boolean.Definition

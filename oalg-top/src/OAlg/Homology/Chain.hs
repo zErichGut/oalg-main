@@ -8,6 +8,7 @@
            , FlexibleContexts
            , GADTs
            , StandaloneDeriving
+           , GeneralizedNewtypeDeriving
            , DataKinds
 #-}
 
@@ -21,23 +22,25 @@
 --
 -- The boundary of a 'Chain'.
 module OAlg.Homology.Chain
-  ( -- * Boundary
-    HomBoundary(..), boundary
-
+  (
     -- * Chain
-  , Chain, ch
-  , ChainZero
+    Chain, ch, chZ, boundary, chainMap
+
+    -- * Chain Homomorphism
+  , ChainHom(..), chDomainSet, chRangeSet
+  , chainHomRep
 
   ) where
 
 import Data.Typeable
 
-
-import Data.List as L (zip)
-import Data.Foldable
+import Data.List as L (zip,(++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Map
+
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
@@ -48,30 +51,28 @@ import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
 
-import OAlg.Entity.Natural
-import OAlg.Entity.Sum as Sum hiding (S)
+import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sum
+import OAlg.Entity.Matrix
 
-import OAlg.Homology.Simplex
-
---------------------------------------------------------------------------------
--- ChainZero -
-
--- | chains for empty simplex sets. For example chains with a /negative/ length.
-type ChainZero r x = SumSymbol r Empty
+import OAlg.Homology.Simplical
 
 --------------------------------------------------------------------------------
 -- Chain -
 
--- | chains of order @__o__@ as free sum over simplices of the length @__o__@.
-type Chain r (o :: N') x = SumSymbol r (Simplex o x)
-
+-- | chains as a formal sum of simplices.
+type Chain r s x = SumSymbol r (s x)
 
 --------------------------------------------------------------------------------
 -- ch -
 
--- | simplex as a chain.
-ch :: (Attestable o, Ring r, Commutative r, Entity x, Ord x) => Simplex o x -> Chain r o x
-ch = Sum.sy
+-- | a simplex as a @__r__@-chain.
+ch :: (Ring r, Commutative r, Simplical s x) => s x -> Chain r s x
+ch = sy
+
+-- | a simplces as a 'Z'-chain.
+chZ :: Simplical s x => s x -> Chain Z s x
+chZ = ch
 
 --------------------------------------------------------------------------------
 -- rAlt -
@@ -79,64 +80,148 @@ ch = Sum.sy
 rAlt :: Ring r => [r]
 rAlt = za rOne where za i = i:za (negate i)
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- zeroHom -
+
+-- | the zero homomorphism.
+zeroHom :: (Ring r, Commutative r, Simplical s y)
+  => Chain r s x -> Chain r s y
+zeroHom = ssySum (const $ LinearCombination [])
+
+--------------------------------------------------------------------------------
 -- boundary -
 
--- | the boundary operator of a chain of order @__o__@. 
-boundary :: (Attestable o, Ring r, Commutative r, Entity x, Ord x)
-  => Chain r (o+1) x -> Chain r o x
-boundary = ssySum (f rAlt) where
-  f :: [r] -> Simplex (n+1) x -> LinearCombination r (Simplex n x)
-  f rs sn' = LinearCombination (rs `zip` (toList $ faces sn'))
- 
---------------------------------------------------------------------------------
--- HomBoundary -
-
--- | the 'boundary' operator as homomorphism.
-data HomBoundary r x y where
-  HomBoundary :: (Attestable o, Entity x, Ord x) 
-    => HomBoundary r (Chain r (o+1) x) (Chain r o x)
+-- | the boundary operator of chains.
+boundary :: (Ring r, Commutative r, Simplical s x)
+  => Chain r s x -> Chain r s x
+boundary = ssySum (bdr rAlt) where
+  bdr :: Simplical s x => [r] -> s x -> LinearCombination r (s x)
+  bdr rs s = LinearCombination (rs `zip` faces s)
 
 --------------------------------------------------------------------------------
--- HomBoundary - Entity -
+-- chainMap -
 
-deriving instance Show (HomBoundary r x y)
-instance Show2 (HomBoundary r)
-
-deriving instance Eq (HomBoundary r x y)
-instance Eq2 (HomBoundary r)
-
-instance Validable (HomBoundary r x y) where
-  valid HomBoundary     = SValid
-  
-instance Validable2 (HomBoundary r)
-
-instance (Typeable r, Typeable x, Typeable y) => Entity (HomBoundary r x y)
-instance Typeable r => Entity2 (HomBoundary r)
+chainMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
+  => Map EntOrd x y -> Chain r s x -> Chain r s y
+chainMap f = ssySum (chMap f) where
+  chMap :: (Ring r, SimplicalTransformable s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
+  chMap f sx = LinearCombination [(rOne,amap1 f sx)]
 
 --------------------------------------------------------------------------------
--- HomBoundary - HomVectorial -
+-- ChainHom -
 
-instance (Ring r, Commutative r) => Morphism (HomBoundary r) where
-  type ObjectClass (HomBoundary r) = Vec r
-  homomorphous HomBoundary = Struct :>: Struct
+-- | homomorphism between chains.
+--
+-- __Property__ Let @h@ be in @'ChainHom' __r__ __s__ __x__ __y__@ where @r@ is a commutaitve ring
+-- and @s@ a 'Simplical' structure, then holds:
+--
+-- (1) In case where @h@ matches @'Boundary' ssx ssx'@ then holds:
+-- @'faces'' ssx@ is a subset of @ssx'@.
+--
+-- (2) In case where @h@ matches @'ChainMap' ssx ssy f@ then for all @sx@ in @ssx@ holds:
+-- @'amap1' f sx@ is an element of @ssy@.
+data ChainHom r s x y where
+  ZeroHom :: (Simplical s x, Simplical s y)
+    => Set (s x) -> Set (s y)
+    -> ChainHom r s (Chain r s x) (Chain r s y)
+  Boundary
+    :: Simplical s x
+    => Set (s x) -> Set (s x)
+    -> ChainHom r s (Chain r s x) (Chain r s x)
+  ChainMap
+    :: SimplicalTransformable s x y
+    => Set (s x) -> Set (s y) -> Map EntOrd x y
+    -> ChainHom r s (Chain r s x) (Chain r s y)
+
+--------------------------------------------------------------------------------
+-- chDomainSet -
+
+chDomainSet :: ChainHom r s (Chain r s x) (Chain r s y) -> Set (s x)
+chDomainSet (ZeroHom sx _)    = sx
+chDomainSet (Boundary sx _)   = sx
+chDomainSet (ChainMap sx _ _) = sx
+
+--------------------------------------------------------------------------------
+-- chRangeSet -
+
+chRangeSet :: ChainHom r s (Chain r s x) (Chain r s y) -> Set (s y)
+chRangeSet (ZeroHom _ sy)    = sy
+chRangeSet (Boundary _ sy)   = sy
+chRangeSet (ChainMap _ sy _) = sy
+--------------------------------------------------------------------------------
+-- ChainHom - Hom (Vec r) -
+
+instance (Ring r, Commutative r) => Applicative (ChainHom r s) where
+  amap (ZeroHom _ _)    = zeroHom
+  amap (Boundary _ _)   = boundary
+  amap (ChainMap _ _ f) = chainMap f
+
+instance Show (ChainHom r s x y) where
+  show (ZeroHom sx sy)    = "ZeroHom (" ++ show sx ++ ") (" ++ show sy ++ ")"
+  show (Boundary s s')    = "Boundary (" ++ show s ++ ") (" ++ show s' ++ ")"
+  show (ChainMap sx sy _) = "ChainMap (" ++ show sx ++ ") (" ++ show sy ++ ")"
+instance Show2 (ChainHom r s)
+
+instance Eq (ChainHom r s x y) where
+  ZeroHom sx sy == ZeroHom sx' sy' = sx == sx' && sy == sy'
+  Boundary s s' == Boundary t t' = s == t && s' == t'
+  ChainMap sx sy f == ChainMap sx' sy' f'
+    = sx == sx' && sy == sy' && and [amap1 f s == amap1 f' s | s <- setxs sx]
+  _ == _ = False
+instance Eq2 (ChainHom r s)
+
+instance Validable (ChainHom r s x y) where
+  valid (ZeroHom ssx ssy) = Label "ZeroHom" :<=>: valid ssx && valid ssy
+  valid (Boundary ssx ssx') = Label "Boundary" :<=>:
+    And [ valid ssx
+        , valid ssx'
+        , Label "1" :<=>: let fs = faces' ssx in
+            (fs <<= ssx') :?> Params ["fs":= show (fs // ssx')]
+        ]
+  valid (ChainMap ssx ssy f) = Label "ChainMap" :<=>:
+    And [ valid ssx
+        , valid ssy
+        , Label "2" :<=>: let ssy' = amap1 (map f) ssx in
+            (ssy' <<= ssy) :?> Params ["ssy'" := show (ssy' // ssy)]
+        ]
+    where map :: SimplicalTransformable s x y => Map EntOrd x y -> Map EntOrd (s x) (s y)
+          map = Map . amap1
+instance Validable2 (ChainHom r s)
+
+instance (Typeable r, Typeable s, Typeable x, Typeable y)
+  => Entity (ChainHom r s x y)
+
+instance (Typeable r, Typeable s) => Entity2 (ChainHom r s)
 
 
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) Typ
-instance (Ring r, Commutative r) => EmbeddableMorphismTyp (HomBoundary r) 
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) Fbr
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) Add
-instance (Ring r, Commutative r) => EmbeddableMorphism (HomBoundary r) (Vec r)
+instance (Ring r, Commutative r, Typeable s) => Morphism (ChainHom r s) where
+  type ObjectClass (ChainHom r s) = Vec r
+  homomorphous (ZeroHom _ _)    = Struct :>: Struct
+  homomorphous (Boundary _ _)   = Struct :>: Struct
+  homomorphous (ChainMap _ _ _) = Struct :>: Struct
 
-instance (Ring r, Commutative r) => Applicative (HomBoundary r) where
-  amap HomBoundary     = boundary
-  
-instance (Ring r, Commutative r) => HomFibred (HomBoundary r) where
-  rmap HomBoundary     = const ()
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Fbr
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Typ
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphismTyp (ChainHom r s)
+instance (Ring r, Commutative r, Typeable s) => HomFibred (ChainHom r s) where
+  rmap (ZeroHom _ _)    = const ()
+  rmap (Boundary _ _)   = const ()
+  rmap (ChainMap _ _ _) = const ()
 
-instance (Ring r, Commutative r) => HomAdditive (HomBoundary r)
-instance (Ring r, Commutative r) => HomVectorial r (HomBoundary r)
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) Add
+instance (Ring r, Commutative r, Typeable s) => HomAdditive (ChainHom r s)
 
+instance (Ring r, Commutative r, Typeable s) => EmbeddableMorphism (ChainHom r s) (Vec r)
+instance (Ring r, Commutative r, Typeable s) => HomVectorial r (ChainHom r s)
 
+--------------------------------------------------------------------------------
+-- chainHomRep -
 
+chainHomRep
+  :: (Ring r, Commutative r, Typeable s)
+  => ChainHom r s (Chain r s x) (Chain r s y)
+  -> Representable r (ChainHom r s) (Chain r s x) (Chain r s y)
+chainHomRep h@(ZeroHom sx sy)     = Representable h sx sy
+chainHomRep h@(Boundary s s')    = Representable h s s'
+chainHomRep h@(ChainMap sx sy _) = Representable h sx sy
 

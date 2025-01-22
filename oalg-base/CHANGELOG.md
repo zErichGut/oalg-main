@@ -86,3 +86,28 @@ has been defined by EmbeddingFrom.
 
 ### Resolved
 - Orphan instance for Projectible Sheaf and Path by removing the general definition to Sum and Product.
+
+## [2.0.2] - 2025-01-13
+
+### Added
+- class Functorial1
+- class Filterable in OAlg.Data.Filterable.
+- structure EntOrd for ordered entities.
+- module OAlg.Data.Logical
+- module OAlg.Category.Map
+- module OAlg.Boolean.Definition: class Logical as base class for Booleans, class Erasable.
+- classes PartiallyOrdered, Empty, Full in OAlg.Structure.PartiallyOrdered.Definition
+- class Lattice in OAlg.Structure.Lattice.Definition.
+- module OAlg.Entity.Seqeuence.Set: setPower, setIsEmpty, setIntersection, setDifference, setTakeN
+  setFilter, instance Erasable (Set x)
+- module OAlg.Entity.Sequence.Graph: gphTakeN, gphset, setgph, gphUnion, gphIntersection,
+gphSetFilter, gphDifference, isSubGraph, instance Ord (Graph i x), Lattice (Graph a (Set b)),
+instance Filterable (Graph i).
+- Propositions for lattices, see OAlg.Structure.Lattice.Proposition
+- instances Ord and PartiallyOrdered for Op.
+
+### Changed
+- the class POrd has been renamed to PartiallyOrdered and moved to
+OAl.Structure.PartiallyOrdered.Definition.
+- in the module OAlg.Entity.Definition: Empty to EntEmpty, empty to fromEmpty,
+Empty2 to EntEmpty2, empty2 to fromEmpty2.

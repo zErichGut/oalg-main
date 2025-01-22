@@ -24,6 +24,7 @@ module OAlg.Prelude
   , module Vld
 
     -- * Data
+  , module Lgc
   , module Bol
   , module Eql
   , module Myb
@@ -81,6 +82,7 @@ import OAlg.Category.Definition as Cat
 import OAlg.Category.Proposition as Prp
 import OAlg.Control.Validate as Vld
 
+import OAlg.Data.Logical as Lgc
 import OAlg.Data.Statement as Stm
 import OAlg.Data.X as X
 import OAlg.Data.Validable as Vlb

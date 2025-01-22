@@ -39,7 +39,7 @@ import Control.Monad
 
 import Data.List (map,(++),repeat,zip)
 
-import OAlg.Prelude
+import OAlg.Prelude hiding ((//))
 
 import OAlg.Data.Canonical
 import OAlg.Data.FinitelyPresentable

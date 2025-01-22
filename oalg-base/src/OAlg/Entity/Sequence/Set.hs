@@ -3,6 +3,7 @@
 
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -18,9 +19,10 @@ module OAlg.Entity.Sequence.Set
   ( 
     -- * Set
     Set(..), set, setSpan, setxs, setSqc, setMap, isSubSet
+  , setPower, setFilter, setTakeN
 
     -- * Operations
-  , setEmpty, setUnion
+  , setEmpty, setIsEmpty, setUnion, setIntersection, setDifference
 
     -- * Lookup
   , setIndex 
@@ -36,13 +38,18 @@ module OAlg.Entity.Sequence.Set
 import Control.Monad
 
 import Data.Foldable
-import Data.List (head,sort,group,map,filter,zip)
+import Data.List as L (head,sort,group,map,zip,(++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Map
+
 import OAlg.Data.Tree
+import OAlg.Data.Filterable
 
 import OAlg.Structure.Number
+import OAlg.Structure.PartiallyOrdered as P
+import OAlg.Structure.Lattice.Definition
 
 --------------------------------------------------------------------------------
 -- Set -
@@ -56,7 +63,7 @@ import OAlg.Structure.Number
 --
 --  (2) @'lengthN' s '==' 'lengthN' xs@.
 --
---  __Note__ The canonical ordering 'Ord' and the subset ordering 'POrd' are not equivalent.
+--  __Note__ The canonical ordering 'Ord' and the subset ordering 'PartiallyOrdered' are not equivalent.
 newtype Set x = Set [x] deriving (Show,Eq,Ord,LengthN,Foldable)
 
 relSet :: (Validable x, Ord x, Show x) => Set x -> Statement
@@ -86,6 +93,13 @@ set = Set . amap1 head . group . sort
 -- | the elements of a set.
 setxs :: Set x -> [x]
 setxs (Set xs) = xs
+
+--------------------------------------------------------------------------------
+-- setTakeN -
+
+-- | takes the first @n@ elements.
+setTakeN :: N -> Set x -> Set x
+setTakeN n (Set xs) = Set $ takeN n xs
 
 --------------------------------------------------------------------------------
 -- setSpan -
@@ -119,11 +133,46 @@ setSqc mx (Set is)
   $ map mx is
 
 --------------------------------------------------------------------------------
+-- setFilter -
+
+-- | filtering a set according to a given predicate.
+setFilter :: (x -> Bool) -> Set x -> Set x
+setFilter p (Set xs) = Set $ filter p xs
+
+instance Filterable Set where
+  filter = setFilter
+
+--------------------------------------------------------------------------------
+-- setIsEmpty -
+
+-- | checking for the empty set.
+setIsEmpty :: Set x -> Bool
+setIsEmpty (Set xs) = case xs of
+  [] -> True
+  _  -> False
+  
+--------------------------------------------------------------------------------
 -- setEmpty -
 
 -- | the empty set.
 setEmpty :: Set x
 setEmpty = Set []
+
+--------------------------------------------------------------------------------
+-- setPower -
+
+-- | the power set of a given set, grouped by there length.
+setPower :: Set x -> Set (N,Set (Set x))
+setPower = Set . spwr where
+  spwr (Set [])     = [(0,Set [Set []])]
+  spwr (Set (x:xs)) = (0,Set [Set []]) : (x <<: spwr (Set xs))
+  
+  (<<:) :: x -> [(N,Set (Set x))] -> [(N,Set (Set x))]
+  x <<: ((_,Set ss):(n,Set ss'):nss) = (n,Set (amap1 (x<:) ss ++ ss')) : (x <<: ((n,Set ss'):nss))
+  x <<: [(n,Set ss)]                 = [(succ n,Set $ amap1 (x<:) ss)]
+  _ <<: []                           = throw $ ImplementationError "spwr"
+
+  x <: Set xs = Set (x:xs)
 
 --------------------------------------------------------------------------------
 -- setUnion -
@@ -139,6 +188,31 @@ setUnion (Set xs) (Set ys) = Set $ un xs ys where
     GT -> y:un xs  ys'
 
 --------------------------------------------------------------------------------
+-- setDifference -
+
+-- | difference of two sets.
+setDifference :: Ord x => Set x -> Set x -> Set x
+setDifference (Set xs) (Set ys) = Set $ diff xs ys where
+  diff [] _          = []
+  diff xs []         = xs
+  diff (x:xs) (y:ys) = case x `compare` y of
+    LT -> x : diff xs (y:ys)
+    EQ -> diff xs ys
+    GT -> diff (x:xs) ys
+
+--------------------------------------------------------------------------------
+-- setIntersection -
+
+-- | intersection of two sets.
+setIntersection :: Ord x => Set x -> Set x -> Set x
+setIntersection (Set xs) (Set ys) = Set $ intr xs ys where
+  intr (x:xs) (y:ys) = case x `compare` y of
+    LT -> intr xs (y:ys)
+    EQ -> x : intr xs ys
+    GT -> intr (x:xs) ys
+  intr _ _ = []
+
+--------------------------------------------------------------------------------
 -- isSubSet -
 
 -- | checks for being a sub set.
@@ -150,6 +224,23 @@ isSubSet (Set xs) (Set ys) = sbs xs ys where
     LT -> False
     EQ -> sbs xs' ys'
     GT -> sbs xs ys'
+
+--------------------------------------------------------------------------------
+-- Set - ErasableLattice -
+
+instance Ord x => PartiallyOrdered (Set x) where (<<=) = isSubSet
+instance Ord x => Empty (Set x) where
+  empty = setEmpty
+  isEmpty (Set []) = True
+  isEmpty (Set _)  = False
+
+instance Ord x => Logical (Set x) where
+  (||) = setUnion
+  (&&) = setIntersection
+
+instance Ord x => Lattice (Set x)
+
+instance Ord x => Erasable (Set x) where (//) = setDifference
 
 --------------------------------------------------------------------------------
 -- setIndex -
@@ -173,11 +264,19 @@ setIndex (Set xs) = lp (lt (xs `zip` [0..]))
 
 lp :: Ord x => Tree x (x,y) -> x -> Maybe y
 lp t x = let (x',y) = trLookup t x in if x' == x then Just y else Nothing
---------------------------------------------------------------------------------
--- Set - POrd -
 
-instance Ord x => POrd (Set x) where
-  (<<=) = isSubSet  
+--------------------------------------------------------------------------------
+-- Map -
+
+instance Applicative1 (Map Ord') Set where
+  amap1 (Map f) (Set xs) = set $ amap1 f xs
+instance Functorial1 (Map Ord') Set
+
+instance Applicative1 (Map EntOrd) Set where
+  amap1 f = amap1 (ordMap f) where
+    ordMap :: Map EntOrd x y -> Map Ord' x y
+    ordMap (Map f) = Map f
+instance Functorial1 (Map EntOrd) Set
 
 --------------------------------------------------------------------------------
 -- xSet -

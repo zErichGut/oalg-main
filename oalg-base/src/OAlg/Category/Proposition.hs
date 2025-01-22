@@ -59,6 +59,7 @@ import OAlg.Structure.Definition
 import OAlg.Category.Path
 import OAlg.Category.Unify
 
+import OAlg.Data.Logical
 import OAlg.Data.X
 import OAlg.Data.Number
 import OAlg.Data.Dualisable
@@ -66,7 +67,6 @@ import OAlg.Data.Opposite
 import OAlg.Data.Statement
 import OAlg.Data.Show
 import OAlg.Data.Equal
-import OAlg.Data.Boolean
 
 import OAlg.Entity.Definition
 

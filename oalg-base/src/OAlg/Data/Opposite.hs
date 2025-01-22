@@ -17,22 +17,39 @@ module OAlg.Data.Opposite
       
   ) where
 
+import Prelude hiding ((&&),(||))
+
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.Logical
+
 --------------------------------------------------------------------------------
 -- Op -
 
 -- | Predicate for the opposite of a type @__x__@. 
 newtype Op x = Op x deriving (Show,Read,Eq)
 
+--------------------------------------------------------------------------------
+-- Op (x) - Instances -
+
+instance Ord x => Ord (Op x) where Op x `compare` Op y = y `compare` x
+
+instance Logical a => Logical (Op a) where
+  Op a || Op b = Op (a && b)
+  Op a && Op b = Op (a || b)
+
+--------------------------------------------------------------------------------
+-- fromOp -
 -- | from @'Op' x@.
 fromOp :: Op x -> x
 fromOp (Op x) = x
 
+--------------------------------------------------------------------------------
+-- fromOpOp -
+
 -- | from @'Op' ('Op' x)@.
 fromOpOp :: Op (Op x) -> x
 fromOpOp (Op (Op x)) = x
-
 
 --------------------------------------------------------------------------------
 -- Op2 -

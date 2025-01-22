@@ -23,6 +23,9 @@ module OAlg.Entity.Sequence.Permutation
     -- * Permutable
   , PermutableSequence(..), permuteByN
 
+    -- * Signum
+  , pmtSign, splitCycles, splitCycle, Cycle(..)  
+
     -- * Form
   , PermutationForm(..), pmf
 
@@ -38,12 +41,13 @@ module OAlg.Entity.Sequence.Permutation
 
 import Control.Monad hiding (sequence)
 
-import Data.List (map,filter,zip,repeat,(++),head,tail,splitAt)
+import Data.List as L (map,zip,repeat,(++),head,tail,splitAt,reverse,span)
 import Data.Foldable
 import Data.Proxy
 
 import OAlg.Prelude
 
+import OAlg.Data.Filterable
 import OAlg.Data.Canonical
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
@@ -51,16 +55,18 @@ import OAlg.Data.Symbol (Symbol())
 
 import OAlg.Entity.Product
 
-import OAlg.Entity.Sequence.Definition
+import OAlg.Entity.Sequence.Definition as D
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.CSequence
 import OAlg.Entity.Sequence.Set
 
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Exponential
 import OAlg.Structure.Operational
+import OAlg.Structure.Number.Definition (mod)
 
 --------------------------------------------------------------------------------
 -- PermutationForm -
@@ -155,7 +161,7 @@ type WordN x = [(x,N)]
 -- | permutes the product symbol by the given permeation form.
 pmfOprPsy :: Entity x => CSequence x -> PermutationForm N -> CSequence x
 pmfOprPsy (ProductSymbol xjs) p = xis where
-  xis = make $ wrdprf () $ Word $ opr (span (Just (0::N)) p) 0 (fromWord $ prwrd xjs) p
+  xis = make $ wrdprf () $ Word $ opr (D.span (Just (0::N)) p) 0 (fromWord $ prwrd xjs) p
 
   expand :: N -> (u,N) -> [(u,I)]
   expand k (u,l) = (takeN l $ repeat u) `zip` [k..]
@@ -463,6 +469,67 @@ instance (Entity i, Ord i) => TotalOpr (Permutation i) (Permutation i)
 instance (Entity i, Ord i) => PermutableSequence Permutation i i where
   permuteBy f wcmp w (Permutation (PermutationForm p))
     = (make (PermutationForm p'),q) where (p',q) = permuteBy f wcmp w p
+
+--------------------------------------------------------------------------------
+-- Cycle -
+
+-- | cycle over the index @__i__@, i.e. a monomorphic list @i 0, i 1 .. i j, i (j+1)..,i (n-1),i n@
+--   where @1 <= n@ and represents the permutation where @i j@ maps to @i (j+1)@ for @j = 0..n.1@ and
+--   @j n@ maps to @i 0@.
+--
+--   __Properties__ Let @'Cycle' is@ be in @'Cycle' __i__@, then holds:
+--
+--  (1) @'length' is '>=' 2@.
+--
+--  (2) @is@ is monomorph.
+newtype Cycle i = Cycle [i] deriving (Show,Eq,Ord)
+
+instance (Show i, Ord i, Validable i) => Validable (Cycle i) where
+  valid (Cycle is) = Label "Cycle" :<=>:
+    And [ valid is
+        , Label "length" :<=>: (lengthN is >= 2) :?> Params ["length is":= (show $ lengthN is)]
+        , Label "monomorph" :<=>: (lengthN is == (lengthN $ set is)) :?> Params ["is":=show is]
+        ]
+
+--------------------------------------------------------------------------------
+-- splitCycle -
+
+-- | splits a permutation in a cycle and its residuum permutation.
+splitCycle :: Eq i => Permutation i -> Maybe (Cycle i,Permutation i)
+splitCycle p = do
+  PermutationForm jis <- return $ form p
+  (c,jis')            <- splitCycle' jis
+  return (c,make $ PermutationForm jis')
+
+splitCycle' :: Eq i => PSequence i i -> Maybe (Cycle i,PSequence i i)
+splitCycle' (PSequence [])          = Nothing
+splitCycle' (PSequence ((j,i):jis)) = Just (Cycle $ reverse cs,PSequence jis') where
+  (cs,jis') = sc i j ([i],jis)
+
+  sc i j res | i == j = res
+  sc i j (cs,jis)     = case L.span ((j/=) . snd) jis of
+    (jis',jis'')     -> case jis'' of
+      (j',_):jis'''  -> sc i j' (j:cs,jis' ++ jis''')
+      _              -> throw $ InvalidData "splitCycle'"
+    
+--------------------------------------------------------------------------------
+-- splitCycles -
+
+-- | splits a permutation in a list of cycles.
+splitCycles :: Eq i => Permutation i -> [Cycle i]
+splitCycles p = cyc is where
+  PermutationForm is = form p
+  
+  cyc is = case splitCycle' is of
+    Nothing      -> []
+    Just (c,is') -> c : cyc is'
+  
+--------------------------------------------------------------------------------
+-- pmtSign -
+
+-- | the signum of a permutation
+pmtSign :: Permutation N -> Z
+pmtSign p = if mod (lengthN $ splitCycles p) 2 == 0 then 1 else -1
 
 --------------------------------------------------------------------------------
 -- xPermutation -
