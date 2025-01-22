@@ -19,6 +19,7 @@
 module OAlg.Homology.Definition
   (
 
+{-    
     -- * Homology
     Homology(..)
   , hmgChainSet''
@@ -50,6 +51,7 @@ module OAlg.Homology.Definition
 
     -- * Failure
   , HomologyFailure(..)
+-}
   ) where
 
 import Data.Typeable
@@ -82,6 +84,7 @@ import OAlg.Homology.Variance
 
 -- import OAlg.Data.Symbol
 
+{-
 --------------------------------------------------------------------------------
 -- Homology -
 
@@ -435,7 +438,7 @@ hmgBoundary'MinusTwo h s = case vrcBoundary' v (vecabhFree1 (lengthN ss') sv) of
     v   = hmgVarianceMinusTwo h
     ss' = setEmpty
     sv  = ssycfs ss' s
-
+-}
     
 
 

@@ -26,6 +26,7 @@ module OAlg.Homology.ChainComplex
   ( -- * Chain Complex
     ChainComplex(..), ccxPoints, ccxArrows, ccxMap
   , chainComplex
+  , ccxHead, ccxTail
 
     -- ** Representation
   , ChainComplexRep(..), chainComplexRep, Regular(..)
@@ -180,19 +181,6 @@ ccxChainMapZ :: Homological s x y
   -> FinList (n+3) (ChainHom Z s (C.Chain Z s x) (C.Chain Z s y))
 ccxChainMapZ = ccxChainMap
 
-a = complex [Set "abc"]
-b = complex [Set [0,1]] :: Complex N
-
-c = cpxProductAsc b a
-
-p1 = ComplexMapAsc c b (Map fst)
-p2 = ComplexMapAsc c a (Map snd)
-
-c' = cpxProduct b a
-
-p1' = ComplexMap c b (Map fst)
-p2' = ComplexMap c a (Map snd)
-
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
@@ -210,6 +198,29 @@ ccxPoints (ChainComplex ds) = dgPoints ds
 
 ccxArrows :: ChainComplex t n d -> FinList (n+2) d
 ccxArrows (ChainComplex ds) = dgArrows ds
+
+--------------------------------------------------------------------------------
+-- ccxHead -
+
+ccxHead :: Oriented d => ChainComplex t n d -> ChainComplex t N0 d
+ccxHead (ChainComplex c) = case c of
+  DiagramChainTo _ _   -> ChainComplex $ ccxToHead c
+  DiagramChainFrom _ _ -> ChainComplex $ coDiagramInv Refl $ ccxToHead $ coDiagram c
+  where
+    ccxToHead :: Diagram (D.Chain To) (n+3) (n+2) d -> Diagram (D.Chain To) N3 N2 d
+    ccxToHead (DiagramChainTo e (d:|d':|_)) = DiagramChainTo e (d:|d':|Nil)
+
+--------------------------------------------------------------------------------
+-- ccxTail -
+
+ccxTail :: Oriented d => ChainComplex t (n+1) d -> ChainComplex t n d
+ccxTail (ChainComplex c) = case c of
+  DiagramChainTo _ _   -> ChainComplex $ ccxToTail c
+  DiagramChainFrom _ _ -> ChainComplex $ coDiagramInv Refl $ ccxToTail $ coDiagram c
+  where
+    ccxToTail :: Oriented d => Diagram (D.Chain To) (n+2) (n+1) d -> Diagram (D.Chain To) (n+1) n d
+    ccxToTail (DiagramChainTo _ (_:|d:|ds)) = DiagramChainTo (end d) (d:|ds)  
+
 
 {-
 --------------------------------------------------------------------------------
@@ -288,7 +299,7 @@ instance (Distributive d, Typeable t, Typeable n) => Entity (ChainComplex t n d)
 --     (3.1) If @d@ matches @'Boundary' _ _@ then @d@ is 'valid'.
 --
 --     (3.2) otherwise @d@ is not 'valid'.
-data ChainComplexRep r s n x
+newtype ChainComplexRep r s n x
   = ChainComplexRep (FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)))
   deriving (Show,Eq)
 
@@ -402,7 +413,7 @@ instance (Distributive d, Typeable t, Typeable n) => Oriented (ChainComplexTrafo
 --  __Property__ Let @r@ be in
 --  @'ChainComplexTrafoRep' __r__ __s__ __n__ __x__ __y__@, where @__r__@ is a 'Commutative' 'Ringe',
 --  then holds: The induced chain comples transformation @'chainComplexTrafo' r@ is 'valid'.
-data ChainComplexTrafoRep r s n x y
+newtype ChainComplexTrafoRep r s n x y
   = ChainComplexTrafoRep
       (FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y)))
   deriving (Show,Eq)

@@ -26,7 +26,7 @@ module OAlg.Homology.Variance
   (
     -- * Variance
     Variance(..)
-  , ccxVarianceZ
+  , ccxZFromVariance, ccxZToVariance
   
   , Variance'(..)
   , ccxVariance'
@@ -75,6 +75,12 @@ import OAlg.AbelianGroup.Liftable
 
 import OAlg.Homology.ChainComplex
 
+
+import OAlg.Homology.Complex
+import OAlg.Homology.Simplical
+import OAlg.Category.Map
+import OAlg.Structure.Ring
+import OAlg.Structure.Multiplicative
 --------------------------------------------------------------------------------
 -- Variance -
 
@@ -86,25 +92,25 @@ type T   = Slice From
 type T'  = Slice From
 
 
--- | measures the variance of a chain complex of being exact. The function 'boundary' evaluates
---   according to a given 'Variance' a possible /boundary/ for a given /cycle/.
+-- | measures the variance of the top chain complex of being exact. The function
+-- 'boundary' evaluates according to a given 'Variance' a possible /boundary/ for a given /cycle/.
 --
 -- @
 --
 --
---                 b            c
---   p  :    r ---------> s -------------> t
---   ^       ^            ^                ^
---   |       |            |                |
---   | u     | one        | k = ker c      | 0
---   |       |            ^                |
---   p' :    r -------->  s' ----------->> t'
---   ^       ^     b'     ^  c' = coker b' ^
---   |       |            |                |
---   | u'    | one        | k' = ker c'    | 0
---   |       |            ^                ^
---   p'':    r --------> s'' ------------> t''
---                b''       c'' = coker b''
+--                         b            c
+-- top       p  :    r ---------> s -------------> t
+--           ^       ^            ^                ^
+--           |       |            |                |
+--           | u     | one        | k = ker c      | 0
+--           |       |            ^                |
+-- center    p' :    r -------->  s' ----------->> t'
+--           ^       ^     b'     ^  c' = coker b' ^
+--           |       |            |                |
+--           | u'    | one        | k' = ker c'    | 0
+--           |       |            ^                ^
+-- bottom    p'':    r --------> s'' ------------> t''
+--                        b''       c'' = coker b''
 -- @
 --
 -- __Note__ In the case that @__d__@ represents finaly generated abelian groups it follows that
@@ -116,13 +122,13 @@ data Variance i d where
 
        -- | the universal property of the kernel of @c@. Let @s@ be in @'Slice' 'From' __i__ __c__@
        -- with @'end' s '==' 'start' c@ then holds:
-       -- If @c '*>Ä s@ is not zero then the result is @'Left' (c'*>'s)@
+       -- If @c '*>' s@ is not zero then the result is @'Left' (c'*>'s)@
        -- otherwise the universal factor of the kernel of @c@. __Note__ If the premise
        -- @'end' s '==' 'start' c@ dose not hold, then the evaluation will end up in a
        -- algebraic exception.
     -> (S (i N1) d -> Either (T (i N1) d) (S' (i N1) d))
 
-       -- | the universal property of the kernel of h. Let @s'@ be in @Slice From i c@ with
+       -- | the universal property of the kernel of @c'@. Let @s'@ be in @Slice From i c@ with
        -- @end s' == start c'@ then holds: If @c' *> s'@ is not zero then the result is @Left (c'*>s')@
        -- otherwise the universal factor of the kernel of @c'@.
     -> (S' (i N1) d -> Either (T' (i N1) d) (S'' (i N1) d))
@@ -267,7 +273,65 @@ vrcBoundary' (Variance _ cKerUnv c'KerUnv b''Lft _) s
         Left t'   -> Left (Right t')
         Right s'' -> Right (b''Lft s'')
 
+--------------------------------------------------------------------------------
+-- VarianceTrafo -
 
+-- | transformation between variances.
+--
+-- @
+--                v b            v c
+--   v :    v r --------> v s ----------> v t
+--   |       |            |                |
+--   | t     |            |                |
+--   |       |            |                | 
+--   v       v            v                v
+--   w :    w r --------> w s------------> w t
+--                w b            w c
+--
+-- @
+--
+-- __Property__ Let @t@ be in @'Variance' __i__ __d__@ for a 'Distributive' structure @__d__@, then
+-- holds: @'vrtTop' t@ is 'valid'. 
+data VarianceTrafo i d
+  = VarianceTrafo (Variance i d) (Variance i d) (FinList N3 d)
+
+--------------------------------------------------------------------------------
+-- vrtTop -
+
+-- | the underlying transformation between the two top chain complexes.
+vrtTop :: VarianceTrafo i d -> ChainComplexTrafo From N0 d
+vrtTop (VarianceTrafo (Variance v3x3 _ _ _ _) (Variance w3x3 _ _ _ _) t) = ChainComplexTrafo top where
+  top = Transformation v w t
+
+  DiagramChainTo v _ = v3x3
+  DiagramChainTo w _ = w3x3
+
+--------------------------------------------------------------------------------
+-- VarianceTrafo - Validable -
+
+instance Distributive d => Validable (VarianceTrafo i d) where
+  valid t = Label "VarianceTrafo" :<=>: (valid $ vrtTop t)
+
+--------------------------------------------------------------------------------
+-- vrtCenter -
+
+-- | the induced transformation betweenthe two center chain complexes.
+vrtCenter :: Multiplicative d => VarianceTrafo i d -> ChainComplexTrafo From N0 d
+vrtCenter v@(VarianceTrafo (Variance v3x3 _ _ _ _) w@(Variance w3x3 _ _ _ _) (t0:|t1:|t2:|Nil))
+  = ChainComplexTrafo center where
+  
+  center = Transformation v' w' (t'0:|t'1:|t'2:|Nil)
+
+  DiagramChainTo _ (vu:|_) = v3x3
+  DiagramChainTo _ (wu:|_) = w3x3
+
+  v' = start vu
+  w' = start wu
+  
+  t'0 = t0
+  t'1 = error "nyi"
+  t'2 = error "nyi"
+  
 --------------------------------------------------------------------------------
 -- Variance' -
 
@@ -293,12 +357,12 @@ data Variance' i d where
    -> Variance' i d
 
 --------------------------------------------------------------------------------
--- ccxVariance -
+-- ccxVariance' -
 
 -- in a further release the constraint (i ~ Free) can be relaxed by adapting CokernlLiftableFree
 -- and Generator!
 
--- | evaluates the restricted varaince.
+-- | evaluates the restricted varaince of the first two arrows..
 --
 -- @
 --                  b            c
@@ -345,11 +409,14 @@ ccxVariance' kers cokers (ChainComplex (DiagramChainFrom r (b:|c:|_)))
     | end s /= end c' = Left ()
     | otherwise       = Right $ lift (l k) s
 
-  
+
+--------------------------------------------------------------------------------
+-- ccxZFromVariance -
+
 -- | evaluates the 'Variance' of the first two matrices where they are mapped in to 'AbHom'
 -- via 'FreeAbHom'.    
-ccxVarianceZ :: ChainComplex From l (Matrix Z) -> Variance Free AbHom
-ccxVarianceZ ccx = Variance d3x3 kUniv k'Univ b''Lft c'Lft where
+ccxZFromVariance :: ChainComplex From l (Matrix Z) -> Variance Free AbHom
+ccxZFromVariance ccx = Variance d3x3 kUniv k'Univ b''Lft c'Lft where
     p = ccxMap FreeAbHom ccx
 
     vrcZ = ccxVariance' abhKernels abhCokersLftFree
@@ -369,3 +436,60 @@ ccxVarianceZ ccx = Variance d3x3 kUniv k'Univ b''Lft c'Lft where
       rZ = case zMatrixLift b''Z s''Z of
         Just x  -> x 
         Nothing -> throw $ ImplementationError "zMatrixLift dos not hold spezification"
+
+--------------------------------------------------------------------------------
+-- ccxZToVariance -
+
+-- | evaluates the 'Variance' of the first two matrices where they are mapped in to 'AbHom'
+-- via 'FreeAbHom'.    
+ccxZToVariance :: ChainComplex To l (Matrix Z) -> Variance Free AbHom
+ccxZToVariance (ChainComplex (DiagramChainTo _ (f:|f':|_))) = ccxZFromVariance ccx where
+  ccx = ChainComplex (DiagramChainFrom (start f') (f':|f:|Nil))
+
+--------------------------------------------------------------------------------
+-- ccxZToVariances -
+
+ccxZToVariances :: ChainComplex To l (Matrix Z) -> FinList (l+1) (Variance Free AbHom)
+ccxZToVariances = vrcs where
+  vrcs :: ChainComplex To l (Matrix Z) -> FinList (l+1) (Variance Free AbHom)
+  vrcs c = ccxZToVariance c :| case c of
+    ChainComplex (DiagramChainTo _ (_:|_:|Nil))  -> Nil
+    ChainComplex (DiagramChainTo _ (_:|_:|_:|_)) -> vrcs (ccxTail c)
+    
+a = complex [Set "abc"]
+b = complex [Set [0,1]] :: Complex N
+
+c = cpxProductAsc b a
+
+p1 = ComplexMapAsc c b (Map fst)
+p2 = ComplexMapAsc c a (Map snd)
+
+c' = cpxProduct b a
+
+p1' = ComplexMap c b (Map fst)
+p2' = ComplexMap c a (Map snd)
+
+hmg :: (Entity x, Ord x, Simplical s x) => (ChainComplexRep Z s n x -> ChainComplex To n (Matrix Z))
+  -> Regular -> Any n -> Complex x -> FinList (n+1) AbGroup
+hmg rep r n c = amap1 vrcT' $ ccxZToVariances $ rep $ chainComplexRep r n c
+
+hmgSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> FinList (n+1) AbGroup
+hmgSet = hmg chainComplexSet
+
+hmgAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> FinList (n+1) AbGroup
+hmgAsc = hmg chainComplexAsc
+
+hmgLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> FinList (n+1) AbGroup
+hmgLst = hmg chainComplexLst
+
+chainComplexSet :: (Ring r, Commutative r, Entity x, Ord x)
+  => ChainComplexRep r Set n x -> ChainComplex To n (Matrix r)
+chainComplexSet = chainComplex
+
+chainComplexAsc :: (Ring r, Commutative r, Entity x, Ord x)
+  => ChainComplexRep r Asc n x -> ChainComplex To n (Matrix r)
+chainComplexAsc = chainComplex
+
+chainComplexLst :: (Ring r, Commutative r, Entity x, Ord x)
+  => ChainComplexRep r [] n x -> ChainComplex To n (Matrix r)
+chainComplexLst = chainComplex
