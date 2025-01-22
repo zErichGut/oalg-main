@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           oalg-base
-version:        2.0.2.1
+version:        2.0.2.2
 synopsis:       Algebraic structures on oriented entities and limits as a tool kit to solve algebraic problems.
 description:    Basic definition of algebraic structures on oriented entities.
                 .
@@ -144,6 +144,7 @@ library
       OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Definition
       OAlg.Limes.EqualizersAndCoequalizers
+      OAlg.Limes.Exact.Zeros
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
       OAlg.Limes.MinimaAndMaxima

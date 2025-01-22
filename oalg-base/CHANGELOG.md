@@ -87,7 +87,7 @@ has been defined by EmbeddingFrom.
 ### Resolved
 - Orphan instance for Projectible Sheaf and Path by removing the general definition to Sum and Product.
 
-## [2.0.2] - 2025-01-13
+## [2.0.2.1] - 2025-01-13
 
 ### Added
 - class Functorial1
@@ -111,3 +111,8 @@ instance Filterable (Graph i).
 OAl.Structure.PartiallyOrdered.Definition.
 - in the module OAlg.Entity.Definition: Empty to EntEmpty, empty to fromEmpty,
 Empty2 to EntEmpty2, empty2 to fromEmpty2.
+
+## [2.0.2.2] - 2025-01-22
+
+### Added
+- module OAlg.Limes.Excat.Zeros

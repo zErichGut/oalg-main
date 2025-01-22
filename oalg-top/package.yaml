@@ -23,7 +23,7 @@ description:         Please see the README on GitHub at <https://github.com/zEri
 dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6
-- oalg-base >= 2.0.2.1
+- oalg-base >= 2.0.2.2
 - oalg-abg >= 1.5.0.4
 
 ghc-options:

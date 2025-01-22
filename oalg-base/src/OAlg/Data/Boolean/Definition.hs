@@ -29,7 +29,6 @@ import Prelude as P hiding (not,(||),(&&),or,and)
 import qualified Data.Bool as B
 
 import OAlg.Data.Logical
-import OAlg.Data.Opposite
 
 --------------------------------------------------------------------------------
 -- Boolean -

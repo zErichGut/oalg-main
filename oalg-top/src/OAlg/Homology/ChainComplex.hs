@@ -23,7 +23,9 @@
 --
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
-  ( -- * Chain Complex
+  (
+{-
+    -- * Chain Complex
     ChainComplex(..), ccxPoints, ccxArrows, ccxMap
   , chainComplex
   , ccxHead, ccxTail
@@ -38,6 +40,7 @@ module OAlg.Homology.ChainComplex
     -- ** Representation
   , ChainComplexTrafoRep(..), cctDomainRep, cctRangeRep
   , chainComplexTrafoRep
+-}
   ) where
 
 import Control.Monad
@@ -70,11 +73,14 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Matrix hiding (Transformation(..))
 
+import OAlg.Limes.Exact.Zeros
+
 import OAlg.Hom.Definition
 
 import OAlg.Homology.Complex
 import OAlg.Homology.Chain as C
 import OAlg.Homology.Simplical
+
 
 --------------------------------------------------------------------------------
 -- toFinList3 -
@@ -181,24 +187,13 @@ ccxChainMapZ :: Homological s x y
   -> FinList (n+3) (ChainHom Z s (C.Chain Z s x) (C.Chain Z s y))
 ccxChainMapZ = ccxChainMap
 
+
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
-newtype ChainComplex t n d = ChainComplex (Diagram (D.Chain t) (n+3) (n+2) d)
-  deriving (Show,Eq)
+type ChainComplex = Zeros
 
---------------------------------------------------------------------------------
--- ccxPoints -
-
-ccxPoints :: Oriented d => ChainComplex t n d -> FinList (n+3) (Point d)
-ccxPoints (ChainComplex ds) = dgPoints ds
-
---------------------------------------------------------------------------------
--- ccxArrows -
-
-ccxArrows :: ChainComplex t n d -> FinList (n+2) d
-ccxArrows (ChainComplex ds) = dgArrows ds
-
+{-
 --------------------------------------------------------------------------------
 -- ccxHead -
 
@@ -220,61 +215,16 @@ ccxTail (ChainComplex c) = case c of
   where
     ccxToTail :: Oriented d => Diagram (D.Chain To) (n+2) (n+1) d -> Diagram (D.Chain To) (n+1) n d
     ccxToTail (DiagramChainTo _ (_:|d:|ds)) = DiagramChainTo (end d) (d:|ds)  
-
-
-{-
---------------------------------------------------------------------------------
--- ccxPred -
-
-ccxPred :: Oriented a => ChainComplex (n+1) a -> ChainComplex n a
-ccxPred (ChainComplex (DiagramChainTo _ (d:|ds)))
-  = ChainComplex (DiagramChainTo (start d) ds)
-
---------------------------------------------------------------------------------
--- ccxHead -
-
--- | extracts the first two elements of the given chain complex.
-ccxHead :: ChainComplex n d
-       -> ChainComplex N0 d
-ccxHead (ChainComplex (DiagramChainTo e (d':|d:|_)))
-  = ChainComplex (DiagramChainTo e  (d':|d:|Nil))
-
---------------------------------------------------------------------------------
--- ccxMap' -
-
-ccxMap' :: Oriented a => (forall k . ChainComplex k a -> b) -> ChainComplex n a -> FinList (n+1) b
-ccxMap' f c@(ChainComplex d) = case dgArrows d of
-  _:|_:|Nil  -> f c :| Nil
-  _:|_:|_:|_ -> f c :| ccxMap' f (ccxPred c)
 -}
 
+{-
 --------------------------------------------------------------------------------
 -- ccxMap -
 
 -- | mapping according to the given distributive homomorphism.
 ccxMap :: Hom Dst h => h a b -> ChainComplex t n a -> ChainComplex t n b
 ccxMap h (ChainComplex c) = ChainComplex (dgMap h c)
-
---------------------------------------------------------------------------------
--- ChainComplex - Entity -
-
-instance Distributive d => Validable (ChainComplex t n d) where
-  valid (ChainComplex ds) = Label "ChainComplex" :<=>: valid ds && vldZeros ds where
-    
-    vldZeros :: Distributive d => Diagram (D.Chain t) (n+3) (n+2) d -> Statement
-    vldZeros d@(DiagramChainTo _ _)   = vldZerosTo 0 d
-    vldZeros d@(DiagramChainFrom _ _) = vldZerosTo 0 (coDiagram d)
-
-    vldZerosTo :: Distributive d => N -> Diagram (D.Chain To) (n+3) (n+2) d -> Statement
-    vldZerosTo i (DiagramChainTo _ (f:|g:|Nil)) = vldZeroTo i f g 
-    vldZerosTo i (DiagramChainTo _ (f:|g:|h:|ds))
-      = vldZeroTo i f g && vldZerosTo (succ i) (DiagramChainTo (end g) (g:|h:|ds))
-
-    vldZeroTo :: Distributive d => N -> d -> d -> Statement
-    vldZeroTo i f g = Label (show i) :<=>: (isZero (f*g))
-          :?> Params ["i":=show i,"f":=show f,"g":=show g]
-
-instance (Distributive d, Typeable t, Typeable n) => Entity (ChainComplex t n d)
+-}
 
 --------------------------------------------------------------------------------
 -- ChainComplexRep --
@@ -307,7 +257,7 @@ newtype ChainComplexRep r s n x
 -- ChainComplexRep - Validable -
 
 instance (Ring r, Commutative r, Simplical s x) => Validable (ChainComplexRep r s n x) where
-  valid c@(ChainComplexRep ds) = Label "ChainComplexRep" :<=>:
+  valid (ChainComplexRep ds) = Label "ChainComplexRep" :<=>:
     And [ vldBnd0 d0
         , vldBnds 0 d0 (F.tail ds)
         ]
@@ -338,14 +288,14 @@ instance (Ring r, Commutative r, Simplical s x) => Validable (ChainComplexRep r 
               , Label "1" :<=>: (chDomainSet d == chRangeSet d') :?> Params ["i":=show i]
               , vldBnds (succ i) d' (d'':|ds)
               ]
-    
+
 --------------------------------------------------------------------------------
 -- chainComplex -
 
 -- | the underlying chain complex.
 chainComplex :: (Ring r, Commutative r, Simplical s x)
   => ChainComplexRep r s n x -> ChainComplex To n (Matrix r)
-chainComplex (ChainComplexRep ds) = ChainComplex (DiagramChainTo (end $ F.head ms) ms) where
+chainComplex (ChainComplexRep ds) = Zeros (DiagramChainTo (end $ F.head ms) ms) where
   ms = amap1 (repMatrix . chainHomRep) ds
 
 --------------------------------------------------------------------------------
@@ -354,7 +304,6 @@ chainComplex (ChainComplexRep ds) = ChainComplex (DiagramChainTo (end $ F.head m
 chainComplexRep :: Simplical s x
   => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
 chainComplexRep r n c = ChainComplexRep (ccxBoundary r n c)
-
 
 ccxSetZ :: (r ~ Z, s ~ Set, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
 ccxSetZ = chainComplexRep
@@ -370,40 +319,7 @@ ccxAscZ = chainComplexRep
 -- ChainComplexTrafo -
 
 -- | transformation between chain complexes.
-newtype ChainComplexTrafo t n d = ChainComplexTrafo (Transformation (D.Chain t) (n+3) (n+2) d)
-  deriving (Show,Eq)
-
---------------------------------------------------------------------------------
--- cctStart -
-
-cctStart :: (Distributive d, Typeable t, Typeable n) => ChainComplexTrafo t n d -> ChainComplex t n d
-cctStart (ChainComplexTrafo t) = ChainComplex $ start t
-
---------------------------------------------------------------------------------
--- cctEnd -
-
-cctEnd :: (Distributive d, Typeable t, Typeable n) => ChainComplexTrafo t n d -> ChainComplex t n d
-cctEnd (ChainComplexTrafo t) = ChainComplex $ end t
-
---------------------------------------------------------------------------------
--- ChainComplexTrafo - Entity -
-
-instance (Distributive d, Typeable t, Typeable n) => Validable (ChainComplexTrafo t n d) where
-  valid f@(ChainComplexTrafo t) = Label "ChainComplexTrafo" :<=>:
-    And [ valid t
-        , valid $ cctStart f
-        , valid $ cctEnd f
-        ]
-
-instance (Distributive d, Typeable t, Typeable n) => Entity (ChainComplexTrafo t n d)
-
---------------------------------------------------------------------------------
--- ChainComplexTrafo - Distributive -
-
-instance (Distributive d, Typeable t, Typeable n) => Oriented (ChainComplexTrafo t n d) where
-  type Point (ChainComplexTrafo t n d) = ChainComplex t n d
-  orientation t = cctStart t :> cctEnd t 
-
+type ChainComplexTrafo = ZerosTrafo
 
 --------------------------------------------------------------------------------
 -- ChainComplexTrafoRep -
@@ -456,18 +372,11 @@ cctRangeRep (ChainComplexTrafoRep (f0:|f1:|fs)) = ChainComplexRep (d0 f0 f1:|ds 
 -- | the induced transformation between chain complexes.
 chainComplexTrafo :: (Ring r, Commutative r, Homological s x y)
   => ChainComplexTrafoRep r s n x y -> ChainComplexTrafo To n (Matrix r)
-chainComplexTrafo r@(ChainComplexTrafoRep fs) = ChainComplexTrafo (Transformation dDom dRng ms) where
-  ChainComplex dDom = chainComplex $ cctDomainRep r
-  ChainComplex dRng = chainComplex $ cctRangeRep r
-  ms = amap1 (repMatrix . chainHomRep) fs
+chainComplexTrafo r@(ChainComplexTrafoRep fs) = ZerosTrafo dDom dRng ms where
+  dDom = chainComplex $ cctDomainRep r
+  dRng = chainComplex $ cctRangeRep r
+  ms   = amap1 (repMatrix . chainHomRep) fs
 
---------------------------------------------------------------------------------
--- ChainComplexTafoRep - Validable -
-
-instance (Ring r, Commutative r, Homological s x y, Typeable n)
-  => Validable (ChainComplexTrafoRep r s n x y) where
-  valid r = Label "ChainComplexTrafoRep" :<=>: (valid $ chainComplexTrafo r)
-  
 --------------------------------------------------------------------------------
 -- chainComplexTrafoRep -
 
@@ -481,268 +390,17 @@ chainComplexTrafoRepZ :: Homological s x y
   -> ChainComplexTrafoRep Z s n x y
 chainComplexTrafoRepZ = chainComplexTrafoRep
 
+a = complex [Set "abc"]
+b = complex [Set [0,1]] :: Complex N
+
+c = cpxProductAsc b a
+
+p1 = ComplexMapAsc c b (Map fst)
+p2 = ComplexMapAsc c a (Map snd)
+
+c' = cpxProduct b a
+
+p1' = ComplexMap c b (Map fst)
+p2' = ComplexMap c a (Map snd)
 
 
-
-
-
-{-
---------------------------------------------------------------------------------
--- ccxCards -
-
-ccxCards :: (Entity (s x), Ord (s x), Ring r, Commutative r, Typeable s, Typeable x)
-  => ChainComplex t n (BoundaryOperator r s x) -> FinList (n+3) N
-ccxCards = amap1 lengthN . ccxPoints
-
---------------------------------------------------------------------------------
--- chainComplex -
-
-chainComplex
-  :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
-  => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r s x)
-chainComplex r n c
-  = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n (cpxIndex c) l0 sxs) where
-  lMinOne:l0:sxs = (amap1 snd $ simplices $ cpxVertexSet c) L.++ L.repeat setEmpty
-  
-  d0 = case r of
-    Regular  -> zero (l0 :> setEmpty)
-    Extended -> bdo (Representable HomBoundary l0 lMinOne)
-
-  ds :: (Ring r, Commutative r, Simplical s, Entity (s x), Ord (s x), Typeable s, Typeable x, Ord x)
-     => Any n -> ((Z,Set x) -> Maybe N) -> Set (s x) -> [Set (s x)]
-     -> FinList (n+1) (BoundaryOperator r s x)
-  ds W0 ivs l sxs = d :| Nil where
-    d  = bdo (Representable HomBoundary l' l)
-    l' = Set $ filter (elg ivs) $ setxs $ L.head sxs -- sxs is a infinite list!    
-  ds (SW n) ivs l sxs = d :| ds n ivs l' (L.tail sxs) where
-    d  = bdo (Representable HomBoundary l' l)
-    l' = Set $ filter (elg ivs) $ setxs $ L.head sxs -- sxs is a infinite list!
-
-  elg :: (Simplical s, Ord x) => ((Z,Set x) -> Maybe N) -> s x -> Bool
-  elg i sx = case i (spxAdjDim $ vertices sx) of
-    Nothing -> False
-    _       -> True
-
-chainComplexSet
-  :: (Ring r, Commutative r, Entity x, Ord x)
-  => Regular -> Any n -> Complex x -> ChainComplex To n (BoundaryOperator r Set x)
-chainComplexSet r n c = ChainComplex $ DiagramChainTo (end d0) $ (d0:|ds n l0 sxs) where
-  lMinOne:l0:sxs = (amap1 snd $ cpxxs c) L.++ L.repeat setEmpty
-  
-  d0 = case r of
-    Regular  -> zero (l0 :> setEmpty)
-    Extended -> bdo (Representable HomBoundary l0 lMinOne)
-
-  ds :: (Ring r, Commutative r, Entity x, Ord x)
-     => Any n -> Set (Set x) -> [Set (Set x)]
-     -> FinList (n+1) (BoundaryOperator r Set x)
-  ds W0 l sxs = d :| Nil where
-    d  = bdo (Representable HomBoundary l' l)
-    l' = L.head sxs -- sxs is a infinite list!    
-  ds (SW n) l sxs = d :| ds n l' (L.tail sxs) where
-    d  = bdo (Representable HomBoundary l' l)
-    l' = L.head sxs -- sxs is a infinite list!= chainComplex
-
-ccl :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z [] N)
-ccl r n m = chainComplex r n (complex [Set [1..m]]) 
-
-ccs :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Set N)
-ccs r n m = chainComplex r n (complex [Set [1..m]])
-
-ccs' :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Set N)
-ccs' r n m = chainComplexSet r n (complex [Set [1..m]])
-
-eq r n m = ccs r n m == ccs' r n m
-
-cca :: Regular -> Any n -> N -> ChainComplex To n (BoundaryOperator Z Asc N)
-cca r n m = chainComplex r n (complex [Set [1..m]]) 
-
-ddZ :: (Typeable s, Entity (s x), Ord (s x), Typeable x)
-  => ChainComplex To n (BoundaryOperator Z s x) -> FinList (n+2) (Matrix Z)
-ddZ = ccxArrows . ccxMap BORepresentation
-
-bdoZ :: (Typeable s, Entity (s x), Ord (s x), Typeable x)
-  => ChainComplex To n (BoundaryOperator Z s x) -> ChainComplex To n (Matrix Z)
-bdoZ = ccxMap BORepresentation
-
-dns :: Matrix Z -> (N,N,String)
-dns m = (lengthN c,cr,sh dgs) where
-  c :> r = orientation m
-  cr = lengthN r * lengthN c
-  dgs :: Maybe (Digits 10 Q)
-  dgs = amap1 toDigits $ mtxDensity m
-
-  sh Nothing    = ""
-  sh (Just (Digits _ [] fs)) = "0." L.++ (join $ amap1 show $ takeN 6 fs)
-  sh (Just (Digits _ _ _))   = "1"
-
---------------------------------------------------------------------------------
--- ChainComplexMap -
-
--- | map between chain complexes, i.e. transformation of the underlying diagrams.
-newtype ChainComplexMap t n d = ChainComplexMap (Transformation (D.Chain t) (n+3) (n+2) d)
-  deriving (Show,Eq)
-
---------------------------------------------------------------------------------
--- ccmOrientation -
-
-ccmOrientation :: (Multiplicative d, Typeable t, Typeable n)
-  => ChainComplexMap t n d -> Orientation (ChainComplex t n d)
-ccmOrientation (ChainComplexMap t) = ChainComplex a :> ChainComplex b where a :> b = orientation t 
-
---------------------------------------------------------------------------------
--- ChainComplexMap - Structure -
-
-instance (Distributive d, Typeable t, Typeable n) => Validable (ChainComplexMap t n d) where
-  valid f@(ChainComplexMap t) = Label "ChainComplexMap"
-    :<=>: And [ valid t
-              , valid $ ccmOrientation f
-              ]
-
---------------------------------------------------------------------------------
--- chainComplexMap -
-
-chainComplexMap
-  :: Regular -> Any n -> ComplexMap (Complex x) (Complex y)
-  -> ChainComplexMap To n (Matrix r)
-chainComplexMap = error "nyi"
--}
-
-
-
-{-
---------------------------------------------------------------------------------
--- chainComplex -
-
-chainComplex :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r, Attestable n)
-  => Regular -> Complex n x -> ChainComplex From n (BoundaryOperator r x)
-chainComplex r = ChainComplex . cc r setEmpty where
-  
-  cc :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r, Attestable n)
-    => Regular -> Set (Simplex (n+2) x) -> Complex n x
-    -> Diagram (D.Chain From) (n+3) (n+2) (BoundaryOperator r x)
-  cc r s'' c
-    = DiagramChainFrom (SimplexSet s'') $ (d'' :| ds r attest c) where
-      s'  = cpxSet c
-      d'' = bdo (Representable HomBoundary s'' s')
-
-  ds :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r, Attestable n)
-    => Regular -> Any n -> Complex n x
-    -> FinList (n+1) (BoundaryOperator r x)
-  ds r (SW n) (Complex s' c) =  d' :| case ats n of {Ats -> ds r n c} where
-      s  = cpxSet c
-      d' = bdo (Representable HomBoundary s' s)
-  ds r W0 c = d0 :| Nil where
-    s' = cpxSet c
-    d0 = case r of
-      Regular  -> zero (SimplexSet s':> SimplexSet s) where s = setEmpty :: Set (Simplex N0 x)
-      Extended -> bdo (Representable HomBoundary s' s) where s = Set [Simplex Nil]
-
-chainComplexZ :: (Entity x, Ord x, Attestable n)
-  => Regular -> Complex n x -> ChainComplex From n (BoundaryOperator Z x)
-chainComplexZ = chainComplex
-
---------------------------------------------------------------------------------
--- homBoundaryOperatorRep -
-
-homBoundaryOperatorRep' :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r)
-  => Product N (BoundaryOperatorRep r x) -> Matrix r
-homBoundaryOperatorRep' = rep . form where
-  rep :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r)
-    => ProductForm N (BoundaryOperatorRep r x) -> Matrix r
-  rep (One s) = one (dim unit ^ lengthN s)
-  rep (P d)   = case d of { BoundaryOperatorRep d' -> repMatrix d' }
-  rep (d :^ n) = ntimes n (rep d)
-  rep (d :* d') = rep d * rep d'
-
-homBoundaryOperatorRep :: ( Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r
-                       , Vectorial r, Scalar r ~ r
-                       )
-  => BoundaryOperator r x -> Matrix r
-homBoundaryOperatorRep (BoundaryOperator d) = rep $ form d where
-  rep :: (Entity x, Ord x, Ring r, Commutative r, Ord r, OrdPoint r, Vectorial r, Scalar r ~ r)
-      => SumForm r (Product N (BoundaryOperatorRep r x)) -> Matrix r
-  rep (Zero (c:>r)) = zero ((d^lengthN c) :> (d^lengthN r)) where d = dim unit
-  rep (S.S d) = homBoundaryOperatorRep' d
-  rep (r :! d) = r ! rep d
-  rep (f :+ g) = rep f + rep g
-
-
---------------------------------------------------------------------------------
--- HomBoundaryOperator -
-
-data HomBoundaryOperator r x y where
-  HomBoundaryOperatorRep :: (Entity x, Ord x)
-    => HomBoundaryOperator r (BoundaryOperator r x) (Matrix r)
-
-deriving instance Show (HomBoundaryOperator r x y)
-instance Show2 (HomBoundaryOperator r)
-
-deriving instance Eq (HomBoundaryOperator r x y)
-instance Eq2 (HomBoundaryOperator r)
-
-instance Validable (HomBoundaryOperator r x y) where
-  valid HomBoundaryOperatorRep = SValid
-
-instance Validable2 (HomBoundaryOperator r)
-
-instance (Typeable r, Typeable x, Typeable y) => Entity (HomBoundaryOperator r x y)
-instance Typeable r => Entity2 (HomBoundaryOperator r)
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => Morphism (HomBoundaryOperator r) where
-  type ObjectClass (HomBoundaryOperator r) = Alg r
-  homomorphous HomBoundaryOperatorRep = Struct :>: Struct
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) Typ
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphismTyp (HomBoundaryOperator r)
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) Fbr
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) Ort
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) Mlt
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) Add
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) Dst
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) FbrOrt
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) (Vec r)
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => EmbeddableMorphism (HomBoundaryOperator r) (Alg r)
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => Applicative (HomBoundaryOperator r) where
-  amap HomBoundaryOperatorRep = homBoundaryOperatorRep
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomFibred (HomBoundaryOperator r) where
-  rmap HomBoundaryOperatorRep (c :> r) = (d^lengthN c) :> (d^lengthN r) where d = dim unit
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomOriented (HomBoundaryOperator r) where
-  pmap HomBoundaryOperatorRep s = dim unit ^ lengthN s
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomMultiplicative (HomBoundaryOperator r) 
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomAdditive (HomBoundaryOperator r) 
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomFibredOriented (HomBoundaryOperator r) 
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomDistributive (HomBoundaryOperator r) 
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomVectorial r (HomBoundaryOperator r) 
-
-instance (Ring r, Commutative r, Ord r, OrdPoint r, Scalar r ~ r, Algebraic r)
-  => HomAlgebraic r (HomBoundaryOperator r) 
-
--}
