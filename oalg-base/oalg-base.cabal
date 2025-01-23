@@ -144,7 +144,7 @@ library
       OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Definition
       OAlg.Limes.EqualizersAndCoequalizers
-      OAlg.Limes.Exact.Zeros
+      OAlg.Limes.Exact.ConsZero
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
       OAlg.Limes.MinimaAndMaxima

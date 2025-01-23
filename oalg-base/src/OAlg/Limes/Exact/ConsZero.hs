@@ -10,25 +10,25 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.Limes.Exact.Zeros
+-- Module      : OAlg.Limes.Exact.ConsZero
 -- Description : chain diagrams with consecutive zero-able arrows. 
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- Chain diagrams with consecutive zero-able arrows. 
-module OAlg.Limes.Exact.Zeros
-  ( -- * Zeros
-    Zeros(..), zrsDiagram, zrsPoints, zrsArrows
+module OAlg.Limes.Exact.ConsZero
+  ( -- * Consecutive Zero
+    ConsZero(..), zrsDiagram, zrsPoints, zrsArrows
 
     -- ** Duality
-  , coZeros
+  , coConsZero
 
     -- * Transformation
-  , ZerosTrafo(..)
+  , ConsZeroTrafo(..)
 
     -- ** Duality
-  , coZerosTrafo
+  , coConsZeroTrafo
   ) where
 
 import Data.Typeable
@@ -45,7 +45,7 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
 --------------------------------------------------------------------------------
--- Zeros -
+-- ConsZero -
 
 -- | chain diagrams with consecutive zero-able arrows.
 --
@@ -57,29 +57,29 @@ import OAlg.Entity.FinList
 --
 -- (2) If @c@ matches @'DiagramChainFrom' _ ds@ then holds:
 -- @d' '*' d@ is 'zero' for all @..d':|'d'..@ in @ds@.
-newtype Zeros t n d = Zeros (Diagram (Chain t) (n+3) (n+2) d)
+newtype ConsZero t n d = ConsZero (Diagram (Chain t) (n+3) (n+2) d)
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- Zeros - Duality -
+-- ConsZero - Duality -
 
-type instance Dual (Zeros t n d) = Zeros (Dual t) n (Op d)
+type instance Dual (ConsZero t n d) = ConsZero (Dual t) n (Op d)
 
-reflDualChain :: Zeros t n d -> Dual (Chain t) :~: Chain (Dual t)
-reflDualChain (Zeros d) = case d of
+reflDualChain :: ConsZero t n d -> Dual (Chain t) :~: Chain (Dual t)
+reflDualChain (ConsZero d) = case d of
   DiagramChainTo _ _   -> Refl
   DiagramChainFrom _ _ -> Refl
 
--- | the dual 'Zeros'
-coZeros :: Zeros t n d -> Dual (Zeros t n d)
-coZeros c@(Zeros d) = case reflDualChain c of
-  Refl -> Zeros (coDiagram d)
+-- | the dual 'ConsZero'
+coConsZero :: ConsZero t n d -> Dual (ConsZero t n d)
+coConsZero c@(ConsZero d) = case reflDualChain c of
+  Refl -> ConsZero (coDiagram d)
 
 --------------------------------------------------------------------------------
--- Zeros - Entity -
+-- ConsZero - Entity -
 
-vldZerosTo :: Distributive d => Zeros To n d -> Statement
-vldZerosTo (Zeros (DiagramChainTo e (d:|ds)))
+vldConsZeroTo :: Distributive d => ConsZero To n d -> Statement
+vldConsZeroTo (ConsZero (DiagramChainTo e (d:|ds)))
   = And [ valid d
         , Label "e == end d" :<=>: (e == end d) :?> Params ["e":=show e, "d":=show d]
         , vldZrs 0 d ds
@@ -94,50 +94,50 @@ vldZerosTo (Zeros (DiagramChainTo e (d:|ds)))
                             , vldZrs (succ i) d' ds
                             ]
 
-instance Distributive d => Validable (Zeros t n d) where
-  valid c@(Zeros d) = Label "Zeros" :<=>:
+instance Distributive d => Validable (ConsZero t n d) where
+  valid c@(ConsZero d) = Label "ConsZero" :<=>:
     case d of
-      DiagramChainTo _ _   -> vldZerosTo c
-      DiagramChainFrom _ _ -> vldZerosTo $ coZeros c
+      DiagramChainTo _ _   -> vldConsZeroTo c
+      DiagramChainFrom _ _ -> vldConsZeroTo $ coConsZero c
 
-instance (Distributive d, Typeable t, Typeable n) => Entity (Zeros t n d)
+instance (Distributive d, Typeable t, Typeable n) => Entity (ConsZero t n d)
 
 --------------------------------------------------------------------------------
 -- zrsDiagram -
 
 -- | the underlying 'Diagram'.
-zrsDiagram :: Zeros t n d -> Diagram (Chain t) (n+3) (n+2) d
-zrsDiagram (Zeros d) = d
+zrsDiagram :: ConsZero t n d -> Diagram (Chain t) (n+3) (n+2) d
+zrsDiagram (ConsZero d) = d
 
 --------------------------------------------------------------------------------
 -- zrsPoints -
 
 -- | the points of the underlying 'Diagram'.
-zrsPoints :: Oriented d => Zeros t n d -> FinList (n+3) (Point d)
+zrsPoints :: Oriented d => ConsZero t n d -> FinList (n+3) (Point d)
 zrsPoints = dgPoints . zrsDiagram
 
 --------------------------------------------------------------------------------
 -- zrsArrows -
 
 -- | the arrows of the underlying 'Diagram'.
-zrsArrows :: Zeros t n d -> FinList (n+2) d
+zrsArrows :: ConsZero t n d -> FinList (n+2) d
 zrsArrows = dgArrows . zrsDiagram
 
 --------------------------------------------------------------------------------
 -- zrsHead -
 
--- zrsHead :: Oriented d => Zeros t n d -> Zeros t N0 d
--- zrsHead (Zeros (DiagramChainTo _ (a:|a':|_))) = Zeros (DiagramChainTo (end a) (a:|a':|Nil))
+-- zrsHead :: Oriented d => ConsZero t n d -> ConsZero t N0 d
+-- zrsHead (ConsZero (DiagramChainTo _ (a:|a':|_))) = ConsZero (DiagramChainTo (end a) (a:|a':|Nil))
 
 --------------------------------------------------------------------------------
--- ZerosTrafo -
+-- ConsZeroTrafo -
 
--- | transformation between two 'Zeros'.
+-- | transformation between two 'ConsZero'.
 --
--- __Properties__ Let @t = 'ZeroTrafo' a b fs@ be in @'ZerosTrafo' __t__ __n__ __d__@ for a
+-- __Properties__ Let @t = 'ZeroTrafo' a b fs@ be in @'ConsZeroTrafo' __t__ __n__ __d__@ for a
 -- 'Distributive' structure, then holds:
 --
--- (1) If @a@ matches @'Zeros' ('DiagramChainTo' _ as)@, then holds:
+-- (1) If @a@ matches @'ConsZero' ('DiagramChainTo' _ as)@, then holds:
 -- @f '*' a '==' b '*' f'@ for all @f@, @a@ and @b@ in
 --
 -- @
@@ -150,7 +150,7 @@ zrsArrows = dgArrows . zrsDiagram
 --                b       
 -- @
 --
--- (2) If @a@ matches @'Zeros' ('DiagramChainFrom' _ as)@, then holds:
+-- (2) If @a@ matches @'ConsZero' ('DiagramChainFrom' _ as)@, then holds:
 -- @f' '*' a '==' b '*' f@ for all @f@, @a@ and @b@ in
 --
 -- @
@@ -162,30 +162,30 @@ zrsArrows = dgArrows . zrsDiagram
 --  bs: ...    ------> ------>   ... 
 --                b       
 -- @
-data ZerosTrafo t n d = ZerosTrafo (Zeros t n d) (Zeros t n d) (FinList (n+3) d)
+data ConsZeroTrafo t n d = ConsZeroTrafo (ConsZero t n d) (ConsZero t n d) (FinList (n+3) d)
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
 -- zrtTransformation -
 
 -- | the underlying 'Transformation'.
-zrtTransformation :: ZerosTrafo t n d -> Transformation (Chain t) (n+3) (n+2) d
-zrtTransformation (ZerosTrafo a b fs) = Transformation (zrsDiagram a) (zrsDiagram b) fs
+zrtTransformation :: ConsZeroTrafo t n d -> Transformation (Chain t) (n+3) (n+2) d
+zrtTransformation (ConsZeroTrafo a b fs) = Transformation (zrsDiagram a) (zrsDiagram b) fs
 
 --------------------------------------------------------------------------------
--- coZerosTrafo - Duality -
+-- coConsZeroTrafo - Duality -
 
-type instance Dual (ZerosTrafo t n d) = ZerosTrafo (Dual t) n (Op d)
+type instance Dual (ConsZeroTrafo t n d) = ConsZeroTrafo (Dual t) n (Op d)
 
--- | the dual 'ZerosTrafo'.
-coZerosTrafo :: ZerosTrafo t n d -> Dual (ZerosTrafo t n d)
-coZerosTrafo (ZerosTrafo a b fs) = ZerosTrafo (coZeros b) (coZeros a) (amap1 Op fs)
+-- | the dual 'ConsZeroTrafo'.
+coConsZeroTrafo :: ConsZeroTrafo t n d -> Dual (ConsZeroTrafo t n d)
+coConsZeroTrafo (ConsZeroTrafo a b fs) = ConsZeroTrafo (coConsZero b) (coConsZero a) (amap1 Op fs)
 
 --------------------------------------------------------------------------------
--- vldZerosTrafoTo - Entity -
+-- vldConsZeroTrafoTo - Entity -
 
-vldZerosTrafoTo :: Distributive d => ZerosTrafo To n d -> Statement
-vldZerosTrafoTo (ZerosTrafo a@(Zeros (DiagramChainTo _ as)) b@(Zeros (DiagramChainTo _ bs)) (f:|fs))
+vldConsZeroTrafoTo :: Distributive d => ConsZeroTrafo To n d -> Statement
+vldConsZeroTrafoTo (ConsZeroTrafo a@(ConsZero (DiagramChainTo _ as)) b@(ConsZero (DiagramChainTo _ bs)) (f:|fs))
   = And [ valid a
         , valid b
         , valid f
@@ -202,16 +202,16 @@ vldZerosTrafoTo (ZerosTrafo a@(Zeros (DiagramChainTo _ as)) b@(Zeros (DiagramCha
           , vldTrfs (succ i) f' fs as bs
           ]
 
-instance Distributive d => Validable (ZerosTrafo t n d) where
-  valid t@(ZerosTrafo a _ _) = Label "ZerosTrafo" :<=>: case a of
-    Zeros (DiagramChainTo _ _)   -> vldZerosTrafoTo t
-    Zeros (DiagramChainFrom _ _) -> vldZerosTrafoTo $ coZerosTrafo t
+instance Distributive d => Validable (ConsZeroTrafo t n d) where
+  valid t@(ConsZeroTrafo a _ _) = Label "ConsZeroTrafo" :<=>: case a of
+    ConsZero (DiagramChainTo _ _)   -> vldConsZeroTrafoTo t
+    ConsZero (DiagramChainFrom _ _) -> vldConsZeroTrafoTo $ coConsZeroTrafo t
 
-instance (Distributive d, Typeable t, Typeable n) => Entity (ZerosTrafo t n d)
+instance (Distributive d, Typeable t, Typeable n) => Entity (ConsZeroTrafo t n d)
 
 --------------------------------------------------------------------------------
--- ZerosTrafo - Oriented -
+-- ConsZeroTrafo - Oriented -
 
-instance (Distributive d, Typeable t, Typeable n) => Oriented (ZerosTrafo t n d) where
-  type Point (ZerosTrafo t n d) = Zeros t n d
-  orientation (ZerosTrafo a b _) = a :> b
+instance (Distributive d, Typeable t, Typeable n) => Oriented (ConsZeroTrafo t n d) where
+  type Point (ConsZeroTrafo t n d) = ConsZero t n d
+  orientation (ConsZeroTrafo a b _) = a :> b
