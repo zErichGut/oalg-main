@@ -19,16 +19,17 @@
 -- Chain diagrams with consecutive zero-able arrows. 
 module OAlg.Limes.Exact.ConsZero
   ( -- * Consecutive Zero
-    ConsZero(..), zrsDiagram, zrsPoints, zrsArrows
+    ConsZero(..), cnzDiagram, cnzPoints, cnzArrows
+  , cnzHead, cnzTail
 
     -- ** Duality
-  , coConsZero
+  , coConsZero, coConsZeroInv, cnzFromOpOp
 
     -- * Transformation
   , ConsZeroTrafo(..)
 
     -- ** Duality
-  , coConsZeroTrafo
+  , coConsZeroTrafo, coConsZeroTrafoInv, cnztFromOpOp
   ) where
 
 import Data.Typeable
@@ -75,6 +76,12 @@ coConsZero :: ConsZero t n d -> Dual (ConsZero t n d)
 coConsZero c@(ConsZero d) = case reflDualChain c of
   Refl -> ConsZero (coDiagram d)
 
+cnzFromOpOp :: Oriented d => ConsZero t n (Op (Op d)) -> ConsZero t n d
+cnzFromOpOp (ConsZero d) = ConsZero (dgFromOpOp d)
+                            
+coConsZeroInv :: Oriented d => Dual (Dual t) :~: t -> Dual (ConsZero t n d) -> ConsZero t n d
+coConsZeroInv Refl d' = cnzFromOpOp $ coConsZero d'
+
 --------------------------------------------------------------------------------
 -- ConsZero - Entity -
 
@@ -103,39 +110,48 @@ instance Distributive d => Validable (ConsZero t n d) where
 instance (Distributive d, Typeable t, Typeable n) => Entity (ConsZero t n d)
 
 --------------------------------------------------------------------------------
--- zrsDiagram -
+-- cnzDiagram -
 
 -- | the underlying 'Diagram'.
-zrsDiagram :: ConsZero t n d -> Diagram (Chain t) (n+3) (n+2) d
-zrsDiagram (ConsZero d) = d
+cnzDiagram :: ConsZero t n d -> Diagram (Chain t) (n+3) (n+2) d
+cnzDiagram (ConsZero d) = d
 
 --------------------------------------------------------------------------------
--- zrsPoints -
+-- cnzPoints -
 
 -- | the points of the underlying 'Diagram'.
-zrsPoints :: Oriented d => ConsZero t n d -> FinList (n+3) (Point d)
-zrsPoints = dgPoints . zrsDiagram
+cnzPoints :: Oriented d => ConsZero t n d -> FinList (n+3) (Point d)
+cnzPoints = dgPoints . cnzDiagram
 
 --------------------------------------------------------------------------------
--- zrsArrows -
+-- cnzArrows -
 
 -- | the arrows of the underlying 'Diagram'.
-zrsArrows :: ConsZero t n d -> FinList (n+2) d
-zrsArrows = dgArrows . zrsDiagram
+cnzArrows :: ConsZero t n d -> FinList (n+2) d
+cnzArrows = dgArrows . cnzDiagram
 
 --------------------------------------------------------------------------------
--- zrsHead -
+-- cnzHead -
 
--- zrsHead :: Oriented d => ConsZero t n d -> ConsZero t N0 d
--- zrsHead (ConsZero (DiagramChainTo _ (a:|a':|_))) = ConsZero (DiagramChainTo (end a) (a:|a':|Nil))
+-- | the two first arrows as a 'ConsZero'.
+cnzHead :: Oriented d => ConsZero t n d -> ConsZero t N0 d
+cnzHead (ConsZero (DiagramChainTo _ (a:|a':|_))) = ConsZero (DiagramChainTo (end a) (a:|a':|Nil))
+cnzHead c@(ConsZero (DiagramChainFrom _ _))      = coConsZeroInv Refl $ cnzHead $ coConsZero c 
 
+--------------------------------------------------------------------------------
+-- cnzTail -
+
+-- | dropping the first arrow.
+cnzTail :: Oriented d => ConsZero t (n+1) d -> ConsZero t n d
+cnzTail (ConsZero (DiagramChainTo _ (a:|as))) = ConsZero (DiagramChainTo (start a) as)
+cnzTail c@(ConsZero (DiagramChainFrom _ _))   = coConsZeroInv Refl $ cnzTail $ coConsZero c
 --------------------------------------------------------------------------------
 -- ConsZeroTrafo -
 
 -- | transformation between two 'ConsZero'.
 --
 -- __Properties__ Let @t = 'ZeroTrafo' a b fs@ be in @'ConsZeroTrafo' __t__ __n__ __d__@ for a
--- 'Distributive' structure, then holds:
+-- 'Distributive' structure @__d__@, then holds:
 --
 -- (1) If @a@ matches @'ConsZero' ('DiagramChainTo' _ as)@, then holds:
 -- @f '*' a '==' b '*' f'@ for all @f@, @a@ and @b@ in
@@ -170,7 +186,7 @@ data ConsZeroTrafo t n d = ConsZeroTrafo (ConsZero t n d) (ConsZero t n d) (FinL
 
 -- | the underlying 'Transformation'.
 zrtTransformation :: ConsZeroTrafo t n d -> Transformation (Chain t) (n+3) (n+2) d
-zrtTransformation (ConsZeroTrafo a b fs) = Transformation (zrsDiagram a) (zrsDiagram b) fs
+zrtTransformation (ConsZeroTrafo a b fs) = Transformation (cnzDiagram a) (cnzDiagram b) fs
 
 --------------------------------------------------------------------------------
 -- coConsZeroTrafo - Duality -
@@ -181,6 +197,15 @@ type instance Dual (ConsZeroTrafo t n d) = ConsZeroTrafo (Dual t) n (Op d)
 coConsZeroTrafo :: ConsZeroTrafo t n d -> Dual (ConsZeroTrafo t n d)
 coConsZeroTrafo (ConsZeroTrafo a b fs) = ConsZeroTrafo (coConsZero b) (coConsZero a) (amap1 Op fs)
 
+coConsZeroTrafoInv :: Oriented d
+  => Dual (Dual t) :~: t -> Dual (ConsZeroTrafo t n d) -> ConsZeroTrafo t n d
+coConsZeroTrafoInv Refl t = cnztFromOpOp $ coConsZeroTrafo t
+
+cnztFromOpOp :: Oriented d => ConsZeroTrafo t n (Op (Op d)) -> ConsZeroTrafo t n d
+cnztFromOpOp (ConsZeroTrafo a b fs) = ConsZeroTrafo a' b' fs' where
+  a' = cnzFromOpOp a
+  b' = cnzFromOpOp b
+  fs' = amap1 fromOpOp fs
 --------------------------------------------------------------------------------
 -- vldConsZeroTrafoTo - Entity -
 
