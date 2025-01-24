@@ -37,6 +37,7 @@ import OAlg.Limes.ProductsAndSums
 import OAlg.Limes.EqualizersAndCoequalizers
 import OAlg.Limes.PullbacksAndPushouts
 import OAlg.Limes.KernelsAndCokernels
+import OAlg.Limes.Exact.Deviation
 
 --------------------------------------------------------------------------------
 -- prpLimitsOrntSymbol -
@@ -73,6 +74,7 @@ prpLimitsOrntSymbol = Prp "LimesOrntSymbol" :<=>:
           Exist xN (\(SomeNatural n) -> Label (show n) :<=>:
                       valid (cokernels' n (cokernelsOrnt I))
                    )
+      , Label "Deviation" :<=>: prpDeviationOrntSymbol
       ]
   where xN = xOneOf $ takeN 20 naturals
 

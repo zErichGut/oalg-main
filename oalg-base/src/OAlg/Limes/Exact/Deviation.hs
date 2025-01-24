@@ -38,6 +38,9 @@ module OAlg.Limes.Exact.Deviation
     -- ** Duality
   , coVarianceTrafo, coVarianceTrafoInv, vrctFromOpOp
 
+    -- * Proposition
+  , prpDeviationOrntSymbol
+
   ) where
 
 import Data.Typeable
@@ -60,7 +63,7 @@ import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsZero
 
 
--- import OAlg.Data.Symbol
+import OAlg.Data.Symbol
 
 --------------------------------------------------------------------------------
 -- Variance -
@@ -260,14 +263,14 @@ deviation = head . cnzPoints . vrcBottom
 -- Deviation -
 
 -- | measuring the deviations.
-type Deviation n = Diagram Discrete (n+1) N0
+type Deviation n = Diagram Discrete n N0
 
 --------------------------------------------------------------------------------
 -- deviations -
 
 -- | the induced 'Deviation's.
 deviations :: Distributive d
-  => Kernels N1 d -> Cokernels N1 d -> ConsZero t n d -> Deviation n d
+  => Kernels N1 d -> Cokernels N1 d -> ConsZero t n d -> Deviation (n+1) d
 deviations kers cokers = DiagramDiscrete . amap1 deviation . variances kers cokers
 
 --------------------------------------------------------------------------------
@@ -370,7 +373,7 @@ varianceTrafos kers cokers t
 --------------------------------------------------------------------------------
 -- DeviationTrafo -
 
-type DeviationTrafo n = Transformation Discrete (n+1) N0
+type DeviationTrafo n = Transformation Discrete n N0
 
 --------------------------------------------------------------------------------
 -- deviationTrafos -
@@ -389,27 +392,36 @@ type DeviationTrafo n = Transformation Discrete (n+1) N0
 -- i.e. the resulting 'DeviationTrafo' for different choices for @kers@ and @cokers@ are
 -- /isomorphic/.
 deviationTrafos :: Distributive d
-  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t n d -> DeviationTrafo n d
+  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t n d -> DeviationTrafo (n+1) d
 deviationTrafos kers cokers t = Transformation a' b' ds where
   ds = amap1 deviationTrafo $ varianceTrafos kers cokers t
   
   a' = DiagramDiscrete $ amap1 start ds
   b' = DiagramDiscrete $ amap1 end ds
 
+--------------------------------------------------------------------------------
+-- prpDeviationTrafos -
+
+-- | validity for the properties of 'deviationTrafos'.
+prpDeviationTrafos :: (Distributive d, Typeable t, Typeable n)
+  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t n d -> Statement
+prpDeviationTrafos kers cokers t = Prp "DeviationTrafos" :<=>:
+  And [ Label "1" :<=>:
+          (start ds == deviations kers cokers (start t)) :?> Params ["t":=show t]
+      , Label "2" :<=>:
+          (end ds == deviations kers cokers (end t)) :?> Params ["t":=show t]
+      ]
+  where
+    ds = deviationTrafos kers cokers t
 
 --------------------------------------------------------------------------------
+-- prpDeviation -
 
-{-
-cFrom = ConsZero (DiagramChainFrom A ((A:>B):|(B:>C):|Nil))
-cTo = ConsZero (DiagramChainTo A ((B:>A):|(C:>B):|Nil))
-
-v = variance (kernelsOrnt X) (cokernelsOrnt Y) cFrom
-
-kers   = kernelsOrnt X
-cokers = cokernelsOrnt Y
-
-aFrom = ConsZero (DiagramChainFrom A ((A:>B):|(B:>C):|(C:>D):|Nil))
-eFrom = ConsZero (DiagramChainFrom E ((E:>F):|(F:>G):|(G:>H):|Nil))
-
-tFrom = ConsZeroTrafo aFrom eFrom ((A:>E):|(B:>F):|(C:>G):|(D:>H):|Nil)
--}
+-- | validity of some properties for @__d__ ~ 'Orientation' 'Symbol'@.
+prpDeviationOrntSymbol :: Statement
+prpDeviationOrntSymbol = Prp "Deviation" :<=>:
+  And [ Forall (xSomeConsZeroTrafoOrnt 20)
+          (\(SomeConsZeroTrafo t) -> prpDeviationTrafos kers cokers t)
+      ]
+  where kers   = kernelsOrnt X
+        cokers = cokernelsOrnt Y

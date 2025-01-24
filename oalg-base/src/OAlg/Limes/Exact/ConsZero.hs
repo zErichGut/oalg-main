@@ -31,7 +31,13 @@ module OAlg.Limes.Exact.ConsZero
 
     -- ** Duality
   , coConsZeroTrafo, coConsZeroTrafoInv, cnztFromOpOp
+
+    -- * X
+  , xSomeConsZeroTrafoOrnt, SomeConsZeroTrafo(..)
   ) where
+
+import Control.Monad
+import Control.Applicative ((<|>))
 
 import Data.Typeable
 
@@ -263,3 +269,51 @@ cnztHead (ConsZeroTrafo a b (f0:|f1:|f2:|_)) = ConsZeroTrafo (cnzHead a) (cnzHea
 -- | dropping the first arrow.
 cnztTail :: Oriented d => ConsZeroTrafo t (n+1) d -> ConsZeroTrafo t n d
 cnztTail (ConsZeroTrafo a b fs) = ConsZeroTrafo (cnzTail a) (cnzTail b) (tail fs)
+
+--------------------------------------------------------------------------------
+-- SomeConsZeroTrafo -
+
+-- | some 'ConsZeroTrafo'.
+data SomeConsZeroTrafo d where
+  SomeConsZeroTrafo :: (Typeable t, Typeable n) => ConsZeroTrafo t n d -> SomeConsZeroTrafo d
+
+instance Distributive d => Validable (SomeConsZeroTrafo d) where
+  valid (SomeConsZeroTrafo t) = Label "SomeConsZeroTrafo" :<=>: valid t
+  
+--------------------------------------------------------------------------------
+-- xSomeConsZeroTrafoOrnt -
+
+-- | random variable for @'ConsZeroTrafo' __t__ __n__ 'OS'@ with a maximal @__n__@ of the given one.
+xSomeConsZeroTrafoOrnt :: N -> X (SomeConsZeroTrafo OS)
+xSomeConsZeroTrafoOrnt n = xscnztTo n <|> xscnztFrom n where
+
+  xTo :: Any n -> X (Diagram (Chain To) (n+3) (n+2) OS)
+  xTo n = xDiagram Refl $ XDiagramChainTo (SW $ SW n) xStandardOrtSite
+  
+  xFrom :: Any n -> X (Diagram (Chain From) (n+3) (n+2) OS)
+  xFrom n = xDiagram Refl $ XDiagramChainFrom (SW $ SW n) xStandardOrtSite
+  
+  xcnztTo :: Any n -> X (ConsZeroTrafo To n OS)
+  xcnztTo n = do
+    a <- amap1 ConsZero $ xTo n
+    b <- amap1 ConsZero $ xTo n
+    return $ ConsZeroTrafo a b $ amap1 (uncurry (:>)) $ (cnzPoints a `zip` cnzPoints b) 
+  
+  xcnztFrom :: Any n -> X (ConsZeroTrafo From n OS)
+  xcnztFrom n = do
+    a <- amap1 ConsZero $ xFrom n
+    b <- amap1 ConsZero $ xFrom n
+    return $ ConsZeroTrafo a b $ amap1 (uncurry (:>)) $ (cnzPoints a `zip` cnzPoints b) 
+  
+  xscnztTo :: N -> X (SomeConsZeroTrafo OS)
+  xscnztTo n = do
+    SomeNatural n' <- amap1 someNatural $ xNB 0 n
+    t              <- xcnztTo n'
+    return $ SomeConsZeroTrafo t
+
+  xscnztFrom :: N -> X (SomeConsZeroTrafo OS)
+  xscnztFrom n = do
+    SomeNatural n' <- amap1 someNatural $ xNB 0 n
+    t              <- xcnztFrom n'
+    return $ SomeConsZeroTrafo t
+  
