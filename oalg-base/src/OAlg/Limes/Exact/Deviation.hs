@@ -10,15 +10,34 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.Limes.Exact.Variance
--- Description : measuring the deviation of being exact.
+-- Module      : OAlg.Limes.Exact.Deviation
+-- Description : measuring the deviation of exactness.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- measuring the deviation of being exact.
-module OAlg.Limes.Exact.Variance
-  (
+-- measuring the deviation exactness.
+module OAlg.Limes.Exact.Deviation
+  ( -- * Deviation
+    Deviation, deviations, deviation
+
+    -- * Deviation Trafo
+  , DeviationTrafo, deviationTrafos, deviationTrafo
+
+    -- * Variance
+  , Variance(..), variances, variance
+  , vrcTop, vrcBottom
+
+    -- ** Duality
+  , coVariance, coVarianceInv, vrcFromOpOp
+
+    -- * Variance Trafo
+  , VarianceTrafo(..), varianceTrafos, varianceTrafo
+  , vrctTop, vrctBottom
+
+    -- ** Duality
+  , coVarianceTrafo, coVarianceTrafoInv, vrctFromOpOp
+
   ) where
 
 import Data.Typeable
@@ -41,7 +60,7 @@ import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsZero
 
 
-import OAlg.Data.Symbol
+-- import OAlg.Data.Symbol
 
 --------------------------------------------------------------------------------
 -- Variance -
@@ -52,7 +71,21 @@ import OAlg.Data.Symbol
 -- __Properties__ Let @'Variance' t ker coker@ be in @t'Variance' __t__ __d__@ for a 'Distributive'
 -- structure @__d__@, then holds:
 --
--- (1) If @'end' t@ matches @'ConsZero' ('DiagramChainTo' _ _)@ then holds:
+-- (1) If @'end' t@ matches @'ConsZero' ('DiagramChainTo' _ _)@ then holds (see diagram below):
+--
+--      (1) @ker@ is the kernel of @v@.
+--
+--      (2) @t1@ is the factor of the universal cone of @ker@.
+--
+--      (3) @t2@ is 'one'.
+--
+--      (4) @w'@ is the universal factor of @w '*' t2@.
+--
+--      (5) @coker@ is the cokernel of @w'@.
+--
+--      (6) @v'@ is the factor of the universal cone of @coker@.
+--
+--      (7) @t0@ is the universal arrow of @v '*' t1@ and hence 'zero'.
 --
 -- @
 --                                  v              w
@@ -66,21 +99,21 @@ import OAlg.Data.Symbol
 --                           v' = coker w'         w'
 -- @
 --
---    (1.1) @ker@ is the kernel of @v@.
+-- (2) If @'start' t@ matches @'ConsZero' ('DiagramChainFrom' _ _)@ then holds (see diagram below):
 --
---    (1.2) @t1@ is the factor of the universal cone of @ker@.
+--      (1) @coker@ is the cokernel of @v@.
 --
---    (1.3) @t2@ is 'one'.
+--      (2) @t1@ is the factor of the universal cone of @coker@.
 --
---    (1.4) @w'@ is the universal factor of @w '*' t2@.
+--      (3) @t2@ is 'one'.
 --
---    (1.5) @coker@ is the cokernel of @w'@.
+--      (4) @w'@ is the universal factor of @t2 '*' w@.
 --
---    (1.6) @v'@ is the factor of the universal cone of @coker@.
+--      (5) @ker@ is the kernel of @w'@.
 --
---    (1.7) @t0@ is the universal arrow of @v '*' t1@ and hence 'zero'.
+--      (6) @v'@ is the factor of the universal cone of @ker@.
 --
--- (2) If @'start' t@ matches @'ConsZero' ('DiagramChainFrom' _ _)@ then holds:
+--      (7) @t0@ is the universal arrow of @t1 '*' v@ and hence 'zero'.
 --
 -- @
 --                                  v              w
@@ -93,20 +126,6 @@ import OAlg.Data.Symbol
 -- bottom:   end t         a'>-----------> b'------------> c
 --                           v' = ker w'         w'
 -- @
---
---    (2.1) @coker@ is the cokernel of @v@.
---
---    (2.2) @t1@ is the factor of the universal cone of @coker@.
---
---    (2.3) @t2@ is 'one'.
---
---    (2.4) @w'@ is the universal factor of @t2 '*' w@.
---
---    (2.5) @ker@ is the kernel of @w'@.
---
---    (2.6) @v'@ is the factor of the universal cone of @ker@.
---
---    (2.7) @t0@ is the universal arrow of @t1 '*' v@ and hence 'zero'.
 data Variance t d
   = Variance
       (ConsZeroTrafo t N0 d)
@@ -124,15 +143,15 @@ coVariance (Variance t ker coker) = Variance (coConsZeroTrafo t) ker' coker' whe
   ker'   = lmToOp cokrnLimesDuality coker 
   coker' = lmToOp krnLimesDuality ker
 
-vrzFromOpOp :: Distributive d => Variance t (Op (Op d)) -> Variance t d
-vrzFromOpOp (Variance t ker coker) = Variance t' ker' coker' where
+vrcFromOpOp :: Distributive d => Variance t (Op (Op d)) -> Variance t d
+vrcFromOpOp (Variance t ker coker) = Variance t' ker' coker' where
   t' = cnztFromOpOp t
 
   ker'   = lmFromOp krnLimesDuality $ lmFromOp cokrnLimesDuality ker
   coker' = lmFromOp cokrnLimesDuality $ lmFromOp krnLimesDuality coker
 
 coVarianceInv :: Distributive d => Dual (Dual t) :~: t -> Dual (Variance t d) -> Variance t d
-coVarianceInv Refl v = vrzFromOpOp $ coVariance v
+coVarianceInv Refl v = vrcFromOpOp $ coVariance v
 
 --------------------------------------------------------------------------------
 -- Variance - Validable -
@@ -238,10 +257,17 @@ deviation :: Distributive d => Variance t d -> Point d
 deviation = head . cnzPoints . vrcBottom
 
 --------------------------------------------------------------------------------
+-- Deviation -
+
+-- | measuring the deviations.
+type Deviation n = Diagram Discrete (n+1) N0
+
+--------------------------------------------------------------------------------
 -- deviations -
 
+-- | the induced 'Deviation's.
 deviations :: Distributive d
-  => Kernels N1 d -> Cokernels N1 d -> ConsZero t n d -> Diagram Discrete (n+1) N0 d
+  => Kernels N1 d -> Cokernels N1 d -> ConsZero t n d -> Deviation n d
 deviations kers cokers = DiagramDiscrete . amap1 deviation . variances kers cokers
 
 --------------------------------------------------------------------------------
@@ -256,23 +282,134 @@ deviations kers cokers = DiagramDiscrete . amap1 deviation . variances kers coke
 data VarianceTrafo t d = VarianceTrafo (Variance t d) (Variance t d) (FinList N3 d)
 
 --------------------------------------------------------------------------------
+-- VarianceTrafo - Duality -
+
+type instance Dual (VarianceTrafo t d) = VarianceTrafo (Dual t) (Op d)
+
+coVarianceTrafo :: Distributive d => VarianceTrafo t d -> Dual (VarianceTrafo t d)
+coVarianceTrafo (VarianceTrafo a b fs)
+  = VarianceTrafo (coVariance b) (coVariance a) (amap1 Op fs)
+
+vrctFromOpOp :: Distributive d => VarianceTrafo t (Op (Op d)) -> VarianceTrafo t d
+vrctFromOpOp (VarianceTrafo a b fs) = VarianceTrafo (vrcFromOpOp a) (vrcFromOpOp b) (amap1 fromOpOp fs)
+
+coVarianceTrafoInv :: Distributive d
+  => Dual (Dual t) :~: t -> Dual (VarianceTrafo t d) -> VarianceTrafo t d
+coVarianceTrafoInv Refl = vrctFromOpOp . coVarianceTrafo
+
+--------------------------------------------------------------------------------
 -- vrctTop -
 
 -- | the induced 'ConsZeroTrafo' between the top 'ConsZero' chains (see diagram for 'Variance').
-vrctTop :: VarianceTrafo t d -> ConsZeroTrafo t N0 d
-vrctTop = error "nyi"
+vrctTop :: Distributive d => VarianceTrafo t d -> ConsZeroTrafo t N0 d
+vrctTop (VarianceTrafo a b fs) = ConsZeroTrafo (vrcTop a) (vrcTop b) fs
 
 --------------------------------------------------------------------------------
--- deviatinsTrafo -
+-- VariaceTrafo - Validable -
 
--- | the induced transformation of 'deviations'.
-deviationsTrafo :: Distributive d
-  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t n d -> Transformation Discrete (n+1) N0 d
-deviationsTrafo = error "nyi"
+instance Distributive d => Validable (VarianceTrafo t d) where
+  valid v = Label "VarianceTrafo" :<=>: valid (vrctTop v)
+  
+--------------------------------------------------------------------------------
+-- vrctBottom -
+
+-- | the induced 'ConsZeroTrafo' between the bottom 'ConsZero' chains (see diagram for 'Variance').
+vrctBottom :: Distributive d => VarianceTrafo t d -> ConsZeroTrafo t N0 d
+vrctBottom t@(VarianceTrafo a b fs) = case vrcTop a of
+  ConsZero (DiagramChainTo _ _)    -> ConsZeroTrafo (vrcBottom a) (vrcBottom b) fs' where
+    fs' = f'0 :| f'1 :| f'2 :| Nil
+
+    _ :| f1 :| f2 :| Nil = fs
+
+    f'2 = f2
+
+    Variance (ConsZeroTrafo _ _ as) _ aCoker = a
+    Variance (ConsZeroTrafo (ConsZero (DiagramChainTo _ bs')) _ _) bKer _ = b
+    _ :|a1:|_ :|Nil = as
+    b'0:|_ :|Nil = bs'
+
+    bKerDgm = cnDiagram $ universalCone bKer
+    f'1 = universalFactor bKer (ConeKernel bKerDgm (f1 * a1))
+
+    aCokerDgm = cnDiagram $ universalCone aCoker
+    f'0 = universalFactor aCoker (ConeCokernel aCokerDgm (b'0 * f'1))
+
+  ConsZero (DiagramChainFrom _ _)  -> coConsZeroTrafoInv Refl $ vrctBottom $ coVarianceTrafo t 
+
+--------------------------------------------------------------------------------
+-- deviationTrafo -
+
+-- | the transformation between the two given 'deviation's. 
+deviationTrafo :: Distributive d => VarianceTrafo t d -> d
+deviationTrafo t = f'0 where ConsZeroTrafo _ _ (f'0:|_) = vrctBottom t
+
+--------------------------------------------------------------------------------
+-- varianceTrafo -
+
+-- | the induced 'VariancTrafo' given by a 'ConsZeroTrafo'.
+--
+-- __Property__ Let @t@ be in @'ConsZeroTrafo' __t__ 'N0' __d__@ for a 'Distributive' structure
+-- @__d__@ and let @kers@ be in @'Kernels' 'N1' __d__@ and @cokers@ be in @'Cokernels' 'N1' __d__@,
+-- then holds: @'vrctTop' ('varianceTraof' kers cokers t) '==' t@.
+varianceTrafo :: Distributive d
+  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t N0 d -> VarianceTrafo t d
+varianceTrafo kers coker (ConsZeroTrafo a b fs) = VarianceTrafo va vb fs where
+  va = variance kers coker a
+  vb = variance kers coker b
+
+--------------------------------------------------------------------------------
+-- varianceTrafos -
+
+varianceTrafos :: Distributive d
+  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t n d -> FinList (n+1) (VarianceTrafo t d)
+varianceTrafos kers cokers t
+  = varianceTrafo kers cokers (cnztHead t) :| case cnztTrafos t of
+      _:|_:|_:|Nil  -> Nil
+      _:|_:|_:|_:|_ -> varianceTrafos kers cokers (cnztTail t)
+
+--------------------------------------------------------------------------------
+-- DeviationTrafo -
+
+type DeviationTrafo n = Transformation Discrete (n+1) N0
+
+--------------------------------------------------------------------------------
+-- deviationTrafos -
+
+-- | the induced 'DeviationTrafo's.
+--
+-- __Properties__ Let @t@ be in @'ConsZeroTrafo __t__ __n__ __d__@ for a 'Distributive' structure
+-- @__d__@ and @kers@ be in @'Kernels' 'N1' __d__@ and @cokers@ be in @'Cokernels' 'N1' __d__@,
+-- then holds:
+--
+-- (1) @'start' ('deviationTrafos' kers cokers t) '==' 'deviations' kers cokers ('start' t)@.
+--
+-- (2) @'end' ('deviationTrafos' kers cokers t) '==' 'deviations' kers cokers ('end' t)@.
+--
+-- __Note__ The resulting 'DeviationTrafo' dos not really depend on the choice of @kers@ and @cokers@,
+-- i.e. the resulting 'DeviationTrafo' for different choices for @kers@ and @cokers@ are
+-- /isomorphic/.
+deviationTrafos :: Distributive d
+  => Kernels N1 d -> Cokernels N1 d -> ConsZeroTrafo t n d -> DeviationTrafo n d
+deviationTrafos kers cokers t = Transformation a' b' ds where
+  ds = amap1 deviationTrafo $ varianceTrafos kers cokers t
+  
+  a' = DiagramDiscrete $ amap1 start ds
+  b' = DiagramDiscrete $ amap1 end ds
+
 
 --------------------------------------------------------------------------------
 
+{-
 cFrom = ConsZero (DiagramChainFrom A ((A:>B):|(B:>C):|Nil))
 cTo = ConsZero (DiagramChainTo A ((B:>A):|(C:>B):|Nil))
 
 v = variance (kernelsOrnt X) (cokernelsOrnt Y) cFrom
+
+kers   = kernelsOrnt X
+cokers = cokernelsOrnt Y
+
+aFrom = ConsZero (DiagramChainFrom A ((A:>B):|(B:>C):|(C:>D):|Nil))
+eFrom = ConsZero (DiagramChainFrom E ((E:>F):|(F:>G):|(G:>H):|Nil))
+
+tFrom = ConsZeroTrafo aFrom eFrom ((A:>E):|(B:>F):|(C:>G):|(D:>H):|Nil)
+-}

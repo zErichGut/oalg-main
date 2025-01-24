@@ -145,7 +145,7 @@ library
       OAlg.Limes.Definition
       OAlg.Limes.EqualizersAndCoequalizers
       OAlg.Limes.Exact.ConsZero
-      OAlg.Limes.Exact.Variance
+      OAlg.Limes.Exact.Deviation
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
       OAlg.Limes.MinimaAndMaxima

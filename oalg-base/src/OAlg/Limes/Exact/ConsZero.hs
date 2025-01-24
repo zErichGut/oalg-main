@@ -26,7 +26,8 @@ module OAlg.Limes.Exact.ConsZero
   , coConsZero, coConsZeroInv, cnzFromOpOp
 
     -- * Transformation
-  , ConsZeroTrafo(..)
+  , ConsZeroTrafo(..), cnztTrafos, cnztTransformation
+  , cnztHead, cnztTail
 
     -- ** Duality
   , coConsZeroTrafo, coConsZeroTrafoInv, cnztFromOpOp
@@ -145,6 +146,7 @@ cnzHead c@(ConsZero (DiagramChainFrom _ _))      = coConsZeroInv Refl $ cnzHead 
 cnzTail :: Oriented d => ConsZero t (n+1) d -> ConsZero t n d
 cnzTail (ConsZero (DiagramChainTo _ (a:|as))) = ConsZero (DiagramChainTo (start a) as)
 cnzTail c@(ConsZero (DiagramChainFrom _ _))   = coConsZeroInv Refl $ cnzTail $ coConsZero c
+
 --------------------------------------------------------------------------------
 -- ConsZeroTrafo -
 
@@ -182,11 +184,18 @@ data ConsZeroTrafo t n d = ConsZeroTrafo (ConsZero t n d) (ConsZero t n d) (FinL
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- zrtTransformation -
+-- cnztTrafos -
+
+-- | the transformations.
+cnztTrafos :: ConsZeroTrafo t n d -> FinList (n+3) d
+cnztTrafos (ConsZeroTrafo _ _ fs) = fs
+
+--------------------------------------------------------------------------------
+-- cnztTransformation -
 
 -- | the underlying 'Transformation'.
-zrtTransformation :: ConsZeroTrafo t n d -> Transformation (Chain t) (n+3) (n+2) d
-zrtTransformation (ConsZeroTrafo a b fs) = Transformation (cnzDiagram a) (cnzDiagram b) fs
+cnztTransformation :: ConsZeroTrafo t n d -> Transformation (Chain t) (n+3) (n+2) d
+cnztTransformation (ConsZeroTrafo a b fs) = Transformation (cnzDiagram a) (cnzDiagram b) fs
 
 --------------------------------------------------------------------------------
 -- coConsZeroTrafo - Duality -
@@ -240,3 +249,17 @@ instance (Distributive d, Typeable t, Typeable n) => Entity (ConsZeroTrafo t n d
 instance (Distributive d, Typeable t, Typeable n) => Oriented (ConsZeroTrafo t n d) where
   type Point (ConsZeroTrafo t n d) = ConsZero t n d
   orientation (ConsZeroTrafo a b _) = a :> b
+
+--------------------------------------------------------------------------------
+-- cnztHead -
+
+-- | the first two arrows of the given 'ConsZeroTrafo'.
+cnztHead :: Oriented d => ConsZeroTrafo t n d -> ConsZeroTrafo t N0 d
+cnztHead (ConsZeroTrafo a b (f0:|f1:|f2:|_)) = ConsZeroTrafo (cnzHead a) (cnzHead b) (f0:|f1:|f2:|Nil)
+
+--------------------------------------------------------------------------------
+-- cnztTail -
+
+-- | dropping the first arrow.
+cnztTail :: Oriented d => ConsZeroTrafo t (n+1) d -> ConsZeroTrafo t n d
+cnztTail (ConsZeroTrafo a b fs) = ConsZeroTrafo (cnzTail a) (cnzTail b) (tail fs)
