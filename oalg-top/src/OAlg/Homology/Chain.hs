@@ -47,6 +47,7 @@ import OAlg.Category.Map
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 
+import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented hiding (Path)
 import OAlg.Structure.Fibred
@@ -277,17 +278,13 @@ data ChainOperator r s where
     -> ChainOperator r s
 
 --------------------------------------------------------------------------------
--- chor -
+-- chopr -
 
-chor :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+chopr :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
   => Representable r (ChainOperatorAtom r s) (Chain r s x) (Chain r s y)
   -> ChainOperator r s
-chor (Representable o sx sy)
-  = ChainOperator $ make $ S $ ChainOperatorRep $ Representable (pth o) sx sy where
-  pth :: (Ring r, Commutative r)
-    => ChainOperatorAtom r s (Chain r s x) (Chain r s y)
-    -> Path (ChainOperatorAtom r s) (Chain r s x) (Chain r s y)
-  pth o = o :. IdPath (domain o)
+chopr (Representable o sx sy)
+  = ChainOperator $ make $ S $ ChainOperatorRep $ Representable (o :. IdPath (domain o)) sx sy 
 
 --------------------------------------------------------------------------------
 -- ChainOperator - Entity -
@@ -355,6 +352,60 @@ instance (Ring r, Commutative r, Typeable s) => Oriented (ChainOperator r s) whe
 
 instance (Ring r, Commutative r, Typeable s) => Fibred (ChainOperator r s) where
   type Root (ChainOperator r s) = Orientation (SimplexSet s)
+
+instance (Ring r, Commutative r, Ord r, Typeable s) => Additive (ChainOperator r s) where
+  zero (SimplexSet sx :> SimplexSet sy) = ChainOperator $ zero (sx,sy)
+  ChainOperator f + ChainOperator g = case eqChainOperatorTypes f g of
+    Just (Refl,Refl) | root f == root g -> ChainOperator (f + g)
+    _                                   -> throw NotAddable
+
+  ntimes n (ChainOperator f) = ChainOperator (ntimes n f)
+
+instance (Ring r, Commutative r, Ord r, Typeable s) => Abelian (ChainOperator r s) where
+  negate (ChainOperator f) = ChainOperator $ negate f
+  ChainOperator f - ChainOperator g = case eqChainOperatorTypes f g of
+    Just (Refl,Refl) | root f == root g -> ChainOperator (f - g)
+    _                                   -> throw NotAddable
+
+  ztimes z (ChainOperator f) = ChainOperator (ztimes z f)
+
+instance (Ring r, Commutative r, Ord r, Typeable s) => Vectorial (ChainOperator r s) where
+  type Scalar (ChainOperator r s) = r
+  r ! ChainOperator f = ChainOperator (r!f)
+
+eqDomRng :: (Typeable y, Typeable y')
+  => Sum r (ChainOperatorRep r s (Chain r s y')  (Chain r s z))
+  -> Sum r (ChainOperatorRep r s (Chain r s x)  (Chain r s y))
+  -> Maybe (y :~: y')
+eqDomRng _ _ = eqT
+
+
+schorDom :: Sum r (ChainOperatorRep r s (Chain r s x)  (Chain r s y)) -> Set (s x)
+schorDom = error "nyi"
+
+schorRng :: Sum r (ChainOperatorRep r s (Chain r s x)  (Chain r s y)) -> Set (s y)
+schorRng = error "nyi"
+
+sfchorMlt :: SumForm r (ChainOperatorRep r s (Chain r s y)  (Chain r s z))
+  -> SumForm r (ChainOperatorRep r s (Chain r s x)  (Chain r s y))
+  -> SumForm r (ChainOperatorRep r s (Chain r s x)  (Chain r s z))
+sfchorMlt = error "nyi"
+
+schorMlt :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s z)
+  => Sum r (ChainOperatorRep r s (Chain r s y)  (Chain r s z))
+  -> Sum r (ChainOperatorRep r s (Chain r s x)  (Chain r s y))
+  -> Sum r (ChainOperatorRep r s (Chain r s x)  (Chain r s z))
+schorMlt f g = make $ reduceWith rdcChnOprSumForm $ (form f `sfchorMlt` form g)
+
+
+  
+instance (Ring r, Commutative r, Ord r, Typeable s) => Multiplicative (ChainOperator r s) where
+  one (SimplexSet sx)
+    = ChainOperator $ make $ S $ ChainOperatorRep $ Representable (cOne Struct) sx sx
+
+  ChainOperator f * ChainOperator g = case eqDomRng f g of
+    Just Refl | schorDom f == schorRng g -> ChainOperator (f `schorMlt` g)
+    _                                    -> throw NotMultiplicable
 
 {-
 --------------------------------------------------------------------------------
