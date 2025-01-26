@@ -145,6 +145,7 @@ instance (Ring r, Commutative r) => Applicative (ChainOperatorAtom r s) where
   amap Boundary     = boundary
   amap (ChainMap f) = chainMap f
 
+<<<<<<< HEAD
 instance (Ring r, Commutative r) => EmbeddableMorphism (ChainOperatorAtom r s) Fbr
 instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s) where
   rmap Boundary     = const ()
@@ -355,6 +356,8 @@ instance (Ring r, Commutative r, Typeable s) => Oriented (ChainOperator r s) whe
 instance (Ring r, Commutative r, Typeable s) => Fibred (ChainOperator r s) where
   type Root (ChainOperator r s) = Orientation (SimplexSet s)
 
+=======
+>>>>>>> 84ed20288615fd5a6f6fb97c99ae8f4e9bf366f6
 {-
 --------------------------------------------------------------------------------
 -- choGraph -

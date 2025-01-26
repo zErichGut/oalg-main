@@ -26,8 +26,6 @@ module OAlg.Hom.Algebraic
   )
   where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Category.Path
@@ -57,9 +55,7 @@ type instance Hom (Alg k) h = HomAlgebraic k h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance ( TransformableOp (s k), ForgetfulAlg k s, ForgetfulTyp (s k)
-         , Typeable s, Typeable k
-         )
+instance (TransformableOp (s k), ForgetfulAlg k s, ForgetfulTyp (s k))
   => HomAlgebraic k (IdHom (s k))
   
 

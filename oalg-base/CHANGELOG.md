@@ -120,3 +120,8 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 
 ### Changed
 - show for FinList
+
+## [2.1.0.0] - 2025-01-26
+
+### Changed
+- eliminated the constraint for HomOriented and HomFibred being an instance of Entity2

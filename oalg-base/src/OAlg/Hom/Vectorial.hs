@@ -24,8 +24,6 @@ module OAlg.Hom.Vectorial
   )
   where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Category.Path
@@ -48,7 +46,7 @@ class (EmbeddableMorphism h (Vec k), HomAdditive h) => HomVectorial k h
 
 instance HomVectorial k h => HomVectorial k (Path h)
 
-instance (ForgetfulVec k s, ForgetfulTyp (s k), Typeable s, Typeable k)
+instance (ForgetfulVec k s, ForgetfulTyp (s k))
   => HomVectorial k (IdHom (s k))
 
 --------------------------------------------------------------------------------

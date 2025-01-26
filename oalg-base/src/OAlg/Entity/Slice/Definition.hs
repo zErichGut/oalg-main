@@ -425,11 +425,11 @@ instance Applicative (SliceFactorDrop s) where
   amap SliceFactorFromDrop = slfFactor
   amap SliceFactorToDrop   = slfFactor
 
-instance Typeable s => HomOriented (SliceFactorDrop s) where
+instance HomOriented (SliceFactorDrop s) where
   pmap SliceFactorFromDrop (SliceFrom _ a) = end a
   pmap SliceFactorToDrop (SliceTo _ a)     = start a
 
-instance Typeable s => HomMultiplicative (SliceFactorDrop s) where
+instance HomMultiplicative (SliceFactorDrop s) where
   
 --------------------------------------------------------------------------------
 -- slfSliceIndex -
