@@ -48,7 +48,7 @@ import OAlg.Hom.Oriented.Definition
 --
 -- __Property__ Let @h@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @f@ in
 -- @__h__ __a__ __b__@ and @x@ in @__a__@ holds: @'root' ('amap' f x) '==' 'rmap' f ('root' x)@.
-class ( EmbeddableMorphism h Fbr, Applicative h, Entity2 h
+class ( EmbeddableMorphism h Fbr, Applicative h
       , EmbeddableMorphismTyp h
       ) => HomFibred h where
   rmap :: h a b -> Root a -> Root b
@@ -91,13 +91,13 @@ instance HomFibredOriented h => HomFibredOriented (Path h)
 --------------------------------------------------------------------------------
 -- prpHomFbrOrt -
 
-relHomFbrOrtHomomorphous :: HomFibredOriented h
+relHomFbrOrtHomomorphous :: (HomFibredOriented h, Show2 h)
   => Homomorphous FbrOrt a b -> h a b -> Root a -> Statement
 relHomFbrOrtHomomorphous (Struct :>: Struct) f r
   = (rmap f r == omap f r) :?> Params ["f":=show2 f,"r":=show r]
 
 -- | validity according to 'HomFibredOriented'.
-prpHomFbrOrt :: HomFibredOriented h => h a b -> Root a -> Statement
+prpHomFbrOrt :: (HomFibredOriented h, Show2 h) => h a b -> Root a -> Statement
 prpHomFbrOrt f r = Prp "HomFbrOrt"
   :<=>: relHomFbrOrtHomomorphous (tauHom (homomorphous f)) f r
 
@@ -109,11 +109,11 @@ type instance Hom FbrOrt h = HomFibredOriented h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (ForgetfulFbr s, ForgetfulTyp s, Typeable s)
+instance (ForgetfulFbr s, ForgetfulTyp s)
   => HomFibred (IdHom s) where
   rmap IdHom r = r
   
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s)
   => HomFibredOriented (IdHom s)
 
 --------------------------------------------------------------------------------

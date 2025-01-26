@@ -33,8 +33,6 @@ module OAlg.Hom.Multiplicative.Definition
   )
   where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Category.Path
@@ -75,7 +73,7 @@ class (EmbeddableMorphism h Mlt, HomOriented h) => HomMultiplicative h
 instance HomMultiplicative h => HomMultiplicative (Path h)
 
 instance ( HomMultiplicative h, Transformable1 Op t
-         , ForgetfulMlt t, ForgetfulTyp t, Typeable t
+         , ForgetfulMlt t, ForgetfulTyp t
          )
   => HomMultiplicative (Forget t h)
 
@@ -95,16 +93,16 @@ type IsoMultiplicative h = ( FunctorialHomOriented h, Cayleyan2 h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s)
   => HomMultiplicative (IdHom s)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s)
   => HomMultiplicative (HomOp s)
 
-instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s)
   => HomMultiplicative (IsoOp s)
 
 --------------------------------------------------------------------------------

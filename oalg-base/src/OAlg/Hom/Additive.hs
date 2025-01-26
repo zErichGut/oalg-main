@@ -70,7 +70,7 @@ type instance Hom Add h = HomAdditive h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (ForgetfulAdd s, ForgetfulTyp s, Typeable s) => HomAdditive (IdHom s)
+instance (ForgetfulAdd s, ForgetfulTyp s) => HomAdditive (IdHom s)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
@@ -88,25 +88,25 @@ instance (HomAdditive h, HomFibredOriented h) => HomAdditive (OpHom h)
 --------------------------------------------------------------------------------
 -- prpHomAdd1 -
 
-relHomAdd1Homomorphous :: HomAdditive h
+relHomAdd1Homomorphous :: (HomAdditive h, Show2 h)
   => Homomorphous Add a b -> h a b -> Root a -> Statement
 relHomAdd1Homomorphous (Struct :>: Struct) f r
   = (amap f (zero r) == zero (rmap f r)) :?> Params ["f":=show2 f,"r":=show r]
 
 -- | validity according to "OAlg.Hom.Additive#HomAdd1".
-prpHomAdd1 :: HomAdditive h => h a b -> Root a -> Statement
+prpHomAdd1 :: (HomAdditive h, Show2 h) => h a b -> Root a -> Statement
 prpHomAdd1 f r = Prp "HomAdd1"
   :<=>: relHomAdd1Homomorphous (tauHom (homomorphous f)) f r
 
 --------------------------------------------------------------------------------
 -- prpHomAdd2 -
 
-relHomAdd2Homomorphous :: HomAdditive h
+relHomAdd2Homomorphous :: (HomAdditive h, Show2 h)
   => Homomorphous Add a b -> h a b -> Adbl2 a -> Statement
 relHomAdd2Homomorphous (Struct:>:Struct) f (Adbl2 x y)
   = (amap f (x+y) == amap f x + amap f y):?>Params ["f":=show2 f,"x":=show x,"y":=show y]
 
 -- | validity according to "OAlg.Hom.Additive#HomAdd2".
-prpHomAdd2 :: HomAdditive h => h a b -> Adbl2 a -> Statement
+prpHomAdd2 :: (HomAdditive h, Show2 h) => h a b -> Adbl2 a -> Statement
 prpHomAdd2 f xy = Prp "HomAdd2"
   :<=>: relHomAdd2Homomorphous (tauHom (homomorphous f)) f xy

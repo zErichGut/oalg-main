@@ -280,7 +280,7 @@ data Representable r h x y where
     => h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y
     -> Representable r h (SumSymbol r x) (SumSymbol r y)
 
-instance Show (Representable r h x y) where
+instance Show2 h => Show (Representable r h x y) where
   show (Representable h xs ys)
     = "Representable " ++ show2 h ++ " (" ++ show xs ++ ") (" ++ show ys ++ ")"
 
@@ -386,7 +386,7 @@ dstVecMax d n xr = getOmega >>= putDistribution d (amap1 (lengthN . vecpsq) $ xV
 -- prpRepMatrix -
 
 -- | validity of 'repMatrix' for the given vector.
-prpRepMatrix :: (Semiring r, Commutative r) => Representable r h x y -> Vector r -> Statement
+prpRepMatrix :: (Semiring r, Commutative r, Show2 h) => Representable r h x y -> Vector r -> Statement
 prpRepMatrix p@(Representable h xs ys) v = Prp "RepMatrix" :<=>:
   And [ Label "1" :<=>: (mi < (It $ lengthN ys))
           :?> Params ["h' $ v":=show w,"max index":=show mi]

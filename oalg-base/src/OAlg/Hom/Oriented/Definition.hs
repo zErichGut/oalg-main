@@ -100,7 +100,7 @@ import OAlg.Hom.Definition
 -- (2) The constraint 'EmbeddableMorphismTyp' for a family @__h__@ of homomorphisms
 -- between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
-class ( EmbeddableMorphism h Ort, Applicative h, Entity2 h
+class ( EmbeddableMorphism h Ort, Applicative h
       , EmbeddableMorphismTyp h
       , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
@@ -110,7 +110,7 @@ instance HomOriented h => HomOriented (C.Path h) where
   pmap (IdPath _) p = p
   pmap (f :. pth) p = pmap f $ pmap pth p
 
-instance (HomOriented h, Transformable1 Op t, ForgetfulOrt t, ForgetfulTyp t, Typeable t)
+instance (HomOriented h, Transformable1 Op t, ForgetfulOrt t, ForgetfulTyp t)
   => HomOriented (Forget t h) where
   pmap (Forget h)      = pmap h
 
@@ -208,11 +208,11 @@ instance Applicative (IdHom s) where
 
 instance Functorial (IdHom s)
 
-instance (TransformableOp s,ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s,ForgetfulOrt s, ForgetfulTyp s)
   => HomOriented (IdHom s) where
   pmap IdHom = id
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => FunctorialHomOriented (IdHom s)
 --------------------------------------------------------------------------------
 -- HomOp -
@@ -316,7 +316,7 @@ instance ForgetfulOrt s => Applicative (HomOp s) where
   amap Opposite (Op o) = opposite o
   amap OppositeInv o = Op (opposite o)
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => HomOriented (HomOp s) where
   pmap FromOpOp    = id
   pmap ToOpOp = id
@@ -391,7 +391,7 @@ instance ForgetfulTyp s => Cayleyan2 (IsoOp s) where
 instance ForgetfulOrt s => Applicative (IsoOp s) where
   amap = restrict amap
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => HomOriented (IsoOp s) where
   pmap = restrict pmap
 
@@ -399,7 +399,7 @@ instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
 -- IsoOp - Functorial -
 
 instance ForgetfulOrt s => Functorial (IsoOp s)
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => FunctorialHomOriented (IsoOp s)
 
 --------------------------------------------------------------------------------
@@ -562,7 +562,7 @@ instance ForgetfulOrt s => Applicative (OpMap O.Path s) where
     coPathInv :: Struct Ort x -> O.Path (Op x) -> Op (O.Path x)
     coPathInv Struct = Op . fromDual
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => HomOriented (OpMap O.Path s) where
   pmap ToOp1 = id
   pmap FromOp1 = id
@@ -573,7 +573,7 @@ instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
 instance ForgetfulOrt s => Applicative (IsoOpMap O.Path s) where
   amap = restrict amap
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => HomOriented (IsoOpMap O.Path s) where pmap = restrict pmap
                                            
 --------------------------------------------------------------------------------
@@ -581,7 +581,7 @@ instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
 
 instance ForgetfulOrt s => Functorial (IsoOpMap O.Path s)
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
   => FunctorialHomOriented (IsoOpMap O.Path s)
 
 --------------------------------------------------------------------------------

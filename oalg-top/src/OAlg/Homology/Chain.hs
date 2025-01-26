@@ -144,6 +144,7 @@ instance (Ring r, Commutative r) => Applicative (ChainHomOperator r s) where
   amap Boundary     = boundary
   amap (ChainMap f) = chainMap f
 
+{-
 --------------------------------------------------------------------------------
 -- choGraph -
 
@@ -211,6 +212,10 @@ rdcAlgChHomForm h = case h of
   S (ChainHomPath (h:.hs) sx sy) -> 
     rdcAlgChHomForm (S (ChainHomPath hs sx (ff h hs sx))) >>= error "nyi" -- return . gg h
   _ -> return h
+-}
+
+
+  
 
 {-
 --------------------------------------------------------------------------------
