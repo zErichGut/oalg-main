@@ -115,4 +115,8 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 ## [2.0.2.2] - 2025-01-22
 
 ### Added
-- module OAlg.Limes.Exact.Zeros
+- module OAlg.Limes.Exact.ConsZero
+- module OAlg.Limes.Exact.Deviation
+
+### Changed
+- show for FinList

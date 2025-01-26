@@ -24,23 +24,20 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
-{-
     -- * Chain Complex
-    ChainComplex(..), ccxPoints, ccxArrows, ccxMap
-  , chainComplex
-  , ccxHead, ccxTail
+    ChainComplex(..), chainComplex
 
     -- ** Representation
   , ChainComplexRep(..), chainComplexRep, Regular(..)
 
     -- * Transformation
-  , ChainComplexTrafo(..), cctStart, cctEnd
+  , ChainComplexTrafo(..)
   , chainComplexTrafo
 
     -- ** Representation
   , ChainComplexTrafoRep(..), cctDomainRep, cctRangeRep
   , chainComplexTrafoRep
--}
+
   ) where
 
 import Control.Monad
@@ -73,7 +70,7 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Matrix hiding (Transformation(..))
 
-import OAlg.Limes.Exact.Zeros
+import OAlg.Limes.Exact.ConsZero
 
 import OAlg.Hom.Definition
 
@@ -187,44 +184,11 @@ ccxChainMapZ :: Homological s x y
   -> FinList (n+3) (ChainHom Z s (C.Chain Z s x) (C.Chain Z s y))
 ccxChainMapZ = ccxChainMap
 
-
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
-type ChainComplex = Zeros
-
-{-
---------------------------------------------------------------------------------
--- ccxHead -
-
-ccxHead :: Oriented d => ChainComplex t n d -> ChainComplex t N0 d
-ccxHead (ChainComplex c) = case c of
-  DiagramChainTo _ _   -> ChainComplex $ ccxToHead c
-  DiagramChainFrom _ _ -> ChainComplex $ coDiagramInv Refl $ ccxToHead $ coDiagram c
-  where
-    ccxToHead :: Diagram (D.Chain To) (n+3) (n+2) d -> Diagram (D.Chain To) N3 N2 d
-    ccxToHead (DiagramChainTo e (d:|d':|_)) = DiagramChainTo e (d:|d':|Nil)
-
---------------------------------------------------------------------------------
--- ccxTail -
-
-ccxTail :: Oriented d => ChainComplex t (n+1) d -> ChainComplex t n d
-ccxTail (ChainComplex c) = case c of
-  DiagramChainTo _ _   -> ChainComplex $ ccxToTail c
-  DiagramChainFrom _ _ -> ChainComplex $ coDiagramInv Refl $ ccxToTail $ coDiagram c
-  where
-    ccxToTail :: Oriented d => Diagram (D.Chain To) (n+2) (n+1) d -> Diagram (D.Chain To) (n+1) n d
-    ccxToTail (DiagramChainTo _ (_:|d:|ds)) = DiagramChainTo (end d) (d:|ds)  
--}
-
-{-
---------------------------------------------------------------------------------
--- ccxMap -
-
--- | mapping according to the given distributive homomorphism.
-ccxMap :: Hom Dst h => h a b -> ChainComplex t n a -> ChainComplex t n b
-ccxMap h (ChainComplex c) = ChainComplex (dgMap h c)
--}
+-- | chain complex.
+type ChainComplex = ConsZero To
 
 --------------------------------------------------------------------------------
 -- ChainComplexRep --
@@ -294,9 +258,10 @@ instance (Ring r, Commutative r, Simplical s x) => Validable (ChainComplexRep r 
 
 -- | the underlying chain complex.
 chainComplex :: (Ring r, Commutative r, Simplical s x)
-  => ChainComplexRep r s n x -> ChainComplex To n (Matrix r)
-chainComplex (ChainComplexRep ds) = Zeros (DiagramChainTo (end $ F.head ms) ms) where
+  => ChainComplexRep r s n x -> ChainComplex n (Matrix r)
+chainComplex (ChainComplexRep ds) = ConsZero (DiagramChainTo (end $ F.head ms) ms) where
   ms = amap1 (repMatrix . chainHomRep) ds
+
 
 --------------------------------------------------------------------------------
 -- chainComplexRep -
@@ -314,12 +279,22 @@ ccxLstZ = chainComplexRep
 ccxAscZ :: (r ~ Z, s ~ Asc, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
 ccxAscZ = chainComplexRep
 
+--------------------------------------------------------------------------------
+-- ccxRepCards -
+
+-- | the cardinalities of a the boundary operators.
+ccxRepCards :: ChainComplexRep r s n x -> ChainComplexCards (n+3)
+ccxRepCards (ChainComplexRep ds) = DiagramDiscrete (cs ds) where
+  cs :: FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)) -> FinList (n+3) N
+  cs (d:|d':|Nil)
+    = (lengthN $ chRangeSet d) :| (lengthN $ chRangeSet d') :| (lengthN $ chDomainSet d') :| Nil
+  cs (d:|d':|d'':|ds) = (lengthN $ chRangeSet d) :| cs (d':|d'':|ds)
 
 --------------------------------------------------------------------------------
 -- ChainComplexTrafo -
 
 -- | transformation between chain complexes.
-type ChainComplexTrafo = ZerosTrafo
+type ChainComplexTrafo = ConsZeroTrafo To
 
 --------------------------------------------------------------------------------
 -- ChainComplexTrafoRep -
@@ -371,8 +346,8 @@ cctRangeRep (ChainComplexTrafoRep (f0:|f1:|fs)) = ChainComplexRep (d0 f0 f1:|ds 
 
 -- | the induced transformation between chain complexes.
 chainComplexTrafo :: (Ring r, Commutative r, Homological s x y)
-  => ChainComplexTrafoRep r s n x y -> ChainComplexTrafo To n (Matrix r)
-chainComplexTrafo r@(ChainComplexTrafoRep fs) = ZerosTrafo dDom dRng ms where
+  => ChainComplexTrafoRep r s n x y -> ChainComplexTrafo n (Matrix r)
+chainComplexTrafo r@(ChainComplexTrafoRep fs) = ConsZeroTrafo dDom dRng ms where
   dDom = chainComplex $ cctDomainRep r
   dRng = chainComplex $ cctRangeRep r
   ms   = amap1 (repMatrix . chainHomRep) fs
