@@ -39,7 +39,7 @@ module OAlg.Homology.Complex
 import Control.Monad
 
 import Data.Typeable
-import Data.List as L ((++))
+import Data.List as L ((++),repeat)
 import Data.Foldable (foldl)
 
 import OAlg.Prelude
@@ -48,10 +48,14 @@ import OAlg.Category.Map
 
 import OAlg.Data.Filterable
 
+import OAlg.Structure.Oriented
+
 import OAlg.Hom.Distributive ()
 
+import OAlg.Entity.Diagram
+import OAlg.Entity.FinList as F hiding ((++),repeat)
+import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.Sequence hiding (span,isEmpty)
-
 import OAlg.Structure.PartiallyOrdered
 
 import OAlg.Homology.Simplical
@@ -299,6 +303,36 @@ instance Validable (ComplexMap s a b) where
               ] 
 
 instance (Typeable s, Typeable a, Typeable b) => Entity (ComplexMap s a b)
+
+--------------------------------------------------------------------------------
+-- Cards -
+
+type Cards n = Diagram Discrete n N0 (Orientation N)
+
+--------------------------------------------------------------------------------
+-- cpxCards -
+
+-- | the cardinalities of the simplex sets up to the given dimension, starting at dimension @-1@. 
+cpxCards :: Any d -> Complex x -> Cards (d+3)
+cpxCards n (Complex (Graph zs)) = DiagramDiscrete $ crds n $ (amap1 snd zs ++ repeat (Set [])) where
+  crds :: Any d -> [Set s] -> FinList (d+3) N
+  crds W0 (s:s':s'':_) = lengthN s :| lengthN s' :| lengthN s'' :| Nil
+  crds (SW n) (s:ss)   = lengthN s :| crds n ss
+  crds _ _             = throw $ ImplementationError "cpxCares.crds"
+
+--------------------------------------------------------------------------------
+-- CardsTrafo -
+
+type CardsTrafo n = Transformation Discrete n N0 (Orientation N)
+
+--------------------------------------------------------------------------------
+-- cpmCards -
+
+cmpCards :: Any d -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo (d+3)
+cmpCards d m = Transformation cd cr ts where
+  cd = cpxCards d (cpmDomain m)
+  cr = cpxCards d (cpmRange m)
+  ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)
 
 --------------------------------------------------------------------------------
 

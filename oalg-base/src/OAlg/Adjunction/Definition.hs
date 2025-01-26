@@ -231,7 +231,7 @@ coAdjunction (Adjunction l r u v)
 --------------------------------------------------------------------------------
 -- relAdjunctionRightUnit -
 
-relAdjunctionRightUnitHom :: Hom Mlt h
+relAdjunctionRightUnitHom :: (Hom Mlt h, Show2 h)
   => Homomorphous Mlt d c -> Adjunction h d c -> Point c -> Statement
 relAdjunctionRightUnitHom (Struct :>: Struct) (Adjunction l r u v) x
   = And [ valid (ux,vlx)
@@ -247,7 +247,7 @@ relAdjunctionRightUnitHom (Struct :>: Struct) (Adjunction l r u v) x
 --------------------------------------------------------------------------------
 -- relAdjunctionRightNatural -
 
-relAdjunctionRightNaturalHom :: Hom Mlt h
+relAdjunctionRightNaturalHom :: (Hom Mlt h, Show2 h)
   => Homomorphous Mlt d c -> Adjunction h d c -> c -> Statement
 relAdjunctionRightNaturalHom (Struct :>: Struct) (Adjunction l r u _) f
   = Label "1.2" :<=>: (u (end f) * f == amap r (amap l f) * u (start f))
@@ -258,7 +258,7 @@ relAdjunctionRightNaturalHom (Struct :>: Struct) (Adjunction l r u _) f
 -- prpAdjunctionRight -
 
 -- | validity of the unit on the right side.
-prpAdjunctionRight :: Hom Mlt h => Adjunction h d c -> Point c -> c -> Statement
+prpAdjunctionRight :: (Hom Mlt h, Show2 h) => Adjunction h d c -> Point c -> c -> Statement
 prpAdjunctionRight adj@(Adjunction _ r _ _) x f = Prp "AdjunctionRight" :<=>:
   And [ relAdjunctionRightUnitHom s adj x
       , relAdjunctionRightNaturalHom s adj f
@@ -269,7 +269,7 @@ prpAdjunctionRight adj@(Adjunction _ r _ _) x f = Prp "AdjunctionRight" :<=>:
 -- prpAdjunctionLeft -
 
 -- | validity of the unit on the left side.
-prpAdjunctionLeft :: Hom Mlt h => Adjunction h d c -> Point d -> d -> Statement
+prpAdjunctionLeft :: (Hom Mlt h, Show2 h) => Adjunction h d c -> Point d -> d -> Statement
 prpAdjunctionLeft adj y g = Prp "AdjucntionLeft" :<=>:
   prpAdjunctionRight (coAdjunction adj) y (Op g)
 
@@ -278,7 +278,7 @@ prpAdjunctionLeft adj y g = Prp "AdjucntionLeft" :<=>:
 
 -- | validity of an adjunction according to the properties of 'Adjunction'.
 prpAdjunction
-  :: Hom Mlt h
+  :: (Hom Mlt h, Entity2 h)
   => Adjunction h d c
   -> X (Point d) -> X d
   -> X (Point c) -> X c
@@ -293,7 +293,7 @@ prpAdjunction adj@(Adjunction l r _ _) xpd xd xpc xc = Prp "Adjunction" :<=>:
 --------------------------------------------------------------------------------
 -- Adjunction - Validable -
 
-instance ( HomMultiplicative h
+instance ( HomMultiplicative h, Entity2 h
          , XStandardPoint d, XStandard d, XStandardPoint c, XStandard c
          )
   => Validable (Adjunction h d c) where

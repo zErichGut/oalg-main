@@ -66,7 +66,7 @@ type XHomOrt h = XAppl h
 -- prpHomOrt -
 
 -- | validity of homomorphisms between 'Oriented' for a given value in the domain.
-relHomOrtHomomorphous :: Hom Ort h
+relHomOrtHomomorphous :: (Hom Ort h, Show2 h)
   => Homomorphous Ort a b -> h a b -> a -> Statement
 relHomOrtHomomorphous (Struct:>:Struct) f x
   = And [ (start fx == pmap f (start x)) :?> prms
@@ -79,21 +79,21 @@ relHomOrtHomomorphous (Struct:>:Struct) f x
 -- prpHomOrt1 -
 
 -- | validity of homomorphisms between 'Oriented' structures based on the given values.
-prpHomOrt1 :: Hom Ort h => h a b -> a -> Statement
+prpHomOrt1 :: (Hom Ort h, Show2 h) => h a b -> a -> Statement
 prpHomOrt1 f x = Prp "HomOrt1" :<=>: relHomOrtHomomorphous (tauHom (homomorphous f)) f x
 
 
 
 -- | validity of homomorphisms between 'Oriented' structures based on the given
 -- random variable.
-prpHomOrt :: Hom Ort h => XHomOrt h -> Statement
+prpHomOrt :: (Hom Ort h, Show2 h) => XHomOrt h -> Statement
 prpHomOrt xfx = Prp "HomOrt"
   :<=>: Forall xfx (\(SomeApplication f x)
                     -> relHomOrtHomomorphous (tauHom (homomorphous f)) f x
                    )
 -- | validity of homomorphisms between 'Oriented' structures based on the given
 -- random variable.
-prpHomOrt' :: Hom Ort h => h a b -> XOrt a -> Statement
+prpHomOrt' :: (Hom Ort h, Show2 h) => h a b -> XOrt a -> Statement
 prpHomOrt' f xa = Label "prpHomOrt'" :<=>:
   Forall xa (relHomOrtHomomorphous (tauHom (homomorphous f)) f)
   

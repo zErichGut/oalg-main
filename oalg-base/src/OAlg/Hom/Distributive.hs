@@ -64,7 +64,7 @@ type IsoDistributive h = ( FunctorialHomOriented h, Cayleyan2 h
 --------------------------------------------------------------------------------
 -- HomDistributive - Instance -
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s, Typeable s)
+instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
   => HomDistributive (IdHom s)
 
 --------------------------------------------------------------------------------

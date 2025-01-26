@@ -15,22 +15,25 @@
 
 -- |
 -- Module      : OAlg.Homology.Chain
--- Description : chains and there boundary.
+-- Description : chains of simlices.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- The boundary of a 'Chain'.
+-- Chains of simplices..
 module OAlg.Homology.Chain
   (
+{-    
     -- * Chain
     Chain, ch, chZ, boundary, chainMap
 
     -- * Chain Homomorphism
   , ChainHom(..), chDomainSet, chRangeSet
   , chainHomRep
-
+-}
   ) where
+
+import Control.Monad
 
 import Data.Typeable
 
@@ -38,7 +41,10 @@ import Data.List as L (zip,(++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Path
 import OAlg.Category.Map
+
+import OAlg.Data.Reducible
 
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Fibred
@@ -52,10 +58,13 @@ import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
 
 import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sum
 import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplical
+
+import OAlg.Data.Symbol hiding (S)
 
 --------------------------------------------------------------------------------
 -- Chain -
@@ -107,6 +116,108 @@ chainMap f = ssySum (chMap f) where
   chMap :: (Ring r, SimplicalTransformable s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
 
+f :: Map EntOrd Symbol N
+f = Map ((toEnum :: Int -> N) . fromEnum)
+
+g :: (Entity x, Ord x) => Map EntOrd x x
+g = cOne Struct
+
+--------------------------------------------------------------------------------
+-- ChainHomOperator -
+
+data ChainHomOperator r s x y where
+  Boundary :: Simplical s x => ChainHomOperator r s (Chain r s x) (Chain r s x)
+  ChainMap :: SimplicalTransformable s x y
+    => Map EntOrd x y -> ChainHomOperator r s (Chain r s x) (Chain r s y)
+
+{-
+instance (Ring r, Commutative r) => Morphism (ChainHomOperator r s) where
+  type ObjectClass (ChainHomOperator r s) = Vec r
+  homomorphous Boundary     = Struct :>: Struct
+  homomorphous (ChainMap _) = Struct :>: Struct
+
+instance (Ring r, Commutative r) => EmbeddableMorphism (ChainHomOperator r s) Typ
+instance (Ring r, Commutative r) => EmbeddableMorphismTyp (ChainHomOperator r s)
+-}
+
+instance (Ring r, Commutative r) => Applicative (ChainHomOperator r s) where
+  amap Boundary     = boundary
+  amap (ChainMap f) = chainMap f
+
+{-
+--------------------------------------------------------------------------------
+-- choGraph -
+
+choGraph :: (Ring r, Commutative r, Simplical s x)
+  => Path (ChainHomOperator r s) (Chain r s x) (Chain r s y)
+  -> Set (s x) -> Graph (s x) (Chain r s y)
+choGraph o s = Graph [(sx,amap o (ch sx)) | sx <- setxs s]
+
+--------------------------------------------------------------------------------
+-- SimplexSet -
+
+data SimplexSet s where
+  SimplexSet :: (Entity x, Ord x) => Set (s x) -> SimplexSet s
+
+--------------------------------------------------------------------------------
+-- ChainHom -
+
+data ChainHomPath r s x y where
+  ChainHomPath
+    :: (Simplical s x, Simplical s y)
+    => Path (ChainHomOperator r s) (Chain r s x) (Chain r s y)
+    -> Set (s x) -> Set (s y)
+    -> ChainHomPath r s (Chain r s x) (Chain r s y)
+
+instance (Ring r, Commutative r) => Show (ChainHomPath r s x y) where
+  show (ChainHomPath h sx _) = "ChainHomPath (" ++ (show $ choGraph h sx) ++ ")"
+instance (Ring r, Commutative r) => Show2 (ChainHomPath r s)
+
+instance (Ring r, Commutative r) => Eq (ChainHomPath r s x y) where
+  ChainHomPath h sx sy == ChainHomPath h' sx' sy' = (sx,sy,choGraph h sx) == (sx',sy',choGraph h' sx')
+instance (Ring r, Commutative r) => Eq2 (ChainHomPath r s)
+
+instance (Ring r, Commutative r) => Validable (ChainHomPath r s x y) where
+  valid (ChainHomPath h sx sy) = Label "ChainHomPath" :<=>: error "nyi"
+
+instance (Ring r, Commutative r, Typeable s, Typeable x, Typeable y) => Entity (ChainHomPath r s x y)
+
+instance (Ring r, Commutative r, Typeable s, Simplical s x, Simplical s y)
+  => Fibred (ChainHomPath r s (Chain r s x) (Chain r s y)) where
+  type Root (ChainHomPath r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
+  root (ChainHomPath _ sx sy) = (sx,sy)
+  
+--------------------------------------------------------------------------------
+-- AlgChainHomForm -
+
+-- | the 'Form' for 'ChainHomOperator's algebra.
+type AlgChainHomForm r s x y = SumForm r (ChainHomPath r s (Chain r s x) (Chain r s y))
+
+ff :: ChainHomOperator r s (Chain r s y) (Chain r s z)
+  -> Path (ChainHomOperator r s) (Chain r s x) (Chain r s y)
+  -> Set (s x) -> Set (s z)
+ff = error "nyi"
+
+gg :: ChainHomOperator r s y (Chain r s z)
+  -> AlgChainHomForm r s x y
+  -> AlgChainHomForm r s x z
+gg = error "nyi"
+
+rdcAlgChHomForm :: AlgChainHomForm r s x y -> Rdc (AlgChainHomForm r s x y)
+rdcAlgChHomForm h = case h of
+  S (ChainHomPath (Boundary :. Boundary :. _) sx sy)
+    -> reducesTo (Zero (sx,sy))
+  S (ChainHomPath (ChainMap f :. Boundary :. hs) sx sy)
+    -> reducesTo $ S $ ChainHomPath (Boundary :. ChainMap f :. hs) sx sy
+  S (ChainHomPath (h:.hs) sx sy) -> 
+    rdcAlgChHomForm (S (ChainHomPath hs sx (ff h hs sx))) >>= error "nyi" -- return . gg h
+  _ -> return h
+-}
+
+
+  
+
+{-
 --------------------------------------------------------------------------------
 -- ChainHom -
 
@@ -225,3 +336,4 @@ chainHomRep h@(ZeroHom sx sy)     = Representable h sx sy
 chainHomRep h@(Boundary s s')    = Representable h s s'
 chainHomRep h@(ChainMap sx sy _) = Representable h sx sy
 
+-}

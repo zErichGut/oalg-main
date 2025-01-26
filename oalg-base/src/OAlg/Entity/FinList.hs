@@ -59,11 +59,13 @@ data FinList (n :: N') a where
 
 ----------------------------------------
 -- FinList - Entity -
-deriving instance Show a => Show (FinList n a)
 deriving instance Eq a => Eq (FinList n a)
 deriving instance Foldable (FinList n)
 deriving instance Typeable (FinList n a)
 deriving instance Ord x => Ord (FinList n x)
+
+instance Show a => Show (FinList n a) where
+  show xs = "[|" L.++ (join $ tween "," $ amap1 show $ toList xs) L.++ "|]"
 
 instance Functor (FinList n) where
   fmap _ Nil     = Nil
