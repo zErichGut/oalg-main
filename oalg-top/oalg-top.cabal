@@ -25,8 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      OAlg.Homology.Chain
       OAlg.Homology.ChainComplex
+      OAlg.Homology.ChainOperator
       OAlg.Homology.Complex
       OAlg.Homology.Definition
       OAlg.Homology.Simplical
