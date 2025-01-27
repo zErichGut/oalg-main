@@ -24,6 +24,7 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
+{-    
     -- * Chain Complex
     ChainComplex(..), chainComplex
 
@@ -37,7 +38,7 @@ module OAlg.Homology.ChainComplex
     -- ** Representation
   , ChainComplexTrafoRep(..), cctDomainRep, cctRangeRep
   , chainComplexTrafoRep
-
+-}
   ) where
 
 import Control.Monad
@@ -75,7 +76,7 @@ import OAlg.Limes.Exact.ConsZero
 import OAlg.Hom.Definition
 
 import OAlg.Homology.Complex
-import OAlg.Homology.Chain as C
+import OAlg.Homology.ChainOperator as C
 import OAlg.Homology.Simplical
 
 
@@ -128,12 +129,109 @@ ccxSimplices n c = case mSet (ccs n c) of
 data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
+-- ChainComplex -
+
+-- | chain complex.
+type ChainComplex = ConsZero To
+
+
+--------------------------------------------------------------------------------
 -- ccxBoundary -
 
 -- | the list of boundary operators, where in the 'Regualr' case the first operator
 -- is addapted to @'ZeroHom' s 'empty'@.
-ccxBoundary :: Simplical s x => Regular -> Any n -> Complex x
-  -> FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)) 
+ccxBoundary :: (Ring r, Commutative r, Ord r, Simplical s x)
+  => Regular -> Any n -> Complex x
+  -> ChainComplex n (ChainOperator r s)
+ccxBoundary r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
+
+  toBndOpr :: (Ring r, Commutative r, Ord r, Simplical s x)
+    => FinList (n+1) (Set (s x)) -> FinList n (ChainOperator r s)
+  toBndOpr (_:|Nil) = Nil
+  toBndOpr (sx:|sx':|sxs) = chopr (Representable Boundary sx' sx) :| toBndOpr (sx':|sxs)
+
+  -- converts to a Chain To diagram by possibly addapting the first operator to zero.
+  toDgm :: (Ring r, Commutative r, Ord r, Typeable s)
+    => Regular
+    -> FinList (n+1) (ChainOperator r s) -> Diagram (D.Chain To) (n+2) (n+1) (ChainOperator r s)
+  toDgm r (ChainOperator d:|ds) = DiagramChainTo (end d') (d':|ds) where
+    d' = ChainOperator $ case r of
+      Extended -> d              -- no addaption
+      Regular  -> zeroEmptyEnd d -- to zero with empty end, but same start
+      
+  zeroEmptyEnd :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+    => ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+    -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+  zeroEmptyEnd d = zero (fst $ root d,empty) 
+
+bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
+bndZSet = ccxBoundary
+
+bndZAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
+bndZAsc = ccxBoundary
+
+bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
+bndZLst = ccxBoundary
+
+--------------------------------------------------------------------------------
+-- ChainComplexTrafo -
+
+-- | transformation between chain complexes.
+type ChainComplexTrafo = ConsZeroTrafo To
+
+--------------------------------------------------------------------------------
+-- ccxTrafo -
+
+eqSetType :: (Typeable x, Typeable x', Typeable y, Typeable y')
+  => Map EntOrd x y -> Set (s x') -> Set (s y') -> Maybe (x :~: x',y :~: y')
+eqSetType f sx sy = do
+  d <- eqDom f sx
+  r <- eqRng f sy
+  return (d,r)
+  
+  where
+    eqDom :: (Typeable x, Typeable x') => Map EntOrd x y -> Set (s x') -> Maybe (x :~: x')
+    eqDom _ _ = eqT
+
+    eqRng :: (Typeable y, Typeable y') => Map EntOrd x y -> Set (s y') -> Maybe (y :~: y')
+    eqRng _ _ = eqT
+
+ccxTrafo :: (Ring r, Commutative r, Ord r, Homological s x y)
+  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
+  -> ChainComplexTrafo n (ChainOperator r s)
+ccxTrafo r n f = ConsZeroTrafo a b fs where
+  a  = ccxBoundary r n (cpmDomain f)
+  b  = ccxBoundary r n (cpmRange f)
+  fs = amap1 (uncurry $ toChnMap $ cpmMap f) $ cnzPoints a `F.zip` cnzPoints b
+
+  toChnMap :: (Ring r, Commutative r, Ord r, Homological s x y)
+    => Map EntOrd x y -> SimplexSet s -> SimplexSet s -> ChainOperator r s
+  toChnMap f (SimplexSet sx) (SimplexSet sy) = case eqSetType f sx sy of
+    Just (Refl,Refl) -> chopr (Representable (ChainMap f) sx sy)
+    Nothing          -> throw $ ImplementationError "ccxTrafo.toChnMap"
+
+
+a = complex $ [Set "abc",Set "bcd",Set "ad"]
+b = complex $ [Set [0,1,2],Set [1,2,3],Set [0,3]] :: Complex Z
+
+f :: Map EntOrd Char Z
+f = Map (\c -> toZ c - toZ 'a') where toZ = (toEnum :: Int -> Z) . fromEnum
+
+tAsc = ComplexMapAsc a b f
+tLst = ComplexMap a b f
+
+chmZAsc :: (Entity x, Ord x, Entity y, Ord y)
+  => Regular -> Any n -> ComplexMap Asc (Complex x) (Complex y)
+  -> ChainComplexTrafo n (ChainOperator Z Asc)
+chmZAsc = ccxTrafo
+
+chmZLst :: (Entity x, Ord x, Entity y, Ord y)
+  => Regular -> Any n -> ComplexMap [] (Complex x) (Complex y)
+  -> ChainComplexTrafo n (ChainOperator Z [])
+chmZLst = ccxTrafo
+
+
+{-
 ccxBoundary r n c = case r of
   Regular  -> zeroBnd (F.head ds) :| F.tail ds
   Extended -> ds
@@ -183,12 +281,6 @@ ccxChainMapZ :: Homological s x y
   => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> FinList (n+3) (ChainHom Z s (C.Chain Z s x) (C.Chain Z s y))
 ccxChainMapZ = ccxChainMap
-
---------------------------------------------------------------------------------
--- ChainComplex -
-
--- | chain complex.
-type ChainComplex = ConsZero To
 
 --------------------------------------------------------------------------------
 -- ChainComplexRep --
@@ -291,12 +383,6 @@ ccxRepCards (ChainComplexRep ds) = DiagramDiscrete (cs ds) where
   cs (d:|d':|d'':|ds) = (lengthN $ chRangeSet d) :| cs (d':|d'':|ds)
 
 --------------------------------------------------------------------------------
--- ChainComplexTrafo -
-
--- | transformation between chain complexes.
-type ChainComplexTrafo = ConsZeroTrafo To
-
---------------------------------------------------------------------------------
 -- ChainComplexTrafoRep -
 
 -- | predicate for beeing a list of eligible chain map operators.
@@ -377,5 +463,5 @@ c' = cpxProduct b a
 
 p1' = ComplexMap c b (Map fst)
 p2' = ComplexMap c a (Map snd)
-
+-}
 

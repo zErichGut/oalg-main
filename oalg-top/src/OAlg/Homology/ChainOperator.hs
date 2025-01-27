@@ -54,6 +54,7 @@ import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 
 import OAlg.Structure.Exception
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented hiding (Path)
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
@@ -73,8 +74,6 @@ import OAlg.Entity.Sum
 import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplical
-
-import OAlg.Data.Symbol hiding (S,R)
 
 --------------------------------------------------------------------------------
 -- Chain -
@@ -125,12 +124,6 @@ chainMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
 chainMap f = ssySum (chMap f) where
   chMap :: (Ring r, SimplicalTransformable s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
-
-f :: Map EntOrd Symbol N
-f = Map ((toEnum :: Int -> N) . fromEnum)
-
-g :: (Entity x, Ord x) => Map EntOrd x x
-g = cOne Struct
 
 --------------------------------------------------------------------------------
 -- ChainOperatorAtom -
@@ -276,7 +269,11 @@ rdcChnOprSFPth o = case o of
     g' <- rdcChnOprSFPth g
     return (f' :+ g')
 
--- | reduces consecutive 'Boundary' operators to zero.
+-- | reduces 'ChainOperatorRep's to:
+--
+--     (*) consecutive 'Boundary' operators to 'Zero'.
+--
+--     (*) empty domains to 'Zero'.
 --
 -- pre: the paths are reduced according to 'rdcChnOprPth'.
 rdcChnOprSFSum :: ChainOperatorSumForm r s (Chain r s x) (Chain r s y)
@@ -285,8 +282,9 @@ rdcChnOprSFSum o = case o of
   Zero _ -> return o
   S (ChainOperatorRep (Representable h sx sy)) -> case h of
     Boundary :. Boundary :. _                  -> reducesTo (Zero (sx,sy))
+    _ | isEmpty sx                             -> reducesTo (Zero (sx,sy))
     _                                          -> return o
-  r :! o' -> rdcChnOprSFSum o' >>= return . (r:!)
+  x :! o'         -> rdcChnOprSFSum o' >>= return . (x:!)
   f :+ g  -> do
     f' <- rdcChnOprSFSum f
     g' <- rdcChnOprSFSum g
