@@ -74,7 +74,7 @@ import OAlg.Entity.Matrix
 
 import OAlg.Homology.Simplical
 
-import OAlg.Data.Symbol hiding (S)
+import OAlg.Data.Symbol hiding (S,R)
 
 --------------------------------------------------------------------------------
 -- Chain -
@@ -185,9 +185,17 @@ instance Reducible (Path (ChainOperatorAtom r s) x y) where
 --------------------------------------------------------------------------------
 -- ChainOperatorRep -
 
+-- | paths of 'ChainOperatorAtom's restricted to a sets of simplices.
+--
+-- __Note__ The application @f@ of a path of 'ChainOperatorAtom's on a 'Chain' @c@ will first project
+-- @c@ to a sum of @'chorDomain' f@, such that the application of @f@ to the projected @c@ is a sum
+-- of @'chorRange' f@!   
 newtype ChainOperatorRep r s x y
   = ChainOperatorRep (Representable r (ChainOperatorPath r s) x y)
 
+instance (Ring r, Commutative r) => Applicative (ChainOperatorRep r s) where
+  amap (ChainOperatorRep (Representable f sx _)) s = amap f $ cfsssy sx $ ssycfs sx s
+  
 --------------------------------------------------------------------------------
 -- chorDomain -
 
@@ -289,10 +297,36 @@ rdcChnOprSumForm :: ChainOperatorSumForm r s (Chain r s x) (Chain r s y)
 rdcChnOprSumForm = rdcChnOprSFPth >>>= rdcChnOprSFSum
 
 --------------------------------------------------------------------------------
+-- smfChors'Appl -
+
+smfChors'Appl :: (Ring r, Commutative r, Simplical s y)
+  => SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+  -> Chain r s x -> SumForm r (SumForm r (R (s y)))
+smfChors'Appl f c = case f of
+  Zero _  -> Zero ()
+  S f'    -> S $ (\(SumSymbol s) -> form s) $ amap f' c
+  r :! f' -> r :! smfChors'Appl f' c
+  a :+ b  -> smfChors'Appl a c :+ smfChors'Appl b c
+
+--------------------------------------------------------------------------------
+-- smfChorsAppl -
+
+smfChorsAppl :: (Ring r, Commutative r, Simplical s y)
+  => SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+  -> Chain r s x -> Chain r s y
+smfChorsAppl f c = SumSymbol $ make $ smfJoin $ smfChors'Appl f c
+
+--------------------------------------------------------------------------------
 -- ChainOperatorRepSum -
 
-newtype ChainOperatorRepSum r s x y
-  = ChainOperatorRepSum (Sum r (ChainOperatorRep r s x y))
+data ChainOperatorRepSum r s x y where
+  ChainOperatorRepSum
+    :: (Simplical s x, Simplical s y)
+    => Sum r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+    -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+
+instance (Ring r, Commutative r) => Applicative (ChainOperatorRepSum r s) where
+  amap (ChainOperatorRepSum f) = smfChorsAppl $ form f
   
 --------------------------------------------------------------------------------
 -- ChainOperatorRepSum - Constructable -
@@ -318,16 +352,16 @@ chors (Representable o sx sy)
 --------------------------------------------------------------------------------
 -- ChainOperatorRepSum - Entity -
 
-deriving instance (Ring r, Commutative r, Simplical s x, Simplical s y)
+deriving instance (Ring r, Commutative r)
   => Show (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
 
-deriving instance (Ring r, Commutative r, Simplical s x, Simplical s y)
+deriving instance (Ring r, Commutative r)
   => Eq (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
 
-deriving instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+deriving instance (Ring r, Commutative r, Ord r)
   => Ord (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
 
-instance (Ring r, Commutative r, Simplical s x, Simplical s y)
+instance (Ring r, Commutative r)
   => Validable (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
   valid (ChainOperatorRepSum r) = Label "ChainOperatorRepSum" :<=>: valid r
 
