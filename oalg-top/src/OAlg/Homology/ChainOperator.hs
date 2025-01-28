@@ -22,8 +22,10 @@
 --
 -- Operators on chains of simplices.
 module OAlg.Homology.ChainOperator
-  ( -- * Chain Operator
-    ChainOperator(..), chopr
+  (
+{-
+    -- * Chain Operator
+    ChainOperator(..), chopr, choprRepMatrix
   , SimplexSet(..)
 
     -- ** Representables
@@ -36,7 +38,7 @@ module OAlg.Homology.ChainOperator
 
     -- * Chain
   , Chain, ch, chZ, boundary, chainMap
-
+-}
   ) where
 
 import Control.Monad
@@ -52,6 +54,7 @@ import OAlg.Category.Map
 
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
+import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
@@ -63,9 +66,13 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Ring
+import OAlg.Structure.Exponential
 
+import OAlg.Hom.Oriented
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
 
 import OAlg.Entity.Sequence.Set
@@ -217,6 +224,12 @@ chorMlt :: (Ring r, Commutative r, Simplical s x, Simplical s z)
   -> ChainOperatorRep r s (Chain r s x) (Chain r s z)
 chorMlt (ChainOperatorRep (Representable f _ sz)) (ChainOperatorRep (Representable g sx _))
   = ChainOperatorRep (Representable (f . g) sx sz)
+
+--------------------------------------------------------------------------------
+-- chorRepMatrix -
+
+chorRepMatrix :: ChainOperatorRep r s (Chain r s x) (Chain r s y) -> Matrix r
+chorRepMatrix (ChainOperatorRep r) = repMatrix r
 
 --------------------------------------------------------------------------------
 -- ChainOperatorRep r s - Entity -
@@ -457,6 +470,26 @@ chorsMlt :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y, Simplic
 chorsMlt f g = make (form f `smfChorMlt` form g)
 
 --------------------------------------------------------------------------------
+-- smfChorRepMatrix -
+
+smfChorRepMatrix :: (Ring r, Commutative r, Vectorial r, Scalar r ~ r, Simplical s x, Simplical s y)
+  => SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y)) -> Matrix r
+smfChorRepMatrix s = case s of
+  Zero (sx,sy) -> zero (dx :> dy) where
+    dx = dim unit ^ lengthN sx
+    dy = dim unit ^ lengthN sy
+  S f -> chorRepMatrix f
+  x :! s' -> x ! smfChorRepMatrix s'
+  a :+ b -> smfChorRepMatrix a + smfChorRepMatrix b
+
+--------------------------------------------------------------------------------
+-- chorsRepMatrix -
+
+chorsRepMatrix :: (Ring r, Commutative r, Vectorial r, Scalar r ~ r, Simplical s x, Simplical s y)
+  => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) -> Matrix r
+chorsRepMatrix (ChainOperatorRepSum f) = smfChorRepMatrix $ form f
+
+--------------------------------------------------------------------------------
 -- ChainOperator -
 
 data ChainOperator r s where
@@ -472,6 +505,13 @@ chopr :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
   => Representable r (ChainOperatorAtom r s) (Chain r s x) (Chain r s y)
   -> ChainOperator r s
 chopr = ChainOperator . chors
+
+--------------------------------------------------------------------------------
+-- choprRepMatrix -
+
+choprRepMatrix :: (Ring r, Commutative r, Vectorial r, Scalar r ~ r)
+  => ChainOperator r s -> Matrix r
+choprRepMatrix (ChainOperator f) = chorsRepMatrix f
 
 --------------------------------------------------------------------------------
 -- ChainOperator - Entity -
@@ -576,3 +616,103 @@ instance (Ring r, Commutative r, Ord r, Typeable s) => Multiplicative (ChainOper
 instance (Ring r, Commutative r, Typeable s) => FibredOriented (ChainOperator r s)
 instance (Ring r, Commutative r, Ord r, Typeable s) => Distributive (ChainOperator r s)
 instance (Ring r, Commutative r, Ord r, Typeable s) => Algebraic (ChainOperator r s)
+
+--------------------------------------------------------------------------------
+-- ChoprRepMatrix -
+
+data ChoprRepMatrix r s x y where
+  ChoprRepMatrix :: ChoprRepMatrix r s (ChainOperator r s) (Matrix r)
+
+deriving instance Show (ChoprRepMatrix r s x y)
+instance Show2 (ChoprRepMatrix r s)
+
+deriving instance Eq (ChoprRepMatrix r s x y)
+instance Eq2 (ChoprRepMatrix r s)
+
+deriving instance Ord (ChoprRepMatrix r s x y)
+
+instance Validable (ChoprRepMatrix r s x y) where
+  valid r = Label "ChoprRepMatrix" :<=>: case r of ChoprRepMatrix -> SValid
+instance Validable2 (ChoprRepMatrix r s)
+
+instance (Typeable r, Typeable s, Typeable x, Typeable y) => Entity (ChoprRepMatrix r s x y)
+instance (Typeable r, Typeable s) => Entity2 (ChoprRepMatrix r s)
+
+--------------------------------------------------------------------------------
+-- AlgebraicSemiring -
+
+-- | 'Commutative' 'Semiring's with a sound 'Algebraic' structure.
+--
+-- __Property__ Let @__r__@ be an instance of 'AlgebraicSemiring', then holds:
+--
+-- (1) For all @x@ and @y@ in @__r__@ holds: @x '!' y '==' x '*' y@.
+--
+-- __Note__ The purpose of this structure is one the one hand to summarize the somewhat lengthy
+-- constraints and on the other hand to ensure that the scalar multiplication is compatible
+-- with the multiplicative structure.
+class (Semiring r, Commutative r, Algebraic r, Scalar r ~ r) => AlgebraicSemiring r
+
+instance AlgebraicSemiring N
+instance AlgebraicSemiring Z
+instance AlgebraicSemiring Q
+
+--------------------------------------------------------------------------------
+-- ChoprRepMatrix - HomAlgebraic -
+
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => Morphism (ChoprRepMatrix r s) where
+  type ObjectClass (ChoprRepMatrix r s) = Alg r
+  homomorphous ChoprRepMatrix = Struct :>: Struct
+
+
+instance (AlgebraicSemiring r, Ring r) => Applicative (ChoprRepMatrix r s) where
+  amap ChoprRepMatrix = choprRepMatrix
+
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => EmbeddableMorphism (ChoprRepMatrix r s) Ort
+
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => EmbeddableMorphism (ChoprRepMatrix r s) Typ
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => EmbeddableMorphismTyp (ChoprRepMatrix r s)
+
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprRepMatrix r s) where
+  pmap ChoprRepMatrix (SimplexSet sx) = dim unit ^ lengthN sx
+
+--------------------------------------------------------------------------------
+-- OrntN -
+
+data OrntN s m n where
+  OrntN :: (Structure s m, Oriented m, LengthN (Point m)) => OrntN s m (Orientation N)
+
+instance Morphism (OrntN Mlt) where
+  type ObjectClass (OrntN Mlt) = Mlt
+  homomorphous OrntN = Struct :>: Struct
+
+instance Morphism (OrntN Dst) where
+  type ObjectClass (OrntN Dst) = Dst
+  homomorphous OrntN = Struct :>: Struct
+
+instance Applicative (OrntN s) where
+  amap OrntN m = lengthN s :> lengthN e where s :> e = orientation m
+
+instance EmbeddableMorphism (OrntN Mlt) Ort
+instance EmbeddableMorphism (OrntN Dst) Ort
+
+instance EmbeddableMorphism (OrntN Mlt) Typ
+instance EmbeddableMorphism (OrntN Dst) Typ
+instance EmbeddableMorphismTyp (OrntN Mlt)
+instance EmbeddableMorphismTyp (OrntN Dst)
+
+instance HomOriented (OrntN Mlt) where pmap OrntN = lengthN
+instance HomOriented (OrntN Dst) where pmap OrntN = lengthN
+
+instance EmbeddableMorphism (OrntN Mlt) Mlt
+instance HomMultiplicative (OrntN Mlt)
+
+instance EmbeddableMorphism (OrntN Dst) Mlt
+instance EmbeddableMorphism (OrntN Dst) Dst
+instance HomMultiplicative (OrntN Dst)
+-- instance HomDistributive (OrntN Dst)
+
+
