@@ -639,24 +639,6 @@ instance (Typeable r, Typeable s, Typeable x, Typeable y) => Entity (ChoprRepMat
 instance (Typeable r, Typeable s) => Entity2 (ChoprRepMatrix r s)
 
 --------------------------------------------------------------------------------
--- AlgebraicSemiring -
-
--- | 'Commutative' 'Semiring's with a sound 'Algebraic' structure.
---
--- __Property__ Let @__r__@ be an instance of 'AlgebraicSemiring', then holds:
---
--- (1) For all @x@ and @y@ in @__r__@ holds: @x '!' y '==' x '*' y@.
---
--- __Note__ The purpose of this structure is one the one hand to summarize the somewhat lengthy
--- constraints and on the other hand to ensure that the scalar multiplication is compatible
--- with the multiplicative structure.
-class (Semiring r, Commutative r, Algebraic r, Scalar r ~ r) => AlgebraicSemiring r
-
-instance AlgebraicSemiring N
-instance AlgebraicSemiring Z
-instance AlgebraicSemiring Q
-
---------------------------------------------------------------------------------
 -- ChoprRepMatrix - HomAlgebraic -
 
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
@@ -683,19 +665,29 @@ instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprR
 -- OrntN -
 
 data OrntN s m n where
-  OrntN :: (Structure s m, Oriented m, LengthN (Point m)) => OrntN s m (Orientation N)
+  OrntN :: (Structure s m, Structure s (Orientation N), Transformable s Ort, LengthN (Point m))
+        => OrntN s m (Orientation N)
 
-instance Morphism (OrntN Mlt) where
-  type ObjectClass (OrntN Mlt) = Mlt
+
+instance Morphism (OrntN s) where
+  type ObjectClass (OrntN s) = s
   homomorphous OrntN = Struct :>: Struct
 
-instance Morphism (OrntN Dst) where
-  type ObjectClass (OrntN Dst) = Dst
-  homomorphous OrntN = Struct :>: Struct
+ff :: EmbeddableMorphism m Ort => m x y -> Struct Typ x
+ff m = gg $ tau $ domain m
+
+gg :: Struct Ort x -> Struct Typ x
+gg Struct = Struct
+
+
+orntNDomStructOrt :: OrntN s m n -> Struct Ort m
+orntNDomStructOrt m@OrntN = tau $ domain m
 
 instance Applicative (OrntN s) where
-  amap OrntN m = lengthN s :> lengthN e where s :> e = orientation m
+  amap m@OrntN f
+    = case orntNDomStructOrt m of Struct -> lengthN s :> lengthN e where s :> e = orientation f
 
+{-
 instance EmbeddableMorphism (OrntN Mlt) Ort
 instance EmbeddableMorphism (OrntN Dst) Ort
 
@@ -714,5 +706,6 @@ instance EmbeddableMorphism (OrntN Dst) Mlt
 instance EmbeddableMorphism (OrntN Dst) Dst
 instance HomMultiplicative (OrntN Dst)
 -- instance HomDistributive (OrntN Dst)
+-}
 
 

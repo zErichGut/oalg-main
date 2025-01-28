@@ -19,7 +19,7 @@
 -- 'Vectorial' structure.
 module OAlg.Structure.Algebraic.Definition
   ( -- * Algebraic
-    Algebraic, Alg, ForgetfulAlg
+    Algebraic, AlgebraicSemiring, Alg, ForgetfulAlg
   )
   where
 
@@ -31,7 +31,7 @@ import OAlg.Structure.Fibred.Definition
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Distributive.Definition
 import OAlg.Structure.Vectorial.Definition
-
+import OAlg.Structure.Ring.Definition
 
 --------------------------------------------------------------------------------
 -- Algebraic -
@@ -53,6 +53,26 @@ instance Algebraic Z
 instance Algebraic Q
 instance Entity p => Algebraic (Orientation p)
 instance Algebraic a => Algebraic (Op a)
+
+--------------------------------------------------------------------------------
+-- AlgebraicSemiring -
+
+-- | 'Commutative' 'Semiring's with a sound 'Algebraic' structure.
+--
+-- __Property__ Let @__r__@ be an instance of 'AlgebraicSemiring', then holds:
+--
+-- (1) For all @x@ and @y@ in @__r__@ holds: @x '!' y '==' x '*' y@.
+--
+-- __Note__ The purpose of this structure is on the one hand to summarize the somewhat lengthy
+-- constraints and on the other hand to ensure that the scalar multiplication @('!')@ is compatible
+-- with the 'Multiplicative' structure.
+class (Semiring r, Commutative r, Algebraic r, Scalar r ~ r) => AlgebraicSemiring r
+
+instance AlgebraicSemiring Int
+instance AlgebraicSemiring Integer
+instance AlgebraicSemiring N
+instance AlgebraicSemiring Z
+instance AlgebraicSemiring Q
 
 --------------------------------------------------------------------------------
 -- Alg -

@@ -123,5 +123,8 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 
 ## [2.1.0.0] - 2025-01-26
 
+### Added
+- AlgebraicSemiring in the module OAlg.Structure.Algebraic.Definition.
+
 ### Changed
 - eliminated the constraint for HomOriented and HomFibred being an instance of Entity2
