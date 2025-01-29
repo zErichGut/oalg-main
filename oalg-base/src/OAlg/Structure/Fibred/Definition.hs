@@ -21,10 +21,10 @@
 module OAlg.Structure.Fibred.Definition
   (
     -- * Fibred
-    Fibred(..), Fbr, ForgetfulFbr
+    Fibred(..), Fbr, TransformableFbr
 
     -- * Fibred Oriented
-  , FibredOriented, FbrOrt, ForgetfulFbrOrt
+  , FibredOriented, FbrOrt, TransformableFbrOrt
 
     -- * Spezial classes
   , OrdRoot, TotalRoot
@@ -203,13 +203,13 @@ instance Transformable Fbr Ent where tau Struct = Struct
 
 
 --------------------------------------------------------------------------------
--- ForgetfulFbr -
+-- TransformableFbr -
 
 -- | transformable to 'Fibred' structure.
-class Transformable s Fbr => ForgetfulFbr s
+class Transformable s Fbr => TransformableFbr s
 
-instance ForgetfulTyp Fbr
-instance ForgetfulFbr Fbr
+instance TransformableTyp Fbr
+instance TransformableFbr Fbr
 
 --------------------------------------------------------------------------------
 -- FbrOrt -
@@ -225,15 +225,15 @@ instance Transformable FbrOrt Fbr where tau Struct = Struct
 instance Transformable FbrOrt Ort where tau Struct = Struct
 
 --------------------------------------------------------------------------------
--- ForgetfulFbrOrt -
+-- TransformableFbrOrt -
 
 -- | transformable to 'FibredOriented' structure.
-class ( ForgetfulFbr s, ForgetfulOrt s
+class ( Transformable s Fbr, Transformable s Ort
       , Transformable s FbrOrt
-      ) => ForgetfulFbrOrt s
+      ) => TransformableFbrOrt s
 
-instance ForgetfulTyp FbrOrt
-instance ForgetfulOrt FbrOrt
-instance ForgetfulFbr FbrOrt
-instance ForgetfulFbrOrt FbrOrt
+instance TransformableTyp FbrOrt
+instance TransformableOrt FbrOrt
+instance TransformableFbr FbrOrt
+instance TransformableFbrOrt FbrOrt
 

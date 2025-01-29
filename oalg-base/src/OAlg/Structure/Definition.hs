@@ -24,7 +24,7 @@ module OAlg.Structure.Definition
 
     -- * Transformable
   , Transformable(..), Transformable1(..), TransformableOp
-  , ForgetfulTyp
+  , TransformableTyp
 
     -- * Some Structure Types
   , Typ, Ord', Bol
@@ -121,10 +121,10 @@ class Transformable1 f s where
 class Transformable1 Op s => TransformableOp s
 
 --------------------------------------------------------------------------------
--- ForgetfulTyp -
+-- TransformableTyp -
 
 -- | helper class to avoid undecidable instances.
-class Transformable s Typ => ForgetfulTyp s
+class Transformable s Typ => TransformableTyp s
 
 
 instance Transformable s Typ => TestEquality (Struct s) where

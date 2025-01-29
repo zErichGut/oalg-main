@@ -155,8 +155,8 @@ instance (Morphism m, Validable2 m) => Validable2 (Path m) where
 
 instance Validable2 (Path m) => Validable (Path m x y) where
   valid = valid2
-  
-instance (EmbeddableMorphismTyp m, Eq2 m) => Eq2 (Path m) where
+
+instance (Morphism m, TransformableObjectClassTyp m, Eq2 m) => Eq2 (Path m) where
   eq2 p q = case (p,q) of
     (IdPath Struct,IdPath Struct) -> True
     
@@ -169,7 +169,8 @@ instance (EmbeddableMorphismTyp m, Eq2 m) => Eq2 (Path m) where
 instance Eq2 (Path m) => Eq (Path m x y) where
   (==) = eq2
 
-instance (Entity2 h, EmbeddableMorphismTyp h) => Entity2 (Path h)  
+instance (Morphism h, TransformableObjectClassTyp h, Entity2 h) => Entity2 (Path h)  
+
 --------------------------------------------------------------------------------
 -- Path - Morphism -
 
@@ -206,7 +207,7 @@ instance (Applicative m, Morphism m) => Functorial (Path m)
 --------------------------------------------------------------------------------
 -- Path - Cayleyan2 -
 
-instance (Cayleyan2 m, EmbeddableMorphismTyp m) => Cayleyan2 (Path m) where
+instance (Cayleyan2 m, TransformableObjectClassTyp m) => Cayleyan2 (Path m) where
   invert2 f@(IdPath _) = f
   invert2 (f :. p)     = invert2 p . mPath (invert2 f)
 

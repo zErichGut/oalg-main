@@ -19,7 +19,7 @@
 -- 'Vectorial' structure.
 module OAlg.Structure.Algebraic.Definition
   ( -- * Algebraic
-    Algebraic, AlgebraicSemiring, Alg, ForgetfulAlg
+    Algebraic, AlgebraicSemiring, Alg, TransformableAlg
   )
   where
 
@@ -94,23 +94,23 @@ instance Transformable (Alg k) (Vec k) where tau Struct = Struct
 instance Transformable1 Op (Alg k) where tau1 Struct = Struct
 
 --------------------------------------------------------------------------------
--- ForgetfulAlg -
+-- TransformableAlg -
 
 -- | transformable to @__k__-'Algebraic'@ structure.
-class ( ForgetfulOrt (s k), ForgetfulMlt (s k)
-      , ForgetfulFbr (s k), ForgetfulFbrOrt (s k)
-      , ForgetfulAdd (s k), ForgetfulDst (s k)
-      , ForgetfulVec k s
+class ( Transformable (s k) Ort, Transformable (s k) Mlt
+      , Transformable (s k) Fbr, Transformable (s k) FbrOrt
+      , Transformable (s k) Add, Transformable (s k) Dst
+      , Transformable (s k) (Vec k)
       , Transformable (s k) (Alg k)
-      ) => ForgetfulAlg k s
+      ) => TransformableAlg k s
 
-instance ForgetfulTyp (Alg k)
-instance ForgetfulOrt (Alg k)
-instance ForgetfulMlt (Alg k)
-instance ForgetfulFbr (Alg k)
-instance ForgetfulFbrOrt (Alg k)
-instance ForgetfulAdd (Alg k)
-instance ForgetfulDst (Alg k)
-instance ForgetfulVec k Alg
-instance ForgetfulAlg k Alg
+instance TransformableTyp (Alg k)
+instance TransformableOrt (Alg k)
+instance TransformableMlt (Alg k)
+instance TransformableFbr (Alg k)
+instance TransformableFbrOrt (Alg k)
+instance TransformableAdd (Alg k)
+instance TransformableDst (Alg k)
+instance TransformableVec k Alg
+instance TransformableAlg k Alg
 

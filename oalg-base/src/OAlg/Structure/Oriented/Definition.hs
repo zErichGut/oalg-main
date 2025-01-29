@@ -23,7 +23,7 @@ module OAlg.Structure.Oriented.Definition
   (
     -- * Oriented
     Oriented(..), Total, EntityPoint, OrdPoint, isEndo, isEndoAt
-  , OS, Ort, structOrtOp, ForgetfulOrt
+  , OS, Ort, structOrtOp, TransformableOrt
 
     -- * Transposable
   , TransposableOriented
@@ -365,13 +365,13 @@ instance Transformable1 Op Ort where tau1 Struct = Struct
 instance TransformableOp Ort
 
 --------------------------------------------------------------------------------
--- ForgetfulOrt -
+-- TransformableOrt -
 
 -- | transformable to 'Oriented' structure.
-class Transformable s Ort => ForgetfulOrt s
+class Transformable s Ort => TransformableOrt s
 
-instance ForgetfulTyp Ort
-instance ForgetfulOrt Ort
+instance TransformableTyp Ort
+instance TransformableOrt Ort
 
 --------------------------------------------------------------------------------
 -- structOrtOp -
