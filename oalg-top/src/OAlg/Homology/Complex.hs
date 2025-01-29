@@ -34,6 +34,10 @@ module OAlg.Homology.Complex
   , ComplexMap(..), cpmForget, cpmDomain, cpmRange
   , cpmMap, cpmGraph
 
+    -- * Cardinalities
+  , cpxCards, Cards
+  , cpmCards, CardsTrafo
+
   ) where
 
 import Control.Monad
@@ -328,8 +332,8 @@ type CardsTrafo n = Transformation Discrete n N0 (Orientation N)
 --------------------------------------------------------------------------------
 -- cpmCards -
 
-cmpCards :: Any d -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo (d+3)
-cmpCards d m = Transformation cd cr ts where
+cpmCards :: Any d -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo (d+3)
+cpmCards d m = Transformation cd cr ts where
   cd = cpxCards d (cpmDomain m)
   cr = cpxCards d (cpmRange m)
   ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)

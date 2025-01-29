@@ -21,6 +21,7 @@ module OAlg.Limes.Exact.ConsZero
   ( -- * Consecutive Zero
     ConsZero(..), cnzDiagram, cnzPoints, cnzArrows
   , cnzHead, cnzTail
+  , cnzMap
 
     -- ** Duality
   , coConsZero, coConsZeroInv, cnzFromOpOp
@@ -28,6 +29,7 @@ module OAlg.Limes.Exact.ConsZero
     -- * Transformation
   , ConsZeroTrafo(..), cnztTrafos, cnztTransformation
   , cnztHead, cnztTail
+  , cnztMap
 
     -- ** Duality
   , coConsZeroTrafo, coConsZeroTrafoInv, cnztFromOpOp
@@ -51,6 +53,9 @@ import OAlg.Structure.Distributive
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
+
+import OAlg.Hom.Definition
+import OAlg.Hom.Distributive ()
 
 --------------------------------------------------------------------------------
 -- ConsZero -
@@ -152,6 +157,13 @@ cnzHead c@(ConsZero (DiagramChainFrom _ _))      = coConsZeroInv Refl $ cnzHead 
 cnzTail :: Oriented d => ConsZero t (n+1) d -> ConsZero t n d
 cnzTail (ConsZero (DiagramChainTo _ (a:|as))) = ConsZero (DiagramChainTo (start a) as)
 cnzTail c@(ConsZero (DiagramChainFrom _ _))   = coConsZeroInv Refl $ cnzTail $ coConsZero c
+
+--------------------------------------------------------------------------------
+-- cnzMap -
+
+-- | mapping for 'ConsZero's.
+cnzMap :: Hom Dst h => h a b -> ConsZero t n a -> ConsZero t n b
+cnzMap h (ConsZero as) = ConsZero $ dgMap h as
 
 --------------------------------------------------------------------------------
 -- ConsZeroTrafo -
@@ -270,6 +282,16 @@ cnztHead (ConsZeroTrafo a b (f0:|f1:|f2:|_)) = ConsZeroTrafo (cnzHead a) (cnzHea
 cnztTail :: Oriented d => ConsZeroTrafo t (n+1) d -> ConsZeroTrafo t n d
 cnztTail (ConsZeroTrafo a b fs) = ConsZeroTrafo (cnzTail a) (cnzTail b) (tail fs)
 
+--------------------------------------------------------------------------------
+-- cnztMap -
+
+-- mapping of 'ConsZeroTrafo's.
+cnztMap :: Hom Dst h => h a b -> ConsZeroTrafo t n a -> ConsZeroTrafo t n b
+cnztMap h (ConsZeroTrafo a b fs) = ConsZeroTrafo a' b' fs' where
+  a'  = cnzMap h a
+  b'  = cnzMap h b
+  fs' = amap1 (amap h) fs
+  
 --------------------------------------------------------------------------------
 -- SomeConsZeroTrafo -
 

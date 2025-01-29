@@ -134,16 +134,15 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 -- | chain complex.
 type ChainComplex = ConsZero To
 
-
 --------------------------------------------------------------------------------
--- ccxBoundary -
+-- chainComplex -
 
--- | the list of boundary operators, where in the 'Regualr' case the first operator
--- is addapted to @'ZeroHom' s 'empty'@.
-ccxBoundary :: (Ring r, Commutative r, Ord r, Simplical s x)
+-- | the chain complex of the boundary operators, where in the 'Regualr' case the first operator
+-- is addapted to @'zero'@ with an empy 'end'.
+chainComplex :: (Ring r, Commutative r, Ord r, Simplical s x)
   => Regular -> Any n -> Complex x
   -> ChainComplex n (ChainOperator r s)
-ccxBoundary r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
+chainComplex r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
 
   toBndOpr :: (Ring r, Commutative r, Ord r, Simplical s x)
     => FinList (n+1) (Set (s x)) -> FinList n (ChainOperator r s)
@@ -165,13 +164,21 @@ ccxBoundary r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c
   zeroEmptyEnd d = zero (fst $ root d,empty) 
 
 bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
-bndZSet = ccxBoundary
+bndZSet = chainComplex
 
 bndZAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
-bndZAsc = ccxBoundary
+bndZAsc = chainComplex
 
 bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
-bndZLst = ccxBoundary
+bndZLst = chainComplex
+
+--------------------------------------------------------------------------------
+-- ccpCards -
+
+-- | the cardinalities of the consecutive 'SimplexSet's of the given chain complex.
+ccpCards :: (Ring r, Commutative r, Ord r, Typeable s)
+  => ChainComplex n (ChainOperator r s) -> Cards (n+3)
+ccpCards c = DiagramDiscrete $ cnzPoints $ cnzMap lengthDst c
 
 --------------------------------------------------------------------------------
 -- ChainComplexTrafo -
@@ -180,7 +187,7 @@ bndZLst = ccxBoundary
 type ChainComplexTrafo = ConsZeroTrafo To
 
 --------------------------------------------------------------------------------
--- ccxTrafo -
+-- chainComplexTrafo -
 
 eqSetType :: (Typeable x, Typeable x', Typeable y, Typeable y')
   => Map EntOrd x y -> Set (s x') -> Set (s y') -> Maybe (x :~: x',y :~: y')
@@ -196,20 +203,34 @@ eqSetType f sx sy = do
     eqRng :: (Typeable y, Typeable y') => Map EntOrd x y -> Set (s y') -> Maybe (y :~: y')
     eqRng _ _ = eqT
 
-ccxTrafo :: (Ring r, Commutative r, Ord r, Homological s x y)
+-- | the transformation of chain complexes.
+chainComplexTrafo :: (Ring r, Commutative r, Ord r, Homological s x y)
   => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexTrafo n (ChainOperator r s)
-ccxTrafo r n f = ConsZeroTrafo a b fs where
-  a  = ccxBoundary r n (cpmDomain f)
-  b  = ccxBoundary r n (cpmRange f)
+chainComplexTrafo r n f = ConsZeroTrafo a b fs where
+  a  = chainComplex r n (cpmDomain f)
+  b  = chainComplex r n (cpmRange f)
   fs = amap1 (uncurry $ toChnMap $ cpmMap f) $ cnzPoints a `F.zip` cnzPoints b
 
   toChnMap :: (Ring r, Commutative r, Ord r, Homological s x y)
     => Map EntOrd x y -> SimplexSet s -> SimplexSet s -> ChainOperator r s
   toChnMap f (SimplexSet sx) (SimplexSet sy) = case eqSetType f sx sy of
     Just (Refl,Refl) -> chopr (Representable (ChainMap f) sx sy)
-    Nothing          -> throw $ ImplementationError "ccxTrafo.toChnMap"
+    Nothing          -> throw $ ImplementationError "chainComplexTrafo.toChnMap"
 
+
+--------------------------------------------------------------------------------
+-- ccptCards -
+
+ccptCards :: (Ring r, Commutative r, Ord r, Typeable s)
+  => ChainComplexTrafo n (ChainOperator r s) -> CardsTrafo (n+3)
+ccptCards t = Transformation a b fs where
+  ConsZeroTrafo ca cb fs = cnztMap lengthDst t
+  a  = DiagramDiscrete $ cnzPoints ca
+  b  = DiagramDiscrete $ cnzPoints cb
+
+
+--------------------------------------------------------------------------------
 
 a = complex $ [Set "abc",Set "bcd",Set "ad"]
 b = complex $ [Set [0,1,2],Set [1,2,3],Set [0,3]] :: Complex Z
@@ -223,245 +244,12 @@ tLst = ComplexMap a b f
 chmZAsc :: (Entity x, Ord x, Entity y, Ord y)
   => Regular -> Any n -> ComplexMap Asc (Complex x) (Complex y)
   -> ChainComplexTrafo n (ChainOperator Z Asc)
-chmZAsc = ccxTrafo
+chmZAsc = chainComplexTrafo
 
 chmZLst :: (Entity x, Ord x, Entity y, Ord y)
   => Regular -> Any n -> ComplexMap [] (Complex x) (Complex y)
   -> ChainComplexTrafo n (ChainOperator Z [])
-chmZLst = ccxTrafo
+chmZLst = chainComplexTrafo
 
 
-{-
-ccxBoundary r n c = case r of
-  Regular  -> zeroBnd (F.head ds) :| F.tail ds
-  Extended -> ds
-  where
-    ds = toBnd $ ccxSimplices n c
-
-    zeroBnd :: ChainHom r s (C.Chain r s x) (C.Chain r s x)
-      -> ChainHom r s (C.Chain r s x) (C.Chain r s x)
-    zeroBnd (Boundary s _) = ZeroHom s empty
-    zeroBnd _              = throw $ ImplementationError "ccxBoundary.zeroBnd"
-    
-    toBnd :: Simplical s x
-      => FinList (n+1) (Z,Set (s x)) -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
-    toBnd (_:|Nil) = Nil
-    toBnd (zs:|zs':|zss) = Boundary (snd zs') (snd zs) :| toBnd (zs':|zss)
-
-ccxBoundaryAscZ :: (s ~  Asc, Entity x, Ord x)
-  => Regular -> Any n -> Complex x -> FinList (n+2) (ChainHom Z s (C.Chain Z s x) (C.Chain Z s x))
-ccxBoundaryAscZ = ccxBoundary
-
-
---------------------------------------------------------------------------------
--- ccxChainMap -
-
-ccxChainMap :: Homological s x y
-  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-ccxChainMap r n f = case r of
-  Regular  -> zeroChnMap (F.head fs) :| F.tail fs
-  Extended -> fs
-  where
-
-    fs = toChnMap (cpmMap f) (ccxSimplices n $ cpmDomain f) (ccxSimplices n $ cpmRange f)
-
-    zeroChnMap :: ChainHom r s (C.Chain r s x) (C.Chain r s y)
-      -> ChainHom r s (C.Chain r s x) (C.Chain r s y)
-    zeroChnMap (ChainMap _ _ _) = ZeroHom empty empty
-    zeroChnMap _                = throw $ ImplementationError "ccxChainMap.zeroChnMap"
-    
-    toChnMap :: SimplicalTransformable s x y
-      => Map EntOrd x y -> FinList n (Z,Set (s x)) -> FinList n (Z,Set (s y))
-      -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-    toChnMap _ Nil Nil                 = Nil
-    toChnMap f (zsx:|zsxs) (zsy:|zsys) = ChainMap (snd zsx) (snd zsy) f :| toChnMap f zsxs zsys
-
-ccxChainMapZ :: Homological s x y
-  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> FinList (n+3) (ChainHom Z s (C.Chain Z s x) (C.Chain Z s y))
-ccxChainMapZ = ccxChainMap
-
---------------------------------------------------------------------------------
--- ChainComplexRep --
-
--- | predicate for being a list of eligible boundary operators.
---
---  __Properties__ Let @c = 'ChainComplexRep' ds@ be in @'ChainComplexRep' __r__ __s__ __n__ __x__@,
--- where @__r__@ is a 'Commutative' 'Ring', then holds:
---
--- (1) For all @..d'|'d'..@ in @ds@ holds: @'chDomainSet' d '==' 'chRangeSet' d'@.
---
--- (2) Let @d = 'F.head' c@, then holds:
---
---     (2.1) If @d@ matches @'ZeroHom' _ s0@ then @s0@ is 'empty'. (for the 'Regualr' case)
---
---     (2.2) If @d@ matches @'Boundary' _ _@ then @d@ is 'valid'.
---
---     (2.3) otherwise @d@ is not 'valid'.
---
--- (3) Let @d@ be in @'F.tail' ds@, then holds:
---
---     (3.1) If @d@ matches @'Boundary' _ _@ then @d@ is 'valid'.
---
---     (3.2) otherwise @d@ is not 'valid'.
-newtype ChainComplexRep r s n x
-  = ChainComplexRep (FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)))
-  deriving (Show,Eq)
-
---------------------------------------------------------------------------------
--- ChainComplexRep - Validable -
-
-instance (Ring r, Commutative r, Simplical s x) => Validable (ChainComplexRep r s n x) where
-  valid (ChainComplexRep ds) = Label "ChainComplexRep" :<=>:
-    And [ vldBnd0 d0
-        , vldBnds 0 d0 (F.tail ds)
-        ]
-    where
-      d0 = F.head ds
-      
-      vldBnd0 d = And [ valid d
-                      , case d of
-                          ZeroHom _ s0 -> Label "2.1" :<=>: isEmpty s0 :?> Params ["s0":=show s0]
-                          Boundary _ _ -> SValid
-                          _            -> Label "2.3" :<=>: SInvalid
-                      ]
-                  
-      vldBnd d = And [ valid d
-                      , case d of
-                         Boundary _ _ -> SValid
-                         _            -> Label "3.2" :<=>: SInvalid
-                     ]
-
-      vldBnds :: Simplical s x
-        => N
-        -> ChainHom r s (C.Chain r s x) (C.Chain r s x)
-        -> FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s x))
-        -> Statement
-      vldBnds _ _ (d:|Nil) = vldBnd d
-      vldBnds i d (d':|d'':|ds)
-        = And [ vldBnd d'
-              , Label "1" :<=>: (chDomainSet d == chRangeSet d') :?> Params ["i":=show i]
-              , vldBnds (succ i) d' (d'':|ds)
-              ]
-
---------------------------------------------------------------------------------
--- chainComplex -
-
--- | the underlying chain complex.
-chainComplex :: (Ring r, Commutative r, Simplical s x)
-  => ChainComplexRep r s n x -> ChainComplex n (Matrix r)
-chainComplex (ChainComplexRep ds) = ConsZero (DiagramChainTo (end $ F.head ms) ms) where
-  ms = amap1 (repMatrix . chainHomRep) ds
-
-
---------------------------------------------------------------------------------
--- chainComplexRep -
-
-chainComplexRep :: Simplical s x
-  => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
-chainComplexRep r n c = ChainComplexRep (ccxBoundary r n c)
-
-ccxSetZ :: (r ~ Z, s ~ Set, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
-ccxSetZ = chainComplexRep
-
-ccxLstZ :: (r ~ Z, s ~ [], Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
-ccxLstZ = chainComplexRep
-
-ccxAscZ :: (r ~ Z, s ~ Asc, Simplical s x) => Regular -> Any n -> Complex x -> ChainComplexRep r s n x
-ccxAscZ = chainComplexRep
-
---------------------------------------------------------------------------------
--- ccxRepCards -
-
--- | the cardinalities of a the boundary operators.
-ccxRepCards :: ChainComplexRep r s n x -> ChainComplexCards (n+3)
-ccxRepCards (ChainComplexRep ds) = DiagramDiscrete (cs ds) where
-  cs :: FinList (n+2) (ChainHom r s (C.Chain r s x) (C.Chain r s x)) -> FinList (n+3) N
-  cs (d:|d':|Nil)
-    = (lengthN $ chRangeSet d) :| (lengthN $ chRangeSet d') :| (lengthN $ chDomainSet d') :| Nil
-  cs (d:|d':|d'':|ds) = (lengthN $ chRangeSet d) :| cs (d':|d'':|ds)
-
---------------------------------------------------------------------------------
--- ChainComplexTrafoRep -
-
--- | predicate for beeing a list of eligible chain map operators.
---
---  __Property__ Let @r@ be in
---  @'ChainComplexTrafoRep' __r__ __s__ __n__ __x__ __y__@, where @__r__@ is a 'Commutative' 'Ringe',
---  then holds: The induced chain comples transformation @'chainComplexTrafo' r@ is 'valid'.
-newtype ChainComplexTrafoRep r s n x y
-  = ChainComplexTrafoRep
-      (FinList (n+3) (ChainHom r s (C.Chain r s x) (C.Chain r s y)))
-  deriving (Show,Eq)
-
---------------------------------------------------------------------------------
--- cctDomainRep -
-
--- | the induced boundary operators according to the domain.
-cctDomainRep :: Simplical s x
-  => ChainComplexTrafoRep r s n x y -> ChainComplexRep r s n x
-cctDomainRep (ChainComplexTrafoRep (f0:|f1:|fs)) = ChainComplexRep (d0 f0 f1:|ds (f1:|fs)) where
-  d0 (ZeroHom s0 _) f1 = ZeroHom (chDomainSet f1) s0
-  d0 f0 f1             = Boundary (chDomainSet f1) (chDomainSet f0)
-
-  ds :: Simplical s x
-    => FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-    -> FinList n (ChainHom r s (C.Chain r s x) (C.Chain r s x))
-  ds (_:|Nil) = Nil
-  ds (f:|f':|fs) = Boundary (chDomainSet f') (chDomainSet f) :| ds (f':|fs)
-
---------------------------------------------------------------------------------
--- cctRangeRep -
-
--- | the induced boundary operators according to the range.
-cctRangeRep :: Simplical s y
-  => ChainComplexTrafoRep r s n x y -> ChainComplexRep r s n y
-cctRangeRep (ChainComplexTrafoRep (f0:|f1:|fs)) = ChainComplexRep (d0 f0 f1:|ds (f1:|fs)) where
-  d0 (ZeroHom _ s0) f1 = ZeroHom (chRangeSet f1) s0
-  d0 f0 f1             = Boundary (chRangeSet f1) (chRangeSet f0)
-
-  ds :: Simplical s y
-    => FinList (n+1) (ChainHom r s (C.Chain r s x) (C.Chain r s y))
-    -> FinList n (ChainHom r s (C.Chain r s y) (C.Chain r s y))
-  ds (_:|Nil) = Nil
-  ds (f:|f':|fs) = Boundary (chRangeSet f') (chRangeSet f) :| ds (f':|fs)
-
---------------------------------------------------------------------------------
--- chainComplexTrafo -
-
--- | the induced transformation between chain complexes.
-chainComplexTrafo :: (Ring r, Commutative r, Homological s x y)
-  => ChainComplexTrafoRep r s n x y -> ChainComplexTrafo n (Matrix r)
-chainComplexTrafo r@(ChainComplexTrafoRep fs) = ConsZeroTrafo dDom dRng ms where
-  dDom = chainComplex $ cctDomainRep r
-  dRng = chainComplex $ cctRangeRep r
-  ms   = amap1 (repMatrix . chainHomRep) fs
-
---------------------------------------------------------------------------------
--- chainComplexTrafoRep -
-
-chainComplexTrafoRep :: Homological s x y
-  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> ChainComplexTrafoRep r s n x y
-chainComplexTrafoRep r n f = ChainComplexTrafoRep (ccxChainMap r n f)
-
-chainComplexTrafoRepZ :: Homological s x y
-  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> ChainComplexTrafoRep Z s n x y
-chainComplexTrafoRepZ = chainComplexTrafoRep
-
-a = complex [Set "abc"]
-b = complex [Set [0,1]] :: Complex N
-
-c = cpxProductAsc b a
-
-p1 = ComplexMapAsc c b (Map fst)
-p2 = ComplexMapAsc c a (Map snd)
-
-c' = cpxProduct b a
-
-p1' = ComplexMap c b (Map fst)
-p2' = ComplexMap c a (Map snd)
--}
 
