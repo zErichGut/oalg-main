@@ -76,6 +76,7 @@ library
       OAlg.Data.Number
       OAlg.Data.Opposite
       OAlg.Data.Ord
+      OAlg.Data.Ornt
       OAlg.Data.Reducible
       OAlg.Data.Show
       OAlg.Data.Singleton
