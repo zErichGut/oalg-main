@@ -53,9 +53,6 @@ module OAlg.Category.Definition
     -- * Transformables
   , TransformableObjectClassTyp
   
-    -- * Embeddable
-  , EmbeddableMorphism
-  , EmbeddableMorphismTyp
   )
   where
 
@@ -375,22 +372,3 @@ instance Applicative m => Applicative (Forget t m) where
 -- @instance (..,'TransformableObjectClassTyp' m),..) => C m@ which will solve the problem!
 class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 
---------------------------------------------------------------------------------
--- EmbeddableMorphism -
-
--- | morphism for which its object class can be embedded into the given structure.
-class (Morphism m, Transformable (ObjectClass m) t) => EmbeddableMorphism m t
-
-instance (Morphism m, Transformable s t) => EmbeddableMorphism (Forget s m) t
-
-instance EmbeddableMorphism m t => EmbeddableMorphism (Op2 m) t
-
---------------------------------------------------------------------------------
--- EmbeddableMorphismType -
-
--- | helper class to avoid undecidable instances.
-class EmbeddableMorphism m Typ => EmbeddableMorphismTyp m
-
-instance (Morphism m, TransformableTyp t) => EmbeddableMorphismTyp (Forget t m)
-
-instance EmbeddableMorphismTyp m => EmbeddableMorphismTyp (Op2 m)

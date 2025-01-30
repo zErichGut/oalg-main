@@ -182,10 +182,6 @@ instance Morphism m => Morphism (Path m) where
   range (IdPath s) = s
   range (f :. _)   = range f
 
-instance EmbeddableMorphism m t => EmbeddableMorphism (Path m) t
-
-instance EmbeddableMorphismTyp m => EmbeddableMorphismTyp (Path m)
-
 --------------------------------------------------------------------------------
 -- Path - Category -
 

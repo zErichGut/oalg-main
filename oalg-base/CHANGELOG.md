@@ -129,3 +129,13 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 
 ### Changed
 - eliminated the constraint for HomOriented and HomFibred being an instance of Entity2
+
+## [2.2.0.0] - 2025-01-30
+
+### Changed
+- Redesign of Hom's: Adaption of the various class definition for Hom's to the idiom
+'Transformable' such that the implementation of concrete Hom's is strait forward (see for example
+'GLApp') and the implementation for parameterized Hom's over a structure index need only the idiom
+'Transformable...' to circumvent undecidable instances (see for example 'IdHom').
+- Elimination of the idioms 'Embeddable' and 'Forgetful' such that only the Idiom
+'Transformable' and 'Transformable...' are needed.

@@ -207,7 +207,7 @@ instance Oriented q => Oriented (Op q) where
   type Point (Op q) = Point q
   orientation (Op a) = opposite (orientation a)
   
-instance (EmbeddableMorphismTyp m, Entity2 m) => Oriented (SomeMorphism m) where
+instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (SomeMorphism m) where
   type Point (SomeMorphism m) = SomeObjectClass m
   start (SomeMorphism f) = SomeObjectClass (domain f)
   end (SomeMorphism f) = SomeObjectClass (range f)

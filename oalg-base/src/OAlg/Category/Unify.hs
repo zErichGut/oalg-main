@@ -73,7 +73,7 @@ instance Show2 m => Show (SomeMorphism m) where
   show (SomeMorphism f) = "SomeMorphism[" ++ show2 f ++ "]"
 
 
-instance (EmbeddableMorphismTyp m, Typeable m, Eq2 m)
+instance (Morphism m, TransformableObjectClassTyp m, Typeable m, Eq2 m)
   => Eq (SomeMorphism m) where
   SomeMorphism f == SomeMorphism g = case eqlMorphism tx tx' ty ty' f g of
     Just Refl -> eq2 f g
@@ -88,7 +88,7 @@ instance (EmbeddableMorphismTyp m, Typeable m, Eq2 m)
 instance Validable2 m => Validable (SomeMorphism m) where
   valid (SomeMorphism f) = valid2 f
 
-instance (EmbeddableMorphismTyp m, Entity2 m) => Entity (SomeMorphism m)
+instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Entity (SomeMorphism m)
 
 --------------------------------------------------------------------------------
 -- SomeEntity -

@@ -34,7 +34,6 @@ module OAlg.Hom.Oriented.Definition
 
     -- * OpHom
   , OpHom(..)
-  -- , OpHom(..), toOpHomOrt
 
     -- * HomOp
   , HomOp(..)
@@ -106,12 +105,6 @@ import OAlg.Hom.Definition
 class ( Morphism h, Applicative h
       , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
       , Transformable1 Op (ObjectClass h)
-
-{-
-      , EmbeddableMorphism h Ort, Applicative h
-      , EmbeddableMorphismTyp h
-      , Transformable1 Op (ObjectClass h)
--}
       ) => HomOriented h where
   pmap :: h a b -> Point a -> Point b
 
@@ -179,11 +172,7 @@ data IdHom s a b where
 instance Morphism (IdHom s) where
   type ObjectClass (IdHom s) = s
   homomorphous IdHom = Struct :>: Struct
-{-
-instance Transformable s t => EmbeddableMorphism (IdHom s) t
 
-instance TransformableTyp s => EmbeddableMorphismTyp (IdHom s)
--}
 --------------------------------------------------------------------------------
 -- IdHom - Entity -
 
@@ -282,11 +271,6 @@ instance Morphism (HomOp s) where
   homomorphous OppositeInv = Struct :>: Struct
 
 instance TransformableTyp s => TransformableObjectClassTyp (HomOp s)
-
-{-  
-instance Transformable s t => EmbeddableMorphism (HomOp s) t
-instance TransformableTyp s => EmbeddableMorphismTyp (HomOp s)
--}
 
 --------------------------------------------------------------------------------
 -- HomOp - Entity -
@@ -392,10 +376,6 @@ instance Morphism (IsoOp s) where
   homomorphous = restrict homomorphous
 
 instance TransformableTyp s => TransformableObjectClassTyp (IsoOp s)
-{-
-instance Transformable s t => EmbeddableMorphism (IsoOp s) t
-instance TransformableTyp s => EmbeddableMorphismTyp (IsoOp s)
--}
 
 instance Category (IsoOp s) where
   cOne o  = IsoOp (IdPath o)
@@ -503,10 +483,7 @@ instance Morphism (OpMap f s) where
   homomorphous FromOp1 = Struct :>: Struct
 
 instance TransformableTyp s => TransformableObjectClassTyp (OpMap f s)
-{-
-instance Transformable s t => EmbeddableMorphism (OpMap f s) t
-instance TransformableTyp s => EmbeddableMorphismTyp (OpMap f s)
--}
+
 --------------------------------------------------------------------------------
 -- OpMap - Entity -
 
@@ -562,10 +539,6 @@ instance Morphism (IsoOpMap f s) where
   homomorphous = restrict homomorphous
 
 instance TransformableTyp s => TransformableObjectClassTyp (IsoOpMap f s)
-{-
-instance Transformable s t => EmbeddableMorphism (IsoOpMap f s) t
-instance TransformableTyp s => EmbeddableMorphismTyp (IsoOpMap f s)
--}
 
 instance Category (IsoOpMap f s) where
   cOne o = IsoOpMap (IdPath o)
@@ -642,17 +615,6 @@ instance Morphism h => Morphism (OpHom h) where
   
 instance Applicative h => Applicative (OpHom h) where
   amap (OpHom h) (Op x) = Op (amap h x)
-{-  
-instance EmbeddableMorphism h Ort    => EmbeddableMorphism (OpHom h) Ort
-instance EmbeddableMorphism h Typ    => EmbeddableMorphism (OpHom h) Typ
-instance EmbeddableMorphism h Mlt    => EmbeddableMorphism (OpHom h) Mlt
-instance EmbeddableMorphism h Fbr    => EmbeddableMorphism (OpHom h) Fbr
-instance EmbeddableMorphism h FbrOrt => EmbeddableMorphism (OpHom h) FbrOrt
-instance EmbeddableMorphism h Add    => EmbeddableMorphism (OpHom h) Add
-instance EmbeddableMorphism h Dst    => EmbeddableMorphism (OpHom h) Dst
-
-instance EmbeddableMorphismTyp h => EmbeddableMorphismTyp (OpHom h)
--}
 
 instance HomOriented h => HomOriented (OpHom h) where
   pmap (OpHom h) = pmap h 

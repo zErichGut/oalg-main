@@ -126,12 +126,6 @@ instance (Multiplicative c, Sliced i c) => Morphism (SliceCokernelKernel i c) wh
   homomorphous SliceCokernel = Struct :>: Struct
   homomorphous SliceKernel = Struct :>: Struct
 
-instance (Multiplicative c, Sliced i c) => EmbeddableMorphism (SliceCokernelKernel i c) Typ
-instance (Multiplicative c, Sliced i c) => EmbeddableMorphismTyp (SliceCokernelKernel i c)
-instance (Multiplicative c, Sliced i c) => EmbeddableMorphism (SliceCokernelKernel i c) Ort
-instance (Multiplicative c, Sliced i c) => EmbeddableMorphism (SliceCokernelKernel i c) Mlt
-
-
 --------------------------------------------------------------------------------
 -- SliceCokernelKernel - HomMultiplicative -
 

@@ -549,10 +549,6 @@ instance Morphism TrApp where
   homomorphous TrGL  = Struct :>: Struct
   homomorphous TrGLT = Struct :>: Struct
 
-instance EmbeddableMorphism TrApp Ort
-instance EmbeddableMorphism TrApp Typ
-instance EmbeddableMorphismTyp TrApp
-
 instance Applicative TrApp where
   amap TrFT  = make . P
   amap TrGL  = trGL
@@ -600,10 +596,6 @@ instance Morphism GLApp where
   homomorphous GLTGL = Struct :>: Struct
   homomorphous GL2GL = Struct :>: Struct
 
-instance EmbeddableMorphism GLApp Ort
-instance EmbeddableMorphism GLApp Typ
-instance EmbeddableMorphismTyp GLApp
-
 instance Applicative GLApp where
   amap FTGL  = zProduct TrGL
   amap FTGLT = zProduct TrGLT 
@@ -616,7 +608,6 @@ instance HomOriented GLApp where
   pmap GLTGL = id
   pmap GL2GL = \p -> productDim [p,p]
 
-instance EmbeddableMorphism GLApp Mlt
 instance HomMultiplicative GLApp
 
 --------------------------------------------------------------------------------
