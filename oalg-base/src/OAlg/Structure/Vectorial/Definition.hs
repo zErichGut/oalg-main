@@ -18,7 +18,7 @@
 -- definition of vectorial structures, i.e. 'Additive' structures with a scalar multiplication @('!')@.
 module OAlg.Structure.Vectorial.Definition
   ( -- * Vectorial
-    Vectorial(..), Vec, ForgetfulVec
+    Vectorial(..), Vec, TransformableVec
 
     -- ** Sheaf
   , VectorSheaf(..)
@@ -188,14 +188,14 @@ instance Transformable (Vec k) Fbr where tau Struct = Struct
 instance Transformable (Vec k) Add where tau Struct = Struct
 
 --------------------------------------------------------------------------------
--- ForgetfulVec -
+-- TransformableVec -
 
 -- | transformable to @__k__-'Vectorial'@ structure.
-class ( ForgetfulFbr (s k), ForgetfulAdd (s k)
+class ( Transformable (s k) Fbr, Transformable (s k) Add 
       , Transformable (s k) (Vec k)
-      ) => ForgetfulVec k s
+      ) => TransformableVec k s
 
-instance ForgetfulTyp (Vec k)
-instance ForgetfulFbr (Vec k)
-instance ForgetfulAdd (Vec k)
-instance ForgetfulVec k Vec
+instance TransformableTyp (Vec k)
+instance TransformableFbr (Vec k)
+instance TransformableAdd (Vec k)
+instance TransformableVec k Vec

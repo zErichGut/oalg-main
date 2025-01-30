@@ -16,7 +16,7 @@
 -- distributive structures, i.e. multiplicative structures with a suitable additive structure.
 module OAlg.Structure.Distributive.Definition
   ( -- * Distributive
-    Distributive, Dst, ForgetfulDst
+    Distributive, Dst, TransformableDst
 
     -- * Transposable
   , TransposableDistributive
@@ -103,20 +103,20 @@ instance Transformable1 Op Dst where tau1 Struct = Struct
 instance TransformableOp Dst
 
 --------------------------------------------------------------------------------
--- ForgetfulDst -
+-- TransformableDst -
 
 -- | transformable to 'Distributive' structure.
-class ( ForgetfulOrt s, ForgetfulMlt s
-      , ForgetfulFbr s, ForgetfulAdd s
-      , ForgetfulFbrOrt s
+class ( Transformable s Ort, Transformable s Mlt
+      , Transformable s Fbr, Transformable s Add
+      , Transformable s FbrOrt
       , Transformable s Dst
-      ) => ForgetfulDst s
+      ) => TransformableDst s
 
-instance ForgetfulTyp Dst
-instance ForgetfulOrt Dst
-instance ForgetfulMlt Dst
-instance ForgetfulFbr Dst
-instance ForgetfulFbrOrt Dst
-instance ForgetfulAdd Dst
-instance ForgetfulDst Dst
+instance TransformableTyp Dst
+instance TransformableOrt Dst
+instance TransformableMlt Dst
+instance TransformableFbr Dst
+instance TransformableFbrOrt Dst
+instance TransformableAdd Dst
+instance TransformableDst Dst
 

@@ -419,7 +419,7 @@ instance EntityPoint x => Dualisable (Matrix x) where
 --------------------------------------------------------------------------------
 -- OpMap Matrix s - Hom -
 
-instance ForgetfulDst s => Applicative (OpMap Matrix s) where
+instance TransformableDst s => Applicative (OpMap Matrix s) where
   amap h@ToOp1 = coMatrixDst (tau (toOp1Struct h)) where
     coMatrixDst :: Struct Dst x -> Op (Matrix x) -> Matrix (Op x)
     coMatrixDst Struct = coMatrix . fromOp
@@ -428,7 +428,7 @@ instance ForgetfulDst s => Applicative (OpMap Matrix s) where
     coMatrixDst :: Struct Dst x -> Matrix (Op x) -> Op (Matrix x)
     coMatrixDst Struct = Op . coMatrixInv
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomOriented (OpMap Matrix s) where
   pmap h@ToOp1 = coDimDst (tau (toOp1Struct h)) where
     coDimDst :: Struct Dst x -> Point (Op (Matrix x)) -> Point (Matrix (Op x))
@@ -438,48 +438,48 @@ instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
     coDimDst :: Struct Dst x -> Point (Matrix (Op x)) -> Point (Op (Matrix x))
     coDimDst Struct = dimMap id
                                                                
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomMultiplicative (OpMap Matrix s)
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomFibred (OpMap Matrix s)
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomFibredOriented (OpMap Matrix s)
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomAdditive (OpMap Matrix s)
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomDistributive (OpMap Matrix s)
 
 --------------------------------------------------------------------------------
 -- IsoOpMap - Hom -
 
-instance ForgetfulDst s => Applicative (IsoOpMap Matrix s) where
+instance TransformableDst s => Applicative (IsoOpMap Matrix s) where
   amap = restrict amap
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomOriented (IsoOpMap Matrix s) where pmap = restrict pmap
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomMultiplicative (IsoOpMap Matrix s)
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomFibred (IsoOpMap Matrix s)
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomFibredOriented (IsoOpMap Matrix s)
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomAdditive (IsoOpMap Matrix s)
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => HomDistributive (IsoOpMap Matrix s)
   
 --------------------------------------------------------------------------------
 -- IsoOpMap - Functorial -
 
-instance ForgetfulDst s => Functorial (IsoOpMap Matrix s)
+instance TransformableDst s => Functorial (IsoOpMap Matrix s)
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableDst s, TransformableTyp s)
   => FunctorialHomOriented (IsoOpMap Matrix s)
 
 --------------------------------------------------------------------------------

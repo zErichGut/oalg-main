@@ -49,10 +49,10 @@ module OAlg.Category.Definition
 
     -- * Forget
   , Forget(..)
-    
-    -- * Embeddable
-  , EmbeddableMorphism
-  , EmbeddableMorphismTyp
+
+    -- * Transformables
+  , TransformableObjectClassTyp
+  
   )
   where
 
@@ -355,21 +355,20 @@ instance Applicative m => Applicative (Forget t m) where
   amap (Forget h) = amap h
 
 --------------------------------------------------------------------------------
--- EmbeddableMorphism -
+--
 
--- | morphism for which its object class can be embedded into the given structure.
-class (Morphism m, Transformable (ObjectClass m) t) => EmbeddableMorphism m t
+-- | helper class to avoid undecided instances.
+--
+-- __Example__ By declaring an instance
+-- @instance (..,'Transformable' ('ObjectClass' m) 'Typ',..) => C m@ for a @'Morphism' __m__@
+-- and a class @__C__@ one will get the compiler error:
+--
+-- @
+--    • Illegal use of type family ‘ObjectClass’
+--        in the constraint ‘Transformable (ObjectClass m) Typ’
+--      (Use UndecidableInstances to permit this)
+-- @
+-- To avoid this error use this instance declaration:
+-- @instance (..,'TransformableObjectClassTyp' m),..) => C m@ which will solve the problem!
+class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 
-instance (Morphism m, Transformable s t) => EmbeddableMorphism (Forget s m) t
-
-instance EmbeddableMorphism m t => EmbeddableMorphism (Op2 m) t
-
---------------------------------------------------------------------------------
--- EmbeddableMorphismType -
-
--- | helper class to avoid undecidable instances.
-class EmbeddableMorphism m Typ => EmbeddableMorphismTyp m
-
-instance (Morphism m, ForgetfulTyp t) => EmbeddableMorphismTyp (Forget t m)
-
-instance EmbeddableMorphismTyp m => EmbeddableMorphismTyp (Op2 m)

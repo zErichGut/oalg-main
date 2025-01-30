@@ -23,7 +23,7 @@
 -- Operators on chains of simplices.
 module OAlg.Homology.ChainOperator
   (
-
+{-
     -- * Chain Operator
     ChainOperator(..), chopr, choprRepMatrix
   , SimplexSet(..)
@@ -42,6 +42,7 @@ module OAlg.Homology.ChainOperator
 
   --------------------------------
   , lengthDst
+-}
   ) where
 
 import Control.Monad
@@ -148,25 +149,18 @@ instance (Ring r, Commutative r) => Morphism (ChainOperatorAtom r s) where
   homomorphous Boundary     = Struct :>: Struct
   homomorphous (ChainMap _) = Struct :>: Struct
 
-instance (Ring r, Commutative r) => EmbeddableMorphism (ChainOperatorAtom r s) Typ
-instance (Ring r, Commutative r) => EmbeddableMorphismTyp (ChainOperatorAtom r s)
-
-
 instance (Ring r, Commutative r) => Applicative (ChainOperatorAtom r s) where
   amap Boundary     = boundary
   amap (ChainMap f) = chainMap f
 
-
-instance (Ring r, Commutative r) => EmbeddableMorphism (ChainOperatorAtom r s) Fbr
 instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s) where
   rmap Boundary     = const ()
   rmap (ChainMap _) = const ()
 
-instance (Ring r, Commutative r) => EmbeddableMorphism (ChainOperatorAtom r s) Add
 instance (Ring r, Commutative r) => HomAdditive (ChainOperatorAtom r s)
 
-instance (Ring r, Commutative r) => EmbeddableMorphism (ChainOperatorAtom r s) (Vec r)
 instance (Ring r, Commutative r) => HomVectorial r (ChainOperatorAtom r s)
+
 
 --------------------------------------------------------------------------------
 -- ChainOpreratorPath -
@@ -655,14 +649,6 @@ instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
 instance (AlgebraicSemiring r, Ring r) => Applicative (ChoprRepMatrix r s) where
   amap ChoprRepMatrix = choprRepMatrix
 
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
-  => EmbeddableMorphism (ChoprRepMatrix r s) Ort
-
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
-  => EmbeddableMorphism (ChoprRepMatrix r s) Typ
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
-  => EmbeddableMorphismTyp (ChoprRepMatrix r s)
-
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprRepMatrix r s) where
   pmap ChoprRepMatrix (SimplexSet sx) = dim unit ^ lengthN sx
 
@@ -678,55 +664,43 @@ instance Morphism (LengthOrnt s) where
   type ObjectClass (LengthOrnt s) = s
   homomorphous LengthOrnt = Struct :>: Struct
 
-class ( Morphism h, Applicative h
-      , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
-      , Transformable1 Op (ObjectClass h)
-      ) => GG h
-
-instance (ForgetfulOrt s, ForgetfulTyp s, TransformableOp s) => GG (LengthOrnt s)
-
-ff :: EmbeddableMorphism m Ort => m x y -> Struct Typ x
+ff :: (Morphism m, Transformable (ObjectClass m) Ort) => m x y -> Struct Typ x
 ff m = gg $ tau $ domain m
 
 gg :: Struct Ort x -> Struct Typ x
 gg Struct = Struct
 
-class Transformable s Ort => TransformableOrt s
+
 
 orntNDomStructOrt :: Transformable s Ort => LengthOrnt s m n -> Struct Ort m
 orntNDomStructOrt m@LengthOrnt = tau $ domain m
 
-instance ForgetfulOrt s => Applicative (LengthOrnt s) where
+instance TransformableOrt s => Applicative (LengthOrnt s) where
   amap m@LengthOrnt f
     = case orntNDomStructOrt m of Struct -> lengthN s :> lengthN e where s :> e = orientation f
 
 
-instance Transformable s Typ => EmbeddableMorphism (LengthOrnt s) Typ
-instance ForgetfulTyp s      => EmbeddableMorphismTyp (LengthOrnt s)
-instance Transformable s Ort => EmbeddableMorphism (LengthOrnt s) Ort
+instance (TransformableOrt s, TransformableTyp s, TransformableOp s)
+  => HomOriented (LengthOrnt s) where
+  pmap m@LengthOrnt = case orntNDomStructOrt m of Struct -> lengthN  
 
-instance (ForgetfulOrt s, ForgetfulTyp s, TransformableOp s)
-  => HomOriented (LengthOrnt s) where pmap m@LengthOrnt = case orntNDomStructOrt m of Struct -> lengthN  
-
-instance Transformable s Mlt => EmbeddableMorphism (LengthOrnt s) Mlt
-instance (ForgetfulOrt s, ForgetfulMlt s, ForgetfulTyp s, TransformableOp s)
+instance (TransformableOrt s, TransformableMlt s, TransformableTyp s, TransformableOp s)
   => HomMultiplicative (LengthOrnt s)
 
-instance Transformable s Fbr => EmbeddableMorphism (LengthOrnt s) Fbr
-instance Transformable s FbrOrt => EmbeddableMorphism (LengthOrnt s) FbrOrt
+instance (TransformableOrt s, TransformableTyp s, TransformableFbrOrt s, TransformableOp s)
+  => HomFibred (LengthOrnt s)
 
-instance (ForgetfulOrt s, ForgetfulTyp s, ForgetfulFbrOrt s, TransformableOp s) => HomFibred (LengthOrnt s)
-
-instance Transformable s Add => EmbeddableMorphism (LengthOrnt s) Add
-instance (ForgetfulOrt s, ForgetfulAdd s, ForgetfulTyp s, ForgetfulFbrOrt s, TransformableOp s)
+instance ( TransformableOrt s, TransformableAdd s, TransformableTyp s, TransformableFbrOrt s
+         , TransformableOp s
+         )
   => HomAdditive (LengthOrnt s)
 
-instance (ForgetfulOrt s, ForgetfulTyp s, ForgetfulFbrOrt s, TransformableOp s)
+instance (TransformableOrt s, TransformableTyp s, TransformableFbrOrt s, TransformableOp s)
   => HomFibredOriented (LengthOrnt s)
 
-instance Transformable s Dst => EmbeddableMorphism (LengthOrnt s) Dst
-instance ( ForgetfulOrt s, ForgetfulTyp s, ForgetfulFbrOrt s, ForgetfulAdd s, ForgetfulMlt s
-         , ForgetfulDst s
+instance ( TransformableOrt s, TransformableTyp s, TransformableFbrOrt s, TransformableAdd s
+         , TransformableMlt s
+         , TransformableDst s
          , TransformableOp s
          )
   => HomDistributive (LengthOrnt s)
@@ -741,9 +715,6 @@ lengthMlt = LengthOrnt
 lengthDst :: (Distributive m, LengthN (Point m)) => LengthOrnt Dst m (Orientation N)
 lengthDst = LengthOrnt
 
-class ( EmbeddableMorphism h Ort, EmbeddableMorphism h Typ, Applicative h
-      , Transformable1 Op (ObjectClass h)
-      ) => FF h
 
 
       

@@ -19,10 +19,10 @@
 module OAlg.Structure.Additive.Definition
   (
     -- * Additive
-    Additive(..), zero', Add, ForgetfulAdd
+    Additive(..), zero', Add, TransformableAdd
 
     -- * Abelian
-  , Abelian(..), isZero, Abl, ForgetfulAbl
+  , Abelian(..), isZero, Abl, TransformableAbl
   )
   where
 
@@ -241,14 +241,14 @@ instance Transformable Add Ent where tau Struct = Struct
 instance Transformable Add Fbr where tau Struct = Struct
 
 --------------------------------------------------------------------------------
--- ForgetfulAdd -
+-- TransformableAdd -
 
 -- | transformable to 'Additive' structure.
-class (ForgetfulFbr s, Transformable s Add) => ForgetfulAdd s
+class (Transformable s Fbr, Transformable s Add) => TransformableAdd s
 
-instance ForgetfulTyp Add
-instance ForgetfulFbr Add
-instance ForgetfulAdd Add
+instance TransformableTyp Add
+instance TransformableFbr Add
+instance TransformableAdd Add
 
 --------------------------------------------------------------------------------
 -- Abl -
@@ -264,13 +264,13 @@ instance Transformable Abl Fbr where tau Struct = Struct
 instance Transformable Abl Add where tau Struct = Struct
 
 --------------------------------------------------------------------------------
--- ForgetfulAbl -
+-- TransformableAbl -
 
 -- | transformable to 'Abelian' structure.
-class (ForgetfulFbr s, ForgetfulAdd s, Transformable s Abl) => ForgetfulAbl s
+class (Transformable s Fbr, Transformable s Add, Transformable s Abl) => TransformableAbl s
 
-instance ForgetfulTyp Abl
-instance ForgetfulFbr Abl
-instance ForgetfulAdd Abl
-instance ForgetfulAbl Abl
+instance TransformableTyp Abl
+instance TransformableFbr Abl
+instance TransformableAdd Abl
+instance TransformableAbl Abl
 

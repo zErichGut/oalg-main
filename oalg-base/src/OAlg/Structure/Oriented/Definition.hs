@@ -23,7 +23,7 @@ module OAlg.Structure.Oriented.Definition
   (
     -- * Oriented
     Oriented(..), Total, EntityPoint, OrdPoint, isEndo, isEndoAt
-  , OS, Ort, structOrtOp, ForgetfulOrt
+  , OS, Ort, structOrtOp, TransformableOrt
 
     -- * Transposable
   , TransposableOriented
@@ -207,7 +207,7 @@ instance Oriented q => Oriented (Op q) where
   type Point (Op q) = Point q
   orientation (Op a) = opposite (orientation a)
   
-instance (EmbeddableMorphismTyp m, Entity2 m) => Oriented (SomeMorphism m) where
+instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (SomeMorphism m) where
   type Point (SomeMorphism m) = SomeObjectClass m
   start (SomeMorphism f) = SomeObjectClass (domain f)
   end (SomeMorphism f) = SomeObjectClass (range f)
@@ -365,13 +365,13 @@ instance Transformable1 Op Ort where tau1 Struct = Struct
 instance TransformableOp Ort
 
 --------------------------------------------------------------------------------
--- ForgetfulOrt -
+-- TransformableOrt -
 
 -- | transformable to 'Oriented' structure.
-class Transformable s Ort => ForgetfulOrt s
+class Transformable s Ort => TransformableOrt s
 
-instance ForgetfulTyp Ort
-instance ForgetfulOrt Ort
+instance TransformableTyp Ort
+instance TransformableOrt Ort
 
 --------------------------------------------------------------------------------
 -- structOrtOp -

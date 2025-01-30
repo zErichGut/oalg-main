@@ -21,7 +21,7 @@
 module OAlg.Structure.Multiplicative.Definition
   (
     -- * Multiplicative
-    Multiplicative(..), one', isOne, Mlt, ForgetfulMlt
+    Multiplicative(..), one', isOne, Mlt, TransformableMlt
 
     -- * Transposable
   , TransposableMultiplicative
@@ -388,14 +388,14 @@ instance Transformable1 Op Mlt where tau1 Struct = Struct
 instance TransformableOp Mlt
 
 --------------------------------------------------------------------------------
--- ForgetfulMlt -
+-- TransformableMlt -
 
 -- | transformable to 'Multiplicative' structure.
-class (ForgetfulOrt s, Transformable s Mlt) => ForgetfulMlt s
+class (Transformable s Ort, Transformable s Mlt) => TransformableMlt s
 
-instance ForgetfulTyp Mlt
-instance ForgetfulOrt Mlt
-instance ForgetfulMlt Mlt
+instance TransformableTyp Mlt
+instance TransformableOrt Mlt
+instance TransformableMlt Mlt
 
 
 --------------------------------------------------------------------------------

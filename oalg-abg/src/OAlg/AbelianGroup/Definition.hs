@@ -381,19 +381,16 @@ instance Morphism AbHomMap where
   homomorphous AbHomMatrix = Struct :>: Struct
   homomorphous MatrixAbHom = Struct :>: Struct
 
-instance EmbeddableMorphism AbHomMap Ort
-instance EmbeddableMorphism AbHomMap Typ
-instance EmbeddableMorphismTyp AbHomMap
-
 instance Applicative AbHomMap where
   amap AbHomMatrix (AbHom m) = m
   amap MatrixAbHom m = AbHom m
+
+instance TransformableObjectClassTyp AbHomMap
 
 instance HomOriented AbHomMap where
   pmap AbHomMatrix (AbGroup g) = Dim g
   pmap MatrixAbHom (Dim g) = AbGroup g
 
-instance EmbeddableMorphism AbHomMap Mlt
 instance HomMultiplicative AbHomMap
 
 --------------------------------------------------------------------------------
@@ -464,14 +461,9 @@ instance Cayleyan2 IsoAbHomMap where
 instance Applicative IsoAbHomMap where
   amap = restrict amap
 
-instance EmbeddableMorphism IsoAbHomMap Ort
-instance EmbeddableMorphism IsoAbHomMap Typ
-instance EmbeddableMorphismTyp IsoAbHomMap
-
 instance HomOriented IsoAbHomMap where
   pmap = restrict pmap
 
-instance EmbeddableMorphism IsoAbHomMap Mlt
 instance HomMultiplicative IsoAbHomMap
 
 --------------------------------------------------------------------------------
@@ -601,10 +593,6 @@ instance Morphism AbHomFree where
   homomorphous AbHomFree = Struct :>: Struct
   homomorphous FreeAbHom = Struct :>: Struct
 
-instance EmbeddableMorphism AbHomFree Ort
-instance EmbeddableMorphism AbHomFree Typ
-instance EmbeddableMorphismTyp AbHomFree
-
 instance Applicative AbHomFree where
   amap AbHomFree h@(AbHom (Matrix _ _ xs)) = Matrix n m xs' where
     s :> e = orientation h
@@ -641,19 +629,10 @@ instance HomOriented AbHomFree where
   pmap AbHomFree g = dim () ^ abgFrees g
   pmap FreeAbHom n = abg 0 ^ lengthN n
 
-instance EmbeddableMorphism AbHomFree Mlt
 instance HomMultiplicative AbHomFree
-
-instance EmbeddableMorphism AbHomFree Fbr
-instance EmbeddableMorphism AbHomFree FbrOrt
 instance HomFibred AbHomFree
-
 instance HomFibredOriented AbHomFree
-
-instance EmbeddableMorphism AbHomFree Add
 instance HomAdditive AbHomFree
-
-instance EmbeddableMorphism AbHomFree Dst
 instance HomDistributive AbHomFree
 
 --------------------------------------------------------------------------------

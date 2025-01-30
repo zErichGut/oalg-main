@@ -412,12 +412,6 @@ instance Morphism (SliceFactorDrop s) where
   homomorphous SliceFactorFromDrop = Struct :>: Struct
   homomorphous SliceFactorToDrop   = Struct :>: Struct
 
-instance EmbeddableMorphism (SliceFactorDrop s) Typ
-instance EmbeddableMorphismTyp (SliceFactorDrop s)
-
-instance EmbeddableMorphism (SliceFactorDrop s) Ort
-instance EmbeddableMorphism (SliceFactorDrop s) Mlt
-
 --------------------------------------------------------------------------------
 -- SliceFactorDrop - Hom Mlt -
 

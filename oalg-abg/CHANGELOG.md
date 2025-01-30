@@ -45,3 +45,7 @@ and this project adheres to the
 ## [1.6.0.0] - 2025-01-26
 ### Adaption
 - adaption to oalg-base-2.1.0.0
+
+## [1.7.0.0] - 2025-01-30
+### Adaption
+- adaption to oalg-base-2.2.0.0

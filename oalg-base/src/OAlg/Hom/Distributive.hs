@@ -31,6 +31,10 @@ import OAlg.Category.Path
 
 import OAlg.Data.Constructable
 
+import OAlg.Structure.Oriented.Definition hiding (Path(..))
+import OAlg.Structure.Multiplicative.Definition
+import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Distributive.Definition
 
 import OAlg.Hom.Definition
@@ -43,7 +47,9 @@ import OAlg.Hom.Additive
 -- HomDistributive -
 
 -- | type family of homomorphisms between 'Distributive' structures.
-class (EmbeddableMorphism h Dst, HomFibredOriented h, HomMultiplicative h, HomAdditive h)
+class ( HomMultiplicative h, HomAdditive h
+      , HomFibredOriented h, Transformable (ObjectClass h) Dst 
+      )
   => HomDistributive h
 
 instance HomDistributive h => HomDistributive (Path h)
@@ -64,15 +70,34 @@ type IsoDistributive h = ( FunctorialHomOriented h, Cayleyan2 h
 --------------------------------------------------------------------------------
 -- HomDistributive - Instance -
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s)
+instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
+         , TransformableMlt s
+         , TransformableFbr s, TransformableAdd s
+         , TransformableFbrOrt s
+         , TransformableDst s
+         )
   => HomDistributive (IdHom s)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s, Typeable s)
+instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
+         , TransformableMlt s
+         , TransformableFbr s, TransformableAdd s
+         , TransformableFbrOrt s
+         , TransformableDst s
+         , Typeable s
+         )
   => HomDistributive (HomOp s)
-instance (TransformableOp s, ForgetfulDst s, ForgetfulTyp s, Typeable s)
+
+
+instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
+         , TransformableMlt s
+         , TransformableFbr s, TransformableAdd s
+         , TransformableFbrOrt s
+         , TransformableDst s
+         , Typeable s
+         )
   => HomDistributive (IsoOp s)
 
 --------------------------------------------------------------------------------
@@ -86,3 +111,4 @@ isoFromOpOpDst = make (FromOpOp :. IdPath Struct)
 -- OpHom -
 
 instance HomDistributive h => HomDistributive (OpHom h)
+

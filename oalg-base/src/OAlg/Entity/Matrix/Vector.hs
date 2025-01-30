@@ -245,19 +245,14 @@ instance (Semiring r, Commutative r) => Morphism (HomSymbol r) where
     HomMatrix _ -> Struct :>: Struct
   
 
-instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) Fbr
-instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) Typ
-instance (Semiring r, Commutative r) => EmbeddableMorphismTyp (HomSymbol r) 
 instance (Semiring r, Commutative r) => HomFibred (HomSymbol r) where
   rmap (HomSymbol _) = const ()
   rmap (Cfs _)       = const ()
   rmap (Ssy _)       = const ()
   rmap (HomMatrix _) = const ()
 
-instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) Add
 instance (Semiring r, Commutative r) => HomAdditive (HomSymbol r)
 
-instance (Semiring r, Commutative r) => EmbeddableMorphism (HomSymbol r) (Vec r)
 instance (Semiring r, Commutative r) => HomVectorial r (HomSymbol r)
 
 --------------------------------------------------------------------------------

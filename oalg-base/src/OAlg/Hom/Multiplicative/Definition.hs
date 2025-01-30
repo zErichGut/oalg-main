@@ -22,8 +22,7 @@
 --
 -- definition of homomorphisms between 'Multiplicative' structures.
 module OAlg.Hom.Multiplicative.Definition
-  (
-    -- * Multiplicative
+  ( -- * Multiplicative
     HomMultiplicative, IsoMultiplicative
 
     -- * OpHom
@@ -68,12 +67,12 @@ import OAlg.Hom.Oriented.Definition
 -- __Note__ If we interpret the types @__a__@ and @__b__@ as small categories (see note at
 -- 'Multiplicative') then we can interpret the type family @__h__@ as a family of covariant
 -- functors.
-class (EmbeddableMorphism h Mlt, HomOriented h) => HomMultiplicative h
+class (HomOriented h, Transformable (ObjectClass h) Mlt) => HomMultiplicative h
 
 instance HomMultiplicative h => HomMultiplicative (Path h)
 
-instance ( HomMultiplicative h, Transformable1 Op t
-         , ForgetfulMlt t, ForgetfulTyp t
+instance ( HomMultiplicative h, TransformableOp t
+         , TransformableMlt t, TransformableTyp t
          )
   => HomMultiplicative (Forget t h)
 
@@ -93,16 +92,16 @@ type IsoMultiplicative h = ( FunctorialHomOriented h, Cayleyan2 h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableMlt s, TransformableTyp s)
   => HomMultiplicative (IdHom s)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableMlt s, TransformableTyp s)
   => HomMultiplicative (HomOp s)
 
-instance (TransformableOp s, ForgetfulMlt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableMlt s, TransformableTyp s)
   => HomMultiplicative (IsoOp s)
 
 --------------------------------------------------------------------------------
@@ -123,3 +122,4 @@ isoOppositeMlt = make (Opposite :. IdPath Struct)
 -- OpHom -
 
 instance HomMultiplicative h => HomMultiplicative (OpHom h)
+

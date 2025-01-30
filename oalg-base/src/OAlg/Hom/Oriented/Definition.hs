@@ -22,6 +22,7 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
+
     -- * Homomorphism
     HomOriented(..), omap, IsoOrt, IsoOriented
 
@@ -33,7 +34,6 @@ module OAlg.Hom.Oriented.Definition
 
     -- * OpHom
   , OpHom(..)
-  -- , OpHom(..), toOpHomOrt
 
     -- * HomOp
   , HomOp(..)
@@ -48,6 +48,7 @@ module OAlg.Hom.Oriented.Definition
 
     -- ** Path
   , isoCoPath
+
   )
   where
 
@@ -64,12 +65,13 @@ import OAlg.Data.Reducible
 import OAlg.Category.Path as C
 
 import OAlg.Structure.Oriented as O
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Fibred
-import OAlg.Structure.Additive
-import OAlg.Structure.Distributive
+-- import OAlg.Structure.Multiplicative
+-- import OAlg.Structure.Fibred
+-- import OAlg.Structure.Additive
+-- import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
+
 
 --------------------------------------------------------------------------------
 -- HomOriented -
@@ -97,20 +99,21 @@ import OAlg.Hom.Definition
 -- 'OAlg.Proposition.Homomorphism.Multiplicative.prpHomOrt' where the property above
 -- is stated.
 --
--- (2) The constraint 'EmbeddableMorphismTyp' for a family @__h__@ of homomorphisms
--- between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
+-- (2) The constraint @'Transformable' ('ObjectClass' __h__) 'Typ'@ for a family @__h__@ of
+-- homomorphisms between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
-class ( EmbeddableMorphism h Ort, Applicative h
-      , EmbeddableMorphismTyp h
+class ( Morphism h, Applicative h
+      , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
       , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
   pmap :: h a b -> Point a -> Point b
+
 
 instance HomOriented h => HomOriented (C.Path h) where
   pmap (IdPath _) p = p
   pmap (f :. pth) p = pmap f $ pmap pth p
 
-instance (HomOriented h, Transformable1 Op t, ForgetfulOrt t, ForgetfulTyp t)
+instance (HomOriented h, Transformable1 Op t, Transformable t Ort, Transformable t Typ)
   => HomOriented (Forget t h) where
   pmap (Forget h)      = pmap h
 
@@ -170,10 +173,6 @@ instance Morphism (IdHom s) where
   type ObjectClass (IdHom s) = s
   homomorphous IdHom = Struct :>: Struct
 
-instance Transformable s t => EmbeddableMorphism (IdHom s) t
-
-instance ForgetfulTyp s => EmbeddableMorphismTyp (IdHom s)
-
 --------------------------------------------------------------------------------
 -- IdHom - Entity -
 
@@ -208,12 +207,13 @@ instance Applicative (IdHom s) where
 
 instance Functorial (IdHom s)
 
-instance (TransformableOp s,ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => HomOriented (IdHom s) where
   pmap IdHom = id
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => FunctorialHomOriented (IdHom s)
+
 --------------------------------------------------------------------------------
 -- HomOp -
 
@@ -269,9 +269,8 @@ instance Morphism (HomOp s) where
   
   homomorphous Opposite    = Struct :>: Struct
   homomorphous OppositeInv = Struct :>: Struct
-  
-instance Transformable s t => EmbeddableMorphism (HomOp s) t
-instance ForgetfulTyp s => EmbeddableMorphismTyp (HomOp s)
+
+instance TransformableTyp s => TransformableObjectClassTyp (HomOp s)
 
 --------------------------------------------------------------------------------
 -- HomOp - Entity -
@@ -293,7 +292,7 @@ instance Typeable s => Entity2 (HomOp s)
 --------------------------------------------------------------------------------
 -- HomOp - Hom -
 
-instance ForgetfulOrt s => Applicative (HomOp s) where
+instance TransformableOrt s => Applicative (HomOp s) where
   amap FromOpOp (Op (Op x)) = x
   amap ToOpOp x             = Op (Op x)
 
@@ -316,7 +315,7 @@ instance ForgetfulOrt s => Applicative (HomOp s) where
   amap Opposite (Op o) = opposite o
   amap OppositeInv o = Op (opposite o)
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => HomOriented (HomOp s) where
   pmap FromOpOp    = id
   pmap ToOpOp = id
@@ -358,6 +357,7 @@ rdcPathHomOp pth = case pth of
   h :. p              -> rdcPathHomOp p >>= (return . (h:.))
   p                   -> return p
 
+
 instance Reducible (PathHomOp s a b) where
   reduce = reduceWith rdcPathHomOp
 
@@ -373,33 +373,32 @@ instance Constructable (IsoOp s a b) where
 
 instance Morphism (IsoOp s) where
   type ObjectClass (IsoOp s) = s
-  homomorphous = restrict homomorphous 
+  homomorphous = restrict homomorphous
 
-instance Transformable s t => EmbeddableMorphism (IsoOp s) t
-instance ForgetfulTyp s => EmbeddableMorphismTyp (IsoOp s)
+instance TransformableTyp s => TransformableObjectClassTyp (IsoOp s)
 
 instance Category (IsoOp s) where
   cOne o  = IsoOp (IdPath o)
   IsoOp f . IsoOp g = make (f . g)
 
-instance ForgetfulTyp s => Cayleyan2 (IsoOp s) where
+instance TransformableTyp s => Cayleyan2 (IsoOp s) where
   invert2 (IsoOp p) = IsoOp (reverse id invHomOp p)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance ForgetfulOrt s => Applicative (IsoOp s) where
+instance TransformableOrt s => Applicative (IsoOp s) where
   amap = restrict amap
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => HomOriented (IsoOp s) where
   pmap = restrict pmap
 
 --------------------------------------------------------------------------------
 -- IsoOp - Functorial -
 
-instance ForgetfulOrt s => Functorial (IsoOp s)
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance TransformableOrt s => Functorial (IsoOp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => FunctorialHomOriented (IsoOp s)
 
 --------------------------------------------------------------------------------
@@ -483,8 +482,7 @@ instance Morphism (OpMap f s) where
   homomorphous ToOp1   = Struct :>: Struct
   homomorphous FromOp1 = Struct :>: Struct
 
-instance Transformable s t => EmbeddableMorphism (OpMap f s) t
-instance ForgetfulTyp s => EmbeddableMorphismTyp (OpMap f s)
+instance TransformableTyp s => TransformableObjectClassTyp (OpMap f s)
 
 --------------------------------------------------------------------------------
 -- OpMap - Entity -
@@ -540,20 +538,19 @@ instance Morphism (IsoOpMap f s) where
   type ObjectClass (IsoOpMap f s) = s
   homomorphous = restrict homomorphous
 
-instance Transformable s t => EmbeddableMorphism (IsoOpMap f s) t
-instance ForgetfulTyp s => EmbeddableMorphismTyp (IsoOpMap f s)
+instance TransformableTyp s => TransformableObjectClassTyp (IsoOpMap f s)
 
 instance Category (IsoOpMap f s) where
   cOne o = IsoOpMap (IdPath o)
   IsoOpMap f . IsoOpMap g = make (f . g)
 
-instance ForgetfulTyp s => Cayleyan2 (IsoOpMap f s) where
+instance TransformableTyp s => Cayleyan2 (IsoOpMap f s) where
   invert2 (IsoOpMap p) = IsoOpMap (reverse id invOpMap p)
 
 --------------------------------------------------------------------------------
 -- OpMap Path s - Hom -
 
-instance ForgetfulOrt s => Applicative (OpMap O.Path s) where
+instance TransformableOrt s => Applicative (OpMap O.Path s) where
   amap h@ToOp1 = coPath (tau (toOp1Struct h)) where
     coPath :: Struct Ort x -> Op (O.Path x) -> O.Path (Op x)
     coPath Struct = toDual . fromOp
@@ -562,7 +559,7 @@ instance ForgetfulOrt s => Applicative (OpMap O.Path s) where
     coPathInv :: Struct Ort x -> O.Path (Op x) -> Op (O.Path x)
     coPathInv Struct = Op . fromDual
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => HomOriented (OpMap O.Path s) where
   pmap ToOp1 = id
   pmap FromOp1 = id
@@ -570,18 +567,18 @@ instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
 --------------------------------------------------------------------------------
 -- IsoOpMap Path s - Hom -
 
-instance ForgetfulOrt s => Applicative (IsoOpMap O.Path s) where
+instance TransformableOrt s => Applicative (IsoOpMap O.Path s) where
   amap = restrict amap
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => HomOriented (IsoOpMap O.Path s) where pmap = restrict pmap
                                            
 --------------------------------------------------------------------------------
 -- IsoOpMap Path s - Functorial -
 
-instance ForgetfulOrt s => Functorial (IsoOpMap O.Path s)
+instance TransformableOrt s => Functorial (IsoOpMap O.Path s)
 
-instance (TransformableOp s, ForgetfulOrt s, ForgetfulTyp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => FunctorialHomOriented (IsoOpMap O.Path s)
 
 --------------------------------------------------------------------------------
@@ -618,16 +615,7 @@ instance Morphism h => Morphism (OpHom h) where
   
 instance Applicative h => Applicative (OpHom h) where
   amap (OpHom h) (Op x) = Op (amap h x)
-  
-instance EmbeddableMorphism h Ort    => EmbeddableMorphism (OpHom h) Ort
-instance EmbeddableMorphism h Typ    => EmbeddableMorphism (OpHom h) Typ
-instance EmbeddableMorphism h Mlt    => EmbeddableMorphism (OpHom h) Mlt
-instance EmbeddableMorphism h Fbr    => EmbeddableMorphism (OpHom h) Fbr
-instance EmbeddableMorphism h FbrOrt => EmbeddableMorphism (OpHom h) FbrOrt
-instance EmbeddableMorphism h Add    => EmbeddableMorphism (OpHom h) Add
-instance EmbeddableMorphism h Dst    => EmbeddableMorphism (OpHom h) Dst
-
-instance EmbeddableMorphismTyp h => EmbeddableMorphismTyp (OpHom h)
 
 instance HomOriented h => HomOriented (OpHom h) where
   pmap (OpHom h) = pmap h 
+

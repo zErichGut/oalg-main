@@ -18,8 +18,7 @@
 --
 -- homomorphisms between 'Additive' structures
 module OAlg.Hom.Additive
-  (
-    -- * Additive
+  ( -- * Additive
     HomAdditive
 
     -- * Proposition
@@ -34,6 +33,7 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Structure.Fibred
+import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
@@ -58,7 +58,7 @@ import OAlg.Hom.Fibred
 --  __/family of homomorphisms between additive structures/__ and an entity @f@ of
 --  @__h__@ @__a__@ @__b__@ a __/additive homomorphism/__ between @__a__@ and
 -- @__b__@.
-class (EmbeddableMorphism h Add, HomFibred h) => HomAdditive h
+class (HomFibred h, Transformable (ObjectClass h) Add) => HomAdditive h
 
 instance HomAdditive h => HomAdditive (Path h)
 
@@ -70,14 +70,23 @@ type instance Hom Add h = HomAdditive h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (ForgetfulAdd s, ForgetfulTyp s) => HomAdditive (IdHom s)
+instance (TransformableFbr s, TransformableTyp s, TransformableAdd s) => HomAdditive (IdHom s)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulAdd s, ForgetfulTyp s, Typeable s)
+instance ( TransformableOrt s, TransformableTyp s, TransformableOp s
+         , TransformableFbr s
+         , TransformableFbrOrt s, TransformableAdd s
+         , Typeable s
+         )
   => HomAdditive (HomOp s)
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulAdd s, ForgetfulTyp s, Typeable s)
+
+instance ( TransformableOrt s, TransformableTyp s, TransformableOp s
+         , TransformableFbr s
+         , TransformableFbrOrt s, TransformableAdd s
+         , Typeable s
+         )
   => HomAdditive (IsoOp s)
 
 --------------------------------------------------------------------------------
@@ -110,3 +119,4 @@ relHomAdd2Homomorphous (Struct:>:Struct) f (Adbl2 x y)
 prpHomAdd2 :: (HomAdditive h, Show2 h) => h a b -> Adbl2 a -> Statement
 prpHomAdd2 f xy = Prp "HomAdd2"
   :<=>: relHomAdd2Homomorphous (tauHom (homomorphous f)) f xy
+

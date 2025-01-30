@@ -18,8 +18,7 @@
 --
 -- homomorphisms between 'Fibred' structures
 module OAlg.Hom.Fibred
-  (
-    -- * Fibred
+  ( -- * Fibred
     HomFibred(..), FunctorialHomFibred
 
     -- * Fibred Oriented
@@ -37,6 +36,7 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Structure.Fibred
+import OAlg.Structure.Oriented.Definition hiding (Path(..))
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
@@ -48,11 +48,12 @@ import OAlg.Hom.Oriented.Definition
 --
 -- __Property__ Let @h@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @f@ in
 -- @__h__ __a__ __b__@ and @x@ in @__a__@ holds: @'root' ('amap' f x) '==' 'rmap' f ('root' x)@.
-class ( EmbeddableMorphism h Fbr, Applicative h
-      , EmbeddableMorphismTyp h
+class ( Morphism h, Applicative h, Transformable (ObjectClass h) Fbr
+      , Transformable (ObjectClass h) Typ
       ) => HomFibred h where
   rmap :: h a b -> Root a -> Root b
-  default rmap :: (EmbeddableMorphism h FbrOrt, HomOriented h)
+
+  default rmap :: (Transformable (ObjectClass h) FbrOrt, HomOriented h)
                => h a b -> Root a -> Root b
   rmap h = rmap' (tauHom (homomorphous h)) h where
 
@@ -83,7 +84,7 @@ type instance Hom Fbr h = HomFibred h
 --
 -- __Property__ Let @h@ be an instance of 'HomFibredOriented' then for all @__a__@, @__b__@ and @f@ in
 -- @__h__ __a__ __b__@ and @r@ in @'Root' __a__@ holds: @'rmap' f r '==' 'omap' f r@.
-class (EmbeddableMorphism h FbrOrt, HomFibred h, HomOriented h)
+class (HomOriented h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
   => HomFibredOriented h
 
 instance HomFibredOriented h => HomFibredOriented (Path h)
@@ -109,23 +110,32 @@ type instance Hom FbrOrt h = HomFibredOriented h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (ForgetfulFbr s, ForgetfulTyp s)
-  => HomFibred (IdHom s) where
+instance (TransformableFbr s, TransformableTyp s) => HomFibred (IdHom s) where
   rmap IdHom r = r
   
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s)
+instance ( TransformableOp s, TransformableOrt s, TransformableFbr s
+         , TransformableFbrOrt s, TransformableTyp s
+         )
   => HomFibredOriented (IdHom s)
 
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s, Typeable s)
+instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
+         , TransformableTyp s, Typeable s
+         )
   => HomFibred (HomOp s)
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s, Typeable s)
+instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
+         , TransformableTyp s, Typeable s
+         )
   => HomFibredOriented (HomOp s)
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s, Typeable s)
+instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
+         , TransformableTyp s, Typeable s
+         )
   => HomFibred (IsoOp s)
-instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s, Typeable s)
+instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
+         , TransformableTyp s, Typeable s
+         )
   => HomFibredOriented (IsoOp s)
 
 --------------------------------------------------------------------------------
@@ -133,5 +143,4 @@ instance (TransformableOp s, ForgetfulFbrOrt s, ForgetfulTyp s, Typeable s)
 
 instance HomFibredOriented h => HomFibred (OpHom h)
 instance HomFibredOriented h => HomFibredOriented (OpHom h)
-
 
