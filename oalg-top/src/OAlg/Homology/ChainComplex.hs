@@ -24,45 +24,33 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
-{-    
     -- * Chain Complex
-    ChainComplex(..), chainComplex
+    chainComplex, Regular(..), ChainComplex
+  , ccpRepMatrix, ccpCards
 
-    -- ** Representation
-  , ChainComplexRep(..), chainComplexRep, Regular(..)
-
-    -- * Transformation
-  , ChainComplexTrafo(..)
-  , chainComplexTrafo
-
-    -- ** Representation
-  , ChainComplexTrafoRep(..), cctDomainRep, cctRangeRep
-  , chainComplexTrafoRep
--}
+    -- * Chain Complex Trafo
+  , chainComplexTrafo, ChainComplexTrafo
+  , ccptRepMatrix, ccptCards
   ) where
 
 import Control.Monad
 
-import Data.Kind
 import Data.Typeable
-import Data.Foldable (toList)
-import Data.List as L (head,tail,repeat,(++),zip) 
+import Data.List as L (repeat,(++),zip) 
 
-import OAlg.Prelude hiding (T,empty)
+import OAlg.Prelude
 
 import OAlg.Category.Map
 
 import OAlg.Data.Filterable
-import OAlg.Data.Singleton
 
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
-import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
-import OAlg.Structure.Exponential
+import OAlg.Structure.Algebraic
 
 import OAlg.Entity.Diagram as D
 import OAlg.Entity.Natural as N
@@ -72,8 +60,6 @@ import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Matrix hiding (Transformation(..))
 
 import OAlg.Limes.Exact.ConsZero
-
-import OAlg.Hom.Definition
 
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainOperator as C
@@ -173,12 +159,19 @@ bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n 
 bndZLst = chainComplex
 
 --------------------------------------------------------------------------------
+-- ccpRepMatrix -
+
+ccpRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => ChainComplex n (ChainOperator r s) -> ChainComplex n (Matrix r)
+ccpRepMatrix = cnzMap ChoprRepMatrix
+
+--------------------------------------------------------------------------------
 -- ccpCards -
 
 -- | the cardinalities of the consecutive 'SimplexSet's of the given chain complex.
 ccpCards :: (Ring r, Commutative r, Ord r, Typeable s)
   => ChainComplex n (ChainOperator r s) -> Cards (n+3)
-ccpCards c = DiagramDiscrete $ cnzPoints $ cnzMap lengthDst c
+ccpCards c = DiagramDiscrete $ cnzPoints $ cnzMap choprCardsOrnt c
 
 --------------------------------------------------------------------------------
 -- ChainComplexTrafo -
@@ -218,6 +211,12 @@ chainComplexTrafo r n f = ConsZeroTrafo a b fs where
     Just (Refl,Refl) -> chopr (Representable (ChainMap f) sx sy)
     Nothing          -> throw $ ImplementationError "chainComplexTrafo.toChnMap"
 
+--------------------------------------------------------------------------------
+-- ccptRepMatrix -
+
+ccptRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => ChainComplexTrafo n (ChainOperator r s) -> ChainComplexTrafo n (Matrix r)
+ccptRepMatrix = cnztMap ChoprRepMatrix
 
 --------------------------------------------------------------------------------
 -- ccptCards -
@@ -225,7 +224,7 @@ chainComplexTrafo r n f = ConsZeroTrafo a b fs where
 ccptCards :: (Ring r, Commutative r, Ord r, Typeable s)
   => ChainComplexTrafo n (ChainOperator r s) -> CardsTrafo (n+3)
 ccptCards t = Transformation a b fs where
-  ConsZeroTrafo ca cb fs = cnztMap lengthDst t
+  ConsZeroTrafo ca cb fs = cnztMap choprCardsOrnt t
   a  = DiagramDiscrete $ cnzPoints ca
   b  = DiagramDiscrete $ cnzPoints cb
 
@@ -241,15 +240,11 @@ f = Map (\c -> toZ c - toZ 'a') where toZ = (toEnum :: Int -> Z) . fromEnum
 tAsc = ComplexMapAsc a b f
 tLst = ComplexMap a b f
 
-chmZAsc :: (Entity x, Ord x, Entity y, Ord y)
-  => Regular -> Any n -> ComplexMap Asc (Complex x) (Complex y)
-  -> ChainComplexTrafo n (ChainOperator Z Asc)
-chmZAsc = chainComplexTrafo
+chmZ :: (Entity x, Ord x, Entity y, Ord y, Homological s x y)
+  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
+  -> ChainComplexTrafo n (ChainOperator Z s)
+chmZ = chainComplexTrafo
 
-chmZLst :: (Entity x, Ord x, Entity y, Ord y)
-  => Regular -> Any n -> ComplexMap [] (Complex x) (Complex y)
-  -> ChainComplexTrafo n (ChainOperator Z [])
-chmZLst = chainComplexTrafo
 
 
 

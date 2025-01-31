@@ -23,10 +23,11 @@
 -- Operators on chains of simplices.
 module OAlg.Homology.ChainOperator
   (
-{-
     -- * Chain Operator
-    ChainOperator(..), chopr, choprRepMatrix
+    ChainOperator(..), chopr, choprCards, choprCardsOrnt
   , SimplexSet(..)
+
+  , choprRepMatrix, ChoprRepMatrix(..)
 
     -- ** Representables
   , ChainOperatorRepSum(), chors, chorsOne, chorsMlt
@@ -38,11 +39,6 @@ module OAlg.Homology.ChainOperator
 
     -- * Chain
   , Chain, ch, chZ, boundary, chainMap
-
-
-  --------------------------------
-  , lengthDst
--}
   ) where
 
 import Control.Monad
@@ -59,6 +55,7 @@ import OAlg.Category.Map
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 import OAlg.Data.Singleton
+import OAlg.Data.Ornt
 
 import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
@@ -73,11 +70,12 @@ import OAlg.Structure.Ring
 import OAlg.Structure.Exponential
 
 import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
-import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
+import OAlg.Hom.Algebraic
 
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
@@ -568,7 +566,7 @@ instance Validable (SimplexSet s) where
 instance Typeable s => Entity (SimplexSet s)
 
 instance LengthN (SimplexSet s) where lengthN (SimplexSet sx) = lengthN sx
-  
+
 --------------------------------------------------------------------------------
 -- ChainOperator - Algebraic -
 
@@ -652,80 +650,27 @@ instance (AlgebraicSemiring r, Ring r) => Applicative (ChoprRepMatrix r s) where
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprRepMatrix r s) where
   pmap ChoprRepMatrix (SimplexSet sx) = dim unit ^ lengthN sx
 
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomMultiplicative (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibred (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomAdditive (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomVectorial r (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibredOriented (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomDistributive (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomAlgebraic r (ChoprRepMatrix r s)
+
 --------------------------------------------------------------------------------
--- LengthOrnt -
+-- choprCardsOrnt -
 
-data LengthOrnt s m n where
-  LengthOrnt :: (Structure s m, Structure s (Orientation N), LengthN (Point m))
-        => LengthOrnt s m (Orientation N)
+choprCardsOrnt :: (Ring r, Commutative r, Ord r, Typeable s)
+  => Path (Ornt Dst) (ChainOperator r s) (Orientation N)
+choprCardsOrnt = OrntMap lengthN :. ornt :. IdPath Struct where
+  ornt :: (Ring r, Commutative r, Ord r, Typeable s)
+       => Ornt Dst (ChainOperator r s) (Orientation (SimplexSet s))
+  ornt = Ornt
 
+--------------------------------------------------------------------------------
+-- choprCards -
 
-instance Morphism (LengthOrnt s) where
-  type ObjectClass (LengthOrnt s) = s
-  homomorphous LengthOrnt = Struct :>: Struct
-
-ff :: (Morphism m, Transformable (ObjectClass m) Ort) => m x y -> Struct Typ x
-ff m = gg $ tau $ domain m
-
-gg :: Struct Ort x -> Struct Typ x
-gg Struct = Struct
-
-
-
-orntNDomStructOrt :: Transformable s Ort => LengthOrnt s m n -> Struct Ort m
-orntNDomStructOrt m@LengthOrnt = tau $ domain m
-
-instance TransformableOrt s => Applicative (LengthOrnt s) where
-  amap m@LengthOrnt f
-    = case orntNDomStructOrt m of Struct -> lengthN s :> lengthN e where s :> e = orientation f
-
-
-instance (TransformableOrt s, TransformableTyp s, TransformableOp s)
-  => HomOriented (LengthOrnt s) where
-  pmap m@LengthOrnt = case orntNDomStructOrt m of Struct -> lengthN  
-
-instance (TransformableOrt s, TransformableMlt s, TransformableTyp s, TransformableOp s)
-  => HomMultiplicative (LengthOrnt s)
-
-instance (TransformableOrt s, TransformableTyp s, TransformableFbrOrt s, TransformableOp s)
-  => HomFibred (LengthOrnt s)
-
-instance ( TransformableOrt s, TransformableAdd s, TransformableTyp s, TransformableFbrOrt s
-         , TransformableOp s
-         )
-  => HomAdditive (LengthOrnt s)
-
-instance (TransformableOrt s, TransformableTyp s, TransformableFbrOrt s, TransformableOp s)
-  => HomFibredOriented (LengthOrnt s)
-
-instance ( TransformableOrt s, TransformableTyp s, TransformableFbrOrt s, TransformableAdd s
-         , TransformableMlt s
-         , TransformableDst s
-         , TransformableOp s
-         )
-  => HomDistributive (LengthOrnt s)
-  
-m = matrixTtl 3 5 [] :: Matrix Z
-
-type LengthOrnt' s m = LengthOrnt s m (Orientation N)
-
-lengthMlt :: (Multiplicative m, LengthN (Point m)) => LengthOrnt Mlt m (Orientation N)
-lengthMlt = LengthOrnt
-
-lengthDst :: (Distributive m, LengthN (Point m)) => LengthOrnt Dst m (Orientation N)
-lengthDst = LengthOrnt
-
-
-
-      
-{-
-instance EmbeddableMorphism (LengthOrnt Mlt) Mlt
-instance HomMultiplicative (LengthOrnt Mlt)
-
-instance EmbeddableMorphism (LengthOrnt Dst) Mlt
-instance EmbeddableMorphism (LengthOrnt Dst) Dst
-instance HomMultiplicative (LengthOrnt Dst)
--- instance HomDistributive (LengthOrnt Dst)
--}
-
-
+choprCards ::  (Ring r, Commutative r, Ord r, Typeable s)
+  => ChainOperator r s -> Orientation N
+choprCards = amap choprCardsOrnt
