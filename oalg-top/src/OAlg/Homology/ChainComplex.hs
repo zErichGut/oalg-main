@@ -24,6 +24,7 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
+
     -- * Chain Complex
     chainComplex, Regular(..), ChainComplex
   , ccpRepMatrix, ccpCards
@@ -32,10 +33,15 @@ module OAlg.Homology.ChainComplex
   , chainComplexTrafo, ChainComplexTrafo
   , ccptRepMatrix, ccptCards
 
+  --------------------------------
+  , Smpl
+  , Structure2, Struct2(..)
+  , Hmlg
   ) where
 
 import Control.Monad
 
+import Data.Kind
 import Data.Typeable
 import Data.List as L (repeat,(++),zip) 
 
@@ -122,14 +128,21 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 type ChainComplex = ConsZero To
 
 --------------------------------------------------------------------------------
+-- Smpl -
+
+data Smpl (s :: Type -> Type)
+
+type instance Structure (Smpl s) x = Simplical s x 
+
+--------------------------------------------------------------------------------
 -- chainComplex -
 
 -- | the chain complex of the boundary operators, where in the 'Regualr' case the first operator
 -- is addapted to @'zero'@ with an empy 'end'.
-chainComplex :: (Ring r, Commutative r, Ord r, Simplical s x)
-  => Regular -> Any n -> Complex x
+chainComplex :: (Ring r, Commutative r, Ord r)
+  => Struct (Smpl s) x -> Regular -> Any n -> Complex x
   -> ChainComplex n (ChainOperator r s)
-chainComplex r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
+chainComplex Struct r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
 
   toBndOpr :: (Ring r, Commutative r, Ord r, Simplical s x)
     => FinList (n+1) (Set (s x)) -> FinList n (ChainOperator r s)
@@ -150,6 +163,7 @@ chainComplex r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n 
     -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
   zeroEmptyEnd d = zero (fst $ root d,empty) 
 
+{-
 bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
 bndZSet = chainComplex
 
@@ -158,6 +172,7 @@ bndZAsc = chainComplex
 
 bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
 bndZLst = chainComplex
+-}
 
 --------------------------------------------------------------------------------
 -- ccpRepMatrix -
@@ -197,15 +212,22 @@ eqSetType f sx sy = do
     eqRng :: (Typeable y, Typeable y') => Map EntOrd x y -> Set (s y') -> Maybe (y :~: y')
     eqRng _ _ = eqT
 
-type family FF m
+type family Structure2 m x y :: Constraint
+
+data Struct2 m x y where
+  Struct2 :: Structure2 m x y => Struct2 m x y
+
+data Hmlg (s :: Type -> Type)
+
+type instance Structure2 (Hmlg s) x y = Homological s x y
 
 -- | the transformation of chain complexes.
-chainComplexTrafo :: (Ring r, Commutative r, Ord r, Homological s x y)
-  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
+chainComplexTrafo :: (Ring r, Commutative r, Ord r)
+  => Struct2 (Hmlg s) x y -> Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexTrafo n (ChainOperator r s)
-chainComplexTrafo r n f = ConsZeroTrafo a b fs where
-  a  = chainComplex r n (cpmDomain f)
-  b  = chainComplex r n (cpmRange f)
+chainComplexTrafo Struct2 r n f = ConsZeroTrafo a b fs where
+  a  = chainComplex Struct r n (cpmDomain f)
+  b  = chainComplex Struct r n (cpmRange f)
   fs = amap1 (uncurry $ toChnMap $ cpmMap f) $ cnzPoints a `F.zip` cnzPoints b
 
   toChnMap :: (Ring r, Commutative r, Ord r, Homological s x y)
@@ -230,3 +252,4 @@ ccptCards t = Transformation a b fs where
   ConsZeroTrafo ca cb fs = cnztMap choprCardsOrnt t
   a  = DiagramDiscrete $ cnzPoints ca
   b  = DiagramDiscrete $ cnzPoints cb
+

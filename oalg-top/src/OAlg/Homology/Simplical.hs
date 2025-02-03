@@ -195,6 +195,7 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
 -- | transforming simplices over @__x__@ to simplices over @__y__@.
 --
 -- __Property__ Let @__s__ __x__ __y__@ be an instance of
+-- 
 -- @'SimplicalTransformable' __s__ __x__ __y__@, then holds:
 --
 -- (1) @'vertices' ('amap1' f s) '==' 'amap1' f ('vertices' s)@ for all

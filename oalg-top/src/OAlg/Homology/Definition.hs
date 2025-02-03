@@ -54,6 +54,7 @@ import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainOperator
 import OAlg.Homology.ChainComplex
+import OAlg.Homology.SomeComplex.Definition
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -71,6 +72,7 @@ homology :: ( Hom Dst h
   -> ChainComplex n (ChainOperator r s) -> Homology n a
 homology h kers cokers = deviations kers cokers . cnzMap h . ccpRepMatrix
 
+{-
 hmgSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> Homology n AbHom
 hmgSet r n c = homology FreeAbHom abhKernels abhCokernels $ ccp r n c  where
   ccp :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
@@ -85,16 +87,45 @@ hmgAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> Homology n AbHom
 hmgAsc r n c = homology FreeAbHom abhKernels abhCokernels $ ccp r n c  where
   ccp :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
   ccp = chainComplex
+-}
+
+data FF s where
+  FFSet :: FF Set
+  FFLst :: FF []
+  FFAsc :: FF Asc
+
+ff :: (Entity x, Ord x) => FF s -> Complex x -> Struct (Smpl s) x
+ff FFSet _ = Struct
+ff FFLst _ = Struct
+ff FFAsc _ = Struct
+
 
 --------------------------------------------------------------------------------
 -- HomologyOperatorAtom -
 
 data HomologyOperatorAtom n r s x y where
-  C :: Regular -> Any n
-    -> HomologyOperatorAtom n r s (Complex x) (ChainComplex n (ChainOperator r s))
-  H :: Hom Dst h => h (Matrix r) a -> Kernels N1 a -> Cokernels N1 a
-    -> HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (Homology n a)
-  T :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (Cards (n+3))
+  C :: FF s -> Regular -> Any n
+    -> HomologyOperatorAtom n r s SomeComplex (ChainComplex n (ChainOperator r s))
+  R :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (ChainComplex n (Matrix r))
+  M :: Hom Dst h => h (Matrix r) a
+    -> HomologyOperatorAtom n r s (ChainComplex n (Matrix r)) (ChainComplex n a)
+  H :: Distributive a => Kernels N1 a -> Cokernels N1 a
+    -> HomologyOperatorAtom n r s (ChainComplex n a) (Homology n a)
+    
+  U :: Any n ->  HomologyOperatorAtom n r s SomeComplex (Cards (n+3))
+  V :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (Cards (n+3))
+
+
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+  => Applicative (HomologyOperatorAtom n r s) where
+  amap (C s r n)       = \(SomeComplex c) -> chainComplex (ff s c) r n c
+  amap R               = ccpRepMatrix
+  amap (M h)           = case range h of Struct -> cnzMap h
+  amap (H kers cokers) = deviations kers cokers 
+  amap (U n)           = scpxCards n
+  amap V               = ccpCards
+
+{-
 
 --------------------------------------------------------------------------------
 -- HomologyOperator -
@@ -124,3 +155,4 @@ hmgt r n f = homologyTrafo FreeAbHom abhKernels abhCokernels $ ccpt r n f where
        => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
        -> ChainComplexTrafo n (ChainOperator Z s)
   ccpt = chainComplexTrafo
+-}

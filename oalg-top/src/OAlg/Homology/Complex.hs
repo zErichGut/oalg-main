@@ -373,7 +373,7 @@ type CardsTrafo n = Transformation Discrete n N0 (Orientation N)
 --------------------------------------------------------------------------------
 -- cpmCards -
 
-cpmCards :: Any d -> ComplexMap m (Complex x) (Complex y) -> CardsTrafo (d+3)
+cpmCards :: Any d -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo (d+3)
 cpmCards d m = Transformation cd cr ts where
   cd = cpxCards d (cpmDomain m)
   cr = cpxCards d (cpmRange m)

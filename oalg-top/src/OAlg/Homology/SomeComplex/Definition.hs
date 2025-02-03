@@ -23,7 +23,7 @@
 -- Definition of the 'Multiplicative' structure of 'SomeComplexMap'.
 module OAlg.Homology.SomeComplex.Definition
   ( -- * Some Complex
-    SomeComplex(..)
+    SomeComplex(..), scpxCards
 
     -- * Some Complex Map
   , SomeComplexMap(..)
@@ -45,7 +45,7 @@ import OAlg.Hom.Distributive ()
 
 -- import OAlg.Entity.Diagram
 -- import OAlg.Entity.FinList as F hiding ((++),repeat)
--- import OAlg.Entity.Natural as N hiding ((++))
+import OAlg.Entity.Natural
 -- import OAlg.Structure.PartiallyOrdered
 
 -- import OAlg.Homology.Simplical
@@ -74,7 +74,6 @@ instance Validable SomeComplex where
   valid (SomeComplex c) = Label "SomeComplex" :<=>: valid c
 
 instance Entity SomeComplex
-
 
 --------------------------------------------------------------------------------
 -- SomeComplexMap -
@@ -135,4 +134,14 @@ instance MultiplicativeComplexMap s => Multiplicative (SomeComplexMap s) where
         Just Refl                    -> SomeComplexMap (f `cpmMlt` g)
         _                            -> throw NotMultiplicable
 
+--------------------------------------------------------------------------------
+-- scpxCards -
 
+scpxCards :: Any d -> SomeComplex -> Cards (d+3)
+scpxCards d (SomeComplex c) = cpxCards d c
+
+--------------------------------------------------------------------------------
+-- scpmCards -
+
+scpmCards :: Any d -> SomeComplexMap s -> CardsTrafo (d+3)
+scpmCards d (SomeComplexMap f) = cpmCards d f
