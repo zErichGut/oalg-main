@@ -31,6 +31,7 @@ module OAlg.Homology.ChainComplex
     -- * Chain Complex Trafo
   , chainComplexTrafo, ChainComplexTrafo
   , ccptRepMatrix, ccptCards
+
   ) where
 
 import Control.Monad
@@ -196,6 +197,8 @@ eqSetType f sx sy = do
     eqRng :: (Typeable y, Typeable y') => Map EntOrd x y -> Set (s y') -> Maybe (y :~: y')
     eqRng _ _ = eqT
 
+type family FF m
+
 -- | the transformation of chain complexes.
 chainComplexTrafo :: (Ring r, Commutative r, Ord r, Homological s x y)
   => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
@@ -227,24 +230,3 @@ ccptCards t = Transformation a b fs where
   ConsZeroTrafo ca cb fs = cnztMap choprCardsOrnt t
   a  = DiagramDiscrete $ cnzPoints ca
   b  = DiagramDiscrete $ cnzPoints cb
-
-
---------------------------------------------------------------------------------
-
-a = complex $ [Set "abc",Set "bcd",Set "ad"]
-b = complex $ [Set [0,1,2],Set [1,2,3],Set [0,3]] :: Complex Z
-
-f :: Map EntOrd Char Z
-f = Map (\c -> toZ c - toZ 'a') where toZ = (toEnum :: Int -> Z) . fromEnum
-
-tAsc = ComplexMapAsc a b f
-tLst = ComplexMap a b f
-
-chmZ :: (Entity x, Ord x, Entity y, Ord y, Homological s x y)
-  => Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> ChainComplexTrafo n (ChainOperator Z s)
-chmZ = chainComplexTrafo
-
-
-
-

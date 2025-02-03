@@ -24,6 +24,7 @@
 -- the variance of a chain complex, i.e. the measure of beeing exact.
 module OAlg.Homology.Variance
   (
+{-
     -- * Variance
     Variance(..)
   , ccxZFromVariance, ccxZToVariance
@@ -38,9 +39,9 @@ module OAlg.Homology.Variance
 
     -- * Generators
   , vrcCyclesGen, vrcHomologyGroupGen
-
+-}
   ) where
-
+{-
 import Control.Monad
 
 import Data.Foldable (toList)
@@ -493,3 +494,4 @@ chainComplexAsc = chainComplex
 chainComplexLst :: (Ring r, Commutative r, Entity x, Ord x)
   => ChainComplexRep r [] n x -> ChainComplex To n (Matrix r)
 chainComplexLst = chainComplex
+-}

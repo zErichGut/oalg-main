@@ -11,6 +11,7 @@
   , StandaloneDeriving
   , DataKinds
   , TupleSections
+  , RankNTypes
 #-}
 
 -- |
@@ -20,10 +21,11 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- ddefinition of complexes of sets.
+-- Definition of complexes of sets.
 module OAlg.Homology.Complex
   (
-    -- * Complex of Sets
+
+    -- * Complex of Set Simplices
     Complex(..), cpxElem, complex
   , cpxVertices, cpxSimplices, cpxGenerators
 
@@ -31,8 +33,12 @@ module OAlg.Homology.Complex
   , cpxProduct, cpxProductAsc
 
     -- * Map
-  , ComplexMap(..), cpmForget, cpmDomain, cpmRange
+  , ComplexMap(..), Neglecting, Preserving
+  , cpmForget, cpmDomain, cpmRange
   , cpmMap, cpmGraph
+
+    -- * Multiplictive
+  , MultiplicativeComplexMap(..)
 
     -- * Cardinalities
   , cpxCards, Cards
@@ -52,6 +58,7 @@ import OAlg.Category.Map
 
 import OAlg.Data.Filterable
 
+import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 
 import OAlg.Hom.Distributive ()
@@ -84,7 +91,6 @@ import OAlg.Homology.Simplical
 -- __Note__ From the property 3 above follows: If @s@ is a set-simplex in @c@ and @t '<<=' s@ then
 -- @t@ is in @c@.
 newtype Complex x = Complex (Graph Z (Set (Set x))) deriving (Show,Eq,Ord)
-
 
 --------------------------------------------------------------------------------
 -- Complex - Entity -
@@ -181,6 +187,7 @@ cpxProduct = cpxProduct' (const True) (const True)
 
 cpxProductAsc :: (Entity x, Ord x, Entity y, Ord y) => Complex x -> Complex y -> Complex (x,y)
 cpxProductAsc = cpxProduct' isAsc isAsc
+
 --------------------------------------------------------------------------------
 -- isFaithful -
 
@@ -189,64 +196,80 @@ isFaithful :: ([y] -> Bool) -> Map EntOrd x y -> Set x -> Bool
 isFaithful p f (Set xs) = p $ amap1 f xs
 
 --------------------------------------------------------------------------------
+-- Neglecting -
+
+-- | type for 'ComplexMap's neglecting the orientation of the simpleces.
+type Neglecting = []
+
+--------------------------------------------------------------------------------
+-- Preserving -
+
+-- | type for 'ComplexMap's preserving the orientation of the simplices.
+type Preserving = Asc
+
+--------------------------------------------------------------------------------
 -- ComplexMap -
 
 -- | mapping between complexes, where the given map of vertices induces a mapping between the two
--- given set-simplex sets. Such a mapping is called __/faithfully oriented/__ if the induced mapping
--- of the set-simplices respects also the given orientation, i.e. @'isFaithful' 'isAsc'@.
+-- given simplex sets. Such a mapping is called __/preserving/__ if the induced mapping
+-- of simplices maintain the given orientation, i.e. @'isFaithful' 'isAsc'@, otherwise it will be
+-- called __/neglecting/__.
 --
 -- __Properties__ Let @m@ be in @'ComplexMap' __s__ ('Complex' __x__) ('Complex' __y__), then
 -- holds: Let @f = 'cpmMap' m@ in
 --
---  (1) For all set-simplices @s@ in @'cpmDomain' m@ holds:
---  @'amap1' f s@ is an element of @'cpmRange' m@, where 
+--  (1) For all simplices @s@ in @'cpmDomain' m@ holds:
+--  @'amap1' f s@ is an element of @'cpmRange' m@
 --
---  (2) If @m@ matches @'ComplexMapAsc' _ _ _@ then for all set-simplices
---  @s@ in @'cpmDomain' m@ holds: @'isFaithful' 'isAsc' f s@.
+--  (2) If @m@ matches @'ComplexMapPrs' _ _ _@ then for all simplices @s@ in @'cpmDomain' m@
+--  holds: @'isFaithful' 'isAsc' f s@.
 --
 -- __Note__ If @'cpmDomain' m@ and @'cpmRange' m@ are 'valid' then it is sufficient to test the
 -- properties above on the generators @'cpxGenerators' ('cpmDomain' m)@.
 data ComplexMap s a b where
-  ComplexMap
+  -- | neglecting the order of the simplices
+  ComplexMapNgl
     :: Complex x -> Complex y
     -> Map EntOrd x y
-    -> ComplexMap [] (Complex x) (Complex y)
-  ComplexMapAsc
+    -> ComplexMap Neglecting (Complex x) (Complex y)
+
+  -- | preserving the oreder of the simplece
+  ComplexMapPrs
     :: Complex x -> Complex y
     -> Map EntOrd x y
-    -> ComplexMap Asc (Complex x) (Complex y)
+    -> ComplexMap Preserving (Complex x) (Complex y)
 
 --------------------------------------------------------------------------------
 -- cpmForget -
 
 -- | forgets eventually the faithfully oriented constraint.
-cpmForget :: ComplexMap s a b -> ComplexMap [] a b
-cpmForget m@(ComplexMap _ _ _)  = m
-cpmForget (ComplexMapAsc a b f) = ComplexMap a b f   
+cpmForget :: ComplexMap s a b -> ComplexMap Neglecting a b
+cpmForget m@(ComplexMapNgl _ _ _) = m
+cpmForget (ComplexMapPrs a b f)   = ComplexMapNgl a b f   
 
 --------------------------------------------------------------------------------
 -- cpmDomain -
 
 -- | the domain of a set-complex map.
 cpmDomain :: ComplexMap s (Complex x) (Complex y) -> Complex x
-cpmDomain (ComplexMap a _ _)    = a
-cpmDomain (ComplexMapAsc a _ _) = a
+cpmDomain (ComplexMapNgl a _ _) = a
+cpmDomain (ComplexMapPrs a _ _) = a
 
 --------------------------------------------------------------------------------
 -- cpmRange -
 
 -- | the range of a set-complex map.
 cpmRange :: ComplexMap s (Complex x) (Complex y) -> Complex y
-cpmRange (ComplexMap _ b _)    = b
-cpmRange (ComplexMapAsc _ b _) = b
+cpmRange (ComplexMapNgl _ b _) = b
+cpmRange (ComplexMapPrs _ b _) = b
 
 --------------------------------------------------------------------------------
 -- cpmMap -
 
 -- | the underling mapping of vertices.
 cpmMap :: ComplexMap s (Complex x) (Complex y) -> Map EntOrd x y
-cpmMap (ComplexMap _ _ f)    = f
-cpmMap (ComplexMapAsc _ _ f) = f
+cpmMap (ComplexMapNgl _ _ f) = f
+cpmMap (ComplexMapPrs _ _ f) = f
 
 --------------------------------------------------------------------------------
 -- cpmGraph -
@@ -260,27 +283,25 @@ cpmGraph m = Graph [(v,f v) | v <- setxs $ cpxVertices $ cpmDomain m] where Map 
 
 instance Show (ComplexMap s a b) where
   show m = case m of
-    ComplexMap _ _ (Map _)    -> "ComplexMap" ++ shCmps m
-    ComplexMapAsc _ _ (Map _) -> "ComplexMapAsc" ++ shCmps m
+    ComplexMapNgl _ _ (Map _) -> "ComplexMap" ++ shCmps m
+    ComplexMapPrs _ _ (Map _) -> "ComplexMapPrs" ++ shCmps m
     where 
       shCmps m = " (" ++ (show $ cpmDomain m) ++ ") (" ++ (show $ cpmRange m)
              ++ ") (" ++ (show $ cpmGraph m) ++ ")"
 
 instance Eq (ComplexMap s a b) where
-  f@(ComplexMap a b (Map _)) == g@(ComplexMap a' b' _) = (a,b,cpmGraph f) == (a',b',cpmGraph g)
-  f == g                                               = cpmForget f == cpmForget g
-
-
+  f@(ComplexMapNgl a b (Map _)) == g@(ComplexMapNgl a' b' _) = (a,b,cpmGraph f) == (a',b',cpmGraph g)
+  f == g                                                     = cpmForget f == cpmForget g
 
 instance Ord (ComplexMap s a b) where
-  compare f@(ComplexMap a b (Map _)) g@(ComplexMap a' b' _)
+  compare f@(ComplexMapNgl a b (Map _)) g@(ComplexMapNgl a' b' _)
     = compare (a,b,cpmGraph f) (a',b',cpmGraph g)
   compare f g = compare (cpmForget f) (cpmForget g)
 
 
 -- | validity according to property 1.
-relComplexMap :: ComplexMap [] a b -> Statement
-relComplexMap (ComplexMap a b f@(Map _))
+relComplexMap :: ComplexMap Neglecting a b -> Statement
+relComplexMap (ComplexMapNgl a b f@(Map _))
   = And [ valid a
         , valid b
         , Label "1" :<=>: (fa <<= sb) :?> Params ["fa // sb":= show (fa // sb)]
@@ -294,8 +315,8 @@ relComplexMap (ComplexMap a b f@(Map _))
 
 
 instance Validable (ComplexMap s a b) where
-  valid m@(ComplexMap _ _ _)            = Label "ComplexMap" :<=>: relComplexMap m
-  valid m@(ComplexMapAsc cx _ f@(Map _)) = Label "ComplexMapAsc" :<=>:
+  valid m@(ComplexMapNgl _ _ _)          = Label "ComplexMapNgl" :<=>: relComplexMap m
+  valid m@(ComplexMapPrs cx _ f@(Map _)) = Label "ComplexMapPrs" :<=>:
     And [ relComplexMap (cpmForget m)
         , vldFaithfulAsc f (amap1 snd $ setxs $ gphset $ cpxGenerators cx)
         ]
@@ -307,6 +328,26 @@ instance Validable (ComplexMap s a b) where
               ] 
 
 instance (Typeable s, Typeable a, Typeable b) => Entity (ComplexMap s a b)
+
+--------------------------------------------------------------------------------
+-- MultiplicativeComplexMap -
+
+class Typeable m => MultiplicativeComplexMap m where
+  cpmOne :: Struct EntOrd x -> Complex x -> ComplexMap m (Complex x) (Complex x)
+  cpmMlt :: ComplexMap m (Complex y) (Complex z) -> ComplexMap m (Complex x) (Complex y)
+         -> ComplexMap m (Complex x) (Complex z)
+
+instance MultiplicativeComplexMap Neglecting where
+  cpmOne s c = ComplexMapNgl c c (cOne s) 
+  cpmMlt (ComplexMapNgl y' z f@(Map _)) (ComplexMapNgl x y g)
+    | y' == y   = ComplexMapNgl x z (f . g)
+    | otherwise = throw $ NotMultiplicable
+
+instance MultiplicativeComplexMap Preserving where
+  cpmOne s c = ComplexMapPrs c c (cOne s) 
+  cpmMlt (ComplexMapPrs y' z f@(Map _)) (ComplexMapPrs x y g)
+    | y' == y   = ComplexMapPrs x z (f . g)
+    | otherwise = throw $ NotMultiplicable
 
 --------------------------------------------------------------------------------
 -- Cards -
@@ -332,24 +373,8 @@ type CardsTrafo n = Transformation Discrete n N0 (Orientation N)
 --------------------------------------------------------------------------------
 -- cpmCards -
 
-cpmCards :: Any d -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo (d+3)
+cpmCards :: Any d -> ComplexMap m (Complex x) (Complex y) -> CardsTrafo (d+3)
 cpmCards d m = Transformation cd cr ts where
   cd = cpxCards d (cpmDomain m)
   cr = cpxCards d (cpmRange m)
   ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)
-
---------------------------------------------------------------------------------
-
--- a = complex [Set "ab",Set "bc",Set "ac"] :: Complex Char
--- b = complex [Set [0,1],Set [1,2], Set [0,2]] :: Complex N
-
-a = complex [Set "abc"]
-b = complex [Set [0,1]] :: Complex N
-
-c = cpxProductAsc b a
-
-p1 = ComplexMapAsc c b (Map fst)
-p2 = ComplexMapAsc c a (Map snd)
-
-  
-

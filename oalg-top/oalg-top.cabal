@@ -30,7 +30,9 @@ library
       OAlg.Homology.Complex
       OAlg.Homology.Definition
       OAlg.Homology.Simplical
+      OAlg.Homology.SomeComplex.Definition
       OAlg.Homology.Variance
+      OAlg.Topology.Definition
   other-modules:
       Paths_oalg_top
   hs-source-dirs:
