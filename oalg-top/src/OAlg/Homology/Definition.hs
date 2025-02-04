@@ -96,8 +96,6 @@ instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
   homomorphous (ChainComplex _ _ _) = Struct :>: Struct
   homomorphous (ScpxCards _)        = Struct :>: Struct
 
-
-
 --------------------------------------------------------------------------------
 -- ChainComplexOperator -
 
