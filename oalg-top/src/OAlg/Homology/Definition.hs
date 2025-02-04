@@ -48,6 +48,7 @@ import OAlg.Limes.Exact.ConsZero
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
+import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
@@ -60,7 +61,7 @@ import OAlg.Homology.SomeComplex.Definition
 
 --------------------------------------------------------------------------------
 
-instance (Distributive d, Typeable t, Typeable n) => Multiplicative (ConsZeroTrafo t n d) where
+
 
 
 --------------------------------------------------------------------------------
@@ -81,30 +82,58 @@ homology :: ( Hom Dst h
 homology h kers cokers = deviations kers cokers . cnzMap h . ccpRepMatrix
 -}
 
+--------------------------------------------------------------------------------
+-- SomeComplexOperator -
+
+data SomeComplexOperator n r s x y where
+  ChainComplex :: SimplexType s -> Regular -> Any n
+    -> SomeComplexOperator n r s SomeComplex (ChainComplex n (ChainOperator r s))
+  ScpxCards :: Any n ->  SomeComplexOperator n r s SomeComplex (Cards (n+3))
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => Morphism (SomeComplexOperator n r s) where
+  type ObjectClass (SomeComplexOperator n r s) = Ent
+  homomorphous (ChainComplex _ _ _) = Struct :>: Struct
+  homomorphous (ScpxCards _)        = Struct :>: Struct
+
+
+
+--------------------------------------------------------------------------------
+-- ChainComplexOperator -
+
+data ChainComplexOperator n r s x y where
+  CcpRepMatrix
+    :: ChainComplexOperator n r s (ChainComplex n (ChainOperator r s)) (ChainComplex n (Matrix r))
+  CnzMap :: Hom Dst h => h (Matrix r) a
+    -> ChainComplexOperator n r s (ChainComplex n (Matrix r)) (ChainComplex n a)
+  Homology :: Distributive a => Kernels N1 a -> Cokernels N1 a
+    -> ChainComplexOperator n r s (ChainComplex n a) (Homology n a)
+  CppCards :: ChainComplexOperator n r s (ChainComplex n (ChainOperator r s)) (Cards (n+3))
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => Morphism (ChainComplexOperator n r s) where
+  type ObjectClass (ChainComplexOperator n r s) = Ent
+  homomorphous CcpRepMatrix = Struct :>: Struct
+  homomorphous (CnzMap h)   = case  dstRng h of
+    Struct -> Struct :>: Struct
+    where dstRng :: Hom Dst h => h a b -> Struct Dst b
+          dstRng = tau . range
+  homomorphous (Homology _ _) = Struct :>: Struct
+  homomorphous CppCards = Struct :>: Struct
+
+instance (AlgebraicRing r, Ord r, Typeable s)
+  => Applicative (ChainComplexOperator n r s) where
+  amap CcpRepMatrix           = ccpRepMatrix
+  amap (CnzMap h)             = case range h of Struct -> cnzMap h
+  amap (Homology kers cokers) = deviations kers cokers 
+  amap CppCards               = ccpCards
+
+
 {-
-hmgSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> Homology n AbHom
-hmgSet r n c = homology FreeAbHom abhKernels abhCokernels $ ccp r n c  where
-  ccp :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
-  ccp = chainComplex
-
-hmgLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> Homology n AbHom
-hmgLst r n c = homology FreeAbHom abhKernels abhCokernels $ ccp r n c  where
-  ccp :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
-  ccp = chainComplex
-
-hmgAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> Homology n AbHom
-hmgAsc r n c = homology FreeAbHom abhKernels abhCokernels $ ccp r n c  where
-  ccp :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
-  ccp = chainComplex
--}
-
-
 --------------------------------------------------------------------------------
 -- HomologyOperatorAtom -
 
 data HomologyOperatorAtom n r s x y where
-  C :: SimplexType s -> Regular -> Any n
-    -> HomologyOperatorAtom n r s SomeComplex (ChainComplex n (ChainOperator r s))
   R :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (ChainComplex n (Matrix r))
   M :: Hom Dst h => h (Matrix r) a
     -> HomologyOperatorAtom n r s (ChainComplex n (Matrix r)) (ChainComplex n a)
@@ -162,6 +191,8 @@ instance (AlgebraicRing r, Ord r) => Applicative (HomologyTrafoOperatorAtom n r 
 instance (AlgebraicRing r, Ord r, MultiplicativeComplexMap s, Typeable n)
   => HomOriented (HomologyTrafoOperatorAtom n r s) where
   pmap o = amap $ hmgOprAtom o
+-}
+
 
 {-
 ------------------------------------------------------------------------------------------

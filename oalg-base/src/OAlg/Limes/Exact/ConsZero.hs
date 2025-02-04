@@ -45,10 +45,14 @@ import Data.Typeable
 
 import OAlg.Prelude
 
+import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
+import OAlg.Structure.Vectorial
+import OAlg.Structure.Algebraic
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
@@ -233,6 +237,7 @@ cnztFromOpOp (ConsZeroTrafo a b fs) = ConsZeroTrafo a' b' fs' where
   a' = cnzFromOpOp a
   b' = cnzFromOpOp b
   fs' = amap1 fromOpOp fs
+
 --------------------------------------------------------------------------------
 -- vldConsZeroTrafoTo - Entity -
 
@@ -262,12 +267,46 @@ instance Distributive d => Validable (ConsZeroTrafo t n d) where
 instance (Distributive d, Typeable t, Typeable n) => Entity (ConsZeroTrafo t n d)
 
 --------------------------------------------------------------------------------
--- ConsZeroTrafo - Oriented -
+-- ConsZeroTrafo - Algebraic -
 
 instance (Distributive d, Typeable t, Typeable n) => Oriented (ConsZeroTrafo t n d) where
   type Point (ConsZeroTrafo t n d) = ConsZero t n d
   orientation (ConsZeroTrafo a b _) = a :> b
 
+instance (Distributive d, Typeable t, Typeable n) => Multiplicative (ConsZeroTrafo t n d) where
+  one c = ConsZeroTrafo c c $ amap1 one $ cnzPoints c
+
+  ConsZeroTrafo y' z f * ConsZeroTrafo x y g
+    | y == y'   = ConsZeroTrafo x z $ amap1 (uncurry (*)) (f `zip` g)
+    | otherwise = throw NotMultiplicable 
+
+instance (Distributive d, Typeable t, Typeable n) => Fibred (ConsZeroTrafo t n d) where
+  type Root (ConsZeroTrafo t n d) = Orientation (ConsZero t n d)
+
+instance (Distributive d, Typeable t, Typeable n) => FibredOriented (ConsZeroTrafo t n d)
+
+instance (Distributive d, Typeable t, Typeable n) => Additive (ConsZeroTrafo t n d) where
+  zero (a :> b) = ConsZeroTrafo a b $ amap1 (zero . uncurry (:>)) (cnzPoints a `zip` cnzPoints b)
+
+  ConsZeroTrafo a b f + ConsZeroTrafo a' b' g
+    | a == a' && b == b' = ConsZeroTrafo a b $ amap1 (uncurry (+)) (f `zip` g)
+    | otherwise          = throw NotAddable
+
+instance (Distributive d, Abelian d, Typeable t, Typeable n) => Abelian (ConsZeroTrafo t n d) where
+  negate (ConsZeroTrafo a b f) = ConsZeroTrafo a b $ amap1 negate f
+
+  ConsZeroTrafo a b f - ConsZeroTrafo a' b' g
+    | a == a' && b == b' = ConsZeroTrafo a b $ amap1 (uncurry (-)) (f `zip` g)
+    | otherwise          = throw NotAddable
+  
+instance (Distributive d, Typeable t, Typeable n) => Distributive (ConsZeroTrafo t n d)
+
+instance (Algebraic d, Typeable t, Typeable n) => Vectorial (ConsZeroTrafo t n d) where
+  type Scalar (ConsZeroTrafo t n d) = Scalar d
+  x ! ConsZeroTrafo a b f = ConsZeroTrafo a b $ amap1 (x!) f
+
+instance (Algebraic d, Typeable t, Typeable n) => Algebraic (ConsZeroTrafo t n d)
+  
 --------------------------------------------------------------------------------
 -- cnztHead -
 

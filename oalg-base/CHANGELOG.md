@@ -133,8 +133,9 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 ## [2.2.0.0] - 2025-01-30
 
 ### Added
-- Structure2 and Struct2 in OAlg.Structure.Definition.
-- The constraint AlgebraicRing, AlgebraicField in OAlg.Structure.Algebraic.Definition.
+- Structure2 and Struct2 in the module OAlg.Structure.Definition.
+- The constraint AlgebraicRing, AlgebraicField in the module OAlg.Structure.Algebraic.Definition.
+- Algebraic structure for ConsZeroTrafo in the module OAlg.Limes.Exact.ConsZero.
 
 ### Changed
 - Redesign of Hom's: Adaption of the various class definition for Hom's to the idiom
