@@ -120,6 +120,9 @@ instance Validable (Proxy x) where
 instance Validable (Struct s x) where
   valid Struct = SValid
 
+instance Validable (Struct2 m x y) where
+  valid Struct2 = SValid
+
 instance Validable a => Validable (Maybe a) where
   valid (Just a)  = valid a
   valid (Nothing) = SValid
@@ -192,3 +195,4 @@ instance Validable2 m => Validable2 (Forget t m) where
 instance Validable2 m => Validable (Forget t m x y) where
   valid = valid2
 
+instance Validable2 (Struct2 m)

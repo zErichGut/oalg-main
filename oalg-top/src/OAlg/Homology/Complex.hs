@@ -37,6 +37,10 @@ module OAlg.Homology.Complex
   , cpmForget, cpmDomain, cpmRange
   , cpmMap, cpmGraph
 
+    -- * Homological
+  , Homological, Hmlg
+  , HomologyType(..), structHmlg, injHmlgType
+  
     -- * Multiplictive
   , MultiplicativeComplexMap(..)
 
@@ -48,6 +52,7 @@ module OAlg.Homology.Complex
 
 import Control.Monad
 
+import Data.Kind
 import Data.Typeable
 import Data.List as L ((++),repeat)
 import Data.Foldable (foldl)
@@ -56,6 +61,7 @@ import OAlg.Prelude
 
 import OAlg.Category.Map
 
+import OAlg.Data.Canonical
 import OAlg.Data.Filterable
 
 import OAlg.Structure.Exception
@@ -206,6 +212,54 @@ type Neglecting = []
 
 -- | type for 'ComplexMap's preserving the orientation of the simplices.
 type Preserving = Asc
+
+--------------------------------------------------------------------------------
+-- Homological -
+
+-- | homological transformations.
+--
+-- __Property__ Let @__s__ __x__ __y__@ be an instance of
+-- @'Homological' __s__ __x__ __y__@, then holds:
+--
+-- (1) @'dimension' ('amap1' f s) '==' 'dimension' s@ for all
+-- @f@ in @'Map' 'Ord'' __x__ __y__@ and @s@ in @__s__ __x__@.
+--
+-- __Note__ @('Map' 'Ord'') 'Set' __x__ __y__@ is not 'Homological'!.
+class SimplicalTransformable s x y => Homological s x y
+
+instance (Entity x, Ord x, Entity y, Ord y) => Homological Neglecting x y
+instance (Entity x, Ord x, Entity y, Ord y) => Homological Preserving x y
+
+--------------------------------------------------------------------------------
+-- Hmlg -
+
+data Hmlg (s :: Type -> Type)
+
+type instance Structure2 (Hmlg s) x y = Homological s x y
+
+--------------------------------------------------------------------------------
+-- HomologyType -
+
+data HomologyType s where
+  HmlgTypeNgl :: HomologyType Neglecting
+  HmlgTypePrs :: HomologyType Preserving
+
+--------------------------------------------------------------------------------
+-- structHmlg -
+
+structHmlg :: (Entity x, Ord x, Entity y, Ord y)
+  => HomologyType s -> f (Complex x) (Complex y) -> Struct2 (Hmlg s) x y
+structHmlg HmlgTypeNgl _ = Struct2
+structHmlg HmlgTypePrs _ = Struct2
+
+--------------------------------------------------------------------------------
+-- injHmlgType -
+
+injHmlgType :: HomologyType s -> SimplexType s
+injHmlgType HmlgTypeNgl = SpxTypeLst
+injHmlgType HmlgTypePrs = SpxTypeAsc
+
+instance Embeddable (HomologyType s) (SimplexType s) where inj = injHmlgType
 
 --------------------------------------------------------------------------------
 -- ComplexMap -

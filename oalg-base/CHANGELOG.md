@@ -132,6 +132,10 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 
 ## [2.2.0.0] - 2025-01-30
 
+### Added
+- Structure2 and Struct2 in OAlg.Structure.Definition.
+- The constraint AlgebraicRing, AlgebraicField in OAlg.Structure.Algebraic.Definition.
+
 ### Changed
 - Redesign of Hom's: Adaption of the various class definition for Hom's to the idiom
 'Transformable' such that the implementation of concrete Hom's is strait forward (see for example

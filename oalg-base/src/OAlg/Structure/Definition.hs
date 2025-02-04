@@ -22,6 +22,8 @@ module OAlg.Structure.Definition
     -- * Structure
     Structure, Struct(..)
 
+  , Structure2, Struct2(..)
+
     -- * Transformable
   , Transformable(..), Transformable1(..), TransformableOp
   , TransformableTyp
@@ -64,6 +66,25 @@ instance Show1 (Struct s) where
 
 instance Eq1 (Struct s) 
 instance Singular (Struct s)
+
+--------------------------------------------------------------------------------
+-- Structure2 -
+
+-- | parameterized constraint for a two types @__x__@ and @__y__@.
+type family Structure2 m x y :: Constraint
+
+--------------------------------------------------------------------------------
+-- Struct2 -
+
+-- | attest that the two types @__x__@ and @__y__@ admit the constraint given by the parameter @__s__@.
+data Struct2 m x y where
+  Struct2 :: Structure2 m x y => Struct2 m x y
+
+deriving instance Show (Struct2 m x y)
+instance Show2 (Struct2 m)
+
+deriving instance Eq (Struct2 m x y)
+instance Eq2 (Struct2 m)
 
 --------------------------------------------------------------------------------
 -- Typ -

@@ -7,6 +7,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Algebraic.Definition
@@ -19,7 +20,10 @@
 -- 'Vectorial' structure.
 module OAlg.Structure.Algebraic.Definition
   ( -- * Algebraic
-    Algebraic, AlgebraicSemiring, Alg, TransformableAlg
+    Algebraic, Alg, TransformableAlg
+
+    -- * Algebraic Semiring
+  , AlgebraicSemiring, AlgebraicRing, AlgebraicField
   )
   where
 
@@ -63,9 +67,13 @@ instance Algebraic a => Algebraic (Op a)
 --
 -- (1) For all @x@ and @y@ in @__r__@ holds: @x '!' y '==' x '*' y@.
 --
--- __Note__ The purpose of this structure is on the one hand to summarize the somewhat lengthy
+-- __Note__
+--
+-- (1) The purpose of this structure is on the one hand to summarize the somewhat lengthy
 -- constraints and on the other hand to ensure that the scalar multiplication @('!')@ is compatible
 -- with the 'Multiplicative' structure.
+--
+-- (2) The property 1. for a 'Algebraic' structure forces the 'Semiring' to be 'Commutative'.
 class (Semiring r, Commutative r, Algebraic r, Scalar r ~ r) => AlgebraicSemiring r
 
 instance AlgebraicSemiring Int
@@ -73,6 +81,18 @@ instance AlgebraicSemiring Integer
 instance AlgebraicSemiring N
 instance AlgebraicSemiring Z
 instance AlgebraicSemiring Q
+
+--------------------------------------------------------------------------------
+-- AlgebraicRing -
+
+-- | algebraic rings.
+type AlgebraicRing r = (AlgebraicSemiring r, Ring r)
+
+--------------------------------------------------------------------------------
+-- AlgebraicField -
+
+-- | algebraic fields.
+type AlgebraicField r = (AlgebraicSemiring r, Field r)
 
 --------------------------------------------------------------------------------
 -- Alg -

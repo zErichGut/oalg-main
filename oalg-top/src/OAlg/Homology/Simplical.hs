@@ -25,15 +25,13 @@ module OAlg.Homology.Simplical
   (
 
     -- * Simplical
-    Simplical(..), faces', gphFaces
+    Simplical(..), Smpl, faces', gphFaces
   , spxAdjDim
+  , SimplexType(..), structSmpl
 
     -- * Simplical Transformable
   , SimplicalTransformable
 
-    -- * Homological
-  , Homological
-  
     -- * Asc
   , Asc(..), isAsc, ascxs, asc
 
@@ -41,6 +39,7 @@ module OAlg.Homology.Simplical
 
 import Control.Monad (join)
 
+import Data.Kind
 import Data.Typeable
 import Data.List (head,tail,sort,(++),zip)
 import Data.Foldable
@@ -121,6 +120,13 @@ instance (Entity x, Ord x) => Simplical Set x where
   vertices = id
   faces (Set vs) = amap1 Set $ faces vs
   simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
+
+--------------------------------------------------------------------------------
+-- Smpl -
+
+data Smpl (s :: Type -> Type)
+
+type instance Structure (Smpl s) x = Simplical s x 
 
 --------------------------------------------------------------------------------
 -- faces' -
@@ -224,22 +230,6 @@ prpSimplicalTransformable xf xsx = Prp "SimplicalTransformable" :<=>:
 
 
 --------------------------------------------------------------------------------
--- Homological -
-
--- | homological transformations.
---
--- __Property__ Let @__s__ __x__ __y__@ be an instance of
--- @'Homological' __s__ __x__ __y__@, then holds:
---
--- (1) @'dimension' ('amap1' f s) '==' 'dimension' s@ for all
--- @f@ in @'Map' 'Ord'' __x__ __y__@ and @s@ in @__s__ __x__@.
---
--- __Note__ @('Map' 'Ord'') 'Set' __x__ __y__@ is not 'Homological'!.
-class SimplicalTransformable s x y => Homological s x y
-
-instance (Entity x, Ord x, Entity y, Ord y) => Homological [] x y
-
---------------------------------------------------------------------------------
 -- Asc -
 
 -- | ascending list with elements in @__x__@.
@@ -340,5 +330,21 @@ instance (Entity x, Ord x) => Simplical Asc x where
   simplices          = Graph . ascCombinations
 
 instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Asc x y
-instance (Entity x, Ord x, Entity y, Ord y) => Homological Asc x y
+
+--------------------------------------------------------------------------------
+-- SimplexType -
+
+data SimplexType s where
+  SpxTypeSet :: SimplexType Set
+  SpxTypeLst :: SimplexType []
+  SpxTypeAsc :: SimplexType Asc
+
+--------------------------------------------------------------------------------
+-- structSmpl -
+
+structSmpl :: (Entity x, Ord x) => SimplexType s -> f x -> Struct (Smpl s) x
+structSmpl SpxTypeSet _ = Struct
+structSmpl SpxTypeLst _ = Struct
+structSmpl SpxTypeAsc _ = Struct
+
 

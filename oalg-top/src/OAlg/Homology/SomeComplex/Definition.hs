@@ -26,7 +26,7 @@ module OAlg.Homology.SomeComplex.Definition
     SomeComplex(..), scpxCards
 
     -- * Some Complex Map
-  , SomeComplexMap(..)
+  , SomeComplexMap(..), entOrdComplexMap
   ) where
 
 import Control.Monad
@@ -84,6 +84,13 @@ data SomeComplexMap s where
     -> SomeComplexMap s
 
 --------------------------------------------------------------------------------
+-- entOrdComplexMap -
+
+entOrdComplexMap :: ComplexMap s (Complex x) (Complex y) -> (Struct EntOrd x,Struct EntOrd y)
+entOrdComplexMap (ComplexMapNgl _ _ (Map _)) = (Struct,Struct)
+entOrdComplexMap (ComplexMapPrs _ _ (Map _)) = (Struct,Struct)
+
+--------------------------------------------------------------------------------
 -- SomeComplexMap - Entity -
 
 deriving instance Show (SomeComplexMap s)
@@ -97,12 +104,8 @@ eqVertexTypeDomDomRngRng f g = do
   eqRng <- eqVertexType (cpmRange f) (cpmRange g)
   return (eqDom,eqRng)
 
-entOrtComplexMap :: ComplexMap s (Complex x) (Complex y) -> (Struct EntOrd x,Struct EntOrd y)
-entOrtComplexMap (ComplexMapNgl _ _ (Map _)) = (Struct,Struct)
-entOrtComplexMap (ComplexMapPrs _ _ (Map _)) = (Struct,Struct)
-
 instance Eq (SomeComplexMap s) where
-  SomeComplexMap f == SomeComplexMap g = case (entOrtComplexMap f,entOrtComplexMap g) of
+  SomeComplexMap f == SomeComplexMap g = case (entOrdComplexMap f,entOrdComplexMap g) of
     ((Struct,Struct),(Struct,Struct)) -> case eqVertexTypeDomDomRngRng f g of
       Just (Refl,Refl)                -> f == g
       Nothing                         -> False
@@ -129,7 +132,7 @@ eqVertexTypeDomRng f g = eqVertexType (cpmDomain f) (cpmRange g)
 instance MultiplicativeComplexMap s => Multiplicative (SomeComplexMap s) where
   one (SomeComplex c) = SomeComplexMap $ cpmOne Struct c
 
-  SomeComplexMap f * SomeComplexMap g = case (fst $ entOrtComplexMap f,snd $ entOrtComplexMap g) of
+  SomeComplexMap f * SomeComplexMap g = case (fst $ entOrdComplexMap f,snd $ entOrdComplexMap g) of
     (Struct,Struct)                  -> case eqVertexTypeDomRng f g of
         Just Refl                    -> SomeComplexMap (f `cpmMlt` g)
         _                            -> throw NotMultiplicable

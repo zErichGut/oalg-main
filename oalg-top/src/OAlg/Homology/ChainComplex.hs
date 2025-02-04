@@ -33,15 +33,10 @@ module OAlg.Homology.ChainComplex
   , chainComplexTrafo, ChainComplexTrafo
   , ccptRepMatrix, ccptCards
 
-  --------------------------------
-  , Smpl
-  , Structure2, Struct2(..)
-  , Hmlg
   ) where
 
 import Control.Monad
 
-import Data.Kind
 import Data.Typeable
 import Data.List as L (repeat,(++),zip) 
 
@@ -128,13 +123,6 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 type ChainComplex = ConsZero To
 
 --------------------------------------------------------------------------------
--- Smpl -
-
-data Smpl (s :: Type -> Type)
-
-type instance Structure (Smpl s) x = Simplical s x 
-
---------------------------------------------------------------------------------
 -- chainComplex -
 
 -- | the chain complex of the boundary operators, where in the 'Regualr' case the first operator
@@ -211,15 +199,6 @@ eqSetType f sx sy = do
 
     eqRng :: (Typeable y, Typeable y') => Map EntOrd x y -> Set (s y') -> Maybe (y :~: y')
     eqRng _ _ = eqT
-
-type family Structure2 m x y :: Constraint
-
-data Struct2 m x y where
-  Struct2 :: Structure2 m x y => Struct2 m x y
-
-data Hmlg (s :: Type -> Type)
-
-type instance Structure2 (Hmlg s) x y = Homological s x y
 
 -- | the transformation of chain complexes.
 chainComplexTrafo :: (Ring r, Commutative r, Ord r)
