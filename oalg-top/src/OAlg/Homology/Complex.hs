@@ -45,8 +45,8 @@ module OAlg.Homology.Complex
   , MultiplicativeComplexMap(..)
 
     -- * Cardinalities
-  , cpxCards, Cards
-  , cpmCards, CardsTrafo
+  , cpxCards, Cards(..)
+  , cpmCards, CardsTrafo(..)
 
   ) where
 
@@ -66,7 +66,13 @@ import OAlg.Data.Filterable
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
-
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
+import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
+import OAlg.Structure.Vectorial
+import OAlg.Structure.Algebraic
+import OAlg.Structure.Ring
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Diagram
@@ -403,17 +409,26 @@ instance MultiplicativeComplexMap Preserving where
     | y' == y   = ComplexMapPrs x z (f . g)
     | otherwise = throw $ NotMultiplicable
 
+
 --------------------------------------------------------------------------------
 -- Cards -
 
-type Cards n = Diagram Discrete n N0 (Orientation N)
+newtype Cards r n = Cards (Diagram Discrete (n+3) N0 (Orientation N))
+  deriving (Show,Eq)
+
+instance Validable (Cards r n) where
+  valid (Cards d) = Label "Cards" :<=>: valid d
+
+instance (Typeable r, Typeable n) => Entity (Cards r n)
+
 
 --------------------------------------------------------------------------------
 -- cpxCards -
 
 -- | the cardinalities of the simplex sets up to the given dimension, starting at dimension @-1@. 
-cpxCards :: Any d -> Complex x -> Cards (d+3)
-cpxCards n (Complex (Graph zs)) = DiagramDiscrete $ crds n $ (amap1 snd zs ++ repeat (Set [])) where
+cpxCards :: Any n -> Complex x -> Cards r n
+cpxCards n (Complex (Graph zs))
+  = Cards $ DiagramDiscrete $ crds n $ (amap1 snd zs ++ repeat (Set [])) where
   crds :: Any d -> [Set s] -> FinList (d+3) N
   crds W0 (s:s':s'':_) = lengthN s :| lengthN s' :| lengthN s'' :| Nil
   crds (SW n) (s:ss)   = lengthN s :| crds n ss
@@ -422,13 +437,56 @@ cpxCards n (Complex (Graph zs)) = DiagramDiscrete $ crds n $ (amap1 snd zs ++ re
 --------------------------------------------------------------------------------
 -- CardsTrafo -
 
-type CardsTrafo n = Transformation Discrete n N0 (Orientation N)
+newtype CardsTrafo r n = CardsTrafo (Transformation Discrete (n+3) N0 (Orientation N))
+  deriving (Show,Eq)
+
+instance Validable (CardsTrafo r n) where
+  valid (CardsTrafo t) = Label "CardsTrafo" :<=>: valid t
+
+instance (Typeable r, Typeable n) => Entity (CardsTrafo r n)
+
+--------------------------------------------------------------------------------
+-- CardsTrafo - Algebraic -
+
+instance (Typeable r, Typeable n) => Oriented (CardsTrafo r n) where
+  type Point (CardsTrafo r n) = Cards r n
+  orientation (CardsTrafo (Transformation a b _)) = Cards a :> Cards b
+
+instance (Typeable r, Typeable n) => Multiplicative (CardsTrafo r n) where
+  one (Cards a) = CardsTrafo (one a)
+  CardsTrafo f * CardsTrafo g = CardsTrafo (f*g)
+
+instance (Typeable r, Typeable n) => Fibred (CardsTrafo r n) where
+  type Root (CardsTrafo r n) = Orientation (Cards r n)
+
+instance (Typeable r, Typeable n) => FibredOriented (CardsTrafo r n)
+
+-- Note: all CardsTrafo are zero!
+instance (Typeable r, Typeable n) => Additive (CardsTrafo r n) where
+  zero (Cards a :> Cards b) = CardsTrafo $ zero (a :> b)
+  a + b | root a == root b = a
+        | otherwise        = throw NotAddable
+
+instance (Typeable r, Typeable n) => Abelian (CardsTrafo r n) where
+  negate = id
+  a - b | root a == root b = a
+        | otherwise        = throw NotAddable
+
+
+instance (Semiring r, Commutative r, Typeable n) => Vectorial (CardsTrafo r n) where
+  type Scalar (CardsTrafo r n) = r
+  (!) _ = id 
+
+instance (Typeable r, Typeable n) => Distributive (CardsTrafo r n)
+
+instance (Semiring r, Commutative r, Typeable n) => Algebraic (CardsTrafo r n)
 
 --------------------------------------------------------------------------------
 -- cpmCards -
 
-cpmCards :: Any d -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo (d+3)
-cpmCards d m = Transformation cd cr ts where
-  cd = cpxCards d (cpmDomain m)
-  cr = cpxCards d (cpmRange m)
+cpmCards :: Any n -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo r n
+cpmCards d m = CardsTrafo $ Transformation cd cr ts where
+  Cards cd = cpxCards d (cpmDomain m)
+  Cards cr = cpxCards d (cpmRange m)
   ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)
+

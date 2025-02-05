@@ -144,3 +144,4 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 'Transformable...' to circumvent undecidable instances (see for example 'IdHom').
 - Elimination of the idioms 'Embeddable' and 'Forgetful' such that only the Idiom
 'Transformable' and 'Transformable...' are needed.
+- Constraints for Transformation being Vectorial.

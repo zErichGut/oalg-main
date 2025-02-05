@@ -174,8 +174,8 @@ ccpRepMatrix = cnzMap ChoprRepMatrix
 
 -- | the cardinalities of the consecutive 'SimplexSet's of the given chain complex.
 ccpCards :: (Ring r, Commutative r, Ord r, Typeable s)
-  => ChainComplex n (ChainOperator r s) -> Cards (n+3)
-ccpCards c = DiagramDiscrete $ cnzPoints $ cnzMap choprCardsOrnt c
+  => ChainComplex n (ChainOperator r s) -> Cards r n
+ccpCards c = Cards $ DiagramDiscrete $ cnzPoints $ cnzMap choprCardsOrnt c
 
 --------------------------------------------------------------------------------
 -- ChainComplexTrafo -
@@ -226,8 +226,8 @@ ccptRepMatrix = cnztMap ChoprRepMatrix
 -- ccptCards -
 
 ccptCards :: (Ring r, Commutative r, Ord r, Typeable s)
-  => ChainComplexTrafo n (ChainOperator r s) -> CardsTrafo (n+3)
-ccptCards t = Transformation a b fs where
+  => ChainComplexTrafo n (ChainOperator r s) -> CardsTrafo r n
+ccptCards t = CardsTrafo $ Transformation a b fs where
   ConsZeroTrafo ca cb fs = cnztMap choprCardsOrnt t
   a  = DiagramDiscrete $ cnzPoints ca
   b  = DiagramDiscrete $ cnzPoints cb

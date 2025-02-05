@@ -289,7 +289,7 @@ instance ( Distributive a, Abelian a
   negate (Transformation a b ts) = Transformation a b (amap1 negate ts)
   ztimes z (Transformation a b ts) = Transformation a b (amap1 (ztimes z) ts)
 
-instance ( Distributive a, Vectorial a
+instance ( Algebraic a
          , Typeable t, Typeable n, Typeable m
          )
   => Vectorial (Transformation t n m a) where

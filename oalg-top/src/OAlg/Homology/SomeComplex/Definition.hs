@@ -140,11 +140,11 @@ instance MultiplicativeComplexMap s => Multiplicative (SomeComplexMap s) where
 --------------------------------------------------------------------------------
 -- scpxCards -
 
-scpxCards :: Any d -> SomeComplex -> Cards (d+3)
+scpxCards :: Any n -> SomeComplex -> Cards r n 
 scpxCards d (SomeComplex c) = cpxCards d c
 
 --------------------------------------------------------------------------------
 -- scpmCards -
 
-scpmCards :: Any d -> SomeComplexMap s -> CardsTrafo (d+3)
+scpmCards :: Any n -> SomeComplexMap s -> CardsTrafo r n
 scpmCards d (SomeComplexMap f) = cpmCards d f

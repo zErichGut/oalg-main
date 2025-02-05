@@ -49,7 +49,11 @@ import OAlg.Limes.Exact.ConsZero
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
+import OAlg.Hom.Fibred
+import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
+import OAlg.Hom.Vectorial
+import OAlg.Hom.Algebraic
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
@@ -71,14 +75,14 @@ type Homology n = Deviation (n+1)
 data HomologyOperatorAtom n r s a b where
   ChainComplex :: SimplexType s -> Regular -> Any n
     -> HomologyOperatorAtom n r s SomeComplex (ChainComplex n (ChainOperator r s))
-  ScpxCards :: Any n ->  HomologyOperatorAtom n r s SomeComplex (Cards (n+3))
+  ScpxCards :: Any n ->  HomologyOperatorAtom n r s SomeComplex (Cards r n)
   CcpRepMatrix
     :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (ChainComplex n (Matrix r))
   CcpMap :: Hom Dst h => h (Matrix r) a
     -> HomologyOperatorAtom n r s (ChainComplex n (Matrix r)) (ChainComplex n a)
   Deviations :: Distributive a => Kernels N1 a -> Cokernels N1 a
     -> HomologyOperatorAtom n r s (ChainComplex n a) (Homology n a)
-  CcpCards :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (Cards (n+3))
+  CcpCards :: HomologyOperatorAtom n r s (ChainComplex n (ChainOperator r s)) (Cards r n)
 
 instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
   => Morphism (HomologyOperatorAtom n r s) where
@@ -116,10 +120,10 @@ chainComplexOpr s r n = ChainComplex s r n :. IdPath Struct
 --------------------------------------------------------------------------------
 -- scpxCardsOpr -
 
-scpxCardsOpr :: Any n -> HomologyOperator n r s SomeComplex (Cards (n+3))
+scpxCardsOpr :: Any n -> HomologyOperator n r s SomeComplex (Cards r n)
 scpxCardsOpr n = ScpxCards n :. IdPath Struct
 
-scpxCardsOpr' :: Any n ->  HomologyOperator n Z Set SomeComplex (Cards (n+3))
+scpxCardsOpr' :: Any n ->  HomologyOperator n Z Set SomeComplex (Cards Z n)
 scpxCardsOpr' = scpxCardsOpr
 
 --------------------------------------------------------------------------------
@@ -149,7 +153,7 @@ deviationsOpr kers cokers = Deviations kers cokers :. IdPath Struct
 -- ccpCardsOpr -
 
 ccpCardsOpr :: (AlgebraicRing r, Ord r, Typeable s, Typeable n)
-  => HomologyOperator n r s (ChainComplex n (ChainOperator r s)) (Cards (n+3))
+  => HomologyOperator n r s (ChainComplex n (ChainOperator r s)) (Cards r n)
 ccpCardsOpr = CcpCards :. IdPath Struct
 
 --------------------------------------------------------------------------------
@@ -186,9 +190,6 @@ data ChainComplexTrafoOperatorAtom n r s a b where
   ChainComplexTrafo :: HomologyType s -> Regular -> Any n
     -> ChainComplexTrafoOperatorAtom n r s (SomeComplexMap s) (ChainComplexTrafo n (ChainOperator r s))
 {-    
-  CcptCards :: ChainComplexTrafoOperatorAtom n r s
-                 (ChainComplexTrafo n (ChainOperator r s))
-                 (CardsTrafo (n+3))
 -}
 
 instance (AlgebraicRing r, Ord r, MultiplicativeComplexMap s, Typeable n)
@@ -206,12 +207,55 @@ cctoho (ChainComplexTrafo s r n) = ChainComplex (inj s) r n
 
 instance (AlgebraicRing r, Ord r, MultiplicativeComplexMap s, Typeable n)
   => HomOriented (ChainComplexTrafoOperatorAtom n r s) where
-  pmap t = amap $ cctoho t
+  pmap = amap . cctoho
 
 instance (AlgebraicRing r, Ord r, MultiplicativeComplexMap s, Typeable n)
   => HomMultiplicative (ChainComplexTrafoOperatorAtom n r s)
 
+--------------------------------------------------------------------------------
+-- DeviationsTrafoOperatorAtom -
 
+data DeviationsTrafoOperatorAtom n r s a b where
+  CcptCards :: DeviationsTrafoOperatorAtom n r s
+                 (ChainComplexTrafo n (ChainOperator r s))
+                 (CardsTrafo r n)
+  
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => Morphism (DeviationsTrafoOperatorAtom n r s) where
+  type ObjectClass (DeviationsTrafoOperatorAtom n r s) = Alg r
+  homomorphous CcptCards = Struct :>: Struct
+  
+instance (AlgebraicRing r, Ord r, Typeable s)
+  => Applicative (DeviationsTrafoOperatorAtom n r s) where
+  amap CcptCards = ccptCards
+
+dtoho :: DeviationsTrafoOperatorAtom n r s a b -> HomologyOperatorAtom n r s (Point a) (Point b)
+dtoho CcptCards = CcpCards
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomOriented (DeviationsTrafoOperatorAtom n r s) where
+  pmap = amap . dtoho
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomMultiplicative (DeviationsTrafoOperatorAtom n r s)
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomFibred (DeviationsTrafoOperatorAtom n r s)
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomAdditive (DeviationsTrafoOperatorAtom n r s)
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomVectorial r (DeviationsTrafoOperatorAtom n r s)
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomFibredOriented (DeviationsTrafoOperatorAtom n r s)
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomDistributive (DeviationsTrafoOperatorAtom n r s)
+
+instance (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+  => HomAlgebraic r (DeviationsTrafoOperatorAtom n r s)
 
 {-
 --------------------------------------------------------------------------------
