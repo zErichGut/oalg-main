@@ -18,6 +18,23 @@
 -- Various homology homomorphisms.
 module OAlg.Homology.Hom
   (
+    -- * Homology
+    HomHomology, HomHomologyAtom(..)
+  , homHomology
+  , homChainComplex, homScpxCards
+  , homCcpRepMatrix, homCcpMap
+  , homDeviations, homCcpCards
+
+    -- * Homology Trafo
+  , HomHomologyTrafo, HomHomologyTrafoAtom(..)
+  , HomChainComplexTrafoAtom(..)
+  , HomDeviationTrafosAtom(..)
+  , homHomologyTrafo
+  , homChainComplexTrafo
+  , homCcptRepMatrix
+  , homCcptMap
+  , homDeviationTrafos
+  , homCcptCards
   ) where
 
 import Data.Typeable
@@ -139,11 +156,11 @@ homDeviations :: (Distributive a, Typeable n)
 homDeviations kers cokers = Deviations kers cokers :. IdPath Struct
 
 --------------------------------------------------------------------------------
--- ccpCardsOpr -
+-- homCcpCards -
 
-ccpCardsOpr :: (AlgebraicRing r, Ord r, Typeable s, Typeable n)
+homCcpCards :: (AlgebraicRing r, Ord r, Typeable s, Typeable n)
   => HomHomology s r n (ChainComplex n (ChainOperator r s)) (Cards r n)
-ccpCardsOpr = CcpCards :. IdPath Struct
+homCcpCards = CcpCards :. IdPath Struct
 
 --------------------------------------------------------------------------------
 -- homHomology -
@@ -322,3 +339,20 @@ homCcptCards :: (AlgebraicRing r, Ord r, Typeable s, Typeable n)
   => HomHomologyTrafo s r n (ChainComplexTrafo n (ChainOperator r s)) (CardsTrafo r n)
 homCcptCards = (HomDeviationTrafosAtom CcptCards) :. IdPath Struct
 
+--------------------------------------------------------------------------------
+-- homHomologyTrafo -
+
+homHomologyTrafo
+  :: ( AlgebraicRing r, Ord r
+     , MultiplicativeComplexMap s, Typeable n
+     , Hom (Alg r) h
+     , Algebraic a, Scalar a ~ r
+     )
+  => HomologyType s -> Regular -> Any n
+  -> h (Matrix r) a -> Kernels N1 a -> Cokernels N1 a
+  -> HomHomologyTrafo s r n (SomeComplexMap s) (DeviationTrafo (n+1) a)
+homHomologyTrafo s r n h kers cokers
+  = homDeviationTrafos kers cokers
+  . homCcptMap h
+  . homCcptRepMatrix
+  . homChainComplexTrafo s r n
