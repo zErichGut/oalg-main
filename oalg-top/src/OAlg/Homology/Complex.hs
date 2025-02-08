@@ -46,7 +46,7 @@ module OAlg.Homology.Complex
 
     -- * Cardinalities
   , cpxCards, Cards(..)
-  , cpmCards, CardsTrafo(..)
+  , cpmCards, CardsTrafo(..), crdsTrafo
 
   ) where
 
@@ -444,6 +444,12 @@ instance Validable (CardsTrafo r n) where
   valid (CardsTrafo t) = Label "CardsTrafo" :<=>: valid t
 
 instance (Typeable r, Typeable n) => Entity (CardsTrafo r n)
+
+--------------------------------------------------------------------------------
+-- crdsTrafo -
+
+crdsTrafo :: CardsTrafo r n -> Transformation Discrete (n+3) N0 (Orientation N)
+crdsTrafo (CardsTrafo t) = t
 
 --------------------------------------------------------------------------------
 -- CardsTrafo - Algebraic -

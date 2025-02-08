@@ -83,6 +83,8 @@ import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
+import OAlg.Hom.Vectorial
+import OAlg.Hom.Algebraic
 
 import OAlg.Limes.Limits
 import OAlg.Limes.Definition
@@ -634,6 +636,8 @@ instance HomFibred AbHomFree
 instance HomFibredOriented AbHomFree
 instance HomAdditive AbHomFree
 instance HomDistributive AbHomFree
+instance HomVectorial Z AbHomFree
+instance HomAlgebraic Z AbHomFree
 
 --------------------------------------------------------------------------------
 -- abhFreeAdjucntion -

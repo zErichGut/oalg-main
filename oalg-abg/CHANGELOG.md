@@ -47,5 +47,9 @@ and this project adheres to the
 - adaption to oalg-base-2.1.0.0
 
 ## [1.7.0.0] - 2025-01-30
+
+### Added
+- Instance HomVectorial and HomAlgerbaic for AbHomFree.
+
 ### Adaption
 - adaption to oalg-base-2.2.0.0

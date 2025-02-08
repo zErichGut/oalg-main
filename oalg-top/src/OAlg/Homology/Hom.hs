@@ -20,7 +20,7 @@ module OAlg.Homology.Hom
   (
     -- * Homology
     HomHomology, HomHomologyAtom(..)
-  , homHomology
+  , homHomology, abhHomHomology
   , homChainComplex, homScpxCards
   , homCcpRepMatrix, homCcpMap
   , homDeviations, homCcpCards
@@ -29,7 +29,7 @@ module OAlg.Homology.Hom
   , HomHomologyTrafo, HomHomologyTrafoAtom(..)
   , HomChainComplexTrafoAtom(..)
   , HomDeviationTrafosAtom(..)
-  , homHomologyTrafo
+  , homHomologyTrafo, abhHomHomologyTrafo
   , homChainComplexTrafo
   , homCcptRepMatrix
   , homCcptMap
@@ -42,6 +42,7 @@ import Data.Typeable
 import OAlg.Prelude
 
 import OAlg.Category.Path
+import OAlg.Category.Map
 
 import OAlg.Data.Canonical
 
@@ -67,6 +68,9 @@ import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
 import OAlg.Hom.Algebraic
+
+import OAlg.AbelianGroup.Definition
+import OAlg.AbelianGroup.KernelsAndCokernels
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
@@ -174,6 +178,16 @@ homHomology :: ( AlgebraicRing r, Ord r, Typeable s, Typeable n
 homHomology s r n h kers cokers
   = homDeviations kers cokers . homCcpMap h . homCcpRepMatrix . homChainComplex s r n
 
+--------------------------------------------------------------------------------
+-- abhHomHomology -
+
+abhHomHomology :: (Typeable s, Typeable n)
+  => SimplexType s -> Regular -> Any n
+  -> HomHomology s Z n SomeComplex (Deviation (n+1) AbHom)
+abhHomHomology s r n = homHomology s r n FreeAbHom kers cokers where
+  kers   = abhKernels
+  cokers = abhCokernels
+  
 --------------------------------------------------------------------------------
 -- HomChainComplexTrafoAtom -
 
@@ -356,3 +370,26 @@ homHomologyTrafo s r n h kers cokers
   . homCcptMap h
   . homCcptRepMatrix
   . homChainComplexTrafo s r n
+
+--------------------------------------------------------------------------------
+-- abhHomHomologyTrafo -
+
+abhHomHomologyTrafo :: (MultiplicativeComplexMap s, Typeable n)
+  => HomologyType s -> Regular -> Any n
+  -> HomHomologyTrafo s Z n (SomeComplexMap s) (DeviationTrafo (n+1) AbHom)
+abhHomHomologyTrafo s r n = homHomologyTrafo s r n FreeAbHom kers cokers where
+  kers   = abhKernels
+  cokers = abhCokernels
+  
+--------------------------------------------------------------------------------
+
+s = complex [Set "ab",Set "bc",Set "ac"]
+t = cpxProductAsc s s
+
+p1 = ComplexMapNgl t s (Map fst)
+p2 = ComplexMapNgl t s (Map snd)
+
+crds :: (MultiplicativeComplexMap s, Typeable n)
+  => HomologyType s -> Regular -> Any n
+  -> HomHomologyTrafo s Z n (SomeComplexMap s) (CardsTrafo Z n)
+crds s r n = homCcptCards . homChainComplexTrafo s r n

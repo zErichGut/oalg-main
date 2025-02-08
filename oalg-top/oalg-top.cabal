@@ -28,7 +28,7 @@ library
       OAlg.Homology.ChainComplex
       OAlg.Homology.ChainOperator
       OAlg.Homology.Complex
-      OAlg.Homology.Definition
+      OAlg.Homology.Hom
       OAlg.Homology.Simplical
       OAlg.Homology.SomeComplex.Definition
       OAlg.Homology.Variance
