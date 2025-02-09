@@ -10,6 +10,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 -- |
 -- Module      : OAlg.Limes.Exact.Deviation
 -- Description : measuring the deviation of exactness.
@@ -84,28 +86,23 @@ instance  GenericKernel (Kernel N1) (Orientation Symbol) where
 class Distributive a => GenericCokernel l a where
   gCokernel                :: CokernelDiagram N1 a -> l a
   gCokernelUniversalCone   :: l a -> CokernelCone N1 a
-  gCokernelUniversalFactor :: l a -> CokernelCone N1 a
-{-
-instance (Distributive a, GenericKernel (Kernel N1) a)
-  => GenericCokernel (Cokernel N1) (Op a) where
-  gCokernel d = coLimes ConeStructDst Refl Refl (gKernel $ coDiagramInv Refl d)
-
-instance (Distributive a, GenericCokernel (Cokernel N1) a)
-  => GenericKernel (Kernel N1) (Op a) where
-  gKernel d = coLimes ConeStructDst Refl Refl (gCokernel $ coDiagramInv Refl d)
--}
+  gCokernelUniversalFactor :: l a -> CokernelCone N1 a -> a
 
 type instance Dual (Kernel n)   = Cokernel n
 type instance Dual (Cokernel n) = Kernel n
 
+instance GenericCokernel (Cokernel N1) a => GenericKernel (Kernel N1) (Op a) where
+  gKernel d = coLimes ConeStructDst Refl Refl $ gCokernel $ coDiagramInv Refl d
+
+
 class Dualisable1 s f where
   toDual1 :: Struct s a ->  f a -> Dual f (Op a)
 
-instance Dualisable1 Dst (Kernel N1) where
+instance Dualisable1 Dst (Kernel n) where
   toDual1 Struct = coLimes ConeStructDst Refl Refl
   -- toDual1 = lmToOp krnLimesDuality
 
-instance Dualisable1 Dst (Cokernel N1) where
+instance Dualisable1 Dst (Cokernel n) where
   toDual1 Struct = coLimes ConeStructDst Refl Refl
 
 
@@ -116,8 +113,11 @@ instance Reflexive1 Dst (Kernel n) where
   fromOpOp1 Struct = lmFromOpOp ConeStructDst Refl Refl where
 
 type GenericKernelCokernelDuality k c
-  = ( Dualisable1 Dst k, Dualisable1 Dst c, Dual k ~ c, Dual c ~ k
-    , Reflexive1 Dst k, Reflexive1 Dst c
+  = ( Reflexive1 Dst k, Reflexive1 Dst c
+    , Reflexive1 Dst (Dual c), Reflexive1 Dst (Dual k)
+    , Dualisable1 Dst k, Dualisable1 Dst c
+    , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
+    , Dual (Dual k) ~ k, Dual (Dual c) ~ c
     )
 
 --------------------------------------------------------------------------------
@@ -194,17 +194,13 @@ data Variance t k c d where
 --------------------------------------------------------------------------------
 -- Variance - Duality -
 
-type instance Dual (Variance t k c d) = Variance (Dual t) k c (Op d)
+type instance Dual (Variance t k c d) = Variance (Dual t) (Dual c) (Dual k) (Op d)
+-- UndecidableInstances needet!
 
 
-
-coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c, Dual k ~ c, Dual c ~ k)
+coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c)
   => Variance t k c d -> Dual (Variance t k c d)
 coVariance (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where
-{-  
-  ker'   = lmToOp cokrnLimesDuality coker 
-  coker' = lmToOp krnLimesDuality ker
--}
   k' = toDual1 (sDst c) c
   c' = toDual1 (sDst k) k
 
@@ -217,17 +213,18 @@ vrcFromOpOp :: (Distributive d, Reflexive1 Dst k, Reflexive1 Dst c)
   => Variance t k c (Op (Op d)) -> Variance t k c d
 vrcFromOpOp (Variance t k c) = Variance t' k' c' where
   t' = cnztFromOpOp t
-{-
-  ker'   = lmFromOp krnLimesDuality $ lmFromOp cokrnLimesDuality ker
-  coker' = lmFromOp cokrnLimesDuality $ lmFromOp krnLimesDuality coker
--}
   k' = fromOpOp1 (sDst k) k
   c' = fromOpOp1 (sDst c) c
 
   sDst :: Distributive d => p (Op (Op d)) -> Struct Dst d
-  sDst = error "nyi"
+  sDst _ = Struct
 
-coVarianceInv :: (Distributive d, GenericKernelCokernelDuality k c)
+
+coVarianceInv :: ( Distributive d
+                 , Reflexive1 Dst k, Reflexive1 Dst c
+                 , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
+                 , Dual (Dual k) ~ k, Dual (Dual c) ~ c
+                 )
   => Dual (Dual t) :~: t -> Dual (Variance t k c d) -> Variance t k c d
 coVarianceInv Refl = vrcFromOpOp . coVariance
 
@@ -235,26 +232,27 @@ coVarianceInv Refl = vrcFromOpOp . coVariance
 --------------------------------------------------------------------------------
 -- Variance - Validable -
 
-instance ( Distributive d
-         , GenericKernelCokernelDuality k c
-         , XStandardOrtSiteTo d, XStandardOrtSiteFrom d
+instance ( GenericKernel k d, GenericCokernel c d
+         , GenericKernel (Dual c) (Op d), GenericCokernel (Dual k) (Op d)
+         , Validable (k d), Validable (c d)
+         , Dualisable1 Dst k, Dualisable1 Dst c
+         -- , XStandardOrtSiteTo d, XStandardOrtSiteFrom d
          )
   => Validable (Variance t k c d) where
   valid v@(Variance t ker coker) = Label "Variance" :<=>:
     And [ valid t
-        -- , valid ker
-        -- , valid coker
+        , valid ker
+        , valid coker
         , case t of
             ConsZeroTrafo _ (ConsZero (DiagramChainTo _ _)) _
               -> Label "To" :<=>: vldVarianceTo v
             ConsZeroTrafo (ConsZero (DiagramChainFrom _ _)) _ _
-              -> Label "From" :<=>: vldVarianceTo $ coVariance v
+              -> Label "From" :<=>:  vldVarianceTo $ coVariance v
         ]
     where
-      vldVarianceTo :: Distributive d => Variance To k c d -> Statement
-      vldVarianceTo = error "nyi"
-
-{-      
+      
+      vldVarianceTo :: ( GenericKernel k d, GenericCokernel c d)
+        => Variance To k c d -> Statement
       vldVarianceTo (Variance t@(ConsZeroTrafo _ _ ts) ker coker)
         = And [ Label "1" :<=>: (v == uKer) :?> Params ["v":=show v]
               , Label "2" :<=>: (t1 == fKer) :?> Params ["t1":=show t1]
@@ -269,20 +267,27 @@ instance ( Distributive d
           ConsZero (DiagramChainTo _ (v':|w':|Nil)) = start t
           t0:|t1:|t2:|Nil = ts
 
-          ConeKernel dKer@(DiagramParallelLR _ _ (uKer:|Nil)) fKer         = universalCone ker
-          ConeCokernel dCoker@(DiagramParallelRL _ _ (uCoker:|Nil)) fCoker = universalCone coker
+          ConeKernel dKer@(DiagramParallelLR _ _ (uKer:|Nil)) fKer         = gKernelUniversalCone ker
+          ConeCokernel dCoker@(DiagramParallelRL _ _ (uCoker:|Nil)) fCoker
+            = gCokernelUniversalCone coker
 
-          uw = universalFactor ker (ConeKernel dKer (w * t2))
+          uw  = gKernelUniversalFactor ker (ConeKernel dKer (w * t2))
 
-          uv' = universalFactor coker (ConeCokernel dCoker (v * t1))
--}
+          uv' = gCokernelUniversalFactor coker (ConeCokernel dCoker (v * t1))
 
-{-
+
+
+
+
 --------------------------------------------------------------------------------
 -- vrcTop -
 
 -- | the top 'ConsZero' chain in the diagram for 'Variance'.
-vrcTop :: Distributive d => Variance t d -> ConsZero t N0 d
+vrcTop :: ( Distributive d, Dualisable1 Dst k, Dualisable1 Dst c
+          , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
+          , Dual (Dual k) ~ k, Dual (Dual c) ~ c
+          )
+  => Variance t k c d -> ConsZero t N0 d
 vrcTop v@(Variance d2x3 _ _)         = case d2x3 of
   ConsZeroTrafo _ e _               -> case e of
     ConsZero (DiagramChainTo _ _)   -> e
@@ -292,7 +297,11 @@ vrcTop v@(Variance d2x3 _ _)         = case d2x3 of
 -- vrcBottom -
 
 -- | the bottom 'ConsZero' chain in the diagram for 'Variance'.
-vrcBottom :: Distributive d => Variance t d -> ConsZero t N0 d
+vrcBottom :: ( Distributive d, Dualisable1 Dst k, Dualisable1 Dst c
+             , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
+             , Dual (Dual k) ~ k, Dual (Dual c) ~ c
+             )
+  => Variance t k c d -> ConsZero t N0 d
 vrcBottom v@(Variance d2x3 _ _)      = case d2x3 of
   ConsZeroTrafo s _ _               -> case s of
     ConsZero (DiagramChainTo _ _)   -> s
@@ -302,9 +311,26 @@ vrcBottom v@(Variance d2x3 _ _)      = case d2x3 of
 -- variance -
 
 -- | the variance of a 'ConsZero'.
-variance :: Distributive d
-  => Kernels N1 d -> Cokernels N1 d -> ConsZero t N0 d -> Variance t d
-variance kers cokers e@(ConsZero (DiagramChainTo _ (v:|w:|Nil)))
+variance :: ( GenericKernel k d, GenericCokernel c d
+            )
+  => ConsZero t N0 d -> Variance t k c d
+variance e@(ConsZero (DiagramChainTo _ (v:|w:|Nil)))
+  = Variance (ConsZeroTrafo s e (t0:|t1:|t2:|Nil)) vKer w'Coker where
+  t2 = one $ start w
+
+  dv   = kernelDiagram v
+  vKer = gKernel dv
+  t1   = kernelFactor $ gKernelUniversalCone vKer
+  w'   = gKernelUniversalFactor vKer (ConeKernel dv w)
+
+  dw'     = cokernelDiagram w'
+  w'Coker = gCokernel dw'
+  t0      = gCokernelUniversalFactor w'Coker (ConeCokernel dw' (v * t1))
+  v'      = cokernelFactor $ gCokernelUniversalCone w'Coker
+  
+  s = ConsZero (DiagramChainTo (end v') (v':|w':|Nil))
+
+{-
   = Variance (ConsZeroTrafo s e (t0:|t1:|t2:|Nil)) vKer w'Coker where
   t2 = one $ start w
 
@@ -319,13 +345,22 @@ variance kers cokers e@(ConsZero (DiagramChainTo _ (v:|w:|Nil)))
   v'      = cokernelFactor $ universalCone w'Coker
   
   s = ConsZero (DiagramChainTo (end v') (v':|w':|Nil))
+-}
 
+{-
+variance c@(ConsZero (DiagramChainFrom _ _))
+  = coVarianceInv Refl $ variance $ coConsZero c where
+-}
+
+{-
 variance kers cokers c@(ConsZero (DiagramChainFrom _ _))
   = coVarianceInv Refl $ variance kers' cokers' $ coConsZero c where
 
   kers' = lmsToOp cokrnLimitsDuality cokers
   cokers' = lmsToOp krnLimitsDuality kers
+-}
 
+{-
 --------------------------------------------------------------------------------
 -- variances -
 
