@@ -25,14 +25,17 @@ module OAlg.Limes.Definition
     -- * Limes
     Limes(..)
   , universalPoint
-  , universalCone
+  -- , universalCone
   , universalShell
-  , universalFactor
+  -- , universalFactor
   , diagram, lmDiagramTypeRefl
   , eligibleCone
   , eligibleFactor
   , lmMap
 
+    -- * Universal
+  , Universal(..)
+  
     -- * Duality
   , lmToOp, lmFromOp, LimesDuality(..)
   , coLimes, coLimesInv, lmFromOpOp
@@ -78,6 +81,31 @@ data LimesException
 instance Exception LimesException where
   toException   = oalgExceptionToException
   fromException = oalgExceptionFromException
+
+--------------------------------------------------------------------------------
+-- UniversalType -
+
+-- | type of a 'Universal'.
+data UniversalType p where
+  UniversalProjective :: UniversalType Projective
+  UniversalInjective  :: UniversalType Injective
+  
+--------------------------------------------------------------------------------
+-- Universal -
+
+class Universal l s p t n m a where
+  -- | the type of the universal.
+  universalType :: l s p t n m a -> UniversalType p
+  
+  -- | the underlying universal cone of a limes.
+  universalCone   :: l s p t n m a -> Cone s p t n m a
+
+  -- | the universal factor of a 'Limes' @l@ to a given eligible cone.
+  --
+  -- __Property__ Let @l@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
+  -- For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' l c@
+  -- holds: @'eligibleFactor' l c ('universalFactor' l c)@.  
+  universalFactor :: l s p t n m a -> Cone s p t n m a -> a
 
 --------------------------------------------------------------------------------
 -- Limes -
@@ -131,6 +159,17 @@ instance Oriented a => Eq (Limes s p t n m a) where
   LimesProjective l _ == LimesProjective l' _  = l == l'
   LimesInjective l _ == LimesInjective l' _    = l == l'
 
+instance Universal Limes s p t n m a where
+  universalType (LimesProjective _ _) = UniversalProjective
+  universalType (LimesInjective _ _)  = UniversalInjective
+  
+  universalCone (LimesProjective l _) = l
+  universalCone (LimesInjective l _)  = l
+
+  universalFactor (LimesProjective _ u) = u
+  universalFactor (LimesInjective _ u)  = u
+
+{-
 --------------------------------------------------------------------------------
 -- universalCone -
 
@@ -138,26 +177,26 @@ instance Oriented a => Eq (Limes s p t n m a) where
 universalCone :: Limes s p t n m a -> Cone s p t n m a
 universalCone (LimesProjective l _) = l
 universalCone (LimesInjective l _)  = l
-
+-}
 --------------------------------------------------------------------------------
 -- universalPoint -
 
 -- | the universal point of a limes, i.e. the tip of the universal cone.
-universalPoint :: Limes s p t n m a -> Point a
+universalPoint :: Universal l s p t n m a => l s p t n m a -> Point a
 universalPoint = tip . universalCone
 
 --------------------------------------------------------------------------------
 -- universalShell -
 
 -- | the shell of the universal cone.
-universalShell :: Limes s p t n m a -> FinList n a
+universalShell :: Universal l s p t n m a => l s p t n m a -> FinList n a
 universalShell = shell . universalCone
 
 --------------------------------------------------------------------------------
 -- diagram -
 
 -- | the underlying diagram of a limes.
-diagram :: Limes s p t n m a -> Diagram t n m a
+diagram :: Universal l s p t n m a => l s p t n m a -> Diagram t n m a
 diagram = cnDiagram . universalCone
 
 --------------------------------------------------------------------------------
@@ -168,6 +207,7 @@ lmDiagramTypeRefl :: Limes s p t n m a -> Dual (Dual t) :~: t
 lmDiagramTypeRefl (LimesProjective l _) = cnDiagramTypeRefl l
 lmDiagramTypeRefl (LimesInjective l _)  = cnDiagramTypeRefl l
 
+{-
 --------------------------------------------------------------------------------
 -- universalFactor -
 
@@ -179,6 +219,7 @@ lmDiagramTypeRefl (LimesInjective l _)  = cnDiagramTypeRefl l
 universalFactor :: Limes s p t n m a -> Cone s p t n m a -> a
 universalFactor (LimesProjective _ u) = u
 universalFactor (LimesInjective _ u)  = u
+-}
 
 --------------------------------------------------------------------------------
 -- eligibleCone -
@@ -188,7 +229,8 @@ universalFactor (LimesInjective _ u)  = u
 -- __Property__ Let @u@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@
 -- and @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
 -- @'eligibleCone' u c@ is true if and only if @'diagram' u '==' 'cnDiagram' c@ is true.
-eligibleCone :: Oriented a => Limes s p t n m a -> Cone s p t n m a -> Bool
+eligibleCone :: (Oriented a, Universal l s p t n m a)
+  => l s p t n m a -> Cone s p t n m a -> Bool
 eligibleCone u c = diagram u == cnDiagram c 
 
 --------------------------------------------------------------------------------
@@ -205,10 +247,15 @@ eligibleCone u c = diagram u == cnDiagram c
 --
 -- (2) If @u@ matches @'LimesInjective' l _@ then holds: @'eligibleFactor' u c x@ is true
 -- if and only if @'cnEligibleFactor' x l c@ is true.
-eligibleFactor :: Limes s p t n m a -> Cone s p t n m a -> a -> Bool
+eligibleFactor :: Universal l s p t n m a => l s p t n m a -> Cone s p t n m a -> a -> Bool
+eligibleFactor l c x = case universalType l of
+  UniversalProjective -> cnEligibleFactor x c (universalCone l)
+  UniversalInjective  -> cnEligibleFactor x (universalCone l) c
+  
+{-
 eligibleFactor (LimesProjective l _) c x = cnEligibleFactor x c l
 eligibleFactor (LimesInjective l _) c x  = cnEligibleFactor x l c
-
+-}
 --------------------------------------------------------------------------------
 -- lmMap -
 
