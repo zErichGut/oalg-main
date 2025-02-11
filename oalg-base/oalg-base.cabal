@@ -155,6 +155,7 @@ library
       OAlg.Limes.Proposition
       OAlg.Limes.PullbacksAndPushouts
       OAlg.Limes.TerminalAndInitialPoint
+      OAlg.Limes.Universal
       OAlg.Prelude
       OAlg.Proposition
       OAlg.Structure.Additive
