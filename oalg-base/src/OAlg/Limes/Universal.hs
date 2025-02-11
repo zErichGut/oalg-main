@@ -29,9 +29,10 @@ module OAlg.Limes.Universal
   , diagram -- , lmDiagramTypeRefl
   , eligibleCone
   , eligibleFactor
+  , unvDiagramTypeRefl
 
     -- * Duality
-  , UniversalDuality(..)
+  , UniversalDualisable(..), UniversalDuality(..)
   
     -- * Proposition
   , relUniversal
@@ -125,6 +126,16 @@ class Universal l where
   universalFactor :: l s p t n m x -> Cone s p t n m x -> x
 
 --------------------------------------------------------------------------------
+-- unvDiagramTypeRefl -
+
+-- | reflexivity of the underlying diagram type.
+unvDiagramTypeRefl :: Universal l => l s p t n m a -> Dual (Dual t) :~: t
+unvDiagramTypeRefl = cnDiagramTypeRefl . universalCone
+
+-- unvDiagramTypeRefl (LimesProjective l _) = cnDiagramTypeRefl l
+-- unvDiagramTypeRefl (LimesInjective l _)  = cnDiagramTypeRefl l
+
+--------------------------------------------------------------------------------
 -- universalPoint -
 
 -- | the universal point of a limes, i.e. the tip of the universal cone.
@@ -190,6 +201,14 @@ data UniversalDuality l s f g a where
     -> Dual (Dual p) :~: p
     -> Dual (Dual t) :~: t
     -> UniversalDuality l s f g a
+
+--------------------------------------------------------------------------------
+-- UniversalDualisable -
+
+class UniversalDualisable l where
+  unvToOp   :: UniversalDuality l s f g a -> f a -> g (Op a)
+  unvFromOp :: UniversalDuality l s f g a -> g (Op a) -> f a
+
 
 --------------------------------------------------------------------------------
 -- relUniversal -

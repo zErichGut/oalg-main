@@ -61,6 +61,7 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Limes.Definition
+import OAlg.Limes.Universal
 import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 

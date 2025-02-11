@@ -63,6 +63,7 @@ import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone.Definition
 import OAlg.Limes.Definition
+import OAlg.Limes.Universal
 import OAlg.Limes.Limits
 
 --------------------------------------------------------------------------------

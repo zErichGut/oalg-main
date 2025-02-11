@@ -24,21 +24,10 @@ module OAlg.Limes.Definition
   (
 
     -- * Limes
-    Limes(..)
-  , universalPoint
-  -- , universalCone
-  , universalShell
-  -- , universalFactor
-  , diagram, lmDiagramTypeRefl
-  , eligibleCone
-  , eligibleFactor
-  , lmMap
+    Limes(..), lmDiagramTypeRefl, lmMap
 
-    -- * Universal
-  , Universal(..)
-  
     -- * Duality
-  , lmToOp, lmFromOp, UniversalDuality(..)
+  , lmToOp, lmFromOp
   , coLimes, coLimesInv, lmFromOpOp
 
     -- * Construction
@@ -46,9 +35,6 @@ module OAlg.Limes.Definition
   
     -- * Proposition
   , relLimes
-
-    -- * Exception
-  , UniversalException(..)
 
   ) where
 
@@ -138,8 +124,7 @@ instance Universal Limes where
 
 -- | reflexivity of the underlying diagram type.
 lmDiagramTypeRefl :: Limes s p t n m a -> Dual (Dual t) :~: t
-lmDiagramTypeRefl (LimesProjective l _) = cnDiagramTypeRefl l
-lmDiagramTypeRefl (LimesInjective l _)  = cnDiagramTypeRefl l
+lmDiagramTypeRefl = unvDiagramTypeRefl
 
 --------------------------------------------------------------------------------
 -- lmMap -
@@ -211,6 +196,10 @@ lmToOp (UniversalDuality cs Refl Refl rp rt) = coLimes cs rp rt
 lmFromOp :: UniversalDuality Limes s f g a -> g (Op a) -> f a
 lmFromOp (UniversalDuality cs Refl Refl rp rt) = coLimesInv cs rp rt
 
+instance UniversalDualisable Limes where
+  unvToOp   = lmToOp
+  unvFromOp = lmFromOp
+  
 --------------------------------------------------------------------------------
 -- relLimes -
 

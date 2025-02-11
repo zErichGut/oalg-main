@@ -55,7 +55,7 @@ import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Definition
+import OAlg.Limes.Universal
 import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.Adjunction

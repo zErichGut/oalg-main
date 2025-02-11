@@ -85,6 +85,7 @@ import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.TerminalAndInitialPoint

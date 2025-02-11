@@ -18,6 +18,7 @@ module OAlg.Limes.KernelsAndCokernels
   (
     -- * Kernels
     Kernels, Kernel, KernelCone, KernelDiagram
+  , GenericKernel
   , kernelFactor
   , kernelDiagram
 
@@ -31,6 +32,7 @@ module OAlg.Limes.KernelsAndCokernels
 
     -- * Cokernels
   , Cokernels, Cokernel, CokernelCone, CokernelDiagram
+  , GenericCokernel
   , cokernelFactor
   , cokernelDiagram
 
@@ -50,6 +52,7 @@ module OAlg.Limes.KernelsAndCokernels
   )
   where
 
+import Data.Kind
 import Data.Typeable
 
 import OAlg.Prelude
@@ -64,6 +67,7 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Limes.Cone
+import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.EqualizersAndCoequalizers
@@ -77,8 +81,12 @@ type KernelDiagram n = Diagram (Parallel LeftToRight) N2 n
 -- | 'Cone' for a kernel.
 type KernelCone n = Cone Dst Projective (Parallel LeftToRight) N2 n
 
+-- | generic kenrel over a 'Universal' @__l__@.
+type GenericKernel (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> Type) n
+  = l Dst Projective (Parallel LeftToRight) N2 n
+
 -- | kernel as a 'Limes'.
-type Kernel n = Limes Dst Projective (Parallel LeftToRight) N2 n
+type Kernel n = GenericKernel Limes n
 
 -- | kernels for 'Distributive' structures.
 type Kernels n       = Limits Dst Projective (Parallel LeftToRight) N2 n
@@ -200,8 +208,12 @@ type CokernelDiagram n = Diagram (Parallel RightToLeft) N2 n
 -- | 'Cone' for a cokernel.
 type CokernelCone n = Cone Dst Injective (Parallel RightToLeft) N2 n
 
+-- | generic cokenrel over a 'Universal' @__l__@.
+type GenericCokernel (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> Type) n
+  = l Dst Injective (Parallel RightToLeft) N2 n
+
 -- | cokernel as 'Limes'.
-type Cokernel n = Limes Dst Injective (Parallel RightToLeft) N2 n
+type Cokernel n = GenericCokernel Limes n -- Limes Dst Injective (Parallel RightToLeft) N2 n
 
 -- | cokernels for 'Distributive' structures.
 type Cokernels n       = Limits Dst Injective (Parallel RightToLeft) N2 n

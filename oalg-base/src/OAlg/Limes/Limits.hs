@@ -48,6 +48,7 @@ import OAlg.Hom.Distributive
 import OAlg.Entity.Diagram
 
 import OAlg.Limes.Cone
+import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 
 
