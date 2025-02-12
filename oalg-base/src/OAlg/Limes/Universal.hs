@@ -192,22 +192,21 @@ eligibleFactor l c x = case universalType l of
 -- UniversalOpDuality -
 
 -- | 'Op'-duality between 'Universal' types @__l__@.
-data UniversalOpDuality l s f g a where
+data UniversalOpDuality l s f f' where
   UniversalOpDuality
     :: Universal l
-    => ConeStruct s a
-    -> f a :~: l s p t n m a
-    -> g (Op a) :~: Dual (l s p t n m a)
+    => f  :~: l s p t n m
+    -> f' :~: l s (Dual p) (Dual t) n m
     -> Dual (Dual p) :~: p
     -> Dual (Dual t) :~: t
-    -> UniversalOpDuality l s f g a
+    -> UniversalOpDuality l s f f'
 
 --------------------------------------------------------------------------------
 -- UniversalOpDualisable -
 
-class UniversalOpDualisable l where
-  unvToOp   :: UniversalOpDuality l s f g a -> f a -> g (Op a)
-  unvFromOp :: UniversalOpDuality l s f g a -> g (Op a) -> f a
+class UniversalOpDualisable l s where
+  unvToOp   :: ConeStruct s a -> UniversalOpDuality l s f f' -> f a -> f' (Op a)
+  unvFromOp :: ConeStruct s a -> UniversalOpDuality l s f f' -> f' (Op a) -> f a
 
 --------------------------------------------------------------------------------
 -- relUniversal -

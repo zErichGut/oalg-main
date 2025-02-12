@@ -128,26 +128,27 @@ coLimitsInv cs rp@Refl rt@Refl lms'
 -- LimitsDuality -
 
 -- | 'Op'-duality between limits types.
-data LimitsDuality s f g a where
-  LimitsDuality :: ConeStruct s a
-    -> f a :~: Limits s p t n m a
-    -> g (Op a) :~: Dual (Limits s p t n m a)
-    -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-    -> LimitsDuality s f g a
+data LimitsDuality s f f' where
+  LimitsDuality
+    :: f  :~: Limits s p t n m
+    -> f' :~: Limits s (Dual p) (Dual t) n m
+    -> Dual (Dual p) :~: p
+    -> Dual (Dual t) :~: t
+    -> LimitsDuality s f f'
 
 --------------------------------------------------------------------------------
 -- lmsToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-lmsToOp :: LimitsDuality s f g a -> f a -> g (Op a)
-lmsToOp (LimitsDuality cs Refl Refl rp rt) = coLimits cs rp rt
+lmsToOp :: ConeStruct s a -> LimitsDuality s f f' -> f a -> f' (Op a)
+lmsToOp cs (LimitsDuality Refl Refl rp rt) = coLimits cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmsFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-lmsFromOp :: LimitsDuality s f g a -> g (Op a) -> f a
-lmsFromOp (LimitsDuality cs Refl Refl rp rt) = coLimitsInv cs rp rt
+lmsFromOp :: ConeStruct s a -> LimitsDuality s f f' -> f' (Op a) -> f a
+lmsFromOp cs (LimitsDuality Refl Refl rp rt) = coLimitsInv cs rp rt
 
 --------------------------------------------------------------------------------
 -- prpLimitsDiagram -

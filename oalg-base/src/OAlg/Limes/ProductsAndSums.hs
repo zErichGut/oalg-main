@@ -213,23 +213,23 @@ sumCone d@(DiagramSink p as) = ConeInjective (sumDiagram d) p as
 -- Sum - Duality - 
 
 -- | duality between sums and products.
-sumLimitsDuality :: Multiplicative a => LimitsDuality Mlt (Sums n) (Products n) a
-sumLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+sumLimitsDuality :: LimitsDuality Mlt (Sums n) (Products n)
+sumLimitsDuality = LimitsDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- sums0 -
 
 -- | sums of zero points given by a initial point.
 sums0 :: Multiplicative a => InitialPoint a -> Sums N0 a
-sums0 int = lmsFromOp sumLimitsDuality $ products0 $ lmToOp intLimesDuality int
+sums0 = lmsFromOp ConeStructMlt sumLimitsDuality . products0 . lmToOp ConeStructMlt intLimesDuality
 
 -- | sums of one point, i.e. 'Maxima'.
 sums1 :: Multiplicative a => Sums N1 a
-sums1 = lmsFromOp sumLimitsDuality $ products1
+sums1 = lmsFromOp ConeStructMlt sumLimitsDuality $ products1
 
 -- | sums of at least two points given by sums of two points.
 sums2 :: Multiplicative a => Sums N2 a -> Sums (n+2) a
-sums2 sum2 = lmsFromOp sumLimitsDuality $ products2 $ lmsToOp sumLimitsDuality sum2
+sums2 = lmsFromOp ConeStructMlt sumLimitsDuality . products2 . lmsToOp ConeStructMlt sumLimitsDuality
 
 -- | sums of @n@ points given by sums of zero and two points.
 sums :: Multiplicative a => Sums N0 a -> Sums N2 a -> Sums n a

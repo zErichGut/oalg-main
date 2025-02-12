@@ -139,7 +139,7 @@ data Variance t k c d where
     -> GenericKernel k N1 d -> GenericCokernel c N1 d
     -> Variance t k c d
 
-
+{-
 --------------------------------------------------------------------------------
 -- Variance - Duality -
 
@@ -152,7 +152,7 @@ coVariance kOp (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where
   k' = error "nyi" -- unvToOp kOp k
   c' = error "nyi"
 
-{-
+
 coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c)
   => Variance t k c d -> Dual (Variance t k c d)
 coVariance (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where

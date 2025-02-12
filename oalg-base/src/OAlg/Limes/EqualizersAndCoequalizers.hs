@@ -188,18 +188,17 @@ type Coequalizers n       = Limits Mlt Injective (Parallel RightToLeft) N2 n
 -- Coequalizer - Duality -
 
 -- | duality between coequalizers and equalizers.
-coeqlLimitsDuality :: Multiplicative a
-  => LimitsDuality Mlt (Coequalizers n) (Equalizers n) a
-coeqlLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+coeqlLimitsDuality :: LimitsDuality Mlt (Coequalizers n) (Equalizers n)
+coeqlLimitsDuality = LimitsDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- coequalizers -
 
 -- | coequalizers of @n@ arrows given by sums of two points and coequalizers of two arrows.
 coequalizers :: Multiplicative a => Sums N2 a -> Coequalizers N2 a -> Coequalizers n a
-coequalizers sum2 coeql2 = lmsFromOp coeqlLimitsDuality $ equalizers prd2 eql2 where
-  prd2 = lmsToOp sumLimitsDuality sum2
-  eql2 = lmsToOp coeqlLimitsDuality coeql2
+coequalizers sum2 coeql2 = lmsFromOp ConeStructMlt coeqlLimitsDuality $ equalizers prd2 eql2 where
+  prd2 = lmsToOp ConeStructMlt sumLimitsDuality sum2
+  eql2 = lmsToOp ConeStructMlt coeqlLimitsDuality coeql2
 
 -- | 'coequalizers' given by a proxy for @n@.
 coequalizers' :: Multiplicative a

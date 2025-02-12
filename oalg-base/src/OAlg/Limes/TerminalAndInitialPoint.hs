@@ -129,19 +129,16 @@ trmDiagramDuality :: Oriented a => DiagramDuality TerminalDiagram InitialDiagram
 trmDiagramDuality = DiagramDuality Refl Refl Refl
 
 -- | terminal 'Cone' duality.
-trmConeDuality :: Multiplicative a
-  => ConeDuality Mlt TerminalCone InitialCone a
-trmConeDuality = ConeDuality ConeStructMlt Refl Refl Refl Refl
+trmConeDuality ::ConeDuality Mlt TerminalCone InitialCone
+trmConeDuality = ConeDuality Refl Refl Refl Refl
 
 -- |  terminal 'Limes' duality.
-trmLimesDuality :: Multiplicative a
-  => UniversalOpDuality Limes Mlt TerminalPoint InitialPoint a
-trmLimesDuality = UniversalOpDuality ConeStructMlt Refl Refl Refl Refl
+trmLimesDuality ::UniversalOpDuality Limes Mlt TerminalPoint InitialPoint
+trmLimesDuality = UniversalOpDuality Refl Refl Refl Refl
 
 -- |  terminal 'Limits' duality.
-trmLimitsDuality :: Multiplicative a
-  => LimitsDuality Mlt Terminals Initials a
-trmLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+trmLimitsDuality :: LimitsDuality Mlt Terminals Initials
+trmLimitsDuality = LimitsDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- Duality - Initial -
@@ -151,19 +148,16 @@ intDiagramDuality :: Oriented a => DiagramDuality InitialDiagram TerminalDiagram
 intDiagramDuality = DiagramDuality Refl Refl Refl
 
 -- | initial 'Cone' duality.
-intConeDuality :: Multiplicative a
-  => ConeDuality Mlt InitialCone TerminalCone a
-intConeDuality = ConeDuality ConeStructMlt Refl Refl Refl Refl
+intConeDuality ::ConeDuality Mlt InitialCone TerminalCone
+intConeDuality = ConeDuality Refl Refl Refl Refl
 
 -- | initial 'Limes' duality.
-intLimesDuality :: Multiplicative a
-  => UniversalOpDuality Limes Mlt InitialPoint TerminalPoint a
-intLimesDuality = UniversalOpDuality ConeStructMlt Refl Refl Refl Refl
+intLimesDuality :: UniversalOpDuality Limes Mlt InitialPoint TerminalPoint
+intLimesDuality = UniversalOpDuality Refl Refl Refl Refl
 
 -- | initial 'Limits' duality.
-intLimitsDuality :: Multiplicative a
-  => LimitsDuality Mlt Initials Terminals a
-intLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+intLimitsDuality :: LimitsDuality Mlt Initials Terminals
+intLimitsDuality = LimitsDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- intDiagram -

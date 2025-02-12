@@ -258,26 +258,27 @@ coConeInv cs Refl Refl = cnFromOpOp cs . coCone
 -- ConeDuality -
 
 -- | 'Op'-duality between cone types.
-data ConeDuality s f g a where
-  ConeDuality :: ConeStruct s a
-    -> f a :~: Cone s p t n m a
-    -> g (Op a) :~: Dual (Cone s p t n m a)
-    -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-    -> ConeDuality s f g a
+data ConeDuality s f f' where
+  ConeDuality 
+    :: f  :~: Cone s p t n m
+    -> f' :~: Cone s (Dual p) (Dual t) n m
+    -> Dual (Dual p) :~: p
+    -> Dual (Dual t) :~: t
+    -> ConeDuality s f f'
 
 --------------------------------------------------------------------------------
 -- cnToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-cnToOp :: ConeDuality s f g a -> f a -> g (Op a)
-cnToOp (ConeDuality _ Refl Refl _ _) = coCone
+cnToOp :: ConeStruct s a -> ConeDuality s f f' -> f a -> f' (Op a)
+cnToOp _ (ConeDuality Refl Refl _ _) = coCone
 
 --------------------------------------------------------------------------------
 -- cnFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-cnFromOp :: ConeDuality s f g a -> g (Op a) -> f a
-cnFromOp (ConeDuality cs Refl Refl rp rt) = coConeInv cs rp rt
+cnFromOp :: ConeStruct s a ->  ConeDuality s f f' -> f' (Op a) -> f a
+cnFromOp cs (ConeDuality Refl Refl rp rt) = coConeInv cs rp rt
 
 --------------------------------------------------------------------------------
 -- tip -
