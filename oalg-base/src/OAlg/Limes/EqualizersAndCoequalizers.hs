@@ -51,6 +51,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 
@@ -188,8 +189,8 @@ type Coequalizers n       = Limits Mlt Injective (Parallel RightToLeft) N2 n
 -- Coequalizer - Duality -
 
 -- | duality between coequalizers and equalizers.
-coeqlLimitsDuality :: LimitsDuality Mlt (Coequalizers n) (Equalizers n)
-coeqlLimitsDuality = LimitsDuality Refl Refl Refl Refl
+coeqlLimitsDuality :: OpDuality Limits Mlt (Coequalizers n) (Equalizers n)
+coeqlLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- coequalizers -

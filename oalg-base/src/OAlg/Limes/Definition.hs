@@ -56,6 +56,7 @@ import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Universal
+import OAlg.Limes.OpDuality
 
 --------------------------------------------------------------------------------
 -- Limes -
@@ -152,11 +153,8 @@ type instance Dual (Limes s p t n m a) = Limes s (Dual p) (Dual t) n m (Op a)
 --------------------------------------------------------------------------------
 -- coLimes -
 
-{-
+
 -- | the co limes with its inverse 'coLimesInv'.
-coLimes :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limes s p t n m a -> Dual (Limes s p t n m a)
--}
 coLimes :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Limes s p t n m a -> Limes s (Dual p) (Dual t) n m (Op a)
 coLimes cs rp rt (LimesProjective l u) = LimesInjective l' u' where
@@ -179,12 +177,8 @@ lmFromOpOp cs Refl Refl = case cs of
 --------------------------------------------------------------------------------
 -- coLimesInv -
 
-{-
+
 -- | the inverse of 'coLimes'.
-coLimesInv :: ConeStruct s a
-  -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Dual (Limes s p t n m a) -> Limes s p t n m a
--}
 coLimesInv :: ConeStruct s a
   -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Limes s (Dual p) (Dual t) n m (Op a) -> Limes s p t n m a
@@ -195,19 +189,20 @@ coLimesInv cs rp@Refl rt@Refl
 -- lmToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-lmToOp :: ConeStruct s a -> UniversalOpDuality Limes s f f' -> f a -> f' (Op a)
-lmToOp cs (UniversalOpDuality Refl Refl rp rt) = coLimes cs rp rt
+lmToOp :: ConeStruct s a -> OpDuality Limes s f f' -> f a -> f' (Op a)
+lmToOp cs (OpDuality Refl Refl rp rt) = coLimes cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-lmFromOp :: ConeStruct s a -> UniversalOpDuality Limes s f f' -> f' (Op a) -> f a
-lmFromOp cs (UniversalOpDuality Refl Refl rp rt) = coLimesInv cs rp rt
+lmFromOp :: ConeStruct s a -> OpDuality Limes s f f' -> f' (Op a) -> f a
+lmFromOp cs (OpDuality Refl Refl rp rt) = coLimesInv cs rp rt
 
-instance UniversalOpDualisable Limes s where
-  unvToOp   = lmToOp
-  unvFromOp = lmFromOp
+
+instance OpDualisable Limes s where
+  opdToOp   = lmToOp
+  opdFromOp = lmFromOp
   
 --------------------------------------------------------------------------------
 -- relLimes -

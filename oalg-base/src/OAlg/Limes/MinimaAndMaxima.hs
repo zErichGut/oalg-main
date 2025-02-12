@@ -40,6 +40,7 @@ import OAlg.Entity.Diagram
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 
@@ -97,12 +98,12 @@ type Maxima t n = Limits Mlt Injective (Chain t) (n+1) n
 -- Duality - Max -
 
 -- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.
-maxLimitsDualityTo :: LimitsDuality Mlt (Maxima To n) (Minima From n)
-maxLimitsDualityTo = LimitsDuality Refl Refl Refl Refl
+maxLimitsDualityTo :: OpDuality Limits Mlt (Maxima To n) (Minima From n)
+maxLimitsDualityTo = OpDuality Refl Refl Refl Refl
 
 -- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.
-maxLimitsDualityFrom :: LimitsDuality Mlt (Maxima From n) (Minima To n)
-maxLimitsDualityFrom = LimitsDuality Refl Refl Refl Refl
+maxLimitsDualityFrom :: OpDuality Limits Mlt (Maxima From n) (Minima To n)
+maxLimitsDualityFrom = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- maxima -

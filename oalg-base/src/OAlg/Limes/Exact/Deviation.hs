@@ -10,6 +10,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 -- |
 -- Module      : OAlg.Limes.Exact.Deviation
 -- Description : measuring the deviation of exactness.
@@ -60,6 +62,7 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
 import OAlg.Limes.Definition
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Universal
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
@@ -139,20 +142,21 @@ data Variance t k c d where
     -> GenericKernel k N1 d -> GenericCokernel c N1 d
     -> Variance t k c d
 
-{-
+
 --------------------------------------------------------------------------------
 -- Variance - Duality -
 
 type instance Dual (Variance t k c d) = Variance (Dual t) c k (Op d)
 
-coVariance :: UniversalOpDualisable k
-  => UniversalOpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1) d
+coVariance :: (Distributive d, OpDualisable k Dst, OpDualisable c Dst)
+  => OpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1)
+  -> OpDuality c Dst (GenericCokernel c N1) (GenericKernel c N1)
   -> Variance t k c d -> Dual (Variance t k c d)
-coVariance kOp (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where
-  k' = error "nyi" -- unvToOp kOp k
-  c' = error "nyi"
+coVariance kOp cOp (Variance t k c) = Variance (coConsZeroTrafo t) c' k' where
+  k' = opdToOp ConeStructDst kOp k
+  c' = opdToOp ConeStructDst cOp c
 
-
+{-
 coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c)
   => Variance t k c d -> Dual (Variance t k c d)
 coVariance (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where
@@ -182,32 +186,40 @@ coVarianceInv :: ( Distributive d
                  )
   => Dual (Dual t) :~: t -> Dual (Variance t k c d) -> Variance t k c d
 coVarianceInv Refl = vrcFromOpOp . coVariance
+-}
 
+class OpDualityKernel k where
+  opdKernel :: OpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1)
 
+instance OpDualityKernel Limes where opdKernel = krnLimesDuality
+  
+class OpDualityCokernel c where
+  opdCokernel :: OpDuality c Dst (GenericCokernel c N1) (GenericKernel c N1)
+
+instance OpDualityCokernel Limes where opdCokernel = cokrnLimesDuality
+  
 --------------------------------------------------------------------------------
 -- Variance - Validable -
 
-instance ( GenericKernel k d, GenericCokernel c d
-         , GenericKernel (Dual c) (Op d), GenericCokernel (Dual k) (Op d)
-         , Validable (k d), Validable (c d)
-         , Dualisable1 Dst k, Dualisable1 Dst c
-         -- , XStandardOrtSiteTo d, XStandardOrtSiteFrom d
+instance ( Distributive d, Universal k, Universal c
+         , Validable (GenericKernel k N1 d), Validable (GenericCokernel c N1 d)
+         , OpDualisable k Dst, OpDualisable c Dst
+         , OpDualityKernel k, OpDualityCokernel c
          )
   => Validable (Variance t k c d) where
-  valid v@(Variance t ker coker) = Label "Variance" :<=>:
+  valid v@(Variance t k c) = Label "Variance" :<=>:
     And [ valid t
-        , valid ker
-        , valid coker
+        , valid k
+        , valid c
         , case t of
             ConsZeroTrafo _ (ConsZero (DiagramChainTo _ _)) _
               -> Label "To" :<=>: vldVarianceTo v
             ConsZeroTrafo (ConsZero (DiagramChainFrom _ _)) _ _
-              -> Label "From" :<=>:  vldVarianceTo $ coVariance v
+              -> Label "From" :<=>:  vldVarianceTo $ coVariance opdKernel opdCokernel v
         ]
     where
       
-      vldVarianceTo :: ( GenericKernel k d, GenericCokernel c d)
-        => Variance To k c d -> Statement
+      vldVarianceTo :: (Distributive d, Universal k, Universal c) => Variance To k c d -> Statement
       vldVarianceTo (Variance t@(ConsZeroTrafo _ _ ts) ker coker)
         = And [ Label "1" :<=>: (v == uKer) :?> Params ["v":=show v]
               , Label "2" :<=>: (t1 == fKer) :?> Params ["t1":=show t1]
@@ -222,46 +234,45 @@ instance ( GenericKernel k d, GenericCokernel c d
           ConsZero (DiagramChainTo _ (v':|w':|Nil)) = start t
           t0:|t1:|t2:|Nil = ts
 
-          ConeKernel dKer@(DiagramParallelLR _ _ (uKer:|Nil)) fKer         = gKernelUniversalCone ker
+          ConeKernel dKer@(DiagramParallelLR _ _ (uKer:|Nil)) fKer = universalCone ker
           ConeCokernel dCoker@(DiagramParallelRL _ _ (uCoker:|Nil)) fCoker
-            = gCokernelUniversalCone coker
+            = universalCone coker
 
-          uw  = gKernelUniversalFactor ker (ConeKernel dKer (w * t2))
+          uw  = universalFactor ker (ConeKernel dKer (w * t2))
 
-          uv' = gCokernelUniversalFactor coker (ConeCokernel dCoker (v * t1))
-
-
-
-
+          uv' = universalFactor coker (ConeCokernel dCoker (v * t1))
 
 --------------------------------------------------------------------------------
 -- vrcTop -
 
 -- | the top 'ConsZero' chain in the diagram for 'Variance'.
-vrcTop :: ( Distributive d, Dualisable1 Dst k, Dualisable1 Dst c
-          , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
-          , Dual (Dual k) ~ k, Dual (Dual c) ~ c
+vrcTop :: ( Distributive d
+          , OpDualisable k Dst, OpDualisable c Dst
+          , OpDualityKernel k, OpDualityCokernel c
+          , OpDualityKernel c, OpDualityCokernel k
           )
   => Variance t k c d -> ConsZero t N0 d
 vrcTop v@(Variance d2x3 _ _)         = case d2x3 of
   ConsZeroTrafo _ e _               -> case e of
     ConsZero (DiagramChainTo _ _)   -> e
-    ConsZero (DiagramChainFrom _ _) -> coConsZeroInv Refl $ vrcTop $ coVariance v
+    ConsZero (DiagramChainFrom _ _) -> coConsZeroInv Refl $ vrcTop $ coVariance opdKernel opdCokernel v
     
 --------------------------------------------------------------------------------
 -- vrcBottom -
 
 -- | the bottom 'ConsZero' chain in the diagram for 'Variance'.
-vrcBottom :: ( Distributive d, Dualisable1 Dst k, Dualisable1 Dst c
-             , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
-             , Dual (Dual k) ~ k, Dual (Dual c) ~ c
+vrcBottom :: ( Distributive d
+             , OpDualisable k Dst, OpDualisable c Dst
+             , OpDualityKernel k, OpDualityCokernel c
+             , OpDualityKernel c, OpDualityCokernel k
              )
   => Variance t k c d -> ConsZero t N0 d
 vrcBottom v@(Variance d2x3 _ _)      = case d2x3 of
   ConsZeroTrafo s _ _               -> case s of
     ConsZero (DiagramChainTo _ _)   -> s
-    ConsZero (DiagramChainFrom _ _) -> coConsZeroInv Refl $ vrcBottom $ coVariance v
-
+    ConsZero (DiagramChainFrom _ _)
+      -> coConsZeroInv Refl $ vrcBottom $ coVariance opdKernel opdCokernel v
+{-
 --------------------------------------------------------------------------------
 -- variance -
 

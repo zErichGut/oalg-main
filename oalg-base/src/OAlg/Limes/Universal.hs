@@ -31,9 +31,6 @@ module OAlg.Limes.Universal
   , eligibleFactor
   , unvDiagramTypeRefl
 
-    -- * Duality
-  , UniversalOpDualisable(..), UniversalOpDuality(..)
-  
     -- * Proposition
   , relUniversal
 
@@ -186,27 +183,6 @@ eligibleFactor :: Universal l => l s p t n m a -> Cone s p t n m a -> a -> Bool
 eligibleFactor l c x = case universalType l of
   UniversalProjective -> cnEligibleFactor x c (universalCone l)
   UniversalInjective  -> cnEligibleFactor x (universalCone l) c
-
-
---------------------------------------------------------------------------------
--- UniversalOpDuality -
-
--- | 'Op'-duality between 'Universal' types @__l__@.
-data UniversalOpDuality l s f f' where
-  UniversalOpDuality
-    :: Universal l
-    => f  :~: l s p t n m
-    -> f' :~: l s (Dual p) (Dual t) n m
-    -> Dual (Dual p) :~: p
-    -> Dual (Dual t) :~: t
-    -> UniversalOpDuality l s f f'
-
---------------------------------------------------------------------------------
--- UniversalOpDualisable -
-
-class UniversalOpDualisable l s where
-  unvToOp   :: ConeStruct s a -> UniversalOpDuality l s f f' -> f a -> f' (Op a)
-  unvFromOp :: ConeStruct s a -> UniversalOpDuality l s f f' -> f' (Op a) -> f a
 
 --------------------------------------------------------------------------------
 -- relUniversal -

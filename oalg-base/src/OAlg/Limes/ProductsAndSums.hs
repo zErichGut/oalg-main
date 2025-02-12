@@ -58,6 +58,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
@@ -213,8 +214,8 @@ sumCone d@(DiagramSink p as) = ConeInjective (sumDiagram d) p as
 -- Sum - Duality - 
 
 -- | duality between sums and products.
-sumLimitsDuality :: LimitsDuality Mlt (Sums n) (Products n)
-sumLimitsDuality = LimitsDuality Refl Refl Refl Refl
+sumLimitsDuality :: OpDuality Limits Mlt (Sums n) (Products n)
+sumLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- sums0 -

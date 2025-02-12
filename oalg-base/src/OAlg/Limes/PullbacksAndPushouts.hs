@@ -50,6 +50,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.MinimaAndMaxima
@@ -211,8 +212,8 @@ type Pushouts n       = Limits Mlt Injective (Star From) (n+1) n
 -- Pusouts - Duality -
 
 -- | duality between pushouts and pullbacks.
-pshLimitsDuality :: LimitsDuality Mlt (Pushouts n) (Pullbacks n)
-pshLimitsDuality = LimitsDuality Refl Refl Refl Refl
+pshLimitsDuality :: OpDuality Limits Mlt (Pushouts n) (Pullbacks n)
+pshLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- pushouts -

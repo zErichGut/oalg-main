@@ -67,7 +67,7 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.EqualizersAndCoequalizers
@@ -236,28 +236,28 @@ cokernelDiagram f = DiagramParallelRL (end f) (start f) (f:|Nil)
 -- Cokernels - Duality -
 
 -- | duality between cokernels and kernels.
-cokrnLimitsDuality :: LimitsDuality Dst (Cokernels n) (Kernels n)
-cokrnLimitsDuality = LimitsDuality Refl Refl Refl Refl
+cokrnLimitsDuality :: OpDuality Limits Dst (Cokernels n) (Kernels n)
+cokrnLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokrnLimesDuality -
 
 -- | duality between 'Cokernel' to 'Kernel'.
-cokrnLimesDuality :: UniversalOpDuality Limes Dst (Cokernel n) (Kernel n)
-cokrnLimesDuality = UniversalOpDuality Refl Refl Refl Refl
+cokrnLimesDuality :: OpDuality Limes Dst (Cokernel n) (Kernel n)
+cokrnLimesDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimesDuality -
 
 -- | duality from 'Kernel' to 'Cokernel'.
-krnLimesDuality ::UniversalOpDuality Limes Dst (Kernel n) (Cokernel n)
-krnLimesDuality = UniversalOpDuality Refl Refl Refl Refl
+krnLimesDuality :: OpDuality Limes Dst (Kernel n) (Cokernel n)
+krnLimesDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimitsDuality -
 
-krnLimitsDuality ::  LimitsDuality Dst (Kernels n) (Cokernels n)
-krnLimitsDuality = LimitsDuality Refl Refl Refl Refl
+krnLimitsDuality ::  OpDuality Limits Dst (Kernels n) (Cokernels n)
+krnLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokernels -
