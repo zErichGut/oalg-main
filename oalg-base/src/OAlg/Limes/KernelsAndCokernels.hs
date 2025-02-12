@@ -245,16 +245,16 @@ cokrnLimitsDuality = LimitsDuality ConeStructDst Refl Refl Refl Refl
 
 -- | duality between 'Cokernel' to 'Kernel'.
 cokrnLimesDuality :: Distributive a
-  => UniversalDuality Limes Dst (Cokernel n) (Kernel n) a
-cokrnLimesDuality = UniversalDuality ConeStructDst Refl Refl Refl Refl
+  => UniversalOpDuality Limes Dst (Cokernel n) (Kernel n) a
+cokrnLimesDuality = UniversalOpDuality ConeStructDst Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimesDuality -
 
 -- | duality from 'Kernel' to 'Cokernel'.
 krnLimesDuality :: Distributive a
-  => UniversalDuality Limes Dst (Kernel n) (Cokernel n) a
-krnLimesDuality = UniversalDuality ConeStructDst Refl Refl Refl Refl
+  => UniversalOpDuality Limes Dst (Kernel n) (Cokernel n) a
+krnLimesDuality = UniversalOpDuality ConeStructDst Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimitsDuality -

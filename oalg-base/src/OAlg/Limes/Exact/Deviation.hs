@@ -10,8 +10,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 
-{-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Limes.Exact.Deviation
 -- Description : measuring the deviation of exactness.
@@ -62,6 +60,7 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
 import OAlg.Limes.Definition
+import OAlg.Limes.Universal
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
@@ -69,61 +68,6 @@ import OAlg.Limes.Exact.ConsZero
 
 
 import OAlg.Data.Symbol
-
-{-
---------------------------------------------------------------------------------
--- GenericKernelCokernel -
-
-class Distributive a => GenericKernel l a where
-  gKernel                :: KernelDiagram N1 a -> l a
-  gKernelUniversalCone   :: l a -> KernelCone N1 a
-  gKernelUniversalFactor :: l a -> KernelCone N1 a -> a
-
-instance  GenericKernel (Kernel N1) (Orientation Symbol) where
-  gKernel                = limes $ kernelsOrnt X
-  gKernelUniversalCone   = universalCone
-  gKernelUniversalFactor = universalFactor
-
-class Distributive a => GenericCokernel l a where
-  gCokernel                :: CokernelDiagram N1 a -> l a
-  gCokernelUniversalCone   :: l a -> CokernelCone N1 a
-  gCokernelUniversalFactor :: l a -> CokernelCone N1 a -> a
-
-type instance Dual (Kernel n)   = Cokernel n
-type instance Dual (Cokernel n) = Kernel n
-
-instance (GenericCokernel (Dual k) a) => GenericKernel k (Op a) where
-
-instance (GenericKernel (Dual c) a) => GenericCokernel c (Op a) where
-{-
-instance GenericCokernel (Cokernel N1) a => GenericKernel (Kernel N1) (Op a) where
-  gKernel d = coLimes ConeStructDst Refl Refl $ gCokernel $ coDiagramInv Refl d
--}
-
-class Dualisable1 s f where
-  toDual1 :: Struct s a ->  f a -> Dual f (Op a)
-
-instance Dualisable1 Dst (Kernel n) where
-  toDual1 Struct = coLimes ConeStructDst Refl Refl
-  -- toDual1 = lmToOp krnLimesDuality
-
-instance Dualisable1 Dst (Cokernel n) where
-  toDual1 Struct = coLimes ConeStructDst Refl Refl
-
-
-class Reflexive1 s f where
-  fromOpOp1 :: Struct s a -> f (Op (Op a)) -> f a
-                 
-instance Reflexive1 Dst (Kernel n) where
-  fromOpOp1 Struct = lmFromOpOp ConeStructDst Refl Refl where
-
-type GenericKernelCokernelDuality k c
-  = ( Reflexive1 Dst k, Reflexive1 Dst c
-    , Reflexive1 Dst (Dual c), Reflexive1 Dst (Dual k)
-    , Dualisable1 Dst k, Dualisable1 Dst c
-    , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
-    , Dual (Dual k) ~ k, Dual (Dual c) ~ c
-    )
 
 --------------------------------------------------------------------------------
 -- Variance -
@@ -192,17 +136,23 @@ type GenericKernelCokernelDuality k c
 data Variance t k c d where
   Variance
     :: ConsZeroTrafo t N0 d
-    -> k d -> c d
+    -> GenericKernel k N1 d -> GenericCokernel c N1 d
     -> Variance t k c d
 
 
 --------------------------------------------------------------------------------
 -- Variance - Duality -
 
-type instance Dual (Variance t k c d) = Variance (Dual t) (Dual c) (Dual k) (Op d)
--- UndecidableInstances needet!
+type instance Dual (Variance t k c d) = Variance (Dual t) c k (Op d)
 
+coVariance :: UniversalOpDualisable k
+  => UniversalOpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1) d
+  -> Variance t k c d -> Dual (Variance t k c d)
+coVariance kOp (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where
+  k' = error "nyi" -- unvToOp kOp k
+  c' = error "nyi"
 
+{-
 coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c)
   => Variance t k c d -> Dual (Variance t k c d)
 coVariance (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where

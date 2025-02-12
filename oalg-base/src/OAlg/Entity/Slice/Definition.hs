@@ -705,6 +705,7 @@ instance (Oriented c, Sliced i c, Typeable s) => Oriented (Slice s i c) where
 
 instance (Sliced i c, Ord c) => Ord (Slice s i c) where
   compare (SliceFrom _ a ) (SliceFrom _ b) = compare a b
+  compare (SliceTo _ a) (SliceTo _ b)      = compare a b
   
 --------------------------------------------------------------------------------
 -- Slice From - OrientedOpl -

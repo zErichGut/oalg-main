@@ -135,8 +135,8 @@ trmConeDuality = ConeDuality ConeStructMlt Refl Refl Refl Refl
 
 -- |  terminal 'Limes' duality.
 trmLimesDuality :: Multiplicative a
-  => UniversalDuality Limes Mlt TerminalPoint InitialPoint a
-trmLimesDuality = UniversalDuality ConeStructMlt Refl Refl Refl Refl
+  => UniversalOpDuality Limes Mlt TerminalPoint InitialPoint a
+trmLimesDuality = UniversalOpDuality ConeStructMlt Refl Refl Refl Refl
 
 -- |  terminal 'Limits' duality.
 trmLimitsDuality :: Multiplicative a
@@ -157,8 +157,8 @@ intConeDuality = ConeDuality ConeStructMlt Refl Refl Refl Refl
 
 -- | initial 'Limes' duality.
 intLimesDuality :: Multiplicative a
-  => UniversalDuality Limes Mlt InitialPoint TerminalPoint a
-intLimesDuality = UniversalDuality ConeStructMlt Refl Refl Refl Refl
+  => UniversalOpDuality Limes Mlt InitialPoint TerminalPoint a
+intLimesDuality = UniversalOpDuality ConeStructMlt Refl Refl Refl Refl
 
 -- | initial 'Limits' duality.
 intLimitsDuality :: Multiplicative a

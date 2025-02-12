@@ -32,7 +32,7 @@ module OAlg.Limes.Universal
   , unvDiagramTypeRefl
 
     -- * Duality
-  , UniversalDualisable(..), UniversalDuality(..)
+  , UniversalOpDualisable(..), UniversalOpDuality(..)
   
     -- * Proposition
   , relUniversal
@@ -189,26 +189,25 @@ eligibleFactor l c x = case universalType l of
 
 
 --------------------------------------------------------------------------------
--- UniversalDuality -
+-- UniversalOpDuality -
 
 -- | 'Op'-duality between 'Universal' types @__l__@.
-data UniversalDuality l s f g a where
-  UniversalDuality
+data UniversalOpDuality l s f g a where
+  UniversalOpDuality
     :: Universal l
     => ConeStruct s a
     -> f a :~: l s p t n m a
     -> g (Op a) :~: Dual (l s p t n m a)
     -> Dual (Dual p) :~: p
     -> Dual (Dual t) :~: t
-    -> UniversalDuality l s f g a
+    -> UniversalOpDuality l s f g a
 
 --------------------------------------------------------------------------------
--- UniversalDualisable -
+-- UniversalOpDualisable -
 
-class UniversalDualisable l where
-  unvToOp   :: UniversalDuality l s f g a -> f a -> g (Op a)
-  unvFromOp :: UniversalDuality l s f g a -> g (Op a) -> f a
-
+class UniversalOpDualisable l where
+  unvToOp   :: UniversalOpDuality l s f g a -> f a -> g (Op a)
+  unvFromOp :: UniversalOpDuality l s f g a -> g (Op a) -> f a
 
 --------------------------------------------------------------------------------
 -- relUniversal -

@@ -186,17 +186,17 @@ coLimesInv cs rp@Refl rt@Refl
 -- lmToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-lmToOp :: UniversalDuality Limes s f g a -> f a -> g (Op a)
-lmToOp (UniversalDuality cs Refl Refl rp rt) = coLimes cs rp rt
+lmToOp :: UniversalOpDuality Limes s f g a -> f a -> g (Op a)
+lmToOp (UniversalOpDuality cs Refl Refl rp rt) = coLimes cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-lmFromOp :: UniversalDuality Limes s f g a -> g (Op a) -> f a
-lmFromOp (UniversalDuality cs Refl Refl rp rt) = coLimesInv cs rp rt
+lmFromOp :: UniversalOpDuality Limes s f g a -> g (Op a) -> f a
+lmFromOp (UniversalOpDuality cs Refl Refl rp rt) = coLimesInv cs rp rt
 
-instance UniversalDualisable Limes where
+instance UniversalOpDualisable Limes where
   unvToOp   = lmToOp
   unvFromOp = lmFromOp
   
