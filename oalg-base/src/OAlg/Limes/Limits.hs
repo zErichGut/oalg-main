@@ -23,7 +23,7 @@ module OAlg.Limes.Limits
     Limits(..), limes, lmsMap
 
     -- * Duality
-  , lmsToOp, lmsFromOp, LimitsDuality(..)
+  , lmsToOp, lmsFromOp
   , coLimits, coLimitsInv, lmsFromOpOp
 
     -- * Construction
@@ -50,7 +50,7 @@ import OAlg.Entity.Diagram
 import OAlg.Limes.Cone
 import OAlg.Limes.Universal
 import OAlg.Limes.Definition
-
+import OAlg.Limes.OpDuality
 
 --------------------------------------------------------------------------------
 -- Limits -
@@ -125,30 +125,26 @@ coLimitsInv cs rp@Refl rt@Refl lms'
   = lmsFromOpOp cs rp rt $ coLimits (cnStructOp cs) Refl Refl lms'
 
 --------------------------------------------------------------------------------
--- LimitsDuality -
-
--- | 'Op'-duality between limits types.
-data LimitsDuality s f g a where
-  LimitsDuality :: ConeStruct s a
-    -> f a :~: Limits s p t n m a
-    -> g (Op a) :~: Dual (Limits s p t n m a)
-    -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-    -> LimitsDuality s f g a
-
---------------------------------------------------------------------------------
 -- lmsToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-lmsToOp :: LimitsDuality s f g a -> f a -> g (Op a)
-lmsToOp (LimitsDuality cs Refl Refl rp rt) = coLimits cs rp rt
+lmsToOp :: ConeStruct s a -> OpDuality Limits s f f' -> f a -> f' (Op a)
+lmsToOp cs (OpDuality Refl Refl rp rt) = coLimits cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmsFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-lmsFromOp :: LimitsDuality s f g a -> g (Op a) -> f a
-lmsFromOp (LimitsDuality cs Refl Refl rp rt) = coLimitsInv cs rp rt
+lmsFromOp :: ConeStruct s a -> OpDuality Limits s f f' -> f' (Op a) -> f a
+lmsFromOp cs (OpDuality Refl Refl rp rt) = coLimitsInv cs rp rt
 
+--------------------------------------------------------------------------------
+-- Limits - OpDualisable -
+
+instance OpDualisable Limits s where
+  opdToOp   = lmsToOp
+  opdFromOp = lmsFromOp
+  
 --------------------------------------------------------------------------------
 -- prpLimitsDiagram -
 

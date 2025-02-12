@@ -35,7 +35,7 @@ module OAlg.Limes.Cone.Definition
   , coConeZeroHead, czFromOpOp, coConeZeroHeadInv
   
     -- ** Duality
-  , cnToOp, cnFromOp, ConeDuality(..)
+  , cnToOp, cnFromOp, ConeDuality
   , coCone, coConeInv, cnFromOpOp
 
     -- * Cone Struct
@@ -73,7 +73,9 @@ import OAlg.Hom.Distributive
 import OAlg.Hom.Definition
 
 import OAlg.Limes.Perspective
+import OAlg.Limes.OpDuality
 
+import OAlg.Limes.Cone.Structure
 --------------------------------------------------------------------------------
 -- Cone -
 
@@ -124,45 +126,6 @@ data Cone s p t n m a where
   ConeCokernel   :: Distributive a
     => Diagram (Parallel RightToLeft) N2 m a -> a
     -> Cone Dst Injective (Parallel RightToLeft) N2 m a
-
-
---------------------------------------------------------------------------------
--- ConeStruct -
-
--- | cone structures.
-data ConeStruct s a where
-  ConeStructMlt :: Multiplicative a => ConeStruct Mlt a
-  ConeStructDst :: Distributive a => ConeStruct Dst a
-
-deriving instance Show (ConeStruct s a)
-deriving instance Eq (ConeStruct s a)
-
---------------------------------------------------------------------------------
--- cnStructOp -
-
--- | the opposite cone structure.
-cnStructOp :: ConeStruct s a -> ConeStruct s (Op a)
-cnStructOp cs = case cs of
-  ConeStructMlt -> ConeStructMlt
-  ConeStructDst -> ConeStructDst
-
---------------------------------------------------------------------------------
--- cnStructMlt -
-
--- | the 'Multiplicative' structure of a cone structure.
-cnStructMlt :: ConeStruct s a -> Struct Mlt a
-cnStructMlt cs = case cs of
-  ConeStructMlt -> Struct
-  ConeStructDst -> Struct
-
---------------------------------------------------------------------------------
--- cnStruct -
-
--- | the associated structure of a cone structure.
-cnStruct :: ConeStruct s a -> Struct s a
-cnStruct cs = case cs of
-  ConeStructMlt -> Struct
-  ConeStructDst -> Struct
 
 --------------------------------------------------------------------------------
 -- cnDiagram -
@@ -257,28 +220,30 @@ coConeInv cs Refl Refl = cnFromOpOp cs . coCone
 --------------------------------------------------------------------------------
 -- ConeDuality -
 
--- | 'Op'-duality between cone types.
-data ConeDuality s f g a where
-  ConeDuality :: ConeStruct s a
-    -> f a :~: Cone s p t n m a
-    -> g (Op a) :~: Dual (Cone s p t n m a)
-    -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-    -> ConeDuality s f g a
+-- | 'OpDuality' for 'Cone's.
+type ConeDuality = OpDuality Cone
 
 --------------------------------------------------------------------------------
 -- cnToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-cnToOp :: ConeDuality s f g a -> f a -> g (Op a)
-cnToOp (ConeDuality _ Refl Refl _ _) = coCone
+cnToOp :: ConeStruct s a -> ConeDuality s f f' -> f a -> f' (Op a)
+cnToOp _ (OpDuality Refl Refl _ _) = coCone
 
 --------------------------------------------------------------------------------
 -- cnFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-cnFromOp :: ConeDuality s f g a -> g (Op a) -> f a
-cnFromOp (ConeDuality cs Refl Refl rp rt) = coConeInv cs rp rt
+cnFromOp :: ConeStruct s a ->  ConeDuality s f f' -> f' (Op a) -> f a
+cnFromOp cs (OpDuality Refl Refl rp rt) = coConeInv cs rp rt
 
+--------------------------------------------------------------------------------
+-- Cone - Dualisable -
+
+instance OpDualisable Cone s where
+  opdToOp   = cnToOp
+  opdFromOp = cnFromOp
+  
 --------------------------------------------------------------------------------
 -- tip -
 

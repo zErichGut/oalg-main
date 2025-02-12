@@ -50,6 +50,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.MinimaAndMaxima
@@ -211,17 +212,16 @@ type Pushouts n       = Limits Mlt Injective (Star From) (n+1) n
 -- Pusouts - Duality -
 
 -- | duality between pushouts and pullbacks.
-pshLimitsDuality :: Multiplicative a
-  => LimitsDuality Mlt (Pushouts n) (Pullbacks n) a
-pshLimitsDuality = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+pshLimitsDuality :: OpDuality Limits Mlt (Pushouts n) (Pullbacks n)
+pshLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- pushouts -
 
 -- | promotion of pushouts.
 pushouts :: Multiplicative a => Pushouts N2 a -> Pushouts n a
-pushouts psh2 = lmsFromOp pshLimitsDuality $ pullbacks plb2 where
-  plb2 = lmsToOp pshLimitsDuality psh2
+pushouts psh2 = lmsFromOp ConeStructMlt pshLimitsDuality $ pullbacks plb2 where
+  plb2 = lmsToOp ConeStructMlt pshLimitsDuality psh2
 
 -- | 'pushouts' given by a proxy for @n@.
 pushouts' :: Multiplicative a => p n -> Pushouts N2 a -> Pushouts n a
@@ -239,7 +239,7 @@ pushoutsOrnt = lmsFromInjOrnt
 
 -- | pushouts given by sums and coequalizers.
 pshSumCoeql2 :: Multiplicative a => Sums N2 a -> Coequalizers N2 a -> Pushouts N2 a
-pshSumCoeql2 sum coeql = lmsFromOp pshLimitsDuality $ plbPrdEql2 prd eql where
-  prd = lmsToOp sumLimitsDuality sum
-  eql = lmsToOp coeqlLimitsDuality coeql
+pshSumCoeql2 sum coeql = lmsFromOp ConeStructMlt pshLimitsDuality $ plbPrdEql2 prd eql where
+  prd = lmsToOp ConeStructMlt sumLimitsDuality sum
+  eql = lmsToOp ConeStructMlt coeqlLimitsDuality coeql
 

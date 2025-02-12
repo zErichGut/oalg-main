@@ -40,6 +40,7 @@ import OAlg.Entity.Diagram
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 
@@ -97,24 +98,23 @@ type Maxima t n = Limits Mlt Injective (Chain t) (n+1) n
 -- Duality - Max -
 
 -- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.
-maxLimitsDualityTo :: Multiplicative a => LimitsDuality Mlt (Maxima To n) (Minima From n) a
-maxLimitsDualityTo = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+maxLimitsDualityTo :: OpDuality Limits Mlt (Maxima To n) (Minima From n)
+maxLimitsDualityTo = OpDuality Refl Refl Refl Refl
 
 -- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.
-maxLimitsDualityFrom :: Multiplicative a
-  => LimitsDuality Mlt (Maxima From n) (Minima To n) a
-maxLimitsDualityFrom = LimitsDuality ConeStructMlt Refl Refl Refl Refl
+maxLimitsDualityFrom :: OpDuality Limits Mlt (Maxima From n) (Minima To n)
+maxLimitsDualityFrom = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- maxima -
 
 -- | maxima according to @'Chain' 'To'@.
 maximaTo :: Multiplicative a => Maxima To n a
-maximaTo = lmsFromOp maxLimitsDualityTo minimaFrom
+maximaTo = lmsFromOp ConeStructMlt maxLimitsDualityTo minimaFrom
 
 -- | maxima according to @'Chain' 'From'@.
 maximaFrom :: Multiplicative a => Maxima From n a
-maximaFrom = lmsFromOp maxLimitsDualityFrom minimaTo
+maximaFrom = lmsFromOp ConeStructMlt maxLimitsDualityFrom minimaTo
 
 -- | maxima according to @'Chain' 'To'@ given by two proxy types.
 maximaTo' :: Multiplicative a => p n -> f a -> Maxima To n a

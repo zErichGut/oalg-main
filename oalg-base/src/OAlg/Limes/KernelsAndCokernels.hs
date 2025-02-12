@@ -67,7 +67,7 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.EqualizersAndCoequalizers
@@ -236,40 +236,36 @@ cokernelDiagram f = DiagramParallelRL (end f) (start f) (f:|Nil)
 -- Cokernels - Duality -
 
 -- | duality between cokernels and kernels.
-cokrnLimitsDuality :: Distributive a
-  => LimitsDuality Dst (Cokernels n) (Kernels n) a
-cokrnLimitsDuality = LimitsDuality ConeStructDst Refl Refl Refl Refl
+cokrnLimitsDuality :: OpDuality Limits Dst (Cokernels n) (Kernels n)
+cokrnLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokrnLimesDuality -
 
 -- | duality between 'Cokernel' to 'Kernel'.
-cokrnLimesDuality :: Distributive a
-  => UniversalOpDuality Limes Dst (Cokernel n) (Kernel n) a
-cokrnLimesDuality = UniversalOpDuality ConeStructDst Refl Refl Refl Refl
+cokrnLimesDuality :: OpDuality Limes Dst (Cokernel n) (Kernel n)
+cokrnLimesDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimesDuality -
 
 -- | duality from 'Kernel' to 'Cokernel'.
-krnLimesDuality :: Distributive a
-  => UniversalOpDuality Limes Dst (Kernel n) (Cokernel n) a
-krnLimesDuality = UniversalOpDuality ConeStructDst Refl Refl Refl Refl
+krnLimesDuality :: OpDuality Limes Dst (Kernel n) (Cokernel n)
+krnLimesDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimitsDuality -
 
-krnLimitsDuality :: Distributive a
-  => LimitsDuality Dst (Kernels n) (Cokernels n) a
-krnLimitsDuality = LimitsDuality ConeStructDst  Refl Refl Refl Refl
+krnLimitsDuality ::  OpDuality Limits Dst (Kernels n) (Cokernels n)
+krnLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokernels -
 
 -- | promoting cokernels.
 cokernels :: Distributive a => Cokernels N1 a -> Cokernels n a
-cokernels ckrn = lmsFromOp cokrnLimitsDuality $ kernels krn where
-  krn = lmsToOp cokrnLimitsDuality ckrn
+cokernels ckrn = lmsFromOp ConeStructDst cokrnLimitsDuality $ kernels krn where
+  krn = lmsToOp ConeStructDst cokrnLimitsDuality ckrn
 
 -- | 'cokernels' given by an additional proxy for @n@.
 cokernels' :: Distributive a => p n -> Cokernels N1 a -> Cokernels n a
@@ -325,7 +321,7 @@ prpIsKernel ker fs k = Prp "IsKernel" :<=>: relIsKernel ker fs k
 -- (2) @k '==' k'@.
 prpIsCokernel :: Distributive a => Cokernel n a -> FinList n a -> a -> Statement
 prpIsCokernel coker fs k = Prp "IsCokernel" :<=>: relIsKernel ker (amap1 Op fs) (Op k)
-  where ker = lmToOp cokrnLimesDuality coker
+  where ker = lmToOp ConeStructDst cokrnLimesDuality coker
   
 
 

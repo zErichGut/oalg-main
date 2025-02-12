@@ -85,7 +85,7 @@ mtxProducts = Limits prd where
 
 -- | sums for matrices.
 mtxSums :: Distributive x => Sums n (Matrix x)
-mtxSums = lmsFromOp sumLimitsDuality $ lmsMap isoToOp $ mtxProducts where
+mtxSums = lmsFromOp ConeStructMlt sumLimitsDuality $ lmsMap isoToOp $ mtxProducts where
   isoToOp :: Distributive x => IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x)) 
   isoToOp = invert2 isoCoMatrixDst
 
