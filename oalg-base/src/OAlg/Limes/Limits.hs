@@ -71,7 +71,7 @@ newtype Limits l s (p :: Perspective) t n m a
 -- | the limes over the given diagram.
 limes :: Limits l s p t n m a -> Diagram t n m a -> l s p t n m a
 limes (Limits lm) = lm
-
+{-
 --------------------------------------------------------------------------------
 -- lmsMap -
 
@@ -99,56 +99,49 @@ type instance Dual (Limits l s p t n m a) = Limits l s (Dual p) (Dual t) n m (Op
 --------------------------------------------------------------------------------
 -- coLimits -
 
-gg :: Diagram (Dual t) n m a ->  Dual (Dual t) :~: t
-gg DiagramEmpty = error "nyi"
-
 -- | the co limits wit its inverse 'coLimitsInv'.
--- coLimits :: OpDualisable l s => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-coLimits :: (OpDualisable l s, Oriented a) => ConeStruct s a
-  -> OpDuality l s (l s p t n m) (l s (Dual p) (Dual t) n m)
-  -> Dual (Dual t) :~: t
+coLimits :: OpDualisable l s
+  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Limits l s p t n m a -> Dual (Limits l s p t n m a)
-coLimits cs opd rt (Limits lm) = Limits lm' where
-  lm' d' = opdToOp cs opd $ lm $ coDiagramInv rt d'
-
-{-
 coLimits cs rp rt (Limits lm) = Limits lm' where
   lm' d' = case cnStructMlt cs of
-    Struct -> coLimes cs rp rt $ lm $ coDiagramInv rt d'
--}
-{-
+    Struct -> opdToOp cs (OpDuality Refl Refl rp rt) $ lm $ coDiagramInv rt d'
+
 --------------------------------------------------------------------------------
 -- lmsFromOpOp -
 
 -- | from the bidual.
-lmsFromOpOp :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limits s p t n m (Op (Op a)) -> Limits s p t n m a
-lmsFromOpOp cs Refl Refl = case cs of
-  ConeStructMlt -> lmsMap isoFromOpOpMlt
-  ConeStructDst -> lmsMap isoFromOpOpDst
+lmsFromOpOp :: UniversalApplicative1 (IsoOp s) l s p t n m
+  => ConeStruct s a -> Limits l s p t n m (Op (Op a)) -> Limits l s p t n m a
+lmsFromOpOp cs = amap1 (isoFromOpOp cs)  where
+  isoFromOpOp :: ConeStruct s a -> IsoOp s (Op (Op a)) a
+  isoFromOpOp cs = case cs of
+    ConeStructMlt -> isoFromOpOpMlt
+    ConeStructDst -> isoFromOpOpDst
 
 --------------------------------------------------------------------------------
 -- coLimitsInv -
 
 -- | from the co limits, with its inverse of 'coLimits'.
-coLimitsInv :: ConeStruct s a
-  -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Dual (Limits s p t n m a) -> Limits s p t n m a
-coLimitsInv cs rp@Refl rt@Refl lms'
-  = lmsFromOpOp cs rp rt $ coLimits (cnStructOp cs) Refl Refl lms'
+coLimitsInv :: (OpDualisable l s, UniversalApplicative1 (IsoOp s) l s p t n m)
+  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> Dual (Limits l s p t n m a) -> Limits l s p t n m a
+coLimitsInv cs Refl Refl lms'
+  = lmsFromOpOp cs $ coLimits (cnStructOp cs) Refl Refl lms'
 
 --------------------------------------------------------------------------------
 -- lmsToOp -
 
 -- | to @__g__ ('Op' __a__)@.
-lmsToOp :: ConeStruct s a -> OpDuality Limits s f f' -> f a -> f' (Op a)
+lmsToOp :: OpDualisable l s => ConeStruct s a -> OpDuality (Limits l) s f f' -> f a -> f' (Op a)
 lmsToOp cs (OpDuality Refl Refl rp rt) = coLimits cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmsFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-lmsFromOp :: ConeStruct s a -> OpDuality Limits s f f' -> f' (Op a) -> f a
+lmsFromOp :: (OpDualisable l s, UniversalApplicative1 (IsoOp s) l s p t n m)
+  => ConeStruct s a -> OpDuality (Limits l) s f f' -> f' (Op a) -> f a
 lmsFromOp cs (OpDuality Refl Refl rp rt) = coLimitsInv cs rp rt
 
 --------------------------------------------------------------------------------

@@ -135,10 +135,13 @@ class Universal l where
 
 -- | applications on 'Universal's.
 --
--- __Properties__ Let @h@ be in @'Hom' __s__ __h__@ and @l@ be in @'Universal' __l__@, then holds:
+-- __Properties__ Let @h@ be in @'IsoOrt' __s__ __h__ __a__ __b__@ and @__l__@ a @'Universal' __l__@,
+-- then holds:
 --
--- (1) @'unversalCone' ('amap1' h u) '==' 'amap1' h ('univeralCone' u)@.
-class (IsoOrt s h, Universal l, Applicative1 h (l s p t n m)) => UniversalApplicative1 h l s p t n m
+-- (1) For all @a@ in @__l__ __s__ __p__ __t__ __n__ __m__ __a__@ holds:
+-- @'unversalCone' ('umap1' h a) '==' 'amap1' h ('univeralCone' u)@.
+class (IsoOrt s h, Universal l) => UniversalApplicative1 h l s where
+  umap1 :: h a b -> l s p t n m a -> l s p t n m b
 -- needs UndecidableSuperClasses to compile!
 
 --------------------------------------------------------------------------------
