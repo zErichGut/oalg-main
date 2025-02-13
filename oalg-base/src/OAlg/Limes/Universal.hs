@@ -12,6 +12,9 @@
   , DataKinds
 #-}
 
+{-# LANGUAGE UndecidableSuperClasses #-}
+-- needed to complie 'UniversalApplicative1'.
+
 -- |
 -- Module      : OAlg.Limes.Universal
 -- Description : definition of a limes of a diagram.
@@ -30,6 +33,9 @@ module OAlg.Limes.Universal
   , eligibleCone
   , eligibleFactor
   , unvDiagramTypeRefl
+
+    -- * Applicative
+  , UniversalApplicative1
 
     -- * Proposition
   , relUniversal
@@ -50,6 +56,8 @@ import OAlg.Entity.FinList
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+
+import OAlg.Hom.Oriented.Definition
 
 import OAlg.Limes.Cone
 
@@ -79,7 +87,7 @@ data UniversalType p where
 -- | universal of a diagram, i.e. a distinguished cone over a given diagram
 -- having the following /universal/ property
 --
--- __Property__ Let @u@ an in @__l__ __s__ __p__ __t__ __n__ __m__ __x__@ for a
+-- __Property__ Let @u@ be in @__l__ __s__ __p__ __t__ __n__ __m__ __x__@ for a
 -- @'Universal' __l___@ and __@x@__ a 'Mulitplicative' structure, then holds:
 -- Let @l = 'universalCone' u@ in
 --
@@ -121,6 +129,17 @@ class Universal l where
   -- For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' l c@
   -- holds: @'eligibleFactor' l c ('universalFactor' l c)@.  
   universalFactor :: l s p t n m x -> Cone s p t n m x -> x
+
+--------------------------------------------------------------------------------
+-- UniversalApplicative1 -
+
+-- | applications on 'Universal's.
+--
+-- __Properties__ Let @h@ be in @'Hom' __s__ __h__@ and @l@ be in @'Universal' __l__@, then holds:
+--
+-- (1) @'unversalCone' ('amap1' h u) '==' 'amap1' h ('univeralCone' u)@.
+class (IsoOrt s h, Universal l, Applicative1 h (l s p t n m)) => UniversalApplicative1 h l s p t n m
+-- needs UndecidableSuperClasses to compile!
 
 --------------------------------------------------------------------------------
 -- unvDiagramTypeRefl -

@@ -134,8 +134,8 @@ lmDiagramTypeRefl = unvDiagramTypeRefl
 lmMap :: IsoOrt s h
   => h a b -> Limes s p t n m a -> Limes s p t n m b
 lmMap h l = case l of
-  LimesProjective t u   -> LimesProjective (t' h t) (u' h u)
-  LimesInjective t u -> LimesInjective  (t' h t) (u' h u)
+  LimesProjective t u -> LimesProjective (t' h t) (u' h u)
+  LimesInjective t u  -> LimesInjective  (t' h t) (u' h u)
   where t' h t = cnMap h t
         u' h u c = h $ u $ cnMap (invert2 h) c
 

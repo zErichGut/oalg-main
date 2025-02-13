@@ -7,7 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, RankNTypes #-}
 
 -- |
 -- Module      : OAlg.Limes.Limits
@@ -19,6 +19,7 @@
 -- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.
 module OAlg.Limes.Limits
   (
+{-    
     -- * Limits
     Limits(..), limes, lmsMap
 
@@ -31,6 +32,7 @@ module OAlg.Limes.Limits
   
     -- * Proposition
   , prpLimits, prpLimitsDiagram
+-}
   ) where
 
 import Data.Typeable
@@ -60,50 +62,61 @@ import OAlg.Limes.OpDuality
 -- __Property__ Let @lms@ be in @'Limits' __s__ __p__ __t__ __n__ __m__ __a__@
 -- and @d@ in @'Diagram' __t__ __n__ __m__ __a__@ then holds:
 -- @'diagram' ('limes' lms d) '==' d@.
-newtype Limits s p t n m a
-  = Limits (Diagram t n m a -> Limes s p t n m a)
+newtype Limits l s (p :: Perspective) t n m a
+  = Limits (Diagram t n m a -> l s p t n m a)
 
 --------------------------------------------------------------------------------
 -- limes -
 
 -- | the limes over the given diagram.
-limes :: Limits s p t n m a -> Diagram t n m a -> Limes s p t n m a
+limes :: Limits l s p t n m a -> Diagram t n m a -> l s p t n m a
 limes (Limits lm) = lm
 
 --------------------------------------------------------------------------------
 -- lmsMap -
 
 -- | mapping of limits.
-lmsMap :: IsoOrt s h
-  => h a b -> Limits s p t n m a -> Limits s p t n m b
+-- lmsMap :: UniversalApplicative1 h l s p t n m
+lmsMap :: UniversalApplicative1 h l s p t n m
+  => h a b -> Limits l s p t n m a -> Limits l s p t n m b
 lmsMap h (Limits ls) = Limits (ls' h ls) where
-  ls' h ls d' = lmMap h $ ls $ dgMap h' d' where
-    h' = invert2 h 
+  ls' h ls d' = amap1 h $ ls $ dgMap h' d'
+  h'          = invert2 h 
+
 
 --------------------------------------------------------------------------------
 -- Limits - Applicative1 -
 
-instance IsoMultiplicative h => Applicative1 h (Limits Mlt p t n m) where
-  amap1 = lmsMap
-
-instance IsoDistributive h => Applicative1 h (Limits Dst p t n m) where
+instance UniversalApplicative1 h l s p t n m => Applicative1 h (Limits l s p t n m) where
   amap1 = lmsMap
 
 --------------------------------------------------------------------------------
 -- Limits - Daul -
 
-type instance Dual (Limits s p t n m a) = Limits s (Dual p) (Dual t) n m (Op a)
+type instance Dual (Limits l s p t n m a) = Limits l s (Dual p) (Dual t) n m (Op a)
+
 
 --------------------------------------------------------------------------------
 -- coLimits -
 
+gg :: Diagram (Dual t) n m a ->  Dual (Dual t) :~: t
+gg DiagramEmpty = error "nyi"
+
 -- | the co limits wit its inverse 'coLimitsInv'.
-coLimits :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limits s p t n m a -> Dual (Limits s p t n m a)
+-- coLimits :: OpDualisable l s => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+coLimits :: (OpDualisable l s, Oriented a) => ConeStruct s a
+  -> OpDuality l s (l s p t n m) (l s (Dual p) (Dual t) n m)
+  -> Dual (Dual t) :~: t
+  -> Limits l s p t n m a -> Dual (Limits l s p t n m a)
+coLimits cs opd rt (Limits lm) = Limits lm' where
+  lm' d' = opdToOp cs opd $ lm $ coDiagramInv rt d'
+
+{-
 coLimits cs rp rt (Limits lm) = Limits lm' where
   lm' d' = case cnStructMlt cs of
     Struct -> coLimes cs rp rt $ lm $ coDiagramInv rt d'
-
+-}
+{-
 --------------------------------------------------------------------------------
 -- lmsFromOpOp -
 
@@ -195,3 +208,4 @@ lmsToPrjOrnt = Limits . lmToPrjOrnt
 lmsFromInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
 lmsFromInjOrnt = Limits . lmFromInjOrnt  
 
+-}
