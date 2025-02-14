@@ -9,6 +9,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 -- |
 -- Module      : OAlg.Limes.Limits
 -- Description : limits of diagrams
@@ -19,7 +21,6 @@
 -- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.
 module OAlg.Limes.Limits
   (
-{-    
     -- * Limits
     Limits(..), limes, lmsMap
 
@@ -32,7 +33,7 @@ module OAlg.Limes.Limits
   
     -- * Proposition
   , prpLimits, prpLimitsDiagram
--}
+
   ) where
 
 import Data.Typeable
@@ -71,30 +72,28 @@ newtype Limits l s (p :: Perspective) t n m a
 -- | the limes over the given diagram.
 limes :: Limits l s p t n m a -> Diagram t n m a -> l s p t n m a
 limes (Limits lm) = lm
-{-
+
 --------------------------------------------------------------------------------
 -- lmsMap -
 
 -- | mapping of limits.
--- lmsMap :: UniversalApplicative1 h l s p t n m
-lmsMap :: UniversalApplicative1 h l s p t n m
+lmsMap :: UniversalApplicative h l s
   => h a b -> Limits l s p t n m a -> Limits l s p t n m b
 lmsMap h (Limits ls) = Limits (ls' h ls) where
-  ls' h ls d' = amap1 h $ ls $ dgMap h' d'
-  h'          = invert2 h 
+  ls' h ls d' = umap h $ ls $ dgMap h' d' where h' = invert2 h 
 
 
 --------------------------------------------------------------------------------
 -- Limits - Applicative1 -
 
-instance UniversalApplicative1 h l s p t n m => Applicative1 h (Limits l s p t n m) where
+instance (IsoOrt s h, UniversalApplicative h l s) => Applicative1 h (Limits l s p t n m) where
   amap1 = lmsMap
+  -- needs UndecidableInstances to compile!
 
 --------------------------------------------------------------------------------
 -- Limits - Daul -
 
 type instance Dual (Limits l s p t n m a) = Limits l s (Dual p) (Dual t) n m (Op a)
-
 
 --------------------------------------------------------------------------------
 -- coLimits -
@@ -111,7 +110,7 @@ coLimits cs rp rt (Limits lm) = Limits lm' where
 -- lmsFromOpOp -
 
 -- | from the bidual.
-lmsFromOpOp :: UniversalApplicative1 (IsoOp s) l s p t n m
+lmsFromOpOp :: UniversalApplicative (IsoOp s) l s
   => ConeStruct s a -> Limits l s p t n m (Op (Op a)) -> Limits l s p t n m a
 lmsFromOpOp cs = amap1 (isoFromOpOp cs)  where
   isoFromOpOp :: ConeStruct s a -> IsoOp s (Op (Op a)) a
@@ -123,7 +122,9 @@ lmsFromOpOp cs = amap1 (isoFromOpOp cs)  where
 -- coLimitsInv -
 
 -- | from the co limits, with its inverse of 'coLimits'.
-coLimitsInv :: (OpDualisable l s, UniversalApplicative1 (IsoOp s) l s p t n m)
+coLimitsInv :: ( OpDualisable l s
+               , UniversalApplicative (IsoOp s) l s
+               )
   => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Dual (Limits l s p t n m a) -> Limits l s p t n m a
 coLimitsInv cs Refl Refl lms'
@@ -140,28 +141,34 @@ lmsToOp cs (OpDuality Refl Refl rp rt) = coLimits cs rp rt
 -- lmsFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-lmsFromOp :: (OpDualisable l s, UniversalApplicative1 (IsoOp s) l s p t n m)
+lmsFromOp :: ( OpDualisable l s
+             , UniversalApplicative (IsoOp s) l s
+             )
   => ConeStruct s a -> OpDuality (Limits l) s f f' -> f' (Op a) -> f a
 lmsFromOp cs (OpDuality Refl Refl rp rt) = coLimitsInv cs rp rt
 
 --------------------------------------------------------------------------------
 -- Limits - OpDualisable -
 
-instance OpDualisable Limits s where
+instance ( OpDualisable l s
+         , UniversalApplicative (IsoOp s) l s
+         )
+  => OpDualisable (Limits l) s where
   opdToOp   = lmsToOp
   opdFromOp = lmsFromOp
-  
+
 --------------------------------------------------------------------------------
 -- prpLimitsDiagram -
 
 -- | validity according to 'Limits'.
-prpLimitsDiagram :: ConeStruct s a -> XOrtPerspective p a
-  -> Limits s p t n m a -> Diagram t n m a 
+prpLimitsDiagram :: (Universal l, Show (l s p t n m a))
+  => ConeStruct s a -> XOrtPerspective p a
+  -> Limits l s p t n m a -> Diagram t n m a 
   -> Statement
 prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
   :<=>: And [ case cnStructMlt cs of
                 Struct -> (diagram lm == d) :?> Params["d":=show d,"lm":=show lm]
-            , relLimes cs xop lm
+            , relUniversal cs xop lm
             ]
   where lm = limes lms d
 
@@ -169,36 +176,37 @@ prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
 -- prpLimits -
 
 -- | validity according to 'Limits', relative to the given random variable for 'Diagram's. 
-prpLimits :: ConeStruct s a -> Limits s p t n m a
+prpLimits :: (Universal l, Show (l s p t n m a))
+  => ConeStruct s a -> Limits l s p t n m a
   -> X (Diagram t n m a) -> XOrtPerspective p a -> Statement
 prpLimits cs lms xd xop = Prp "Limits"
   :<=>: Forall xd (prpLimitsDiagram cs xop lms)
 
 
-instance ( Multiplicative a, XStandard (Diagram t n m a)
-         , XStandardOrtPerspective p a
+instance ( Multiplicative a
+         , Universal l, Show (l Mlt p t n m a)
+         , XStandard (Diagram t n m a), XStandardOrtPerspective p a
          )
-  => Validable (Limits Mlt p t n m a) where
+  => Validable (Limits l Mlt p t n m a) where
   valid lm = prpLimits ConeStructMlt lm xStandard xStandardOrtPerspective
 
-instance ( Distributive a, XStandard (Diagram t n m a)
-         , XStandardOrtPerspective p a
+instance ( Distributive a
+         , Universal l, Show (l Dst p t n m a)
+         , XStandard (Diagram t n m a), XStandardOrtPerspective p a
          )
-  => Validable (Limits Dst p t n m a) where
+  => Validable (Limits l Dst p t n m a) where
   valid lm = prpLimits ConeStructDst lm xStandard xStandardOrtPerspective
 
 --------------------------------------------------------------------------------
 -- lmsToPrjOrnt -
 
 -- | projective limits for @'Orientation' __p__@.
-lmsToPrjOrnt :: Entity p => p -> Limits Mlt Projective t n m (Orientation p)
+lmsToPrjOrnt :: Entity p => p -> Limits Limes Mlt Projective t n m (Orientation p)
 lmsToPrjOrnt = Limits . lmToPrjOrnt
-  
+
 --------------------------------------------------------------------------------
 -- lmsFromInjOrnt -
 
 -- | injective limits for @'Orientation' __p__@.
-lmsFromInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
+lmsFromInjOrnt :: Entity p => p -> Limits Limes Mlt Injective t n m (Orientation p)
 lmsFromInjOrnt = Limits . lmFromInjOrnt  
-
--}

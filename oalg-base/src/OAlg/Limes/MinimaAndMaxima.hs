@@ -57,8 +57,11 @@ type MinimumCone t n = Cone Mlt Projective (Chain t) (n+1) n
 -- | minimum as 'Limes'.
 type Minimum t n = Limes Mlt Projective (Chain t) (n+1) n
 
+-- | generic minima for a 'Multiplicative' structure.
+type GenericMinima l t n = Limits l Mlt Projective (Chain t) (n+1) n
+
 -- | minima for a 'Multiplicative' structure.
-type Minima t n = Limits Mlt Projective (Chain t) (n+1) n
+type Minima t n = GenericMinima Limes t n
 
 --------------------------------------------------------------------------------
 -- minima -
@@ -91,18 +94,21 @@ type MaximumCone t n = Cone Mlt Injective (Chain t) (n+1) n
 -- | maximum as a 'Limes'.
 type Maximum t n = Limes Mlt Injective (Chain t) (n+1) n
 
+-- | generic maxima for a 'Multiplicative' structure.
+type GenericMaxima l t n = Limits l Mlt Injective (Chain t) (n+1) n
+
 -- | maxima for a 'Multiplicative' structure.
-type Maxima t n = Limits Mlt Injective (Chain t) (n+1) n
+type Maxima t n = GenericMaxima Limes t n
 
 --------------------------------------------------------------------------------
 -- Duality - Max -
 
 -- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.
-maxLimitsDualityTo :: OpDuality Limits Mlt (Maxima To n) (Minima From n)
+maxLimitsDualityTo :: OpDuality (Limits Limes) Mlt (Maxima To n) (Minima From n)
 maxLimitsDualityTo = OpDuality Refl Refl Refl Refl
 
 -- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.
-maxLimitsDualityFrom :: OpDuality Limits Mlt (Maxima From n) (Minima To n)
+maxLimitsDualityFrom :: OpDuality (Limits Limes) Mlt (Maxima From n) (Minima To n)
 maxLimitsDualityFrom = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------

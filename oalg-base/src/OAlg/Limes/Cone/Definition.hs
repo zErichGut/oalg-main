@@ -22,7 +22,7 @@
 module OAlg.Limes.Cone.Definition
   (
     -- * Cone
-    Cone(..), Perspective(..)
+    Cone(..), Perspective(..), cnMltOrDst
   , cnDiagram, cnDiagramTypeRefl
   , tip, shell, cnArrows, cnPoints
   , cnMap, cnMapMlt, cnMapDst
@@ -57,6 +57,8 @@ import Data.Array hiding (range)
 
 import OAlg.Prelude
 
+import OAlg.Data.Either
+
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList
 import OAlg.Entity.Diagram
@@ -76,6 +78,7 @@ import OAlg.Limes.Perspective
 import OAlg.Limes.OpDuality
 
 import OAlg.Limes.Cone.Structure
+
 --------------------------------------------------------------------------------
 -- Cone -
 
@@ -126,6 +129,23 @@ data Cone s p t n m a where
   ConeCokernel   :: Distributive a
     => Diagram (Parallel RightToLeft) N2 m a -> a
     -> Cone Dst Injective (Parallel RightToLeft) N2 m a
+
+--------------------------------------------------------------------------------
+-- coneStruct -
+
+-- | the associated 'ConeStruct'.
+coneStruct :: Cone s p t n m a -> ConeStruct s a
+coneStruct (ConeProjective _ _ _) = ConeStructMlt
+coneStruct (ConeInjective _ _ _)  = ConeStructMlt
+coneStruct (ConeKernel _ _)       = ConeStructDst
+coneStruct (ConeCokernel _ _)     = ConeStructDst
+
+--------------------------------------------------------------------------------
+-- cnMltOrDst -
+
+-- | proof of @__s__@ being either 'Mlt' or 'Dst'.
+cnMltOrDst :: Cone s p t n m a -> Either (s :~: Mlt) (s :~: Dst)
+cnMltOrDst = cnStructMltOrDst . coneStruct
 
 --------------------------------------------------------------------------------
 -- cnDiagram -

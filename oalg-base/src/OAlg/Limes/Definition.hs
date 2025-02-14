@@ -119,7 +119,7 @@ instance Universal Limes where
 
   universalFactor (LimesProjective _ u) = u
   universalFactor (LimesInjective _ u)  = u
-
+  
 --------------------------------------------------------------------------------
 -- lmDiagramTypeRefl -
 
@@ -140,10 +140,10 @@ lmMap h l = case l of
         u' h u c = h $ u $ cnMap (invert2 h) c
 
 --------------------------------------------------------------------------------
--- Limes - Applicative1 -
+-- Limes - UniversalApplicative -
 
-instance IsoMultiplicative h => Applicative1 h (Limes Mlt p t n m) where
-  amap1 = lmMap
+instance IsoMultiplicative h => Applicative1 h (Limes Mlt p t n m) where amap1 = lmMap
+instance IsoMultiplicative h => UniversalApplicative h Limes Mlt where umap = lmMap
   
 --------------------------------------------------------------------------------
 -- Limes - Dual -

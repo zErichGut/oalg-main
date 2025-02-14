@@ -21,7 +21,7 @@
 module OAlg.Limes.TerminalAndInitialPoint
   (
     -- * Terminal
-    Terminals, TerminalPoint, TerminalCone, TerminalDiagram
+    Terminals, GenericTerminals, TerminalPoint, TerminalCone, TerminalDiagram
   , trmDiagram, trmCone
 
     -- ** Orientation
@@ -29,7 +29,7 @@ module OAlg.Limes.TerminalAndInitialPoint
     
 
     -- * Initial
-  , Initials, InitialPoint, InitialCone, InitialDiagram
+  , Initials, GenericInitials, InitialPoint, InitialCone, InitialDiagram
   , intDiagram, intCone
 
     -- ** Orientation
@@ -78,8 +78,11 @@ type TerminalCone = Cone Mlt Projective 'Empty N0 N0
 -- | terminal point as 'Limes'.
 type TerminalPoint = Limes Mlt Projective 'Empty N0 N0
 
+-- | generic terminal point within a 'Multiplicative' structure.
+type GenericTerminals l = Limits l Mlt Projective 'Empty N0 N0
+
 -- | terminal point within a 'Multiplicative' structure.
-type Terminals = Limits Mlt Projective 'Empty N0 N0
+type Terminals = GenericTerminals Limes
 
 --------------------------------------------------------------------------------
 -- trmDiagram -
@@ -118,8 +121,11 @@ type InitialCone = Cone Mlt Injective 'Empty N0 N0
 -- | initial point as 'Limes'.
 type InitialPoint = Limes Mlt Injective 'Empty N0 N0
 
+-- | generic initial point within a 'Multiplicative' structure.
+type GenericInitials l = Limits l Mlt Injective 'Empty N0 N0
+
 -- | initial point within a 'Multiplicative' structure.
-type Initials = Limits Mlt Injective 'Empty N0 N0
+type Initials = GenericInitials Limes
 
 --------------------------------------------------------------------------------
 -- Duality - Terminal -
@@ -137,7 +143,7 @@ trmLimesDuality ::OpDuality Limes Mlt TerminalPoint InitialPoint
 trmLimesDuality = OpDuality Refl Refl Refl Refl
 
 -- |  terminal 'Limits' duality.
-trmLimitsDuality :: OpDuality Limits Mlt Terminals Initials
+trmLimitsDuality :: OpDuality (Limits Limes) Mlt Terminals Initials
 trmLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
@@ -156,7 +162,7 @@ intLimesDuality :: OpDuality Limes Mlt InitialPoint TerminalPoint
 intLimesDuality = OpDuality Refl Refl Refl Refl
 
 -- | initial 'Limits' duality.
-intLimitsDuality :: OpDuality Limits Mlt Initials Terminals
+intLimitsDuality :: OpDuality (Limits Limes) Mlt Initials Terminals
 intLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------

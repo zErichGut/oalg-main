@@ -13,7 +13,7 @@
 #-}
 
 {-# LANGUAGE UndecidableSuperClasses #-}
--- needed to complie 'UniversalApplicative1'.
+-- needed to complie 'UniversalApplicative'.
 
 -- |
 -- Module      : OAlg.Limes.Universal
@@ -35,7 +35,7 @@ module OAlg.Limes.Universal
   , unvDiagramTypeRefl
 
     -- * Applicative
-  , UniversalApplicative1
+  , UniversalApplicative(..)
 
     -- * Proposition
   , relUniversal
@@ -51,11 +51,14 @@ import Data.Typeable
 
 import OAlg.Prelude
 
+import OAlg.Data.Either
+
 import OAlg.Entity.Diagram
 import OAlg.Entity.FinList
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented.Definition
 
@@ -131,17 +134,32 @@ class Universal l where
   universalFactor :: l s p t n m x -> Cone s p t n m x -> x
 
 --------------------------------------------------------------------------------
--- UniversalApplicative1 -
+-- unvMltOrDst -
+
+-- | proof of @__s__@ being either 'Mlt' or 'Dst'.
+unvMltOrDst :: Universal l => l s p t n m a -> Either (s :~: Mlt) (s :~: Dst)
+unvMltOrDst = cnMltOrDst . universalCone
+
+--------------------------------------------------------------------------------
+-- UniversalApplicative -
 
 -- | applications on 'Universal's.
 --
 -- __Properties__ Let @h@ be in @'IsoOrt' __s__ __h__ __a__ __b__@ and @__l__@ a @'Universal' __l__@,
 -- then holds:
 --
--- (1) For all @a@ in @__l__ __s__ __p__ __t__ __n__ __m__ __a__@ holds:
--- @'unversalCone' ('umap1' h a) '==' 'amap1' h ('univeralCone' u)@.
-class (IsoOrt s h, Universal l) => UniversalApplicative1 h l s where
-  umap1 :: h a b -> l s p t n m a -> l s p t n m b
+-- (1) For all @u@ in @__l__ __s__ __p__ __t__ __n__ __m__ __a__@ holds:
+-- @'unversalCone' ('umap' h u) '==' 'amap1' h ('univeralCone' u)@.
+--
+-- __Note__
+--
+-- (1) As @__s__@ is either 'Mlt' or 'Dst' (see 'unvMltOrDst') the property above is well
+-- defined.
+--
+-- (2) The constraint 'IsoOrt' is needed to fulfill the universal property of the mapped
+-- 'universalFactor'.
+class (IsoOrt s h, Universal l) => UniversalApplicative h l s where
+  umap :: h a b -> l s p t n m a -> l s p t n m b
 -- needs UndecidableSuperClasses to compile!
 
 --------------------------------------------------------------------------------

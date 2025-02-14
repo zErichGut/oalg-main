@@ -23,9 +23,14 @@ module OAlg.Limes.Cone.Structure
   (
     -- * Cone Struct
     ConeStruct(..), cnStructOp, cnStructMlt, cnStruct
+  , cnStructMltOrDst
   ) where
 
+import Data.Typeable
+
 import OAlg.Prelude
+
+import OAlg.Data.Either
 
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
@@ -67,4 +72,13 @@ cnStruct :: ConeStruct s a -> Struct s a
 cnStruct cs = case cs of
   ConeStructMlt -> Struct
   ConeStructDst -> Struct
+
+--------------------------------------------------------------------------------
+-- cnStructMltOrDst -
+
+-- | proof of @__s__@ being either 'Mlt' or 'Dst'.
+cnStructMltOrDst :: ConeStruct s a -> Either (s :~: Mlt) (s :~: Dst)
+cnStructMltOrDst cs = case cs of
+  ConeStructMlt -> Left Refl
+  ConeStructDst -> Right Refl
 
