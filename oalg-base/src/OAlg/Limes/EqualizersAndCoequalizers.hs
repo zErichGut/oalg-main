@@ -16,7 +16,7 @@
 module OAlg.Limes.EqualizersAndCoequalizers
   (
     -- * Equalizers
-    Equalizers, Equalizer, EqualizerCone, EqualizerDiagram
+    Equalizers, GenericEqualizers, Equalizer, EqualizerCone, EqualizerDiagram
 
     -- ** Construction
   , equalizers, equalizers0, equalizers1, equalizers2
@@ -25,7 +25,7 @@ module OAlg.Limes.EqualizersAndCoequalizers
   , equalizersOrnt
 
     -- * Coequalizers
-  , Coequalizers, Coequalizer, CoequalizerCone, CoequalizerDiagram
+  , Coequalizers, GenericCoequalizers, Coequalizer, CoequalizerCone, CoequalizerDiagram
 
     -- ** Construction
   , coequalizers, coequalizers'
@@ -70,8 +70,11 @@ type EqualizerCone n = Cone Mlt Projective (Parallel LeftToRight) N2 n
 -- | equalizer as 'Limes'.
 type Equalizer n = Limes Mlt Projective (Parallel LeftToRight) N2 n
 
+-- | generic equalizers for a 'Multiplicative' structures.
+type GenericEqualizers l n = Limits l Mlt Projective (Parallel LeftToRight) N2 n
+
 -- | equalizers for a 'Multiplicative' structures.
-type Equalizers n = Limits Mlt Projective (Parallel LeftToRight) N2 n
+type Equalizers n = GenericEqualizers Limes n
 
 
 --------------------------------------------------------------------------------
@@ -182,14 +185,17 @@ type CoequalizerCone n = Cone Mlt Injective (Parallel RightToLeft) N2 n
 -- | coequalizer as 'Limes.
 type Coequalizer n = Limes Mlt Injective (Parallel RightToLeft) N2 n
 
+-- | generic coequalizers for a 'Multiplicative' structure.
+type GenericCoequalizers l n = Limits l Mlt Injective (Parallel RightToLeft) N2 n
+
 -- | coequalizers for a 'Multiplicative' structure.
-type Coequalizers n       = Limits Mlt Injective (Parallel RightToLeft) N2 n
+type Coequalizers n = GenericCoequalizers Limes n
 
 --------------------------------------------------------------------------------
 -- Coequalizer - Duality -
 
 -- | duality between coequalizers and equalizers.
-coeqlLimitsDuality :: OpDuality Limits Mlt (Coequalizers n) (Equalizers n)
+coeqlLimitsDuality :: OpDuality (Limits Limes) Mlt (Coequalizers n) (Equalizers n)
 coeqlLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------

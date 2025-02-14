@@ -88,8 +88,11 @@ type GenericKernel (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Type 
 -- | kernel as a 'Limes'.
 type Kernel n = GenericKernel Limes n
 
+-- | generic kernels for 'Distributive' structures.
+type GenericKernels l n = Limits l Dst Projective (Parallel LeftToRight) N2 n
+
 -- | kernels for 'Distributive' structures.
-type Kernels n       = Limits Dst Projective (Parallel LeftToRight) N2 n
+type Kernels n = GenericKernels Limes n
 
 --------------------------------------------------------------------------------
 -- kernelFactor -
@@ -215,8 +218,11 @@ type GenericCokernel (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Typ
 -- | cokernel as 'Limes'.
 type Cokernel n = GenericCokernel Limes n -- Limes Dst Injective (Parallel RightToLeft) N2 n
 
+-- | generic cokernels for 'Distributive' structures.
+type GenericCokernels l n = Limits l Dst Injective (Parallel RightToLeft) N2 n
+
 -- | cokernels for 'Distributive' structures.
-type Cokernels n       = Limits Dst Injective (Parallel RightToLeft) N2 n
+type Cokernels n = GenericCokernels Limes n
 
 --------------------------------------------------------------------------------
 -- cokernelFactor -
@@ -236,7 +242,7 @@ cokernelDiagram f = DiagramParallelRL (end f) (start f) (f:|Nil)
 -- Cokernels - Duality -
 
 -- | duality between cokernels and kernels.
-cokrnLimitsDuality :: OpDuality Limits Dst (Cokernels n) (Kernels n)
+cokrnLimitsDuality :: OpDuality (Limits Limes) Dst (Cokernels n) (Kernels n)
 cokrnLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------
@@ -256,7 +262,7 @@ krnLimesDuality = OpDuality Refl Refl Refl Refl
 --------------------------------------------------------------------------------
 -- krnLimitsDuality -
 
-krnLimitsDuality ::  OpDuality Limits Dst (Kernels n) (Cokernels n)
+krnLimitsDuality ::  OpDuality (Limits Limes) Dst (Kernels n) (Cokernels n)
 krnLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------

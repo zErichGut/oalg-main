@@ -144,7 +144,10 @@ lmMap h l = case l of
 
 instance IsoMultiplicative h => Applicative1 h (Limes Mlt p t n m) where amap1 = lmMap
 instance IsoMultiplicative h => UniversalApplicative h Limes Mlt where umap = lmMap
-  
+
+instance IsoDistributive h => Applicative1 h (Limes Dst p t n m) where amap1 = lmMap
+instance IsoDistributive h => UniversalApplicative h Limes Dst where umap = lmMap
+                                                                       
 --------------------------------------------------------------------------------
 -- Limes - Dual -
 

@@ -15,7 +15,7 @@
 module OAlg.Limes.PullbacksAndPushouts
   (
     -- * Pullbacks
-    Pullbacks, Pullback, PullbackCone, PullbackDiagram
+    Pullbacks, GenericPullbacks, Pullback, PullbackCone, PullbackDiagram
 
     -- ** Construction
   , pullbacks, pullbacks0, pullbacks1, plbPrdEql2
@@ -24,7 +24,7 @@ module OAlg.Limes.PullbacksAndPushouts
   , pullbacksOrnt
 
     -- * Pushouts
-  , Pushouts, Pushout, PushoutCone, PushoutDiagram
+  , Pushouts, GenericPushouts, Pushout, PushoutCone, PushoutDiagram
 
     -- ** Construction
   , pushouts, pushouts', pshSumCoeql2
@@ -70,9 +70,11 @@ type PullbackCone n = Cone Mlt Projective (Star To) (n+1) n
 -- | pullback as 'Limes'.
 type Pullback n = Limes Mlt Projective (Star To) (n+1) n
 
--- | pullbacks for 'Multiplicative' structures.
-type Pullbacks n = Limits Mlt Projective (Star To) (n+1) n
+-- | generic pullbacks for 'Multiplicative' structures.
+type GenericPullbacks l n = Limits l Mlt Projective (Star To) (n+1) n
 
+-- | pullbacks for 'Multiplicative' structures.
+type Pullbacks n = GenericPullbacks Limes n
 
 --------------------------------------------------------------------------------
 -- plbMinimumDiagram0 -
@@ -205,14 +207,17 @@ type PushoutCone n = Cone Mlt Injective (Star From) (n+1) n
 -- | pushout as 'Limes'.
 type Pushout n = Limes Mlt Injective (Star From) (n+1) n
 
+-- | generic pushouts for a 'Multiplicative' structures.
+type GenericPushouts l n = Limits l Mlt Injective (Star From) (n+1) n
+
 -- | pushouts for a 'Multiplicative' structures.
-type Pushouts n       = Limits Mlt Injective (Star From) (n+1) n
+type Pushouts n = GenericPushouts Limes n
 
 --------------------------------------------------------------------------------
 -- Pusouts - Duality -
 
 -- | duality between pushouts and pullbacks.
-pshLimitsDuality :: OpDuality Limits Mlt (Pushouts n) (Pullbacks n)
+pshLimitsDuality :: OpDuality (Limits Limes) Mlt (Pushouts n) (Pullbacks n)
 pshLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------

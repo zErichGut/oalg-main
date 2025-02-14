@@ -78,8 +78,11 @@ type ProductCone n = Cone Mlt Projective Discrete n N0
 -- | product as a 'Limes'.
 type Product n = Limes Mlt Projective Discrete n N0
 
+-- | generic products for a 'Multiplicative' structure.
+type GenericProducts l n = Limits l Mlt Projective Discrete n N0
+
 -- | products for a 'Multiplicative' structure.
-type Products n = Limits Mlt Projective Discrete n N0
+type Products n = GenericProducts Limes n
 
 --------------------------------------------------------------------------------
 -- prdDiagram -
@@ -193,8 +196,11 @@ type SumCone n = Cone Mlt Injective Discrete n N0
 -- | sum as a 'Limes.
 type Sum n = Limes Mlt Injective Discrete n N0
 
+-- | generic sums for a 'Multiplicative' structure.
+type GenericSums l n = Limits l Mlt Injective Discrete n N0
+
 -- | sums for a 'Multiplicative' structure.
-type Sums n = Limits Mlt Injective Discrete n N0
+type Sums n = GenericSums Limes n
 
 --------------------------------------------------------------------------------
 -- sumDiagram -
@@ -214,7 +220,7 @@ sumCone d@(DiagramSink p as) = ConeInjective (sumDiagram d) p as
 -- Sum - Duality - 
 
 -- | duality between sums and products.
-sumLimitsDuality :: OpDuality Limits Mlt (Sums n) (Products n)
+sumLimitsDuality :: OpDuality (Limits Limes) Mlt (Sums n) (Products n)
 sumLimitsDuality = OpDuality Refl Refl Refl Refl
 
 --------------------------------------------------------------------------------

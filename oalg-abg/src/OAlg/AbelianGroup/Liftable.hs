@@ -50,6 +50,7 @@ import OAlg.Entity.Diagram
 import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence.PSequence
 
+import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 import OAlg.Limes.KernelsAndCokernels
 
