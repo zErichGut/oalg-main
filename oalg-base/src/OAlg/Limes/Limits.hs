@@ -79,13 +79,12 @@ lmsMap :: UniversalApplicative h l s
 lmsMap h (Limits ls) = Limits (ls' h ls) where
   ls' h ls d' = umap h $ ls $ dgMap h' d' where h' = invert2 h 
 
-
 --------------------------------------------------------------------------------
 -- Limits - Applicative1 -
 
-instance (IsoOrt s h, UniversalApplicative h l s) => Applicative1 h (Limits l s p t n m) where
+instance UniversalApplicative h l s => Applicative1 h (Limits l s p t n m) where
   amap1 = lmsMap
-  -- needs UndecidableInstances to compile!
+
 
 --------------------------------------------------------------------------------
 -- Limits - Daul -
@@ -142,6 +141,7 @@ lmsFromOp cs (OpDuality rp rt) = coLimitsInv cs rp rt
 --------------------------------------------------------------------------------
 -- Limits - OpDualisable -
 
+-- needs UndecidableInstances to compile!  -- needs UndecidableInstances to compile!
 instance ( OpDualisable c l s
          , UniversalApplicative (IsoOp s) l s
          )

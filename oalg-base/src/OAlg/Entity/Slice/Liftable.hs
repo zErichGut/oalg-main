@@ -120,6 +120,7 @@ instance Show c => Show (Liftable s i c) where
   show (LiftableProjective c _) = join ["LiftableProjective (",show c,") lft"]
   show (LiftableInjective c _)  = join ["LiftableInjective (",show c,") lft"]
 
+
 --------------------------------------------------------------------------------
 -- Liftable - Dual -
 
@@ -334,3 +335,5 @@ instance OpDualisable (LiftableStruct i) (LiftableLimes i) Dst where
   opdToOp LiftableStruct (OpDuality rp rt)   = coLiftableLimes rp rt
   opdFromOp LiftableStruct (OpDuality rp rt) = coLiftableLimesInv rp rt
 
+instance UniversalApplicative (IsoOp Dst) (LiftableLimes i) Dst where
+  umap iso (LiftableKernel k lft) = error "nyi"

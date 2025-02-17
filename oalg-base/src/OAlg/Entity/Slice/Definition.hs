@@ -107,16 +107,16 @@ class (Entity1 i, Singleton1 i) => Sliced i c where
   -- | the distingueished point of the given index type @__i__@.
   slicePoint :: i c -> Point c
 
-
 instance Sliced i c => Sliced i (Op c) where
   slicePoint i = to i $ slicePoint $ fo i where
     
-    fo :: Singleton1 i => i (Op c) -> i c
+    fo :: Singleton1 i => i (f c) -> i c
     fo _ = unit1
 
-    to :: p (Op c) -> Point c -> Point (Op c)
+    to :: Point c ~ Point (f c) => p (f c) -> Point c -> Point (f c)
     to _ = id
 
+  
 --------------------------------------------------------------------------------
 -- Slice -
 
