@@ -19,7 +19,7 @@ module OAlg.Hom.Distributive
     HomDistributive, IsoDistributive
 
     -- * Iso
-  , isoFromOpOpDst
+  , isoToOpOpDst, isoFromOpOpDst
   )
   where
 
@@ -99,6 +99,13 @@ instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
          , Typeable s
          )
   => HomDistributive (IsoOp s)
+
+--------------------------------------------------------------------------------
+-- isoToOpOpDst -
+
+-- | the induced isomorphism of 'Distributive' structures given by 'ToOpOp'.
+isoToOpOpDst :: Distributive a => IsoOp Dst a (Op (Op a))
+isoToOpOpDst = make (ToOpOp :. IdPath Struct)
 
 --------------------------------------------------------------------------------
 -- isoFromOpOpDst -

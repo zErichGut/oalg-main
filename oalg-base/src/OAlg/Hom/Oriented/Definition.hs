@@ -39,7 +39,8 @@ module OAlg.Hom.Oriented.Definition
   , HomOp(..)
 
     -- * IsoOp
-  , IsoOp(), PathHomOp, opPathOrt, isoFromOpOpOrt
+  , IsoOp(), PathHomOp, opPathOrt
+  , isoToOpOpOrt, isoFromOpOpOrt
 
     -- * IsoOpMap
   , IsoOpMap(), PathOpMap
@@ -407,6 +408,13 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
 -- | the induced isomorphism given by 'OpPath'.
 opPathOrt :: Oriented a => IsoOp Ort (Op (O.Path a)) (O.Path (Op a)) 
 opPathOrt = make (OpPath :. IdPath Struct) 
+
+--------------------------------------------------------------------------------
+-- isoToOpOpOrt -
+
+-- | the induced isomorphism of 'Oriented' structures given by 'ToOpOp'.
+isoToOpOpOrt :: Oriented a => IsoOp Ort a (Op (Op a))
+isoToOpOpOrt = make (ToOpOp :. IdPath Struct)
 
 --------------------------------------------------------------------------------
 -- isoFromOpOpOrt -

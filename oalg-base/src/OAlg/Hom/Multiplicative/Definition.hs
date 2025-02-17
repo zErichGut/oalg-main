@@ -27,7 +27,7 @@ module OAlg.Hom.Multiplicative.Definition
 
     -- * OpHom
   -- , toOpHomMlt
-  , isoFromOpOpMlt
+  , isoToOpOpMlt, isoFromOpOpMlt
   , isoOppositeMlt
   )
   where
@@ -103,6 +103,13 @@ instance (TransformableOp s, TransformableOrt s, TransformableMlt s, Transformab
 
 instance (TransformableOp s, TransformableOrt s, TransformableMlt s, TransformableTyp s)
   => HomMultiplicative (IsoOp s)
+
+--------------------------------------------------------------------------------
+-- isoToOpOpMlt -
+
+-- | the induced isomorphism of 'Multiplicative' structures given by 'ToOpOp'.
+isoToOpOpMlt :: Multiplicative a => IsoOp Mlt a (Op (Op a))
+isoToOpOpMlt = make (ToOpOp :. IdPath Struct)
 
 --------------------------------------------------------------------------------
 -- isoFromOpOpMlt -

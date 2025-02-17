@@ -148,6 +148,7 @@ data Variance t k c d where
 
 type instance Dual (Variance t k c d) = Variance (Dual t) c k (Op d)
 
+{-
 coVariance :: (Distributive d, OpDualisable k Dst, OpDualisable c Dst)
   => OpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1)
   -> OpDuality c Dst (GenericCokernel c N1) (GenericKernel c N1)
@@ -156,7 +157,7 @@ coVariance kOp cOp (Variance t k c) = Variance (coConsZeroTrafo t) c' k' where
   k' = opdToOp ConeStructDst kOp k
   c' = opdToOp ConeStructDst cOp c
 
-{-
+
 coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c)
   => Variance t k c d -> Dual (Variance t k c d)
 coVariance (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where

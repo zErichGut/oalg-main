@@ -105,11 +105,11 @@ type Maxima t n = GenericMaxima Limes t n
 
 -- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.
 maxLimitsDualityTo :: OpDuality (Limits Limes) Mlt (Maxima To n) (Minima From n)
-maxLimitsDualityTo = OpDuality Refl Refl Refl Refl
+maxLimitsDualityTo = OpDuality Refl Refl
 
 -- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.
 maxLimitsDualityFrom :: OpDuality (Limits Limes) Mlt (Maxima From n) (Minima To n)
-maxLimitsDualityFrom = OpDuality Refl Refl Refl Refl
+maxLimitsDualityFrom = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- maxima -

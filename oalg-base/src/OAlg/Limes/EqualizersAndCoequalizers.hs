@@ -196,7 +196,7 @@ type Coequalizers n = GenericCoequalizers Limes n
 
 -- | duality between coequalizers and equalizers.
 coeqlLimitsDuality :: OpDuality (Limits Limes) Mlt (Coequalizers n) (Equalizers n)
-coeqlLimitsDuality = OpDuality Refl Refl Refl Refl
+coeqlLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- coequalizers -

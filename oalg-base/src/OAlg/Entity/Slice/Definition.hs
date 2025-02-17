@@ -29,6 +29,7 @@ module OAlg.Entity.Slice.Definition
 
     -- ** Duality
   , coSlice, coSliceInv
+  , slFromOpOp, slToOpOp
 
     -- * Factor
   , SliceFactor(..), slfFactor, slfIndex
@@ -161,6 +162,10 @@ coSlice (SliceTo _ f)   = SliceFrom unit1 (Op f)
 slFromOpOp :: Singleton1 i => Slice s i (Op (Op c)) -> Slice s i c
 slFromOpOp (SliceFrom _ (Op (Op f))) = SliceFrom unit1 f
 slFromOpOp (SliceTo _ (Op (Op t))) = SliceTo unit1 t
+
+slToOpOp :: Singleton1 i => Slice s i c -> Slice s i (Op (Op c))
+slToOpOp (SliceFrom _ f) = SliceFrom unit1 (Op (Op f))
+slToOpOp (SliceTo _ t)   = SliceTo unit1 (Op (Op t))
 
 slSiteBidual :: Slice s i c -> Dual (Dual s) :~: s
 slSiteBidual (SliceFrom _ _) = Refl

@@ -221,7 +221,7 @@ sumCone d@(DiagramSink p as) = ConeInjective (sumDiagram d) p as
 
 -- | duality between sums and products.
 sumLimitsDuality :: OpDuality (Limits Limes) Mlt (Sums n) (Products n)
-sumLimitsDuality = OpDuality Refl Refl Refl Refl
+sumLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- sums0 -

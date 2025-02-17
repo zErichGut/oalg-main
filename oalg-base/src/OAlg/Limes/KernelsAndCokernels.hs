@@ -18,7 +18,7 @@ module OAlg.Limes.KernelsAndCokernels
   (
     -- * Kernels
     Kernels, Kernel, KernelCone, KernelDiagram
-  , GenericKernel
+  , GenericKernel, GenericKernels
   , kernelFactor
   , kernelDiagram
 
@@ -32,7 +32,7 @@ module OAlg.Limes.KernelsAndCokernels
 
     -- * Cokernels
   , Cokernels, Cokernel, CokernelCone, CokernelDiagram
-  , GenericCokernel
+  , GenericCokernel, GenericCokernels
   , cokernelFactor
   , cokernelDiagram
 
@@ -243,27 +243,27 @@ cokernelDiagram f = DiagramParallelRL (end f) (start f) (f:|Nil)
 
 -- | duality between cokernels and kernels.
 cokrnLimitsDuality :: OpDuality (Limits Limes) Dst (Cokernels n) (Kernels n)
-cokrnLimitsDuality = OpDuality Refl Refl Refl Refl
+cokrnLimitsDuality = OpDuality  Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokrnLimesDuality -
 
 -- | duality between 'Cokernel' to 'Kernel'.
 cokrnLimesDuality :: OpDuality Limes Dst (Cokernel n) (Kernel n)
-cokrnLimesDuality = OpDuality Refl Refl Refl Refl
+cokrnLimesDuality = OpDuality  Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimesDuality -
 
 -- | duality from 'Kernel' to 'Cokernel'.
 krnLimesDuality :: OpDuality Limes Dst (Kernel n) (Cokernel n)
-krnLimesDuality = OpDuality Refl Refl Refl Refl
+krnLimesDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- krnLimitsDuality -
 
 krnLimitsDuality ::  OpDuality (Limits Limes) Dst (Kernels n) (Cokernels n)
-krnLimitsDuality = OpDuality Refl Refl Refl Refl
+krnLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokernels -

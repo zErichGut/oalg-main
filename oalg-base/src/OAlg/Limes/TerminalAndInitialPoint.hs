@@ -136,15 +136,15 @@ trmDiagramDuality = DiagramDuality Refl Refl Refl
 
 -- | terminal 'Cone' duality.
 trmConeDuality :: OpDuality Cone Mlt TerminalCone InitialCone
-trmConeDuality = OpDuality Refl Refl Refl Refl
+trmConeDuality = OpDuality Refl Refl
 
 -- |  terminal 'Limes' duality.
 trmLimesDuality ::OpDuality Limes Mlt TerminalPoint InitialPoint
-trmLimesDuality = OpDuality Refl Refl Refl Refl
+trmLimesDuality = OpDuality Refl Refl
 
 -- |  terminal 'Limits' duality.
 trmLimitsDuality :: OpDuality (Limits Limes) Mlt Terminals Initials
-trmLimitsDuality = OpDuality Refl Refl Refl Refl
+trmLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- Duality - Initial -
@@ -155,15 +155,15 @@ intDiagramDuality = DiagramDuality Refl Refl Refl
 
 -- | initial 'Cone' duality.
 intConeDuality :: OpDuality Cone Mlt InitialCone TerminalCone
-intConeDuality = OpDuality Refl Refl Refl Refl
+intConeDuality = OpDuality Refl Refl
 
 -- | initial 'Limes' duality.
 intLimesDuality :: OpDuality Limes Mlt InitialPoint TerminalPoint
-intLimesDuality = OpDuality Refl Refl Refl Refl
+intLimesDuality = OpDuality Refl Refl
 
 -- | initial 'Limits' duality.
 intLimitsDuality :: OpDuality (Limits Limes) Mlt Initials Terminals
-intLimitsDuality = OpDuality Refl Refl Refl Refl
+intLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- intDiagram -

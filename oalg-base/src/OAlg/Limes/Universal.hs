@@ -169,9 +169,6 @@ class (IsoOrt s h, Universal l) => UniversalApplicative h l s where
 unvDiagramTypeRefl :: Universal l => l s p t n m a -> Dual (Dual t) :~: t
 unvDiagramTypeRefl = cnDiagramTypeRefl . universalCone
 
--- unvDiagramTypeRefl (LimesProjective l _) = cnDiagramTypeRefl l
--- unvDiagramTypeRefl (LimesInjective l _)  = cnDiagramTypeRefl l
-
 --------------------------------------------------------------------------------
 -- universalPoint -
 

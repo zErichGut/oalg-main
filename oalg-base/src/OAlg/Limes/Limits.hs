@@ -33,7 +33,6 @@ module OAlg.Limes.Limits
   
     -- * Proposition
   , prpLimits, prpLimitsDiagram
-
   ) where
 
 import Data.Typeable
@@ -45,8 +44,6 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
-import OAlg.Hom.Distributive
 
 import OAlg.Entity.Diagram
 
@@ -99,61 +96,56 @@ type instance Dual (Limits l s p t n m a) = Limits l s (Dual p) (Dual t) n m (Op
 -- coLimits -
 
 -- | the co limits wit its inverse 'coLimitsInv'.
-coLimits :: OpDualisable l s
-  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+coLimits :: OpDualisable c l s
+  => c s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Limits l s p t n m a -> Dual (Limits l s p t n m a)
 coLimits cs rp rt (Limits lm) = Limits lm' where
-  lm' d' = case cnStructMlt cs of
-    Struct -> opdToOp cs (OpDuality Refl Refl rp rt) $ lm $ coDiagramInv rt d'
+  lm' d' = case opdStructMlt cs of Struct -> opdToOp cs (OpDuality rp rt) $ lm $ coDiagramInv rt d'
 
 --------------------------------------------------------------------------------
 -- lmsFromOpOp -
 
 -- | from the bidual.
-lmsFromOpOp :: UniversalApplicative (IsoOp s) l s
-  => ConeStruct s a -> Limits l s p t n m (Op (Op a)) -> Limits l s p t n m a
-lmsFromOpOp cs = amap1 (isoFromOpOp cs)  where
-  isoFromOpOp :: ConeStruct s a -> IsoOp s (Op (Op a)) a
-  isoFromOpOp cs = case cs of
-    ConeStructMlt -> isoFromOpOpMlt
-    ConeStructDst -> isoFromOpOpDst
+lmsFromOpOp :: (OpReflexive c s, UniversalApplicative (IsoOp s) l s)
+  => c s a -> Limits l s p t n m (Op (Op a)) -> Limits l s p t n m a
+lmsFromOpOp cs = amap1 (invert2 $ opdRefl cs)
 
 --------------------------------------------------------------------------------
 -- coLimitsInv -
 
 -- | from the co limits, with its inverse of 'coLimits'.
-coLimitsInv :: ( OpDualisable l s
+coLimitsInv :: ( OpDualisable c l s
                , UniversalApplicative (IsoOp s) l s
                )
-  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  => c s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Dual (Limits l s p t n m a) -> Limits l s p t n m a
 coLimitsInv cs Refl Refl lms'
-  = lmsFromOpOp cs $ coLimits (cnStructOp cs) Refl Refl lms'
+  = lmsFromOpOp cs $ coLimits (opdStructOp cs) Refl Refl lms'
 
 --------------------------------------------------------------------------------
 -- lmsToOp -
 
--- | to @__g__ ('Op' __a__)@.
-lmsToOp :: OpDualisable l s => ConeStruct s a -> OpDuality (Limits l) s f f' -> f a -> f' (Op a)
-lmsToOp cs (OpDuality Refl Refl rp rt) = coLimits cs rp rt
+-- | to @__f'__ ('Op' __a__)@.
+lmsToOp :: OpDualisable c l s => c s a -> OpDuality (Limits l) s x y -> x a -> y (Op a)
+lmsToOp cs (OpDuality rp rt) = coLimits cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmsFromOp -
 
--- | from @__g__ ('Op' __a__)@.
-lmsFromOp :: ( OpDualisable l s
+-- | from @__f'__ ('Op' __a__)@.
+lmsFromOp :: ( OpDualisable c l s
              , UniversalApplicative (IsoOp s) l s
              )
-  => ConeStruct s a -> OpDuality (Limits l) s f f' -> f' (Op a) -> f a
-lmsFromOp cs (OpDuality Refl Refl rp rt) = coLimitsInv cs rp rt
+  => c s a -> OpDuality (Limits l) s x y -> y (Op a) -> x a
+lmsFromOp cs (OpDuality rp rt) = coLimitsInv cs rp rt
 
 --------------------------------------------------------------------------------
 -- Limits - OpDualisable -
 
-instance ( OpDualisable l s
+instance ( OpDualisable c l s
          , UniversalApplicative (IsoOp s) l s
          )
-  => OpDualisable (Limits l) s where
+  => OpDualisable c (Limits l) s where
   opdToOp   = lmsToOp
   opdFromOp = lmsFromOp
 
@@ -161,14 +153,14 @@ instance ( OpDualisable l s
 -- prpLimitsDiagram -
 
 -- | validity according to 'Limits'.
-prpLimitsDiagram :: (Universal l, Show (l s p t n m a))
-  => ConeStruct s a -> XOrtPerspective p a
+prpLimitsDiagram :: (OpReflexive c s, Universal l, Show (l s p t n m a))
+  => c s a -> XOrtPerspective p a
   -> Limits l s p t n m a -> Diagram t n m a 
   -> Statement
 prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
-  :<=>: And [ case cnStructMlt cs of
+  :<=>: And [ case opdStructMlt cs of
                 Struct -> (diagram lm == d) :?> Params["d":=show d,"lm":=show lm]
-            , relUniversal cs xop lm
+            , relUniversal (opdConeStruct cs) xop lm
             ]
   where lm = limes lms d
 
@@ -176,8 +168,8 @@ prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
 -- prpLimits -
 
 -- | validity according to 'Limits', relative to the given random variable for 'Diagram's. 
-prpLimits :: (Universal l, Show (l s p t n m a))
-  => ConeStruct s a -> Limits l s p t n m a
+prpLimits :: (OpReflexive c s, Universal l, Show (l s p t n m a))
+  => c s a -> Limits l s p t n m a
   -> X (Diagram t n m a) -> XOrtPerspective p a -> Statement
 prpLimits cs lms xd xop = Prp "Limits"
   :<=>: Forall xd (prpLimitsDiagram cs xop lms)
@@ -210,3 +202,4 @@ lmsToPrjOrnt = Limits . lmToPrjOrnt
 -- | injective limits for @'Orientation' __p__@.
 lmsFromInjOrnt :: Entity p => p -> Limits Limes Mlt Injective t n m (Orientation p)
 lmsFromInjOrnt = Limits . lmFromInjOrnt  
+

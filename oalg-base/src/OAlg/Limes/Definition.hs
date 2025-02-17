@@ -193,17 +193,17 @@ coLimesInv cs rp@Refl rt@Refl
 
 -- | to @__g__ ('Op' __a__)@.
 lmToOp :: ConeStruct s a -> OpDuality Limes s f f' -> f a -> f' (Op a)
-lmToOp cs (OpDuality Refl Refl rp rt) = coLimes cs rp rt
+lmToOp cs (OpDuality rp rt) = coLimes cs rp rt
 
 --------------------------------------------------------------------------------
 -- lmFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
 lmFromOp :: ConeStruct s a -> OpDuality Limes s f f' -> f' (Op a) -> f a
-lmFromOp cs (OpDuality Refl Refl rp rt) = coLimesInv cs rp rt
+lmFromOp cs (OpDuality rp rt) = coLimesInv cs rp rt
 
 
-instance OpDualisable Limes s where
+instance OpDualisable ConeStruct Limes s where
   opdToOp   = lmToOp
   opdFromOp = lmFromOp
   

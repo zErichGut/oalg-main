@@ -48,9 +48,11 @@ import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Universal
+import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
@@ -123,9 +125,23 @@ instance Show c => Show (Liftable s i c) where
 
 type instance Dual (Liftable p i c) = Liftable (Dual p) i (Op c)
 
+
 coLiftable :: Sliced i c => Liftable p i c -> Dual (Liftable p i c)
 coLiftable (LiftableProjective c lft) = LiftableInjective (Op c) (coSlice . lft . coSliceInv Refl)
 coLiftable (LiftableInjective c lft)  = LiftableProjective (Op c) (coSlice . lft . coSliceInv Refl)
+
+
+lftbFromOpOp :: (Sliced i c, Multiplicative c) => Liftable p i (Op (Op c)) -> Liftable p i c
+lftbFromOpOp (LiftableProjective c lft) = LiftableProjective c' lft' where
+  c'   = amap isoFromOpOpMlt c
+  lft' = slFromOpOp . lft . slToOpOp
+lftbFromOpOp (LiftableInjective c lft) = LiftableInjective c' lft' where
+  c'   = amap isoFromOpOpMlt c
+  lft' = slFromOpOp . lft . slToOpOp
+
+coLiftableInv :: (Sliced i c, Multiplicative c)
+  => Dual (Dual p) :~: p -> Dual (Liftable p i c) -> Liftable p i c
+coLiftableInv Refl = lftbFromOpOp . coLiftable
 
 --------------------------------------------------------------------------------
 -- Liftable - Valid -
@@ -179,6 +195,7 @@ liftBase (LiftableInjective c _)  = c
 
 --------------------------------------------------------------------------------
 -- lift -
+
 type family ToSite (s :: k) :: Site
 
 type instance ToSite Projective = To
@@ -208,13 +225,19 @@ data LiftableLimes i s p t n m c where
 -- LiftableKernel -
 
 -- | liftable kenrel according to a slice index @__i__@.
-type LiftableKernel i = LiftableLimes i Dst Projective (Parallel LeftToRight) N2 N1
+type LiftableKernel i = GenericKernel (LiftableLimes i) N1
+
+-- | liftable kernels according to a slice index @__i__@.
+type LiftableKernels i = GenericKernels (LiftableLimes i) N1
 
 --------------------------------------------------------------------------------
 -- LiftableCokernel -
 
 -- | liftable cokernel according to a slice index @__i__@.
-type LiftableCokernel i = LiftableLimes i Dst Injective (Parallel RightToLeft) N2 N1
+type LiftableCokernel i = GenericCokernel (LiftableLimes i) N1
+
+-- | liftable cokernels according to a slice index @__i__@.
+type LiftableCokernels i = GenericCokernels (LiftableLimes i) N1
 
 --------------------------------------------------------------------------------
 -- lmLiftable -
@@ -264,3 +287,50 @@ instance Universal (LiftableLimes i) where
 
   universalFactor (LiftableKernel k _)   = universalFactor k
   universalFactor (LiftableCokernel c _) = universalFactor c
+
+
+--------------------------------------------------------------------------------
+-- LiftableLimes - Duality -
+
+type instance Dual (LiftableLimes i s p t n m c) = LiftableLimes i s (Dual p) (Dual t) n m (Op c)
+
+coLiftableLimes :: (Distributive c, Sliced i c)
+  => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> LiftableLimes i s p t n m c -> Dual (LiftableLimes i s p t n m c)
+coLiftableLimes rp rt l@(LiftableKernel ker _) = LiftableCokernel coker lft' where
+  coker = coLimes ConeStructDst rp rt ker
+  lft' = lift $ coLiftable $ lmLiftable l
+coLiftableLimes rp rt l@(LiftableCokernel coker _) = LiftableKernel ker lft' where
+  ker = coLimes ConeStructDst rp rt coker
+  lft' = lift $ coLiftable $ lmLiftable l
+
+lftlFromOpOp :: (Distributive c, Sliced i c)
+  => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> LiftableLimes i s p t n m (Op (Op c)) -> LiftableLimes i s p t n m c
+lftlFromOpOp rp rt l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
+  ker' = lmFromOpOp ConeStructDst rp rt ker
+  lft' = lift $ lftbFromOpOp $ lmLiftable l
+lftlFromOpOp rp rt l@(LiftableCokernel coker _) = LiftableCokernel coker' lft' where
+  coker' = lmFromOpOp ConeStructDst rp rt coker
+  lft'   = lift $ lftbFromOpOp $ lmLiftable l
+
+coLiftableLimesInv :: (Distributive c, Sliced i c)
+  => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> Dual (LiftableLimes i s p t n m c) -> LiftableLimes i s p t n m c
+coLiftableLimesInv rp@Refl rt@Refl = lftlFromOpOp rp rt . coLiftableLimes Refl Refl
+
+--------------------------------------------------------------------------------
+-- LiftableStruct -
+
+data LiftableStruct i s c where
+  LiftableStruct :: (Distributive c, Sliced i c) => LiftableStruct i s c
+
+instance OpReflexive (LiftableStruct i) Dst where
+  opdStructOp LiftableStruct = LiftableStruct
+  opdConeStruct LiftableStruct = ConeStructDst
+  opdRefl LiftableStruct = isoToOpOpDst
+
+instance OpDualisable (LiftableStruct i) (LiftableLimes i) Dst where
+  opdToOp LiftableStruct (OpDuality rp rt)   = coLiftableLimes rp rt
+  opdFromOp LiftableStruct (OpDuality rp rt) = coLiftableLimesInv rp rt
+

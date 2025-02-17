@@ -248,19 +248,19 @@ type ConeDuality = OpDuality Cone
 
 -- | to @__g__ ('Op' __a__)@.
 cnToOp :: ConeStruct s a -> ConeDuality s f f' -> f a -> f' (Op a)
-cnToOp _ (OpDuality Refl Refl _ _) = coCone
+cnToOp _ (OpDuality _ _) = coCone
 
 --------------------------------------------------------------------------------
 -- cnFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
 cnFromOp :: ConeStruct s a ->  ConeDuality s f f' -> f' (Op a) -> f a
-cnFromOp cs (OpDuality Refl Refl rp rt) = coConeInv cs rp rt
+cnFromOp cs (OpDuality rp rt) = coConeInv cs rp rt
 
 --------------------------------------------------------------------------------
 -- Cone - Dualisable -
 
-instance OpDualisable Cone s where
+instance OpDualisable ConeStruct Cone s where
   opdToOp   = cnToOp
   opdFromOp = cnFromOp
   

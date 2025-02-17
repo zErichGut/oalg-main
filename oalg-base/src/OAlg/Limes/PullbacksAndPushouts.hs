@@ -218,7 +218,7 @@ type Pushouts n = GenericPushouts Limes n
 
 -- | duality between pushouts and pullbacks.
 pshLimitsDuality :: OpDuality (Limits Limes) Mlt (Pushouts n) (Pullbacks n)
-pshLimitsDuality = OpDuality Refl Refl Refl Refl
+pshLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- pushouts -
