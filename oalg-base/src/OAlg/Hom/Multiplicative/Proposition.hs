@@ -224,21 +224,21 @@ xHomMlt' h (XMlt _ xp _ _ xa2 _) = XHomMlt xsp xsa2 where
 prpHomOpMlt :: Statement
 prpHomOpMlt = Prp "HomOpMlt"
   :<=>: And [ prpHomMlt xsaToOpOp
-            , prpHomMlt xsaOpposite
-            , prpHomMlt xsaOpPathInv
+            -- , prpHomMlt xsaOpposite
+            -- , prpHomMlt xsaOpPathInv
             ] where
 
     xeo :: XOrtSite To (Orientation Symbol)
     xeo = xEndOrnt xSymbol
-
+{-    
     xsp' :: XOrtSite From (Path (Op (Orientation Symbol)))
     xsp' = xosXOrtSitePath (toDual xeo) 10
-    
+
     xsaOpposite :: XHomMlt (HomOp Mlt)
     xsaOpposite = xHomMlt (XSomeApplMlt Opposite $ toDual xeo)
 
     xsaOpPathInv :: XHomMlt (HomOp Mlt)
     xsaOpPathInv = xHomMlt (XSomeApplMlt OpPathInv $ xsp')
-
+-}
     xsaToOpOp :: XHomMlt (HomOp Mlt)
     xsaToOpOp = xHomMlt (XSomeApplMlt ToOpOp xeo)

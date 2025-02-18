@@ -25,7 +25,7 @@
 module OAlg.Entity.Slice.Definition
   (
     -- * Slice
-    Slice(..), slice, slSiteType
+    Slice(..), slice, slSiteType, slMap
 
     -- ** Duality
   , coSlice, coSliceInv
@@ -150,6 +150,17 @@ slSiteType (SliceFrom _ _ ) = Left Refl
 slSiteType (SliceTo _ _)    = Right Refl
 
 --------------------------------------------------------------------------------
+-- slMap -
+
+-- | mapping of slices.
+--
+-- __Note__ As 'IsoOp' is generated only by 'isoToOpOpOrt' ans 'isoFromOpOpOrt' the 'slicePoint' is
+-- invariant under these mappings and as such 'slMap' maps 'valid' slices to 'valid' slices.
+slMap :: Singleton1 i => IsoOp o a b -> Slice s i a -> Slice s i b
+slMap i (SliceFrom _ a) = SliceFrom unit1 (amap i a)
+slMap i (SliceTo _ a)   = SliceTo unit1 (amap i a)
+
+--------------------------------------------------------------------------------
 -- Slice - Dual -
 
 type instance Dual (Slice s i c) = Slice (Dual s) i (Op c)
@@ -159,19 +170,17 @@ coSlice :: Singleton1 i => Slice s i c -> Dual (Slice s i c)
 coSlice (SliceFrom _ f) = SliceTo unit1 (Op f)
 coSlice (SliceTo _ f)   = SliceFrom unit1 (Op f)
 
-slFromOpOp :: Singleton1 i => Slice s i (Op (Op c)) -> Slice s i c
-slFromOpOp (SliceFrom _ (Op (Op f))) = SliceFrom unit1 f
-slFromOpOp (SliceTo _ (Op (Op t))) = SliceTo unit1 t
+slFromOpOp :: (Singleton1 i, Oriented c) => Slice s i (Op (Op c)) -> Slice s i c
+slFromOpOp = slMap isoFromOpOpOrt
 
-slToOpOp :: Singleton1 i => Slice s i c -> Slice s i (Op (Op c))
-slToOpOp (SliceFrom _ f) = SliceFrom unit1 (Op (Op f))
-slToOpOp (SliceTo _ t)   = SliceTo unit1 (Op (Op t))
+slToOpOp :: (Singleton1 i, Oriented c) => Slice s i c -> Slice s i (Op (Op c))
+slToOpOp = slMap isoToOpOpOrt
 
 slSiteBidual :: Slice s i c -> Dual (Dual s) :~: s
 slSiteBidual (SliceFrom _ _) = Refl
 slSiteBidual (SliceTo _ _) = Refl
 
-coSliceInv :: Singleton1 i => Dual (Dual s) :~: s -> Dual (Slice s i c) -> Slice s i c
+coSliceInv :: (Singleton1 i, Oriented c) => Dual (Dual s) :~: s -> Dual (Slice s i c) -> Slice s i c
 coSliceInv Refl = slFromOpOp . coSlice
 
 --------------------------------------------------------------------------------

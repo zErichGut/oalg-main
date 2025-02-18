@@ -123,14 +123,14 @@ prpHomOpOrt = Prp "HomOpOrt"
   :<=>: prpHomOrt xa where
 
     xo = xOrtOrnt xSymbol
-    xs = xStartOrnt xSymbol
+    -- xs = xStartOrnt xSymbol
 
-    xpth n = xNB 0 n >>= xosPath xs
+    -- xpth n = xNB 0 n >>= xosPath xs
     
     xa :: XHomOrt (HomOp Ort)
     xa = join $ xOneOf [ fmap (SomeApplication FromOpOp . Op . Op) xo 
-                       , fmap (SomeApplication OpPath . Op) $ xpth 10
-                       , fmap (SomeApplication Opposite . Op) xo
+                       -- , fmap (SomeApplication OpPath . Op) $ xpth 10
+                       -- , fmap (SomeApplication Opposite . Op) xo
                        ]
          
 
@@ -156,7 +156,7 @@ prpIsoOpOrtFunctorial = Prp "IsoOpOrtFunctorial"
 -- | random variale of @'IsoOp' 'Ort'@.
 xIsoOpOrtFrom :: XFnctMrphSite From (IsoOp Ort)
 xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
-  
+{-  
   domOpPath :: Struct Ort (Op (O.Path OS))
   domOpPath = Struct
 
@@ -165,7 +165,7 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
 
   domOpOS :: Struct Ort (Op OS)
   domOpOS = Struct
-
+-}
   domOpOpOS :: Struct Ort (Op (Op OS))
   domOpOpOS = Struct
   
@@ -174,15 +174,15 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
 
   xOS = xOrtOrnt xSymbol
   
-  xox d =     xdomOS d <|> xdomOpOS d
-          <|> xdomOpPath d <|> xdomOpPathInv d
+  xox d =     xdomOS d -- <|> xdomOpOS d
+          -- <|> xdomOpPath d <|> xdomOpPathInv d
           <|> xdomOpOpOS d
 
   xdomOS :: Struct Ort x -> X x
   xdomOS d = case testEquality d domOS of
     Just Refl -> xOS
     Nothing   -> XEmpty
-
+{-
   xdomOpOS :: Struct Ort x -> X x
   xdomOpOS d = case testEquality d domOpOS of
     Just Refl -> fmap Op xOS
@@ -197,22 +197,22 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
   xdomOpPathInv d = case testEquality d domOpPathInv of
     Just Refl -> fmap toDual (xNB 0 10 >>= xosPath (xStartOrnt xSymbol))
     Nothing   -> XEmpty
-
+-}
   xdomOpOpOS :: Struct Ort x -> X x
   xdomOpOpOS d = case testEquality d domOpOpOS of
     Just Refl -> fmap (Op . Op) xOS
     Nothing   -> XEmpty
   
   xss = xOneOf [ SomeObjectClass domOS
-               , SomeObjectClass domOpPath
-               , SomeObjectClass domOpPathInv
-               , SomeObjectClass domOpOS
+               -- , SomeObjectClass domOpPath
+               -- , SomeObjectClass domOpPathInv
+               -- , SomeObjectClass domOpOS
                , SomeObjectClass domOpOpOS
                ]
 
   xsdm d =    xsdmFromOpOp d <|> xsdmToOpOp d
-          <|> xsdmOpPath d <|> xsdmOpPathInv d
-          <|> xsdmOpposite d <|> xsdmOppositeInv d
+          -- <|> xsdmOpPath d <|> xsdmOpPathInv d
+          -- <|> xsdmOpposite d <|> xsdmOppositeInv d
           
   xsdmFromOpOp :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
   xsdmFromOpOp d = case testEquality d domOpOpOS of
@@ -223,7 +223,7 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
   xsdmToOpOp d = case testEquality d domOS of
     Just Refl -> return $ SomeMorphismDomain (f' d)
     _         -> XEmpty
-
+{-
   xsdmOpPath :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
   xsdmOpPath d = case testEquality d domOpPath of
     Just Refl -> return $ SomeMorphismDomain (p d)
@@ -243,14 +243,14 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
   xsdmOppositeInv d = case testEquality d domOS of
     Just Refl -> return $ SomeMorphismDomain (o' d)
     _         -> XEmpty
-
+-}
 
   f' :: Struct Ort a -> IsoOp Ort a (Op (Op a))
   f' Struct = invert2 isoFromOpOpOrt
 
   f :: a ~ OS => Struct Ort (Op (Op a)) -> IsoOp Ort (Op (Op a)) a
   f Struct = isoFromOpOpOrt
-
+{-
   p :: a ~ OS => Struct Ort (Op (O.Path a)) -> IsoOp Ort (Op (O.Path a)) (O.Path (Op a))
   p Struct = make (OpPath :. IdPath Struct)
 
@@ -262,5 +262,5 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
 
   o' :: a ~ OS => Struct Ort a -> IsoOp Ort a (Op a)
   o' Struct = make (OppositeInv :. IdPath Struct)
-
+-}
 

@@ -22,7 +22,6 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-
     -- * Homomorphism
     HomOriented(..), omap, IsoOrt, IsoOriented
 
@@ -39,7 +38,7 @@ module OAlg.Hom.Oriented.Definition
   , HomOp(..)
 
     -- * IsoOp
-  , IsoOp(), PathHomOp, opPathOrt
+  , IsoOp(), PathHomOp -- , opPathOrt
   , isoToOpOpOrt, isoFromOpOpOrt
 
     -- * IsoOpMap
@@ -218,7 +217,7 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
 --------------------------------------------------------------------------------
 -- HomOp -
 
--- | some basic contravariant isomorphisms between @__s__@-structures with there 'invert2'.
+-- | the @a -> 'Op' ('Op' a))@ isomorphism between @__s__@-structures with its 'invert2'.
 data HomOp s a b where  
   FromOpOp  :: ( Structure s (Op (Op a))
                , Structure s a
@@ -226,6 +225,7 @@ data HomOp s a b where
   ToOpOp :: ( Structure s (Op (Op a))
             , Structure s a
             ) => HomOp s a (Op (Op a))
+{-            
   OpPath    :: ( Structure s a
                , Structure s (Op (O.Path a))
                , Structure s (O.Path (Op a))
@@ -240,7 +240,7 @@ data HomOp s a b where
   OppositeInv :: ( Structure s (Op (Orientation p))
                , Structure s (Orientation p)
                ) => HomOp s (Orientation p) (Op (Orientation p))
-
+-}
 --------------------------------------------------------------------------------
 -- invHomOp -
 
@@ -249,13 +249,14 @@ invHomOp :: HomOp s a b -> HomOp s b a
 invHomOp h = case h of
   FromOpOp    -> ToOpOp
   ToOpOp      -> FromOpOp
-
+{-
   OpPath      -> OpPathInv
   OpPathInv   -> OpPath
 
   Opposite    -> OppositeInv
   OppositeInv -> Opposite
-  
+-}
+
 --------------------------------------------------------------------------------
 -- HomOp - Morphism -
 
@@ -264,12 +265,13 @@ instance Morphism (HomOp s) where
 
   homomorphous FromOpOp    = Struct :>: Struct
   homomorphous ToOpOp = Struct :>: Struct
-
+{-
   homomorphous OpPath    = Struct :>: Struct
   homomorphous OpPathInv = Struct :>: Struct
   
   homomorphous Opposite    = Struct :>: Struct
   homomorphous OppositeInv = Struct :>: Struct
+-}
 
 instance TransformableTyp s => TransformableObjectClassTyp (HomOp s)
 
@@ -293,10 +295,11 @@ instance Typeable s => Entity2 (HomOp s)
 --------------------------------------------------------------------------------
 -- HomOp - Hom -
 
-instance TransformableOrt s => Applicative (HomOp s) where
+instance Applicative (HomOp s) where
   amap FromOpOp (Op (Op x)) = x
   amap ToOpOp x             = Op (Op x)
-
+{-
+instance TransformableOrt s => Applicative (HomOp s) where
   amap h@OpPath (Op pth) = toDualOrt (tau (aStruct h)) h pth where
     aStruct :: HomOp s (Op (O.Path a)) (O.Path (Op a)) -> Struct s a
     aStruct OpPath = Struct
@@ -315,18 +318,19 @@ instance TransformableOrt s => Applicative (HomOp s) where
 
   amap Opposite (Op o) = opposite o
   amap OppositeInv o = Op (opposite o)
-
+-}
 instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => HomOriented (HomOp s) where
   pmap FromOpOp    = id
   pmap ToOpOp = id
-
+{-
   pmap OpPath    = id
   pmap OpPathInv = id
 
   pmap Opposite    = id
   pmap OppositeInv = id
-  
+-}
+
 --------------------------------------------------------------------------------
 -- PathHomOp -
 
@@ -348,13 +352,13 @@ rdcPathHomOp :: PathHomOp s a b -> Rdc (PathHomOp s a b)
 rdcPathHomOp pth = case pth of
   FromOpOp :. ToOpOp :. p -> reducesTo p >>= rdcPathHomOp
   ToOpOp :. FromOpOp :. p -> reducesTo p >>= rdcPathHomOp
-
+{-
   OpPath :. OpPathInv :. p -> reducesTo p >>= rdcPathHomOp
   OpPathInv :. OpPath :. p -> reducesTo p >>= rdcPathHomOp
   
   Opposite :. OppositeInv :. p -> reducesTo p >>= rdcPathHomOp
   OppositeInv :. Opposite :. p -> reducesTo p >>= rdcPathHomOp
-  
+-}  
   h :. p              -> rdcPathHomOp p >>= (return . (h:.))
   p                   -> return p
 
@@ -388,7 +392,8 @@ instance TransformableTyp s => Cayleyan2 (IsoOp s) where
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance TransformableOrt s => Applicative (IsoOp s) where
+-- instance TransformableOrt s => Applicative (IsoOp s) where
+instance Applicative (IsoOp s) where
   amap = restrict amap
 
 instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
@@ -398,17 +403,18 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
 --------------------------------------------------------------------------------
 -- IsoOp - Functorial -
 
-instance TransformableOrt s => Functorial (IsoOp s)
+-- instance TransformableOrt s => Functorial (IsoOp s)
+instance Functorial (IsoOp s)
 instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   => FunctorialHomOriented (IsoOp s)
-
+{-
 --------------------------------------------------------------------------------
 -- opPathOrt -
 
 -- | the induced isomorphism given by 'OpPath'.
 opPathOrt :: Oriented a => IsoOp Ort (Op (O.Path a)) (O.Path (Op a)) 
 opPathOrt = make (OpPath :. IdPath Struct) 
-
+-}
 --------------------------------------------------------------------------------
 -- isoToOpOpOrt -
 
@@ -626,4 +632,5 @@ instance Applicative h => Applicative (OpHom h) where
 
 instance HomOriented h => HomOriented (OpHom h) where
   pmap (OpHom h) = pmap h 
+
 

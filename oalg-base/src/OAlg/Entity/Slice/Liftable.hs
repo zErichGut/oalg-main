@@ -120,6 +120,14 @@ instance Show c => Show (Liftable s i c) where
   show (LiftableProjective c _) = join ["LiftableProjective (",show c,") lft"]
   show (LiftableInjective c _)  = join ["LiftableInjective (",show c,") lft"]
 
+--------------------------------------------------------------------------------
+-- lftbMap -
+
+lftbMap :: (Singleton1 i, TransformableTyp o) => IsoOp o a b -> Liftable p i a -> Liftable p i b
+lftbMap i (LiftableProjective a lft) = LiftableProjective (amap i a) lft' where
+  lft' = slMap i . lft . slMap (invert2 i)
+lftbMap i (LiftableInjective a lft) = LiftableInjective (amap i a) lft' where
+  lft' = slMap i . lft . slMap (invert2 i)
 
 --------------------------------------------------------------------------------
 -- Liftable - Dual -
@@ -127,18 +135,12 @@ instance Show c => Show (Liftable s i c) where
 type instance Dual (Liftable p i c) = Liftable (Dual p) i (Op c)
 
 
-coLiftable :: Sliced i c => Liftable p i c -> Dual (Liftable p i c)
+coLiftable :: (Sliced i c, Multiplicative c) => Liftable p i c -> Dual (Liftable p i c)
 coLiftable (LiftableProjective c lft) = LiftableInjective (Op c) (coSlice . lft . coSliceInv Refl)
 coLiftable (LiftableInjective c lft)  = LiftableProjective (Op c) (coSlice . lft . coSliceInv Refl)
 
-
 lftbFromOpOp :: (Sliced i c, Multiplicative c) => Liftable p i (Op (Op c)) -> Liftable p i c
-lftbFromOpOp (LiftableProjective c lft) = LiftableProjective c' lft' where
-  c'   = amap isoFromOpOpMlt c
-  lft' = slFromOpOp . lft . slToOpOp
-lftbFromOpOp (LiftableInjective c lft) = LiftableInjective c' lft' where
-  c'   = amap isoFromOpOpMlt c
-  lft' = slFromOpOp . lft . slToOpOp
+lftbFromOpOp = lftbMap isoFromOpOpMlt
 
 coLiftableInv :: (Sliced i c, Multiplicative c)
   => Dual (Dual p) :~: p -> Dual (Liftable p i c) -> Liftable p i c
@@ -222,6 +224,17 @@ data LiftableLimes i s p t n m c where
     :: Cokernel N1 c -> (Slice From i c -> Slice From i c)
     -> LiftableLimes i Dst Injective (Parallel RightToLeft) N2 N1 c
 
+--------------------------------------------------------------------------------
+-- lftlMap -
+
+lftlMap :: Singleton1 i => IsoOp Dst a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
+lftlMap i l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
+  ker' = lmMap i ker
+  LiftableProjective _ lft' = lftbMap i (lmLiftable l)
+lftlMap i l@(LiftableCokernel coker _) = LiftableCokernel coker' lft' where
+  coker' = lmMap i coker
+  LiftableInjective _ lft' = lftbMap i (lmLiftable l)
+  
 --------------------------------------------------------------------------------
 -- LiftableKernel -
 
@@ -335,5 +348,6 @@ instance OpDualisable (LiftableStruct i) (LiftableLimes i) Dst where
   opdToOp LiftableStruct (OpDuality rp rt)   = coLiftableLimes rp rt
   opdFromOp LiftableStruct (OpDuality rp rt) = coLiftableLimesInv rp rt
 
-instance UniversalApplicative (IsoOp Dst) (LiftableLimes i) Dst where
-  umap iso (LiftableKernel k lft) = error "nyi"
+instance Singleton1 i => UniversalApplicative (IsoOp Dst) (LiftableLimes i) Dst where
+  umap = lftlMap
+

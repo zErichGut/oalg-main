@@ -28,7 +28,7 @@ module OAlg.Hom.Multiplicative.Definition
     -- * OpHom
   -- , toOpHomMlt
   , isoToOpOpMlt, isoFromOpOpMlt
-  , isoOppositeMlt
+  -- , isoOppositeMlt
   )
   where
 
@@ -118,12 +118,14 @@ isoToOpOpMlt = make (ToOpOp :. IdPath Struct)
 isoFromOpOpMlt :: Multiplicative a => IsoOp Mlt (Op (Op a)) a
 isoFromOpOpMlt = make (FromOpOp :. IdPath Struct)
 
+{-
 --------------------------------------------------------------------------------
 -- isoOppositeMlt -
 
 -- | the induced isomorphism of 'Oriented' structures given by 'Opposite'.
 isoOppositeMlt :: Entity p => IsoOp Mlt (Op (Orientation p)) (Orientation p)
 isoOppositeMlt = make (Opposite :. IdPath Struct)
+-}
 
 --------------------------------------------------------------------------------
 -- OpHom -

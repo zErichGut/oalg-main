@@ -153,4 +153,6 @@ Indroducing generic limits.
 ### Added
 - The class Uiversal and UniversalApplicative in the module OAlg.Limes.Universal for generic limits.
 
-
+### Changed
+- HomOp contains only the constructors FromOpOp and ToOpOp and as such IsoOp is generated
+by isoToOpOp ans its inverse isoFromOpOp.
