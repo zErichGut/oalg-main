@@ -109,14 +109,14 @@ instance (TransformableOp s, TransformableOrt s, TransformableMlt s, Transformab
 
 -- | the induced isomorphism of 'Multiplicative' structures given by 'ToOpOp'.
 isoToOpOpMlt :: Multiplicative a => IsoOp Mlt a (Op (Op a))
-isoToOpOpMlt = make (ToOpOp :. IdPath Struct)
+isoToOpOpMlt = isoToOpOp
 
 --------------------------------------------------------------------------------
 -- isoFromOpOpMlt -
 
 -- | the induced isomorphism of 'Multiplicative' structures given by 'FromOpOp'.
 isoFromOpOpMlt :: Multiplicative a => IsoOp Mlt (Op (Op a)) a
-isoFromOpOpMlt = make (FromOpOp :. IdPath Struct)
+isoFromOpOpMlt = isoFromOpOp
 
 {-
 --------------------------------------------------------------------------------

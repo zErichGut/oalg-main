@@ -46,6 +46,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
@@ -61,6 +62,7 @@ import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
 
+import OAlg.Entity.Slice.Sliced
 import OAlg.Entity.Slice.Definition
 
 --------------------------------------------------------------------------------
@@ -120,27 +122,43 @@ instance Show c => Show (Liftable s i c) where
   show (LiftableProjective c _) = join ["LiftableProjective (",show c,") lft"]
   show (LiftableInjective c _)  = join ["LiftableInjective (",show c,") lft"]
 
+
 --------------------------------------------------------------------------------
 -- lftbMap -
 
-lftbMap :: (Singleton1 i, TransformableTyp o) => IsoOp o a b -> Liftable p i a -> Liftable p i b
-lftbMap i (LiftableProjective a lft) = LiftableProjective (amap i a) lft' where
-  lft' = slMap i . lft . slMap (invert2 i)
-lftbMap i (LiftableInjective a lft) = LiftableInjective (amap i a) lft' where
-  lft' = slMap i . lft . slMap (invert2 i)
-
+lftbMap :: (IsoSlice Mlt i h, Hom Mlt h) => h a b -> Liftable p i a -> Liftable p i b
+lftbMap h l = case l of
+  LiftableProjective a lft -> LiftableProjective (amap h a) lft' where
+    lft' = slMap (forget ix h) . lft . slMap (forget ix h')
+  LiftableInjective a lft  -> LiftableInjective (amap h a) lft' where
+    lft' = slMap (forget ix h) . lft . slMap (forget ix h')
+  where 
+    ix = ia (tau (domain h)) l
+    h' = invert2 h
+    
+    forget :: HomSliced Mlt i h => i x -> h a b -> Forget (Sld Mlt i) h a b
+    forget _ = Forget
+  
+    ia :: Struct (Sld Mlt i) a -> Liftable p i a -> i a
+    ia Struct _ = unit1
+  
 --------------------------------------------------------------------------------
 -- Liftable - Dual -
 
 type instance Dual (Liftable p i c) = Liftable (Dual p) i (Op c)
 
 
-coLiftable :: (Sliced i c, Multiplicative c) => Liftable p i c -> Dual (Liftable p i c)
+coLiftable :: Sliced i c => Liftable p i c -> Dual (Liftable p i c)
 coLiftable (LiftableProjective c lft) = LiftableInjective (Op c) (coSlice . lft . coSliceInv Refl)
 coLiftable (LiftableInjective c lft)  = LiftableProjective (Op c) (coSlice . lft . coSliceInv Refl)
 
+
 lftbFromOpOp :: (Sliced i c, Multiplicative c) => Liftable p i (Op (Op c)) -> Liftable p i c
-lftbFromOpOp = lftbMap isoFromOpOpMlt
+lftbFromOpOp l = lftbMap (fromOpOp l) l where
+  fromOpOp :: (Sliced i c, Multiplicative c)
+    => Liftable p i (Op (Op c)) -> IsoOp (Sld Mlt i) (Op (Op c)) c
+  fromOpOp _ = isoFromOpOp
+
 
 coLiftableInv :: (Sliced i c, Multiplicative c)
   => Dual (Dual p) :~: p -> Dual (Liftable p i c) -> Liftable p i c
@@ -225,12 +243,43 @@ data LiftableLimes i s p t n m c where
     -> LiftableLimes i Dst Injective (Parallel RightToLeft) N2 N1 c
 
 --------------------------------------------------------------------------------
+-- lmLiftable -
+
+-- | the associated 'Liftable'.
+lmLiftable :: LiftableLimes i s p t n m c -> Liftable p i c
+lmLiftable (LiftableKernel k lft)   = LiftableProjective (kernelFactor $ universalCone k) lft
+lmLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ universalCone c) lft
+
+--------------------------------------------------------------------------------
 -- lftlMap -
 
-lftlMap :: Singleton1 i => IsoOp Dst a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
-lftlMap i l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
-  ker' = lmMap i ker
-  LiftableProjective _ lft' = lftbMap i (lmLiftable l)
+instance Category h => Category (Forget t h) where
+
+instance Functorial h => Functorial (Forget t h)
+instance ( FunctorialHomOriented h, Transformable1 Op t, Transformable t Ort
+         , Transformable t Typ
+         )
+  => FunctorialHomOriented (Forget t h)
+instance Cayleyan2 h => Cayleyan2 (Forget t h) where invert2 (Forget h) = Forget (invert2 h)
+
+
+lftlMap :: (IsoSlice Dst i h, HomDistributive h)
+  => h a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
+lftlMap h l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
+  ker' = lmMap h ker
+  lft' = lift $ lftbMap (h) (lmLiftable l)
+
+  forget :: HomSliced Dst i h => i x -> h a b -> Forget (Sld Dst i) h a b
+  forget _ = Forget
+
+  ix :: HomSliced Dst i h => h a b -> LiftableLimes i s p t n m a -> i a
+  ix h l = case sldStruct h l of Struct -> unit1
+
+  sldStruct :: HomSliced Dst i h => h a b -> LiftableLimes i s p t n m a -> Struct (Sld Dst i) a
+  sldStruct h _ = tau (domain h)
+
+
+{-
 lftlMap i l@(LiftableCokernel coker _) = LiftableCokernel coker' lft' where
   coker' = lmMap i coker
   LiftableInjective _ lft' = lftbMap i (lmLiftable l)
@@ -252,14 +301,6 @@ type LiftableCokernel i = GenericCokernel (LiftableLimes i) N1
 
 -- | liftable cokernels according to a slice index @__i__@.
 type LiftableCokernels i = GenericCokernels (LiftableLimes i) N1
-
---------------------------------------------------------------------------------
--- lmLiftable -
-
--- | the associated 'Liftable'.
-lmLiftable :: LiftableLimes i s p t n m c -> Liftable p i c
-lmLiftable (LiftableKernel k lft)   = LiftableProjective (kernelFactor $ universalCone k) lft
-lmLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ universalCone c) lft
 
 --------------------------------------------------------------------------------
 -- lftKernel -
@@ -318,20 +359,10 @@ coLiftableLimes rp rt l@(LiftableCokernel coker _) = LiftableKernel ker lft' whe
   ker = coLimes ConeStructDst rp rt coker
   lft' = lift $ coLiftable $ lmLiftable l
 
-lftlFromOpOp :: (Distributive c, Sliced i c)
-  => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> LiftableLimes i s p t n m (Op (Op c)) -> LiftableLimes i s p t n m c
-lftlFromOpOp rp rt l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
-  ker' = lmFromOpOp ConeStructDst rp rt ker
-  lft' = lift $ lftbFromOpOp $ lmLiftable l
-lftlFromOpOp rp rt l@(LiftableCokernel coker _) = LiftableCokernel coker' lft' where
-  coker' = lmFromOpOp ConeStructDst rp rt coker
-  lft'   = lift $ lftbFromOpOp $ lmLiftable l
-
 coLiftableLimesInv :: (Distributive c, Sliced i c)
   => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Dual (LiftableLimes i s p t n m c) -> LiftableLimes i s p t n m c
-coLiftableLimesInv rp@Refl rt@Refl = lftlFromOpOp rp rt . coLiftableLimes Refl Refl
+coLiftableLimesInv Refl Refl = lftlMap isoFromOpOpDst . coLiftableLimes Refl Refl
 
 --------------------------------------------------------------------------------
 -- LiftableStruct -
@@ -351,3 +382,4 @@ instance OpDualisable (LiftableStruct i) (LiftableLimes i) Dst where
 instance Singleton1 i => UniversalApplicative (IsoOp Dst) (LiftableLimes i) Dst where
   umap = lftlMap
 
+-}

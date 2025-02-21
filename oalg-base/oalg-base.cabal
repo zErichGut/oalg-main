@@ -124,6 +124,7 @@ library
       OAlg.Entity.Slice.Definition
       OAlg.Entity.Slice.Free
       OAlg.Entity.Slice.Liftable
+      OAlg.Entity.Slice.Sliced
       OAlg.Entity.Sum
       OAlg.Entity.Sum.Definition
       OAlg.Entity.Sum.SumSymbol

@@ -39,6 +39,7 @@ module OAlg.Hom.Oriented.Definition
 
     -- * IsoOp
   , IsoOp(), PathHomOp -- , opPathOrt
+  , isoToOpOp, isoFromOpOp
   , isoToOpOpOrt, isoFromOpOpOrt
 
     -- * IsoOpMap
@@ -415,12 +416,27 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
 opPathOrt :: Oriented a => IsoOp Ort (Op (O.Path a)) (O.Path (Op a)) 
 opPathOrt = make (OpPath :. IdPath Struct) 
 -}
+
+--------------------------------------------------------------------------------
+-- isoToOpOp -
+
+-- | the isomorphism given by 'ToOpOp'.
+isoToOpOp :: (Structure s a, Structure s (Op (Op a))) => IsoOp s a (Op (Op a))
+isoToOpOp = make (ToOpOp :. IdPath Struct)
+
 --------------------------------------------------------------------------------
 -- isoToOpOpOrt -
 
 -- | the induced isomorphism of 'Oriented' structures given by 'ToOpOp'.
 isoToOpOpOrt :: Oriented a => IsoOp Ort a (Op (Op a))
-isoToOpOpOrt = make (ToOpOp :. IdPath Struct)
+isoToOpOpOrt = isoToOpOp
+
+--------------------------------------------------------------------------------
+-- isoFromOpOp -
+
+-- | the isomorphism given by 'FromOpOp'.
+isoFromOpOp :: (Structure s a, Structure s (Op (Op a))) => IsoOp s (Op (Op a)) a
+isoFromOpOp = make (FromOpOp :. IdPath Struct)
 
 --------------------------------------------------------------------------------
 -- isoFromOpOpOrt -
@@ -447,7 +463,7 @@ isoToOpOpOrt = make (ToOpOp :. IdPath Struct)
 -- >>> f . f . t . f . t . tOS == cOne Struct
 -- True
 isoFromOpOpOrt :: Oriented a => IsoOp Ort (Op (Op a)) a
-isoFromOpOpOrt = make (FromOpOp :. IdPath Struct)
+isoFromOpOpOrt = isoFromOpOp
 
 --------------------------------------------------------------------------------
 -- OpMap -

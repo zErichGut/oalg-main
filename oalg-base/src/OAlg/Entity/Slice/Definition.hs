@@ -24,19 +24,17 @@
 -- definition of slicing a 'Multiplicative' structures according a given indexed 'Point'.
 module OAlg.Entity.Slice.Definition
   (
+
     -- * Slice
     Slice(..), slice, slSiteType, slMap
 
     -- ** Duality
   , coSlice, coSliceInv
-  , slFromOpOp, slToOpOp
+  , slFromOpOp
 
     -- * Factor
   , SliceFactor(..), slfFactor, slfIndex
   
-    -- * Sliced
-  , Sliced(..)
-
     -- * Hom
   , SliceFactorDrop(..)
 
@@ -57,6 +55,7 @@ module OAlg.Entity.Slice.Definition
   , xosXOrtSiteToSliceFactorTo
   , xosXOrtSiteFromSliceFactorFrom
   , xosAdjTerminal
+
   ) where
 
 import Control.Monad
@@ -92,31 +91,8 @@ import OAlg.Limes.PullbacksAndPushouts
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
+import OAlg.Entity.Slice.Sliced
 
-import OAlg.Data.Symbol
-
---------------------------------------------------------------------------------
--- Sliced -
-
--- | Slicing a 'Multiplicative' structures at the 'Point' given by the type of the index
---  __@i@__. 
---
---  __Note__ The constraint @'Singleton1' __i__@ ensures that the distinguished point
---  depends only on the type __@i c@__.
-class (Entity1 i, Singleton1 i) => Sliced i c where
-  -- | the distingueished point of the given index type @__i__@.
-  slicePoint :: i c -> Point c
-
-instance Sliced i c => Sliced i (Op c) where
-  slicePoint i = to i $ slicePoint $ fo i where
-    
-    fo :: Singleton1 i => i (f c) -> i c
-    fo _ = unit1
-
-    to :: Point c ~ Point (f c) => p (f c) -> Point c -> Point (f c)
-    to _ = id
-
-  
 --------------------------------------------------------------------------------
 -- Slice -
 
@@ -142,6 +118,14 @@ slice (SliceFrom _ p) = p
 slice (SliceTo _ p)   = p
 
 --------------------------------------------------------------------------------
+-- slIndex -
+
+-- | the underlying index.
+slIndex :: Slice s i c -> i c
+slIndex (SliceFrom i _) = i
+slIndex (SliceTo i _)   = i
+
+--------------------------------------------------------------------------------
 -- slSiteType -
 
 -- | the 'Site' type of a slice.
@@ -150,15 +134,27 @@ slSiteType (SliceFrom _ _ ) = Left Refl
 slSiteType (SliceTo _ _)    = Right Refl
 
 --------------------------------------------------------------------------------
+-- sldRange -
+
+-- | the associated 'Sliced' structure of the 'range' of @h@.
+sldRange :: HomSliced Ort i h => h a b -> i x -> Struct (Sld Ort i) b
+sldRange h _ = tau (range h)
+
+--------------------------------------------------------------------------------
 -- slMap -
 
 -- | mapping of slices.
 --
 -- __Note__ As 'IsoOp' is generated only by 'isoToOpOpOrt' ans 'isoFromOpOpOrt' the 'slicePoint' is
 -- invariant under these mappings and as such 'slMap' maps 'valid' slices to 'valid' slices.
-slMap :: Singleton1 i => IsoOp o a b -> Slice s i a -> Slice s i b
-slMap i (SliceFrom _ a) = SliceFrom unit1 (amap i a)
-slMap i (SliceTo _ a)   = SliceTo unit1 (amap i a)
+slMap :: HomSliced Ort i h => h a b -> Slice s i a -> Slice s i b
+slMap h s        = case s of
+  SliceFrom i a -> case sldRange h i of
+    Struct      -> SliceFrom (singleton1 i) (amap h a)
+  SliceTo i a   -> case sldRange h i of
+    Struct      -> SliceTo (singleton1 i) (amap h a)
+        
+instance HomSliced Ort i h => Applicative1 h (Slice s i) where amap1 = slMap
 
 --------------------------------------------------------------------------------
 -- Slice - Dual -
@@ -166,29 +162,23 @@ slMap i (SliceTo _ a)   = SliceTo unit1 (amap i a)
 type instance Dual (Slice s i c) = Slice (Dual s) i (Op c)
 
 -- | to the dual 'Slice'.
-coSlice :: Singleton1 i => Slice s i c -> Dual (Slice s i c)
-coSlice (SliceFrom _ f) = SliceTo unit1 (Op f)
-coSlice (SliceTo _ f)   = SliceFrom unit1 (Op f)
+coSlice :: Sliced i c => Slice s i c -> Dual (Slice s i c)
+coSlice (SliceFrom i f) = SliceTo (singleton1 i) (Op f)
+coSlice (SliceTo i f)   = SliceFrom (singleton1 i) (Op f)
 
-slFromOpOp :: (Singleton1 i, Oriented c) => Slice s i (Op (Op c)) -> Slice s i c
-slFromOpOp = slMap isoFromOpOpOrt
+slFromOpOp :: Sliced i c => Slice s i (Op (Op c)) -> Slice s i c
+slFromOpOp s = slMap (fromOpOp s) s where
+  fromOpOp :: Sliced i c => Slice s i (Op (Op c)) -> IsoOp (Sld Ort i) (Op (Op c)) c
+  fromOpOp _ = isoFromOpOp
 
-slToOpOp :: (Singleton1 i, Oriented c) => Slice s i c -> Slice s i (Op (Op c))
-slToOpOp = slMap isoToOpOpOrt
-
-slSiteBidual :: Slice s i c -> Dual (Dual s) :~: s
-slSiteBidual (SliceFrom _ _) = Refl
-slSiteBidual (SliceTo _ _) = Refl
-
-coSliceInv :: (Singleton1 i, Oriented c) => Dual (Dual s) :~: s -> Dual (Slice s i c) -> Slice s i c
+coSliceInv :: Sliced i c => Dual (Dual s) :~: s -> Dual (Slice s i c) -> Slice s i c
 coSliceInv Refl = slFromOpOp . coSlice
 
 --------------------------------------------------------------------------------
 -- Slice - Validable -
 
 -- | validity of a 'Slice'.
-relValidSlice :: (Oriented c, Sliced i c)
-  => Slice s i c -> Statement
+relValidSlice :: Sliced i c => Slice s i c -> Statement
 relValidSlice s@(SliceFrom i f)
   = And [ valid1 i
         , valid f
@@ -198,7 +188,7 @@ relValidSlice s@(SliceFrom i f)
 relValidSlice s                 = relValidSlice (coSlice s)
 
 
-instance (Oriented c, Sliced i c) => Validable (Slice s i c) where
+instance Sliced i c => Validable (Slice s i c) where
   valid s = Label "Slice" :<=>: relValidSlice s
 
 
@@ -247,7 +237,7 @@ slfIndex _ = unit1
 type instance Dual (SliceFactor s i c) = SliceFactor (Dual s) i (Op c)
 
 -- | to the dual 'SliceFactor'.
-coSliceFactor :: Singleton1 i
+coSliceFactor :: Sliced i c
   => SliceFactor s i c -> Dual (SliceFactor s i c)
 coSliceFactor (SliceFactor a b t)
   = SliceFactor (coSlice b) (coSlice a) (Op t)
@@ -574,9 +564,6 @@ instance (Multiplicative c, Sliced i c, XStandardOrtSite To c)
 
 --------------------------------------------------------------------------------
 
-instance Sliced Proxy OS where
-  slicePoint _ = P
-
 instance XStandardOrtSite From (SliceFactor To Proxy OS) where
   xStandardOrtSite = XStart xp xFrom where
     xp = xStandard
@@ -647,4 +634,5 @@ instance (Distributive d, Abelian d, Sliced i d) => Abelian (Slice From i d) whe
 instance (Distributive d, Vectorial d, Sliced i d) => Vectorial (Slice From i d) where
   type Scalar (Slice From i d) = Scalar d
   x ! SliceFrom i a = SliceFrom i (x!a)
+
 
