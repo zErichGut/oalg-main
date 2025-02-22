@@ -11,6 +11,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
 
+-- {-# LANGUAGE UndecidableInstances #-}
+
 -- |
 -- Module      : OAlg.Entity.Slice.Sliced
 -- Description : oriented structures with a distinguished point.
@@ -21,16 +23,13 @@
 -- 'Oriented' structures with a distinguished 'Point'.
 module OAlg.Entity.Slice.Sliced
   (
+
     -- * Sliced
     Sliced(..)
 
     -- * Hom
   , HomSliced, Sld
-  , IsoSlice
 
-    -- * IsoOp
-  -- , isoToOpOpSld, isoFromOpOpSld
-  
   ) where
 
 import Data.Kind
@@ -143,7 +142,7 @@ instance ( Transformable s Fbr, Transformable s FbrOrt, Transformable s Add
   
 instance Transformable (Sld Mlt i) (Sld Ort i) where tau Struct = Struct
 instance Transformable (Sld Dst i) (Sld Mlt i) where tau Struct = Struct
-
+instance TransformableSld i Dst Mlt
 --------------------------------------------------------------------------------
 -- HomSliced -
 
@@ -156,52 +155,23 @@ instance Transformable (Sld Dst i) (Sld Mlt i) where tau Struct = Struct
 -- @'pmap' h ('slicePoint' i) '==' 'slicePioint' ('singelton1' i)@, where @i@ is in @__i__ __a__@.
 class (HomOriented h, Transformable (ObjectClass h) (Sld s i)) => HomSliced s i h
 
+type instance Hom (Sld s i) h = (HomSliced s i h, Hom s h)
 
+--------------------------------------------------------------------------------
+-- Path - HomSliced -
 instance HomSliced s i h => HomSliced s i (Path h)
-
-instance (HomSliced t i h, Transformable1 Op t, Transformable (Sld t i) (Sld s i))
-  => HomSliced s i (Forget (Sld t i) h)
-
---------------------------------------------------------------------------------
--- Hom -
-
-type instance Hom (Sld s i) h = HomSliced s i h
-
---------------------------------------------------------------------------------
--- IsoSliced -
-
-type IsoSlice s i h = (FunctorialHomOriented h, Cayleyan2 h, HomSliced s i h)
 
 --------------------------------------------------------------------------------
 -- IdHom - HomSliced -
 
-instance Transformable1 Op s => HomSliced s i (IdHom (Sld s i))
+instance TransformableSld i s s
+instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IdHom (Sld t i))
+-- needs UndecidableInstances to complie!
 
-
+class Transformable (Sld s i) (Sld t i) => TransformableSld i s t
 --------------------------------------------------------------------------------
 -- IsoOp - HomSliced -
 
-instance Transformable1 Op s => HomSliced s i (IsoOp (Sld s i))
+instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IsoOp (Sld t i))
+-- needs UndecidableInstances to complie!
 
-
-ff :: (HomSliced Dst i h, HomDistributive h) => i a -> h (Op (Op a)) a -> N
-ff = error "nyi"
-
-gg :: (Sliced i a, Distributive a) => i a -> IsoOp (Sld Dst i) (Op (Op a)) a
-gg _ = isoFromOpOp
-
-
-hh :: (Sliced i a, Distributive a) => i a -> N
-hh i = ff i (gg i)
-
-
-
-
-{-
-isoFromOpOpSld :: Sliced i a => IsoOp (Sld Ort i) (Op (Op a)) a
-isoFromOpOpSld = make (FromOpOp :. IdPath Struct)
-
-
-isoToOpOpSld :: Sliced s i a => IsoOp (Sld s i) a (Op (Op a))
-isoToOpOpSld = make (ToOpOp :. IdPath Struct)
--}

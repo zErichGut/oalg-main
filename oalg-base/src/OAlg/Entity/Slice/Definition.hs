@@ -137,8 +137,9 @@ slSiteType (SliceTo _ _)    = Right Refl
 -- sldRange -
 
 -- | the associated 'Sliced' structure of the 'range' of @h@.
-sldRange :: HomSliced Ort i h => h a b -> i x -> Struct (Sld Ort i) b
-sldRange h _ = tau (range h)
+sldRange :: HomSliced o i h => p o -> i x -> h a b -> Struct (Sld o i) b
+sldRange _ _ h = tau (range h)
+
 
 --------------------------------------------------------------------------------
 -- slMap -
@@ -147,14 +148,15 @@ sldRange h _ = tau (range h)
 --
 -- __Note__ As 'IsoOp' is generated only by 'isoToOpOpOrt' ans 'isoFromOpOpOrt' the 'slicePoint' is
 -- invariant under these mappings and as such 'slMap' maps 'valid' slices to 'valid' slices.
-slMap :: HomSliced Ort i h => h a b -> Slice s i a -> Slice s i b
-slMap h s        = case s of
-  SliceFrom i a -> case sldRange h i of
+slMap :: HomSliced o i h => p o -> h a b -> Slice s i a -> Slice s i b
+slMap o h s        = case s of
+  SliceFrom i a -> case sldRange o i h of
     Struct      -> SliceFrom (singleton1 i) (amap h a)
-  SliceTo i a   -> case sldRange h i of
+  SliceTo i a   -> case sldRange o i h of
     Struct      -> SliceTo (singleton1 i) (amap h a)
-        
-instance HomSliced Ort i h => Applicative1 h (Slice s i) where amap1 = slMap
+
+
+-- instance HomSliced Ort i h => Applicative1 h (Slice s i) where amap1 = slMap
 
 --------------------------------------------------------------------------------
 -- Slice - Dual -
@@ -167,7 +169,9 @@ coSlice (SliceFrom i f) = SliceTo (singleton1 i) (Op f)
 coSlice (SliceTo i f)   = SliceFrom (singleton1 i) (Op f)
 
 slFromOpOp :: Sliced i c => Slice s i (Op (Op c)) -> Slice s i c
-slFromOpOp s = slMap (fromOpOp s) s where
+slFromOpOp s = slMap o (fromOpOp s) s where
+  o = Proxy :: Proxy Ort
+  
   fromOpOp :: Sliced i c => Slice s i (Op (Op c)) -> IsoOp (Sld Ort i) (Op (Op c)) c
   fromOpOp _ = isoFromOpOp
 
@@ -634,5 +638,6 @@ instance (Distributive d, Abelian d, Sliced i d) => Abelian (Slice From i d) whe
 instance (Distributive d, Vectorial d, Sliced i d) => Vectorial (Slice From i d) where
   type Scalar (Slice From i d) = Scalar d
   x ! SliceFrom i a = SliceFrom i (x!a)
+
 
 
