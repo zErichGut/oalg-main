@@ -25,7 +25,8 @@ module OAlg.Structure.Definition
   , Structure2, Struct2(..)
 
     -- * Transformable
-  , Transformable(..), Transformable1(..), TransformableOp
+  , Transformable(..)
+  , Transformable1(..), TransformableOp, tauOp
   , TransformableTyp
 
     -- * Some Structure Types
@@ -140,6 +141,13 @@ class Transformable1 f s where
 
 -- | helper class to avoid undecidable instances.
 class Transformable1 Op s => TransformableOp s
+
+--------------------------------------------------------------------------------
+-- tauOp -
+
+-- | 'tau' for 'Op'.
+tauOp :: Transformable1 Op s => Struct s x -> Struct s (Op x)
+tauOp = tau1
 
 --------------------------------------------------------------------------------
 -- TransformableTyp -

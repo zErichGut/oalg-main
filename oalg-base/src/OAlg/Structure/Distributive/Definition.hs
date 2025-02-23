@@ -16,7 +16,7 @@
 -- distributive structures, i.e. multiplicative structures with a suitable additive structure.
 module OAlg.Structure.Distributive.Definition
   ( -- * Distributive
-    Distributive, Dst, TransformableDst
+    Distributive, Dst, TransformableDst, tauDst
 
     -- * Transposable
   , TransposableDistributive
@@ -84,6 +84,7 @@ instance Entity p => TransposableDistributive (Orientation p)
 instance TransposableDistributive N
 instance TransposableDistributive Z
 instance TransposableDistributive Q
+
 --------------------------------------------------------------------------------
 -- Dst -
   
@@ -101,6 +102,13 @@ instance Transformable Dst FbrOrt where tau Struct = Struct
 instance Transformable Dst Add where tau Struct = Struct
 instance Transformable1 Op Dst where tau1 Struct = Struct
 instance TransformableOp Dst
+
+--------------------------------------------------------------------------------
+-- tauDst -
+
+-- | 'tau' for 'Dst'.
+tauDst :: Transformable s Dst => Struct s x -> Struct Dst x
+tauDst = tau
 
 --------------------------------------------------------------------------------
 -- TransformableDst -

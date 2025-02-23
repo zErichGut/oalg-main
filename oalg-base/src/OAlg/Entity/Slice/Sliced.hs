@@ -11,8 +11,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Entity.Slice.Sliced
 -- Description : oriented structures with a distinguished point.
@@ -25,7 +23,7 @@ module OAlg.Entity.Slice.Sliced
   (
 
     -- * Sliced
-    Sliced(..)
+    Sliced(..), TransformableSld
 
     -- * Hom
   , HomSliced, Sld
@@ -49,7 +47,6 @@ import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
-import OAlg.Hom.Distributive
 
 import OAlg.Data.Symbol
 
@@ -85,27 +82,21 @@ data Sld s (i :: Type -> Type)
 
 type instance Structure (Sld s i) x = (Sliced i x, Structure s x)
 
+--------------------------------------------------------------------------------
+-- TransformableSld -
 
+-- | helper class to circumvent @UndecidableInstances@.
+class Transformable (Sld s i) (Sld t i) => TransformableSld i s t
+
+instance TransformableSld i s s
+instance TransformableSld i Mlt Ort
+
+--------------------------------------------------------------------------------
+-- sldStruct -
+
+-- | the underlying 'Structure' of the 'Sliced'-'Structure'.
 sldStruct :: Struct (Sld s i) x -> Struct s x
 sldStruct Struct = Struct
-
-tauOp :: Transformable1 Op s => Struct s x -> Struct s (Op x)
-tauOp = tau1
-
-tauMlt :: Transformable s Mlt => Struct s x -> Struct Mlt x
-tauMlt = tau
-
-tauFbr :: Transformable s Fbr => Struct s x -> Struct Fbr x
-tauFbr = tau
-
-tauFbrOrt :: Transformable s FbrOrt => Struct s x -> Struct FbrOrt x
-tauFbrOrt = tau
-
-tauAdd :: Transformable s Add => Struct s x -> Struct Add x
-tauAdd = tau
-
-tauDst :: Transformable s Dst => Struct s x -> Struct Dst x
-tauDst = tau
 
 instance Transformable1 Op s => Transformable1 Op (Sld s i) where
   tau1 s@Struct = case tauOp (sldStruct s) of Struct -> Struct
@@ -143,6 +134,7 @@ instance ( Transformable s Fbr, Transformable s FbrOrt, Transformable s Add
 instance Transformable (Sld Mlt i) (Sld Ort i) where tau Struct = Struct
 instance Transformable (Sld Dst i) (Sld Mlt i) where tau Struct = Struct
 instance TransformableSld i Dst Mlt
+
 --------------------------------------------------------------------------------
 -- HomSliced -
 
@@ -159,19 +151,23 @@ type instance Hom (Sld s i) h = (HomSliced s i h, Hom s h)
 
 --------------------------------------------------------------------------------
 -- Path - HomSliced -
+
 instance HomSliced s i h => HomSliced s i (Path h)
+
+--------------------------------------------------------------------------------
+-- Forget - HomSliced -
+
+instance (HomSliced t i h, Transformable1 Op t, TransformableSld i t s)
+  => HomSliced s i (Forget (Sld t i) h)
 
 --------------------------------------------------------------------------------
 -- IdHom - HomSliced -
 
-instance TransformableSld i s s
 instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IdHom (Sld t i))
--- needs UndecidableInstances to complie!
 
-class Transformable (Sld s i) (Sld t i) => TransformableSld i s t
 --------------------------------------------------------------------------------
 -- IsoOp - HomSliced -
 
 instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IsoOp (Sld t i))
--- needs UndecidableInstances to complie!
+
 

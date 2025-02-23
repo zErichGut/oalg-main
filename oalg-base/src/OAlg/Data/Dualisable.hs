@@ -26,7 +26,7 @@ module OAlg.Data.Dualisable
   , Transposable(..)
 
     -- * Site
-  , Site(..)
+  , Site(..), ToSite
 
     -- * Side
   , Side(..)
@@ -102,6 +102,12 @@ type instance Dual To = From
 instance Transposable Site where
   transpose From = To
   transpose To = From
+
+--------------------------------------------------------------------------------
+-- ToSite -
+
+-- | mapping to 'Site'.
+type family ToSite (s :: k) :: Site
 
 --------------------------------------------------------------------------------
 -- Side -

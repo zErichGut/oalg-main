@@ -19,7 +19,7 @@
 module OAlg.Structure.Additive.Definition
   (
     -- * Additive
-    Additive(..), zero', Add, TransformableAdd
+    Additive(..), zero', Add, TransformableAdd, tauAdd
 
     -- * Abelian
   , Abelian(..), isZero, Abl, TransformableAbl
@@ -239,6 +239,13 @@ type instance Structure Add x = Additive x
 instance Transformable Add Typ where tau Struct = Struct
 instance Transformable Add Ent where tau Struct = Struct
 instance Transformable Add Fbr where tau Struct = Struct
+
+--------------------------------------------------------------------------------
+-- tauAdd -
+
+-- | 'tau' for 'Add'.
+tauAdd :: Transformable s Add => Struct s x -> Struct Add x
+tauAdd = tau
 
 --------------------------------------------------------------------------------
 -- TransformableAdd -

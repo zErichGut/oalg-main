@@ -27,3 +27,7 @@ data Perspective = Projective | Injective deriving (Show,Eq,Ord,Enum,Bounded)
 type instance Dual Projective = Injective
 type instance Dual Injective = Projective
 
+type instance ToSite Projective = To
+type instance ToSite Injective  = From
+
+

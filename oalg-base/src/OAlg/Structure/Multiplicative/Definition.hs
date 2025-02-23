@@ -21,7 +21,7 @@
 module OAlg.Structure.Multiplicative.Definition
   (
     -- * Multiplicative
-    Multiplicative(..), one', isOne, Mlt, TransformableMlt
+    Multiplicative(..), one', isOne, Mlt, TransformableMlt, tauMlt
 
     -- * Transposable
   , TransposableMultiplicative
@@ -386,6 +386,13 @@ instance Transformable Mlt Ent where tau Struct = Struct
 instance Transformable Mlt Ort where tau Struct = Struct
 instance Transformable1 Op Mlt where tau1 Struct = Struct
 instance TransformableOp Mlt
+
+--------------------------------------------------------------------------------
+-- tauMlt -
+
+-- | 'tau' for 'Mlt'.
+tauMlt :: Transformable s Mlt => Struct s x -> Struct Mlt x
+tauMlt = tau
 
 --------------------------------------------------------------------------------
 -- TransformableMlt -

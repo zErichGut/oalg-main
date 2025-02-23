@@ -24,14 +24,32 @@
 -- liftable slices.
 module OAlg.Entity.Slice.Liftable
   (
-{-    
     -- * Liftables
-    Liftable(..), liftBase, lift
-  , LiftableException(..)
+    Liftable(..), lift, lftbBase, lftbMap
+  , LiftableStruct(..)
 
     -- ** Duality
-  , coLiftable
--}
+  , coLiftable, coLiftableInv, lftbFromOpOp
+
+    -- * Limes
+  , LiftableLimes(..), lftlLiftable, lftlMap
+  
+    -- ** Kernel
+  , LiftableKernels, LiftableKernel
+  , lftlKernel
+  
+    -- ** Cokernel
+  , LiftableCokernels, LiftableCokernel
+  , lftlCokernel
+
+    -- ** Duality
+  , coLiftableLimes, coLiftableLimesInv, lftlFromOpOp
+
+    -- * Proposition
+  , relLiftable
+
+    -- * Exception
+  , LiftableException(..)
   ) where
 
 import Control.Monad
@@ -46,20 +64,16 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Distributive
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Universal
 import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
-import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.Entity.Natural hiding ((++))
-import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
 
 import OAlg.Entity.Slice.Sliced
@@ -129,12 +143,14 @@ instance Show c => Show (Liftable s i c) where
 lftbMap :: IsoOrt (Sld Mlt i) h => h a b -> Liftable p i a -> Liftable p i b
 lftbMap h l = case l of
   LiftableProjective a lft -> LiftableProjective (amap h a) lft' where
-    lft' = slMap o h . lft . slMap o h'
+    lft' = slMap (forget l h) . lft . slMap (forget l h')    
   LiftableInjective a lft  -> LiftableInjective (amap h a) lft' where
-    lft' = slMap o h . lft . slMap o h'
+    lft' = slMap (forget l h) . lft . slMap (forget l h')
   where
     h' = invert2 h
-    o = Proxy :: Proxy Mlt
+
+    forget :: IsoOrt (Sld Mlt i) h => Liftable p i x -> h a b -> Forget (Sld Mlt i) h a b
+    forget _ = Forget
 
 --------------------------------------------------------------------------------
 -- Liftable - Dual -
@@ -200,20 +216,15 @@ instance (Sliced i c, Multiplicative c, XStandardOrtOrientation c)
   valid l = Label "Liftable" :<=>: relLiftable xStandardOrtOrientation l
                                       
 --------------------------------------------------------------------------------
--- liftBase -
+-- lftbBase -
 
 -- | the underlying factor.
-liftBase :: Liftable s i c -> c
-liftBase (LiftableProjective c _) = c
-liftBase (LiftableInjective c _)  = c
+lftbBase :: Liftable s i c -> c
+lftbBase (LiftableProjective c _) = c
+lftbBase (LiftableInjective c _)  = c
 
 --------------------------------------------------------------------------------
 -- lift -
-
-type family ToSite (s :: k) :: Site
-
-type instance ToSite Projective = To
-type instance ToSite Injective = From
 
 -- | the lifting map.
 lift :: Liftable p i c -> Slice (ToSite p) i c -> Slice (ToSite p) i c
@@ -236,24 +247,26 @@ data LiftableLimes i s p t n m c where
     -> LiftableLimes i Dst Injective (Parallel RightToLeft) N2 N1 c
 
 --------------------------------------------------------------------------------
--- lmLiftable -
+-- lftlLiftable -
 
 -- | the associated 'Liftable'.
-lmLiftable :: LiftableLimes i s p t n m c -> Liftable p i c
-lmLiftable (LiftableKernel k lft)   = LiftableProjective (kernelFactor $ universalCone k) lft
-lmLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ universalCone c) lft
+lftlLiftable :: LiftableLimes i s p t n m c -> Liftable p i c
+lftlLiftable (LiftableKernel k lft)   = LiftableProjective (kernelFactor $ universalCone k) lft
+lftlLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ universalCone c) lft
 
 --------------------------------------------------------------------------------
 -- lftlMap -
 
 lftlMap :: (IsoOrt (Sld Dst i) h, HomSliced Mlt i h)
   => h a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
+-- it is possible ot get rid of the constranint HomSliced Mlt i h via the construction of
+-- Forget, but more work would be needed!
 lftlMap h l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
   ker' = lmMap h ker
-  lft' = lift $ lftbMap h (lmLiftable l)
+  lft' = lift $ lftbMap h (lftlLiftable l)
 lftlMap i l@(LiftableCokernel coker _) = LiftableCokernel coker' lft' where
   coker' = lmMap i coker
-  LiftableInjective _ lft' = lftbMap i (lmLiftable l)
+  LiftableInjective _ lft' = lftbMap i (lftlLiftable l)
   
 --------------------------------------------------------------------------------
 -- LiftableKernel -
@@ -274,17 +287,17 @@ type LiftableCokernel i = GenericCokernel (LiftableLimes i) N1
 type LiftableCokernels i = GenericCokernels (LiftableLimes i) N1
 
 --------------------------------------------------------------------------------
--- lftKernel -
+-- lftlKernel -
 
 -- | the liftable property of 'LiftableKernel'.
-lftKernel :: LiftableKernel i c -> Slice To i c -> Slice To i c
-lftKernel l = lift (lmLiftable l)
+lftlKernel :: LiftableKernel i c -> Slice To i c -> Slice To i c
+lftlKernel l = lift (lftlLiftable l)
 
 --------------------------------------------------------------------------------
--- lftCokernel -
+-- lftlCokernel -
 
-lftCokernel :: LiftableCokernel i c -> Slice From i c -> Slice From i c
-lftCokernel l = lift (lmLiftable l)
+lftlCokernel :: LiftableCokernel i c -> Slice From i c -> Slice From i c
+lftlCokernel l = lift (lftlLiftable l)
 
 --------------------------------------------------------------------------------
 -- LiftableLimes - Predicate -
@@ -298,8 +311,8 @@ instance ( Distributive c, Sliced i c
          , XStandardOrtSiteTo c, XStandardOrtSiteFrom c
          , XStandardOrtOrientation c
          ) => Validable (LiftableLimes i s p t n m c) where
-  valid l@(LiftableKernel k _)   = Label "LiftableKernel" :<=>: valid k && valid (lmLiftable l)
-  valid l@(LiftableCokernel c _) = Label "LiftableCokernel" :<=>: valid c && valid (lmLiftable l)
+  valid l@(LiftableKernel k _)   = Label "LiftableKernel" :<=>: valid k && valid (lftlLiftable l)
+  valid l@(LiftableCokernel c _) = Label "LiftableCokernel" :<=>: valid c && valid (lftlLiftable l)
 
 --------------------------------------------------------------------------------
 -- LiftableLimes - Universal -
@@ -325,10 +338,10 @@ coLiftableLimes :: (Sliced i c, Distributive c)
   -> LiftableLimes i s p t n m c -> Dual (LiftableLimes i s p t n m c)
 coLiftableLimes rp rt l@(LiftableKernel ker _) = LiftableCokernel coker lft' where
   coker = coLimes ConeStructDst rp rt ker
-  lft' = lift $ coLiftable $ lmLiftable l
+  lft' = lift $ coLiftable $ lftlLiftable l
 coLiftableLimes rp rt l@(LiftableCokernel coker _) = LiftableKernel ker lft' where
   ker = coLimes ConeStructDst rp rt coker
-  lft' = lift $ coLiftable $ lmLiftable l
+  lft' = lift $ coLiftable $ lftlLiftable l
 
 lftlFromOpOp :: (Sliced i c, Distributive c)
   => LiftableLimes i s p t n m (Op (Op c)) -> LiftableLimes i s p t n m c
@@ -336,11 +349,11 @@ lftlFromOpOp l = lftlMap (fromOpOp l) l where
   fromOpOp :: (Sliced i c, Distributive c)
     => LiftableLimes i s p t n m (Op (Op c)) -> IsoOp (Sld Dst i) (Op (Op c)) c
   fromOpOp _ = isoFromOpOp
-{-
+
 coLiftableLimesInv :: (Distributive c, Sliced i c)
   => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
   -> Dual (LiftableLimes i s p t n m c) -> LiftableLimes i s p t n m c
-coLiftableLimesInv Refl Refl = lftlMap isoFromOpOpDst . coLiftableLimes Refl Refl
+coLiftableLimesInv Refl Refl = lftlFromOpOp . coLiftableLimes Refl Refl
 
 --------------------------------------------------------------------------------
 -- LiftableStruct -
@@ -357,7 +370,6 @@ instance OpDualisable (LiftableStruct i) (LiftableLimes i) Dst where
   opdToOp LiftableStruct (OpDuality rp rt)   = coLiftableLimes rp rt
   opdFromOp LiftableStruct (OpDuality rp rt) = coLiftableLimesInv rp rt
 
-instance Singleton1 i => UniversalApplicative (IsoOp Dst) (LiftableLimes i) Dst where
+instance Typeable i => UniversalApplicative (IsoOp (Sld Dst i)) (LiftableLimes i) Dst where
   umap = lftlMap
 
--}
