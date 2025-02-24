@@ -35,7 +35,7 @@ module OAlg.Category.Definition
     -- * Morphism
   , Morphism(..)
   , Homomorphous(..), tauHom, tau1Hom
-  , eqlDomain, eqlRange
+  , eqlDomain, eqlRange, eqlEndo
   , eqlMorphism
   -- , toOp2Struct
 
@@ -137,6 +137,13 @@ eqlMorphism :: Typeable m
   -> Struct Typ y -> Struct Typ y'
   -> m x y -> m x' y' -> Maybe (m x y :~: m x' y')
 eqlMorphism Struct Struct Struct Struct _ _ = eqT
+
+--------------------------------------------------------------------------------
+-- eqlEndo -
+
+-- | maybe endomorphism.
+eqlEndo :: Struct Typ x -> Struct Typ y -> h x y -> Maybe (x :~: y)
+eqlEndo Struct Struct _ = eqT
 
 --------------------------------------------------------------------------------
 -- Homomorphous -
@@ -353,6 +360,8 @@ instance Morphism m => Morphism (Forget t m) where
 
 instance Applicative m => Applicative (Forget t m) where
   amap (Forget h) = amap h
+
+instance Transformable t Typ => TransformableObjectClassTyp (Forget t h)
 
 --------------------------------------------------------------------------------
 --

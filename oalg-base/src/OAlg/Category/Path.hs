@@ -22,11 +22,14 @@ module OAlg.Category.Path
   (
     -- * Path
     Path(..), toOp2Path, fromOp2Path, compose, mPath, reverse, pthFoldr, pthLength
+
+    -- * Forget
+  , CatForget(), CatForgetForm
   )
   where
 
 
-import Control.Monad (join)
+import Control.Monad 
 
 import Data.Typeable
 import qualified Data.List as L
@@ -44,6 +47,9 @@ import OAlg.Data.Dualisable
 import OAlg.Data.Opposite
 import OAlg.Data.Number
 import OAlg.Data.Boolean
+import OAlg.Data.Constructable
+import OAlg.Data.Reducible
+import OAlg.Data.Statement
 
 --------------------------------------------------------------------------------
 -- Path -
@@ -160,7 +166,7 @@ instance (Morphism m, TransformableObjectClassTyp m, Eq2 m) => Eq2 (Path m) wher
   eq2 p q = case (p,q) of
     (IdPath Struct,IdPath Struct) -> True
     
-    (f :. p',g :. q') -> case eqlDomain (domain (Forget f)) (domain(Forget g)) f g of
+    (f :. p',g :. q') -> case eqlDomain (tau (domain f)) (tau (domain g)) f g of
       Just Refl       -> eq2 f g && eq2 p' q'
       Nothing         -> False
       
@@ -207,3 +213,80 @@ instance (Cayleyan2 m, TransformableObjectClassTyp m) => Cayleyan2 (Path m) wher
   invert2 f@(IdPath _) = f
   invert2 (f :. p)     = invert2 p . mPath (invert2 f)
 
+--------------------------------------------------------------------------------
+-- CatForgetForm -
+
+type CatForgetForm t h = Path (Forget t h)
+
+rdcCatForget :: (Category h, Transformable (ObjectClass h) Typ, Eq2 h)
+  => CatForgetForm t h x y -> Rdc (CatForgetForm t h x y)
+rdcCatForget p = case p of
+  Forget f :. Forget g :. h             -> rdcCatForget h >>= reducesTo . (Forget (f . g) :.)
+  Forget f :. h                         -> case eqlEndo (tau (domain f)) (tau (range f)) f of
+    Just Refl | eq2 f (cOne (domain f)) -> reducesTo h
+    _                                   -> rdcCatForget h >>= return . (Forget f :.)
+  _                                     -> return p
+
+--------------------------------------------------------------------------------
+-- CatForget -
+
+newtype CatForget t h x y = CatForget (Path (Forget t h) x y)
+  deriving (Show)
+
+instance Show2 h => Show2 (CatForget t h)
+
+instance (Morphism h, Transformable t Typ, Eq2 h)
+  => Eq2 (CatForget t h) where eq2 (CatForget f) (CatForget g) = eq2 f g
+
+instance (Morphism h, Transformable t Typ, Eq2 h) => Eq (CatForget t h x y) where
+  (==) = eq2
+
+instance (Morphism h, Validable2 h) => Validable2 (CatForget t h) where
+  valid2 (CatForget p) = Label "CatForget" :<=>: valid2 p
+
+instance (Morphism h, Validable2 h) => Validable (CatForget t h x y) where
+  valid = valid2
+
+instance ( Morphism h, Transformable t Typ, Show2 h, Eq2 h, Validable2 h
+         , Typeable h, Typeable t
+         )
+  => Entity2 (CatForget t h)
+
+instance ( Morphism h, Transformable t Typ, Show2 h, Eq2 h, Validable2 h
+         , Typeable h, Typeable t, Typeable x, Typeable y
+         )
+  => Entity (CatForget t h x y)
+
+--------------------------------------------------------------------------------
+-- CatForget - Constructable -
+
+instance Exposable (CatForget t h x y) where
+  type Form (CatForget t h x y) = CatForgetForm t h x y
+  form (CatForget p) = p
+
+instance (Category h, TransformableObjectClassTyp h, Eq2 h) => Constructable (CatForget t h x y) where
+  make = CatForget . reduceWith rdcCatForget
+
+--------------------------------------------------------------------------------
+-- CatForget - Category -
+
+instance Morphism h => Morphism (CatForget t h) where
+  type ObjectClass (CatForget t h) = t
+  homomorphous (CatForget p) = homomorphous p
+
+instance (Category h, TransformableObjectClassTyp h, Eq2 h) => Category (CatForget t h) where
+  cOne s = make (IdPath s)
+  CatForget f . CatForget g = make (f $. g)
+
+instance (Cayleyan2 h, TransformableObjectClassTyp h, Transformable t Typ)
+  => Cayleyan2 (CatForget t h) where
+  invert2 (CatForget p) = CatForget (reverse id invForget p) where
+    invForget :: Cayleyan2 h => Forget t h x y -> Forget t h y x
+    invForget (Forget f) = Forget (invert2 f)
+  
+--------------------------------------------------------------------------------
+-- CatForget - Functorial -
+
+instance Applicative h => Applicative (CatForget t h) where amap (CatForget p) = amap p
+
+instance (Functorial h, TransformableObjectClassTyp h, Eq2 h)  => Functorial (CatForget t h)

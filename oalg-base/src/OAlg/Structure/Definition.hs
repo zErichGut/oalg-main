@@ -30,7 +30,8 @@ module OAlg.Structure.Definition
   , TransformableTyp
 
     -- * Some Structure Types
-  , Typ, Ord', Bol
+  , Typ, tauTyp
+  , Ord', Bol
 
   ) where
 
@@ -94,6 +95,13 @@ instance Eq2 (Struct2 m)
 data Typ
 
 type instance Structure Typ x = Typeable x
+
+--------------------------------------------------------------------------------
+-- tauTyp -
+
+-- | 'tau' to 'Typ'
+tauTyp :: Transformable s Typ => Struct s x -> Struct Typ x
+tauTyp = tau
 
 --------------------------------------------------------------------------------
 -- Type -

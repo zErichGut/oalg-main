@@ -424,6 +424,15 @@ opPathOrt = make (OpPath :. IdPath Struct)
 isoToOpOp :: (Structure s a, Structure s (Op (Op a))) => IsoOp s a (Op (Op a))
 isoToOpOp = make (ToOpOp :. IdPath Struct)
 
+isoToOpOp' :: ( Transformable t s, TransformableTyp t
+              , Structure t a, Structure t (Op (Op a))
+              , Structure s a
+              ) => CatForget s (IsoOp t) a (Op (Op a))
+isoToOpOp' = make (Forget isoToOpOp :. IdPath Struct)
+
+ito :: CatForget Ort (IsoOp Ort) N (Op (Op N))
+ito = isoToOpOp'
+
 --------------------------------------------------------------------------------
 -- isoToOpOpOrt -
 
