@@ -142,7 +142,7 @@ data Variance t k c d where
     -> GenericKernel k N1 d -> GenericCokernel c N1 d
     -> Variance t k c d
 
-
+{-
 --------------------------------------------------------------------------------
 -- Variance - Duality -
 
@@ -273,7 +273,7 @@ vrcBottom v@(Variance d2x3 _ _)      = case d2x3 of
     ConsZero (DiagramChainTo _ _)   -> s
     ConsZero (DiagramChainFrom _ _)
       -> coConsZeroInv Refl $ vrcBottom $ coVariance opdKernel opdCokernel v
-{-
+
 --------------------------------------------------------------------------------
 -- variance -
 

@@ -669,3 +669,17 @@ instance HomOriented h => HomOriented (OpHom h) where
   pmap (OpHom h) = pmap h 
 
 
+--------------------------------------------------------------------------------
+-- Forget' - HomOriented -
+
+instance ( HomOriented h
+         , Transformable t Ort, Transformable t Typ
+         , Transformable1 Op t
+         ) => HomOriented (Forget' t h) where
+  pmap h = pmap (form h)
+
+instance ( FunctorialHomOriented h, Eq2 h
+         , Transformable t Ort, Transformable t Typ
+         , Transformable1 Op t
+         ) => FunctorialHomOriented (Forget' t h)
+

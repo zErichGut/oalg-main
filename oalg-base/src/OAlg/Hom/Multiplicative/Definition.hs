@@ -132,3 +132,13 @@ isoOppositeMlt = make (Opposite :. IdPath Struct)
 
 instance HomMultiplicative h => HomMultiplicative (OpHom h)
 
+--------------------------------------------------------------------------------
+-- Forget' -
+
+instance ( HomMultiplicative h
+         , Transformable t Ort
+         , Transformable t Mlt
+         , Transformable t Typ
+         , Transformable1 Op t
+         ) => HomMultiplicative (Forget' t h)
+

@@ -236,6 +236,8 @@ rdcForget' p = case p of
 newtype Forget' t h x y = Forget' (Path (Forget t h) x y)
   deriving (Show)
 
+instance Transformable t Typ => TransformableObjectClassTyp (Forget' t h)
+
 instance Show2 h => Show2 (Forget' t h)
 
 instance (Morphism h, Transformable t Typ, Eq2 h)

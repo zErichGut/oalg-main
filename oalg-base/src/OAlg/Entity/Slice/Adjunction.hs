@@ -62,6 +62,7 @@ import OAlg.Adjunction
 
 import OAlg.Entity.Natural
 import OAlg.Entity.Slice.Definition
+import OAlg.Entity.Slice.Sliced
 
 --------------------------------------------------------------------------------
 -- SliceCokernelKernel -
@@ -125,6 +126,8 @@ instance (Multiplicative c, Sliced i c) => Morphism (SliceCokernelKernel i c) wh
   type ObjectClass (SliceCokernelKernel i c) = Mlt
   homomorphous SliceCokernel = Struct :>: Struct
   homomorphous SliceKernel = Struct :>: Struct
+
+instance TransformableObjectClassTyp (SliceCokernelKernel i c)
 
 --------------------------------------------------------------------------------
 -- SliceCokernelKernel - HomMultiplicative -

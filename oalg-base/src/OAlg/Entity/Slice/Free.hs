@@ -33,7 +33,7 @@ module OAlg.Entity.Slice.Free
 
     -- ** Kernel
   , KernelFree, KernelDiagramFree
-  
+{-  
     -- ** Liftable Cokernel
   , CokernelDiagramFree
   , CokernelLiftableFree(..)
@@ -41,7 +41,7 @@ module OAlg.Entity.Slice.Free
 
     -- *** Liftable Cokernels
   , clfLimes, ClfCokernels(..)
-  
+-}  
     -- ** Pullback
   , PullbackFree, PullbackDiagramFree  
   
@@ -69,7 +69,8 @@ import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
 import OAlg.Entity.Slice.Definition
-
+import OAlg.Entity.Slice.Sliced
+import OAlg.Entity.Slice.Liftable
 
 --------------------------------------------------------------------------------
 -- Free -
@@ -261,6 +262,7 @@ type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
 -- | pullback of a diagram with free points.
 type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
 
+{-
 --------------------------------------------------------------------------------
 -- CokernelLiftableFree -
 
@@ -323,3 +325,4 @@ newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftable
 clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
 clfLimes (ClfCokernels l) = l
 
+-}

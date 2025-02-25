@@ -61,14 +61,12 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Data.Singleton
-import OAlg.Data.Constructable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
@@ -260,31 +258,6 @@ lftlLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ univ
 
 --------------------------------------------------------------------------------
 -- lftlMap -
-
-instance Transformable t Typ => TransformableObjectClassTyp (Forget' t h)
-
-instance ( HomOriented h
-         , Transformable t Ort, Transformable t Typ
-         , Transformable1 Op t
-         ) => HomOriented (Forget' t h)
-
-instance ( FunctorialHomOriented h, Eq2 h
-         , Transformable t Ort, Transformable t Typ
-         , Transformable1 Op t
-         ) => FunctorialHomOriented (Forget' t h)
-
-instance ( HomSliced t i h
-         , TransformableSld i t s
-         , Transformable1 Op t
-         ) => HomSliced s i (Forget' (Sld t i) h)
-
-
-instance ( HomMultiplicative h
-         , Transformable t Ort
-         , Transformable t Mlt
-         , Transformable t Typ
-         , Transformable1 Op t
-         ) => HomMultiplicative (Forget' t h)
 
 lftlMap :: IsoOrt (Sld Dst i) h => h a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
 lftlMap h l = case l of

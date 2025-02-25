@@ -170,4 +170,12 @@ instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IdHom (
 
 instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IsoOp (Sld t i))
 
+--------------------------------------------------------------------------------
+-- Forget' - HomSliced -
+
+instance ( HomSliced t i h
+         , TransformableSld i t s
+         , Transformable1 Op t
+         ) => HomSliced s i (Forget' (Sld t i) h)
+
 

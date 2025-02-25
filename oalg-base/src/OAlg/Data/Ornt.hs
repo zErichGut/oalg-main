@@ -52,6 +52,8 @@ instance Morphism (Ornt s) where
   homomorphous Ornt        = Struct :>: Struct
   homomorphous (OrntMap _) = Struct :>: Struct
 
+instance TransformableTyp s => TransformableObjectClassTyp (Ornt s)
+
 domOriented :: Transformable s Ort => Ornt s x y -> Struct Ort x
 domOriented o@Ornt        = tau $ domain o
 domOriented o@(OrntMap _) = tau $ domain o
@@ -64,7 +66,7 @@ orntAppl (OrntMap f) (s :> e) = f s :> f e
 instance TransformableOrt s => Applicative (Ornt s) where
   amap = orntAppl
 
-instance (TransformableOrt s, TransformableTyp s, TransformableOp s)  => HomOriented (Ornt s) where
+instance ( TransformableOrt s, TransformableTyp s, TransformableOp s)  => HomOriented (Ornt s) where
   pmap Ornt        = id
   pmap (OrntMap f) = f
 

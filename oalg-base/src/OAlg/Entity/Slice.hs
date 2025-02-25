@@ -16,11 +16,13 @@
 -- the type level, as such we need to circumvent somehow this restriction by using an
 -- /index/ type where the associated point depends only of that type (see 'Sliced').
 module OAlg.Entity.Slice
-  ( module Def
+  ( module Sld
+  , module Def
   , module Adj
   , module Fre
   ) where
 
+import OAlg.Entity.Slice.Sliced as Sld
 import OAlg.Entity.Slice.Definition as Def
 import OAlg.Entity.Slice.Adjunction as Adj
 import OAlg.Entity.Slice.Free as Fre

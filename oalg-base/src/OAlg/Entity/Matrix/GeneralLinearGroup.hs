@@ -549,6 +549,8 @@ instance Morphism TrApp where
   homomorphous TrGL  = Struct :>: Struct
   homomorphous TrGLT = Struct :>: Struct
 
+instance TransformableObjectClassTyp TrApp
+
 instance Applicative TrApp where
   amap TrFT  = make . P
   amap TrGL  = trGL
@@ -595,6 +597,8 @@ instance Morphism GLApp where
   homomorphous FTGLT = Struct :>: Struct
   homomorphous GLTGL = Struct :>: Struct
   homomorphous GL2GL = Struct :>: Struct
+
+instance TransformableObjectClassTyp GLApp
 
 instance Applicative GLApp where
   amap FTGL  = zProduct TrGL
