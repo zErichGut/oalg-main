@@ -416,6 +416,8 @@ data SliceFactorDrop s x y where
     :: (Multiplicative c, Sliced i c)
     => SliceFactorDrop To (SliceFactor To i c) c
 
+instance TransformableObjectClassTyp (SliceFactorDrop s)
+
 --------------------------------------------------------------------------------
 -- SliceFactorDrop - Entity -
 

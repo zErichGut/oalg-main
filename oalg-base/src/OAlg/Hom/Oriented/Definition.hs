@@ -39,7 +39,7 @@ module OAlg.Hom.Oriented.Definition
 
     -- * IsoOp
   , IsoOp(), PathHomOp -- , opPathOrt
-  , isoToOpOp, isoFromOpOp
+  , isoToOpOp, isoToOpOp', isoFromOpOp, isoFromOpOp'
   , isoToOpOpOrt, isoFromOpOpOrt
 
     -- * IsoOpMap
@@ -104,7 +104,7 @@ import OAlg.Hom.Definition
 -- homomorphisms between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
 class ( Morphism h, Applicative h
-      , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
+      , Transformable (ObjectClass h) Ort, TransformableObjectClassTyp h
       , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
   pmap :: h a b -> Point a -> Point b
@@ -167,6 +167,8 @@ type IsoOriented h = (FunctorialHomOriented h, Cayleyan2 h)
 data IdHom s a b where
   IdHom :: Structure s a => IdHom s a a
 
+instance TransformableTyp s => TransformableObjectClassTyp (IdHom s)
+
 --------------------------------------------------------------------------------
 -- IdHom - Morphism -
 
@@ -208,7 +210,8 @@ instance Applicative (IdHom s) where
 
 instance Functorial (IdHom s)
 
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
+instance ( TransformableOp s, TransformableOrt s, TransformableTyp s
+         )
   => HomOriented (IdHom s) where
   pmap IdHom = id
 
@@ -427,11 +430,9 @@ isoToOpOp = make (ToOpOp :. IdPath Struct)
 isoToOpOp' :: ( Transformable t s, TransformableTyp t
               , Structure t a, Structure t (Op (Op a))
               , Structure s a
-              ) => CatForget s (IsoOp t) a (Op (Op a))
-isoToOpOp' = make (Forget isoToOpOp :. IdPath Struct)
-
-ito :: CatForget Ort (IsoOp Ort) N (Op (Op N))
-ito = isoToOpOp'
+              )
+  => Forget' s (IsoOp t) a (Op (Op a))
+isoToOpOp' = forget' Proxy isoToOpOp
 
 --------------------------------------------------------------------------------
 -- isoToOpOpOrt -
@@ -446,6 +447,13 @@ isoToOpOpOrt = isoToOpOp
 -- | the isomorphism given by 'FromOpOp'.
 isoFromOpOp :: (Structure s a, Structure s (Op (Op a))) => IsoOp s (Op (Op a)) a
 isoFromOpOp = make (FromOpOp :. IdPath Struct)
+
+isoFromOpOp' :: (Transformable t s, TransformableTyp t
+                , Structure t a, Structure t (Op (Op a))
+                , Structure s (Op (Op a))
+                )
+ => Forget' s (IsoOp t) (Op (Op a)) a
+isoFromOpOp' = forget' Proxy isoFromOpOp
 
 --------------------------------------------------------------------------------
 -- isoFromOpOpOrt -
@@ -633,6 +641,8 @@ isoCoPath = make (ToOp1 :. IdPath Struct)
 -- | induced homomorphism on 'Op'.
 data OpHom h x y where
   OpHom :: Transformable1 Op (ObjectClass h) => h x y -> OpHom h (Op x) (Op y)
+
+instance TransformableObjectClassTyp h => TransformableObjectClassTyp (OpHom h)
 
 instance Show2 h => Show2 (OpHom h) where
   show2 (OpHom h) = "OpHom[" ++ show2 h ++ "]"

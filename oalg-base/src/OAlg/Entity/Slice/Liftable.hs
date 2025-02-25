@@ -58,13 +58,17 @@ import Data.Typeable
 
 import OAlg.Prelude
 
+import OAlg.Category.Path
+
 import OAlg.Data.Singleton
+import OAlg.Data.Constructable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
@@ -257,17 +261,46 @@ lftlLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ univ
 --------------------------------------------------------------------------------
 -- lftlMap -
 
-lftlMap :: (IsoOrt (Sld Dst i) h, HomSliced Mlt i h)
-  => h a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
--- it is possible ot get rid of the constranint HomSliced Mlt i h via the construction of
--- Forget, but more work would be needed!
-lftlMap h l@(LiftableKernel ker _) = LiftableKernel ker' lft' where
-  ker' = lmMap h ker
-  lft' = lift $ lftbMap h (lftlLiftable l)
-lftlMap i l@(LiftableCokernel coker _) = LiftableCokernel coker' lft' where
-  coker' = lmMap i coker
-  LiftableInjective _ lft' = lftbMap i (lftlLiftable l)
-  
+instance Transformable t Typ => TransformableObjectClassTyp (Forget' t h)
+
+instance ( HomOriented h
+         , Transformable t Ort, Transformable t Typ
+         , Transformable1 Op t
+         ) => HomOriented (Forget' t h)
+
+instance ( FunctorialHomOriented h, Eq2 h
+         , Transformable t Ort, Transformable t Typ
+         , Transformable1 Op t
+         ) => FunctorialHomOriented (Forget' t h)
+
+instance ( HomSliced t i h
+         , TransformableSld i t s
+         , Transformable1 Op t
+         ) => HomSliced s i (Forget' (Sld t i) h)
+
+
+instance ( HomMultiplicative h
+         , Transformable t Ort
+         , Transformable t Mlt
+         , Transformable t Typ
+         , Transformable1 Op t
+         ) => HomMultiplicative (Forget' t h)
+
+lftlMap :: IsoOrt (Sld Dst i) h => h a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
+lftlMap h l = case l of
+  LiftableKernel ker _ -> LiftableKernel ker' lft' where
+    ker' = lmMap h ker
+    lft' = lift $ lftbMap (forget (tau' l h) h) (lftlLiftable l)
+  LiftableCokernel coker _ -> LiftableCokernel coker' lft' where
+    coker' = lmMap h coker
+    LiftableInjective _ lft' = lftbMap (forget (tau' l h) h) (lftlLiftable l)
+  where 
+    tau' :: IsoOrt (Sld Dst i) h => LiftableLimes i s p t n m a -> h a b -> Struct (Sld Dst i) a
+    tau' _ h = tau (domain h)
+    
+    forget :: IsoOrt (Sld Dst i) h => Struct (Sld Dst i) a -> h a b -> Forget' (Sld Dst i) h a b
+    forget Struct h = forget' Proxy h
+
 --------------------------------------------------------------------------------
 -- LiftableKernel -
 

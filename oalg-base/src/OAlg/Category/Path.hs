@@ -24,7 +24,8 @@ module OAlg.Category.Path
     Path(..), toOp2Path, fromOp2Path, compose, mPath, reverse, pthFoldr, pthLength
 
     -- * Forget
-  , CatForget(), CatForgetForm
+  , Forget'(), forget'
+  , Forget'Form
   )
   where
 
@@ -60,6 +61,8 @@ infixr 9 :.
 data Path m x y where
   IdPath :: Struct (ObjectClass m) x -> Path m x x
   (:.)   :: m y z -> Path m x y -> Path m x z
+
+instance TransformableObjectClassTyp m => TransformableObjectClassTyp (Path m)
 
 --------------------------------------------------------------------------------
 -- ($.) -
@@ -214,79 +217,92 @@ instance (Cayleyan2 m, TransformableObjectClassTyp m) => Cayleyan2 (Path m) wher
   invert2 (f :. p)     = invert2 p . mPath (invert2 f)
 
 --------------------------------------------------------------------------------
--- CatForgetForm -
+-- Forget'Form -
 
-type CatForgetForm t h = Path (Forget t h)
+type Forget'Form t h = Path (Forget t h)
 
-rdcCatForget :: (Category h, Transformable (ObjectClass h) Typ, Eq2 h)
-  => CatForgetForm t h x y -> Rdc (CatForgetForm t h x y)
-rdcCatForget p = case p of
-  Forget f :. Forget g :. h             -> rdcCatForget h >>= reducesTo . (Forget (f . g) :.)
+rdcForget' :: (Category h, Transformable (ObjectClass h) Typ, Eq2 h)
+  => Forget'Form t h x y -> Rdc (Forget'Form t h x y)
+rdcForget' p = case p of
+  Forget f :. Forget g :. h             -> rdcForget' h >>= reducesTo . (Forget (f . g) :.)
   Forget f :. h                         -> case eqlEndo (tau (domain f)) (tau (range f)) f of
     Just Refl | eq2 f (cOne (domain f)) -> reducesTo h
-    _                                   -> rdcCatForget h >>= return . (Forget f :.)
+    _                                   -> rdcForget' h >>= return . (Forget f :.)
   _                                     -> return p
 
 --------------------------------------------------------------------------------
--- CatForget -
+-- Forget' -
 
-newtype CatForget t h x y = CatForget (Path (Forget t h) x y)
+newtype Forget' t h x y = Forget' (Path (Forget t h) x y)
   deriving (Show)
 
-instance Show2 h => Show2 (CatForget t h)
+instance Show2 h => Show2 (Forget' t h)
 
 instance (Morphism h, Transformable t Typ, Eq2 h)
-  => Eq2 (CatForget t h) where eq2 (CatForget f) (CatForget g) = eq2 f g
+  => Eq2 (Forget' t h) where eq2 (Forget' f) (Forget' g) = eq2 f g
 
-instance (Morphism h, Transformable t Typ, Eq2 h) => Eq (CatForget t h x y) where
+instance (Morphism h, Transformable t Typ, Eq2 h) => Eq (Forget' t h x y) where
   (==) = eq2
 
-instance (Morphism h, Validable2 h) => Validable2 (CatForget t h) where
-  valid2 (CatForget p) = Label "CatForget" :<=>: valid2 p
+instance (Morphism h, Validable2 h) => Validable2 (Forget' t h) where
+  valid2 (Forget' p) = Label "Forget'" :<=>: valid2 p
 
-instance (Morphism h, Validable2 h) => Validable (CatForget t h x y) where
+instance (Morphism h, Validable2 h) => Validable (Forget' t h x y) where
   valid = valid2
 
-instance ( Morphism h, Transformable t Typ, Show2 h, Eq2 h, Validable2 h
-         , Typeable h, Typeable t
-         )
-  => Entity2 (CatForget t h)
+instance (Entity2 h, Morphism h, Transformable t Typ, Typeable t) => Entity2 (Forget' t h)
 
-instance ( Morphism h, Transformable t Typ, Show2 h, Eq2 h, Validable2 h
-         , Typeable h, Typeable t, Typeable x, Typeable y
+instance ( Entity2 h, Morphism h, Transformable t Typ
+         , Typeable t, Typeable x, Typeable y
          )
-  => Entity (CatForget t h x y)
+  => Entity (Forget' t h x y)
 
 --------------------------------------------------------------------------------
--- CatForget - Constructable -
+-- Forget' - Constructable -
 
-instance Exposable (CatForget t h x y) where
-  type Form (CatForget t h x y) = CatForgetForm t h x y
-  form (CatForget p) = p
+instance Exposable (Forget' t h x y) where
+  type Form (Forget' t h x y) = Forget'Form t h x y
+  form (Forget' p) = p
 
-instance (Category h, TransformableObjectClassTyp h, Eq2 h) => Constructable (CatForget t h x y) where
-  make = CatForget . reduceWith rdcCatForget
+instance (Category h, TransformableObjectClassTyp h, Eq2 h) => Constructable (Forget' t h x y) where
+  make = Forget' . reduceWith rdcForget'
 
 --------------------------------------------------------------------------------
--- CatForget - Category -
+-- forget' -
 
-instance Morphism h => Morphism (CatForget t h) where
-  type ObjectClass (CatForget t h) = t
-  homomorphous (CatForget p) = homomorphous p
+-- | constructs a 'Forget''.
+--
+-- __Note__: The first argument serves only as a proxy for @__t__@.
+forget' :: ( Category h, Eq2 h
+           , TransformableObjectClassTyp h
+           , Transformable (ObjectClass h) t
+           , Structure t x
+           )
+  => p t -> h x y -> Forget' t h x y
+forget' _ h = make (Forget h :. IdPath Struct)
 
-instance (Category h, TransformableObjectClassTyp h, Eq2 h) => Category (CatForget t h) where
+--------------------------------------------------------------------------------
+-- Forget' - Category -
+
+instance Morphism h => Morphism (Forget' t h) where
+  type ObjectClass (Forget' t h) = t
+  homomorphous (Forget' p) = homomorphous p
+
+instance (Category h, TransformableObjectClassTyp h, Eq2 h) => Category (Forget' t h) where
   cOne s = make (IdPath s)
-  CatForget f . CatForget g = make (f $. g)
+  Forget' f . Forget' g = make (f $. g)
 
 instance (Cayleyan2 h, TransformableObjectClassTyp h, Transformable t Typ)
-  => Cayleyan2 (CatForget t h) where
-  invert2 (CatForget p) = CatForget (reverse id invForget p) where
+  => Cayleyan2 (Forget' t h) where
+  invert2 (Forget' p) = Forget' (reverse id invForget p) where
     invForget :: Cayleyan2 h => Forget t h x y -> Forget t h y x
     invForget (Forget f) = Forget (invert2 f)
   
 --------------------------------------------------------------------------------
--- CatForget - Functorial -
+-- Forget' - Functorial -
 
-instance Applicative h => Applicative (CatForget t h) where amap (CatForget p) = amap p
+instance Applicative h => Applicative (Forget' t h) where amap (Forget' p) = amap p
 
-instance (Functorial h, TransformableObjectClassTyp h, Eq2 h)  => Functorial (CatForget t h)
+instance (Functorial h, TransformableObjectClassTyp h, Eq2 h)  => Functorial (Forget' t h)
+
+
