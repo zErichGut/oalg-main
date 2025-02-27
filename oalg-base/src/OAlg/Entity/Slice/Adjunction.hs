@@ -161,7 +161,7 @@ instance ( Distributive d
     aCoker = sliceCokernelTo' s a
     a' = cokernelFactor $ universalCone aCoker
     b' = cokernelFactor $ universalCone $ sliceCokernelTo' s b
-    f' = universalFactor aCoker (ConeCokernel (diagram aCoker) b')
+    f' = universalFactor aCoker (ConeCokernel (diagram (universalCone aCoker)) b')
     -- from SliceFactor a b f valid follwos that
     -- ConeCokernel (diagram aCoker) b' is eligible
 
@@ -170,7 +170,7 @@ instance ( Distributive d
     bKer = sliceKernelFrom' s b
     a' = kernelFactor $ universalCone $ sliceKernelFrom' s a
     b' = kernelFactor $ universalCone $ bKer
-    f' = universalFactor bKer (ConeKernel (diagram bKer) a')
+    f' = universalFactor bKer (ConeKernel (diagram (universalCone bKer)) a')
     -- from SliceFactor a b f valid follows that ConeKernel (diagram bKer) a' is eligible
 
 instance ( Distributive d
@@ -299,7 +299,7 @@ slcCokerKer c k a@(SliceTo i a') = SliceFactor a (SliceTo i b') u where
   f         = pmap (slcCokernel c k a) a
   aCokerKer = sliceKernelFrom' (slcKernel c k f) f
   b'        = kernelFactor $ universalCone aCokerKer
-  u         = universalFactor aCokerKer (ConeKernel (diagram aCokerKer) a')
+  u         = universalFactor aCokerKer (ConeKernel (diagram (universalCone aCokerKer)) a')
   
 --------------------------------------------------------------------------------
 -- slcKerCoker -
@@ -313,7 +313,7 @@ slcKerCoker c k a@(SliceFrom i a') = SliceFactor (SliceFrom i b') a u where
   t = pmap (slcKernel c k a) a
   aKerCoker = sliceCokernelTo' (slcCokernel c k t) t
   b' = cokernelFactor $ universalCone aKerCoker
-  u = universalFactor aKerCoker (ConeCokernel (diagram aKerCoker) a')
+  u = universalFactor aKerCoker (ConeCokernel (diagram (universalCone aKerCoker)) a')
 
 --------------------------------------------------------------------------------
 -- slcAdjunction -

@@ -76,6 +76,7 @@ import OAlg.Hom.Definition
 
 import OAlg.Limes.Perspective
 import OAlg.Limes.OpDuality
+import OAlg.Limes.Diagrammatic
 
 import OAlg.Limes.Cone.Structure
 
@@ -157,6 +158,8 @@ cnDiagram (ConeInjective d _ _)  = d
 cnDiagram (ConeKernel d _)       = d
 cnDiagram (ConeCokernel d _)     = d
 
+instance Oriented a => Diagrammatic (Cone s p) t n m a where diagram = cnDiagram
+
 --------------------------------------------------------------------------------
 -- cnDiagramTypeRefl -
 
@@ -166,7 +169,6 @@ cnDiagramTypeRefl (ConeProjective d _ _) = dgTypeRefl d
 cnDiagramTypeRefl (ConeInjective d _ _)  = dgTypeRefl d
 cnDiagramTypeRefl (ConeKernel d _)       = dgTypeRefl d
 cnDiagramTypeRefl (ConeCokernel d _)     = dgTypeRefl d
-
 
 --------------------------------------------------------------------------------
 -- cnMap -

@@ -159,7 +159,7 @@ prpLimitsDiagram :: (OpReflexive c s, Universal l, Show (l s p t n m a))
   -> Statement
 prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
   :<=>: And [ case opdStructMlt cs of
-                Struct -> (diagram lm == d) :?> Params["d":=show d,"lm":=show lm]
+                Struct -> (diagram (universalCone lm) == d) :?> Params["d":=show d,"lm":=show lm]
             , relUniversal (opdConeStruct cs) xop lm
             ]
   where lm = limes lms d

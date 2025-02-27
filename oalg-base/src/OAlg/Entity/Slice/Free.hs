@@ -201,7 +201,7 @@ instance (Distributive c, Sliced i c, XStandardOrtSiteTo c, Typeable n)
   valid (KernelSliceFromSomeFreeTip k' i ker) = Label "KernelSliceFromSomeFreeTip" :<=>:
     And [ valid1 k'
         , valid ker
-        , Label "1" :<=>: let DiagramParallelLR s _ _ = diagram ker in
+        , Label "1" :<=>: let DiagramParallelLR s _ _ = diagram (universalCone ker) in
             (slicePoint i == s) :?> Params ["i":=show1 i,"s":= show s]
         , Label "2" :<=>: (slicePoint k' == tip (universalCone ker))
             :?> Params ["k'":=show1 k',"ker":=show ker]

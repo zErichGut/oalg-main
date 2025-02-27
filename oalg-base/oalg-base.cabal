@@ -147,6 +147,7 @@ library
       OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Cone.Structure
       OAlg.Limes.Definition
+      OAlg.Limes.Diagrammatic
       OAlg.Limes.EqualizersAndCoequalizers
       OAlg.Limes.Exact.ConsZero
       OAlg.Limes.Exact.Deviation
