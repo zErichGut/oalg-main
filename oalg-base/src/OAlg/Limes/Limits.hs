@@ -21,8 +21,9 @@
 -- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.
 module OAlg.Limes.Limits
   (
+{-    
     -- * Limits
-    Limits(..), limes, lmsMap
+    Limits(..), lmsMap
 
     -- * Duality
   , lmsToOp, lmsFromOp
@@ -33,6 +34,7 @@ module OAlg.Limes.Limits
   
     -- * Proposition
   , prpLimits, prpLimitsDiagram
+-}
   ) where
 
 import Data.Typeable
@@ -46,7 +48,9 @@ import OAlg.Structure.Distributive
 import OAlg.Hom.Oriented
 
 import OAlg.Entity.Diagram
+import OAlg.Entity.Natural
 
+import OAlg.Limes.Diagrammatic
 import OAlg.Limes.Cone
 import OAlg.Limes.Universal
 import OAlg.Limes.Definition
@@ -55,21 +59,23 @@ import OAlg.Limes.OpDuality
 --------------------------------------------------------------------------------
 -- Limits -
 
--- | limes of a diagram, i.e. assigning to each diagram a limes over the given diagram.
+-- | limes of a diagrammatic object, i.e. assigning to each diagrammatic object @d@ a limes over the
+-- @d@.
 --
--- __Property__ Let @lms@ be in @'Limits' __s__ __p__ __t__ __n__ __m__ __a__@
--- and @d@ in @'Diagram' __t__ __n__ __m__ __a__@ then holds:
--- @'diagram' ('limes' lms d) '==' d@.
-newtype Limits l s (p :: Perspective) t n m a
-  = Limits (Diagram t n m a -> l s p t n m a)
+-- __Property__ Let @l@ be in @'Limits' __u__ __s__ __p__ __t__ __n__ __m__ __a__@
+-- and @d@ in @__d__ __t__ __n__ __m__ __a__@ then holds:
+-- @'diagram' ('universalCone' ('limes' l d)) '==' 'diagram' d@.
+newtype Limits d u s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N') a
+  = Limits (d t n m a -> u s p t n m a)
+
 
 --------------------------------------------------------------------------------
 -- limes -
 
 -- | the limes over the given diagram.
-limes :: Limits l s p t n m a -> Diagram t n m a -> l s p t n m a
-limes (Limits lm) = lm
-
+limes :: Limits d u s p t n m a -> d t n m a -> u s p t n m a
+limes (Limits l) = l
+{-
 --------------------------------------------------------------------------------
 -- lmsMap -
 
@@ -203,3 +209,4 @@ lmsToPrjOrnt = Limits . lmToPrjOrnt
 lmsFromInjOrnt :: Entity p => p -> Limits Limes Mlt Injective t n m (Orientation p)
 lmsFromInjOrnt = Limits . lmFromInjOrnt  
 
+-}

@@ -35,12 +35,15 @@ module OAlg.Limes.Universal
   , eligibleFactor
   , unvDiagramTypeRefl
 
-    -- * Applicative
+    -- ** Applicative
   , UniversalApplicative(..)
 
-    -- * Proposition
+    -- ** Proposition
   , relUniversal
-
+{-
+    -- * Limits
+  , UniversalLimits(..)
+-}  
     -- * Exception
   , UniversalException(..)
 
@@ -84,15 +87,15 @@ instance Exception UniversalException where
 data UniversalType p where
   UniversalProjective :: UniversalType Projective
   UniversalInjective  :: UniversalType Injective
-  
+
 --------------------------------------------------------------------------------
 -- Universal -
 
 -- | universal of a diagram, i.e. a distinguished cone over a given diagram
 -- having the following /universal/ property
 --
--- __Property__ Let @u@ be in @__l__ __s__ __p__ __t__ __n__ __m__ __a__@ for a
--- @'Universal' __l___@ and @__a__@ a 'Mulitplicative' structure, then holds:
+-- __Property__ Let @u@ be in @__u__ __s__ __p__ __t__ __n__ __m__ __a__@ for a
+-- @'Universal' __u___@ and a 'Mulitplicative' structure @__a__@, then holds:
 -- Let @l = 'universalCone' u@ in
 --
 -- (1) @l@ is 'valid'.
@@ -120,45 +123,45 @@ data UniversalType p where
 --
 -- (2) It is not required that the evaluation of the universal factor for a __non__ eligible cone
 --  yield an exception!
-class Universal l where
+class Universal u where
   -- | the type of the universal.
-  universalType :: l s p t n m a -> UniversalType p
+  universalType :: u s p t n m a -> UniversalType p
   
   -- | the underlying universal cone of a limes.
-  universalCone   :: l s p t n m a -> Cone s p t n m a
+  universalCone   :: u s p t n m a -> Cone s p t n m a
 
   -- | the universal factor of a 'Limes' @l@ to a given eligible cone.
   --
   -- __Property__ Let @l@ be in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
   -- For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with @'eligibleCone' l c@
   -- holds: @'eligibleFactor' l c ('universalFactor' l c)@.  
-  universalFactor :: l s p t n m a -> Cone s p t n m a -> a
+  universalFactor :: u s p t n m a -> Cone s p t n m a -> a
 
 --------------------------------------------------------------------------------
 -- unvMltOrDst -
 
 -- | proof of @__s__@ being either 'Mlt' or 'Dst'.
-unvMltOrDst :: Universal l => l s p t n m a -> Either (s :~: Mlt) (s :~: Dst)
+unvMltOrDst :: Universal u => u s p t n m a -> Either (s :~: Mlt) (s :~: Dst)
 unvMltOrDst = cnMltOrDst . universalCone
 
 -- unvDiagramTypeRefl -
 
 -- | reflexivity of the underlying diagram type.
-unvDiagramTypeRefl :: Universal l => l s p t n m a -> Dual (Dual t) :~: t
+unvDiagramTypeRefl :: Universal u => u s p t n m a -> Dual (Dual t) :~: t
 unvDiagramTypeRefl = cnDiagramTypeRefl . universalCone
 
 --------------------------------------------------------------------------------
 -- universalPoint -
 
 -- | the universal point of a limes, i.e. the tip of the universal cone.
-universalPoint :: Universal l => l s p t n m a -> Point a
+universalPoint :: Universal u => u s p t n m a -> Point a
 universalPoint = tip . universalCone
 
 --------------------------------------------------------------------------------
 -- universalShell -
 
 -- | the shell of the universal cone.
-universalShell :: Universal l => l s p t n m a -> FinList n a
+universalShell :: Universal u => u s p t n m a -> FinList n a
 universalShell = shell . universalCone
 
 --------------------------------------------------------------------------------
@@ -170,8 +173,8 @@ universalShell = shell . universalCone
 -- and @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
 -- @'eligibleCone' u c@ is true if and only if @'diagram' ('universalCone' u) '==' 'cnDiagram' c@
 -- is true.
-eligibleCone :: (Oriented a, Universal l)
-  => l s p t n m a -> Cone s p t n m a -> Bool
+eligibleCone :: (Oriented a, Universal u)
+  => u s p t n m a -> Cone s p t n m a -> Bool
 eligibleCone u c = diagram (universalCone u) == diagram c 
 
 --------------------------------------------------------------------------------
@@ -188,7 +191,7 @@ eligibleCone u c = diagram (universalCone u) == diagram c
 --
 -- (2) If @u@ matches @'LimesInjective' l _@ then holds: @'eligibleFactor' u c x@ is true
 -- if and only if @'cnEligibleFactor' x l c@ is true.
-eligibleFactor :: Universal l => l s p t n m a -> Cone s p t n m a -> a -> Bool
+eligibleFactor :: Universal u => u s p t n m a -> Cone s p t n m a -> a -> Bool
 eligibleFactor l c x = case universalType l of
   UniversalProjective -> cnEligibleFactor x c (universalCone l)
   UniversalInjective  -> cnEligibleFactor x (universalCone l) c
@@ -197,9 +200,9 @@ eligibleFactor l c x = case universalType l of
 -- relUniversal -
 
 -- | validity of a 'Universal'.
-relUniversal :: (Universal l, Show (l s p t n m a))
+relUniversal :: (Universal u, Show (u s p t n m a))
   => ConeStruct s a
-  -> XOrtPerspective p a -> l s p t n m a -> Statement
+  -> XOrtPerspective p a -> u s p t n m a -> Statement
 relUniversal cs xop u = Label "Universal" :<=>: case cnStructMlt cs of
   Struct -> let l = universalCone u in
     And [ Label "1" :<=>: valid l
@@ -218,37 +221,38 @@ relUniversal cs xop u = Label "Universal" :<=>: case cnStructMlt cs of
                     ]
             )
         ]
-
+{-
 --------------------------------------------------------------------------------
 -- UniversalLimits -
 
 -- | constructing for each diagramtatic object @__d__ __t__ __n__ __m__ __a__@ a universal
--- object @__l__ __s__ __p__ __t__ __n__ __m__ __a__@.
+-- object @__u__ __s__ __p__ __t__ __n__ __m__ __a__@.
 --
--- __Property__ Let @u@ be in @__u__ __d__ __l__ __s__ __p__ __t__ __n__ __m__ __a__@ and
+-- __Property__ Let @l@ be in @__l__ __d__ __u__ __s__ __p__ __t__ __n__ __m__ __a__@ and
 -- @d@ in @__d__ __t__ __n__ __m__ __a__@ for a
--- @'UniversalLimits' __u__ __d__ __l__ __s__ __p__ __t__ __n__ __m__ __a__@, then holds:
--- @'diagram ('universalCone' ('limes' u d)) '==' 'diagram' d@.
-class (Diagrammatic d t n m a, Universal l) => UniversalLimits u d l s p t n m a where
-  limes :: u d l s p t n m a -> d t n m a -> l s p t n m a
+-- @'UniversalLimits' __l__ __d__ __u__ __s__ __p__ __t__ __n__ __m__ __a__@, then holds:
+-- @'diagram ('universalCone' ('limes' l d)) '==' 'diagram' d@.
+class (Diagrammatic d t n m a, Universal u) => UniversalLimits l d u s p t n m a where
+  limes :: l d u s p t n m a -> d t n m a -> u s p t n m a
 
 --------------------------------------------------------------------------------
 -- relUniversalLimes -
 
-relUniversalLimes :: (UniversalLimits u d l s p t n m a, Show (d t n m a))
-  => u d l s p t n m a -> d t n m a -> Statement
+relUniversalLimes :: (UniversalLimits l d u s p t n m a, Show (d t n m a))
+  => l d u s p t n m a -> d t n m a -> Statement
 relUniversalLimes u d = Label "UniversalLimes" :<=>:
   (diagram (universalCone (limes u d)) == diagram d) :?> Params ["d":= show d]
+-}
 
 --------------------------------------------------------------------------------
 -- UniversalApplicative -
 
 -- | applications on 'Universal's.
 --
--- __Properties__ Let @h@ be in @'IsoOrt' __s__ __h__ __a__ __b__@ and @__l__@ a @'Universal' __l__@,
+-- __Properties__ Let @h@ be in @'IsoOrt' __s__ __h__ __a__ __b__@ and @__u__@ a @'Universal' __u__@,
 -- then holds:
 --
--- (1) For all @u@ in @__l__ __s__ __p__ __t__ __n__ __m__ __a__@ holds:
+-- (1) For all @u@ in @__u__ __s__ __p__ __t__ __n__ __m__ __a__@ holds:
 -- @'unversalCone' ('umap' h u) '==' 'amap1' h ('univeralCone' u)@.
 --
 -- __Note__
@@ -258,7 +262,8 @@ relUniversalLimes u d = Label "UniversalLimes" :<=>:
 --
 -- (2) The constraint 'IsoOrt' is needed to fulfill the universal property of the mapped
 -- 'universalFactor'.
-class (IsoOrt s h, Universal l) => UniversalApplicative h l s where
-  umap :: h a b -> l s p t n m a -> l s p t n m b
+class (IsoOrt s h, Universal u) => UniversalApplicative h u s where
+  umap :: h a b -> u s p t n m a -> u s p t n m b
 -- needs UndecidableSuperClasses to compile!
+
 

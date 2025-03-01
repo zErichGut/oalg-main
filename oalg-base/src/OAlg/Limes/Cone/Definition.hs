@@ -21,6 +21,7 @@
 -- definition of 'Cone's over 'Diagram's.
 module OAlg.Limes.Cone.Definition
   (
+{-    
     -- * Cone
     Cone(..), Perspective(..), cnMltOrDst
   , cnDiagram, cnDiagramTypeRefl
@@ -48,6 +49,7 @@ module OAlg.Limes.Cone.Definition
   , cnPrjChainTo, cnPrjChainToInv
   , cnPrjChainFrom, cnPrjChainFromInv
   , FactorChain(..)
+-}
   ) where
 
 import Control.Monad
@@ -85,57 +87,58 @@ import OAlg.Limes.Cone.Structure
 
 -- | cone over a diagram.
 --
--- __Properties__ Let @c@ be in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
+-- __Properties__ Let @c@ be in @'Cone' __s__ __p__ __d__ __t__ __n__ __m__ __a__@ for a
+-- 'Diagrammatic' @__d__@, then holds:
 --
 -- (1) If @c@ matches @'ConeProjective' d t cs@ for a 'Multiplicative' structure __@a@__
 -- then holds:
 --
 --     (1) For all @ci@ in @cs@ holds: @'start' ci '==' t@ and
---     @'end' ci '==' pi@ where @pi@ in @'dgPoints' d@.
+--     @'end' ci '==' pi@ where @pi@ in @'dgPoints' ('diagram' d)@.
 --
---     (2) For all @aij@ in @'dgArrows' d@ holds: @aij 'Mlt.*' ci '==' cj@
+--     (2) For all @aij@ in @'dgArrows' ('diagram' d)@ holds: @aij 'Mlt.*' ci '==' cj@
 --     where @ci@, @cj@ in @cs@.
 --
 -- (2) If @c@ matches @'ConeInjective' d t cs@ for a 'Multiplicative' structure __@a@__
--- then holds:
+-- then holds: 
 --
 --     (1) For all @ci@ in @cs@ holds: @'end' ci '==' t@ and
---     @'start' ci '==' pi@ where @pi@ in @'dgPoints' d@.
+--     @'start' ci '==' pi@ where @pi@ in @'dgPoints' ('diagram' d)@.
 --
---     (2) For all @aij@ in @'dgArrows' d@ holds: @cj 'Mlt.*' aij '==' ci@
+--     (2) For all @aij@ in @'dgArrows' ('diagram' d)@ holds: @cj 'Mlt.*' aij '==' ci@
 --     where @ci@, @cj@ in @cs@.
 --
 -- (3) If @c@ matches @'ConeKernel' p k@ for a 'Distributive' structure __@a@__ then holds:
 --
---     (1) @'end' k '==' p0@ where @p0@ in @'dgPoints' p@
+--     (1) @'end' k '==' p0@ where @p0@ in @'dgPoints' ('diagram' p)@
 --
---     (2) For all @a@ in @'dgArrows' p@ holds: @a 'Mlt.*' k '==' 'zero' (t ':>' p1)@
---     where @t = 'start' k@ and @p0@, @p1@ in @'dgPoints' p@.
+--     (2) For all @a@ in @'dgArrows' ('diagram' p)@ holds: @a 'Mlt.*' k '==' 'zero' (t ':>' p1)@
+--     where @t = 'start' k@ and @p0@, @p1@ in @'dgPoints' ('diagram' p)@.
 --
 -- (4) If @c@ matches @'ConeCokernel' p k@ for a 'Distributive' structure __@a@__ then
 -- holds:
 --
---     (1) @'start' k '==' p0@ where @p0@ in @'cnPoints' c@
+--     (1) @'start' k '==' p0@ where @p0@ in @'dgPoints' ('diagram' p)@
 --
---     (2) For all @a@ in @'dgArrows' p@ holds: @k 'Mlt.*' a '==' 'zero' (p1 ':>' t)@ where
---     @t = 'end' k@ and @p0@, @p1@ in @'dgPoints' p@.
-data Cone s p t n m a where
+--     (2) For all @a@ in @'dgArrows' ('diagram' p)@ holds: @k 'Mlt.*' a '==' 'zero' (p1 ':>' t)@
+--     where @t = 'end' k@ and @p0@, @p1@ in @'dgPoints' ('diagram' p)@.
+data Cone s (p :: Perspective) d (t :: DiagramType) (n :: N') (m :: N') a where
   ConeProjective :: Multiplicative a
-    => Diagram t n m a -> Point a -> FinList n a -> Cone Mlt Projective t n m a
+    => d t n m a -> Point a -> FinList n a -> Cone Mlt Projective d t n m a
   ConeInjective  :: Multiplicative a
-    => Diagram t n m a -> Point a -> FinList n a -> Cone Mlt Injective t n m a
+    => d t n m a -> Point a -> FinList n a -> Cone Mlt Injective d t n m a
   ConeKernel     :: Distributive a
-    => Diagram (Parallel LeftToRight) N2 m a -> a
-    -> Cone Dst Projective (Parallel LeftToRight)  N2 m a
+    => d (Parallel LeftToRight) N2 m a -> a
+    -> Cone Dst Projective d (Parallel LeftToRight)  N2 m a
   ConeCokernel   :: Distributive a
-    => Diagram (Parallel RightToLeft) N2 m a -> a
-    -> Cone Dst Injective (Parallel RightToLeft) N2 m a
+    => d (Parallel RightToLeft) N2 m a -> a
+    -> Cone Dst Injective d (Parallel RightToLeft) N2 m a
 
 --------------------------------------------------------------------------------
 -- coneStruct -
 
 -- | the associated 'ConeStruct'.
-coneStruct :: Cone s p t n m a -> ConeStruct s a
+coneStruct :: Cone s p d t n m a -> ConeStruct s a
 coneStruct (ConeProjective _ _ _) = ConeStructMlt
 coneStruct (ConeInjective _ _ _)  = ConeStructMlt
 coneStruct (ConeKernel _ _)       = ConeStructDst
@@ -145,92 +148,93 @@ coneStruct (ConeCokernel _ _)     = ConeStructDst
 -- cnMltOrDst -
 
 -- | proof of @__s__@ being either 'Mlt' or 'Dst'.
-cnMltOrDst :: Cone s p t n m a -> Either (s :~: Mlt) (s :~: Dst)
+cnMltOrDst :: Cone s p d t n m a -> Either (s :~: Mlt) (s :~: Dst)
 cnMltOrDst = cnStructMltOrDst . coneStruct
 
 --------------------------------------------------------------------------------
--- cnDiagram -
+-- diagrammaticObject -
 
--- | the underlying diagram.
-cnDiagram :: Cone s p t n m a -> Diagram t n m a
-cnDiagram (ConeProjective d _ _) = d
-cnDiagram (ConeInjective d _ _)  = d
-cnDiagram (ConeKernel d _)       = d
-cnDiagram (ConeCokernel d _)     = d
+-- | the underlying 'Diagrammatic' object.
+diagrammaticObject :: Cone s p d t n m a -> d t n m a
+diagrammaticObject (ConeProjective d _ _) = d
+diagrammaticObject (ConeInjective d _ _)  = d
+diagrammaticObject (ConeKernel d _)       = d
+diagrammaticObject (ConeCokernel d _)     = d
 
-instance Oriented a => Diagrammatic (Cone s p) t n m a where diagram = cnDiagram
+instance Diagrammatic d => Diagrammatic (Cone s p d) where diagram = diagram . diagrammaticObject
 
 --------------------------------------------------------------------------------
 -- cnDiagramTypeRefl -
 
 -- | reflexivity of the underlying diagram type.
-cnDiagramTypeRefl :: Cone s p t n m a -> Dual (Dual t) :~: t
-cnDiagramTypeRefl (ConeProjective d _ _) = dgTypeRefl d
-cnDiagramTypeRefl (ConeInjective d _ _)  = dgTypeRefl d
-cnDiagramTypeRefl (ConeKernel d _)       = dgTypeRefl d
-cnDiagramTypeRefl (ConeCokernel d _)     = dgTypeRefl d
+cnDiagramTypeRefl :: Diagrammatic d => Cone s p d t n m a -> Dual (Dual t) :~: t
+cnDiagramTypeRefl c = dgTypeRefl (diagram c)
 
 --------------------------------------------------------------------------------
 -- cnMap -
 
-cnMapMltStruct :: Hom Mlt h => Struct Mlt b -> h a b
-  -> Cone Mlt p t n m a -> Cone Mlt p t n m b
+cnMapMltStruct :: (DiagrammaticApplicative h d, Hom Mlt h) => Struct Mlt b
+  -> h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMltStruct Struct h c = case c of
-  ConeProjective d t as -> ConeProjective (dgMap h d) (pmap h t) (fmap (amap h) as)
-  ConeInjective d t as -> ConeInjective (dgMap h d) (pmap h t) (fmap (amap h) as)
+  ConeProjective d t as -> ConeProjective (dmap h d) (pmap h t) (fmap (amap h) as)
+  ConeInjective d t as -> ConeInjective (dmap h d) (pmap h t) (fmap (amap h) as)
+
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
-cnMapMlt :: Hom Mlt h => h a b -> Cone Mlt p t n m a -> Cone Mlt p t n m b
+cnMapMlt :: (DiagrammaticApplicative h d, Hom Mlt h)
+  => h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMlt h = cnMapMltStruct (tau $ range h) h
 
-cnMapDstStruct :: Hom Dst h => Struct Dst b -> h a b
-  -> Cone Dst p t n m a -> Cone Dst p t n m b
+cnMapDstStruct :: (DiagrammaticApplicative h d, Hom Dst h) => Struct Dst b
+  -> h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
 cnMapDstStruct Struct h c = case c of
-  ConeKernel d a   -> ConeKernel (dgMap h d) (amap h a)
-  ConeCokernel d a -> ConeCokernel (dgMap h d) (amap h a)
-
+  ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
+  ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
+  
 -- | mapping of a cone under a 'Distributive' homomorphism.
-cnMapDst :: Hom Dst h => h a b -> Cone Dst p t n m a -> Cone Dst p t n m b
+cnMapDst :: (DiagrammaticApplicative h d, Hom Dst h)
+  => h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
 cnMapDst h = cnMapDstStruct (tau $ range h) h
 
 -- | mapping of a cone.
-cnMap :: Hom s h => h a b -> Cone s p t n m a -> Cone s p t n m b
+cnMap :: (DiagrammaticApplicative h d, Hom s h) => h a b -> Cone s p d t n m a -> Cone s p d t n m b
 cnMap h c = case c of
   ConeProjective _ _ _ -> cnMapMlt h c
   ConeInjective _ _ _  -> cnMapMlt h c
   ConeKernel _ _       -> cnMapDst h c
   ConeCokernel _ _     -> cnMapDst h c
-  
-instance HomMultiplicative h => Applicative1 h (Cone Mlt p t n m) where
-  amap1 = cnMapMlt
 
-instance HomDistributive h => Applicative1 h (Cone Dst p t n m) where
-  amap1 = cnMapDst
+instance (DiagrammaticApplicative h d, HomMultiplicative h)
+  => Applicative1 h (Cone Mlt p d t n m) where amap1 = cnMapMlt
+
+instance (DiagrammaticApplicative h d, HomDistributive h)
+  => Applicative1 h (Cone Dst p d t n m) where amap1 = cnMapDst
 
 --------------------------------------------------------------------------------
 -- Cone - Dual -
 
-type instance Dual (Cone s p t n m a) = Cone s (Dual p) (Dual t) n m (Op a)
+type instance Dual (Cone s p d t n m a) = Cone s (Dual p) d (Dual t) n m (Op a)
 
 --------------------------------------------------------------------------------
 -- coCone -
 
 -- | to the dual cone, with its inverse 'coConeInv'.
-coCone :: Cone s p t n m a -> Dual (Cone s p t n m a)
+coCone :: DiagrammaticDualisable d => Cone s p d t n m a -> Dual (Cone s p d t n m a)
 coCone c = case c of
-  ConeProjective d t as -> ConeInjective (coDiagram d) t (fmap Op as)
-  ConeInjective d t as  -> ConeProjective (coDiagram d) t (fmap Op as)
-  ConeKernel d a        -> ConeCokernel (coDiagram d) (Op a)
-  ConeCokernel d a      -> ConeKernel (coDiagram d) (Op a)
+  ConeProjective d t as -> ConeInjective (coDiagrammatic d) t (fmap Op as)
+  ConeInjective d t as  -> ConeProjective (coDiagrammatic d) t (fmap Op as)
+  ConeKernel d a        -> ConeCokernel (coDiagrammatic d) (Op a)
+  ConeCokernel d a      -> ConeKernel (coDiagrammatic d) (Op a)
 
 --------------------------------------------------------------------------------
 -- cnFromOpOp -
 
 -- | from @'Op' '.' 'Op'@.
-cnFromOpOp :: ConeStruct s a -> Cone s p t n m (Op (Op a)) -> Cone s p t n m a
+cnFromOpOp :: DiagrammaticApplicative (IsoOp s) d => ConeStruct s a
+  -> Cone s p d t n m (Op (Op a)) -> Cone s p d t n m a
 cnFromOpOp ConeStructMlt = cnMapMlt isoFromOpOpMlt
 cnFromOpOp ConeStructDst = cnMapDst isoFromOpOpDst 
-
+{-
 --------------------------------------------------------------------------------
 -- coConeInv -
 
@@ -751,3 +755,4 @@ cnPrjChainFrom (FactorChain f d@(DiagramChainFrom _ as))
 cnPrjChainFromInv :: Cone Mlt Projective (Chain From) (n+1) n a -> FactorChain From n a
 cnPrjChainFromInv (ConeProjective d _ (c:|_)) = FactorChain c d
 
+-}

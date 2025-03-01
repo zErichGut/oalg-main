@@ -19,6 +19,7 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
+
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows, dgMap
@@ -255,26 +256,22 @@ coDiagramInv Refl = dgFromOpOp . coDiagram
 -- DiagramDuality -
 
 -- | 'Op'-duality between diagrams.
-data DiagramDuality f g a where
-  DiagramDuality :: Oriented a
-    => f a :~: Diagram t n m a
-    -> g (Op a) :~: Dual (Diagram t n m a)
-    -> Dual (Dual t) :~: t
-    -> DiagramDuality f g a
+data DiagramDuality x y where
+  DiagramDuality :: Dual (Dual t) :~: t -> DiagramDuality (Diagram t n m) (Diagram (Dual t) n m)
 
 --------------------------------------------------------------------------------
 -- dgToOp -
 
--- | to @__g__ ('Op' __a__)@.
-dgToOp :: DiagramDuality f g a -> f a -> g (Op a)
-dgToOp (DiagramDuality Refl Refl _) = coDiagram
+-- | to @__y__ ('Op' __a__)@.
+dgToOp :: DiagramDuality x y -> x a -> y (Op a)
+dgToOp (DiagramDuality _) = coDiagram
 
 --------------------------------------------------------------------------------
 -- dgFromOp -
 
 -- | from @__g__ ('Op' __a__)@.
-dgFromOp :: DiagramDuality f g a -> g (Op a) -> f a 
-dgFromOp (DiagramDuality Refl Refl rt) = coDiagramInv rt
+dgFromOp :: Oriented a => DiagramDuality x y -> y (Op a) -> x a 
+dgFromOp (DiagramDuality rt) = coDiagramInv rt
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -

@@ -55,7 +55,6 @@ data OpDuality (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> T
     :: Dual (Dual p) :~: p -> Dual (Dual t) :~: t
     -> OpDuality l s (l s p t n m) (l s (Dual p) (Dual t) n m)
 
-
 --------------------------------------------------------------------------------
 -- OpReflexive -
 
