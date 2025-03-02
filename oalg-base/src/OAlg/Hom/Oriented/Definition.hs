@@ -41,6 +41,7 @@ module OAlg.Hom.Oriented.Definition
   , IsoOp(), PathHomOp -- , opPathOrt
   , isoToOpOp, isoToOpOp', isoFromOpOp, isoFromOpOp'
   , isoToOpOpOrt, isoFromOpOpOrt
+  , isoToOpOpStruct, isoFromOpOpStruct
 
     -- * IsoOpMap
   , IsoOpMap(), PathOpMap
@@ -435,6 +436,15 @@ isoToOpOp' :: ( Transformable t s, TransformableTyp t
 isoToOpOp' = forget' Proxy isoToOpOp
 
 --------------------------------------------------------------------------------
+-- isoToOpOpStruct -
+
+-- | the induced 'IsoOp'.
+isoToOpOpStruct :: Transformable1 Op s => Struct s a -> IsoOp s a (Op (Op a))
+isoToOpOpStruct s = iso s (tauOp (tauOp s)) where
+  iso :: Struct s a -> Struct s (Op (Op a)) -> IsoOp s a (Op (Op a))
+  iso Struct Struct = isoToOpOp
+  
+--------------------------------------------------------------------------------
 -- isoToOpOpOrt -
 
 -- | the induced isomorphism of 'Oriented' structures given by 'ToOpOp'.
@@ -448,13 +458,22 @@ isoToOpOpOrt = isoToOpOp
 isoFromOpOp :: (Structure s a, Structure s (Op (Op a))) => IsoOp s (Op (Op a)) a
 isoFromOpOp = make (FromOpOp :. IdPath Struct)
 
-isoFromOpOp' :: (Transformable t s, TransformableTyp t
+isoFromOpOp' :: ( Transformable t s, TransformableTyp t
                 , Structure t a, Structure t (Op (Op a))
                 , Structure s (Op (Op a))
                 )
  => Forget' s (IsoOp t) (Op (Op a)) a
 isoFromOpOp' = forget' Proxy isoFromOpOp
 
+--------------------------------------------------------------------------------
+-- isoFromOpOpStruct -
+
+-- | the induced 'IsoOp'.
+isoFromOpOpStruct :: Transformable1 Op s => Struct s a -> IsoOp s (Op (Op a)) a
+isoFromOpOpStruct s = iso s (tauOp (tauOp s)) where
+  iso :: Struct s a -> Struct s (Op (Op a)) -> IsoOp s (Op (Op a)) a
+  iso Struct Struct = isoFromOpOp
+  
 --------------------------------------------------------------------------------
 -- isoFromOpOpOrt -
 
