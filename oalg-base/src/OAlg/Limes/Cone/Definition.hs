@@ -183,11 +183,11 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 --------------------------------------------------------------------------------
 -- cnMap -
 
-cnMapMltStruct :: (DiagrammaticApplicative h d, Hom Mlt h) => Struct Mlt b
-  -> h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
+cnMapMltStruct :: (DiagrammaticApplicative h d, Hom Mlt h)
+  => Struct Mlt b -> h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMltStruct Struct h c = case c of
-  ConeProjective d t as -> ConeProjective (dmap h d) (pmap h t) (fmap (amap h) as)
-  ConeInjective d t as -> ConeInjective (dmap h d) (pmap h t) (fmap (amap h) as)
+  ConeProjective d t as  -> ConeProjective (dmap h d) (pmap h t) (fmap (amap h) as)
+  ConeInjective d t as   -> ConeInjective (dmap h d) (pmap h t) (fmap (amap h) as)
 
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
@@ -258,6 +258,7 @@ coConeInv cs Refl Refl = cnFromOpOp cs . coCone (tauOp (cnStruct cs))
 --------------------------------------------------------------------------------
 -- ConeDuality -
 
+-- | duality for 'Diagrammatic'-'Cone's.
 data ConeDuality s d x y where
   ConeDuality :: Dual (Dual p) :~: p -> DiagrammaticDuality s d (d t n m) (d (Dual t) n m)
     -> ConeDuality s d (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
@@ -381,10 +382,10 @@ coConeZeroHeadInv s rp rt (ConeZeroHead c)
 -- | subtracts to every arrow of the underlying parallel diagram the first arrow and
 -- adapts the shell accordingly.
 cnDiffHead :: (Distributive a, Abelian a)
-  => Cone Mlt p Diagram (Parallel d) n (m+1) a -> ConeZeroHead Mlt p Diagram (Parallel d)  n (m+1) a
-cnDiffHead (ConeProjective d t (a:|as)) = ConeZeroHead $ case d of
-  DiagramParallelLR _ _ _ -> ConeProjective (dgPrlDiffHead d) t (a:|fmap toZero as)
-  DiagramParallelRL _ _ _ -> ConeProjective (dgPrlDiffHead d) t (toZero a:|as)
+  => Cone Mlt p Diagram (Parallel d) n (m+1) a -> ConeZeroHead Mlt p Diagram (Parallel d) n (m+1) a
+cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
+  DiagramParallelLR _ _ _ -> ConeProjective (dgPrlDiffHead d) t (a:|fmap toZero as) where a:|as = s
+  DiagramParallelRL _ _ _ -> ConeProjective (dgPrlDiffHead d) t (toZero a:|as) where a:|as = s
   where toZero a = zero (root a)
 cnDiffHead c@(ConeInjective d _ _) = case d of
   DiagramParallelLR _ _ _ ->   coConeZeroHeadInv ConeStructMlt Refl Refl
