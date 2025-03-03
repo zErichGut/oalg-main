@@ -1,4 +1,6 @@
 
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 -- |
 -- Module      : OAlg.Data.Opposite
 -- Description : predicate for the opposite
@@ -14,7 +16,9 @@ module OAlg.Data.Opposite
 
     -- * Op2
   , Op2(..)
-      
+
+    -- * Duality
+  , OpDualisable(..)
   ) where
 
 import Prelude hiding ((&&),(||))
@@ -63,3 +67,19 @@ instance Show2 h => Show2 (Op2 h) where
 
 instance Eq2 h => Eq2 (Op2 h) where
   eq2 (Op2 f) (Op2 g) = eq2 f g 
+
+--------------------------------------------------------------------------------
+-- OpDualisable -
+
+-- | 'Op'-dualisable structures.
+--
+-- __Property__ Let @'OpDualisable' __d__ __s__@, then for all @__x__@, @__y__@, @__a__@
+-- with @'Eq' (__x__ __a__)@ and  @'Eq' (__y__ ('Op' __a__)) holds:
+-- 
+-- (1) @'opdFromOp' s ('opdToOp' s x) '==' x@ for all @x@ in @__x__ __a__@ and @s@ in @__s__ __a__@.
+--
+-- (2) @'opdToOp' s ('opdFromOp' s y) '==' y@ for all and @y@ in @__y__ ('Op' __a__)@ and
+-- @s@ in @__s__ __a__@.
+class OpDualisable d s where
+  opdToOp   :: d x y -> s a -> x a -> y (Op a)
+  opdFromOp :: d x y -> s a -> y (Op a) -> x a

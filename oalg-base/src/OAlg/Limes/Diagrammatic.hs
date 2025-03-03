@@ -23,6 +23,7 @@
 -- Objects having an underlying 'Diagram'.
 module OAlg.Limes.Diagrammatic
   (
+
     -- * Diagrammatic
     Diagrammatic(..)
 
@@ -30,7 +31,7 @@ module OAlg.Limes.Diagrammatic
   , DiagrammaticDualisable(..), coDiagrammaticInv
   , dgmFromOpOp
 
-  , DiagrammaticDuality(..), dgmToOp, dgmFromOp
+  , DiagrammaticDuality(..) -- , dgmToOp, dgmFromOp
 
     -- * Applicative
   , DiagrammaticApplicative(..)
@@ -39,6 +40,7 @@ module OAlg.Limes.Diagrammatic
     -- * Proposition
   , prpDiagrammaticApplicative
   , prpDiagrammaticDualisable
+
   ) where
 
 import Data.Typeable
@@ -132,6 +134,11 @@ data DiagrammaticDuality s d x y where
   DiagrammaticDuality :: DiagrammaticDualisable s d => Dual (Dual t) :~: t
     -> DiagrammaticDuality s d (d t n m) (d (Dual t) n m)
 
+instance OpDualisable (DiagrammaticDuality s d) (Struct s) where
+  opdToOp (DiagrammaticDuality _)      = coDiagrammatic
+  opdFromOp (DiagrammaticDuality rt) s = coDiagrammaticInv s rt
+
+{-
 --------------------------------------------------------------------------------
 -- dgmToOp -
 
@@ -145,6 +152,7 @@ dgmToOp (DiagrammaticDuality _) = coDiagrammatic
 -- | from 'Op'.
 dgmFromOp :: DiagrammaticDuality s d x y -> Struct s a -> y (Op a) -> x a
 dgmFromOp (DiagrammaticDuality rt) s = coDiagrammaticInv s rt
+-}
 
 --------------------------------------------------------------------------------
 -- prpDiagrammaticApplicative -
@@ -172,5 +180,3 @@ prpDiagrammaticDualisable :: ( DiagrammaticDualisable s d
 prpDiagrammaticDualisable s Refl d = Prp "DiagrammaticDualisable" :<=>:
   (coDiagrammatic (tauOp s) (coDiagrammatic s d) == dmap (isoToOpOpStruct s) d)
     :?> Params ["d":=show d]
-
-  
