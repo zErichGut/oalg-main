@@ -16,9 +16,10 @@ module OAlg.Data.Opposite
 
     -- * Op2
   , Op2(..)
-
+{-
     -- * Duality
   , OpDualisable(..)
+-}
   ) where
 
 import Prelude hiding ((&&),(||))
@@ -68,6 +69,7 @@ instance Show2 h => Show2 (Op2 h) where
 instance Eq2 h => Eq2 (Op2 h) where
   eq2 (Op2 f) (Op2 g) = eq2 f g 
 
+{-
 --------------------------------------------------------------------------------
 -- OpDualisable -
 
@@ -83,3 +85,4 @@ instance Eq2 h => Eq2 (Op2 h) where
 class OpDualisable d s where
   opdToOp   :: d x y -> s a -> x a -> y (Op a)
   opdFromOp :: d x y -> s a -> y (Op a) -> x a
+-}

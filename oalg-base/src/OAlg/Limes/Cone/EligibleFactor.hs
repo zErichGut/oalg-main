@@ -11,14 +11,15 @@
 
 -- |
 -- Module      : OAlg.Limes.Cone.EligibleFactor
--- Description : eligible factors between cones
+-- Description : eligible factors for diagrammatic-cones.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- eligible factors between 'Cone's.
+-- eligible factors for 'Diagrammatic'-'Cone's.
 module OAlg.Limes.Cone.EligibleFactor
   (
+ {-
      -- * Eligible Factor
     cnEligibleFactor
   , EligibleFactor(..), elfFactorCone
@@ -35,6 +36,7 @@ module OAlg.Limes.Cone.EligibleFactor
   
   , xosEligibleFactorPrj
   , xosEligibleFactorInj
+-}
   ) where
 
 import Control.Monad
@@ -55,6 +57,7 @@ import OAlg.Hom.Distributive
 import OAlg.Hom.Definition
 
 import OAlg.Limes.Perspective
+import OAlg.Limes.Diagrammatic
 import OAlg.Limes.Cone.Definition
 
 --------------------------------------------------------------------------------
@@ -79,7 +82,7 @@ import OAlg.Limes.Cone.Definition
 --     (1) @'orientation' x '==' 'tip' f ':>' 'tip' t@.
 --
 --     (2) @x v'*' ti '==' fi@ for all @ti@ in @'shell' t@ and @fi@ in @'shell' f@.
-cnEligibleFactor :: a -> Cone s p t n m a -> Cone s p t n m a -> Bool
+cnEligibleFactor :: DiagrammaticDualisable s d => a -> Cone s p d t n m a -> Cone s p d t n m a -> Bool
 cnEligibleFactor x (ConeProjective _ f fs) (ConeProjective _ t ts)
   = orientation x == f:>t && comPrj x fs ts where
     comPrj :: Multiplicative a => a -> FinList n a -> FinList n a -> Bool
@@ -87,7 +90,8 @@ cnEligibleFactor x (ConeProjective _ f fs) (ConeProjective _ t ts)
     comPrj x (f:|fs) (t:|ts) = t*x == f && comPrj x fs ts
 cnEligibleFactor x (ConeKernel _ f) (ConeKernel _ t)
   = orientation x == start f :> start t && t*x == f
-cnEligibleFactor x f t = cnEligibleFactor (Op x) (coCone t) (coCone f)
+cnEligibleFactor x f t = cnEligibleFactor (Op x) (coCone s t) (coCone s f) where
+  s = cnStruct $ coneStruct f
 
 --------------------------------------------------------------------------------
 -- EligibleFactor -
@@ -102,18 +106,19 @@ cnEligibleFactor x f t = cnEligibleFactor (Op x) (coCone t) (coCone f)
 --
 -- (2) If @e@ matches @'EligibleFactorFrom' l x c@ then holds:
 -- @'cnDiagram' l '==' 'cnDiagram' c@ and @'cnEligibleFactor' x l c@.
-data EligibleFactor s p t n m a where
-  EligibleFactorTo :: Cone s Projective t n m a -> a -> Cone s Projective t n m a
-    -> EligibleFactor s Projective t n m a
-  EligibleFactorFrom :: Cone s Injective t n m a -> a -> Cone s Injective t n m a
-    -> EligibleFactor s Injective t n m a
+data EligibleFactor s p d t n m a where
+  EligibleFactorTo :: Cone s Projective d t n m a -> a -> Cone s Projective d t n m a
+    -> EligibleFactor s Projective d t n m a
+  EligibleFactorFrom :: Cone s Injective d t n m a -> a -> Cone s Injective d t n m a
+    -> EligibleFactor s Injective d t n m a
 
-deriving instance Show a => Show (EligibleFactor s p t n m a)
+deriving instance (Show (d t n m a), Show a) => Show (EligibleFactor s p d t n m a)
+
 --------------------------------------------------------------------------------
 -- elfFactorCone -
 
 -- | the underlying factor together with its cone.
-elfFactorCone :: EligibleFactor s p t n m a -> (a,Cone s p t n m a)
+elfFactorCone :: EligibleFactor s p d t n m a -> (a,Cone s p d t n m a)
 elfFactorCone (EligibleFactorTo _ x c)   = (x,c)
 elfFactorCone (EligibleFactorFrom _ x c) = (x,c)
 
@@ -121,22 +126,22 @@ elfFactorCone (EligibleFactorFrom _ x c) = (x,c)
 -- elfMap -
 
 -- | mapping of a eligible factor within a 'Multiplicative' structure.
-elfMapMlt :: Hom Mlt h
-  => h a b -> EligibleFactor Mlt p t n m a -> EligibleFactor Mlt p t n m b
+elfMapMlt :: (DiagrammaticApplicative h d, Hom Mlt h)
+  => h a b -> EligibleFactor Mlt p d t n m a -> EligibleFactor Mlt p d t n m b
 elfMapMlt h elf = case elf of
   EligibleFactorTo l x c   -> EligibleFactorTo (cnMapMlt h l) (h$x) (cnMapMlt h c)
   EligibleFactorFrom l x c -> EligibleFactorFrom (cnMapMlt h l) (h$x) (cnMapMlt h c)
 
 -- | mapping of a eligible factor within a 'Distributive' structure.
-elfMapDst :: Hom Dst h
-  => h a b -> EligibleFactor Dst p t n m a -> EligibleFactor Dst p t n m b
+elfMapDst :: (DiagrammaticApplicative h d, Hom Dst h)
+  => h a b -> EligibleFactor Dst p d t n m a -> EligibleFactor Dst p d t n m b
 elfMapDst h elf = case elf of
   EligibleFactorTo l x c   -> EligibleFactorTo (cnMapDst h l) (h$x) (cnMapDst h c)
   EligibleFactorFrom l x c -> EligibleFactorFrom (cnMapDst h l) (h$x) (cnMapDst h c)
 
 -- | mapping of a eligible factor.  
-elfMap :: Hom s h
-  => h a b -> EligibleFactor s p t n m a -> EligibleFactor s p t n m b
+elfMap :: (DiagrammaticApplicative h d, Hom s h)
+  => h a b -> EligibleFactor s p d t n m a -> EligibleFactor s p d t n m b
 elfMap h elf@(EligibleFactorTo l _ _) = case l of
   ConeProjective _ _ _ -> elfMapMlt h elf  
   ConeKernel _ _       -> elfMapDst h elf  
@@ -147,18 +152,19 @@ elfMap h elf@(EligibleFactorFrom l _ _) = case l of
 --------------------------------------------------------------------------------
 -- EligibleFactor - Duality -
 
-type instance Dual (EligibleFactor s p t n m a)
-  = EligibleFactor s (Dual p) (Dual t) n m (Op a)
+type instance Dual (EligibleFactor s p d t n m a)
+  = EligibleFactor s (Dual p) d (Dual t) n m (Op a)
 
 -- | to the dual, with its inverse 'coEligibleFactorInv'.
-coEligibleFactor :: EligibleFactor s p t n m a -> Dual (EligibleFactor s p t n m a)
-coEligibleFactor (EligibleFactorTo l x c) = EligibleFactorFrom l' (Op x) c' where
-  l' = coCone l
-  c' = coCone c
-coEligibleFactor (EligibleFactorFrom l x c) = EligibleFactorTo l' (Op x) c' where
-  l' = coCone l
-  c' = coCone c
-
+coEligibleFactor :: DiagrammaticDualisable s d
+  => Struct s a -> EligibleFactor s p d t n m a -> Dual (EligibleFactor s p d t n m a)
+coEligibleFactor s (EligibleFactorTo l x c) = EligibleFactorFrom l' (Op x) c' where
+  l' = coCone s l
+  c' = coCone s c
+coEligibleFactor s (EligibleFactorFrom l x c) = EligibleFactorTo l' (Op x) c' where
+  l' = coCone s l
+  c' = coCone s c
+{-
 -- | from the bidual.
 elfFromOpOp :: ConeStruct s a
   -> EligibleFactor s p t n m (Op (Op a)) -> EligibleFactor s p t n m a
@@ -238,3 +244,4 @@ instance XStandardOrtSiteTo a => XStandardOrtPerspective Projective a where
 
 instance XStandardOrtSiteFrom a => XStandardOrtPerspective Injective a where
   xStandardOrtPerspective = XOrtInjective xStandardOrtSite
+-}

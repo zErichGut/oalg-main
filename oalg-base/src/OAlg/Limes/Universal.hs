@@ -25,7 +25,7 @@
 -- definition of a 'Limes' of a 'Diagram'.
 module OAlg.Limes.Universal
   (
-
+{-
     -- * Universal
     Universal(..), UniversalType(..)
   , universalPoint
@@ -46,7 +46,7 @@ module OAlg.Limes.Universal
 -}  
     -- * Exception
   , UniversalException(..)
-
+-}
   ) where
 
 import Control.Monad (fmap)
@@ -87,7 +87,7 @@ instance Exception UniversalException where
 data UniversalType p where
   UniversalProjective :: UniversalType Projective
   UniversalInjective  :: UniversalType Injective
-
+{-
 --------------------------------------------------------------------------------
 -- Universal -
 
@@ -265,5 +265,5 @@ relUniversalLimes u d = Label "UniversalLimes" :<=>:
 class (IsoOrt s h, Universal u) => UniversalApplicative h u s where
   umap :: h a b -> u s p t n m a -> u s p t n m b
 -- needs UndecidableSuperClasses to compile!
-
+-}
 

@@ -24,7 +24,7 @@ module OAlg.Limes.Cone.Definition
 
     -- * Cone
     Cone(..), diagrammaticObject
-  , Perspective(..), cnMltOrDst
+  , Perspective(..), cnMltOrDst, coneStruct
   , cnDiagramTypeRefl
   , tip, shell, cnArrows, cnPoints
   , cnMap, cnMapMlt, cnMapDst
