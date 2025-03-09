@@ -14,7 +14,7 @@
 -- data admitting a kind of duality.
 module OAlg.Data.Dualisable
   ( -- * Dual
-    Dual
+    Dual, Dual1
 
     -- * Dualisable
   , Dualisable(..), fromDual'
@@ -36,11 +36,19 @@ module OAlg.Data.Dualisable
   )
   where
 
+import Data.Kind
+
 --------------------------------------------------------------------------------
 -- Dual -
 
--- | the assigned dual kind.
+-- | the associated dual kind.
 type family Dual (x :: k) :: k
+
+--------------------------------------------------------------------------------
+-- Dual1 -
+
+-- | the associated parameterized dual kind.
+type family Dual1 (c :: k -> Type) :: k -> Type
 
 --------------------------------------------------------------------------------
 -- Dualisable -

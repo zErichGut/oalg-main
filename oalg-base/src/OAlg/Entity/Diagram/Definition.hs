@@ -216,7 +216,8 @@ instance HomOriented h => Applicative1 h (Diagram t n m) where
 --------------------------------------------------------------------------------
 -- Diagram - Dual -
 
-type instance Dual (Diagram t n m a) = Diagram (Dual t) n m (Op a)
+type instance Dual1 (Diagram t n m) = Diagram (Dual t) n m
+type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 
 --------------------------------------------------------------------------------
 -- coDiagram -
