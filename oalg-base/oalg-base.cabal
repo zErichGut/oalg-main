@@ -78,6 +78,7 @@ library
       OAlg.Data.Ord
       OAlg.Data.Ornt
       OAlg.Data.Reducible
+      OAlg.Data.Relation
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular

@@ -47,12 +47,13 @@ import Data.Typeable
 
 import OAlg.Prelude
 
+import OAlg.Data.Relation
+
 import OAlg.Hom.Oriented.Definition
 
 import OAlg.Structure.Oriented.Definition
 
 import OAlg.Entity.Diagram hiding (DiagramDuality(..))
-import OAlg.Entity.Natural hiding (lemma1)
 
 import OAlg.Limes.OpDuality
 
@@ -98,183 +99,106 @@ class (FunctorialHomOriented h, DiagrammaticApplicative h d) => DiagrammaticFunc
 instance FunctorialHomOriented h => DiagrammaticFunctorial h Diagram
 
 --------------------------------------------------------------------------------
--- DiagrammaticSoundDual1 -
-
-class Diagrammatic d => DiagrammaticSoundDual1 d where
-  diagrammaticSoundDual1 :: p t -> Dual1 (d t n m) :~: d (Dual t) n m
-
-instance DiagrammaticSoundDual1 Diagram where
-  diagrammaticSoundDual1 _ = Refl
-  
---------------------------------------------------------------------------------
 -- DiagrammaticDualisable -
 
 -- | 'Op'-dualisable 'Diagrammatic' objects.
 --
 -- __Property__ Let @'DiagrammaticDualisable' __s__ __d__@, then holds:
--- @'coDiagrammatic' ('coDiagrammatic' d) '==' 'dmap' i d@
+-- @'coDiagrammatic' ('tauOp' s) ('coDiagrammatic' s d) '==' 'dmap' i d@
 -- for all @__t__@, @__n__@, @__m__@, @__a__@, @d@ in @__d__ __t__ __n__ __m__ __a__@,
--- @s@ in @'Struct' __s__ __a__@, @'Functor1' i = 'isoBidual' ('diagramDuality' d s)@ and @d@ is an instance of @'Eq' (__d__ __t__ __n__ __m__ __a__)@.
-class ( DiagrammaticSoundDual1 d
+-- @s@ in @'Struct' __s__ __a__@, @i = isoToOpOpStruct s@ and @d@ is an instance of
+-- @'Eq' (__d__ __t__ __n__ __m__ __a__)@.
+class ( Diagrammatic d
       , DiagrammaticFunctorial (IsoOp s) d
       , TransformableOrt s, TransformableOp s, TransformableTyp s
       ) => DiagrammaticDualisable s d where
-  diagramDuality :: Struct s a -> d t n m a -> DiagramDuality s (IsoOp s) Op (Diagram t n m)
-  coDiagrammatic :: Struct s a -> d t n m a -> Dual1 (d t n m) (Op a)
-
+  coDiagrammatic :: Struct s a -> d t n m a -> d (Dual t) n m (Op a)
 
 instance (TransformableOrt s, TransformableOp s, TransformableTyp s)
   => DiagrammaticDualisable s Diagram where
-  diagramDuality     = dgDuality
-  coDiagrammatic s d = toDual1 (dgDuality s d) s d
+  coDiagrammatic = const coDiagram
 
-
-{-
---------------------------------------------------------------------------------
--- dgmFromOpOp -
-
--- | from @'Op' '.' 'Op'@.
-dgmFromOpOp :: DiagrammaticDualisable s d
-  => Struct s a -> d t n m (Op (Op a)) -> d t n m a
-dgmFromOpOp s = dmap (isoFromOpOpStruct s)
-
---------------------------------------------------------------------------------
--- coDiagrammaticInv -
-
--- | the inverse to 'coDiagrammatic'.
-coDiagrammaticInv :: DiagrammaticDualisable s d => Struct s a -> Dual (Dual t) :~: t
-  -> d (Dual t) n m (Op a) -> d t n m a
-coDiagrammaticInv s Refl = dgmFromOpOp s . coDiagrammatic (tauOp s)
--}
 --------------------------------------------------------------------------------
 -- DiagrammaticDuality -
 
-
-data DiagrammaticDuality s d i o c where
+-- | duality for 'Diagrammatic' objects.
+data DiagrammaticDuality s d i o a b where
   DiagrammaticDuality
     :: ( DiagrammaticDualisable s d
-       -- , Functorial1 (IsoOp s) (d t n m)
-       -- xo, Functorial1 (IsoOp s) (d (Dual t) n m)
+       , Functorial1 (IsoOp s) (d t n m)
+       , Functorial1 (IsoOp s) (d (Dual t) n m)
        )
     => Dual (Dual t) :~: t
-    -> DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+    -> DiagrammaticDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
 
+instance Symmetric (DiagrammaticDuality s d i o) where
+  swap (DiagrammaticDuality Refl) = DiagrammaticDuality Refl
 
-instance TransformableDual1 (DiagrammaticDuality s d (IsoOp s) Op) where
-  tauDual1 d@(DiagrammaticDuality _) = tauDual1' d
+instance (TransformableTyp s, Transformable1 Op s)
+  => Duality1 s (DiagrammaticDuality s dy) (IsoOp s) Op where
+  toDual1 (DiagrammaticDuality _)    = coDiagrammatic
+  isoBidual1 (DiagrammaticDuality _) = Functor1 . isoToOpOpStruct   
 
-dgmdSoundDual1 :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+{-
+--------------------------------------------------------------------------------
+-- dgmdSoundDual1 -
+
+-- | soundness of 'Dual1' for 'DiagrammaticDuality's.
+dgmdSoundDual1 :: DiagrammaticDuality s d i o (d t n m)
   -> Dual1 (d t n m) :~: d (Dual t) n m
 dgmdSoundDual1 (DiagrammaticDuality r) = diagrammaticSoundDual1 r
 
-tauDual1' :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
-  -> DiagrammaticDuality s d (IsoOp s) Op (Dual1 (d t n m))
+--------------------------------------------------------------------------------
+-- DiagrammaticDuality - Duality1 -
+
+
+instance TransformableDual1 (DiagrammaticDuality s d i o) where
+  tauDual1 d@(DiagrammaticDuality _) = tauDual1' d
+
+tauDual1' :: DiagrammaticDuality s d i o (d t n m)
+  -> DiagrammaticDuality s d i o (Dual1 (d t n m))
 tauDual1' d@(DiagrammaticDuality _) = tauDual1'' d (dgmdSoundDual1 d)
 
-tauDual1'' :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+tauDual1'' :: DiagrammaticDuality s d i o (d t n m)
   -> Dual1 (d t n m) :~: d (Dual t) n m
-  -> DiagrammaticDuality s d (IsoOp s) Op (Dual1 (d t n m))
+  -> DiagrammaticDuality s d i o (Dual1 (d t n m))
 tauDual1'' (DiagrammaticDuality Refl) Refl = DiagrammaticDuality Refl
 
 
-instance ReflexiveDual1 (DiagrammaticDuality s d (IsoOp s) Op) where
+instance ReflexiveDual1 (DiagrammaticDuality s d i o) where
   reflDual1 d@(DiagrammaticDuality _) = reflDual1' d
   
-reflDual1' :: DiagrammaticDuality s d (IsoOp s) Op (d t n m) -> Dual1 (Dual1 (d t n m)) :~: d t n m
+reflDual1' :: DiagrammaticDuality s d i o (d t n m) -> Dual1 (Dual1 (d t n m)) :~: d t n m
 reflDual1' d = reflDual1'' d (lemma1 d) (lemma3 d)
 
-lemma1 :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+lemma1 :: DiagrammaticDuality s d i o (d t n m)
   -> Dual1 (Dual1 (d t n m)) :~: Dual1 (d (Dual t) n m)
 lemma1 d = lemma2 d (dgmdSoundDual1 d)
 
-lemma2 :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+lemma2 :: DiagrammaticDuality s d i o (d t n m)
   -> Dual1 (d t n m) :~: d (Dual t) n m
   -> Dual1 (Dual1 (d t n m)) :~: Dual1 (d (Dual t) n m)
 lemma2 _ Refl = Refl
 
-lemma3 :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+lemma3 :: DiagrammaticDuality s d i o (d t n m)
   -> Dual1 (d (Dual t) n m) :~: d (Dual (Dual t)) n m
 lemma3 d = lemma4 d Refl 
 
-lemma4 :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+lemma4 :: DiagrammaticDuality s d i o (d t n m)
   -> Dual t :~: t' -> Dual1 (d t' n m) :~: d (Dual t') n m
 lemma4 (DiagrammaticDuality _) = diagrammaticSoundDual1
 
-reflDual1'' :: DiagrammaticDuality s d (IsoOp s) Op (d t n m)
+reflDual1'' :: DiagrammaticDuality s d i o (d t n m)
   -> Dual1 (Dual1 (d t n m)) :~: Dual1 (d (Dual t) n m) -- lemma1
   -> Dual1 (d (Dual t) n m) :~: d (Dual (Dual t)) n m   -- lemma3
   -> Dual1 (Dual1 (d t n m)) :~: d t n m
 reflDual1'' (DiagrammaticDuality Refl) Refl Refl = Refl
 
-
-{-
-hh 
-  :: (forall (t' :: DiagramType) (n :: N') (m :: N') . p t' -> Dual1 (d t' n m) :~: d (Dual t') n m)
-  -> (forall (t' :: DiagramType) (n :: N') (m :: N') . p t' -> p (Dual t'))
-  -> p t -> Dual1 (d (Dual t) n m) :~: d (Dual (Dual t)) n m
-hh tau p t = tau (p t)
-
-ff :: DiagrammaticDuality s d h o (d t n m)  
-  -> Dual (Dual t) :~: t
-  -> Dual1 (d (Dual t) n m) :~: d (Dual (Dual t)) n m
-ff t = hh ddd pt (p t) where
-  p :: Dual (Dual t) :~: t -> Proxy t
-  p _ = Proxy
-
-  pt :: Proxy t -> Proxy (Dual t)
-  pt _ = Proxy
-  
-
-instance ReflexiveDual1 (DiagrammaticDuality s d (IsoOp s) Op) where
-  reflDual1 r@(DiagrammaticDuality u@Refl (DiagramDuality v@Refl)) = gg r u v
-
-gg :: DiagrammaticDuality s d h o (d t n m)  
-  -> Dual1 (d t n m) :~: d (Dual t) n m -> Dual (Dual t) :~: t
-  -> Dual1 (d (Dual t) n m) :~: d t n m
-gg = error "nyi"
-     
-instance (TransformableOrt s, TransformableOp s, TransformableTyp s)
+instance (TransformableTyp s, Transformable1 Op s)
   => Duality1 s (DiagrammaticDuality s d) (IsoOp s) Op where
-  toDual1 (DiagrammaticDuality Refl _) = coDiagrammatic
-  isoBidual1 (DiagrammaticDuality _ _) = Functor1 . isoToOpOpStruct
+  toDual1 d@(DiagrammaticDuality _)  = case dgmdSoundDual1 d of Refl -> coDiagrammatic
+  isoBidual1 (DiagrammaticDuality _) = Functor1 . isoToOpOpStruct   
 -}
-{-
-tauBidual :: forall d (t :: DiagramType) (n :: N') (m :: N')
-  .  Dual (d t n m) :~: d (Dual t) n m -> Dual (Dual t) :~: t
-  -> Dual (d (Dual t) n m) :~: d t n m
-tauBidual = error "nyi"
-
-
-{-
---------------------------------------------------------------------------------
--- DiagrammaticDuality -
-
-data DiagrammaticDuality s d x y where
-  DiagrammaticDuality :: DiagrammaticDualisable s d => Dual (Dual t) :~: t
-    -> DiagrammaticDuality s d (d t n m) (d (Dual t) n m)
-
-instance OpDualisable (DiagrammaticDuality s d) (Struct s) where
-  opdToOp (DiagrammaticDuality _)      = coDiagrammatic
-  opdFromOp (DiagrammaticDuality rt) s = coDiagrammaticInv s rt
--}
-
-{-
---------------------------------------------------------------------------------
--- dgmToOp -
-
--- | to 'Op'.
-dgmToOp :: DiagrammaticDuality s d x y -> Struct s a -> x a -> y (Op a)
-dgmToOp (DiagrammaticDuality _) = coDiagrammatic
-
---------------------------------------------------------------------------------
--- dgmFromOp -
-
--- | from 'Op'.
-dgmFromOp :: DiagrammaticDuality s d x y -> Struct s a -> y (Op a) -> x a
-dgmFromOp (DiagrammaticDuality rt) s = coDiagrammaticInv s rt
--}
-
-
 --------------------------------------------------------------------------------
 -- prpDiagrammaticApplicative -
 
@@ -301,4 +225,14 @@ prpDiagrammaticDualisable :: ( DiagrammaticDualisable s d
 prpDiagrammaticDualisable s Refl d = Prp "DiagrammaticDualisable" :<=>:
   (coDiagrammatic (tauOp s) (coDiagrammatic s d) == dmap (isoToOpOpStruct s) d)
     :?> Params ["d":=show d]
--}
+
+--------------------------------------------------------------------------------
+-- dgmDuality -
+
+instance (Category h, HomOriented h) => Functorial1 h (Diagram t n m)
+
+dgmDuality :: (TransformableOrt s, TransformableOp s, TransformableTyp s)
+  => Dual (Dual t) :~: t
+  -> DiagrammaticDuality s Diagram (IsoOp s) Op (Diagram t n m) (Diagram (Dual t) n m)
+dgmDuality = DiagrammaticDuality
+
