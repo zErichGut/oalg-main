@@ -45,7 +45,7 @@ module OAlg.Category.Definition
   
     -- * Functorial
   , Functorial
-  , Functorial1
+  , Functorial1, Functor1(..)
 
     -- * Forget
   , Forget(..)
@@ -281,7 +281,7 @@ instance Category c => Category (Op2 c) where
 --
 --   (1) #Fnc2#For all types __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
 --   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amap' (f '.' g) = 'amap' f '.' 'amap' g@. 
-class (Applicative c, Category c) => Functorial c
+class (Category c, Applicative c) => Functorial c
 
 --------------------------------------------------------------------------------
 -- Functorial1 -
@@ -297,6 +297,13 @@ class (Applicative c, Category c) => Functorial c
 -- (2) For all types @__x__@, @__y__@, @__z__@, @f@ in @__c__ __y__ __z__@ and
 -- @g@ in @__c__ __x__ __y__@ holds: @'amap1' (f '.' g) = 'amap1' f '.' 'amap1' g@.
 class (Category c, Applicative1 c f) => Functorial1 c f 
+
+--------------------------------------------------------------------------------
+-- Functor1 -
+
+-- | functor from @__h__@ to @('->')@ given by @__c__@.
+data Functor1 h c x y where
+  Functor1 :: Functorial1 h c => h x y -> Functor1 h c x y
 
 --------------------------------------------------------------------------------
 -- Cayleyan2 -

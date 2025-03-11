@@ -211,7 +211,9 @@ dgMap h d = case d of
         f  = amap h
 
 instance HomOriented h => Applicative1 h (Diagram t n m) where
-  amap1 = dgMap
+  amap1 = dgMap -- do not change this definition!!!
+
+instance FunctorialHomOriented h => Functorial1 h (Diagram t n m)
 
 --------------------------------------------------------------------------------
 -- Diagram - Dual -
