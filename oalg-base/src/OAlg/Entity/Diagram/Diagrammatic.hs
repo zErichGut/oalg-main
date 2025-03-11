@@ -15,32 +15,33 @@
 
 
 -- |
--- Module      : OAlg.Limes.Diagrammatic
+-- Module      : OAlg.Entity.Diagram.Diagrammatic
 -- Description : objects having an underlying diagram.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- Objects having an underlying 'Diagram'.
-module OAlg.Limes.Diagrammatic
+module OAlg.Entity.Diagram.Diagrammatic
   (
-{-
+
     -- * Diagrammatic
     Diagrammatic(..)
 
     -- ** Duality
   , DiagrammaticDualisable(..)
-
-  -- , DiagrammaticDuality(..) -- , dgmToOp, dgmFromOp
+  , DiagrammaticDuality(..), DiagrammaticOpDuality
+  , dgmOpDuality
 
     -- * Applicative
-  , DiagrammaticApplicative(..)
-  , DiagrammaticFunctorial
+  , DiagrammaticApplicative(..), DiagrammaticApplicative1
+  , DiagrammaticFunctorial, DiagrammaticFunctorial1
 
     -- * Proposition
   , prpDiagrammaticApplicative
+  , prpDiagrammaticApplicative1
   , prpDiagrammaticDualisable
--}
+
   ) where
 
 import Data.Typeable
@@ -141,7 +142,7 @@ instance FunctorialHomOriented h => DiagrammaticFunctorial h Diagram
 -- @s@ in @'Struct' __s__ __a__@, @i = isoToOpOpStruct s@ and @d@ is an instance of
 -- @'Eq' (__d__ __t__ __n__ __m__ __a__)@.
 class ( Diagrammatic d
-      , DiagrammaticFunctorial (IsoOp s) d
+      , DiagrammaticApplicative (IsoOp s) d
       ) => DiagrammaticDualisable s d where
   coDiagrammatic :: Struct s a -> d t n m a -> d (Dual t) n m (Op a)
 
