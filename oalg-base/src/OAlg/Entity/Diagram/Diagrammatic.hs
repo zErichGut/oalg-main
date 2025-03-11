@@ -168,8 +168,8 @@ instance Symmetric (DiagrammaticDuality s d i o) where
 
 instance (TransformableTyp s, Transformable1 Op s)
   => Duality1 s (DiagrammaticDuality s d) (IsoOp s) Op where
-  toDual1 (DiagrammaticDuality _)    = coDiagrammatic
-  isoBidual1 (DiagrammaticDuality _) = Functor1 . isoToOpOpStruct   
+  toDualFst (DiagrammaticDuality _)    = coDiagrammatic
+  isoBidualFst (DiagrammaticDuality _) = Functor1 . isoToOpOpStruct   
 
 --------------------------------------------------------------------------------
 -- DiagrammaticOpDuality -
