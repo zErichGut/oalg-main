@@ -65,6 +65,7 @@ library
       OAlg.Data.Canonical
       OAlg.Data.Constructable
       OAlg.Data.Dualisable
+      OAlg.Data.Duality
       OAlg.Data.Either
       OAlg.Data.Equal
       OAlg.Data.Filterable
@@ -94,6 +95,7 @@ library
       OAlg.Entity.Definition
       OAlg.Entity.Diagram
       OAlg.Entity.Diagram.Definition
+      OAlg.Entity.Diagram.Diagrammatic
       OAlg.Entity.Diagram.Proposition
       OAlg.Entity.Diagram.Quiver
       OAlg.Entity.Diagram.Transformation
@@ -148,14 +150,12 @@ library
       OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Cone.Structure
       OAlg.Limes.Definition
-      OAlg.Limes.Diagrammatic
       OAlg.Limes.EqualizersAndCoequalizers
       OAlg.Limes.Exact.ConsZero
       OAlg.Limes.Exact.Deviation
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
       OAlg.Limes.MinimaAndMaxima
-      OAlg.Limes.OpDuality
       OAlg.Limes.Perspective
       OAlg.Limes.ProductsAndSums
       OAlg.Limes.Proposition

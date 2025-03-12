@@ -29,9 +29,9 @@ module OAlg.Entity.Diagram.Diagrammatic
     Diagrammatic(..)
 
     -- ** Duality
-  , DiagrammaticDualisable(..)
-  , DiagrammaticDuality(..), DiagrammaticOpDuality
-  , dgmOpDuality
+  , DiagrammaticOpDualisable(..)
+  , DiagrammaticOpDuality(..)
+  , DiagrammaticOpDuality', dgmOpDuality
 
     -- * Applicative
   , DiagrammaticApplicative(..), DiagrammaticApplicative1
@@ -40,7 +40,7 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Proposition
   , prpDiagrammaticApplicative
   , prpDiagrammaticApplicative1
-  , prpDiagrammaticDualisable
+  , prpDiagrammaticOpDualisable
 
   ) where
 
@@ -63,6 +63,9 @@ import OAlg.Entity.Diagram hiding (DiagramDuality(..))
 -- | object @__d__@ having an underlying 'Diagram'.
 class Diagrammatic d where
   diagram :: d t n m a -> Diagram t n m a
+
+--------------------------------------------------------------------------------
+-- Diagram - Diagrammatic -
 
 instance Diagrammatic Diagram where diagram = id
 
@@ -132,50 +135,49 @@ type DiagrammaticFunctorial1 h d t n m
 instance FunctorialHomOriented h => DiagrammaticFunctorial h Diagram
 
 --------------------------------------------------------------------------------
--- DiagrammaticDualisable -
+-- DiagrammaticOpDualisable -
 
 -- | 'Op'-dualisable 'Diagrammatic' objects.
 --
--- __Property__ Let @'DiagrammaticDualisable' __s__ __d__@, then holds:
+-- __Property__ Let @'DiagrammaticOpDualisable' __s__ __d__@, then holds:
 -- @'coDiagrammatic' ('tauOp' s) ('coDiagrammatic' s d) '==' 'dmap' i d@
 -- for all @__t__@, @__n__@, @__m__@, @__a__@, @d@ in @__d__ __t__ __n__ __m__ __a__@,
 -- @s@ in @'Struct' __s__ __a__@, @i = isoToOpOpStruct s@ and @d@ is an instance of
 -- @'Eq' (__d__ __t__ __n__ __m__ __a__)@.
-class ( Diagrammatic d
-      , DiagrammaticApplicative (IsoOp s) d
-      ) => DiagrammaticDualisable s d where
+class ( Diagrammatic d, DiagrammaticApplicative (IsoOp s) d) => DiagrammaticOpDualisable s d where
   coDiagrammatic :: Struct s a -> d t n m a -> d (Dual t) n m (Op a)
 
 instance (TransformableOrt s, TransformableOp s, TransformableTyp s)
-  => DiagrammaticDualisable s Diagram where
+  => DiagrammaticOpDualisable s Diagram where
   coDiagrammatic = const coDiagram
 
 --------------------------------------------------------------------------------
--- DiagrammaticDuality -
+-- DiagrammaticOpDuality -
 
--- | duality for 'Diagrammatic' objects.
-data DiagrammaticDuality s d i o a b where
-  DiagrammaticDuality
-    :: ( DiagrammaticDualisable s d
+-- | 'Op'-duality for 'Diagrammatic' objects.
+data DiagrammaticOpDuality s d i o a b where
+  DiagrammaticOpDuality
+    :: ( DiagrammaticOpDualisable s d
        , DiagrammaticFunctorial1 (IsoOp s) d t n m
        , DiagrammaticFunctorial1 (IsoOp s) d (Dual t) n m
        )
     => Dual (Dual t) :~: t
-    -> DiagrammaticDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
+    -> DiagrammaticOpDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
 
-instance Symmetric (DiagrammaticDuality s d i o) where
-  swap (DiagrammaticDuality Refl) = DiagrammaticDuality Refl
+instance Symmetric (DiagrammaticOpDuality s d i o) where
+  swap (DiagrammaticOpDuality Refl) = DiagrammaticOpDuality Refl
 
 instance (TransformableTyp s, Transformable1 Op s)
-  => Duality1 s (DiagrammaticDuality s d) (IsoOp s) Op where
-  toDualFst (DiagrammaticDuality _)    = coDiagrammatic
-  isoBidualFst (DiagrammaticDuality _) = Functor1 . isoToOpOpStruct   
+  => Duality1 s (DiagrammaticOpDuality s d) (IsoOp s) Op where
+  toDualFst (DiagrammaticOpDuality _)    = coDiagrammatic
+  isoBidualFst (DiagrammaticOpDuality _) = Functor1 . isoToOpOpStruct   
 
 --------------------------------------------------------------------------------
 -- DiagrammaticOpDuality -
 
 -- | diagrammatic 'Op' duality.
-type DiagrammaticOpDuality s d t n m = DiagrammaticDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
+type DiagrammaticOpDuality' s d t n m
+  = DiagrammaticOpDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
 
 --------------------------------------------------------------------------------
 -- dgmOpDuality -
@@ -183,8 +185,9 @@ type DiagrammaticOpDuality s d t n m = DiagrammaticDuality s d (IsoOp s) Op (d t
 -- | 'Op'-duality for 'Diagrams's.
 dgmOpDuality :: (TransformableOrt s, TransformableOp s, TransformableTyp s)
   => Dual (Dual t) :~: t
-  -> DiagrammaticOpDuality s Diagram t n m
-dgmOpDuality = DiagrammaticDuality
+  -> DiagrammaticOpDuality' s Diagram t n m
+dgmOpDuality = DiagrammaticOpDuality
+
 
 --------------------------------------------------------------------------------
 -- prpDiagrammaticApplicative -
@@ -212,15 +215,13 @@ prpDiagrammaticApplicative1 h d = Prp "DiagrammaticApplicative1" :<=>:
   (dmap h d == amap1 h d) :?> Params ["d":= show d]
   
 --------------------------------------------------------------------------------
--- prpDiagrammaticDualisable -
+-- prpDiagrammaticOpDualisable -
 
--- | validity according to 'DiagrammaticDualisable'.
-prpDiagrammaticDualisable :: ( DiagrammaticDualisable s d
-                             , Eq (d t n m (Op (Op a)))
-                             , Show (d t n m a)
-                             )
+-- | validity according to 'DiagrammaticOpDualisable'.
+prpDiagrammaticOpDualisable
+  :: ( DiagrammaticOpDualisable s d, Eq (d t n m (Op (Op a))), Show (d t n m a))
   => Struct s a -> Dual (Dual t) :~: t -> d t n m a -> Statement
-prpDiagrammaticDualisable s Refl d = Prp "DiagrammaticDualisable" :<=>:
+prpDiagrammaticOpDualisable s Refl d = Prp "DiagrammaticOpDualisable" :<=>:
   (coDiagrammatic (tauOp s) (coDiagrammatic s d) == dmap (isoToOpOpStruct s) d)
     :?> Params ["d":=show d]
 

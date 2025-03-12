@@ -218,7 +218,7 @@ instance FunctorialHomOriented h => Functorial1 h (Diagram t n m)
 --------------------------------------------------------------------------------
 -- Diagram - Dual -
 
-type instance Dual1 (Diagram t n m) = Diagram (Dual t) n m
+type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 
 --------------------------------------------------------------------------------

@@ -21,7 +21,7 @@
 -- definition of 'Cone's over 'Diagram's.
 module OAlg.Limes.Cone.Definition
   (
-
+{-
     -- * Cone
     Cone(..), diagrammaticObject
   , Perspective(..), cnMltOrDst, coneStruct
@@ -50,7 +50,7 @@ module OAlg.Limes.Cone.Definition
   , cnPrjChainTo, cnPrjChainToInv
   , cnPrjChainFrom, cnPrjChainFromInv
   , FactorChain(..)
-
+-}
   ) where
 
 import Control.Monad
@@ -61,10 +61,13 @@ import Data.Array hiding (range)
 import OAlg.Prelude
 
 import OAlg.Data.Either
+import OAlg.Data.Duality
+import OAlg.Data.Relation
 
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList
 import OAlg.Entity.Diagram
+import OAlg.Entity.Diagram.Diagrammatic
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Fibred
@@ -78,7 +81,6 @@ import OAlg.Hom.Distributive
 import OAlg.Hom.Definition
 
 import OAlg.Limes.Perspective
-import OAlg.Limes.Diagrammatic
 
 import OAlg.Limes.Cone.Structure
 
@@ -183,29 +185,40 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 --------------------------------------------------------------------------------
 -- cnMap -
 
+{-
 cnMapMltStruct :: (DiagrammaticApplicative h d, Hom Mlt h)
   => Struct Mlt b -> h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMltStruct Struct h c = case c of
-  ConeProjective d t as  -> ConeProjective (dmap h d) (pmap h t) (fmap (amap h) as)
-  ConeInjective d t as   -> ConeInjective (dmap h d) (pmap h t) (fmap (amap h) as)
-
+  ConeProjective d t as  -> ConeProjective (dmap h d) (pmap h t) (amap1 (amap h) as)
+  ConeInjective d t as   -> ConeInjective (dmap h d) (pmap h t) (amap1 (amap h) as)
+-}
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
 cnMapMlt :: (DiagrammaticApplicative h d, Hom Mlt h)
   => h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
-cnMapMlt h = cnMapMltStruct (tau $ range h) h
+cnMapMlt h c               = case tauMlt (range h) of
+  Struct                  -> case c of
+    ConeProjective d t as -> ConeProjective (dmap h d) (pmap h t) (amap1 (amap h) as)
+    ConeInjective d t as  -> ConeInjective (dmap h d) (pmap h t) (amap1 (amap h) as)
+    
 
+{-
 cnMapDstStruct :: (DiagrammaticApplicative h d, Hom Dst h) => Struct Dst b
   -> h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
 cnMapDstStruct Struct h c = case c of
   ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
   ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
-  
+-}
+
 -- | mapping of a cone under a 'Distributive' homomorphism.
 cnMapDst :: (DiagrammaticApplicative h d, Hom Dst h)
   => h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
-cnMapDst h = cnMapDstStruct (tau $ range h) h
-
+-- cnMapDst h = cnMapDstStruct (tau $ range h) h
+cnMapDst h c          = case tauDst (range h) of
+  Struct             -> case c of
+    ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
+    ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
+    
 -- | mapping of a cone.
 cnMap :: (DiagrammaticApplicative h d, Hom s h) => h a b -> Cone s p d t n m a -> Cone s p d t n m b
 cnMap h c = case c of
@@ -217,14 +230,72 @@ cnMap h c = case c of
 instance (DiagrammaticApplicative h d, HomMultiplicative h)
   => Applicative1 h (Cone Mlt p d t n m) where amap1 = cnMapMlt
 
+instance (Category h, HomMultiplicative h, DiagrammaticFunctorial h d)
+  => Functorial1 h (Cone Mlt p d t n m)
+
 instance (DiagrammaticApplicative h d, HomDistributive h)
   => Applicative1 h (Cone Dst p d t n m) where amap1 = cnMapDst
+
+instance (Category h, HomDistributive h, DiagrammaticFunctorial h d)
+  => Functorial1 h (Cone Dst p d t n m)
+
 
 --------------------------------------------------------------------------------
 -- Cone - Dual -
 
-type instance Dual (Cone s p d t n m a) = Cone s (Dual p) d (Dual t) n m (Op a)
+type instance Dual1 (Cone s p d t n m)  = Cone s (Dual p) d (Dual t) n m 
+type instance Dual (Cone s p d t n m a) = Dual1 (Cone s p d t n m) (Op a)
 
+--------------------------------------------------------------------------------
+-- coCone -
+
+-- | to the dual cone, with its inverse 'coConeInv'.
+coCone :: DiagrammaticOpDuality' s d t n m
+  -> Struct s a -> Cone s p d t n m a -> Dual (Cone s p d t n m a)
+coCone dOp s c          = case c of
+  ConeProjective d t as -> ConeInjective (toDualFst dOp s d) t (amap1 Op as)
+  ConeInjective d t as  -> ConeProjective (toDualFst dOp s d) t (amap1 Op as)
+  ConeKernel d a        -> ConeCokernel (toDualFst dOp s d) (Op a)
+  ConeCokernel d a      -> ConeKernel (toDualFst dOp s d) (Op a)
+
+--------------------------------------------------------------------------------
+-- ConeOpDuality -
+
+data ConeOpDuality s d i o a b where
+  ConeOpDuality
+    :: ( DiagrammaticOpDualisable s d
+       , DiagrammaticFunctorial1 (IsoOp s) d t n m
+       , DiagrammaticFunctorial1 (IsoOp s) d (Dual t) n m
+       )
+    => Dual (Dual p) :~: p
+    -> Dual (Dual t) :~: t
+    -> ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
+
+--------------------------------------------------------------------------------
+-- cnDgmOpDuality -
+
+-- | the underlying 'Diagrammatic'-'Op'-duality.
+cnDgmOpDuality
+  :: ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
+  -> DiagrammaticOpDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
+cnDgmOpDuality (ConeOpDuality _ rt) = DiagrammaticOpDuality rt
+
+--------------------------------------------------------------------------------
+-- ConeOpDuality - Duality1 -
+
+instance Symmetric (ConeOpDuality s d i o) where
+  swap (ConeOpDuality Refl Refl) = ConeOpDuality Refl Refl
+
+instance Duality1 Mlt (ConeOpDuality Mlt d) (IsoOp Mlt) Op where
+  toDualFst cOp@(ConeOpDuality _ _) = coCone (cnDgmOpDuality cOp)
+  isoBidualFst (ConeOpDuality _ _)  = Functor1 . isoToOpOpStruct 
+
+instance Duality1 Dst (ConeOpDuality Dst d) (IsoOp Dst) Op where
+  toDualFst cOp@(ConeOpDuality _ _) = coCone (cnDgmOpDuality cOp)
+  isoBidualFst (ConeOpDuality _ _)  = Functor1 . isoToOpOpStruct 
+
+
+{-
 --------------------------------------------------------------------------------
 -- coCone -
 
@@ -266,6 +337,7 @@ data ConeDuality s d x y where
 instance OpDualisable (ConeDuality s d) (ConeStruct s) where
   opdToOp (ConeDuality _ (DiagrammaticDuality _)) s     = coCone (cnStruct s)
   opdFromOp (ConeDuality rp (DiagrammaticDuality rt)) s = coConeInv s rp rt   
+-}
 
 --------------------------------------------------------------------------------
 -- tip -
@@ -320,6 +392,7 @@ cnPoints = dgPoints . diagram
 cnArrows :: Diagrammatic d => Cone s p d t n m a -> FinList m a
 cnArrows = dgArrows . diagram
 
+{-
 --------------------------------------------------------------------------------
 -- cnDstAdjZero -
 
@@ -327,6 +400,9 @@ cnArrows = dgArrows . diagram
 cnDstAdjZero :: Cone Dst p Diagram t n m a -> Cone Mlt p Diagram t n (m+1) a
 cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
   = ConeProjective (dgPrlAdjZero d) t (k:|zero (t:>r):|Nil) where t = start k
+cnDstAdjZero c@(ConeCokernel _ _) = fromDualFst cOp $ cnDstAdjZero $ toDualFst cOp c where
+  cOp = ConeOpDuality Refl Refl
+
 cnDstAdjZero c@(ConeCokernel _ _)
   = coConeInv ConeStructMlt Refl Refl $ cnDstAdjZero $ coCone Struct c
 
@@ -579,7 +655,7 @@ relConePrjMlt (DiagramGeneral ps aijs) t cs
                   cj = cs ! j
 
 --------------------------------------------------------------------------------
--- relCone -
+-- relConeDiagram -
 
 -- | validity of a 'Diagram'-'Cone'.
 relConeDiagram :: Cone s p Diagram t n m a -> Statement
@@ -777,3 +853,4 @@ cnPrjChainFromInv :: Cone Mlt Projective Diagram (Chain From) (n+1) n a -> Facto
 cnPrjChainFromInv (ConeProjective d _ (c:|_)) = FactorChain c d
 
 
+-}
