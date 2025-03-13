@@ -165,12 +165,23 @@ diagrammaticObject (ConeCokernel d _)     = d
 
 instance Diagrammatic d => Diagrammatic (Cone s p d) where diagram = diagram . diagrammaticObject
 
+{-
 --------------------------------------------------------------------------------
 -- cnDiagramTypeRefl -
 
 -- | reflexivity of the underlying diagram type.
 cnDiagramTypeRefl :: Diagrammatic d => Cone s p d t n m a -> Dual (Dual t) :~: t
 cnDiagramTypeRefl c = dgTypeRefl (diagram c)
+-}
+
+--------------------------------------------------------------------------------
+-- cnTypeRefl -
+
+cnTypeRefl :: Cone s p d t n m a -> Dual (Dual p) :~: p
+cnTypeRefl (ConeProjective _ _ _) = Refl
+cnTypeRefl (ConeInjective _ _ _)  = Refl
+cnTypeRefl (ConeKernel _ _)       = Refl
+cnTypeRefl (ConeCokernel _ _)     = Refl
 
 --------------------------------------------------------------------------------
 -- coneDiagram -
@@ -185,14 +196,6 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 --------------------------------------------------------------------------------
 -- cnMap -
 
-{-
-cnMapMltStruct :: (DiagrammaticApplicative h d, Hom Mlt h)
-  => Struct Mlt b -> h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
-cnMapMltStruct Struct h c = case c of
-  ConeProjective d t as  -> ConeProjective (dmap h d) (pmap h t) (amap1 (amap h) as)
-  ConeInjective d t as   -> ConeInjective (dmap h d) (pmap h t) (amap1 (amap h) as)
--}
-
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
 cnMapMlt :: (DiagrammaticApplicative h d, Hom Mlt h)
   => h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
@@ -201,14 +204,6 @@ cnMapMlt h c               = case tauMlt (range h) of
     ConeProjective d t as -> ConeProjective (dmap h d) (pmap h t) (amap1 (amap h) as)
     ConeInjective d t as  -> ConeInjective (dmap h d) (pmap h t) (amap1 (amap h) as)
     
-
-{-
-cnMapDstStruct :: (DiagrammaticApplicative h d, Hom Dst h) => Struct Dst b
-  -> h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
-cnMapDstStruct Struct h c = case c of
-  ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
-  ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
--}
 
 -- | mapping of a cone under a 'Distributive' homomorphism.
 cnMapDst :: (DiagrammaticApplicative h d, Hom Dst h)
@@ -239,7 +234,6 @@ instance (DiagrammaticApplicative h d, HomDistributive h)
 instance (Category h, HomDistributive h, DiagrammaticFunctorial h d)
   => Functorial1 h (Cone Dst p d t n m)
 
-
 --------------------------------------------------------------------------------
 -- Cone - Dual -
 
@@ -267,76 +261,67 @@ data ConeOpDuality s d i o a b where
        , DiagrammaticFunctorial1 (IsoOp s) d t n m
        , DiagrammaticFunctorial1 (IsoOp s) d (Dual t) n m
        )
-    => Dual (Dual p) :~: p
+    => Either (s :~: Mlt) (s :~: Dst)
+    -> Dual (Dual p) :~: p
     -> Dual (Dual t) :~: t
     -> ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
 
+--------------------------------------------------------------------------------
+-- ConeOpDuality' -
+
+type ConeOpDuality' s p d t n m
+  = ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
+  
 --------------------------------------------------------------------------------
 -- cnDgmOpDuality -
 
 -- | the underlying 'Diagrammatic'-'Op'-duality.
 cnDgmOpDuality
-  :: ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
-  -> DiagrammaticOpDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
-cnDgmOpDuality (ConeOpDuality _ rt) = DiagrammaticOpDuality rt
+  :: ConeOpDuality' s p d t n m
+  -> DiagrammaticOpDuality' s d t n m
+cnDgmOpDuality (ConeOpDuality _ _ rt) = DiagrammaticOpDuality rt
 
 --------------------------------------------------------------------------------
 -- ConeOpDuality - Duality1 -
 
 instance Symmetric (ConeOpDuality s d i o) where
-  swap (ConeOpDuality Refl Refl) = ConeOpDuality Refl Refl
+  swap (ConeOpDuality s Refl Refl) = ConeOpDuality s Refl Refl
 
-instance Duality1 Mlt (ConeOpDuality Mlt d) (IsoOp Mlt) Op where
-  toDualFst cOp@(ConeOpDuality _ _) = coCone (cnDgmOpDuality cOp)
-  isoBidualFst (ConeOpDuality _ _)  = Functor1 . isoToOpOpStruct 
+instance (TransformableTyp s, Transformable1 Op s) => Duality1 s (ConeOpDuality s d) (IsoOp s) Op where
+  toDualFst cOp@(ConeOpDuality _ _ _) = coCone (cnDgmOpDuality cOp)
 
-instance Duality1 Dst (ConeOpDuality Dst d) (IsoOp Dst) Op where
-  toDualFst cOp@(ConeOpDuality _ _) = coCone (cnDgmOpDuality cOp)
-  isoBidualFst (ConeOpDuality _ _)  = Functor1 . isoToOpOpStruct 
+  isoBidualFst (ConeOpDuality s _ _)  = case s of
+    Left Refl  -> Functor1 . isoToOpOpStruct
+    Right Refl -> Functor1 . isoToOpOpStruct
+
+--------------------------------------------------------------------------------
+-- cnOpDualityDiagram -
+
+cnOpDualityDiagram' :: Either (s :~: Mlt) (s :~: Dst) -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> ConeOpDuality' s p Diagram t n m
+cnOpDualityDiagram' s = case s of
+  Left Refl  -> ConeOpDuality s
+  Right Refl -> ConeOpDuality s
+
+cnOpDualityDiagram :: Diagrammatic d => Cone s p d t n m a -> ConeOpDuality' s p Diagram t n m
+cnOpDualityDiagram c = cnOpDualityDiagram' (cnMltOrDst c) (cnTypeRefl c) (dgmTypeRefl c)
+
+--------------------------------------------------------------------------------
+-- tauConeOpDualityDiagramMlt -
+
+-- | transforming a @'ConeOpDuality' __s__@ to @'ConeOpDuality' 'Mlt'@.
+tauConeOpDualityDiagramMlt :: ConeOpDuality' s p Diagram t n m -> ConeOpDuality' Mlt p Diagram t n' m'
+tauConeOpDualityDiagramMlt (ConeOpDuality s@(Left Refl) p t) = ConeOpDuality s p t
+tauConeOpDualityDiagramMlt (ConeOpDuality (Right Refl) p t)  = ConeOpDuality (Left Refl) p t
 
 
 {-
 --------------------------------------------------------------------------------
--- coCone -
+-- cnOpDualityDst -
 
--- | to the dual cone, with its inverse 'coConeInv'.
-coCone :: DiagrammaticDualisable s d => Struct s a -> Cone s p d t n m a -> Dual (Cone s p d t n m a)
-coCone s c = case c of
-  ConeProjective d t as -> ConeInjective (coDiagrammatic s d) t (fmap Op as)
-  ConeInjective d t as  -> ConeProjective (coDiagrammatic s d) t (fmap Op as)
-  ConeKernel d a        -> ConeCokernel (coDiagrammatic s d) (Op a)
-  ConeCokernel d a      -> ConeKernel (coDiagrammatic s d) (Op a)
-
---------------------------------------------------------------------------------
--- cnFromOpOp -
-
--- | from @'Op' '.' 'Op'@.
-cnFromOpOp :: DiagrammaticDualisable s d
-  => ConeStruct s a -> Cone s p d t n m (Op (Op a)) -> Cone s p d t n m a
-cnFromOpOp ConeStructMlt = cnMapMlt isoFromOpOpMlt
-cnFromOpOp ConeStructDst = cnMapDst isoFromOpOpDst 
-
-
---------------------------------------------------------------------------------
--- coConeInv -
-
--- | from the dual cone, with its inverse 'coCone'.
-coConeInv :: DiagrammaticDualisable s d
-  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Dual (Cone s p d t n m a) -> Cone s p d t n m a
-coConeInv cs Refl Refl = cnFromOpOp cs . coCone (tauOp (cnStruct cs))
-
---------------------------------------------------------------------------------
--- ConeDuality -
-
--- | duality for 'Diagrammatic'-'Cone's.
-data ConeDuality s d x y where
-  ConeDuality :: Dual (Dual p) :~: p -> DiagrammaticDuality s d (d t n m) (d (Dual t) n m)
-    -> ConeDuality s d (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
-
-instance OpDualisable (ConeDuality s d) (ConeStruct s) where
-  opdToOp (ConeDuality _ (DiagrammaticDuality _)) s     = coCone (cnStruct s)
-  opdFromOp (ConeDuality rp (DiagrammaticDuality rt)) s = coConeInv s rp rt   
+cnOpDualityDst :: Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> ConeOpDuality' Dst p Diagram t n m
+cnOpDualityDst = ConeOpDuality
 -}
 
 --------------------------------------------------------------------------------
@@ -392,7 +377,7 @@ cnPoints = dgPoints . diagram
 cnArrows :: Diagrammatic d => Cone s p d t n m a -> FinList m a
 cnArrows = dgArrows . diagram
 
-{-
+
 --------------------------------------------------------------------------------
 -- cnDstAdjZero -
 
@@ -400,98 +385,16 @@ cnArrows = dgArrows . diagram
 cnDstAdjZero :: Cone Dst p Diagram t n m a -> Cone Mlt p Diagram t n (m+1) a
 cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
   = ConeProjective (dgPrlAdjZero d) t (k:|zero (t:>r):|Nil) where t = start k
-cnDstAdjZero c@(ConeCokernel _ _) = fromDualFst cOp $ cnDstAdjZero $ toDualFst cOp c where
-  cOp = ConeOpDuality Refl Refl
-
 cnDstAdjZero c@(ConeCokernel _ _)
-  = coConeInv ConeStructMlt Refl Refl $ cnDstAdjZero $ coCone Struct c
+  = fromDualFst (tau cOpDst) (tauMlt sDst)
+  $ cnDstAdjZero
+  $ toDualFst cOpDst sDst
+  $ c
+  where cOpDst = cnOpDualityDiagram c
+        sDst   = cnStruct $ coneStruct c
 
-
---------------------------------------------------------------------------------
--- ConeZeroHead -
-
--- | predicate for cones where the first arrow of its underlying diagram is equal to 'zero'.
-newtype ConeZeroHead s p d t n m a = ConeZeroHead (Cone s p d t n m a) deriving (Show,Eq)
-
---------------------------------------------------------------------------------
--- ConeZeroHead - Validable -
-
-instance (Distributive a, Diagrammatic d, Validable (d t n (S m) a))
-  => Validable (ConeZeroHead s p d t n (S m) a) where
-  valid (ConeZeroHead c)
-    = And [ valid c
-          , relIsZero $ head $ dgArrows $ diagram c
-          ]
-
-instance ( Distributive a
-         , Diagrammatic d
-         , Entity (d t n (S m) a)
-         , Typeable d, Typeable s, Typeable p, Typeable t, Typeable n, Typeable m
-         )
-  => Entity (ConeZeroHead s p d t n (S m) a)
-
---------------------------------------------------------------------------------
--- ConeZeroHead - Dual -
-
-type instance Dual (ConeZeroHead s p d t n m a) = ConeZeroHead s (Dual p) d (Dual t) n m (Op a)
-
--- | to the dual, with its inverse 'coConeZeroHead'.
-coConeZeroHead :: DiagrammaticDualisable s d
-  => Struct s a -> ConeZeroHead s p d t n m a -> Dual (ConeZeroHead s p d t n m a)
-coConeZeroHead s (ConeZeroHead c) = ConeZeroHead $ coCone s c
-
--- | from the bidual.
-czFromOpOp :: DiagrammaticDualisable s d
-  => ConeStruct s a -> ConeZeroHead s p d t n m (Op (Op a)) -> ConeZeroHead s p d t n m a
-czFromOpOp s (ConeZeroHead c) = ConeZeroHead $ cnFromOpOp s c
-
--- | from the dual, with its inverse 'coConeZeroHead'.
-coConeZeroHeadInv :: DiagrammaticDualisable s d
-  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Dual (ConeZeroHead s p d t n m a) -> ConeZeroHead s p d t n m a
-coConeZeroHeadInv s rp rt (ConeZeroHead c)
-  = ConeZeroHead $ coConeInv s rp rt c
-
---------------------------------------------------------------------------------
--- cnDiffHead -
-
--- | subtracts to every arrow of the underlying parallel diagram the first arrow and
--- adapts the shell accordingly.
-cnDiffHead :: (Distributive a, Abelian a)
-  => Cone Mlt p Diagram (Parallel d) n (m+1) a -> ConeZeroHead Mlt p Diagram (Parallel d) n (m+1) a
-cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
-  DiagramParallelLR _ _ _ -> ConeProjective (dgPrlDiffHead d) t (a:|fmap toZero as) where a:|as = s
-  DiagramParallelRL _ _ _ -> ConeProjective (dgPrlDiffHead d) t (toZero a:|as) where a:|as = s
-  where toZero a = zero (root a)
-cnDiffHead c@(ConeInjective d _ _) = case d of
-  DiagramParallelLR _ _ _ ->   coConeZeroHeadInv ConeStructMlt Refl Refl
-                             $ cnDiffHead $ coCone Struct c
-  DiagramParallelRL _ _ _ ->   coConeZeroHeadInv ConeStructMlt Refl Refl
-                             $ cnDiffHead $ coCone Struct c
-
---------------------------------------------------------------------------------
--- cnZeroHead -
-
--- | embedding of a cone in a distributive structure to its multiplicative cone.
-cnZeroHead :: Cone Dst p Diagram t n m a -> ConeZeroHead Mlt p Diagram t n (m+1) a
-cnZeroHead = ConeZeroHead . cnDstAdjZero 
-
---------------------------------------------------------------------------------
--- cnKernel -
-
--- | the kernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
-cnKernel :: (Distributive a, p ~ Projective, t ~ Parallel LeftToRight)
-  => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
-cnKernel (ConeZeroHead (ConeProjective d _ cs)) = case d of
-  DiagramParallelLR l r as -> ConeKernel (DiagramParallelLR l r (tail as)) (head cs)
-
---------------------------------------------------------------------------------
--- cnCokernel
-
--- | the cokernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
-cnCokernel :: (Distributive a, p ~ Injective, t ~ Parallel RightToLeft)
-  => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
-cnCokernel = coConeInv ConeStructDst Refl Refl . cnKernel . coConeZeroHead Struct
+        tau = tauConeOpDualityDiagramMlt
+        
 
 --------------------------------------------------------------------------------
 -- relConePrjMlt -
@@ -654,16 +557,20 @@ relConePrjMlt (DiagramGeneral ps aijs) t cs
           ] where ci = cs ! i
                   cj = cs ! j
 
+
 --------------------------------------------------------------------------------
 -- relConeDiagram -
 
 -- | validity of a 'Diagram'-'Cone'.
 relConeDiagram :: Cone s p Diagram t n m a -> Statement
 relConeDiagram (ConeProjective d t cs) = relConePrjMlt d t cs
+relConeDiagram c@(ConeInjective _ _ _) = relConeDiagram $ toDualFst cOp s c where
+    cOp = cnOpDualityDiagram c
+    s   = cnStruct $ coneStruct c
 relConeDiagram c@(ConeKernel _ _)      = relConeDiagram (cnDstAdjZero c)
-relConeDiagram c                       = case coneStruct c of
-  ConeStructMlt                       -> relConeDiagram (coCone Struct c)
-  ConeStructDst                       -> relConeDiagram (coCone Struct c)
+relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram $ toDualFst cOp s c where
+    cOp = cnOpDualityDiagram c
+    s   = cnStruct $ coneStruct c
 
 --------------------------------------------------------------------------------
 -- relCone -
@@ -691,6 +598,98 @@ instance ( Diagrammatic d
          , Entity (d t n m a)
          , Typeable d, Typeable s, Typeable p, Typeable t, Typeable n, Typeable m, Typeable a
          ) => Entity (Cone s p d t n m a)
+
+--------------------------------------------------------------------------------
+-- ConeZeroHead -
+
+-- | predicate for cones where the first arrow of its underlying diagram is equal to 'zero'.
+newtype ConeZeroHead s p d t n m a = ConeZeroHead (Cone s p d t n m a) deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- ConeZeroHead - Validable -
+
+instance (Distributive a, Diagrammatic d, Validable (d t n (S m) a))
+  => Validable (ConeZeroHead s p d t n (S m) a) where
+  valid (ConeZeroHead c)
+    = And [ valid c
+          , relIsZero $ head $ dgArrows $ diagram c
+          ]
+
+instance ( Distributive a
+         , Diagrammatic d
+         , Entity (d t n (S m) a)
+         , Typeable d, Typeable s, Typeable p, Typeable t, Typeable n, Typeable m
+         )
+  => Entity (ConeZeroHead s p d t n (S m) a)
+
+--------------------------------------------------------------------------------
+-- ConeZeroHead - Dual -
+
+type instance Dual1 (ConeZeroHead s p d t n m)  = ConeZeroHead s (Dual p) d (Dual t) n m 
+type instance Dual (ConeZeroHead s p d t n m a) = Dual1 (ConeZeroHead s p d t n m) (Op a)
+
+
+-- | to the dual, with its inverse 'coConeZeroHead'.
+coConeZeroHead :: (TransformableTyp s, Transformable1 Op s)
+  => ConeOpDuality' s p d t n m -> Struct s a
+  -> ConeZeroHead s p d t n m a -> Dual (ConeZeroHead s p d t n m a)
+coConeZeroHead cOp s (ConeZeroHead c) = ConeZeroHead $ toDualFst cOp s c
+
+
+{-
+
+-- | from the bidual.
+czFromOpOp :: DiagrammaticDualisable s d
+  => ConeStruct s a -> ConeZeroHead s p d t n m (Op (Op a)) -> ConeZeroHead s p d t n m a
+czFromOpOp s (ConeZeroHead c) = ConeZeroHead $ cnFromOpOp s c
+
+-- | from the dual, with its inverse 'coConeZeroHead'.
+coConeZeroHeadInv :: DiagrammaticDualisable s d
+  => ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
+  -> Dual (ConeZeroHead s p d t n m a) -> ConeZeroHead s p d t n m a
+coConeZeroHeadInv s rp rt (ConeZeroHead c)
+  = ConeZeroHead $ coConeInv s rp rt c
+
+--------------------------------------------------------------------------------
+-- cnDiffHead -
+
+-- | subtracts to every arrow of the underlying parallel diagram the first arrow and
+-- adapts the shell accordingly.
+cnDiffHead :: (Distributive a, Abelian a)
+  => Cone Mlt p Diagram (Parallel d) n (m+1) a -> ConeZeroHead Mlt p Diagram (Parallel d) n (m+1) a
+cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
+  DiagramParallelLR _ _ _ -> ConeProjective (dgPrlDiffHead d) t (a:|fmap toZero as) where a:|as = s
+  DiagramParallelRL _ _ _ -> ConeProjective (dgPrlDiffHead d) t (toZero a:|as) where a:|as = s
+  where toZero a = zero (root a)
+cnDiffHead c@(ConeInjective d _ _) = case d of
+  DiagramParallelLR _ _ _ ->   coConeZeroHeadInv ConeStructMlt Refl Refl
+                             $ cnDiffHead $ coCone Struct c
+  DiagramParallelRL _ _ _ ->   coConeZeroHeadInv ConeStructMlt Refl Refl
+                             $ cnDiffHead $ coCone Struct c
+
+--------------------------------------------------------------------------------
+-- cnZeroHead -
+
+-- | embedding of a cone in a distributive structure to its multiplicative cone.
+cnZeroHead :: Cone Dst p Diagram t n m a -> ConeZeroHead Mlt p Diagram t n (m+1) a
+cnZeroHead = ConeZeroHead . cnDstAdjZero 
+
+--------------------------------------------------------------------------------
+-- cnKernel -
+
+-- | the kernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
+cnKernel :: (Distributive a, p ~ Projective, t ~ Parallel LeftToRight)
+  => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
+cnKernel (ConeZeroHead (ConeProjective d _ cs)) = case d of
+  DiagramParallelLR l r as -> ConeKernel (DiagramParallelLR l r (tail as)) (head cs)
+
+--------------------------------------------------------------------------------
+-- cnCokernel
+
+-- | the cokernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
+cnCokernel :: (Distributive a, p ~ Injective, t ~ Parallel RightToLeft)
+  => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
+cnCokernel = coConeInv ConeStructDst Refl Refl . cnKernel . coConeZeroHead Struct
 
 
 --------------------------------------------------------------------------------
@@ -851,6 +850,6 @@ cnPrjChainFrom (FactorChain f d@(DiagramChainFrom _ as))
 -- 'cnPrjChainFrom'.
 cnPrjChainFromInv :: Cone Mlt Projective Diagram (Chain From) (n+1) n a -> FactorChain From n a
 cnPrjChainFromInv (ConeProjective d _ (c:|_)) = FactorChain c d
-
-
 -}
+
+

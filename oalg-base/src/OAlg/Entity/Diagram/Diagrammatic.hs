@@ -26,7 +26,7 @@ module OAlg.Entity.Diagram.Diagrammatic
   (
 
     -- * Diagrammatic
-    Diagrammatic(..)
+    Diagrammatic(..), dgmTypeRefl
 
     -- ** Duality
   , DiagrammaticOpDualisable(..)
@@ -68,6 +68,13 @@ class Diagrammatic d where
 -- Diagram - Diagrammatic -
 
 instance Diagrammatic Diagram where diagram = id
+
+--------------------------------------------------------------------------------
+-- dgmTypeRefl -
+
+-- | the associated 'DiagramType' is bidual.
+dgmTypeRefl :: Diagrammatic d => d t n m a -> Dual (Dual t) :~: t
+dgmTypeRefl = dgTypeRefl . diagram
 
 --------------------------------------------------------------------------------
 -- DiagrammaticApplicative -
@@ -173,7 +180,7 @@ instance (TransformableTyp s, Transformable1 Op s)
   isoBidualFst (DiagrammaticOpDuality _) = Functor1 . isoToOpOpStruct   
 
 --------------------------------------------------------------------------------
--- DiagrammaticOpDuality -
+-- DiagrammaticOpDuality' -
 
 -- | diagrammatic 'Op' duality.
 type DiagrammaticOpDuality' s d t n m
