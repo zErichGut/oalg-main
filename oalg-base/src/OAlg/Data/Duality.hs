@@ -65,7 +65,86 @@ instance (Category h, Eq2 h, Show2 h) => Validable (Inv2 h x y) where
         ]
     
 instance (Category h, Eq2 h, Show2 h) => Validable2 (Inv2 h)
-    
+
+--------------------------------------------------------------------------------
+-- StructuralDuality -
+
+-- | structureal duality.
+--
+-- __Property__ Let @d@ be in @'StructuralDuality' __s__ __h__ __o__@, then holds:
+-- 
+-- (1) @'stcToBidual' d s x '==' 'amap' r x@ for all @__x__@, @s@ in @'Struct' __s__ __x__@
+-- and @x@ in @__x__@, where @'Inv2' r _ = 'stcRefl' d s@,
+--
+--
+data StructuralDuality s h o where
+  StructuralDuality
+    :: (Functorial h, Eq2 h, Transformable1 o s)
+    => (forall x . Struct s x -> Inv2 h x (o (o x)))
+    -> (forall x . Struct s x -> x -> o x)
+    -> StructuralDuality s h o
+
+--------------------------------------------------------------------------------
+-- StructuralDuality - Validable -
+
+prpStructuralDuality :: (Eq (o (o x)), Show x)
+  => StructuralDuality s h o -> Struct s x -> X x -> Statement
+prpStructuralDuality d@(StructuralDuality _ _) s xs
+  = Prp "StructuralDuality" :<=>: Forall xs
+    (\x -> case stcRefl d s of
+        Inv2 r _ -> (stcToBidual d s x == amap r x) :?> Params ["x":=show x]
+    ) 
+  
+--------------------------------------------------------------------------------
+-- stcRefl -
+
+stcRefl :: StructuralDuality s h o -> Struct s x -> Inv2 h x (o (o x))
+stcRefl (StructuralDuality r _) = r
+
+--------------------------------------------------------------------------------
+-- stcToDual -
+
+stcToDual :: StructuralDuality s h o -> Struct s x -> x -> o x
+stcToDual (StructuralDuality _ t) = t
+
+--------------------------------------------------------------------------------
+-- stcToBidual -
+
+stcToBidual :: StructuralDuality s h o -> Struct s x -> x -> o (o x)
+stcToBidual d@(StructuralDuality _ _) s = stcToDual d (tau1 s) . stcToDual d s
+
+--------------------------------------------------------------------------------
+-- stcFromDual -
+
+stcFromDual :: StructuralDuality s h o -> Struct s x -> o x -> x
+stcFromDual d@(StructuralDuality r _) s = case r s of
+  Inv2 _ r' -> amap r' . stcToDual d (tau1 s)
+
+--------------------------------------------------------------------------------
+-- stcFromBidual -
+
+stcFromBidual :: StructuralDuality s h o -> Struct s x -> o (o x) -> x
+stcFromBidual d@(StructuralDuality _ _) s = stcFromDual d s . stcFromDual d (tau1 s)
+
+--------------------------------------------------------------------------------
+-- OpDuality -
+
+type OpDuality s = StructuralDuality s (IsoOp s) Op
+
+--------------------------------------------------------------------------------
+-- opDuality -
+
+opDuality :: (TransformableTyp s, Transformable1 Op s) => OpDuality s
+opDuality = StructuralDuality r (const Op) where
+  r s = Inv2 r' r'' where
+    r'  = isoToOpOpStruct s
+    r'' = isoFromOpOpStruct s
+
+
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- StructuralReflexive -
 
@@ -79,6 +158,14 @@ class (Category h, Eq2 h) => StructuralReflexive s h o where
 stcRefl' :: StructuralReflexive s h o => p h -> Struct s x -> Inv2 h x (o (o x))
 stcRefl' _ = stcRefl
 
+--------------------------------------------------------------------------------
+-- IsoOp - StructuralReflexive -
+
+instance (TransformableTyp s, Transformable1 Op s) => StructuralReflexive s (IsoOp s) Op where
+  stcRefl s = Inv2 r r' where
+    r  = isoToOpOpStruct s
+    r' = isoFromOpOpStruct s
+    
 --------------------------------------------------------------------------------
 -- StructuralDuality -
 
@@ -104,6 +191,13 @@ class (StructuralReflexive s h o, Functorial h, Transformable1 o s) => Structura
   stcFromDual :: p h -> Struct s x -> o x -> x
   stcFromDual h s = case stcRefl' h s of Inv2 _ r' -> amap r' . stcToDual h (tau1 s)
 
+--------------------------------------------------------------------------------
+-- IsoOp - StructuralDuality -
+
+instance (TransformableTyp s, Transformable1 Op s) => StructuralDuality s (IsoOp s) Op where
+  stcToDual _ Struct   = Op
+  stcFromDual _ Struct = fromOp
+  
 --------------------------------------------------------------------------------
 -- stcToBidual -
 
@@ -137,9 +231,9 @@ prpStructuralDuality o h s xs x''s = Label "StructuralDuality" :<=>:
               Inv2 _ r' -> (stcFromBidual o h s x'' == amap r' x'') :?> Params ["x''":=show x'']
           )
       ]
+-}
 
-
-
+{-
 --------------------------------------------------------------------------------
 -- Functor1 -
 
@@ -161,7 +255,7 @@ fncSnd :: BiFunctorial1 d h => d h a b -> Functor1 h b
 fncSnd d = fncFst (swap d)
 
 
-{-
+
 --------------------------------------------------------------------------------
 -- HomDuality -
 
