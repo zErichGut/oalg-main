@@ -45,92 +45,123 @@ import OAlg.Data.Relation
 import OAlg.Structure.Oriented.Definition
 import OAlg.Hom.Oriented.Definition
 
-{-
-import OAlg.Structure.Ring
-import OAlg.Structure.Multiplicative
-import OAlg.Entity.Matrix.Definition
+--------------------------------------------------------------------------------
+-- Inv2 -
+
+-- | predicate for invertible morphisms within a category.
+--
+-- __Property__ Let @'Inv2' f f'@ be in @'Inv2' __h__ __x__ __y__@ for a @'Categroy' __h__@ with
+-- @'Eq2' __h__@, then holds:
+--
+-- (1) @f' '.' f '==' 'cOne' ('domain' f)@.
+--
+-- (2) @f '.' f' '==' 'cOne' ('range' f)@.
+data Inv2 h x y = Inv2 (h x y) (h y x) deriving (Show, Eq)
+
+instance (Category h, Eq2 h, Show2 h) => Validable (Inv2 h x y) where
+  valid (Inv2 f f') = Label "Inv2" :<=>:
+    And [ Label "1" :<=>: ((f' . f) `eq2` cOne (domain f)) :?> Params ["f":=show2 f]
+        , Label "2" :<=>: ((f . f') `eq2` cOne (range f)) :?> Params ["f":=show2 f]
+        ]
+    
+instance (Category h, Eq2 h, Show2 h) => Validable2 (Inv2 h)
+    
+--------------------------------------------------------------------------------
+-- StructuralReflexive -
+
+-- | structural reflexion.
+class (Category h, Eq2 h) => StructuralReflexive s h o where
+  stcRefl :: Struct s x -> Inv2 h x (o (o x))
 
 --------------------------------------------------------------------------------
--- Mat -
+-- stcRefl' -
 
-data Mat r
-
-type instance Structure (Mat r) x = (Ring r, Commutative r, x ~ Matrix r)
-
-data Trp r x
-
-instance Transformable1 (Trp r) (Mat r) where
--}
-
-
+stcRefl' :: StructuralReflexive s h o => p h -> Struct s x -> Inv2 h x (o (o x))
+stcRefl' _ = stcRefl
 
 --------------------------------------------------------------------------------
--- OReflexive -
-
-class Cayleyan2 i => OReflexive s i o where
-  oRefl :: Struct s x -> i x (o (o x))
-
-
---------------------------------------------------------------------------------
--- oRefl' -
-
-oRefl' :: OReflexive s i o => p i -> Struct s x -> i x (o (o x))
-oRefl' _ = oRefl
-
---------------------------------------------------------------------------------
--- oTau -
-
-oTau :: Transformable1 o s => Struct s x -> Struct s (o x)
-oTau = tau1
-
---------------------------------------------------------------------------------
--- ODuality -
+-- StructuralDuality -
 
 -- | structureal duality.
 --
--- __Property__ Let @'ODuality' __s__ __i__ __o__@, then holds:
+-- __Property__ Let @'StructuralDuality' __s__ __h__ __o__@, then holds:
 --
--- @'oToDual' i ('oTau' s) '$' 'oToDual' i s x '==' 'amap' ('oRefl'' i s) x@ for all
--- @i@ in @__p__ __i__@, @x@ in @__x__@ and @s@ in @'Struct' __s__ __x__@.
-class (OReflexive s i o, Functorial i, Transformable1 o s) => ODuality s i o where
-  {-# Minimal (oToDual | oFromDual) #-}
-  oToDual :: p i -> Struct s x -> x -> o x
-  oToDual i s = oFromDual i (oTau s) . amap (oRefl' i s)
+-- (1) @'stcToDual' h ('tau1' s) '$' 'stcToDual' h s x '==' 'amap' r x@ for all
+-- @h@ in @__p__ __h__@, @x@ in @__x__@ and @s@ in @'Struct' __s__ __x__@, where
+-- @'Inv2' r _ = 'stcRefl'' h s@,
+--
+-- (2) @'stcFromDual' h s '$' 'stcFromDual' h ('tau1' s) x'' '==' 'amap' r' x''@ for all
+-- @h@ in @__p__ __h__@, @x''@ in @__o__ (__o__) __x__@ and @s@ in @'Struct' __s__ __x__@, where
+-- @'Inv2' _ r' = 'stcRefl'' h s@,
+class (StructuralReflexive s h o, Functorial h, Transformable1 o s) => StructuralDuality s h o where
+  {-# Minimal (stcToDual | stcFromDual) #-}
+
+  -- | mapping to dual.
+  stcToDual :: p h -> Struct s x -> x -> o x
+  stcToDual h s = case stcRefl' h s of Inv2 r _ -> stcFromDual h (tau1 s) . amap r
+
+  -- | mapping from dual.
+  stcFromDual :: p h -> Struct s x -> o x -> x
+  stcFromDual h s = case stcRefl' h s of Inv2 _ r' -> amap r' . stcToDual h (tau1 s)
+
+--------------------------------------------------------------------------------
+-- stcToBidual -
+
+-- | mapping ot bidual.
+stcToBidual :: StructuralDuality s h o => p o -> q h -> Struct s x -> x -> o (o x)
+stcToBidual _ h s = stcToDual h (tau1 s) . stcToDual h s
+
+--------------------------------------------------------------------------------
+-- stcFromBidual -
+
+-- | mapping from bidual.
+stcFromBidual :: StructuralDuality s h o => p o -> q h -> Struct s x -> o (o x) -> x
+stcFromBidual _ h s = stcFromDual h s . stcFromDual h (tau1 s)
   
-  oFromDual :: p i -> Struct s x -> o x -> x
-  oFromDual i s = amap (invert2 (oRefl' i s)) . oToDual i (oTau s)
-
 --------------------------------------------------------------------------------
--- oToBidual -
+-- prpStructuralDuality -
 
-oToBidual :: ODuality s i o => p o -> q i -> Struct s x -> x -> o (o x)
-oToBidual _ i s = oToDual i (oTau s) . oToDual i s
+-- | validity according to 'StructuralDuality'.
+prpStructuralDuality :: ( StructuralDuality s h o
+                        , Eq (o (o x)), Show (o (o x))
+                        , Eq x, Show x 
+                        )
+  => q o -> p h -> Struct s x -> X x -> X (o (o x)) -> Statement
+prpStructuralDuality o h s xs x''s = Label "StructuralDuality" :<=>:
+  And [ Label "1" :<=>: Forall xs
+          (\x -> case stcRefl' h s of
+              Inv2 r _ -> (stcToBidual o h s x == amap r x) :?> Params ["x":=show x]
+          )
+      , Label "2" :<=>: Forall x''s
+          (\x'' -> case stcRefl' h s of
+              Inv2 _ r' -> (stcFromBidual o h s x'' == amap r' x'') :?> Params ["x''":=show x'']
+          )
+      ]
 
---------------------------------------------------------------------------------
--- prpODuality -
 
--- | validity according to 'ODuality'.
-prpODuality :: (ODuality s i o, Eq (o (o x)), Show x) => q o -> p i -> Struct s x -> X x -> Statement
-prpODuality o i s xs = Label "ODuality" :<=>: Forall xs
-  (\x -> (oToBidual o i s x == amap (oRefl' i s) x)
-         :?> Params ["x":=show x]
-  )
-{-
+
 --------------------------------------------------------------------------------
 -- Functor1 -
 
+-- | a functor @__f__@ from the category @__h__@ to @('->')@.
 data Functor1 h f where
   Functor1 :: Functorial1 h f => Functor1 h f
 
 --------------------------------------------------------------------------------
 -- BiFunctorial1 -
 
-class Symmetric (d i) => BiFunctorial1 d i where
-  fncFst :: d i a b -> Functor1 i a
+-- | a bi-functor from the category @__h__@ to @('->')@, i.e. a functor @__a__@ and @__b__@ from
+-- @__h__@ to @('->')@
+class Symmetric (d h) => BiFunctorial1 d h where
+  -- | the given functor @__a__@ according to @__d__ __h__@.
+  fncFst :: d h a b -> Functor1 h a
 
-fncSnd :: BiFunctorial1 d i => d i a b -> Functor1 i b
+  -- | the given functor @__b__@ according to @__d__ __h__@.
+fncSnd :: BiFunctorial1 d h => d h a b -> Functor1 h b
 fncSnd d = fncFst (swap d)
 
+
+{-
 --------------------------------------------------------------------------------
 -- HomDuality -
 
