@@ -34,6 +34,7 @@ module OAlg.Data.Duality
   ) where
 
 import Data.Proxy
+import Data.Typeable
 
 import OAlg.Prelude hiding (toDual, Functor1(..))
 
@@ -76,7 +77,12 @@ instance (Category h, Eq2 h, Show2 h) => Validable2 (Inv2 h)
 -- (1) @'stcToBidual' d s x '==' 'amap' r x@ for all @__x__@, @s@ in @'Struct' __s__ __x__@
 -- and @x@ in @__x__@, where @'Inv2' r _ = 'stcRefl' d s@,
 --
+-- __Note__
 --
+-- (1) From the property 1 above follows that @'stcFromDual' d s '.' 'stcToDual' d s@ is
+-- equal to 'id'.
+--
+-- (2) In general @'stcToDual' d s '.' 'stcFromDual' d s@ is not equal to 'id'.
 data StructuralDuality s h o where
   StructuralDuality
     :: (Functorial h, Eq2 h, Transformable1 o s)
@@ -140,8 +146,113 @@ opDuality = StructuralDuality r (const Op) where
     r'  = isoToOpOpStruct s
     r'' = isoFromOpOpStruct s
 
+--------------------------------------------------------------------------------
+-- StructuralDuality1 -
 
 
+data StructuralDuality1 s h o a b where
+  StructuralDuality1
+    :: (Functorial1 h a, Functorial1 h b, Transformable1 o s)
+    => (forall x . Struct s x -> Inv2 h x (o (o x)))
+    -> (forall x . Struct s x -> a (o x) -> b x)
+    -> (forall x . Struct s x -> b (o x) -> a x)
+    -> StructuralDuality1 s h o a b
+
+
+instance Symmetric (StructuralDuality1 s h o) where
+  swap (StructuralDuality1 r t t') = StructuralDuality1 r t' t
+
+--------------------------------------------------------------------------------
+-- stcRefl1 -
+
+stcRefl1 :: StructuralDuality1 s h o a b -> Struct s x -> Inv2 h x (o (o x))
+stcRefl1 (StructuralDuality1 r _ _) = r
+
+{-
+--------------------------------------------------------------------------------
+-- stcFromFst -
+
+stcFromFst :: StructuralDuality1 s h o a b -> Struct s x -> a (o x) -> b x
+stcFromFst (StructuralDuality1 _ t _)  = t
+
+--------------------------------------------------------------------------------
+-- stcFromSnd -
+
+stcFromSnd :: StructuralDuality1 s h o a b -> Struct s x -> b (o x) -> a x
+stcFromSnd d = stcFromFst (swap d)
+-}
+
+--------------------------------------------------------------------------------
+-- stcToDualFst -
+
+stcToDualFst :: StructuralDuality1 s h o a b -> Struct s x -> a x -> b (o x)
+stcToDualFst (StructuralDuality1 r t _) s = case r s of
+  Inv2 r' _ -> t (tau1 s) . amap1 r'
+
+--------------------------------------------------------------------------------
+-- stcFromDualFst -
+
+stcFromDualFst :: StructuralDuality1 s h o a b -> Struct s x -> b (o x) -> a x
+stcFromDualFst (StructuralDuality1 _ _ t') = t'
+
+--------------------------------------------------------------------------------
+-- stcFromBidualFst -
+
+stcFromBidualFst :: StructuralDuality1 s h o a b -> Struct s x -> a (o (o x)) -> a x
+stcFromBidualFst (StructuralDuality1 _ t t') s = t' s . t (tau1 s) 
+
+--------------------------------------------------------------------------------
+-- stcToDualSnd -
+
+stcToDualSnd :: StructuralDuality1 s h o a b -> Struct s x -> b x -> a (o x)
+stcToDualSnd d = stcToDualFst (swap d)
+
+--------------------------------------------------------------------------------
+-- stcFromDualSnd -
+
+stcFromDualSnd :: StructuralDuality1 s h o a b -> Struct s x -> a (o x) -> b x
+stcFromDualSnd (StructuralDuality1 _ t _) = t
+
+--------------------------------------------------------------------------------
+-- prpStructuralDuality1 -
+
+prpStructuralDuality1 :: (Eq (a x), Show (a (o (o x))))
+  => StructuralDuality1 s h o a b -> Struct s x -> X (a (o (o x))) -> Statement
+prpStructuralDuality1 d@(StructuralDuality1 r _ _) s xa''s
+  = Prp "StructuralDuality1" :<=>: Forall xa''s
+  (\xa'' -> case r s of
+              Inv2 _ r'' -> (stcFromBidualFst d s xa'' == amap1 r'' xa'')
+                              :?> Params ["xa''":=show xa'']
+  )
+
+
+
+{-
+--------------------------------------------------------------------------------
+-- Duality1 -
+
+-- | duality for one-parameterized structures, where @__b__@ is the dual of @__a__@ and vice versa.
+--
+-- __Property__ Let @'Duality1' __s__ __d__ __i__ __o__@ then holds:
+-- For all @__a__@, @__b__@, @__x__@, @d@ in @__d__ __i__ __o__ __a__ __b__@,
+-- @s@ in @'Struct' __s__ __x__@ holds:
+--
+-- (1) @'toBidualFst' d s a '==' 'amap1' i a@ for all @a@ in @__a__ __x__@ and
+-- @'Functor1' i = 'isoBidualFst' d s@.
+--
+-- (2) @'toBidualSnd' d s b '==' 'amap1' i b@ for all @b@ in @__b__ __x__@ and
+-- @'Functor1' i = 'isoBidualSnd' d s@.
+-- class (Cayleyan2 i, Symmetric (d i o), Transformable1 o s)
+class (Duality i o s, Symmetric (d i o))
+  => Duality1 s d i o where
+
+  -- | mapping to dual.
+  toDualFst    :: d i o a b -> Struct s x -> a x -> b (o x)
+
+  -- | functor to bidual.
+  isoBidualFst :: d i o a b -> Struct s x -> Functor1 i a x (o (o x))
+
+-}
 
 
 {-
