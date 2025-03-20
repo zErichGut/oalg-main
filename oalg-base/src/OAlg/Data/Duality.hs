@@ -47,6 +47,13 @@ import OAlg.Structure.Oriented.Definition
 import OAlg.Hom.Oriented.Definition
 
 --------------------------------------------------------------------------------
+-- Functor1 -
+
+-- | a functor @__f__@ from the category @__h__@ to @('->')@.
+data Functor1 h f where
+  Functor1 :: Functorial1 h f => Functor1 h f
+
+--------------------------------------------------------------------------------
 -- Inv2 -
 
 -- | predicate for invertible morphisms within a category.
@@ -149,7 +156,18 @@ opDuality = StructuralDuality r (const Op) where
 --------------------------------------------------------------------------------
 -- StructuralDuality1 -
 
-
+-- | structural duality of two @__h__@-'Functorial1's.
+--
+-- __Property__ Let @d@ be in @'StructuralDuality1' __s__ __h__ __o__ __a__ __b__@, then holds:
+--
+-- (1) @'stcToDual1 d ('stcTau' s) '.' 'stcToDual1 d s = 'amap1' r'@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' r' _ = 'stcRefl1' d s@.
+--
+-- (2) @'stcFromDual1' d s '.' 'stcFromDual1' d ('stcTau' s) = 'amap1' r''@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' _ r'' = 'stcRefl1' d s@.
+--
+-- (3) @'stcFromDual1' d s '.' 'stcToDual1' d s = 'id'@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@.
 data StructuralDuality1 s h o a b where
   StructuralDuality1
     :: (Functorial1 h a, Functorial1 h b, Transformable1 o s)
@@ -158,73 +176,72 @@ data StructuralDuality1 s h o a b where
     -> (forall x . Struct s x -> b (o x) -> a x)
     -> StructuralDuality1 s h o a b
 
+--------------------------------------------------------------------------------
+-- stcFncFst -
 
-instance Symmetric (StructuralDuality1 s h o) where
-  swap (StructuralDuality1 r t t') = StructuralDuality1 r t' t
+-- | attesting of being a functor.
+stcFncFst :: StructuralDuality1 s h o a b -> Functor1 h a
+stcFncFst (StructuralDuality1 _ _ _) = Functor1
 
+--------------------------------------------------------------------------------
+-- stcTau -
+
+stcTau :: StructuralDuality1 s h o a b -> Struct s x -> Struct s (o x)
+stcTau (StructuralDuality1 _ _ _) = tau1
 --------------------------------------------------------------------------------
 -- stcRefl1 -
 
+-- | the associated reflexion.
 stcRefl1 :: StructuralDuality1 s h o a b -> Struct s x -> Inv2 h x (o (o x))
 stcRefl1 (StructuralDuality1 r _ _) = r
 
-{-
 --------------------------------------------------------------------------------
--- stcFromFst -
+-- stcToDual1 -
 
-stcFromFst :: StructuralDuality1 s h o a b -> Struct s x -> a (o x) -> b x
-stcFromFst (StructuralDuality1 _ t _)  = t
-
---------------------------------------------------------------------------------
--- stcFromSnd -
-
-stcFromSnd :: StructuralDuality1 s h o a b -> Struct s x -> b (o x) -> a x
-stcFromSnd d = stcFromFst (swap d)
--}
-
---------------------------------------------------------------------------------
--- stcToDualFst -
-
-stcToDualFst :: StructuralDuality1 s h o a b -> Struct s x -> a x -> b (o x)
-stcToDualFst (StructuralDuality1 r t _) s = case r s of
+-- | mapping to the dual of @__a__@.
+stcToDual1 :: StructuralDuality1 s h o a b -> Struct s x -> a x -> b (o x)
+stcToDual1 (StructuralDuality1 r t _) s = case r s of
   Inv2 r' _ -> t (tau1 s) . amap1 r'
 
 --------------------------------------------------------------------------------
--- stcFromDualFst -
+-- stcFromDual1 -
 
-stcFromDualFst :: StructuralDuality1 s h o a b -> Struct s x -> b (o x) -> a x
-stcFromDualFst (StructuralDuality1 _ _ t') = t'
-
---------------------------------------------------------------------------------
--- stcFromBidualFst -
-
-stcFromBidualFst :: StructuralDuality1 s h o a b -> Struct s x -> a (o (o x)) -> a x
-stcFromBidualFst (StructuralDuality1 _ t t') s = t' s . t (tau1 s) 
+-- | mapping from the dual of @__a__@.
+stcFromDual1 :: StructuralDuality1 s h o a b -> Struct s x -> b (o x) -> a x
+stcFromDual1 (StructuralDuality1 _ _ t') = t'
 
 --------------------------------------------------------------------------------
--- stcToDualSnd -
+-- stcFromBidual1 -
 
-stcToDualSnd :: StructuralDuality1 s h o a b -> Struct s x -> b x -> a (o x)
-stcToDualSnd d = stcToDualFst (swap d)
-
---------------------------------------------------------------------------------
--- stcFromDualSnd -
-
-stcFromDualSnd :: StructuralDuality1 s h o a b -> Struct s x -> a (o x) -> b x
-stcFromDualSnd (StructuralDuality1 _ t _) = t
+-- | mapping from the bi-dual of @__a__@.
+stcFromBidual1 :: StructuralDuality1 s h o a b -> Struct s x -> a (o (o x)) -> a x
+stcFromBidual1 (StructuralDuality1 _ t t') s = t' s . t (tau1 s) 
 
 --------------------------------------------------------------------------------
 -- prpStructuralDuality1 -
 
+-- | validity accorting to 'StructuralDuality1'.
 prpStructuralDuality1 :: (Eq (a x), Show (a (o (o x))))
-  => StructuralDuality1 s h o a b -> Struct s x -> X (a (o (o x))) -> Statement
+  => StructuralDuality1 s h o a b -> Struct s x -> X (a x) -> X (a (o (o x))) -> Statement
+prpStructuralDuality1 d s xas xa''s = Prp "StructuralDuality1" :<=>:
+  And []
+{-  
+  And [ Label "1" :<=>: Forall xas
+        (\xa -> case (stcRefl1 d s, stcFncFst d) of
+            (Inv2 r' _, Functor1) -> ((stcToDual1 d (stcTau d s) $ stcToDual d s xa) == amap1 r' xa)
+                           :?> Params []
+        )
+      ]
+-}
+  
+{-  
 prpStructuralDuality1 d@(StructuralDuality1 r _ _) s xa''s
   = Prp "StructuralDuality1" :<=>: Forall xa''s
   (\xa'' -> case r s of
-              Inv2 _ r'' -> (stcFromBidualFst d s xa'' == amap1 r'' xa'')
+              Inv2 _ r'' -> (stcFromBidual1 d s xa'' == amap1 r'' xa'')
                               :?> Params ["xa''":=show xa'']
   )
-
+-}
 
 
 {-
@@ -345,13 +362,6 @@ prpStructuralDuality o h s xs x''s = Label "StructuralDuality" :<=>:
 -}
 
 {-
---------------------------------------------------------------------------------
--- Functor1 -
-
--- | a functor @__f__@ from the category @__h__@ to @('->')@.
-data Functor1 h f where
-  Functor1 :: Functorial1 h f => Functor1 h f
-
 --------------------------------------------------------------------------------
 -- BiFunctorial1 -
 
