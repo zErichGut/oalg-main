@@ -1,0 +1,291 @@
+
+{-# LANGUAGE NoImplicitPrelude #-}
+
+{-# LANGUAGE
+    TypeFamilies
+  , MultiParamTypeClasses
+  , FlexibleInstances
+  , FlexibleContexts
+  , GADTs
+  , StandaloneDeriving
+  , TypeOperators
+  , DataKinds
+  , RankNTypes
+#-}
+
+-- |
+-- Module      : OAlg.Data.StructuralDuality
+-- Description : duality on structural data.
+-- Copyright   : (c) Erich Gut
+-- License     : BSD3
+-- Maintainer  : zerich.gut@gmail.com
+-- 
+-- Duality on structural data.
+module OAlg.Data.StructuralDuality
+  (
+    -- * Structureal Duality
+    StructuralDuality(..), stcToDual, stcFromDual
+  , stcRefl, stcTau
+
+    -- ** Op
+  , opDuality, OpDuality
+
+    -- * Structural Duality 1
+  , StructuralDuality1(..), stcToDualFst, stcFromDualSnd
+  , stcToDualSnd, stcFromDualFst
+  , stcRefl1, stcTau1
+
+    -- * Proposition
+  , prpStructuralDuality
+  , prpStructuralDuality1
+  ) where
+
+import OAlg.Prelude hiding (toDual, Functor1(..))
+
+import OAlg.Data.Relation
+
+import OAlg.Hom.Oriented.Definition
+
+--------------------------------------------------------------------------------
+-- Functor -
+
+-- | attest of being 'Functorial' from the 'Category' __c__ to the 'Category' @('->')@.
+data Functor c where
+  Functor :: Functorial c => Functor c
+  
+--------------------------------------------------------------------------------
+-- Functor1 -
+
+-- | attest of being 'Functorial1' for the 'Category' __c__ to the 'Category' @('->')@ according
+-- to @__f__@.
+data Functor1 c f where
+  Functor1 :: Functorial1 c f => Functor1 c f
+
+--------------------------------------------------------------------------------
+-- Inv2 -
+
+-- | predicate for invertible morphisms within a category @__c__@.
+--
+-- __Property__ Let @'Inv2' f f'@ be in @'Inv2' __c__ __x__ __y__@ for a @'Categroy' __c__@ with
+-- @'Eq2' __c__@, then holds:
+--
+-- (1) @f' '.' f '==' 'cOne' ('domain' f)@.
+--
+-- (2) @f '.' f' '==' 'cOne' ('range' f)@.
+data Inv2 c x y = Inv2 (c x y) (c y x) deriving (Show, Eq)
+
+instance (Category c, Eq2 c, Show2 c) => Validable (Inv2 c x y) where
+  valid (Inv2 f f') = Label "Inv2" :<=>:
+    And [ Label "1" :<=>: ((f' . f) `eq2` cOne (domain f)) :?> Params ["f":=show2 f]
+        , Label "2" :<=>: ((f . f') `eq2` cOne (range f)) :?> Params ["f":=show2 f]
+        ]
+    
+instance (Category c, Eq2 c, Show2 c) => Validable2 (Inv2 c)
+
+--------------------------------------------------------------------------------
+-- StructuralDuality -
+
+-- | structural duality of a @__i__@-'Functorial'.
+--
+-- __Property__ Let @d@ be in @'StructuralDuality' __s__ __i__ __o__@, then holds:
+--
+-- (1) @'stcToDual d ('stcTau' s) '.' 'stcToDua' d s = 'amap' r'@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' r' _ = 'stcRefl' d s@.
+--
+-- (2) @'stcFromDual' d s '.' 'stcFromDual' d ('stcTau' s) = 'amap' r''@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' _ r'' = 'stcRefl' d s@.
+--
+-- (3) @'stcFromDual' d s '.' 'stcToDual' d s = 'id'@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@.
+--
+-- __Note__
+--
+-- (1) The relation @'StructuralDuality1' __s__ __i__ __o__@ is not necessarily symmetric,
+-- i.e. @'stcToDual' d s' '.' 'stcFromDual' d s' = 'id'@ dose not hold in general!
+--
+-- (2) A sufficient condition for the property 3 above would be:
+-- @'stcFromDualSnd' d s '.' 'stcFromDualFst' d ('stcTau1' s) == 'amap1' r''@ where
+-- @'Inv2' _ r'' = stcRefl1 d s@.
+data StructuralDuality s i o where
+  StructuralDuality
+    :: (Functorial i, Eq2 i, Transformable1 o s)
+    => (forall x . Struct s x -> Inv2 i x (o (o x)))
+    -> (forall x . Struct s x -> x -> o x)
+    -> StructuralDuality s i o
+
+--------------------------------------------------------------------------------
+-- stcFnc -
+
+-- | attest of being 'Functorial1' according to the category @__i__@.
+stcFnc :: StructuralDuality s i o -> Functor i
+stcFnc (StructuralDuality _ _) = Functor
+
+--------------------------------------------------------------------------------
+-- stcTau -
+
+-- | promoting a structure to its opposite structure.
+stcTau :: StructuralDuality s i o -> Struct s x -> Struct s (o x)
+stcTau (StructuralDuality _ _) = tau1
+
+--------------------------------------------------------------------------------
+-- stcRefl -
+
+-- | the associated reflection.
+stcRefl :: StructuralDuality s i o -> Struct s x -> Inv2 i x (o (o x))
+stcRefl (StructuralDuality r _) = r
+
+--------------------------------------------------------------------------------
+-- stcToDual -
+
+stcToDual :: StructuralDuality s i o -> Struct s x -> x -> o x
+stcToDual (StructuralDuality _ t) = t
+
+--------------------------------------------------------------------------------
+-- stcFromDual -
+
+stcFromDual :: StructuralDuality s i o -> Struct s x -> o x -> x
+stcFromDual (StructuralDuality r t) s = amap r' . t (tau1 s) where Inv2 _ r' = r s
+
+--------------------------------------------------------------------------------
+-- StructuralDuality - Validable -
+
+prpStructuralDuality :: (Eq x, Show x, Eq (o (o x)), Show (o (o x)))
+  => StructuralDuality s i o -> Struct s x -> X x -> X (o (o x)) -> Statement
+prpStructuralDuality d s xs x''s = Prp "StructuralDuality" :<=>:
+  And [ Label "1" :<=>: Forall xs
+        (\x -> case stcFnc d of
+            Functor -> ((stcToDual d (stcTau d s) $ stcToDual d s x) == amap r' x)
+                       :?> Params ["x":=show x]
+              where Inv2 r' _ = stcRefl d s
+        )        
+      , Label "2" :<=>: Forall x''s
+        (\x'' -> case stcFnc d of
+            Functor -> ((stcFromDual d s $ stcFromDual d (stcTau d s) x'') == amap r'' x'')
+                       :?> Params ["x''":=show x'']
+              where Inv2 _ r'' = stcRefl d s
+        )
+      , Label "3" :<=>: Forall xs
+        (\x -> ((stcFromDual d s $ stcToDual d s x) == x) :?> Params ["x":=show x]   
+        )
+      ]
+
+--------------------------------------------------------------------------------
+-- OpDuality -
+
+type OpDuality s = StructuralDuality s (IsoOp s) Op
+
+--------------------------------------------------------------------------------
+-- opDuality -
+
+opDuality :: (TransformableTyp s, Transformable1 Op s) => OpDuality s
+opDuality = StructuralDuality r (const Op) where
+  r s = Inv2 r' r'' where
+    r'  = isoToOpOpStruct s
+    r'' = isoFromOpOpStruct s
+
+--------------------------------------------------------------------------------
+-- StructuralDuality1 -
+
+-- | structural duality of two @__i__@-'Functorial1's.
+--
+-- __Property__ Let @d@ be in @'StructuralDuality1' __s__ __i__ __o__ __a__ __b__@, then holds:
+--
+-- (1) @'stcToDualSnd d ('stcTau1' s) '.' 'stcToDualFst' d s = 'amap1' r'@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' r' _ = 'stcRefl1' d s@.
+--
+-- (2) @'stcFromDualSnd' d s '.' 'stcFromDualFst' d ('stcTau1' s) = 'amap1' r''@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' _ r'' = 'stcRefl1' d s@.
+--
+-- (3) @'stcFromDualSnd' d s '.' 'stcToDualFst' d s = 'id'@ for all @__x__@ and
+-- @s@ is in @'Struct' __s__ __x__@.
+--
+-- __Note__
+--
+-- (1) The relation @'StructuralDuality1' __s__ __i__ __o__@ is not necessarily symmetric,
+-- i.e. @'stcToDualFst' d s' '.' 'stcFromDualSnd' d s' = 'id'@ dose not hold in general!
+--
+-- (2) A sufficient condition for the property 3 above would be:
+-- @'stcFromDualSnd' d s '.' 'stcFromDualFst' d ('stcTau1' s) == 'amap1' r''@ where
+-- @'Inv2' _ r'' = stcRefl1 d s@.
+data StructuralDuality1 s i o a b where
+  StructuralDuality1
+    :: (Functorial1 i a, Functorial1 i b, Transformable1 o s)
+    => (forall x . Struct s x -> Inv2 i x (o (o x)))
+    -> (forall x . Struct s x -> a (o x) -> b x)
+    -> (forall x . Struct s x -> b (o x) -> a x)
+    -> StructuralDuality1 s i o a b
+
+--------------------------------------------------------------------------------
+-- stcFncFst -
+
+-- | attest of being 'Functorial1' according to the category @__i__@ and @__a__@.
+stcFncFst :: StructuralDuality1 s i o a b -> Functor1 i a
+stcFncFst (StructuralDuality1 _ _ _) = Functor1
+
+--------------------------------------------------------------------------------
+-- stcTau1 -
+
+-- | promoting a structure to its opposite structure.
+stcTau1 :: StructuralDuality1 s i o a b -> Struct s x -> Struct s (o x)
+stcTau1 (StructuralDuality1 _ _ _) = tau1
+
+--------------------------------------------------------------------------------
+-- stcRefl1 -
+
+-- | the associated reflection.
+stcRefl1 :: StructuralDuality1 s i o a b -> Struct s x -> Inv2 i x (o (o x))
+stcRefl1 (StructuralDuality1 r _ _) = r
+
+--------------------------------------------------------------------------------
+-- stcToDualFst -
+
+-- | mapping to the dual of @__a__@.
+stcToDualFst :: StructuralDuality1 s i o a b -> Struct s x -> a x -> b (o x)
+stcToDualFst (StructuralDuality1 r t _) s = t (tau1 s) . amap1 r' where Inv2 r' _ = r s
+
+--------------------------------------------------------------------------------
+-- stcToDualSnd -
+
+-- | mapping to the dual of @__b__@.
+stcToDualSnd :: StructuralDuality1 s i o a b -> Struct s x -> b x -> a (o x)
+stcToDualSnd (StructuralDuality1 r _ t') s = t' (tau1 s) . amap1 r' where  Inv2 r' _ = r s
+
+--------------------------------------------------------------------------------
+-- stcFromDualSnd -
+
+-- | mapping from the dual of @__a__@.
+stcFromDualSnd :: StructuralDuality1 s i o a b -> Struct s x -> b (o x) -> a x
+stcFromDualSnd (StructuralDuality1 _ _ t') = t'
+
+--------------------------------------------------------------------------------
+-- stcFromDualFst -
+
+-- | mapping from the dual of @__b__@.
+stcFromDualFst :: StructuralDuality1 s i o a b -> Struct s x -> a (o x) -> b x
+stcFromDualFst (StructuralDuality1 _ t _) = t
+
+--------------------------------------------------------------------------------
+-- prpStructuralDuality1 -
+
+-- | validity accorting to 'StructuralDuality1'.
+prpStructuralDuality1 :: (Eq (a x), Show (a x), Eq (a (o (o x))), Show (a (o (o x))))
+  => StructuralDuality1 s i o a b -> Struct s x -> X (a x) -> X (a (o (o x))) -> Statement
+prpStructuralDuality1 d s xas xa''s = Prp "StructuralDuality1" :<=>:
+  And [ Label "1" :<=>: Forall xas
+        (\xa -> case stcFncFst d of
+            Functor1 -> ((stcToDualSnd d (stcTau1 d s) $ stcToDualFst d s xa) == amap1 r' xa)
+                        :?> Params ["xa":=show xa]
+              where Inv2 r' _ = stcRefl1 d s
+        )
+      , Label "2" :<=>: Forall xa''s
+        (\xa'' -> case stcFncFst d of
+            Functor1 -> ((stcFromDualSnd d s $ stcFromDualFst d (stcTau1 d s) xa'') == amap1 r'' xa'')
+                        :?> Params ["xa''":=show xa'']
+              where Inv2 _ r'' = stcRefl1 d s
+        )
+      , Label "3" :<=>: Forall xas
+        (\xa -> ((stcFromDualSnd d s $ stcToDualFst d s xa) == xa) :?> Params ["xa":=show xa]   
+        )
+      ]
+
+  
