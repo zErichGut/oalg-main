@@ -65,7 +65,6 @@ library
       OAlg.Data.Canonical
       OAlg.Data.Constructable
       OAlg.Data.Dualisable
-      OAlg.Data.Duality
       OAlg.Data.Either
       OAlg.Data.Equal
       OAlg.Data.Filterable
@@ -87,6 +86,7 @@ library
       OAlg.Data.Statement.Definition
       OAlg.Data.Statement.Proposition
       OAlg.Data.Statistics
+      OAlg.Data.StructuralDuality
       OAlg.Data.Symbol
       OAlg.Data.Tree
       OAlg.Data.TypeLits
