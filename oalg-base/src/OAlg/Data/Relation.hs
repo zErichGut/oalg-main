@@ -25,3 +25,4 @@ module OAlg.Data.Relation
 class Symmetric r where
   swap :: r x y -> r y x
   
+

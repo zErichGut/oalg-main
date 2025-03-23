@@ -30,7 +30,7 @@ module OAlg.Category.Definition
   , curry3, uncurry3
 
     -- * Cayleyan
-  , Cayleyan2(..)
+  , Cayleyan2(..), Inv2(..)
   
     -- * Morphism
   , Morphism(..)
@@ -44,8 +44,9 @@ module OAlg.Category.Definition
   , Applicative1(..)
   
     -- * Functorial
-  , Functorial
+  , Functorial, Functor(..)
   , Functorial1, Functor1(..)
+  , BiFunctorial1(..)
 
     -- * Forget
   , Forget(..)
@@ -284,6 +285,13 @@ instance Category c => Category (Op2 c) where
 class (Category c, Applicative c) => Functorial c
 
 --------------------------------------------------------------------------------
+-- Functor -
+
+-- | attest of being 'Functorial' from the 'Category' __c__ to the 'Category' @('->')@.
+data Functor c where
+  Functor :: Functorial c => Functor c
+  
+--------------------------------------------------------------------------------
 -- Functorial1 -
 
 -- | representable categories, i.e. covariant functors from an 'Applicative1' category @__c__@ to
@@ -301,10 +309,24 @@ class (Category c, Applicative1 c f) => Functorial1 c f
 --------------------------------------------------------------------------------
 -- Functor1 -
 
--- | functor from @__h__@ to @('->')@ given by @__c__@.
-data Functor1 h c x y where
-  Functor1 :: Functorial1 h c => h x y -> Functor1 h c x y
+-- | attest of being 'Functorial1' for the 'Category' __c__ to the 'Category' @('->')@ according
+-- to @__f__@.
+data Functor1 c f where
+  Functor1 :: Functorial1 c f => Functor1 c f
 
+--------------------------------------------------------------------------------
+-- BiFunctorial1 -
+
+-- | bi-functorials.
+class BiFunctorial1 c f where
+  -- | attest of being 'Functorial1' according to the category @__c__@
+  -- and the first parameter @__a__@.
+  fstFnc1 :: f a b -> Functor1 c a
+  
+  -- | attest of being 'Functorial1' according to the category @__c__@
+  -- and the second parameter @__b__@.  
+  sndFnc1 :: f a b -> Functor1 c b
+  
 --------------------------------------------------------------------------------
 -- Cayleyan2 -
 
@@ -316,6 +338,19 @@ data Functor1 h c x y where
 --  @(f '.' 'invert2' f) == 'cOne' ('range' f)@ where @(==) = 'eq2'@.
 class (Category c, Eq2 c) => Cayleyan2 c where
   invert2 :: c x y -> c y x
+
+--------------------------------------------------------------------------------
+-- Inv2 -
+
+-- | predicate for invertible morphisms within a category @__c__@.
+--
+-- __Property__ Let @'Inv2' f f'@ be in @'Inv2' __c__ __x__ __y__@ for a @'Categroy' __c__@ with
+-- @'Eq2' __c__@, then holds:
+--
+-- (1) @f' '.' f '==' 'cOne' ('domain' f)@.
+--
+-- (2) @f '.' f' '==' 'cOne' ('range' f)@.
+data Inv2 c x y = Inv2 (c x y) (c y x) deriving (Show, Eq)
 
 --------------------------------------------------------------------------------
 -- Cayleyan2 - Instance -

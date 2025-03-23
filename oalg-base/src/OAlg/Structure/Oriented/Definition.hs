@@ -23,7 +23,7 @@ module OAlg.Structure.Oriented.Definition
   (
     -- * Oriented
     Oriented(..), Total, EntityPoint, OrdPoint, isEndo, isEndoAt
-  , OS, Ort, structOrtOp, TransformableOrt
+  , OS, Ort, tauOrt, structOrtOp, TransformableOrt
 
     -- * Transposable
   , TransposableOriented
@@ -56,7 +56,7 @@ module OAlg.Structure.Oriented.Definition
   )
   where
 
-import Control.Monad
+import Control.Monad as M
 import Control.Applicative ((<|>))
 import Data.Typeable
 import Data.Foldable
@@ -94,7 +94,7 @@ instance Entity p => Entity (Orientation p)
 instance Singleton u => Singleton (Orientation u) where
   unit = unit :> unit
 
-instance Functor Orientation where
+instance M.Functor Orientation where
   fmap f (a :> b) = f a :> f b
 
 instance XStandard p => XStandard (Orientation p) where
@@ -372,6 +372,13 @@ class Transformable s Ort => TransformableOrt s
 
 instance TransformableTyp Ort
 instance TransformableOrt Ort
+
+--------------------------------------------------------------------------------
+-- tauOrt -
+
+-- | transforming to 'Ort'.
+tauOrt :: Transformable s Ort => Struct s x -> Struct Ort x
+tauOrt = tau
 
 --------------------------------------------------------------------------------
 -- structOrtOp -

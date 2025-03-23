@@ -22,16 +22,19 @@ module OAlg.Data.Validable
   , XStandard(..), relXStandard
   )
   where
+import Prelude hiding ((.))
 
 import Control.DeepSeq (NFData(..))
 
 import Data.Ratio
 import Data.Proxy
 
-import OAlg.Category.Definition hiding ((.))
+import OAlg.Category.Definition
 
 import OAlg.Data.Statement
 import OAlg.Data.Either
+import OAlg.Data.Equal
+import OAlg.Data.Show
 import OAlg.Data.Ord
 import OAlg.Data.Number
 import OAlg.Data.Opposite
@@ -196,3 +199,13 @@ instance Validable2 m => Validable (Forget t m x y) where
   valid = valid2
 
 instance Validable2 (Struct2 m)
+
+instance (Category c, Eq2 c, Show2 c) => Validable (Inv2 c x y) where
+  valid (Inv2 f f') = Label "Inv2" :<=>:
+    And [ Label "1" :<=>: ((f' . f) `eq2` cOne (domain f)) :?> Params ["f":=show2 f]
+        , Label "2" :<=>: ((f . f') `eq2` cOne (range f)) :?> Params ["f":=show2 f]
+        ]
+    
+instance (Category c, Eq2 c, Show2 c) => Validable2 (Inv2 c)
+
+

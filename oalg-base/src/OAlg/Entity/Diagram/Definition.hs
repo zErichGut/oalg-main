@@ -19,7 +19,7 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
-
+{-
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows, dgMap
@@ -46,7 +46,7 @@ module OAlg.Entity.Diagram.Definition
   , xDiagram
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
-
+-}
   )
   where
 
@@ -56,6 +56,8 @@ import Data.Typeable
 import Data.Array as A hiding (range)
 
 import OAlg.Prelude hiding (T)
+
+import OAlg.Data.StructuralDuality
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
@@ -221,6 +223,27 @@ instance FunctorialHomOriented h => Functorial1 h (Diagram t n m)
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 
+--------------------------------------------------------------------------------
+-- dgFromDual -
+
+dgFromDual :: StructuralDualityOriented d s i o
+  => d i o -> Struct s a
+  -> Diagram t n m (o a) -> Dual1 (Diagram t n m) a
+dgFromDual dlt s d = case d of
+  DiagramEmpty             -> DiagramEmpty
+  DiagramDiscrete ps       -> DiagramDiscrete $ amap1 fromPnt ps
+  DiagramChainTo e as      -> DiagramChainFrom (fromPnt e) (amap1 from as)
+  DiagramChainFrom s as    -> DiagramChainTo (fromPnt s) (amap1 from as)
+  DiagramParallelLR l r as -> DiagramParallelRL (fromPnt l) (fromPnt r) (amap1 from as)
+  DiagramParallelRL l r as -> DiagramParallelLR (fromPnt l) (fromPnt r) (amap1 from as)
+  -- DiagramSink e as         -> DiagramSource e (fmap Op as)
+  -- DiagramSource s as       -> DiagramSink s (fmap Op as)
+  -- DiagramGeneral ps aijs   -> DiagramGeneral ps (fmap (\(a,o) -> (Op a,opposite o)) aijs)
+
+  where fromPnt = sdlFromDualPnt dlt s
+        from    = sdlFromDual dlt s
+  
+{-
 --------------------------------------------------------------------------------
 -- coDiagram -
 
@@ -707,4 +730,4 @@ dstSomeDiagram n xd = putDstr cnstr n xd where
 xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientation p))
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
-
+-}

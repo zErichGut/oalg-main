@@ -37,7 +37,7 @@ module OAlg.Entity.FinList
 
   where
 
-import Control.Monad
+import Control.Monad as M
 
 import Data.Typeable
 import Data.Foldable
@@ -67,7 +67,7 @@ deriving instance Ord x => Ord (FinList n x)
 instance Show a => Show (FinList n a) where
   show xs = "[|" L.++ (join $ tween "," $ amap1 show $ toList xs) L.++ "|]"
 
-instance Functor (FinList n) where
+instance M.Functor (FinList n) where
   fmap _ Nil     = Nil
   fmap f (a:|as) = f a :| fmap f as
 
@@ -203,7 +203,7 @@ deriving instance Show a => Show (SomeFinList a)
 instance Validable a => Validable (SomeFinList a) where
   valid (SomeFinList xs) = valid xs
 
-instance Functor SomeFinList where
+instance M.Functor SomeFinList where
   fmap f (SomeFinList xs) = SomeFinList (fmap f xs)
   
 
