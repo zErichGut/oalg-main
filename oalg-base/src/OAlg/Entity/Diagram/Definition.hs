@@ -229,19 +229,40 @@ type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 dgFromDual :: StructuralDualityOriented d s i o
   => d i o -> Struct s a
   -> Diagram t n m (o a) -> Dual1 (Diagram t n m) a
-dgFromDual dlt s d = case d of
+dgFromDual dlt stc d = case d of
   DiagramEmpty             -> DiagramEmpty
-  DiagramDiscrete ps       -> DiagramDiscrete $ amap1 fromPnt ps
+  DiagramDiscrete ps       -> DiagramDiscrete (amap1 fromPnt ps)
   DiagramChainTo e as      -> DiagramChainFrom (fromPnt e) (amap1 from as)
   DiagramChainFrom s as    -> DiagramChainTo (fromPnt s) (amap1 from as)
   DiagramParallelLR l r as -> DiagramParallelRL (fromPnt l) (fromPnt r) (amap1 from as)
   DiagramParallelRL l r as -> DiagramParallelLR (fromPnt l) (fromPnt r) (amap1 from as)
-  -- DiagramSink e as         -> DiagramSource e (fmap Op as)
-  -- DiagramSource s as       -> DiagramSink s (fmap Op as)
-  -- DiagramGeneral ps aijs   -> DiagramGeneral ps (fmap (\(a,o) -> (Op a,opposite o)) aijs)
+  DiagramSink e as         -> DiagramSource (fromPnt e) (amap1 from as)
+  DiagramSource s as       -> DiagramSink (fromPnt s) (amap1 from as)
+  DiagramGeneral ps aijs   -> DiagramGeneral
+                                (amap1 fromPnt ps)
+                                (amap1 (\(a,o) -> (from a,opposite o)) aijs)
 
-  where fromPnt = sdlFromDualPnt dlt s
-        from    = sdlFromDual dlt s
+  where fromPnt = sdlFromDualPnt dlt stc
+        from    = sdlFromDual dlt stc
+
+--------------------------------------------------------------------------------
+-- DiagramDuality -
+
+data DiagramDuality d s i o a b where
+  DiagramDuality
+    :: StructuralDualityOriented d s i o
+    => d i o
+    -> Dual (Dual t) :~: t
+    -> DiagramDuality d s i o (Diagram t n m) (Dual1 (Diagram t n m))
+
+instance BiFunctorial1 i (DiagramDuality d s i o) where
+  fstFnc1 (DiagramDuality _ _) = Functor1
+  sndFnc1 (DiagramDuality _ _) = Functor1
+
+instance Transformable1 o s => StructuralDuality1 (DiagramDuality d s) s i o where
+  sdlRefl1 (DiagramDuality d _)          = sdlRefl d
+  sdlFromDualFst (DiagramDuality d Refl) = dgFromDual d
+  sdlFromDualSnd (DiagramDuality d _)    = dgFromDual d
   
 {-
 --------------------------------------------------------------------------------

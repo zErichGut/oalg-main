@@ -27,11 +27,6 @@ module OAlg.Data.StructuralDuality
     -- * Structureal Duality
     StructuralDuality(..), sdlTau
 
-{-
-    -- ** Op
-  , opDuality, OpDuality
--}
-  
     -- * Structural Duality 1
   , StructuralDuality1(..), sdlTau1
 
@@ -42,12 +37,6 @@ module OAlg.Data.StructuralDuality
   ) where
 
 import OAlg.Prelude
-
--- import OAlg.Data.Relation
-
--- import OAlg.Structure.Oriented.Definition
-
--- import OAlg.Hom.Oriented.Definition
 
 --------------------------------------------------------------------------------
 -- StructuralDuality -
