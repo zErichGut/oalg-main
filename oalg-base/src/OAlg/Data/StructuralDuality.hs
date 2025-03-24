@@ -41,7 +41,7 @@ import OAlg.Prelude
 --------------------------------------------------------------------------------
 -- StructuralDuality -
 
--- | structural duality of a @__i__@-'Functorial' according to a @__o__@-duality.
+-- | duality for types with an underlying structure. 
 --
 -- __Property__  For all @d@ in @__d__ __i__ __o__@ and @s@ in @'Struct' __s__ __x__@ with
 -- @'StructuralDuality' __d__ __s__ __i__ __o__@ holds:
@@ -108,18 +108,18 @@ prpStructuralDuality d s xs x''s = Prp "StructuralDuality" :<=>:
 --------------------------------------------------------------------------------
 -- StructuralDuality1 -
 
--- | structural duality of a @__i__@-'BiFunctorialial1' according to @__o__@-duality.
+-- | duality for parameterized types over types with an underlying structure.
 --
--- __Property__ Let @d@ be in @'StructuralDuality1' __d__ __s__ __i__ __o__ __a__ __b__@, then holds:
+-- __Property__ For all @d@ in @__d__ __i__ __o__ __a__ __b__@ and @s@ in @'Struct' __s__ __x__@ with
+-- @'StructuralDuality1' __d__ __s__ __i__ __o__@, then holds:
 --
--- (1) @'sdlFromDualFst' d s '.' 'sdlToDualFst' d s = 'id'@ for all @__x__@ and
--- @s@ is in @'Struct' __s__ __x__@.
+-- (1) @'sdlFromDualFst' d s '.' 'sdlToDualFst' d s = 'id'@.
 --
--- (2) @'sdlToDualSnd d ('sdlTau1' s) '.' 'sdlToDualFst' d s = 'amap1' r@ for all @__x__@ and
--- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' r _ = 'sdlRefl1' d s@.
+-- (2) @'sdlToDualSnd d ('sdlTau1' s) '.' 'sdlToDualFst' d s = 'amap1' r@
+-- where @'Inv2' r _ = 'sdlRefl1' d s@.
 --
--- (3) @'sdlFromDualFst' d s '.' 'sdlFromDualSnd' d ('sdlTau1' s) = 'amap1' r'@ for all @__x__@ and
--- @s@ is in @'Struct' __s__ __x__@, where @'Inv2' _ r' = 'sdlRefl1' d s@.
+-- (3) @'sdlFromDualFst' d s '.' 'sdlFromDualSnd' d ('sdlTau1' s) = 'amap1' r'@
+-- where @'Inv2' _ r' = 'sdlRefl1' d s@.
 --
 -- __Note__
 --
@@ -148,7 +148,6 @@ class (BiFunctorial1 i (d i o), Transformable1 o s) => StructuralDuality1 d s i 
 
   -- | mapping from the dual of @__b__ __x__@.
   sdlFromDualSnd :: d i o a b -> Struct s x -> a (o x) -> b x
-
 
 --------------------------------------------------------------------------------
 -- sdlFncFst -

@@ -711,9 +711,9 @@ instance ( FunctorialHomOriented h, Eq2 h
 --------------------------------------------------------------------------------
 -- OpDuality -
 
+-- | 'Op' duality according to 'IsoOp'.
 data OpDuality i o where
   OpDuality    :: OpDuality (IsoOp s) Op
-  OpDualityOrt :: OpDuality (IsoOp Ort) Op
 
 --------------------------------------------------------------------------------
 -- OpDuality - StructuralDuality -

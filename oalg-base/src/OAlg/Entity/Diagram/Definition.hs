@@ -154,6 +154,38 @@ deriving instance Oriented a => Show (Diagram t n m a)
 deriving instance Oriented a => Eq (Diagram t n m a)
 
 --------------------------------------------------------------------------------
+-- dgType -
+
+-- | the type of a diagram.
+dgType :: Diagram t n m a -> DiagramType
+dgType d = case d of
+  DiagramEmpty            -> Empty
+  DiagramDiscrete _       -> Discrete
+  DiagramChainTo _ _      -> Chain To
+  DiagramChainFrom _ _    -> Chain From
+  DiagramParallelLR _ _ _ -> Parallel LeftToRight
+  DiagramParallelRL _ _ _ -> Parallel RightToLeft
+  DiagramSink _ _         -> Star To
+  DiagramSource _ _       -> Star From
+  DiagramGeneral _ _      -> General
+
+--------------------------------------------------------------------------------
+-- dgTypeRefl -
+
+-- | reflexivity of the underlying diagram type.
+dgTypeRefl :: Diagram t n m a -> Dual (Dual t) :~: t
+dgTypeRefl d = case d of
+  DiagramEmpty            -> Refl
+  DiagramDiscrete _       -> Refl
+  DiagramChainTo _ _      -> Refl
+  DiagramChainFrom _ _    -> Refl
+  DiagramParallelLR _ _ _ -> Refl
+  DiagramParallelRL _ _ _ -> Refl
+  DiagramSink _ _         -> Refl
+  DiagramSource _ _       -> Refl
+  DiagramGeneral _ _      -> Refl
+
+--------------------------------------------------------------------------------
 -- dgPoints -
 
 -- | the points of a diagram.
@@ -248,6 +280,7 @@ dgFromDual dlt stc d = case d of
 --------------------------------------------------------------------------------
 -- DiagramDuality -
 
+-- | duality of 'Diagram's over 'Oriented'-types.
 data DiagramDuality d s i o a b where
   DiagramDuality
     :: StructuralDualityOriented d s i o
@@ -263,7 +296,29 @@ instance Transformable1 o s => StructuralDuality1 (DiagramDuality d s) s i o whe
   sdlRefl1 (DiagramDuality d _)          = sdlRefl d
   sdlFromDualFst (DiagramDuality d Refl) = dgFromDual d
   sdlFromDualSnd (DiagramDuality d _)    = dgFromDual d
+
+--------------------------------------------------------------------------------
+-- DiagramOpDuality -
+
+type DiagramOpDuality s = DiagramDuality OpDuality s (IsoOp s) Op
   
+--------------------------------------------------------------------------------
+-- dgOpDuality -
+
+-- | 'Op'-duality of 'Diagram's over 'Oriented'-types.
+dgOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s)
+  => Dual (Dual t) :~: t
+  -> DiagramOpDuality s (Diagram t n m) (Dual1 (Diagram t n m))
+dgOpDuality = DiagramDuality OpDuality
+
+--------------------------------------------------------------------------------
+-- dgOpDualityOrt -
+
+-- | 'Op'-duality of 'Diagram's over 'Oriented'-types.
+dgOpDualityOrt :: Dual (Dual t) :~: t
+  -> DiagramOpDuality Ort (Diagram t n m) (Dual1 (Diagram t n m))
+dgOpDualityOrt = dgOpDuality
+
 {-
 --------------------------------------------------------------------------------
 -- coDiagram -
@@ -319,9 +374,12 @@ dgToOp (DiagramDuality _) = coDiagram
 -- | from @__g__ ('Op' __a__)@.
 dgFromOp :: Oriented a => DiagramDuality x y -> y (Op a) -> x a 
 dgFromOp (DiagramDuality rt) = coDiagramInv rt
+-}
+
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -
+
 
 instance Oriented a => Validable (Diagram t n m a) where
   valid d = case d of
@@ -369,16 +427,18 @@ instance Oriented a => Validable (Diagram t n m a) where
               , vld (succ l) ps aijs
               ]
 
-    _ -> valid $ coDiagram d
+    _ -> valid $ sdlToDualFst dOp sOrt d
 
-    where prm :: N -> Message
+    where dOp  = dgOpDualityOrt (dgTypeRefl d)
+          sOrt = Struct :: Oriented x => Struct Ort x
+    
+          prm :: N -> Message
           prm i = Params["i":=show i]
           lC = Label "chain"
           lE = Label "end"
           lO = Label "orientation"
           lB = Label "bound"
     
-
 --------------------------------------------------------------------------------
 -- Diagram - Entity -
 
@@ -392,12 +452,12 @@ instance (Oriented a, Typeable d, Typeable n, Typeable m)
   type Point (Diagram (Parallel d) n m a) = Point a
   orientation (DiagramParallelLR l r _) = l:>r
   orientation (DiagramParallelRL l r _) = r:>l
-  
+
 --------------------------------------------------------------------------------
 -- dgQuiver -
 
 -- | the underlying quiver of a diagram.
-dgQuiver :: Diagram t n m a -> Quiver n m
+dgQuiver :: Oriented a => Diagram t n m a -> Quiver n m
 dgQuiver DiagramEmpty = Quiver W0 Nil
 dgQuiver (DiagramDiscrete ps) = Quiver (toW ps) Nil
 dgQuiver (DiagramChainTo _ as) = Quiver (SW (toW os)) os where
@@ -412,7 +472,10 @@ dgQuiver (DiagramSink _ as) = Quiver (SW (toW os)) os where
   snk _ Nil     = Nil
   snk j (_:|os) = (j:>0):|snk (succ j) os
 dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
-dgQuiver d = coQuiverInv $ dgQuiver (coDiagram d)
+dgQuiver d = coQuiverInv $ dgQuiver $ sdlToDualFst dOp sOrt d where
+  dOp  = dgOpDualityOrt (dgTypeRefl d)
+  sOrt = Struct :: Oriented a => Struct Ort a
+
 
 --------------------------------------------------------------------------------
 -- chnToStart -
@@ -437,7 +500,10 @@ chnFromStart (DiagramChainFrom s _) = s
 -- chnFromEnd -
 
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
-chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ coDiagram d
+chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ sdlToDualFst dOp sOrt d where
+  dOp  = dgOpDualityOrt (dgTypeRefl d)
+  sOrt = Struct :: Oriented a => Struct Ort a
+
 
 --------------------------------------------------------------------------------
 -- Diagram (Chain t) - Oriented -
@@ -485,39 +551,6 @@ dgPrlDiffHead d = case d of
   DiagramParallelRL l r as -> DiagramParallelRL l r (fmap (diff $ head as) as)
   where diff a x = x - a
 
-             
---------------------------------------------------------------------------------
--- dgType -
-
--- | the type of a diagram.
-dgType :: Diagram t n m a -> DiagramType
-dgType d = case d of
-  DiagramEmpty            -> Empty
-  DiagramDiscrete _       -> Discrete
-  DiagramChainTo _ _      -> Chain To
-  DiagramChainFrom _ _    -> Chain From
-  DiagramParallelLR _ _ _ -> Parallel LeftToRight
-  DiagramParallelRL _ _ _ -> Parallel RightToLeft
-  DiagramSink _ _         -> Star To
-  DiagramSource _ _       -> Star From
-  DiagramGeneral _ _      -> General
-
---------------------------------------------------------------------------------
--- dgTypeRefl -
-
--- | reflexivity of the underlying diagram type.
-dgTypeRefl :: Diagram t n m a -> Dual (Dual t) :~: t
-dgTypeRefl d = case d of
-  DiagramEmpty            -> Refl
-  DiagramDiscrete _       -> Refl
-  DiagramChainTo _ _      -> Refl
-  DiagramChainFrom _ _    -> Refl
-  DiagramParallelLR _ _ _ -> Refl
-  DiagramParallelRL _ _ _ -> Refl
-  DiagramSink _ _         -> Refl
-  DiagramSource _ _       -> Refl
-  DiagramGeneral _ _      -> Refl
-
 --------------------------------------------------------------------------------
 -- XDiagram -
 
@@ -537,7 +570,8 @@ data XDiagram t n m a where
 --------------------------------------------------------------------------------
 -- XDiagram - Dualisable -
 
-type instance Dual (XDiagram t n m a) = XDiagram (Dual t) n m (Op a)
+type instance Dual1 (XDiagram t n m) = XDiagram (Dual t) n m
+type instance Dual (XDiagram t n m a) = Dual1 (XDiagram t n m) (Op a)
 
 -- | the co-'XDiagram'.
 coXDiagram :: XDiagram t n m a -> Dual (XDiagram t n m a)
@@ -605,15 +639,16 @@ xDiagram rt xd = case xd of
   XDiagramChainTo m xs    -> xChain m xs
   XDiagramParallelLR m xo -> xParallel m xo
   XDiagramSink m xe       -> xSink m xe
-  _                       ->   amap1 (coDiagramInv rt)
+  _                       ->   amap1 (sdlFromDualFst dOp sOrt)
                              $ xDiagram (rt' rt) $ coXDiagram xd
+  where dOp  = dgOpDualityOrt rt
+        sOrt = Struct :: Oriented a => Struct Ort a
 
 --------------------------------------------------------------------------------
 -- X (Diagram t n m OS) - Standard -
 
 instance (Oriented a, n ~ N0, m ~ N0) => XStandard (Diagram 'Empty n m a) where
   xStandard = xDiagram Refl XDiagramEmpty
-
 
 instance (Oriented a, m ~ N0, XStandardPoint a, Attestable n)
   => XStandard (Diagram Discrete n m a) where
@@ -664,7 +699,35 @@ instance Oriented a => Validable (SomeDiagram a) where
 sdgMap :: Hom Ort h => h a b -> SomeDiagram a -> SomeDiagram b
 sdgMap h (SomeDiagram a) = SomeDiagram (dgMap h a)
 
-type instance Dual (SomeDiagram a) = SomeDiagram (Op a)
+--------------------------------------------------------------------------------
+-- SomeDiagram - Duality -
+
+type instance Dual1 SomeDiagram    = SomeDiagram
+type instance Dual (SomeDiagram a) = Dual1 SomeDiagram (Op a)
+
+--------------------------------------------------------------------------------
+-- SomeDiagramDuality -
+
+data SomeDiagramDuality d s i o a b where
+  SomeDiagramDuality
+    :: forall d s i o t n m . DiagramDuality d s i o (Diagram t n m) (Dual1 (Diagram t n m))
+    -> SomeDiagramDuality d s i o SomeDiagram SomeDiagram
+
+instance HomOriented h => Applicative1 h SomeDiagram where
+  amap1 = sdgMap
+  
+instance FunctorialHomOriented h => Functorial1 h SomeDiagram
+
+instance FunctorialHomOriented i => BiFunctorial1 i (SomeDiagramDuality d s i o) where
+  fstFnc1 (SomeDiagramDuality _) = Functor1
+  sndFnc1 (SomeDiagramDuality _) = Functor1
+
+instance (FunctorialHomOriented i, Transformable1 o s)
+  => StructuralDuality1 (SomeDiagramDuality d s) s i o where
+  sdlRefl1 (SomeDiagramDuality d) = sdlRefl1 d
+  sdlFromDualFst (SomeDiagramDuality d) s (SomeDiagram a) = SomeDiagram $ sdlFromDualFst d s a
+  
+{-
 
 -- | the dual of some diagram, with inverse 'coSomeDiagramInv'.
 coSomeDiagram :: SomeDiagram a -> Dual (SomeDiagram a)
