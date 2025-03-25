@@ -23,7 +23,6 @@
 -- Duality on structural data.
 module OAlg.Data.StructuralDuality
   (
-
     -- * Structureal Duality
     StructuralDuality(..), sdlTau
 
@@ -126,10 +125,16 @@ prpStructuralDuality d s xs x''s = Prp "StructuralDuality" :<=>:
 -- (1) The relation @'StructuralDuality1' __d__ __s__ __i__ __o__@ is not necessarily /symmetric/,
 -- i.e. @'sdlToDualFst' d s' '.' 'sdlFromDualFst' d s' = 'id'@ dose not hold in general!
 --
--- (2) A sufficient condition for the property 1 above would be:
--- @'sdlFromDualFst' d s '.' 'sdlFromDualSnd' d ('sdlTau1' s) == 'amap1' r'@ where
--- @'Inv2' _ r' = sdlRefl1 d s@.
+-- (2) If a implementation of 'sdlToDualFst' and 'sdlToDualSnd' is provided such that
+-- the proprety 2 holds and 'sdlFromDualFst' and 'sdlFromDualSnd' are left as defined, then
+-- follows that the property 1 holds.
+--
+-- (3) If a implementation of 'sdlFromDualFst' and 'sdlFromDualSnd' is provided such that
+-- the property 3 holds and 'sdlToDualFst' and 'sdlToDualSnd' are left as defined, then
+-- follows that the property 1 holds.
 class (BiFunctorial1 i (d i o), Transformable1 o s) => StructuralDuality1 d s i o where
+  {-# MINIMAL sdlRefl1, (sdlToDualFst, sdlToDualSnd | sdlFromDualFst, sdlFromDualSnd) #-}
+  
   -- | the associated reflection.
   sdlRefl1 :: d i o a b -> Struct s x -> Inv2 i x (o (o x))
 
@@ -140,14 +145,19 @@ class (BiFunctorial1 i (d i o), Transformable1 o s) => StructuralDuality1 d s i 
 
   -- | mapping from the dual of @__a__ __x__@.
   sdlFromDualFst :: d i o a b -> Struct s x -> b (o x) -> a x
-  
+  sdlFromDualFst d s = case sdlFncFst d s of
+    Functor1 -> amap1 r' . sdlToDualSnd d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+
   -- | mapping to the dual of @__b__ __x__@.
   sdlToDualSnd :: d i o a b -> Struct s x -> b x -> a (o x)
   sdlToDualSnd d s = case sdlFncSnd d s of
     Functor1 -> sdlFromDualFst d (sdlTau1 d s) . amap1 r where  Inv2 r _ = sdlRefl1 d s
 
+
   -- | mapping from the dual of @__b__ __x__@.
   sdlFromDualSnd :: d i o a b -> Struct s x -> a (o x) -> b x
+  sdlFromDualSnd d s = case sdlFncSnd d s of
+    Functor1 -> amap1 r' . sdlToDualFst d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
 
 --------------------------------------------------------------------------------
 -- sdlFncFst -
