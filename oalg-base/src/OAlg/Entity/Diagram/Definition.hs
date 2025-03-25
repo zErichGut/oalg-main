@@ -38,7 +38,6 @@ module OAlg.Entity.Diagram.Definition
   , DiagramDuality(..), DiagramOpDuality
   , dgOpDuality, dgOpDualityOrt
 
-
     -- * SomeDiagram
   , SomeDiagram(..), sdgMap
 
@@ -290,7 +289,7 @@ coDiagram dlt stc d = case d of
 --------------------------------------------------------------------------------
 -- DiagramDuality -
 
--- | duality of 'Diagram's over 'Oriented'-types.
+-- | 'StructuralDuality1' for 'Diagram's.
 data DiagramDuality d s i o a b where
   DiagramDuality
     :: StructuralDualityOriented d s i o
@@ -310,12 +309,13 @@ instance Transformable1 o s => StructuralDuality1 (DiagramDuality d s) s i o whe
 --------------------------------------------------------------------------------
 -- DiagramOpDuality -
 
+-- | 'StructuralDuality1' for 'Diagram' according to 'IsoOp'.
 type DiagramOpDuality s = DiagramDuality OpDuality s (IsoOp s) Op
   
 --------------------------------------------------------------------------------
 -- dgOpDuality -
 
--- | 'Op'-duality of 'Diagram's over 'Oriented'-types.
+-- | 'Op'-duality for 'Diagram's.
 dgOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s)
   => Dual (Dual t) :~: t
   -> DiagramOpDuality s (Diagram t n m) (Dual1 (Diagram t n m))
@@ -324,7 +324,7 @@ dgOpDuality = DiagramDuality OpDuality
 --------------------------------------------------------------------------------
 -- dgOpDualityOrt -
 
--- | 'Op'-duality of 'Diagram's over 'Oriented'-types.
+-- | 'Op'-duality for 'Diagram' on 'Ort'-structures.
 dgOpDualityOrt :: Dual (Dual t) :~: t
   -> DiagramOpDuality Ort (Diagram t n m) (Dual1 (Diagram t n m))
 dgOpDualityOrt = dgOpDuality
@@ -646,8 +646,6 @@ instance Oriented a => Eq (SomeDiagram a) where
           , eqArws a b
           , eqOrnt a b
           ]
-
-    
     where
       eqPnts :: Oriented x => Diagram t n m x -> Diagram t' n' m' x -> Bool
       eqPnts a b = (toList $ dgPoints a) == (toList $ dgPoints b)
@@ -663,6 +661,8 @@ instance Oriented a => Eq (SomeDiagram a) where
 
 instance Oriented a => Validable (SomeDiagram a) where
   valid (SomeDiagram d) = valid d
+
+instance Oriented a => Entity (SomeDiagram a)
 
 --------------------------------------------------------------------------------
 -- sdgMap -
@@ -680,15 +680,16 @@ type instance Dual (SomeDiagram a) = Dual1 SomeDiagram (Op a)
 --------------------------------------------------------------------------------
 -- coSomeDiagram -
 
+-- | dual of 'SomeDiagram'.
 coSomeDiagram :: StructuralDualityOriented d s i o
   => d i o -> Struct s a
   -> SomeDiagram a -> Dual1 SomeDiagram (o a)
 coSomeDiagram dlt sOrt (SomeDiagram d) = SomeDiagram (coDiagram dlt sOrt d)
 
-
 --------------------------------------------------------------------------------
 -- SomeDiagramDuality -
 
+-- | 'StructuralDuality1' for 'SomeDiagram's.
 data SomeDiagramDuality d s i o a b where
   SomeDiagramDuality
     :: StructuralDualityOriented d s i o
@@ -704,10 +705,6 @@ instance FunctorialHomOriented i => BiFunctorial1 i (SomeDiagramDuality d s i o)
   fstFnc1 (SomeDiagramDuality _) = Functor1
   sndFnc1 (SomeDiagramDuality _) = Functor1
 
-dgDuality :: StructuralDualityOriented d s i o
-  => d i o -> Diagram t n m x -> DiagramDuality d s i o (Diagram t n m) (Dual1 (Diagram t n m))
-dgDuality dlt d = DiagramDuality dlt (dgTypeRefl d)
-
 instance (FunctorialHomOriented i, Transformable1 o s)
   => StructuralDuality1 (SomeDiagramDuality d s) s i o where
   sdlRefl1 (SomeDiagramDuality d) = sdlRefl d
@@ -717,11 +714,13 @@ instance (FunctorialHomOriented i, Transformable1 o s)
 --------------------------------------------------------------------------------
 -- SomeDiagramOpDuality -
 
+-- | 'StructuralDuality1' for 'SomeDiagram' according to 'IsoOp'.
 type SomeDiagramOpDuality s = SomeDiagramDuality OpDuality s (IsoOp s) Op
 
 --------------------------------------------------------------------------------
 -- sdgOpDuality -
 
+-- | 'Op'-duality for 'SomeDiagram's.
 sdgOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s)
   => SomeDiagramOpDuality s SomeDiagram (Dual1 SomeDiagram)
 sdgOpDuality = SomeDiagramDuality OpDuality
@@ -729,9 +728,9 @@ sdgOpDuality = SomeDiagramDuality OpDuality
 --------------------------------------------------------------------------------
 -- sdgOpDualityOrt -
 
+-- | 'Op'-duality for 'SomeDiagram' on 'Ort'-structures.
 sdgOpDualityOrt :: SomeDiagramOpDuality Ort SomeDiagram (Dual1 SomeDiagram)
 sdgOpDualityOrt = sdgOpDuality
-
 
 --------------------------------------------------------------------------------
 -- xSomeDiagram -
