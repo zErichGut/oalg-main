@@ -19,7 +19,7 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
-{-
+
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows, dgMap
@@ -33,20 +33,27 @@ module OAlg.Entity.Diagram.Definition
   , dgPrlTail, dgPrlDiffHead
   , dgPrlDiffTail
 
-    -- * Duality
-  , dgToOp, dgFromOp, DiagramDuality(..)
-  , coDiagram, coDiagramInv, dgFromOpOp
-  
+
+    -- ** Duality
+  , DiagramDuality(..), DiagramOpDuality
+  , dgOpDuality, dgOpDualityOrt
+
+
     -- * SomeDiagram
-  , SomeDiagram(..), sdgMap, sdgFromOpOp
-  , coSomeDiagram, coSomeDiagramInv
+  , SomeDiagram(..), sdgMap
+
+    -- ** Duality
+  , SomeDiagramDuality(..), SomeDiagramOpDuality
+  , sdgOpDuality, sdgOpDualityOrt
+
+    -- * Propostition
+  , prpSomeDiagramDuality
   
     -- * X
   , XDiagram(..)
   , xDiagram
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
--}
   )
   where
 
@@ -54,6 +61,7 @@ import Control.Monad
 
 import Data.Typeable
 import Data.Array as A hiding (range)
+import Data.Foldable (toList)
 
 import OAlg.Prelude hiding (T)
 
@@ -324,7 +332,6 @@ dgOpDualityOrt = dgOpDuality
 --------------------------------------------------------------------------------
 -- Diagram - Validable -
 
-
 instance Oriented a => Validable (Diagram t n m a) where
   valid d = case d of
     DiagramEmpty -> SValid
@@ -419,7 +426,6 @@ dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
 dgQuiver d = coQuiverInv $ dgQuiver $ sdlToDualFst dOp sOrt d where
   dOp  = dgOpDualityOrt (dgTypeRefl d)
   sOrt = Struct :: Oriented a => Struct Ort a
-
 
 --------------------------------------------------------------------------------
 -- chnToStart -
@@ -633,6 +639,28 @@ data SomeDiagram a where
 
 deriving instance Oriented a => Show (SomeDiagram a)
 
+instance Oriented a => Eq (SomeDiagram a) where
+  SomeDiagram a == SomeDiagram b
+    = and [ dgType a == dgType b
+          , eqPnts a b
+          , eqArws a b
+          , eqOrnt a b
+          ]
+
+    
+    where
+      eqPnts :: Oriented x => Diagram t n m x -> Diagram t' n' m' x -> Bool
+      eqPnts a b = (toList $ dgPoints a) == (toList $ dgPoints b)
+
+      eqArws :: Oriented x => Diagram t n m x -> Diagram t' n' m' x -> Bool
+      eqArws a b = (toList $ dgArrows a) == (toList $ dgArrows b)
+
+      eqOrnt :: Diagram t n m x -> Diagram t' n' m' x -> Bool
+      eqOrnt (DiagramGeneral _ o) (DiagramGeneral _ o')
+        = (toList $ amap1 snd o) == (toList $ amap1 snd o')
+      eqOrnt _ _ = True
+
+
 instance Oriented a => Validable (SomeDiagram a) where
   valid (SomeDiagram d) = valid d
 
@@ -665,7 +693,7 @@ data SomeDiagramDuality d s i o a b where
   SomeDiagramDuality
     :: StructuralDualityOriented d s i o
     => d i o
-    -> SomeDiagramDuality d s i o SomeDiagram SomeDiagram
+    -> SomeDiagramDuality d s i o SomeDiagram (Dual1 SomeDiagram)
 
 instance HomOriented h => Applicative1 h SomeDiagram where
   amap1 = sdgMap
@@ -695,13 +723,13 @@ type SomeDiagramOpDuality s = SomeDiagramDuality OpDuality s (IsoOp s) Op
 -- sdgOpDuality -
 
 sdgOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s)
-  => SomeDiagramOpDuality s SomeDiagram SomeDiagram
+  => SomeDiagramOpDuality s SomeDiagram (Dual1 SomeDiagram)
 sdgOpDuality = SomeDiagramDuality OpDuality
 
 --------------------------------------------------------------------------------
 -- sdgOpDualityOrt -
 
-sdgOpDualityOrt :: SomeDiagramOpDuality Ort SomeDiagram SomeDiagram
+sdgOpDualityOrt :: SomeDiagramOpDuality Ort SomeDiagram (Dual1 SomeDiagram)
 sdgOpDualityOrt = sdgOpDuality
 
 
@@ -785,5 +813,15 @@ xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientat
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
 
--- xd :: X (SomeDiagram OS)
--- xd = xSomeDiagramOrnt (amap1 someNatural (xNB 0 10)) xStandard
+--------------------------------------------------------------------------------
+-- prpSomeDiagramDuality -
+
+-- | validity of 'StructuralDuality1' for 'sdgOpDualityOrt'.
+prpSomeDiagramDuality :: Statement
+prpSomeDiagramDuality = Prp "SomeDiagramDuality" :<=>:
+  prpStructuralDuality1 d (Struct :: Struct Ort (Orientation N)) xsd xsd'' where
+    d = sdgOpDualityOrt
+
+    xsd   = xSomeDiagramOrnt (amap1 someNatural (xNB 0 10)) xStandard
+    xsd'' = amap1 (amap1 isoToOpOpOrt) xsd
+
