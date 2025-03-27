@@ -24,10 +24,13 @@
 module OAlg.Data.StructuralDuality
   (
     -- * Structureal Duality
-    StructuralDuality(..), sdlTau
+    StructuralDuality(..), sdlRefl, sdlTau
 
     -- * Structural Duality 1
-  , StructuralDuality1(..), sdlTau1
+  , StructuralDuality1(..), sdlRefl1, sdlTau1
+
+    -- * Reflexivity
+  , StructuralReflexive(..)
 
     -- * Proposition
   , prpStructuralDuality
@@ -36,6 +39,15 @@ module OAlg.Data.StructuralDuality
   ) where
 
 import OAlg.Prelude
+
+--------------------------------------------------------------------------------
+-- StructuralReflexive -
+
+
+-- | category having for each @__s__@-structured @__x__@ an isomorphism
+-- @__i__ __x__ (__o__ (__o__ x))@.
+class (Category i, Eq2 i, Transformable1 o s) => StructuralReflexive s i o where
+  stcReflection :: Struct s x -> Inv2 i x (o ( o x))
 
 --------------------------------------------------------------------------------
 -- StructuralDuality -
@@ -62,19 +74,24 @@ import OAlg.Prelude
 -- @'sdlFromDual' d s = 'amap' r' '.' 'sdlToDual' d ('sdlTau' d s)@ and
 -- @'sdlTuDual' d ('sdlTau' d s) '.' 'sdlToDual' d s = 'amap1' r'@
 -- where @'Inv2' _ r' = sdlRefl1 d s@.
-class (Functorial i, Eq2 i, Transformable1 o s) => StructuralDuality d s i o where
-  {-# MINIMAL sdlRefl, (sdlToDual | sdlFromDual) #-}
+class (StructuralReflexive s i o, Functorial i) => StructuralDuality d s i o where
+  {-# MINIMAL (sdlToDual | sdlFromDual) #-}
   
-  -- | the associated reflection.
-  sdlRefl :: d i o -> Struct s x -> Inv2 i x (o (o x))
-
   -- | to @__x__@-dual.
   sdlToDual :: d i o -> Struct s x -> x -> o x
   sdlToDual d s = sdlFromDual d (sdlTau d s) .  amap r where Inv2 r _ = sdlRefl d s
 
+
   -- | from @__x__@-dual.
   sdlFromDual :: d i o -> Struct s x -> o x -> x
   sdlFromDual d s = amap r' . sdlToDual d (sdlTau d s) where Inv2 _ r' = sdlRefl d s
+
+--------------------------------------------------------------------------------
+-- sdlRefl -
+
+  -- | the associated reflection.
+sdlRefl :: StructuralDuality d s i o => d i o -> Struct s x -> Inv2 i x (o (o x))
+sdlRefl _ = stcReflection 
 
 --------------------------------------------------------------------------------
 -- sdlTau -
@@ -114,10 +131,10 @@ prpStructuralDuality d s xs x''s = Prp "StructuralDuality" :<=>:
 --
 -- (1) @'sdlFromDualFst' d s '.' 'sdlToDualFst' d s = 'id'@.
 --
--- (2) @'sdlToDualSnd d ('sdlTau1' s) '.' 'sdlToDualFst' d s = 'amap1' r@
+-- (2) @'sdlToDualSnd d ('sdlTau1' s) '.' 'sdlToDualFst' d s = 'amap1Fst' d r@
 -- where @'Inv2' r _ = 'sdlRefl1' d s@.
 --
--- (3) @'sdlFromDualFst' d s '.' 'sdlFromDualSnd' d ('sdlTau1' s) = 'amap1' r'@
+-- (3) @'sdlFromDualFst' d s '.' 'sdlFromDualSnd' d ('sdlTau1' s) = 'amap1Fst' d r'@
 -- where @'Inv2' _ r' = 'sdlRefl1' d s@.
 --
 -- __Note__
@@ -127,37 +144,43 @@ prpStructuralDuality d s xs x''s = Prp "StructuralDuality" :<=>:
 --
 -- (2) If a implementation of 'sdlToDualFst' and 'sdlToDualSnd' is provided such that
 -- the proprety 2 holds and 'sdlFromDualFst' and 'sdlFromDualSnd' are left as defined, then
--- follows that the property 1 holds.
+-- follows:
+--
+--     (1) property 1 holds.
+--
+--     (2) If for all @d@ in @__d__ __i__ __o__ __a__ __b__@ and @s@ in @'Struct' __s__ __x__@ holds:
+--     @'sdlToDualSnd' d s '.' 'amap1Snd' d r' = 'amap1Fst' d r'' '.' 'sdlToDualSnd' d s''@ where
+--     @s' = 'sdlTau1' d s@, @s'' = 'sdlTau1' d s'@, @'Inv2 _ r' = sdlRefl1 d s@ and
+--     @'Inv2' _ r'' = 'sdlRelf1' d s'@, then holds property 3.
 --
 -- (3) If a implementation of 'sdlFromDualFst' and 'sdlFromDualSnd' is provided such that
 -- the property 3 holds and 'sdlToDualFst' and 'sdlToDualSnd' are left as defined, then
 -- follows that the property 1 holds.
-class (BiFunctorial1 i (d i o), Transformable1 o s) => StructuralDuality1 d s i o where
-  {-# MINIMAL sdlRefl1, (sdlToDualFst, sdlToDualSnd | sdlFromDualFst, sdlFromDualSnd) #-}
+class (StructuralReflexive s i o, BiFunctorial1 i (d i o)) => StructuralDuality1 d s i o where
+  {-# MINIMAL (sdlToDualFst, sdlToDualSnd | sdlFromDualFst, sdlFromDualSnd) #-}
   
-  -- | the associated reflection.
-  sdlRefl1 :: d i o a b -> Struct s x -> Inv2 i x (o (o x))
-
   -- | mapping to the dual of @__a__ __x__@.
   sdlToDualFst :: d i o a b -> Struct s x -> a x -> b (o x)
-  sdlToDualFst d s = case sdlFncFst d s of
-    Functor1 -> sdlFromDualSnd d (sdlTau1 d s) . amap1 r where Inv2 r _ = sdlRefl1 d s
+  sdlToDualFst d s = sdlFromDualSnd d (sdlTau1 d s) . amap1Fst d r where Inv2 r _ = sdlRefl1 d s
 
   -- | mapping from the dual of @__a__ __x__@.
   sdlFromDualFst :: d i o a b -> Struct s x -> b (o x) -> a x
-  sdlFromDualFst d s = case sdlFncFst d s of
-    Functor1 -> amap1 r' . sdlToDualSnd d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+  sdlFromDualFst d s = amap1Fst d r' . sdlToDualSnd d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
 
   -- | mapping to the dual of @__b__ __x__@.
   sdlToDualSnd :: d i o a b -> Struct s x -> b x -> a (o x)
-  sdlToDualSnd d s = case sdlFncSnd d s of
-    Functor1 -> sdlFromDualFst d (sdlTau1 d s) . amap1 r where  Inv2 r _ = sdlRefl1 d s
-
+  sdlToDualSnd d s = sdlFromDualFst d (sdlTau1 d s) . amap1Snd d r where  Inv2 r _ = sdlRefl1 d s
 
   -- | mapping from the dual of @__b__ __x__@.
   sdlFromDualSnd :: d i o a b -> Struct s x -> a (o x) -> b x
-  sdlFromDualSnd d s = case sdlFncSnd d s of
-    Functor1 -> amap1 r' . sdlToDualFst d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+  sdlFromDualSnd d s = amap1Snd d r' . sdlToDualFst d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+
+--------------------------------------------------------------------------------
+-- sdlRefl1 -
+
+-- | the associated reflection.
+sdlRefl1 :: StructuralDuality1 d s i o => d i o a b -> Struct s x -> Inv2 i x (o (o x))
+sdlRefl1 _ = stcReflection
 
 --------------------------------------------------------------------------------
 -- sdlFncFst -
@@ -165,7 +188,7 @@ class (BiFunctorial1 i (d i o), Transformable1 o s) => StructuralDuality1 d s i 
 -- | attest of being 'Functorial1' according to the category @__i__@
 -- and the first parameter @__a__@.
 sdlFncFst :: StructuralDuality1 d s i o => d i o a b -> Struct s x -> Functor1 i a
-sdlFncFst d _ = fstFnc1 d
+sdlFncFst d _ = fnc1Fst d
 
 --------------------------------------------------------------------------------
 -- sdlFncSnd -
@@ -173,7 +196,7 @@ sdlFncFst d _ = fstFnc1 d
 -- | attest of being 'Functorial1' according to the category @__i__@
 -- and the second parameter @__b__@.
 sdlFncSnd :: StructuralDuality1 d s i o => d i o a b -> Struct s x -> Functor1 i b
-sdlFncSnd d _ = sndFnc1 d
+sdlFncSnd d _ = fnc1Snd d
 
 --------------------------------------------------------------------------------
 -- sdlTau1 -
@@ -182,6 +205,33 @@ sdlFncSnd d _ = sndFnc1 d
 sdlTau1 :: StructuralDuality1 d s i o => d i o a b -> Struct s x -> Struct s (o x)
 sdlTau1 _ = tau1
 
+--------------------------------------------------------------------------------
+-- prpFF -
+
+
+prpFF :: (StructuralDuality1 d s i o, Eq (a (o x)), Show (b (o (o x))))
+  => d i o a b -> Struct s x -> X (b (o (o x))) -> Statement
+prpFF d s xb'' = Prp "FF" :<=>: Forall xb''
+  (\b'' -> let s'  = sdlTau1 d s
+               s'' = sdlTau1 d s' 
+               Inv2 _ r' =  sdlRefl1 d s
+               Inv2 _ r'' = sdlRefl1 d s'
+            in ((sdlToDualSnd d s $ amap1Snd d r' b'') == (amap1Fst d r'' $ sdlToDualSnd d s'' b''))
+                 :?> Params ["b''":=show b''] 
+  )
+
+prpNaturalTransforming :: StructuralDuality1 d s i o
+  => (Eq (a (o (o (o x)))), Show (b x))
+  => d i o a b -> Struct s x -> X (b x) -> Statement
+prpNaturalTransforming d s xb = Prp "NaturalTransforming" :<=>: Forall xb
+  (\b -> let s'  = sdlTau1 d s
+             s'' = sdlTau1 d s' 
+             Inv2 r _ =  sdlRefl1 d s
+             Inv2 r' _ = sdlRefl1 d s'
+          in ((sdlToDualSnd d s'' $ amap1Snd d r b) == (amap1Fst d r' $ sdlToDualSnd d s b))
+               :?> Params ["b x":=show b]
+  )
+  
 --------------------------------------------------------------------------------
 -- prpStructuralDuality1 -
 
@@ -194,21 +244,15 @@ prpStructuralDuality1 d s xas xa''s = Prp "StructuralDuality1" :<=>:
         (\xa -> ((sdlFromDualFst d s $ sdlToDualFst d s xa) == xa) :?> Params ["xa":=show xa]   
         )
       , Label "2" :<=>: Forall xas
-        (\xa -> case sdlFncFst d s of
-            Functor1 -> ((sdlToDualSnd d (sdlTau1 d s) $ sdlToDualFst d s xa) == amap1 r xa)
-                        :?> Params ["xa":=show xa]
+        (\xa -> ((sdlToDualSnd d (sdlTau1 d s) $ sdlToDualFst d s xa) == amap1Fst d r xa)
+                  :?> Params ["xa":=show xa]
         )
       , Label "3" :<=>: Forall xa''s
-        (\xa'' -> case sdlFncFst d s of
-            Functor1 -> ((sdlFromDualFst d s $ sdlFromDualSnd d (sdlTau1 d s) xa'') == amap1 r' xa'')
-                        :?> Params ["xa''":=show xa'']
+        (\xa'' -> ((sdlFromDualFst d s $ sdlFromDualSnd d (sdlTau1 d s) xa'') == amap1Fst d r' xa'')
+                   :?> Params ["xa''":=show xa'']
         )
       ]
   where Inv2 r r' = sdlRefl1 d s
-
-
-
-
 
 
 

@@ -46,7 +46,7 @@ module OAlg.Category.Definition
     -- * Functorial
   , Functorial, Functor(..)
   , Functorial1, Functor1(..)
-  , BiFunctorial1(..)
+  , BiFunctorial1(..), amap1Fst, amap1Snd
 
     -- * Forget
   , Forget(..)
@@ -321,11 +321,31 @@ data Functor1 c f where
 class BiFunctorial1 c f where
   -- | attest of being 'Functorial1' according to the category @__c__@
   -- and the first parameter @__a__@.
-  fstFnc1 :: f a b -> Functor1 c a
+  fnc1Fst :: f a b -> Functor1 c a
   
   -- | attest of being 'Functorial1' according to the category @__c__@
   -- and the second parameter @__b__@.  
-  sndFnc1 :: f a b -> Functor1 c b
+  fnc1Snd :: f a b -> Functor1 c b
+
+--------------------------------------------------------------------------------
+-- amap1Fst -
+
+-- | application according to the first 'Functorial1'.
+amap1Fst :: BiFunctorial1 c d => d a b -> c x y -> a x -> a y
+amap1Fst d c = case fnc1Fst' d c of Functor1 -> amap1 c
+  where
+    fnc1Fst' :: BiFunctorial1 c d => d a b -> c x y -> Functor1 c a
+    fnc1Fst' d _ = fnc1Fst d
+
+--------------------------------------------------------------------------------
+-- amap1Snd -
+
+-- | application according to the second 'Functorial1'.
+amap1Snd :: BiFunctorial1 c d => d a b -> c x y -> b x -> b y
+amap1Snd d c = case fnc1Snd' d c of Functor1 -> amap1 c
+  where
+    fnc1Snd' :: BiFunctorial1 c d => d a b -> c x y -> Functor1 c b
+    fnc1Snd' d _ = fnc1Snd d
   
 --------------------------------------------------------------------------------
 -- Cayleyan2 -

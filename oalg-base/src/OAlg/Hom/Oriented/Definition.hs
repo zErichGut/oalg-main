@@ -508,6 +508,12 @@ isoFromOpOpOrt :: Oriented a => IsoOp Ort (Op (Op a)) a
 isoFromOpOpOrt = isoFromOpOp
 
 --------------------------------------------------------------------------------
+-- IsoOp - StructuralReflexive -
+
+instance (TransformableTyp s, Transformable1 Op s) => StructuralReflexive s (IsoOp s) Op where
+  stcReflection s = Inv2 (isoToOpOpStruct s) (isoFromOpOpStruct s)
+  
+--------------------------------------------------------------------------------
 -- OpMap -
 
 -- | contravariant @__s__@-isomorphisms between @__f__ __x__@ and @__f__ ('Op' __x__)@.
@@ -720,7 +726,6 @@ data OpDuality i o where
 
 instance (TransformableTyp s, Transformable1 Op s)
   => StructuralDuality OpDuality s (IsoOp s) Op where
-  sdlRefl _ s = Inv2 (isoToOpOpStruct s) (isoFromOpOpStruct s)
   sdlToDual _ _   = Op
   sdlFromDual _ _ = fromOp
 

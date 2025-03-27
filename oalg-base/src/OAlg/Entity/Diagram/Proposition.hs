@@ -21,27 +21,35 @@ module OAlg.Entity.Diagram.Proposition
   (
     -- * Proposition
     prpDiagramOrntSymbol
-  , prpCoDiagram
-
+  , prpSomeDiagramDuality
   )
   where
 
 import OAlg.Prelude hiding (T)
 
+import OAlg.Data.StructuralDuality
+
 import OAlg.Structure.Oriented
+
+import OAlg.Hom.Oriented.Definition
 
 import OAlg.Entity.Natural as N hiding ((++))
 
 import OAlg.Entity.Diagram.Definition
 
---------------------------------------------------------------------------------
--- prpCoDiagram -
 
--- | the point list is stable under 'coDiagram'.
-prpCoDiagram :: Oriented a => Diagram t n m a -> Statement
-prpCoDiagram d = Prp "CoDiagram"
-  :<=>: (dgPoints (coDiagram d) == dgPoints d) :?> Params ["d":=show d]
-                  
+--------------------------------------------------------------------------------
+-- prpSomeDiagramDuality -
+
+-- | validity of 'StructuralDuality1' for 'sdgOpDualityOrt'.
+prpSomeDiagramDuality :: Oriented a => X (SomeDiagram a) -> Statement
+prpSomeDiagramDuality xsd = Prp "SomeDiagramDuality" :<=>:
+  prpStructuralDuality1 d s xsd xsd'' where
+    d = sdgOpDualityOrt
+    s = Struct :: Oriented a => Struct Ort a
+
+    xsd'' = amap1 (amap1 isoToOpOpOrt) xsd
+
 --------------------------------------------------------------------------------
 -- prpDiagramOrntSymbol -
 
@@ -49,7 +57,7 @@ prpCoDiagram d = Prp "CoDiagram"
 prpDiagramOrntSymbol :: Statement
 prpDiagramOrntSymbol = Prp "DiagramOrntSymbol"
   :<=>: And [ Forall xd valid
-            , Forall xd (\(SomeDiagram d) -> prpCoDiagram d)
+            , prpSomeDiagramDuality xd
             ] where
   xd :: X (SomeDiagram OS)
   xd = xSomeDiagramOrnt xn xStandard

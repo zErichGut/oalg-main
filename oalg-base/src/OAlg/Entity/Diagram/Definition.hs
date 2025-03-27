@@ -45,9 +45,6 @@ module OAlg.Entity.Diagram.Definition
   , SomeDiagramDuality(..), SomeDiagramOpDuality
   , sdgOpDuality, sdgOpDualityOrt
 
-    -- * Propostition
-  , prpSomeDiagramDuality
-  
     -- * X
   , XDiagram(..)
   , xDiagram
@@ -298,11 +295,10 @@ data DiagramDuality d s i o a b where
     -> DiagramDuality d s i o (Diagram t n m) (Dual1 (Diagram t n m))
 
 instance BiFunctorial1 i (DiagramDuality d s i o) where
-  fstFnc1 (DiagramDuality _ _) = Functor1
-  sndFnc1 (DiagramDuality _ _) = Functor1
+  fnc1Fst (DiagramDuality _ _) = Functor1
+  fnc1Snd (DiagramDuality _ _) = Functor1
 
-instance Transformable1 o s => StructuralDuality1 (DiagramDuality d s) s i o where
-  sdlRefl1 (DiagramDuality d _)        = sdlRefl d
+instance StructuralReflexive s i o => StructuralDuality1 (DiagramDuality d s) s i o where
   sdlToDualFst (DiagramDuality d _)    = coDiagram d
   sdlToDualSnd (DiagramDuality d Refl) = coDiagram d
 
@@ -702,12 +698,11 @@ instance HomOriented h => Applicative1 h SomeDiagram where
 instance FunctorialHomOriented h => Functorial1 h SomeDiagram
 
 instance FunctorialHomOriented i => BiFunctorial1 i (SomeDiagramDuality d s i o) where
-  fstFnc1 (SomeDiagramDuality _) = Functor1
-  sndFnc1 (SomeDiagramDuality _) = Functor1
+  fnc1Fst (SomeDiagramDuality _) = Functor1
+  fnc1Snd (SomeDiagramDuality _) = Functor1
 
-instance (FunctorialHomOriented i, Transformable1 o s)
+instance (StructuralReflexive s i o, FunctorialHomOriented i)
   => StructuralDuality1 (SomeDiagramDuality d s) s i o where
-  sdlRefl1 (SomeDiagramDuality d) = sdlRefl d
   sdlToDualFst (SomeDiagramDuality dlt) = coSomeDiagram dlt
   sdlToDualSnd (SomeDiagramDuality dlt) = coSomeDiagram dlt
 
@@ -811,16 +806,4 @@ dstSomeDiagram n xd = putDstr cnstr n xd where
 xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientation p))
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
-
---------------------------------------------------------------------------------
--- prpSomeDiagramDuality -
-
--- | validity of 'StructuralDuality1' for 'sdgOpDualityOrt'.
-prpSomeDiagramDuality :: Statement
-prpSomeDiagramDuality = Prp "SomeDiagramDuality" :<=>:
-  prpStructuralDuality1 d (Struct :: Struct Ort (Orientation N)) xsd xsd'' where
-    d = sdgOpDualityOrt
-
-    xsd   = xSomeDiagramOrnt (amap1 someNatural (xNB 0 10)) xStandard
-    xsd'' = amap1 (amap1 isoToOpOpOrt) xsd
 
