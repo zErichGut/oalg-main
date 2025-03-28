@@ -63,7 +63,8 @@ class (Category i, Eq2 i, Transformable1 o s) => SReflexive s i o where
 -- where @'Inv2' r _ = 'sdlRefl' d s@.
 --
 -- (3) @'sdlToDual' d s'' '.' 'amap' r = amap r'' '.' 'sdlToDual' d s@, where @s' = 'sdlTau' d s@,
--- @s'' = 'sdlTau' d s'@, @'Inv2' r _ = 'sdlRefl' d s@ and @'Inv2' r'' _ = 'sdlRefl' d s'@.
+-- @s'' = 'sdlTau' d s'@, @s' = 'sdlTau' d s@, @'Inv2' r _ = 'sdlRefl' d s@ and
+-- @'Inv2' r'' _ = 'sdlRefl' d s'@.
 --
 -- (4) @'sdlFromDual' d s '.' 'sdlFromDual' d ('sdlTau' d s) = 'amap' r'@
 -- where @'Inv2' _ r' = 'sdlRefl' d s@.
@@ -141,47 +142,47 @@ prpSDuality d s xs x''s = Prp "SDuality" :<=>:
 -- __Property__ For all @d@ in @__d__ __i__ __o__ __a__ __b__@ and @s@ in @'Struct' __s__ __x__@ with
 -- @'SDuality1' __d__ __s__ __i__ __o__@, then holds:
 --
--- (1) @'sdlFromDualFst' d s '.' 'sdlToDualFst' d s = 'id'@.
+-- (1) @'sdlFromDual1Fst' d s '.' 'sdlToDual1Fst' d s = 'id'@.
 --
--- (2) @'sdlToDualSnd d ('sdlTau1' s) '.' 'sdlToDualFst' d s = 'amap1Fst' d r@
+-- (2) @'sdlToDual1Snd d ('sdlTau1' s) '.' 'sdlToDual1Fst' d s = 'amap1Fst' d r@
 -- where @'Inv2' r _ = 'sdlRefl1' d s@.
 --
--- (3) @'sdlToDualSnd' d s'' '.' 'amap1Snd' d r = 'amap1Fst' d r'' '.' 'sdlToDualSnd' d s@ where
--- @s' = 'sdlTau1' d s@, @s'' = 'sdlTau1' d s'@, @'Inv2' r _ = 'sdlRefl1' d s@ and
+-- (3) @'sdlToDual1Snd' d s'' '.' 'amap1Snd' d r = 'amap1Fst' d r'' '.' 'sdlToDual1Snd' d s@ where
+-- @s'' = 'sdlTau1' d s'@, @s' = 'sdlTau1' d s@, @'Inv2' r _ = 'sdlRefl1' d s@ and
 -- @'Inv2' r'' _ = 'sdlRefl1' d s'@.
 --
--- (4) @'sdlFromDualFst' d s '.' 'sdlFromDualSnd' d ('sdlTau1' s) = 'amap1Fst' d r'@
+-- (4) @'sdlFromDual1Fst' d s '.' 'sdlFromDual1Snd' d ('sdlTau1' s) = 'amap1Fst' d r'@
 -- where @'Inv2' _ r' = 'sdlRefl1' d s@.
 --
 -- __Note__
 --
 -- (1) The relation @'SDuality1' __d__ __s__ __i__ __o__@ is not necessarily /symmetric/,
--- i.e. @'sdlToDualFst' d s' '.' 'sdlFromDualFst' d s' = 'id'@ dose not hold in general!
+-- i.e. @'sdlToDual1Fst' d s' '.' 'sdlFromDual1Fst' d s' = 'id'@ dose not hold in general!
 --
 -- (2) A sufficient condition for the properties 1 and 4 above is: The properties 2 and 3 hold and
--- @'sdlFromDualFst' d s = 'amap1Fst' d r' '.' 'sdlToDualSnd' d s'@ and
--- @'amap1Snd' d r' '.' 'sdlToDualFst' d s'@ where @s' = 'sdlTau1' d s@ and
--- @Inv2 _ r' = sdlRefl1 d s@´. Hence it is sufficient to implement 'sdlToDualFst' and 'sdlToDualSnd'
--- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDualFst' and
+-- @'sdlFromDual1Fst' d s = 'amap1Fst' d r' '.' 'sdlToDual1Snd' d s'@ and
+-- @'amap1Snd' d r' '.' 'sdlToDual1Fst' d s'@ where @s' = 'sdlTau1' d s@ and
+-- @Inv2 _ r' = sdlRefl1 d s@´. Hence it is sufficient to implement 'sdlToDual1Fst' and 'sdlToDual1Snd'
+-- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDual1Fst' and
 -- 'sdlFromFualSnd' as provided.
 class (SReflexive s i o, BiFunctorial1 i (d i o)) => SDuality1 d s i o where
-  {-# MINIMAL (sdlToDualFst, sdlToDualSnd | sdlFromDualFst, sdlFromDualSnd) #-}
+  {-# MINIMAL (sdlToDual1Fst, sdlToDual1Snd | sdlFromDual1Fst, sdlFromDual1Snd) #-}
   
   -- | mapping to the dual of @__a__ __x__@.
-  sdlToDualFst :: d i o a b -> Struct s x -> a x -> b (o x)
-  sdlToDualFst d s = sdlFromDualSnd d (sdlTau1 d s) . amap1Fst d r where Inv2 r _ = sdlRefl1 d s
+  sdlToDual1Fst :: d i o a b -> Struct s x -> a x -> b (o x)
+  sdlToDual1Fst d s = sdlFromDual1Snd d (sdlTau1 d s) . amap1Fst d r where Inv2 r _ = sdlRefl1 d s
 
   -- | mapping from the dual of @__a__ __x__@.
-  sdlFromDualFst :: d i o a b -> Struct s x -> b (o x) -> a x
-  sdlFromDualFst d s = amap1Fst d r' . sdlToDualSnd d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+  sdlFromDual1Fst :: d i o a b -> Struct s x -> b (o x) -> a x
+  sdlFromDual1Fst d s = amap1Fst d r' . sdlToDual1Snd d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
 
   -- | mapping to the dual of @__b__ __x__@.
-  sdlToDualSnd :: d i o a b -> Struct s x -> b x -> a (o x)
-  sdlToDualSnd d s = sdlFromDualFst d (sdlTau1 d s) . amap1Snd d r where  Inv2 r _ = sdlRefl1 d s
+  sdlToDual1Snd :: d i o a b -> Struct s x -> b x -> a (o x)
+  sdlToDual1Snd d s = sdlFromDual1Fst d (sdlTau1 d s) . amap1Snd d r where  Inv2 r _ = sdlRefl1 d s
 
   -- | mapping from the dual of @__b__ __x__@.
-  sdlFromDualSnd :: d i o a b -> Struct s x -> a (o x) -> b x
-  sdlFromDualSnd d s = amap1Snd d r' . sdlToDualFst d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+  sdlFromDual1Snd :: d i o a b -> Struct s x -> a (o x) -> b x
+  sdlFromDual1Snd d s = amap1Snd d r' . sdlToDual1Fst d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
 
 --------------------------------------------------------------------------------
 -- sdlRefl1 -
@@ -227,18 +228,18 @@ prpSDuality1 d s xa xb xa'' = Prp "SDuality1" :<=>:
                    s'' = sdlTau1 d s' 
                    Inv2 r _  =  sdlRefl1 d s
                    Inv2 r'' _ = sdlRefl1 d s'
-                in ((sdlToDualSnd d s'' $ amap1Snd d r b) == (amap1Fst d r'' $ sdlToDualSnd d s b))
+                in ((sdlToDual1Snd d s'' $ amap1Snd d r b) == (amap1Fst d r'' $ sdlToDual1Snd d s b))
                      :?> Params ["b x":=show b]
         )
       , Label "2" :<=>: Forall xa
-        (\a -> ((sdlToDualSnd d (sdlTau1 d s) $ sdlToDualFst d s a) == amap1Fst d r a)
+        (\a -> ((sdlToDual1Snd d (sdlTau1 d s) $ sdlToDual1Fst d s a) == amap1Fst d r a)
                   :?> Params ["a x":=show a]
         )
       , Label "1" :<=>: Forall xa
-        (\a -> ((sdlFromDualFst d s $ sdlToDualFst d s a) == a) :?> Params ["a x":=show a]   
+        (\a -> ((sdlFromDual1Fst d s $ sdlToDual1Fst d s a) == a) :?> Params ["a x":=show a]   
         )
       , Label "4" :<=>: Forall xa''
-        (\a'' -> ((sdlFromDualFst d s $ sdlFromDualSnd d (sdlTau1 d s) a'') == amap1Fst d r' a'')
+        (\a'' -> ((sdlFromDual1Fst d s $ sdlFromDual1Snd d (sdlTau1 d s) a'') == amap1Fst d r' a'')
                    :?> Params ["a (o (o x))":=show a'']
         )
       ]

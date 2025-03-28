@@ -35,6 +35,7 @@ module OAlg.Entity.Diagram.Definition
 
 
     -- ** Duality
+  , coDiagram
   , DiagramDuality(..), DiagramOpDuality
   , dgOpDuality, dgOpDualityOrt
 
@@ -233,20 +234,37 @@ dgCenter (DiagramSource c _) = c
 -- dgMap -
 
 -- | mapping of a diagram via a homomorphism on 'Oriented' structures.
+--
+-- __Definition__ Let @h@ be in @__h__ __a__ __b__@ and @d@ in @'Diagram' ___t__ __n__ __m__ __a__@
+-- with @'Hom' 'Ort' __h__@, then we define @d' = 'dgMap' h d@ as follows: Let @hPnt = 'pmap' h@ and
+-- @hArw = ''amap' h@ in
+--
+-- @
+-- d' = case d of
+--   DiagramEmpty             -> DiagramEmpty
+--   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
+--   DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
+--   DiagramChainFrom s as    -> DiagramChainFrom  (hPnt s) (amap1 hArw as)
+--   DiagramParallelLR l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
+--   DiagramParallelRL l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
+--   DiagramSink e as         -> DiagramSink (hPnt e) (amap1 hArw as)
+--   DiagramSource s as       -> DiagramSource (hPnt s) (amap1 hArw as)
+--   DiagramGeneral ps aijs   -> DiagramGeneral (amap1 hPnt ps) (amap1 (\(a,o) -> (hArw a,o)) aijs)
+-- @
 dgMap :: Hom Ort h => h a b -> Diagram t n m a -> Diagram t n m b
 dgMap h d = case d of
   DiagramEmpty             -> DiagramEmpty
-  DiagramDiscrete ps       -> DiagramDiscrete (fmap fp ps)
-  DiagramChainTo e as      -> DiagramChainTo (fp e) (fmap f as)
-  DiagramChainFrom s as    -> DiagramChainFrom  (fp s) (fmap f as)
-  DiagramParallelLR l r as -> DiagramParallelLR (fp l) (fp r) (fmap f as)
-  DiagramParallelRL l r as -> DiagramParallelRL (fp l) (fp r) (fmap f as)
-  DiagramSink e as         -> DiagramSink (fp e) (fmap f as)
-  DiagramSource s as       -> DiagramSource (fp s) (fmap f as)
-  DiagramGeneral ps aijs   -> DiagramGeneral (fmap fp ps)
-                                (fmap (\(a,o) -> (f a,o)) aijs)
-  where fp = pmap h
-        f  = amap h
+  DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
+  DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
+  DiagramChainFrom s as    -> DiagramChainFrom  (hPnt s) (amap1 hArw as)
+  DiagramParallelLR l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramParallelRL l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramSink e as         -> DiagramSink (hPnt e) (amap1 hArw as)
+  DiagramSource s as       -> DiagramSource (hPnt s) (amap1 hArw as)
+  DiagramGeneral ps aijs   -> DiagramGeneral (amap1 hPnt ps)
+                                (amap1 (\(a,o) -> (hArw a,o)) aijs)
+  where hPnt = pmap h
+        hArw = amap h
 
 instance HomOriented h => Applicative1 h (Diagram t n m) where
   amap1 = dgMap -- do not change this definition!!!
@@ -264,29 +282,68 @@ type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 
 -- | mapping a diagram to its co-diagram according to the given structural duality on oriented
 -- structures.
+--
+-- __Definition__ Let @dlt@ be in @__d__ __i__ __o__@, @stc@ in @'Struct' __s__ __a__@ and
+-- @d@ in @'Diagram' __t__ __n__ __m__ __a__@ with @'SDualityOriented' __d__ __s__ __i__ __o__@, then
+-- we define @d' = 'coDiagram' dlt stc d@ as follows: Let @coPnt = 'sdlToDualPnt' dlt stc@ and
+-- @coArw = 'sdlToDual' dlt stc@ in
+--
+-- @
+-- d' = case d of
+--   DiagramEmpty             -> DiagramEmpty
+--   DiagramDiscrete ps       -> DiagramDiscrete (amap1 coPnt ps)
+--   DiagramChainTo e as      -> DiagramChainFrom (coPnt e) (amap1 coArw as)
+--   DiagramChainFrom s as    -> DiagramChainTo (coPnt s) (amap1 coArw as)
+--   DiagramParallelLR l r as -> DiagramParallelRL (coPnt l) (coPnt r) (amap1 coArw as)
+--   DiagramParallelRL l r as -> DiagramParallelLR (coPnt l) (coPnt r) (amap1 coArw as)
+--   DiagramSink e as         -> DiagramSource (coPnt e) (amap1 coArw as)
+--   DiagramSource s as       -> DiagramSink (coPnt s) (amap1 coArw as)
+--   DiagramGeneral ps aijs   -> DiagramGeneral (amap1 coPnt ps) (amap1 (\(a,o) -> (coArw a,opposite o)) aijs)
+-- @
+--
+-- From the definition above, the definition for 'dgMap', the properties for 'SDuality' and
+-- 'SDualityOriented' follows easily:
+--
+-- __Properties__ For all @dlt@ in @__d__ __i__ __o__@ and @stc@ in @'Struct' __s__ __x__@ with
+-- @'SDualityOriented __d__ __s__ __i__ __o__@ holds:
+--
+-- (1) @'coDiagram' dlt stc' '.' 'coDiagram' dlt stc = 'dgMap' r@ where
+-- @stc' = 'sdlTau' stc@ and @'Inv2' r _ = 'sdlRefl' dlt stc@.
+--
+-- (2) @'coDiagram' dlt stc'' '.' 'dgMap' r = 'dgMap' r'' '.' 'coDiagram' dlt stc@ where
+-- @stc' = 'sdlTau' stc@, @stc'' = 'sdlTau' dlt stc'@, @'Inv2' r _ = 'sdlRefl' dlt stc@ and
+-- @'Inv2' r'' _ = 'sdlRefl' dlt s'@.
 coDiagram :: SDualityOriented d s i o
   => d i o -> Struct s a
   -> Diagram t n m a -> Dual1 (Diagram t n m) (o a)
 coDiagram dlt stc d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 coPnt ps)
-  DiagramChainTo e as      -> DiagramChainFrom (coPnt e) (amap1 co as)
-  DiagramChainFrom s as    -> DiagramChainTo (coPnt s) (amap1 co as)
-  DiagramParallelLR l r as -> DiagramParallelRL (coPnt l) (coPnt r) (amap1 co as)
-  DiagramParallelRL l r as -> DiagramParallelLR (coPnt l) (coPnt r) (amap1 co as)
-  DiagramSink e as         -> DiagramSource (coPnt e) (amap1 co as)
-  DiagramSource s as       -> DiagramSink (coPnt s) (amap1 co as)
+  DiagramChainTo e as      -> DiagramChainFrom (coPnt e) (amap1 coArw as)
+  DiagramChainFrom s as    -> DiagramChainTo (coPnt s) (amap1 coArw as)
+  DiagramParallelLR l r as -> DiagramParallelRL (coPnt l) (coPnt r) (amap1 coArw as)
+  DiagramParallelRL l r as -> DiagramParallelLR (coPnt l) (coPnt r) (amap1 coArw as)
+  DiagramSink e as         -> DiagramSource (coPnt e) (amap1 coArw as)
+  DiagramSource s as       -> DiagramSink (coPnt s) (amap1 coArw as)
   DiagramGeneral ps aijs   -> DiagramGeneral
                                 (amap1 coPnt ps)
-                                (amap1 (\(a,o) -> (co a,opposite o)) aijs)
+                                (amap1 (\(a,o) -> (coArw a,opposite o)) aijs)
 
   where coPnt = sdlToDualPnt dlt stc
-        co    = sdlToDual dlt stc
+        coArw = sdlToDual dlt stc
 
 --------------------------------------------------------------------------------
 -- DiagramDuality -
 
--- | 'SDuality1' for 'Diagram's.
+-- | 'SDuality1' for 'Diagram's where 'sdlToDual1Fst' and 'sdlToDualSnd' is given by 'coDiagram'.
+--
+-- __Note__
+--
+-- (1) The definition of 'sdlToDualSnd' is also given by 'coDiagram' and the assumption that
+-- @'Dual' ('Dual' __t__) ':~:' __t__@.
+--
+-- (2) From the properties of 'coDiagram' and the note 3 of 'SDuality1' follows, that all the
+-- properties of 'SDuality1' for 'DiagramDuality' holds.
 data DiagramDuality d s i o a b where
   DiagramDuality
     :: SDualityOriented d s i o
@@ -299,8 +356,8 @@ instance BiFunctorial1 i (DiagramDuality d s i o) where
   fnc1Snd (DiagramDuality _ _) = Functor1
 
 instance SReflexive s i o => SDuality1 (DiagramDuality d s) s i o where
-  sdlToDualFst (DiagramDuality d _)    = coDiagram d
-  sdlToDualSnd (DiagramDuality d Refl) = coDiagram d
+  sdlToDual1Fst (DiagramDuality d _)    = coDiagram d
+  sdlToDual1Snd (DiagramDuality d Refl) = coDiagram d
 
 --------------------------------------------------------------------------------
 -- DiagramOpDuality -
@@ -374,7 +431,7 @@ instance Oriented a => Validable (Diagram t n m a) where
               , vld (succ l) ps aijs
               ]
 
-    _ -> valid $ sdlToDualFst dOp sOrt d
+    _ -> valid $ sdlToDual1Fst dOp sOrt d
 
     where dOp  = dgOpDualityOrt (dgTypeRefl d)
           sOrt = Struct :: Oriented x => Struct Ort x
@@ -419,7 +476,7 @@ dgQuiver (DiagramSink _ as) = Quiver (SW (toW os)) os where
   snk _ Nil     = Nil
   snk j (_:|os) = (j:>0):|snk (succ j) os
 dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
-dgQuiver d = coQuiverInv $ dgQuiver $ sdlToDualFst dOp sOrt d where
+dgQuiver d = coQuiverInv $ dgQuiver $ sdlToDual1Fst dOp sOrt d where
   dOp  = dgOpDualityOrt (dgTypeRefl d)
   sOrt = Struct :: Oriented a => Struct Ort a
 
@@ -446,7 +503,7 @@ chnFromStart (DiagramChainFrom s _) = s
 -- chnFromEnd -
 
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
-chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ sdlToDualFst dOp sOrt d where
+chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ sdlToDual1Fst dOp sOrt d where
   dOp  = dgOpDualityOrt (dgTypeRefl d)
   sOrt = Struct :: Oriented a => Struct Ort a
 
@@ -493,8 +550,8 @@ dgPrlDiffTail = dgPrlTail . dgPrlDiffHead
 dgPrlDiffHead :: Abelian a
   => Diagram (Parallel d) n (m+1) a -> Diagram (Parallel d) n (m+1) a
 dgPrlDiffHead d = case d of
-  DiagramParallelLR l r as -> DiagramParallelLR l r (fmap (diff $ head as) as)
-  DiagramParallelRL l r as -> DiagramParallelRL l r (fmap (diff $ head as) as)
+  DiagramParallelLR l r as -> DiagramParallelLR l r (amap1 (diff $ head as) as)
+  DiagramParallelRL l r as -> DiagramParallelRL l r (amap1 (diff $ head as) as)
   where diff a x = x - a
 
 --------------------------------------------------------------------------------
@@ -585,7 +642,7 @@ xDiagram rt xd = case xd of
   XDiagramChainTo m xs    -> xChain m xs
   XDiagramParallelLR m xo -> xParallel m xo
   XDiagramSink m xe       -> xSink m xe
-  _                       ->   amap1 (sdlFromDualFst dOp sOrt)
+  _                       ->   amap1 (sdlFromDual1Fst dOp sOrt)
                              $ xDiagram (rt' rt) $ coXDiagram xd
   where dOp  = dgOpDualityOrt rt
         sOrt = Struct :: Oriented a => Struct Ort a
@@ -703,8 +760,8 @@ instance FunctorialHomOriented i => BiFunctorial1 i (SomeDiagramDuality d s i o)
 
 instance (SReflexive s i o, FunctorialHomOriented i)
   => SDuality1 (SomeDiagramDuality d s) s i o where
-  sdlToDualFst (SomeDiagramDuality dlt) = coSomeDiagram dlt
-  sdlToDualSnd (SomeDiagramDuality dlt) = coSomeDiagram dlt
+  sdlToDual1Fst (SomeDiagramDuality dlt) = coSomeDiagram dlt
+  sdlToDual1Snd (SomeDiagramDuality dlt) = coSomeDiagram dlt
 
 --------------------------------------------------------------------------------
 -- SomeDiagramOpDuality -
@@ -771,7 +828,7 @@ xSomeDiagram xn xTo xFrom xO = do
     = amap1 SomeDiagram $ xDiagram Refl (XDiagramChainTo n xTo)
 
   xChainFrom :: Oriented a => Any n -> XOrtSite From a -> X (SomeDiagram a)
-  xChainFrom n xFrom = amap1 (sdlFromDualFst d s) $ xChainTo n (coXOrtSite xFrom) where
+  xChainFrom n xFrom = amap1 (sdlFromDual1Fst d s) $ xChainTo n (coXOrtSite xFrom) where
     d = sdgOpDualityOrt
     s = Struct :: Oriented a => Struct Ort a
           
@@ -779,7 +836,7 @@ xSomeDiagram xn xTo xFrom xO = do
   xParallelLR n xO = amap1 SomeDiagram $ xDiagram Refl (XDiagramParallelLR n xO)
    
   xParallelRL :: Oriented a => Any n -> XOrtOrientation a -> X (SomeDiagram a)
-  xParallelRL n xO = amap1 (sdlFromDualFst d s) $ xParallelLR n (coXOrtOrientation xO) where
+  xParallelRL n xO = amap1 (sdlFromDual1Fst d s) $ xParallelLR n (coXOrtOrientation xO) where
     d = sdgOpDualityOrt
     s = Struct :: Oriented a => Struct Ort a
 
@@ -787,7 +844,7 @@ xSomeDiagram xn xTo xFrom xO = do
   xSink n xTo = amap1 SomeDiagram $ xDiagram Refl (XDiagramSink n xTo)
 
   xSource :: Oriented a => Any n -> XOrtSite From a -> X (SomeDiagram a)
-  xSource n xFrom = amap1 (sdlFromDualFst d s) $ xSink n (coXOrtSite xFrom) where
+  xSource n xFrom = amap1 (sdlFromDual1Fst d s) $ xSink n (coXOrtSite xFrom) where
     d = sdgOpDualityOrt
     s = Struct :: Oriented a => Struct Ort a
 
