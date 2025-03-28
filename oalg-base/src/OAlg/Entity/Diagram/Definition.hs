@@ -61,7 +61,7 @@ import Data.Foldable (toList)
 
 import OAlg.Prelude hiding (T)
 
-import OAlg.Data.StructuralDuality
+import OAlg.Data.SDuality
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
@@ -264,7 +264,7 @@ type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 
 -- | mapping a diagram to its co-diagram according to the given structural duality on oriented
 -- structures.
-coDiagram :: StructuralDualityOriented d s i o
+coDiagram :: SDualityOriented d s i o
   => d i o -> Struct s a
   -> Diagram t n m a -> Dual1 (Diagram t n m) (o a)
 coDiagram dlt stc d = case d of
@@ -286,10 +286,10 @@ coDiagram dlt stc d = case d of
 --------------------------------------------------------------------------------
 -- DiagramDuality -
 
--- | 'StructuralDuality1' for 'Diagram's.
+-- | 'SDuality1' for 'Diagram's.
 data DiagramDuality d s i o a b where
   DiagramDuality
-    :: StructuralDualityOriented d s i o
+    :: SDualityOriented d s i o
     => d i o
     -> Dual (Dual t) :~: t
     -> DiagramDuality d s i o (Diagram t n m) (Dual1 (Diagram t n m))
@@ -298,14 +298,14 @@ instance BiFunctorial1 i (DiagramDuality d s i o) where
   fnc1Fst (DiagramDuality _ _) = Functor1
   fnc1Snd (DiagramDuality _ _) = Functor1
 
-instance StructuralReflexive s i o => StructuralDuality1 (DiagramDuality d s) s i o where
+instance SReflexive s i o => SDuality1 (DiagramDuality d s) s i o where
   sdlToDualFst (DiagramDuality d _)    = coDiagram d
   sdlToDualSnd (DiagramDuality d Refl) = coDiagram d
 
 --------------------------------------------------------------------------------
 -- DiagramOpDuality -
 
--- | 'StructuralDuality1' for 'Diagram' according to 'IsoOp'.
+-- | 'SDuality1' for 'Diagram' according to 'IsoOp'.
 type DiagramOpDuality s = DiagramDuality OpDuality s (IsoOp s) Op
   
 --------------------------------------------------------------------------------
@@ -677,7 +677,7 @@ type instance Dual (SomeDiagram a) = Dual1 SomeDiagram (Op a)
 -- coSomeDiagram -
 
 -- | dual of 'SomeDiagram'.
-coSomeDiagram :: StructuralDualityOriented d s i o
+coSomeDiagram :: SDualityOriented d s i o
   => d i o -> Struct s a
   -> SomeDiagram a -> Dual1 SomeDiagram (o a)
 coSomeDiagram dlt sOrt (SomeDiagram d) = SomeDiagram (coDiagram dlt sOrt d)
@@ -685,10 +685,10 @@ coSomeDiagram dlt sOrt (SomeDiagram d) = SomeDiagram (coDiagram dlt sOrt d)
 --------------------------------------------------------------------------------
 -- SomeDiagramDuality -
 
--- | 'StructuralDuality1' for 'SomeDiagram's.
+-- | 'SDuality1' for 'SomeDiagram's.
 data SomeDiagramDuality d s i o a b where
   SomeDiagramDuality
-    :: StructuralDualityOriented d s i o
+    :: SDualityOriented d s i o
     => d i o
     -> SomeDiagramDuality d s i o SomeDiagram (Dual1 SomeDiagram)
 
@@ -701,15 +701,15 @@ instance FunctorialHomOriented i => BiFunctorial1 i (SomeDiagramDuality d s i o)
   fnc1Fst (SomeDiagramDuality _) = Functor1
   fnc1Snd (SomeDiagramDuality _) = Functor1
 
-instance (StructuralReflexive s i o, FunctorialHomOriented i)
-  => StructuralDuality1 (SomeDiagramDuality d s) s i o where
+instance (SReflexive s i o, FunctorialHomOriented i)
+  => SDuality1 (SomeDiagramDuality d s) s i o where
   sdlToDualFst (SomeDiagramDuality dlt) = coSomeDiagram dlt
   sdlToDualSnd (SomeDiagramDuality dlt) = coSomeDiagram dlt
 
 --------------------------------------------------------------------------------
 -- SomeDiagramOpDuality -
 
--- | 'StructuralDuality1' for 'SomeDiagram' according to 'IsoOp'.
+-- | 'SDuality1' for 'SomeDiagram' according to 'IsoOp'.
 type SomeDiagramOpDuality s = SomeDiagramDuality OpDuality s (IsoOp s) Op
 
 --------------------------------------------------------------------------------

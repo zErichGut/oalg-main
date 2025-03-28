@@ -23,8 +23,11 @@ module OAlg.Hom.Oriented.Proposition
     prpIdHomOrt, prpHomOpOrt
 
   , prpIsoOpOrtCategory, prpIsoOpOrtFunctorial
+  , prpOpDualityOS
+
 
     -- * Oriented
+  , prpSDualityOriented
   , prpHomOrt, XHomOrt
   , prpHomOrt'
   , prpHomOrt1
@@ -42,15 +45,13 @@ import Data.Type.Equality
 
 import OAlg.Prelude
 
-import OAlg.Data.Constructable
+import OAlg.Data.SDuality
 
-import OAlg.Category.Path as C
 import OAlg.Category.Unify
 
 import OAlg.Data.Symbol
 
 import OAlg.Structure.Oriented as O
-import OAlg.Structure.Multiplicative
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
@@ -91,6 +92,7 @@ prpHomOrt xfx = Prp "HomOrt"
   :<=>: Forall xfx (\(SomeApplication f x)
                     -> relHomOrtHomomorphous (tauHom (homomorphous f)) f x
                    )
+
 -- | validity of homomorphisms between 'Oriented' structures based on the given
 -- random variable.
 prpHomOrt' :: (Hom Ort h, Show2 h) => h a b -> XOrt a -> Statement
@@ -113,6 +115,61 @@ prpIdHomOrt = Prp "IdHomOrt"
 
     xsaIdHomOrnt :: X (SomeApplication (IdHom Ort))
     xsaIdHomOrnt = fmap (SomeApplication IdHom) $ xOrtOrnt xSymbol
+
+--------------------------------------------------------------------------------
+-- prpSDualityOriented -
+
+-- | validdity according to 'SDualityOriented'.
+prpSDualityOriented :: SDualityOriented d s i o
+  => d i o -> Struct s x
+  -> X x -> X (o x)
+  -> X (Point x) -> X (Point (o (o x)))
+  -> Statement
+prpSDualityOriented d s xx xx' xp xp'' = Prp "SDualityOriented" :<=>:
+  And [ Label "5" :<=>: case (tauOrt s, tauOrt (sdlTau d s)) of
+          (Struct,Struct) -> Forall xx
+            (\x -> And [ Label "start" :<=>:
+                         (start (sdlToDual d s x) == sdlToDualPnt d s (end x))
+                           :?> Params ["x":=show x]
+                       , Label "end" :<=>:
+                         (end (sdlToDual d s x) == sdlToDualPnt d s (start x))
+                           :?> Params ["x":=show x]
+                       ]
+            )
+      , Label "6" :<=>: case (tauOrt s, tauOrt (sdlTau d s)) of
+          (Struct,Struct) -> Forall xx'
+            (\x' -> And [ Label "start" :<=>:
+                          (start (sdlFromDual d s x') == sdlFromDualPnt d s (end x'))
+                            :?> Params ["x'":=show x']
+                        , Label "end" :<=>:
+                          (end (sdlFromDual d s x') == sdlFromDualPnt d s (start x'))
+                            :?> Params ["x'":=show x']
+                        ]
+            )
+      , Label "3" :<=>: case (tauOrt s,tauOrt $ sdlTau d $ sdlTau d $ sdlTau d s) of
+          (Struct,Struct) -> Forall xp
+            (\p -> let s'  = sdlTau d s
+                       s'' = sdlTau d s'
+                       Inv2 r'' _ = sdlRefl d s' 
+                    in ((sdlToDualPnt d s'' $ pmap r p) == (pmap r'' $ sdlToDualPnt d s p))
+                         :?> Params ["p":=show p]
+            )
+      , Label "2" :<=>: case (tauOrt s, tauOrt $ sdlTau d $ sdlTau d s) of
+          (Struct,Struct) -> Forall xp
+            (\p -> ((sdlToDualPnt d (sdlTau d s) $ sdlToDualPnt d s p) == pmap r p)
+                   :?> Params ["p":=show p]
+            )
+      , Label "1" :<=>: case tauOrt s of
+          Struct -> Forall xp
+            (\p -> ((sdlFromDualPnt d s $ sdlToDualPnt d s p) == p) :?> Params ["p":=show p]   
+            )         
+      , Label "4" :<=>: case (tauOrt s, tauOrt $ sdlTau d $ sdlTau d s) of
+          (Struct,Struct) -> Forall xp''
+            (\p'' -> ((sdlFromDualPnt d s $ sdlFromDualPnt d (sdlTau d s) p'') == pmap r' p'')
+                     :?> Params ["p''":=show p'']
+            )
+      ]
+  where Inv2 r r' = sdlRefl d s
 
 --------------------------------------------------------------------------------
 -- prpHomOpOrt -
@@ -150,6 +207,23 @@ prpIsoOpOrtFunctorial :: Statement
 prpIsoOpOrtFunctorial = Prp "IsoOpOrtFunctorial"
   :<=>: prpFunctorial (xFnct xIsoOpOrtFrom)
 
+--------------------------------------------------------------------------------
+-- prpOpDualityOS -
+
+-- | validity of 'OpDuality' according to 'SDuality' and 'SDualityOriented' on 'OS'.
+prpOpDualityOS :: Statement
+prpOpDualityOS = Prp "OpDualityOS" :<=>:
+  And [ prpSDuality dOp sOrt xos xos''
+      , prpSDualityOriented dOp sOrt xos xos' xs xs''
+      ]
+  where dOp   = OpDuality :: OpDuality (IsoOp Ort) Op
+        sOrt  = Struct :: Struct Ort OS
+        xs    = xSymbol
+        xs''  = xs
+        xos   = xOrtOrnt xs
+        xos'  = amap1 Op xos
+        xos'' = amap1 Op xos'
+  
 --------------------------------------------------------------------------------
 -- xIsoOpOrtFrom -
 

@@ -27,7 +27,7 @@ module OAlg.Entity.Diagram.Proposition
 
 import OAlg.Prelude hiding (T)
 
-import OAlg.Data.StructuralDuality
+import OAlg.Data.SDuality
 
 import OAlg.Structure.Oriented
 
@@ -37,14 +37,13 @@ import OAlg.Entity.Natural as N hiding ((++))
 
 import OAlg.Entity.Diagram.Definition
 
-
 --------------------------------------------------------------------------------
 -- prpSomeDiagramDuality -
 
--- | validity of 'StructuralDuality1' for 'sdgOpDualityOrt'.
+-- | validity of 'SDuality1' for 'sdgOpDualityOrt'.
 prpSomeDiagramDuality :: Oriented a => X (SomeDiagram a) -> Statement
 prpSomeDiagramDuality xsd = Prp "SomeDiagramDuality" :<=>:
-  prpStructuralDuality1 d s xsd xsd'' where
+  prpSDuality1 d s xsd xsd xsd'' where
     d = sdgOpDualityOrt
     s = Struct :: Oriented a => Struct Ort a
 

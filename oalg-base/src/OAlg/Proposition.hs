@@ -39,6 +39,7 @@ prpOAlgBase = Prp "OAlgBase"
                 And [ prpIdHom
                     , prpHomOp
                     , prpIsoOpOrt
+                    , prpOpDualityOS
                     ]
             , Label "Product" :<=>: prpOrtProductZOrntSymbol
             , Label "Diagram" :<=>: prpDiagramOrntSymbol

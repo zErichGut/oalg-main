@@ -29,9 +29,8 @@ module OAlg.Hom.Oriented.Definition
   , FunctorialHomOriented
 
     -- * Duality
-  , StructuralDualityOriented(..)
+  , SDualityOriented(..)
   , OpDuality(..)
-  , prpStructuralDualityOriented
 
     -- * IdHom
   , IdHom(..)
@@ -68,7 +67,7 @@ import OAlg.Prelude
 
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
-import OAlg.Data.StructuralDuality
+import OAlg.Data.SDuality
 
 import OAlg.Category.Path as C
 
@@ -508,10 +507,10 @@ isoFromOpOpOrt :: Oriented a => IsoOp Ort (Op (Op a)) a
 isoFromOpOpOrt = isoFromOpOp
 
 --------------------------------------------------------------------------------
--- IsoOp - StructuralReflexive -
+-- IsoOp - SReflexive -
 
-instance (TransformableTyp s, Transformable1 Op s) => StructuralReflexive s (IsoOp s) Op where
-  stcReflection s = Inv2 (isoToOpOpStruct s) (isoFromOpOpStruct s)
+instance (TransformableTyp s, Transformable1 Op s) => SReflexive s (IsoOp s) Op where
+  sReflection s = Inv2 (isoToOpOpStruct s) (isoFromOpOpStruct s)
   
 --------------------------------------------------------------------------------
 -- OpMap -
@@ -722,50 +721,55 @@ data OpDuality i o where
   OpDuality    :: OpDuality (IsoOp s) Op
 
 --------------------------------------------------------------------------------
--- OpDuality - StructuralDuality -
+-- OpDuality - SDuality -
 
 instance (TransformableTyp s, Transformable1 Op s)
-  => StructuralDuality OpDuality s (IsoOp s) Op where
+  => SDuality OpDuality s (IsoOp s) Op where
   sdlToDual _ _   = Op
   sdlFromDual _ _ = fromOp
 
 --------------------------------------------------------------------------------
--- StructuralDualityOriented -
+-- SDualityOriented -
 
 -- | structural duality of a @__i__@-'FunctorialHomOriented' according to a @__o__@-duality.
 --
 -- __Property__  For all @d@ in @__d__ __i__ __o__@ and @s@ in @'Struct' __s__ __x__@ with
--- @'StructuralDuality' __d__ __s__ __i__ __o__@ holds:
+-- @'SDuality' __d__ __s__ __i__ __o__@ holds:
 --
 -- (1) @'sdlFromDualPnt' d s '.' 'sdlToDualPnt' d s = 'id'@
 --
 -- (2) @'sdlToDualPnt' d ('sdlTau' d s) '.' 'sdlToDualPnt' d s = 'pmap' r@
 -- where @'Inv2' r _ = 'sdlRefl' d s@.
 --
--- (3) @'sdlFromDualPnt' d s '.' 'sdlFromDualPnt' d ('sdlTau' d s) = 'pmap' r'@
+-- (3) @'sdlToDualPnt' d s'' '.' 'pmap' r = pmap r'' '.' 'sdlToDualPnt' d s@, where
+-- @s' = 'sdlTau' d s@, @s'' = 'sdlTau' d s'@, @'Inv2' r _ = 'sdlRefl' d s@ and
+-- @'Inv2' r'' _ = 'sdlRefl' d s'@.
+--
+-- (4) @'sdlFromDualPnt' d s '.' 'sdlFromDualPnt' d ('sdlTau' d s) = 'pmap' r'@
 -- where @'Inv2' _ r' = 'sdlRefl' d s@.
 --
--- (4) @'start' '.' 'sdlToDual' d s = 'sdlToDualPnt' d s '.' 'end'@
+-- (5) @'start' '.' 'sdlToDual' d s = 'sdlToDualPnt' d s '.' 'end'@
 -- and @'end' '.' 'sdlToDual' d s = 'sdlToDualPnt' '.' 'start'@.
 --
--- (5) @'start' '.' 'sdlFromDual' d s = 'sdlFromDualPnt' '.' 'end'@
+-- (6) @'start' '.' 'sdlFromDual' d s = 'sdlFromDualPnt' '.' 'end'@
 -- and @'end' '.' 'sdlFromDual' d s = 'sdlFromDualPnt' '.' 'start'@.
 --
 -- __Note__
 --
 -- (1) @'sdlToDual' d s@ together with @'sdlToDualPnt' d s@ and
--- @'sdlFromDual' d s@ together with @'sdlFromDualPnt' d s@ constitute __contravariant__
+-- @'sdlFromDual' d s@ together with @'sdlFromDualPnt' d s@ constitute a __contravariant__
 -- homomorphisms between 'Oriented' structures.
 --
--- (2) The relation @'StructuralDualityOriented' __d__ __s__ __i__ __o__@ is not necessarily
+-- (2) The relation @'SDualityOriented' __d__ __s__ __i__ __o__@ is not necessarily
 -- /symmetric/, i.e. @'sdlToDual' d s' '.' 'sdlFromDual' d s' = 'id'@ may not hold in general!
 --
--- (3) A sufficient condition for the property 1 above would be:
--- @'sdlFromDualPnt' d s = 'pmap' r' '.' 'sdlToDualPnt' d ('sdlTau' d s)@ and
--- @'sdlTuDualPnt' d ('sdlTau' d s) '.' 'sdlToDualPnt' d s = 'pmap1' r'@
--- where @'Inv2' _ r' = sdlRefl1 d s@.
-class (StructuralDuality d s i o, FunctorialHomOriented i, Transformable s Ort)
-  => StructuralDualityOriented d s i o where
+-- (3) A sufficient condition for the property 1 and 4 above is: The properties 2 and 3 hold an
+-- @'sdlFromDualPnt' d s = 'pmap' r' '.' 'sdlToDualPnt' d ('sdlTau' d s)@ where
+-- @'Inv2' _ r' = sdlRefl1 d s@. Hence it is sufficient to implement 'sdlToDualPnt' 
+-- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDualPnt' 
+-- as provided. 
+class (SDuality d s i o, FunctorialHomOriented i, Transformable s Ort)
+  => SDualityOriented d s i o where
   {-# MINIMAL (sdlToDualPnt | sdlFromDualPnt) #-}
 
   -- | to @'Point' __x__@-dual.
@@ -777,58 +781,10 @@ class (StructuralDuality d s i o, FunctorialHomOriented i, Transformable s Ort)
   sdlFromDualPnt d s = pmap r' . sdlToDualPnt d (sdlTau d s) where Inv2 _ r' = sdlRefl d s 
 
 --------------------------------------------------------------------------------
--- OpDuality - StructuralDualityOriented -
+-- OpDuality - SDualityOriented -
 
 instance (TransformableTyp s, Transformable1 Op s, TransformableOp s, TransformableOrt s)
-  => StructuralDualityOriented OpDuality s (IsoOp s) Op where
+  => SDualityOriented OpDuality s (IsoOp s) Op where
   sdlToDualPnt _ _   = id
   sdlFromDualPnt _ _ = id
-
---------------------------------------------------------------------------------
--- prpStructuralDualityOriented -
-
--- | validdity according to 'StructuralDualityOriented'.
-prpStructuralDualityOriented :: StructuralDualityOriented d s i o
-  => d i o -> Struct s x
-  -> X x -> X (o x)
-  -> X (Point x) -> X (Point (o (o x)))
-  -> Statement
-prpStructuralDualityOriented d s xs x's ps p''s = Prp "StructuralDualityOriented" :<=>:
-  And [ Label "1" :<=>: case tauOrt s of
-          Struct -> Forall ps
-            (\p -> ((sdlFromDualPnt d s $ sdlToDualPnt d s p) == p) :?> Params ["p":=show p]   
-            )         
-      , Label "2" :<=>: case (tauOrt s, tauOrt $ sdlTau d $ sdlTau d s) of
-          (Struct,Struct) -> Forall ps
-            (\p -> ((sdlToDualPnt d (sdlTau d s) $ sdlToDualPnt d s p) == pmap r p)
-                   :?> Params ["p":=show p]
-            )
-
-      , Label "3" :<=>: case (tauOrt s, tauOrt $ sdlTau d $ sdlTau d s) of
-          (Struct,Struct) -> Forall p''s
-            (\p'' -> ((sdlFromDualPnt d s $ sdlFromDualPnt d (sdlTau d s) p'') == pmap r' p'')
-                     :?> Params ["p''":=show p'']
-            )
-      , Label "4" :<=>: case (tauOrt s, tauOrt (sdlTau d s)) of
-          (Struct,Struct) -> Forall xs
-            (\x -> And [ Label "start" :<=>:
-                         (start (sdlToDual d s x) == sdlToDualPnt d s (end x))
-                           :?> Params ["x":=show x]
-                       , Label "end" :<=>:
-                         (end (sdlToDual d s x) == sdlToDualPnt d s (start x))
-                           :?> Params ["x":=show x]
-                       ]
-            )
-      , Label "5" :<=>: case (tauOrt s, tauOrt (sdlTau d s)) of
-          (Struct,Struct) -> Forall x's
-            (\x' -> And [ Label "start" :<=>:
-                          (start (sdlFromDual d s x') == sdlFromDualPnt d s (end x'))
-                            :?> Params ["x'":=show x']
-                        , Label "end" :<=>:
-                          (end (sdlFromDual d s x') == sdlFromDualPnt d s (start x'))
-                            :?> Params ["x'":=show x']
-                        ]
-            )
-      ]
-  where Inv2 r r' = sdlRefl d s
 
