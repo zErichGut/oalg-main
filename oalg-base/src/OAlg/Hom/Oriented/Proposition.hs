@@ -23,7 +23,7 @@ module OAlg.Hom.Oriented.Proposition
     prpIdHomOrt, prpHomOpOrt
 
   , prpIsoOpOrtCategory, prpIsoOpOrtFunctorial
-  , prpOpDualityOS
+  , prpOpDualityOrtOS
 
 
     -- * Oriented
@@ -208,11 +208,11 @@ prpIsoOpOrtFunctorial = Prp "IsoOpOrtFunctorial"
   :<=>: prpFunctorial (xFnct xIsoOpOrtFrom)
 
 --------------------------------------------------------------------------------
--- prpOpDualityOS -
+-- prpOpDualityOrtOS -
 
 -- | validity of 'OpDuality' according to 'SDuality' and 'SDualityOriented' on 'OS'.
-prpOpDualityOS :: Statement
-prpOpDualityOS = Prp "OpDualityOS" :<=>:
+prpOpDualityOrtOS :: Statement
+prpOpDualityOrtOS = Prp "OpDualityOrtOS" :<=>:
   And [ prpSDuality dOp sOrt xos xos''
       , prpSDualityOriented dOp sOrt xos xos' xs xs''
       ]

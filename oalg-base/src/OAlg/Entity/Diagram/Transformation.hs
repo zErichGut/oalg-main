@@ -18,17 +18,22 @@
 -- 
 -- natural transformations between 'Diagram's.
 module OAlg.Entity.Diagram.Transformation
-  ( -- * Transformation
+  (
+{-
+    -- * Transformation
     Transformation(..), trfs
 
     -- * Duality
   , coTransformation
+-}
   ) where
 
 import Data.Typeable
 import Data.Array as A
 
 import OAlg.Prelude
+
+import OAlg.Data.SDuality
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
@@ -38,6 +43,10 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial as V
 import OAlg.Structure.Algebraic
+
+import OAlg.Hom.Definition
+import OAlg.Hom.Oriented.Definition
+import OAlg.Hom.Multiplicative.Definition
 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
@@ -85,15 +94,59 @@ trfs :: Transformation t n m a -> FinList n a
 trfs (Transformation _ _ fs) = fs
 
 --------------------------------------------------------------------------------
+-- trfMap -
+
+trfMap :: Hom Mlt h => h a b -> Transformation t n m a -> Transformation t n m b
+trfMap h (Transformation a b ts) = Transformation (dgMap h a) (dgMap h b) (amap1 (amap h) ts)
+
+instance HomMultiplicative h => Applicative1 h (Transformation t n m) where
+  amap1 = trfMap
+
+instance (FunctorialHomOriented h, HomMultiplicative h) => Functorial1 h (Transformation t n m)
+
+--------------------------------------------------------------------------------
 -- Transformaltion - Duality -
 
-type instance Dual (Transformation t n m a) = Transformation (Dual t) n m (Op a)
+type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m 
+type instance Dual (Transformation t n m a) = Dual1 (Transformation t n m) (Op a)
+
 
 -- | the dual transformation.
-coTransformation :: Transformation t n m a -> Dual (Transformation t n m a)
-coTransformation (Transformation a b ts)
-  = Transformation (coDiagram b) (coDiagram a) (amap1 Op ts)
+coTransformation :: SDualityMultiplicative d s i o
+  => d i o -> Struct s a -> Transformation t n m a -> Dual1 (Transformation t n m) (o a)
+coTransformation dlt stc (Transformation a b ts)
+  = Transformation (coDiagram dlt stc b) (coDiagram dlt stc a) (amap1 coFct ts) where
+  coFct = sdlToDual dlt stc
 
+--------------------------------------------------------------------------------
+-- TransformationDuality -
+
+-- | 'SDuality1' for 'Transformation's where 'sdlToDual1Fst' and 'sdlToDualSnd' are given by
+-- 'coTransformation'.
+--
+-- __Note__
+--
+-- (1) The definition of 'sdlToDualSnd' is also given by 'coTransformation' and the assumption that
+-- @'Dual' ('Dual' __t__) ':~:' __t__@.
+--
+-- (2) From the properties of 'coTransformation' and the note 3 of 'SDuality1' follows, that all the
+-- properties of 'SDuality1' for 'TransformationDuality' holds.
+data TransformationDuality d s i o a b where
+  TransformationDuality
+    :: SDualityMultiplicative d s i o
+    => d i o
+    -> Dual (Dual t) :~: t
+    -> TransformationDuality d s i o (Transformation t n m) (Dual1 (Transformation t n m))
+
+instance BiFunctorial1 i (TransformationDuality d s i o) where
+  fnc1Fst (TransformationDuality _ _) = Functor1
+  fnc1Snd (TransformationDuality _ _) = Functor1
+
+instance SReflexive s i o => SDuality1 (TransformationDuality d s) s i o where
+  sdlToDual1Fst (TransformationDuality d _)    = coTransformation d
+  sdlToDual1Snd (TransformationDuality d Refl) = coTransformation d 
+
+{-
 --------------------------------------------------------------------------------
 -- Transformation - Entity -
 
@@ -300,3 +353,4 @@ instance ( Algebraic a
          , Typeable t, Typeable n, Typeable m
          )
   => Algebraic (Transformation t n m a)
+-}

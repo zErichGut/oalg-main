@@ -35,12 +35,7 @@ prpOAlgBase = Prp "OAlgBase"
                     , prpStatement
                     ]
             , prpStructure
-            , Label "Hom" :<=>:
-                And [ prpIdHom
-                    , prpHomOp
-                    , prpIsoOpOrt
-                    , prpOpDualityOS
-                    ]
+            , Label "Hom" :<=>: prpHom
             , Label "Product" :<=>: prpOrtProductZOrntSymbol
             , Label "Diagram" :<=>: prpDiagramOrntSymbol
             , Label "Limes"   :<=>: prpLimitsOrntSymbol

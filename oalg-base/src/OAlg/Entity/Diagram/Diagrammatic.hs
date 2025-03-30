@@ -25,6 +25,7 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
 
+{-
     -- * Diagrammatic
     Diagrammatic(..), dgmTypeRefl
 
@@ -41,7 +42,7 @@ module OAlg.Entity.Diagram.Diagrammatic
   , prpDiagrammaticApplicative
   , prpDiagrammaticApplicative1
   , prpDiagrammaticOpDualisable
-
+-}
   ) where
 
 import Data.Typeable
@@ -63,7 +64,7 @@ import OAlg.Entity.Diagram hiding (DiagramDuality(..))
 -- | object @__d__@ having an underlying 'Diagram'.
 class Diagrammatic d where
   diagram :: d t n m a -> Diagram t n m a
-
+{-
 --------------------------------------------------------------------------------
 -- Diagram - Diagrammatic -
 
@@ -231,4 +232,4 @@ prpDiagrammaticOpDualisable
 prpDiagrammaticOpDualisable s Refl d = Prp "DiagrammaticOpDualisable" :<=>:
   (coDiagrammatic (tauOp s) (coDiagrammatic s d) == dmap (isoToOpOpStruct s) d)
     :?> Params ["d":=show d]
-
+-}

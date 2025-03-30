@@ -22,6 +22,9 @@ module OAlg.Structure.Multiplicative.Proposition
   , Endo(..), Mltp2(..), Mltp3(..)
   , prpMlt1, prpMlt2, prpMlt2_1, prpMlt2_2, prpMlt3, prpMlt4, prpMlt5
 
+    -- * Duality
+  , coXMlt
+
     -- * X
   , XStandardMlt(..)
   , xMlt, xMltp2, xMltp3

@@ -25,6 +25,9 @@ module OAlg.Hom.Multiplicative.Definition
   ( -- * Multiplicative
     HomMultiplicative, IsoMultiplicative
 
+    -- * Duality
+  , SDualityMultiplicative
+
     -- * OpHom
   -- , toOpHomMlt
   , isoToOpOpMlt, isoFromOpOpMlt
@@ -35,8 +38,6 @@ module OAlg.Hom.Multiplicative.Definition
 import OAlg.Prelude
 
 import OAlg.Category.Path
-
-import OAlg.Data.Constructable
 
 -- this modules are imported to make the description easier
 import OAlg.Structure.Oriented hiding (Path(..))
@@ -142,3 +143,37 @@ instance ( HomMultiplicative h
          , Transformable1 Op t
          ) => HomMultiplicative (Forget' t h)
 
+--------------------------------------------------------------------------------
+-- SDualityMultiplicative -
+
+-- | structural duality of a 'SDualityOriented' respecting the multiplicative structure.
+--
+-- __Properties__ For all @d@ in @__d__ __i__ __o__@ and @s@ in @'Struct' __s__ __x__@ with
+-- @'SDuality' __d__ __s__ __i__ __o__@ holds:
+--
+-- (1) @'sdlToDual' d s ('one' p) '==' 'one' ('sdlToDualPnt' d s p)@ for all @p@ in @'Point' __x__@.
+--
+-- (2) @'sdlToDual' d s (f '*' g) '==' 'sdlToDual' d s g '*' 'sdlToDual' d s f@ for all
+-- @'Mltp2' f g@ in @'Mltp2' __x__@.
+--
+-- (3) @'sdlFromDual' d s ('one' p') '==' 'one' ('sdlFromDualPnt' d s p')@ for all
+-- @p'@ in @'Point' (__o__ __x__)@.
+--
+-- (4) @'sdlFromDual' d s (f' '*' g') '==' 'sdlFromDual' d s g' '*' 'sdlFromDual' d s f'@ for all
+-- @'Mltp2' f' g'@ in @'Mltp2' (__o__ __x__)@.
+--
+-- __Note__
+--
+-- (1) @'sdlToDual' d s@ together with @'sdlToDualPnt' d s@ and
+-- @'sdlFromDual' d s@ together with @'sdlFromDualPnt' d s@ constitute a __contravariant__
+-- homomorphisms between 'Multiplicative' structures.
+class (SDualityOriented d s i o, HomMultiplicative i, Transformable s Mlt)
+  => SDualityMultiplicative d s i o 
+
+--------------------------------------------------------------------------------
+-- OpDuality - SDualityMultiplicative -
+
+instance ( TransformableTyp s, Transformable1 Op s, TransformableOp s, TransformableOrt s
+         , TransformableMlt s
+         )
+  => SDualityMultiplicative OpDuality s (IsoOp s) Op

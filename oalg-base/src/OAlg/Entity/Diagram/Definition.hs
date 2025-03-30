@@ -335,7 +335,7 @@ coDiagram dlt stc d = case d of
 --------------------------------------------------------------------------------
 -- DiagramDuality -
 
--- | 'SDuality1' for 'Diagram's where 'sdlToDual1Fst' and 'sdlToDualSnd' is given by 'coDiagram'.
+-- | 'SDuality1' for 'Diagram's where 'sdlToDual1Fst' and 'sdlToDualSnd' are given by 'coDiagram'.
 --
 -- __Note__
 --

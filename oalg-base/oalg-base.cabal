@@ -79,6 +79,7 @@ library
       OAlg.Data.Ornt
       OAlg.Data.Reducible
       OAlg.Data.Relation
+      OAlg.Data.SDuality
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular
@@ -86,7 +87,6 @@ library
       OAlg.Data.Statement.Definition
       OAlg.Data.Statement.Proposition
       OAlg.Data.Statistics
-      OAlg.Data.StructuralDuality
       OAlg.Data.Symbol
       OAlg.Data.Tree
       OAlg.Data.TypeLits

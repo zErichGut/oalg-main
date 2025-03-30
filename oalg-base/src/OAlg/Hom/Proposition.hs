@@ -17,6 +17,7 @@
 module OAlg.Hom.Proposition
   (
     prpIdHom, prpHomOp, prpIsoOpOrt
+  , prpHom
 
 
   , module Ort
@@ -58,3 +59,16 @@ prpIsoOpOrt = Prp "IsoOpOrt"
   :<=>: And [ prpIsoOpOrtCategory
             , prpIsoOpOrtFunctorial
             ]
+
+--------------------------------------------------------------------------------
+-- prpHom -
+
+-- | validity of some propositions for homomorphisms,
+prpHom :: Statement
+prpHom = Prp "Hom" :<=>:
+  And [ prpIdHom
+      , prpHomOp
+      , prpIsoOpOrt
+      , prpOpDualityOrtOS
+      , prpOpDualityMltOS
+      ]

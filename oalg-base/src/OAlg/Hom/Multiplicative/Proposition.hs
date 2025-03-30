@@ -19,7 +19,7 @@
 module OAlg.Hom.Multiplicative.Proposition
   (
     -- * Proposition
-    prpHomOpMlt
+    prpHomOpMlt, prpOpDualityMltOS
 
     -- * Multiplicative
   , prpHomMlt, XHomMlt(..), coXHomMlt, coXHomMltInv
@@ -37,6 +37,7 @@ import Control.Monad
 
 import OAlg.Prelude
 
+import OAlg.Data.SDuality
 import OAlg.Data.Symbol
 
 import OAlg.Structure.Oriented
@@ -46,6 +47,47 @@ import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative.Definition
 
+--------------------------------------------------------------------------------
+-- prpSDualityMultiplicative -
+
+-- | validity according to 'SDualityMultiplicative'.
+prpSDualityMultiplicative :: SDualityMultiplicative d s i o
+  => d i o -> Struct s x -> XMlt x -> XMlt (o x)-> Statement
+prpSDualityMultiplicative d s xMlt xoMlt = Prp "SDualityMultiplicative" :<=>:
+  And [ Label "1" :<=>: Forall (xMltPoint xMlt)
+        (\p -> case (tauMlt s, tauMlt $ sdlTau d s) of
+            (Struct,Struct) -> (sdlToDual d s (one p) == one (sdlToDualPnt d s p))
+              :?> Params ["p":=show p]
+        )
+      , Label "2" :<=>: Forall (xMltMltp2 xMlt)
+        (\(Mltp2 f g) -> case (tauMlt s, tauMlt $ sdlTau d s) of
+            (Struct,Struct) -> (sdlToDual d s (f * g) == sdlToDual d s g * sdlToDual d s f)
+              :?> Params ["f":=show f, "g":=show g]
+        )
+      , Label "3" :<=>: Forall (xMltPoint xoMlt)
+        (\p' -> case (tauMlt s, tauMlt $ sdlTau d s) of
+            (Struct,Struct) -> (sdlFromDual d s (one p') == one (sdlFromDualPnt d s p'))
+              :?> Params ["p'":=show p']
+        )
+      , Label "4" :<=>: Forall (xMltMltp2 xoMlt)
+        (\(Mltp2 f' g') -> case (tauMlt s, tauMlt $ sdlTau d s) of
+            (Struct,Struct) -> (sdlFromDual d s (f' * g') == sdlFromDual d s g' * sdlFromDual d s f')
+              :?> Params ["f'":=show f', "g'":=show g']
+        ) 
+      ]
+
+--------------------------------------------------------------------------------
+-- prpOpDualityMltOS -
+
+-- | validity of 'OpDuality' according to 'SDualityMultiplictive' on 'OS'.
+prpOpDualityMltOS :: Statement
+prpOpDualityMltOS = Prp "OpDualityMltOs" :<=>:
+  prpSDualityMultiplicative dOp sMlt xOS xoOS
+  where dOp  = OpDuality :: OpDuality (IsoOp Mlt) Op
+        sMlt = Struct :: Struct Mlt OS
+        xOS  = xMltOrnt (xNB 0 10) xStandard
+        xoOS = coXMlt xOS
+  
 --------------------------------------------------------------------------------
 -- SomeApplPnt -
 
@@ -242,3 +284,4 @@ prpHomOpMlt = Prp "HomOpMlt"
 -}
     xsaToOpOp :: XHomMlt (HomOp Mlt)
     xsaToOpOp = xHomMlt (XSomeApplMlt ToOpOp xeo)
+
