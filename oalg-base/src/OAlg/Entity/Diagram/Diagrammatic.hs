@@ -49,8 +49,8 @@ import Data.Typeable
 
 import OAlg.Prelude
 
-import OAlg.Data.Relation
-import OAlg.Data.Duality
+
+import OAlg.Data.SDuality
 
 import OAlg.Hom.Oriented.Definition
 
@@ -64,7 +64,7 @@ import OAlg.Entity.Diagram hiding (DiagramDuality(..))
 -- | object @__d__@ having an underlying 'Diagram'.
 class Diagrammatic d where
   diagram :: d t n m a -> Diagram t n m a
-{-
+
 --------------------------------------------------------------------------------
 -- Diagram - Diagrammatic -
 
@@ -77,6 +77,8 @@ instance Diagrammatic Diagram where diagram = id
 dgmTypeRefl :: Diagrammatic d => d t n m a -> Dual (Dual t) :~: t
 dgmTypeRefl = dgTypeRefl . diagram
 
+
+{-
 --------------------------------------------------------------------------------
 -- DiagrammaticApplicative -
 

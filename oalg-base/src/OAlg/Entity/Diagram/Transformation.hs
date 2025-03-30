@@ -19,13 +19,14 @@
 -- natural transformations between 'Diagram's.
 module OAlg.Entity.Diagram.Transformation
   (
-{-
     -- * Transformation
     Transformation(..), trfs
 
     -- * Duality
   , coTransformation
--}
+  , TransformationDuality(..), TransformationOpDuality
+  , trfOpDuality, trfOpDualityMlt
+
   ) where
 
 import Data.Typeable
@@ -97,10 +98,9 @@ trfs (Transformation _ _ fs) = fs
 -- trfMap -
 
 trfMap :: Hom Mlt h => h a b -> Transformation t n m a -> Transformation t n m b
-trfMap h (Transformation a b ts) = Transformation (dgMap h a) (dgMap h b) (amap1 (amap h) ts)
+trfMap h (Transformation a b ts) = Transformation (amap1 h a) (amap1 h b) (amap1 (amap h) ts)
 
-instance HomMultiplicative h => Applicative1 h (Transformation t n m) where
-  amap1 = trfMap
+instance HomMultiplicative h => Applicative1 h (Transformation t n m) where amap1 = trfMap
 
 instance (FunctorialHomOriented h, HomMultiplicative h) => Functorial1 h (Transformation t n m)
 
@@ -146,7 +146,26 @@ instance SReflexive s i o => SDuality1 (TransformationDuality d s) s i o where
   sdlToDual1Fst (TransformationDuality d _)    = coTransformation d
   sdlToDual1Snd (TransformationDuality d Refl) = coTransformation d 
 
-{-
+--------------------------------------------------------------------------------
+-- TransformationOpDuality -
+
+type TransformationOpDuality s = TransformationDuality OpDuality s (IsoOp s) Op
+
+--------------------------------------------------------------------------------
+-- trfOpDuality -
+
+trfOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s, TransformableMlt s)
+  => Dual (Dual t) :~: t
+  -> TransformationOpDuality s (Transformation t n m) (Dual1 (Transformation t n m))
+trfOpDuality = TransformationDuality OpDuality
+
+--------------------------------------------------------------------------------
+-- trfOpDualityMlt -
+
+trfOpDualityMlt :: Dual (Dual t) :~: t
+  -> TransformationOpDuality Mlt (Transformation t n m) (Dual1 (Transformation t n m))
+trfOpDualityMlt = trfOpDuality
+
 --------------------------------------------------------------------------------
 -- Transformation - Entity -
 
@@ -268,7 +287,9 @@ vldTr t@(Transformation a b ts) = case (a,b) of
     -> vldTrPrlLR (p,p',fs) (q,q',gs) ts
   (DiagramSink p fs,DiagramSink q gs)       -> vldTrSink (p,fs) (q,gs) ts
   (DiagramGeneral _ _,DiagramGeneral _ _)   -> vldTrGen a b ts
-  _                                         -> vldTr (coTransformation t)
+  _                                         -> vldTr $ sdlToDual1Fst dOp sMlt t where
+    dOp  = trfOpDualityMlt (dgTypeRefl a)
+    sMlt = Struct :: Multiplicative a => Struct Mlt a 
 
 instance Multiplicative a => Validable (Transformation t n m a) where
   valid t@(Transformation a b _) = Label "Transformation" :<=>:
@@ -353,4 +374,4 @@ instance ( Algebraic a
          , Typeable t, Typeable n, Typeable m
          )
   => Algebraic (Transformation t n m a)
--}
+

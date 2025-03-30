@@ -198,12 +198,12 @@ dgPoints :: Oriented a => Diagram t n m a -> FinList n (Point a)
 dgPoints d = case d of
   DiagramEmpty            -> Nil
   DiagramDiscrete ps      -> ps
-  DiagramChainTo e as     -> e:|fmap start as
-  DiagramChainFrom s as   -> s:|fmap end as
+  DiagramChainTo e as     -> e:|amap1 start as
+  DiagramChainFrom s as   -> s:|amap1 end as
   DiagramParallelLR p q _ -> p :| q :| Nil
   DiagramParallelRL p q _ -> p :| q :| Nil
-  DiagramSink p as        -> p :| fmap start as
-  DiagramSource p as      -> p :| fmap end as
+  DiagramSink p as        -> p :| amap1 start as
+  DiagramSource p as      -> p :| amap1 end as
   DiagramGeneral ps _     -> ps
 
 --------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ dgArrows d = case d of
   DiagramParallelRL _ _ as -> as
   DiagramSink _ as         -> as
   DiagramSource _ as       -> as
-  DiagramGeneral _  as     -> fmap fst as
+  DiagramGeneral _  as     -> amap1 fst as
 
 --------------------------------------------------------------------------------
 -- dgCenter -
@@ -266,8 +266,7 @@ dgMap h d = case d of
   where hPnt = pmap h
         hArw = amap h
 
-instance HomOriented h => Applicative1 h (Diagram t n m) where
-  amap1 = dgMap -- do not change this definition!!!
+instance HomOriented h => Applicative1 h (Diagram t n m) where amap1 = dgMap
 
 instance FunctorialHomOriented h => Functorial1 h (Diagram t n m)
 

@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+
 -- |
 -- Module      : OAlg.Category.Applicative
 -- Description : application on values.
@@ -22,7 +23,10 @@ module OAlg.Category.Applicative
 
 import Control.Monad (Functor(..))
 
+import Data.List (map)
+
 import OAlg.Data.Either
+import OAlg.Data.X
 
 --------------------------------------------------------------------------------
 -- Applicative -
@@ -56,5 +60,9 @@ class Applicative1 h f where
   -- | application.
   amap1 :: h a b -> f a -> f b
 
-instance Functor f => Applicative1 (->) f where
+instance Applicative1 (->) X where
   amap1 = fmap
+
+instance Applicative1 (->) [] where
+  amap1 = map
+

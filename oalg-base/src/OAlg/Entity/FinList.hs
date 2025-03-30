@@ -67,9 +67,9 @@ deriving instance Ord x => Ord (FinList n x)
 instance Show a => Show (FinList n a) where
   show xs = "[|" L.++ (join $ tween "," $ amap1 show $ toList xs) L.++ "|]"
 
-instance M.Functor (FinList n) where
-  fmap _ Nil     = Nil
-  fmap f (a:|as) = f a :| fmap f as
+instance Applicative1 (->) (FinList n) where
+  amap1 _ Nil     = Nil
+  amap1 f (a:|as) = f a :| amap1 f as
 
 instance Validable a => Validable (FinList n a) where
   valid as = vld 0 as where
@@ -127,7 +127,7 @@ zip (a:|as) (b:|bs) = (a,b):|zip as bs
 
 -- | zips three sequences of the same length. 
 zip3 :: FinList n a -> FinList n b -> FinList n c -> FinList n (a,b,c)
-zip3 as bs cs = fmap (\((a,b),c) -> (a,b,c)) ((as `zip` bs) `zip` cs)
+zip3 as bs cs = amap1 (\((a,b),c) -> (a,b,c)) ((as `zip` bs) `zip` cs)
 
 --------------------------------------------------------------------------------
 -- (|:) -
@@ -154,7 +154,7 @@ Nil ++ bs     = bs
 -- | the product of two finite lists.
 (**) :: FinList n a -> FinList m b -> FinList (n * m) (a,b)
 Nil ** _ = Nil
-(a :| as) ** bs = fmap (a,) bs ++ (as ** bs)
+(a :| as) ** bs = amap1 (a,) bs ++ (as ** bs)
 
 --------------------------------------------------------------------------------
 -- repeat -
@@ -203,8 +203,8 @@ deriving instance Show a => Show (SomeFinList a)
 instance Validable a => Validable (SomeFinList a) where
   valid (SomeFinList xs) = valid xs
 
-instance M.Functor SomeFinList where
-  fmap f (SomeFinList xs) = SomeFinList (fmap f xs)
+instance Applicative1 (->) SomeFinList where
+  amap1 f (SomeFinList xs) = SomeFinList (amap1 f xs)
   
 
 --------------------------------------------------------------------------------
