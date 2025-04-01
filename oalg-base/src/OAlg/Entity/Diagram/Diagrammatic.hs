@@ -65,9 +65,6 @@ import OAlg.Entity.Diagram.Definition
 class Diagrammatic d where
   diagram :: d t n m a -> Diagram t n m a
 
---------------------------------------------------------------------------------
--- Diagram - Diagrammatic -
-
 instance Diagrammatic Diagram where diagram = id
 
 --------------------------------------------------------------------------------
@@ -80,6 +77,12 @@ dgmTypeRefl = dgTypeRefl . diagram
 --------------------------------------------------------------------------------
 -- ApplicativeDiagrammatic -
 
+-- | application on 'Diagrammatic' objects.
+--
+-- __Property__ Let @ApplicativeDiagrammatic __h__ __d__ __t__ __n__ m@, then holds:
+--
+-- (1) For all @__a__@, @__b__@ and @h@ in @__h__ __a__ __b__@ holds:
+-- @'amap1' h '.' 'diagram' '.=.' 'diagram' '.' 'amap1' h@.
 class (Diagrammatic d, Applicative1 h (d t n m), HomOriented h) => ApplicativeDiagrammatic h d t n m
 
 instance HomOriented h => ApplicativeDiagrammatic h Diagram t n m
@@ -87,6 +90,7 @@ instance HomOriented h => ApplicativeDiagrammatic h Diagram t n m
 --------------------------------------------------------------------------------
 -- prpApplicativeDiagrammatic -
 
+-- | validity according to 'ApplicativeDiagrammatic'.
 prpApplicativeDiagrammatic :: (ApplicativeDiagrammatic h d t n m, Show (d t n m a))
   => h a b -> X (d t n m a) -> Statement
 prpApplicativeDiagrammatic h xd = Prp "ApplicativeDiagrammatic" :<=>:
@@ -114,7 +118,6 @@ type FunctorialDiagrammatic h d t n m
 -- (1) @'diagram' '.' 'coDiagrammatic' q s = 'coDiagram' q s '.' 'diagram'@. 
 class (Diagrammatic d, SDualityOriented q s i o) => CoDiagrammatic q s i o d where
   coDiagrammatic ::  q i o -> Struct s a -> d t n m a -> d (Dual t) n m (o a)
-
 
 instance SDualityOriented q s i o => CoDiagrammatic q s i o Diagram where coDiagrammatic = coDiagram
 

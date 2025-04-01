@@ -94,8 +94,8 @@ instance Entity p => Entity (Orientation p)
 instance Singleton u => Singleton (Orientation u) where
   unit = unit :> unit
 
-instance M.Functor Orientation where
-  fmap f (a :> b) = f a :> f b
+instance Applicative1 (->) Orientation where
+  amap1 f (a :> b) = f a :> f b
 
 instance XStandard p => XStandard (Orientation p) where
   xStandard = xTupple2 xStandard xStandard >>= return . uncurry (:>)

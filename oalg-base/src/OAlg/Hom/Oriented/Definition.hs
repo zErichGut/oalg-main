@@ -22,8 +22,12 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
+
     -- * Homomorphism
-    HomOriented(..), omap, IsoOrt, IsoOriented
+    HomOriented, omap, IsoOrt, IsoOriented
+
+    -- * Applications
+  , ApplicativePoint(..), FunctorialPoint
 
     -- * Functorial
   , FunctorialHomOriented
@@ -81,17 +85,58 @@ import OAlg.Hom.Definition
 
 
 --------------------------------------------------------------------------------
+-- ApplicativePoint -
+
+-- | applications on 'Point's.
+class ApplicativePoint h where
+  pmap :: h a b -> Point a -> Point b
+
+instance ApplicativePoint h => ApplicativePoint (C.Path h) where
+  pmap (IdPath _) p = p
+  pmap (f :. pth) p = pmap f $ pmap pth p
+
+instance ApplicativePoint h => ApplicativePoint (Forget t h) where
+  pmap (Forget h) = pmap h
+
+
+--------------------------------------------------------------------------------
+-- omap -
+
+-- | the induced mapping of 'Orientation'.
+omap :: ApplicativePoint h => h a b -> Orientation (Point a) -> Orientation (Point b)
+omap h = amap1 (pmap h)
+
+--------------------------------------------------------------------------------
+-- FunctorialPoint -
+
+-- | functorial applications on 'Point's.
+--
+-- __Properties__ Let @'FunctorialHomOriented' __h__@, then holds:
+--
+-- (1) For all @__a__@ and
+-- @s@ in @'Struct' ('ObjectClass' __h__) __a__@ holds: @'pmap' ('cOne' s) '.=.' 'id'@.
+--
+-- (2) For all @__a__@, @__b__@, @__c__@, @f@ in @__h b c__@ and
+-- @g@ in @__h a b__@ holds:
+-- @'pmap' (f '.' g) '.=.' 'pmap' f '.' 'pmap' g@.
+class (Category h, ApplicativePoint h) => FunctorialPoint h
+
+instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
+
+--------------------------------------------------------------------------------
 -- HomOriented -
 
 -- | type family of homomorphisms between 'Oriented' structures.
 --
 -- __Property__ Let @__h__@ be an instance of 'HomOriented', then
--- for all  @__a__@, @__b__@ and @f@ in @__h__@ @__a__@ @__b__@ and
--- @x@ in @__a__@ holds:  @'start' ('amap' f x) '==' 'pmap' f ('start' x)@ and
--- @'end' ('amap' f x) '==' 'pmap' f ('end' x)@.
+-- for all  @__a__@, @__b__@ and @f@ in @__h a b__@ holds:
+--
+-- (1) @'start' '.' 'amap' f '.=.' 'pmap' f '.=.' 'start')@.
+--
+-- (2) @'end' '.=.' 'amap' f '.=.' 'pmap' f '.' 'end'@.
 --
 -- We call such a @__h__@  a __/family of homomorphisms between oriented structures/__
--- and an entity @f@ in @__h__@ @__a__@ @__b__@ a
+-- and an entity @f@ in @__h__ a__ b__@ a
 -- __/covariant oriented homomorphism/__ - or __/oriented homomorphism/__ for short -
 -- __/between/__ @__a__@ __/and/__ @__b__@. A covariant oriented homomorphism @f@ in
 -- @__h__ ('Op' __a__) __b__@ or @__h__ __a__ ('Op' __b__)@ will be called a
@@ -109,50 +154,28 @@ import OAlg.Hom.Definition
 -- (2) The constraint @'Transformable' ('ObjectClass' __h__) 'Typ'@ for a family @__h__@ of
 -- homomorphisms between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
-class ( Morphism h, Applicative h
+class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort, TransformableObjectClassTyp h
       , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
-  pmap :: h a b -> Point a -> Point b
 
 
-instance HomOriented h => HomOriented (C.Path h) where
-  pmap (IdPath _) p = p
-  pmap (f :. pth) p = pmap f $ pmap pth p
+instance HomOriented h => HomOriented (C.Path h)
 
 instance (HomOriented h, Transformable1 Op t, Transformable t Ort, Transformable t Typ)
-  => HomOriented (Forget t h) where
-  pmap (Forget h)      = pmap h
-
---------------------------------------------------------------------------------
--- omap -
-
--- | the induced mapping of 'Orientation'.
-omap :: HomOriented h => h a b -> Orientation (Point a) -> Orientation (Point b)
-omap h = fmap (pmap h)
+  => HomOriented (Forget t h)
 
 --------------------------------------------------------------------------------
 -- FunctorialHomOriented -
 
 -- | functorial application on 'Oriented' structures.
---
--- __Properties__ Let @__h__@ be an instance of the class 'FunctorialHomOriented',
--- then holds:
---
--- (1) #FncHom1#For all types @__a__@ and
--- @s@ in @'Struct' ('ObjectClass' __h__) __a__@ holds: @'pmap' ('cOne' s) = 'id'@.
---
--- (2) #FncHom1#For all types @__a__@, @__b__@, @__c__@ and
--- @f@ in @__h__@ @__b__@ @__c__@, @g@ in @__h__@ @__a__@ @__b__@ holds:
--- @'pmap' (f '.' g) = 'pmap' f '.' 'pmap' g@.
-class (Category h, Functorial h, HomOriented h) => FunctorialHomOriented h
-
-instance FunctorialHomOriented h => FunctorialHomOriented (C.Path h)
+type FunctorialHomOriented h = (HomOriented h, Functorial h, FunctorialPoint h)
 
 --------------------------------------------------------------------------------
 -- Hom -
 
 type instance Hom Ort h = HomOriented h
+
 
 --------------------------------------------------------------------------------
 -- IsoOrt -
@@ -214,15 +237,15 @@ instance Cayleyan2 (IdHom s) where
 instance Applicative (IdHom s) where
   amap IdHom = id
 
-instance Functorial (IdHom s)
-
-instance ( TransformableOp s, TransformableOrt s, TransformableTyp s
-         )
-  => HomOriented (IdHom s) where
+instance ApplicativePoint (IdHom s) where
   pmap IdHom = id
 
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => FunctorialHomOriented (IdHom s)
+instance Functorial (IdHom s)
+instance FunctorialPoint (IdHom s)
+
+instance ( TransformableOp s, TransformableOrt s, TransformableTyp s)
+  => HomOriented (IdHom s)
+
 
 --------------------------------------------------------------------------------
 -- HomOp -
@@ -251,6 +274,7 @@ data HomOp s a b where
                , Structure s (Orientation p)
                ) => HomOp s (Orientation p) (Op (Orientation p))
 -}
+
 --------------------------------------------------------------------------------
 -- invHomOp -
 
@@ -273,8 +297,8 @@ invHomOp h = case h of
 instance Morphism (HomOp s) where
   type ObjectClass (HomOp s) = s
 
-  homomorphous FromOpOp    = Struct :>: Struct
-  homomorphous ToOpOp = Struct :>: Struct
+  homomorphous FromOpOp = Struct :>: Struct
+  homomorphous ToOpOp   = Struct :>: Struct
 {-
   homomorphous OpPath    = Struct :>: Struct
   homomorphous OpPathInv = Struct :>: Struct
@@ -309,7 +333,6 @@ instance Applicative (HomOp s) where
   amap FromOpOp (Op (Op x)) = x
   amap ToOpOp x             = Op (Op x)
 {-
-instance TransformableOrt s => Applicative (HomOp s) where
   amap h@OpPath (Op pth) = toDualOrt (tau (aStruct h)) h pth where
     aStruct :: HomOp s (Op (O.Path a)) (O.Path (Op a)) -> Struct s a
     aStruct OpPath = Struct
@@ -329,10 +352,10 @@ instance TransformableOrt s => Applicative (HomOp s) where
   amap Opposite (Op o) = opposite o
   amap OppositeInv o = Op (opposite o)
 -}
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (HomOp s) where
-  pmap FromOpOp    = id
-  pmap ToOpOp = id
+
+instance ApplicativePoint (HomOp s) where
+  pmap FromOpOp = id
+  pmap ToOpOp   = id
 {-
   pmap OpPath    = id
   pmap OpPathInv = id
@@ -340,6 +363,8 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
   pmap Opposite    = id
   pmap OppositeInv = id
 -}
+
+instance (TransformableOrt s, TransformableTyp s, TransformableOp s) => HomOriented (HomOp s)
 
 --------------------------------------------------------------------------------
 -- PathHomOp -
@@ -406,17 +431,15 @@ instance TransformableTyp s => Cayleyan2 (IsoOp s) where
 instance Applicative (IsoOp s) where
   amap = restrict amap
 
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (IsoOp s) where
+instance Functorial (IsoOp s)
+
+instance ApplicativePoint (IsoOp s) where
   pmap = restrict pmap
 
---------------------------------------------------------------------------------
--- IsoOp - Functorial -
+instance FunctorialPoint (IsoOp s)
 
--- instance TransformableOrt s => Functorial (IsoOp s)
-instance Functorial (IsoOp s)
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => FunctorialHomOriented (IsoOp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s) => HomOriented (IsoOp s)
+
 {-
 --------------------------------------------------------------------------------
 -- opPathOrt -
@@ -425,6 +448,7 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
 opPathOrt :: Oriented a => IsoOp Ort (Op (O.Path a)) (O.Path (Op a)) 
 opPathOrt = make (OpPath :. IdPath Struct) 
 -}
+
 
 --------------------------------------------------------------------------------
 -- isoToOpOp -
@@ -636,10 +660,12 @@ instance TransformableOrt s => Applicative (OpMap O.Path s) where
     coPathInv :: Struct Ort x -> O.Path (Op x) -> Op (O.Path x)
     coPathInv Struct = Op . fromDual
 
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (OpMap O.Path s) where
+instance ApplicativePoint (OpMap O.Path s) where
   pmap ToOp1 = id
   pmap FromOp1 = id
+  
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
+  => HomOriented (OpMap O.Path s)
 
 --------------------------------------------------------------------------------
 -- IsoOpMap Path s - Hom -
@@ -647,16 +673,17 @@ instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
 instance TransformableOrt s => Applicative (IsoOpMap O.Path s) where
   amap = restrict amap
 
+instance ApplicativePoint (IsoOpMap O.Path s) where
+  pmap = restrict pmap
+  
 instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (IsoOpMap O.Path s) where pmap = restrict pmap
-                                           
+  => HomOriented (IsoOpMap O.Path s) 
+
 --------------------------------------------------------------------------------
 -- IsoOpMap Path s - Functorial -
 
 instance TransformableOrt s => Functorial (IsoOpMap O.Path s)
-
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => FunctorialHomOriented (IsoOpMap O.Path s)
+instance FunctorialPoint (IsoOpMap O.Path s)
 
 --------------------------------------------------------------------------------
 -- isoCoPath -
@@ -695,23 +722,25 @@ instance Morphism h => Morphism (OpHom h) where
 instance Applicative h => Applicative (OpHom h) where
   amap (OpHom h) (Op x) = Op (amap h x)
 
+instance ApplicativePoint h => ApplicativePoint (OpHom h) where
+  pmap (OpHom h) = pmap h
+  
+
 instance HomOriented h => HomOriented (OpHom h) where
-  pmap (OpHom h) = pmap h 
-
-
+  
 --------------------------------------------------------------------------------
 -- Forget' - HomOriented -
+
+instance ApplicativePoint h => ApplicativePoint (Forget' t h) where
+  pmap h = pmap (form h)
+
+instance (FunctorialPoint h, Eq2 h, TransformableObjectClassTyp h) => FunctorialPoint (Forget' t h)
 
 instance ( HomOriented h
          , Transformable t Ort, Transformable t Typ
          , Transformable1 Op t
          ) => HomOriented (Forget' t h) where
-  pmap h = pmap (form h)
-
-instance ( FunctorialHomOriented h, Eq2 h
-         , Transformable t Ort, Transformable t Typ
-         , Transformable1 Op t
-         ) => FunctorialHomOriented (Forget' t h)
+  
 
 --------------------------------------------------------------------------------
 -- OpDuality -
@@ -787,4 +816,5 @@ instance (TransformableTyp s, Transformable1 Op s, TransformableOp s, Transforma
   => SDualityOriented OpDuality s (IsoOp s) Op where
   sdlToDualPnt _ _   = id
   sdlFromDualPnt _ _ = id
+
 
