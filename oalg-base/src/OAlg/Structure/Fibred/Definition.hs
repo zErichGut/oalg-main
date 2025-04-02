@@ -77,7 +77,8 @@ class (Entity f, Entity (Root f)) => Fibred f where
 -- | 'Fibred' and 'Oriented' structure with matching 'root' and 'orientation'.
 --
 --   __Property__ Let __@d@__ be a 'FibredOriented' structure, then holds:
---   For all @s@ in __@d@__ holds: @'root' s '==' 'orientation' s@.
+--
+--   (1) @'root' '.=.' 'orientation'@.
 --
 --   __Note__ 'FibredOriented' structures are required for
 --  'OAlg.Structure.Distributive.Distributive' structures.

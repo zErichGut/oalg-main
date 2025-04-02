@@ -72,8 +72,9 @@ type XFbrOrt = X
 
 -- | validity for 'FibredOriented' structures.
 prpFbrOrt :: FibredOriented f => XFbrOrt f -> Statement
-prpFbrOrt xs = Prp "FbrOrt"
-  :<=>: Forall xs (\s -> (orientation s == root s) :?> Params ["s":=show s])
+prpFbrOrt xs = Prp "FbrOrt" :<=>:
+  Label "1" :<=>: root .=. orientation where (.=.) = prpExtensionalEqual xs
+
 
 --------------------------------------------------------------------------------
 -- XStalk -

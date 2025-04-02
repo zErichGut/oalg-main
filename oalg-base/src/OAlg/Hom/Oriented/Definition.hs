@@ -765,23 +765,23 @@ instance (TransformableTyp s, Transformable1 Op s)
 -- __Property__  For all @d@ in @__d__ __i__ __o__@ and @s@ in @'Struct' __s__ __x__@ with
 -- @'SDuality' __d__ __s__ __i__ __o__@ holds:
 --
--- (1) @'sdlFromDualPnt' d s '.' 'sdlToDualPnt' d s = 'id'@
+-- (1) @'sdlFromDualPnt' d s '.' 'sdlToDualPnt' d s '.=.' 'id'@
 --
--- (2) @'sdlToDualPnt' d ('sdlTau' d s) '.' 'sdlToDualPnt' d s = 'pmap' r@
+-- (2) @'sdlToDualPnt' d ('sdlTau' d s) '.' 'sdlToDualPnt' d s '.=.' 'pmap' r@
 -- where @'Inv2' r _ = 'sdlRefl' d s@.
 --
 -- (3) @'sdlToDualPnt' d s'' '.' 'pmap' r = pmap r'' '.' 'sdlToDualPnt' d s@, where
--- @s' = 'sdlTau' d s@, @s'' = 'sdlTau' d s'@, @'Inv2' r _ = 'sdlRefl' d s@ and
+-- @s' = 'sdlTau' d s@, @s'' = 'sdlTau' d s'@, @'Inv2' r _ '.=.' 'sdlRefl' d s@ and
 -- @'Inv2' r'' _ = 'sdlRefl' d s'@.
 --
--- (4) @'sdlFromDualPnt' d s '.' 'sdlFromDualPnt' d ('sdlTau' d s) = 'pmap' r'@
+-- (4) @'sdlFromDualPnt' d s '.' 'sdlFromDualPnt' d ('sdlTau' d s) '.=.' 'pmap' r'@
 -- where @'Inv2' _ r' = 'sdlRefl' d s@.
 --
--- (5) @'start' '.' 'sdlToDual' d s = 'sdlToDualPnt' d s '.' 'end'@
--- and @'end' '.' 'sdlToDual' d s = 'sdlToDualPnt' '.' 'start'@.
+-- (5) @'start' '.' 'sdlToDual' d s '.=.' 'sdlToDualPnt' d s '.' 'end'@
+-- and @'end' '.' 'sdlToDual' d s '.=.' 'sdlToDualPnt' '.' 'start'@.
 --
--- (6) @'start' '.' 'sdlFromDual' d s = 'sdlFromDualPnt' '.' 'end'@
--- and @'end' '.' 'sdlFromDual' d s = 'sdlFromDualPnt' '.' 'start'@.
+-- (6) @'start' '.' 'sdlFromDual' d s '.=.' 'sdlFromDualPnt' '.' 'end'@
+-- and @'end' '.' 'sdlFromDual' d s '.=.' 'sdlFromDualPnt' '.' 'start'@.
 --
 -- __Note__
 --
@@ -790,10 +790,10 @@ instance (TransformableTyp s, Transformable1 Op s)
 -- homomorphisms between 'Oriented' structures.
 --
 -- (2) The relation @'SDualityOriented' __d__ __s__ __i__ __o__@ is not necessarily
--- /symmetric/, i.e. @'sdlToDual' d s' '.' 'sdlFromDual' d s' = 'id'@ may not hold in general!
+-- /symmetric/, i.e. @'sdlToDual' d s' '.' 'sdlFromDual' d s' '.=.' 'id'@ may not hold in general!
 --
 -- (3) A sufficient condition for the property 1 and 4 above is: The properties 2 and 3 hold an
--- @'sdlFromDualPnt' d s = 'pmap' r' '.' 'sdlToDualPnt' d ('sdlTau' d s)@ where
+-- @'sdlFromDualPnt' d s '.=.' 'pmap' r' '.' 'sdlToDualPnt' d ('sdlTau' d s)@ where
 -- @'Inv2' _ r' = sdlRefl1 d s@. Hence it is sufficient to implement 'sdlToDualPnt' 
 -- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDualPnt' 
 -- as provided. 

@@ -127,50 +127,38 @@ prpSDualityOriented :: SDualityOriented d s i o
   -> Statement
 prpSDualityOriented d s xx xx' xp xp'' = Prp "SDualityOriented" :<=>:
   And [ Label "5" :<=>: case (tauOrt s, tauOrt (sdlTau d s)) of
-          (Struct,Struct) -> Forall xx
-            (\x -> And [ Label "start" :<=>:
-                         (start (sdlToDual d s x) == sdlToDualPnt d s (end x))
-                           :?> Params ["x":=show x]
-                       , Label "end" :<=>:
-                         (end (sdlToDual d s x) == sdlToDualPnt d s (start x))
-                           :?> Params ["x":=show x]
-                       ]
-            )
+          (Struct,Struct) -> And [ Label "start" :<=>:
+                                     ((start . sdlToDual d s) .=. (sdlToDualPnt d s . end))
+                                 , Label "end" :<=>:
+                                     ((end . sdlToDual d s) .=. (sdlToDualPnt d s . start))
+                                 ]
+            where (.=.) = prpExtensionalEqual xx
       , Label "6" :<=>: case (tauOrt s, tauOrt (sdlTau d s)) of
-          (Struct,Struct) -> Forall xx'
-            (\x' -> And [ Label "start" :<=>:
-                          (start (sdlFromDual d s x') == sdlFromDualPnt d s (end x'))
-                            :?> Params ["x'":=show x']
-                        , Label "end" :<=>:
-                          (end (sdlFromDual d s x') == sdlFromDualPnt d s (start x'))
-                            :?> Params ["x'":=show x']
-                        ]
-            )
-      , Label "3" :<=>: case (tauOrt s,tauOrt $ sdlTau d $ sdlTau d $ sdlTau d s) of
-          (Struct,Struct) -> Forall xp
-            (\p -> let s'  = sdlTau d s
-                       s'' = sdlTau d s'
-                       Inv2 r'' _ = sdlRefl d s' 
-                    in ((sdlToDualPnt d s'' $ pmap r p) == (pmap r'' $ sdlToDualPnt d s p))
-                         :?> Params ["p":=show p]
-            )
-      , Label "2" :<=>: case (tauOrt s, tauOrt $ sdlTau d $ sdlTau d s) of
-          (Struct,Struct) -> Forall xp
-            (\p -> ((sdlToDualPnt d (sdlTau d s) $ sdlToDualPnt d s p) == pmap r p)
-                   :?> Params ["p":=show p]
-            )
+          (Struct,Struct) -> And [ Label "start" :<=>:
+                                     ((start . sdlFromDual d s) .=. (sdlFromDualPnt d s . end))
+                                 , Label "end" :<=>:
+                                     ((end . sdlFromDual d s) .=. (sdlFromDualPnt d s . start))
+                                 ] 
+            where (.=.) = prpExtensionalEqual xx'
+      , Label "3" :<=>: case (tauOrt s,tauOrt s''') of
+          (Struct,Struct) -> ((sdlToDualPnt d s'' . pmap r) .=. (pmap r'' . sdlToDualPnt d s))
+            where (.=.) = prpExtensionalEqual xp
+      , Label "2" :<=>: case (tauOrt s, tauOrt s'') of
+          (Struct,Struct) -> ((sdlToDualPnt d s' . sdlToDualPnt d s) .=. pmap r)
+            where (.=.) = prpExtensionalEqual xp
       , Label "1" :<=>: case tauOrt s of
-          Struct -> Forall xp
-            (\p -> ((sdlFromDualPnt d s $ sdlToDualPnt d s p) == p) :?> Params ["p":=show p]   
-            )         
-      , Label "4" :<=>: case (tauOrt s, tauOrt $ sdlTau d $ sdlTau d s) of
-          (Struct,Struct) -> Forall xp''
-            (\p'' -> ((sdlFromDualPnt d s $ sdlFromDualPnt d (sdlTau d s) p'') == pmap r' p'')
-                     :?> Params ["p''":=show p'']
-            )
+          Struct -> ((sdlFromDualPnt d s . sdlToDualPnt d s) .=. id)
+            where (.=.) = prpExtensionalEqual xp
+      , Label "4" :<=>: case (tauOrt s, tauOrt s'') of
+          (Struct,Struct) -> ((sdlFromDualPnt d s . sdlFromDualPnt d s') .=. pmap r')
+            where (.=.) = prpExtensionalEqual xp''
       ]
-  where Inv2 r r' = sdlRefl d s
-
+  where s'         = sdlTau d s
+        s''        = sdlTau d s'
+        s'''       = sdlTau d s''
+        Inv2 r r' = sdlRefl d s
+        Inv2 r'' _ = sdlRefl d s'
+        
 --------------------------------------------------------------------------------
 -- prpHomOpOrt -
 
