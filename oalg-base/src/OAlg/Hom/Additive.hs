@@ -26,14 +26,11 @@ module OAlg.Hom.Additive
   )
   where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Category.Path
 
 import OAlg.Structure.Fibred
-import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
@@ -75,17 +72,14 @@ instance (TransformableFbr s, TransformableTyp s, TransformableAdd s) => HomAddi
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance ( TransformableOrt s, TransformableTyp s, TransformableOp s
-         , TransformableFbr s
+instance ( TransformableTyp s, TransformableFbr s
          , TransformableFbrOrt s, TransformableAdd s
-         , Typeable s
          )
   => HomAdditive (HomOp s)
 
-instance ( TransformableOrt s, TransformableTyp s, TransformableOp s
+instance ( TransformableTyp s
          , TransformableFbr s
          , TransformableFbrOrt s, TransformableAdd s
-         , Typeable s
          )
   => HomAdditive (IsoOp s)
 

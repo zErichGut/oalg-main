@@ -67,6 +67,7 @@ library
       OAlg.Data.Dualisable
       OAlg.Data.Either
       OAlg.Data.Equal
+      OAlg.Data.ExtensionalEqual
       OAlg.Data.Filterable
       OAlg.Data.FinitelyPresentable
       OAlg.Data.Generator

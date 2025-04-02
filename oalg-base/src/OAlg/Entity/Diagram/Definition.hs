@@ -282,40 +282,40 @@ type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 -- | mapping a diagram to its co-diagram according to the given structural duality on oriented
 -- structures.
 --
--- __Definition__ Let @dlt@ be in @__d__ __i__ __o__@, @stc@ in @'Struct' __s__ __a__@ and
--- @d@ in @'Diagram' __t__ __n__ __m__ __a__@ with @'SDualityOriented' __d__ __s__ __i__ __o__@, then
--- we define @d' = 'coDiagram' dlt stc d@ as follows: Let @coPnt = 'sdlToDualPnt' dlt stc@ and
--- @coArw = 'sdlToDual' dlt stc@ in
+-- __Definition__ Let @q@ be in @__q__ __i__ __o__@, @s@ in @'Struct' __s__ __a__@ and
+-- @d@ in @'Diagram' __t__ __n__ __m__ __a__@ with @'SDualityOriented' __q__ __s__ __i__ __o__@, then
+-- we define @d' = 'coDiagram' q s d@ as follows: Let @coPnt = 'sdlToDualPnt' q s@ and
+-- @coArw = 'sdlToDual' q s@ in
 --
 -- @
 -- d' = case d of
 --   DiagramEmpty             -> DiagramEmpty
 --   DiagramDiscrete ps       -> DiagramDiscrete (amap1 coPnt ps)
---   DiagramChainTo e as      -> DiagramChainFrom (coPnt e) (amap1 coArw as)
---   DiagramChainFrom s as    -> DiagramChainTo (coPnt s) (amap1 coArw as)
+--   DiagramChainTo p as      -> DiagramChainFrom (coPnt p) (amap1 coArw as)
+--   DiagramChainFrom p as    -> DiagramChainTo (coPnt p) (amap1 coArw as)
 --   DiagramParallelLR l r as -> DiagramParallelRL (coPnt l) (coPnt r) (amap1 coArw as)
 --   DiagramParallelRL l r as -> DiagramParallelLR (coPnt l) (coPnt r) (amap1 coArw as)
---   DiagramSink e as         -> DiagramSource (coPnt e) (amap1 coArw as)
---   DiagramSource s as       -> DiagramSink (coPnt s) (amap1 coArw as)
+--   DiagramSink p as         -> DiagramSource (coPnt p) (amap1 coArw as)
+--   DiagramSource p as       -> DiagramSink (coPnt p) (amap1 coArw as)
 --   DiagramGeneral ps aijs   -> DiagramGeneral (amap1 coPnt ps) (amap1 (\(a,o) -> (coArw a,opposite o)) aijs)
 -- @
 --
 -- From the definition above, the definition for 'dgMap', the properties for 'SDuality' and
 -- 'SDualityOriented' follows easily:
 --
--- __Properties__ For all @dlt@ in @__d__ __i__ __o__@ and @stc@ in @'Struct' __s__ __x__@ with
--- @'SDualityOriented __d__ __s__ __i__ __o__@ holds:
+-- __Properties__ For all @q@ in @__q__ __i__ __o__@ and @s@ in @'Struct' __s__ __x__@ with
+-- @'SDualityOriented __q__ __s__ __i__ __o__@ holds:
 --
--- (1) @'coDiagram' dlt stc' '.' 'coDiagram' dlt stc = 'dgMap' r@ where
--- @stc' = 'sdlTau' stc@ and @'Inv2' r _ = 'sdlRefl' dlt stc@.
+-- (1) @'coDiagram' q s' '.' 'coDiagram' q s '.=.' 'dgMap' r@ where
+-- @s' = 'sdlTau' q s@ and @'Inv2' r _ = 'sdlRefl' q s@.
 --
--- (2) @'coDiagram' dlt stc'' '.' 'dgMap' r = 'dgMap' r'' '.' 'coDiagram' dlt stc@ where
--- @stc' = 'sdlTau' stc@, @stc'' = 'sdlTau' dlt stc'@, @'Inv2' r _ = 'sdlRefl' dlt stc@ and
--- @'Inv2' r'' _ = 'sdlRefl' dlt s'@.
+-- (2) @'coDiagram' q s'' '.' 'dgMap' r '.=.' 'dgMap' r'' '.' 'coDiagram' q s@ where
+-- @s' = 'sdlTau' q s@, @s'' = 'sdlTau' q s'@, @'Inv2' r _ = 'sdlRefl' q s@ and
+-- @'Inv2' r'' _ = 'sdlRefl' q s'@.
 coDiagram :: SDualityOriented d s i o
   => d i o -> Struct s a
   -> Diagram t n m a -> Dual1 (Diagram t n m) (o a)
-coDiagram dlt stc d = case d of
+coDiagram q s d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 coPnt ps)
   DiagramChainTo e as      -> DiagramChainFrom (coPnt e) (amap1 coArw as)
@@ -328,8 +328,8 @@ coDiagram dlt stc d = case d of
                                 (amap1 coPnt ps)
                                 (amap1 (\(a,o) -> (coArw a,opposite o)) aijs)
 
-  where coPnt = sdlToDualPnt dlt stc
-        coArw = sdlToDual dlt stc
+  where coPnt = sdlToDualPnt q s
+        coArw = sdlToDual q s
 
 --------------------------------------------------------------------------------
 -- DiagramDuality -
@@ -338,30 +338,30 @@ coDiagram dlt stc d = case d of
 --
 -- __Note__
 --
--- (1) The definition of 'sdlToDualSnd' is also given by 'coDiagram' and the assumption that
+-- (1) The definition of 'sdlToDualSnd' is also given by 'coDiagram' under the assumption of
 -- @'Dual' ('Dual' __t__) ':~:' __t__@.
 --
 -- (2) From the properties of 'coDiagram' and the note 3 of 'SDuality1' follows, that all the
 -- properties of 'SDuality1' for 'DiagramDuality' holds.
-data DiagramDuality d s i o a b where
+data DiagramDuality q s i o a b where
   DiagramDuality
-    :: SDualityOriented d s i o
-    => d i o
+    :: SDualityOriented q s i o
+    => q i o
     -> Dual (Dual t) :~: t
-    -> DiagramDuality d s i o (Diagram t n m) (Dual1 (Diagram t n m))
+    -> DiagramDuality q s i o (Diagram t n m) (Dual1 (Diagram t n m))
 
-instance BiFunctorial1 i (DiagramDuality d s i o) where
+instance BiFunctorial1 i (DiagramDuality q s i o) where
   fnc1Fst (DiagramDuality _ _) = Functor1
   fnc1Snd (DiagramDuality _ _) = Functor1
 
-instance SReflexive s i o => SDuality1 (DiagramDuality d s) s i o where
-  sdlToDual1Fst (DiagramDuality d _)    = coDiagram d
-  sdlToDual1Snd (DiagramDuality d Refl) = coDiagram d
+instance SReflexive s i o => SDuality1 (DiagramDuality q s) s i o where
+  sdlToDual1Fst (DiagramDuality q _)    = coDiagram q
+  sdlToDual1Snd (DiagramDuality q Refl) = coDiagram q
 
 --------------------------------------------------------------------------------
 -- DiagramOpDuality -
 
--- | 'SDuality1' for 'Diagram' according to 'IsoOp'.
+-- | 'DiagramDuality' according to 'IsoOp'.
 type DiagramOpDuality s = DiagramDuality OpDuality s (IsoOp s) Op
   
 --------------------------------------------------------------------------------

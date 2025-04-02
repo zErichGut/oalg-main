@@ -155,7 +155,7 @@ instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
 -- homomorphisms between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
 class ( Morphism h, Applicative h, ApplicativePoint h
-      , Transformable (ObjectClass h) Ort, TransformableObjectClassTyp h
+      , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
       , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
 

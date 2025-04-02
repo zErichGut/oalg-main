@@ -23,8 +23,6 @@ module OAlg.Hom.Distributive
   )
   where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Category.Path
@@ -86,7 +84,6 @@ instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
          , TransformableFbr s, TransformableAdd s
          , TransformableFbrOrt s
          , TransformableDst s
-         , Typeable s
          )
   => HomDistributive (HomOp s)
 
@@ -96,7 +93,6 @@ instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
          , TransformableFbr s, TransformableAdd s
          , TransformableFbrOrt s
          , TransformableDst s
-         , Typeable s
          )
   => HomDistributive (IsoOp s)
 

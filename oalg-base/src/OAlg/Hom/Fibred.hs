@@ -8,6 +8,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ConstraintKinds  #-}
 
 -- |
 -- Module      : OAlg.Hom.Oriented
@@ -18,9 +19,13 @@
 --
 -- homomorphisms between 'Fibred' structures
 module OAlg.Hom.Fibred
-  ( -- * Fibred
-    HomFibred(..), FunctorialHomFibred
+  (
+    -- * Fibred
+    HomFibred, FunctorialHomFibred
 
+    -- * Applications
+  , ApplicativeRoot(..), FunctorialRoot
+  
     -- * Fibred Oriented
   , HomFibredOriented
 
@@ -28,8 +33,6 @@ module OAlg.Hom.Fibred
   , prpHomFbrOrt
   )
   where
-
-import Data.Typeable
 
 import OAlg.Prelude
 
@@ -42,35 +45,61 @@ import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
 
 --------------------------------------------------------------------------------
+-- ApplicativeRoot -
+
+-- | applications on 'Root's.
+class ApplicativeRoot h where
+  rmap :: h a b -> Root a -> Root b
+
+  default rmap :: (Morphism h, Transformable (ObjectClass h) FbrOrt, ApplicativePoint h)
+               => h a b -> Root a -> Root b
+  rmap h = rmap' (tauHom (homomorphous h)) h where
+
+    rmap' :: ApplicativePoint h => Homomorphous FbrOrt a b -> h a b -> Root a -> Root b
+    rmap' (Struct :>: Struct) = omap
+
+instance ApplicativeRoot h => ApplicativeRoot (Path h) where
+  rmap (IdPath _) r = r
+  rmap (f :. pth) r = rmap f $ rmap pth r
+
+--------------------------------------------------------------------------------
+-- FunctorialRoot -
+
+-- | functorial applications on 'Root's.
+--
+-- __Property__ Let @'FunctorialRoot' __h__@, then holds:
+--
+-- (1) For all @__a__@ and
+-- @s@ in @'Struct' ('ObjectClass' __h__) __a__@ holds: @'rmap' ('cOne' s) '.=.' 'id'@.
+--
+-- (2) For all @__a__@, @__b__@, @__c__@, @f@ in @__h b c__@ and
+-- @g@ in @__h a b__@ holds:
+-- @'rmap' (f '.' g) '.=.' 'rmap' f '.' 'rmap' g@.
+class (Category h, ApplicativeRoot h) => FunctorialRoot h
+
+instance (Morphism h, ApplicativeRoot h) => FunctorialRoot (Path h)
+
+--------------------------------------------------------------------------------
 -- HomFibred -
 
 -- | type family of homomorphisms between 'Fibred' structures.
 --
 -- __Property__ Let @h@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @f@ in
--- @__h__ __a__ __b__@ and @x@ in @__a__@ holds: @'root' ('amap' f x) '==' 'rmap' f ('root' x)@.
-class ( Morphism h, Applicative h, Transformable (ObjectClass h) Fbr
-      , Transformable (ObjectClass h) Typ
+-- @__h__ __a__ __b__@ and @x@ in @__a__@ holds:
+--
+-- (1) @'root' '.' 'amap' f '.=.' 'rmap' f '.' 'root'@.
+class ( Morphism h, Applicative h, ApplicativeRoot h
+      , Transformable (ObjectClass h) Fbr, Transformable (ObjectClass h) Typ
       ) => HomFibred h where
-  rmap :: h a b -> Root a -> Root b
 
-  default rmap :: (Transformable (ObjectClass h) FbrOrt, HomOriented h)
-               => h a b -> Root a -> Root b
-  rmap h = rmap' (tauHom (homomorphous h)) h where
 
-    rmap' :: HomOriented h => Homomorphous FbrOrt a b -> h a b -> Root a -> Root b
-    rmap' (Struct :>: Struct) = omap
-
-instance HomFibred h => HomFibred (Path h) where
-  rmap (IdPath _) r = r
-  rmap (f :. pth) r = rmap f $ rmap pth r
+instance HomFibred h => HomFibred (Path h)
 
 --------------------------------------------------------------------------------
 -- FunctorialHomFibred -
 
 -- | functorial application of 'Fibred' homomorphisms.
-class (Category h, Functorial h, HomFibred h) => FunctorialHomFibred h
-
-instance FunctorialHomFibred h => FunctorialHomFibred (Path h)
+type FunctorialHomFibred h = (HomFibred h, Functorial h, FunctorialRoot h)
 
 --------------------------------------------------------------------------------
 -- Hom -
@@ -82,8 +111,10 @@ type instance Hom Fbr h = HomFibred h
 
 -- | type family of homomorphisms between 'FibredOriented' structures.
 --
--- __Property__ Let @h@ be an instance of 'HomFibredOriented' then for all @__a__@, @__b__@ and @f@ in
--- @__h__ __a__ __b__@ and @r@ in @'Root' __a__@ holds: @'rmap' f r '==' 'omap' f r@.
+-- __Property__ Let @'HomFibredOriented' __h__@, then holds:
+--
+-- (1) For all @__a__@, @__b__@ and @f@ in
+-- @__h__ __a__ __b__@ holds: @'rmap' f '.=.' 'omap' f@.
 class (HomOriented h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
   => HomFibredOriented h
 
@@ -110,8 +141,10 @@ type instance Hom FbrOrt h = HomFibredOriented h
 --------------------------------------------------------------------------------
 -- IdHom - Hom -
 
-instance (TransformableFbr s, TransformableTyp s) => HomFibred (IdHom s) where
+instance ApplicativeRoot (IdHom s) where
   rmap IdHom r = r
+  
+instance (TransformableFbr s, TransformableTyp s) => HomFibred (IdHom s)
   
 instance ( TransformableOp s, TransformableOrt s, TransformableFbr s
          , TransformableFbrOrt s, TransformableTyp s
@@ -121,26 +154,33 @@ instance ( TransformableOp s, TransformableOrt s, TransformableFbr s
 --------------------------------------------------------------------------------
 -- IsoOp - Hom -
 
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
+instance TransformableFbrOrt s => ApplicativeRoot (HomOp s)
+
+instance ( TransformableFbr s, TransformableFbrOrt s
+         , TransformableTyp s
          )
   => HomFibred (HomOp s)
+
+
 instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
+         , TransformableTyp s
          )
   => HomFibredOriented (HomOp s)
+
+instance TransformableFbrOrt s => ApplicativeRoot (IsoOp s)
+
+instance (TransformableFbr s, TransformableFbrOrt s, TransformableTyp s) => HomFibred (IsoOp s)
+
 instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
-         )
-  => HomFibred (IsoOp s)
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
+         , TransformableTyp s
          )
   => HomFibredOriented (IsoOp s)
 
 --------------------------------------------------------------------------------
 -- OpHom -
 
+instance HomFibredOriented h => ApplicativeRoot (OpHom h)
 instance HomFibredOriented h => HomFibred (OpHom h)
 instance HomFibredOriented h => HomFibredOriented (OpHom h)
+
 

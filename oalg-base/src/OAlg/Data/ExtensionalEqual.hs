@@ -24,9 +24,11 @@ prpExtensionalEqual :: (Show x, Eq y) => X x -> (x -> y) -> (x -> y) -> Statemen
 prpExtensionalEqual xx f g = Prp "ExtensionalEqual" :<=>: Forall xx
   (\x -> (f x == g x) :?> Params ["x":=show x]
   )
+
 --------------------------------------------------------------------------------
 -- (.=.) -
 
+infix 4 .=.
 -- | extensional equality for two functions.
 --
 -- __Note__ We use this notation even if the constraints 'XStandard' dos not hold.

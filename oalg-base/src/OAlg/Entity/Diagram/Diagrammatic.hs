@@ -25,10 +25,26 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
 
-{-
+
     -- * Diagrammatic
     Diagrammatic(..), dgmTypeRefl
 
+    -- * Application
+  , ApplicativeDiagrammatic, FunctorialDiagrammatic
+
+    -- * Duality
+  , SDualityDiagrammatic, CoDiagrammatic(..)
+  , DiagrammaticDuality(..), dgmDuality
+  , DiagrammaticOpDuality, SDualityOpDiagrammatic
+  , dgmOpDuality, dgmOpDualityOrt
+
+    -- * Proposition
+  , prpApplicativeDiagrammatic
+  , prpCoDiagrammatic
+  , prpSDualityDiagrammatic
+
+  
+{-
     -- ** Duality
   , DiagrammaticOpDualisable(..)
   , DiagrammaticOpDuality(..)
@@ -48,7 +64,6 @@ module OAlg.Entity.Diagram.Diagrammatic
 import Data.Typeable
 
 import OAlg.Prelude
-
 
 import OAlg.Data.SDuality
 
@@ -94,15 +109,14 @@ instance HomOriented h => ApplicativeDiagrammatic h Diagram t n m
 prpApplicativeDiagrammatic :: (ApplicativeDiagrammatic h d t n m, Show (d t n m a))
   => h a b -> X (d t n m a) -> Statement
 prpApplicativeDiagrammatic h xd = Prp "ApplicativeDiagrammatic" :<=>:
-  case tauOrt (range h) of
-    Struct -> Forall xd
-      (\d  -> (amap1 h (diagram d) == diagram (amap1 h d))
-                :?> Params ["d":=show d]
-      )
+  Label "1" :<=>: case tauOrt (range h) of
+    Struct -> (amap1 h . diagram) .=. (diagram . amap1 h) where
+      (.=.) = prpExtensionalEqual xd 
 
 --------------------------------------------------------------------------------
 -- FunctorialDiagrammatic -
 
+-- | functorial applications on 'Diagrammatic' objects.
 type FunctorialDiagrammatic h d t n m
   = (ApplicativeDiagrammatic h d t n m, Functorial1 h (d t n m), FunctorialHomOriented h)
 
@@ -124,19 +138,28 @@ instance SDualityOriented q s i o => CoDiagrammatic q s i o Diagram where coDiag
 --------------------------------------------------------------------------------
 -- prpCoDiagrammatic -
 
+-- | validity according to 'CoDiagrammatic'.
 prpCoDiagrammatic :: (CoDiagrammatic q s i o d, Show (d t n m a))
   => q i o -> Struct s a -> X (d t n m a) -> Statement
 prpCoDiagrammatic q s xd = Prp "CoDiagrammatic" :<=>:
-  case tauOrt (sdlTau q s) of
-    Struct -> Forall xd
-      (\d -> (coDiagrammatic q s (diagram d) == diagram (coDiagrammatic q s d))
-               :?> Params ["d":=show d]
-      )
-
+  Label "1" :<=>: case tauOrt (sdlTau q s) of
+    Struct -> (coDiagrammatic q s . diagram) .=. (diagram . coDiagrammatic q s) where
+      (.=.) = prpExtensionalEqual xd 
   
 --------------------------------------------------------------------------------
 -- SDualityDiagrammatic -
 
+-- | structural duality for 'Diagrammatic' objects.
+--
+-- __Properties__ Let @'SDualityDiagrammatic' __q s i o d t n m__@
+-- and @r@ in @'Dual' ('Dual' __t__) ':~: __t__@, then holds: for all
+-- @__a__@, @q@ in @__q i o__@ and @s@ in @'Struct' __s  a__@ holds: Let @s' = 'sdlTau' s@,
+-- @s'' = 'sdlTau' s'@, @'Inv2' r _ = 'sdlRefl' q s@ and @'Inv2' r'' _ = 'sdlRefl' s'@ in:
+--
+-- (1) If @r@ matches 'Refl' then holds:
+-- @'coDiagrammatic' q s' '.' 'coDiagrammatic' q s '.=.' 'amap1' r@.
+--
+-- (2) @'coDiagrammatic' q s'' '.' 'amap1' r '.=.' 'amap1' r'' '.' 'coDiagrammatic' q s@.
 class ( CoDiagrammatic q s i o d, FunctorialDiagrammatic i d t n m
       , FunctorialDiagrammatic i d (Dual t) n m
       )
@@ -151,17 +174,14 @@ instance (SDualityOriented q s i o, FunctorialHomOriented i)
 prpSDualityDiagrammatic :: SDualityDiagrammatic q s i o d t n m
   => (Eq (d t n m (o (o a))), Eq (d (Dual t) n m (o (o (o a)))))
   => Show (d t n m a)
-  => q i o -> Struct s a -> X (d t n m a) -> Statement
-prpSDualityDiagrammatic q s xd = Prp "SDualityDiagrammatic" :<=>:
-  And [ Forall xd
-          (\d    -> case dgmTypeRefl d of
-            Refl -> (coDiagrammatic q s' (coDiagrammatic q s d) == amap1 r d)
-                      :?> Params ["d":=show d]
-          )
-      , Forall xd
-          (\d -> (coDiagrammatic q s'' (amap1 r d) == amap1 r'' (coDiagrammatic q s d))
-                   :?> Params ["d":=show d]
-          )
+  => Dual (Dual t) :~: t
+  -> q i o -> Struct s a -> X (d t n m a) -> Statement
+prpSDualityDiagrammatic Refl q s xd = Prp "SDualityDiagrammatic" :<=>:
+  And [ Label "1" :<=>: let (.=.) = prpExtensionalEqual xd in
+          ((coDiagrammatic q s' . coDiagrammatic q s) .=. amap1 r)
+
+      , Label "2" :<=>: let (.=.) = prpExtensionalEqual xd in
+          ((coDiagrammatic q s'' . amap1 r) .=. (amap1 r'' . coDiagrammatic q s))
       ]
   where s'         = sdlTau q s
         s''        = sdlTau q s'
@@ -171,6 +191,16 @@ prpSDualityDiagrammatic q s xd = Prp "SDualityDiagrammatic" :<=>:
 --------------------------------------------------------------------------------
 -- DiagrammaticDuality -
 
+-- | 'SDuality1' for 'Diagrammatic' objects where 'sdlToDual1Fst' and 'sdlToDualSnd' are given by
+-- 'coDiagrammatic'.
+--
+-- __Note__
+--
+-- (1) The definition of 'sdlToDualSnd' is also given by 'coDiagrammatic' under the assumption of
+-- @'Dual' ('Dual' __t__) ':~:' __t__@.
+--
+-- (2) From the properties of 'coDiagrammatic' and the note 3 of 'SDuality1' follows, that all the
+-- properties of 'SDuality1' for 'DiagrammaticDuality' holds.
 data DiagrammaticDuality q s i o a b where
   DiagrammaticDuality
     :: SDualityDiagrammatic q s i o d t n m
@@ -186,208 +216,39 @@ instance SReflexive s i o => SDuality1 (DiagrammaticDuality q s) s i o where
   sdlToDual1Fst (DiagrammaticDuality q _)    = coDiagrammatic q
   sdlToDual1Snd (DiagrammaticDuality q Refl) = coDiagrammatic q 
 
-ff :: DiagramDuality q s i o (Diagram t n m) (Dual1 (Diagram t n m))
+--------------------------------------------------------------------------------
+-- dgmDuality -
+
+-- | the induced 'DiagrammaticDuality'.
+dgmDuality :: DiagramDuality q s i o (Diagram t n m) (Dual1 (Diagram t n m))
   -> DiagrammaticDuality q s i o (Diagram t n m) (Diagram (Dual t) n m)
-ff (DiagramDuality q r) = DiagrammaticDuality q r
-
-{-
---------------------------------------------------------------------------------
--- ApplicativeDiagrammatic -
-
--- | applications on 'Diagrammatic' objects.
---
--- __Property__ For all @h@ in @__h__ __a__ __b__@ with @'ApplicativeDiagrammatic' __h__ __d__@ holds:
---
--- (1)  @'diagram' '.' 'dmap' h = 'amap1' h '.' 'diagram'@.
-class (HomOriented h, Diagrammatic d) => ApplicativeDiagrammatic h d where
-  dmap :: h a b -> d t n m a -> d t n m b
-
-instance HomOriented h => ApplicativeDiagrammatic h Diagram where dmap = amap1
-
---------------------------------------------------------------------------------
--- prpApplicativeDiagrammatic -
-
--- | validity according to 'ApplicativeDiagrammatic'.
-prpApplicativeDiagrammatic :: (ApplicativeDiagrammatic h d, Show (d t n m a))
-  => h a b -> X (d t n m a) -> Statement
-prpApplicativeDiagrammatic h xd = Prp "ApplicativeDiagrammatic" :<=>:
-  case tauOrt (range h) of
-    Struct -> Forall xd
-      (\d  -> (diagram (dmap h d) == amap1 h (diagram d)) 
-        :?> Params ["d":=show d]
-      )
-  
-  
-
-
---------------------------------------------------------------------------------
--- prpCoDiagrammatic -
-
--- | validity according to 'CoDiagrammatic'.
-prpCoDiagrammatic :: (CoDiagrammatic q s i o d, Show (d t n m a), Eq (d t n m (o (o a))))
-  => q i o -> Struct s a -> X (d t n m a) -> Statement
-prpCoDiagrammatic q s xd = Prp "CoDiagrammatic" :<=>:
-  And [ case tauOrt (sdlTau q s) of
-          Struct -> Forall xd
-            (\d  -> (diagram (coDiagrammatic q s d) == coDiagram q s (diagram d))
-                      :?> Params ["d":=show d]
-            )
-      , case tauOrt (sdlTau q $ sdlTau q s) of
-          Struct   -> Forall xd
-            (\d    -> case dgmTypeRefl d of
-              Refl -> (coDiagrammatic q (sdlTau q s) (coDiagrammatic q s d) == dmap r d)
-                        :?> Params ["d":=show d]    
-            )
-      ]
-  where Inv2 r _ = sdlRefl q s
-      
-
--}
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- DiagrammaticApplicative1 -
-
--- | applications on 'Diagrammatic' objects as a one-parameterized type, where 'dmap' and 'amap1'
--- are equaly defined.
---
--- __Property__ Let @'DiagrammaticApplicative __h__ __d__@ and
--- @'Applicative1' __h__ (__d__ __t__ __n__ __m__)@, then holds:
--- @'dmap' h d '==' 'amap1' h d@ for all @__a__@, @__b__@, @h@ in @__h__ __a__ __b__@ and @d@ in
--- @__d__ __t__ __n__ __m__ __a__@.
-class (DiagrammaticApplicative h d, Applicative1 h (d t n m)) => DiagrammaticApplicative1 h d t n m
-
-instance HomOriented h => DiagrammaticApplicative1 h Diagram t n m
-
---------------------------------------------------------------------------------
--- DiagrammaticFunctorial -
-
--- | functorial applications on 'Diagrammatic' objects.
---
--- __Property__ Let @'DiagrammaticFunctorial' __h__ __d__@, then holds:
---
--- (1) For all @__x__@ and @s@ in @'Struct' ('Objectclass' h) __x__@ holds:
--- @'dmap' ('cOne' s) d '==' d@ for all @__t__@, @__n__@, @__m__@ and
--- @d@ in @__d__ __t__ __n__ __m__ __x__@. 
---
--- (2) For all @__x__@, @__y__@, @__z__@, @f@ in @__h__ __y__ __x__@ and @g@ in @__h__ __x__ __y__@
--- holds: @'dmap' (f '.' g) d '==' 'dmap' f ('dmap' g d)@ for all @__t__@, @__n__@, @__m__@ and
--- @d@ in @__d__ __t__ __n__ __m__ __x__@. 
-class (FunctorialHomOriented h, DiagrammaticApplicative h d) => DiagrammaticFunctorial h d
-
---------------------------------------------------------------------------------
--- DiagrammaticFunctorial1 -
-
--- | functorial applications on 'Diagrammatic' objects as a one-parameterized type.
---
--- __Note__ Actually from  @'DiagrammaticApplicative1' __h__ __d__ __t__ __n__ __m__@ and
--- @'Functorial1'  __h__ (__d__ __t__ __n__ __m__)@ it follows that
--- @'DiagrammaticFunctorial __h__ __d__@ holds, but it is not feasible to declare an
--- instance:
---
--- @
--- instance (DiagrammaticApplicative1 h d t n m, Functorial1 h (d t n m))
---   => DiagrammaticFunctorial h d
--- @
-type DiagrammaticFunctorial1 h d t n m
-  = ( DiagrammaticApplicative1 h d t n m
-    , DiagrammaticFunctorial h d
-    , Functorial1 h (d t n m)
-    )
-    
-instance FunctorialHomOriented h => DiagrammaticFunctorial h Diagram
-
---------------------------------------------------------------------------------
--- DiagrammaticOpDualisable -
-
--- | 'Op'-dualisable 'Diagrammatic' objects.
---
--- __Property__ Let @'DiagrammaticOpDualisable' __s__ __d__@, then holds:
--- @'coDiagrammatic' ('tauOp' s) ('coDiagrammatic' s d) '==' 'dmap' i d@
--- for all @__t__@, @__n__@, @__m__@, @__a__@, @d@ in @__d__ __t__ __n__ __m__ __a__@,
--- @s@ in @'Struct' __s__ __a__@, @i = isoToOpOpStruct s@ and @d@ is an instance of
--- @'Eq' (__d__ __t__ __n__ __m__ __a__)@.
-class ( Diagrammatic d, DiagrammaticApplicative (IsoOp s) d) => DiagrammaticOpDualisable s d where
-  coDiagrammatic :: Struct s a -> d t n m a -> d (Dual t) n m (Op a)
-
-instance (TransformableOrt s, TransformableOp s, TransformableTyp s)
-  => DiagrammaticOpDualisable s Diagram where
-  coDiagrammatic = const coDiagram
+dgmDuality (DiagramDuality q r) = DiagrammaticDuality q r
 
 --------------------------------------------------------------------------------
 -- DiagrammaticOpDuality -
 
--- | 'Op'-duality for 'Diagrammatic' objects.
-data DiagrammaticOpDuality s d i o a b where
-  DiagrammaticOpDuality
-    :: ( DiagrammaticOpDualisable s d
-       , DiagrammaticFunctorial1 (IsoOp s) d t n m
-       , DiagrammaticFunctorial1 (IsoOp s) d (Dual t) n m
-       )
-    => Dual (Dual t) :~: t
-    -> DiagrammaticOpDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
-
-instance Symmetric (DiagrammaticOpDuality s d i o) where
-  swap (DiagrammaticOpDuality Refl) = DiagrammaticOpDuality Refl
-
-instance (TransformableTyp s, Transformable1 Op s)
-  => Duality1 s (DiagrammaticOpDuality s d) (IsoOp s) Op where
-  toDualFst (DiagrammaticOpDuality _)    = coDiagrammatic
-  isoBidualFst (DiagrammaticOpDuality _) = Functor1 . isoToOpOpStruct   
+-- | 'DiagrmaticDuality' according to 'IsoOp'.
+type DiagrammaticOpDuality s = DiagrammaticDuality OpDuality s (IsoOp s) Op
 
 --------------------------------------------------------------------------------
--- DiagrammaticOpDuality' -
+-- SDualityOpDiagrammatic -
 
--- | diagrammatic 'Op' duality.
-type DiagrammaticOpDuality' s d t n m
-  = DiagrammaticOpDuality s d (IsoOp s) Op (d t n m) (d (Dual t) n m)
+-- | 'SDualityDiagrmmatic' according to 'IsoOp'.
+type SDualityOpDiagrammatic s = SDualityDiagrammatic OpDuality s (IsoOp s) Op
 
 --------------------------------------------------------------------------------
 -- dgmOpDuality -
 
--- | 'Op'-duality for 'Diagrams's.
-dgmOpDuality :: (TransformableOrt s, TransformableOp s, TransformableTyp s)
-  => Dual (Dual t) :~: t
-  -> DiagrammaticOpDuality' s Diagram t n m
-dgmOpDuality = DiagrammaticOpDuality
-
+-- | 'Op'-duality for 'Diagrammatic' objects.
+dgmOpDuality :: SDualityOpDiagrammatic s d t n m
+  => Dual (Dual t) :~: t -> DiagrammaticOpDuality s (d t n m) (d (Dual t) n m)
+dgmOpDuality = DiagrammaticDuality OpDuality
 
 --------------------------------------------------------------------------------
--- prpDiagrammaticApplicative -
+-- dgmOpDualityOrt -
 
-relDiagrammaticApplicative :: (DiagrammaticApplicative h d, Show (d t n m a))
-  => Struct Ort b -> h a b -> d t n m a -> Statement
-relDiagrammaticApplicative Struct h a
-  = (diagram (dmap h a) == dmap h (diagram a)) :?> Params ["a":=show a]
+-- | 'Op'-duality for 'Diagrammatic' objects on 'Ort'-structures.
+dgmOpDualityOrt :: SDualityOpDiagrammatic Ort d t n m
+  => Dual (Dual t) :~: t -> DiagrammaticOpDuality Ort (d t n m) (d (Dual t) n m)
+dgmOpDualityOrt = dgmOpDuality
 
--- | validity according to 'DiagrammaticApplicative'.
-prpDiagrammaticApplicative :: (DiagrammaticApplicative h d, Show (d t n m a))
-  => h a b -> d t n m a -> Statement
-prpDiagrammaticApplicative h a = Prp "DiagrammaticApplicative" :<=>:
-  relDiagrammaticApplicative (tau (range h)) h a
-
---------------------------------------------------------------------------------
--- prpDiagrammaticApplicative1 -
-
--- | validity according to 'DiagrammaticApplicative1'.
-prpDiagrammaticApplicative1 :: ( DiagrammaticApplicative1 h d t n m
-                               , Eq (d t n m b), Show (d t n m a)
-                               )
-  => h a b -> d t n m a -> Statement
-prpDiagrammaticApplicative1 h d = Prp "DiagrammaticApplicative1" :<=>:
-  (dmap h d == amap1 h d) :?> Params ["d":= show d]
-  
---------------------------------------------------------------------------------
--- prpDiagrammaticOpDualisable -
-
--- | validity according to 'DiagrammaticOpDualisable'.
-prpDiagrammaticOpDualisable
-  :: ( DiagrammaticOpDualisable s d, Eq (d t n m (Op (Op a))), Show (d t n m a))
-  => Struct s a -> Dual (Dual t) :~: t -> d t n m a -> Statement
-prpDiagrammaticOpDualisable s Refl d = Prp "DiagrammaticOpDualisable" :<=>:
-  (coDiagrammatic (tauOp s) (coDiagrammatic s d) == dmap (isoToOpOpStruct s) d)
-    :?> Params ["d":=show d]
--}
