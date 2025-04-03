@@ -84,7 +84,7 @@ class (SReflexive s i o, Functorial i) => SDuality d s i o where
   
   -- | to @__x__@-dual.
   sdlToDual :: d i o -> Struct s x -> x -> o x
-  sdlToDual d s = sdlFromDual d (sdlTau d s) .  amap r where Inv2 r _ = sdlRefl d s
+  sdlToDual d s = sdlFromDual d (sdlTau d s) . amap r where Inv2 r _ = sdlRefl d s
 
 
   -- | from @__x__@-dual.
