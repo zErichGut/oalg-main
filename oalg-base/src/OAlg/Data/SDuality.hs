@@ -11,6 +11,7 @@
   , TypeOperators
   , DataKinds
   , RankNTypes
+  , PolyKinds
 #-}
 
 -- |
@@ -23,9 +24,9 @@
 -- Duality on structural data.
 module OAlg.Data.SDuality
   (
-{-    
+
     -- * Structural Duality
-    SDuality(..), sdlRefl, sdlTau
+    SDuality(..), sdlTau
 
     -- * Structural Duality 1
   , SDuality1(..), sdlRefl1, sdlTau1
@@ -36,10 +37,11 @@ module OAlg.Data.SDuality
     -- * Proposition
   , prpSDuality
   , prpSDuality1
--}
+
   ) where
 
 import Data.Kind
+import OAlg.Data.Proxy
 
 import OAlg.Prelude hiding (Q)
 
@@ -173,9 +175,9 @@ data Q (i :: Type -> Type -> Type) (o :: Type -> Type) = Q
 
 -- | the associated reflection.
 sdlRefl1 :: SDuality1 d s i o => d i o a b -> Struct s x -> Inv2 i x (o (o x))
-sdlRefl1 d s = sdlRefl (q d s) s where
-  q :: SDuality1 d s i o => d i o a b -> Struct s x -> Q i o
-  q _ _ = Q
+sdlRefl1 d = sdlRefl (q d) where
+  q :: forall k d (i :: k) o a b .  d i o a b -> Proxy2 i o
+  q _ = Proxy2
 
 --------------------------------------------------------------------------------
 -- sdlFncFst -

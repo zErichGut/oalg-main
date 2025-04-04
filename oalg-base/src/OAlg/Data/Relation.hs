@@ -5,7 +5,7 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.Data.Dualisable
+-- Module      : OAlg.Data.Relation
 -- Description : binary relations.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3

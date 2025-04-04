@@ -31,11 +31,11 @@ module OAlg.Hom.Oriented.Definition
 
     -- * Functorial
   , FunctorialHomOriented
-
+{-
     -- * Duality
   , SDualityOriented(..)
   , OpDuality(..)
-
+-}
     -- * IdHom
   , IdHom(..)
 
@@ -534,7 +534,7 @@ isoFromOpOpOrt = isoFromOpOp
 -- IsoOp - SReflexive -
 
 instance (TransformableTyp s, Transformable1 Op s) => SReflexive s (IsoOp s) Op where
-  sReflection s = Inv2 (isoToOpOpStruct s) (isoFromOpOpStruct s)
+  sdlRefl _ s = Inv2 (isoToOpOpStruct s) (isoFromOpOpStruct s)
   
 --------------------------------------------------------------------------------
 -- OpMap -
@@ -726,7 +726,7 @@ instance ApplicativePoint h => ApplicativePoint (OpHom h) where
   pmap (OpHom h) = pmap h
   
 
-instance HomOriented h => HomOriented (OpHom h) where
+instance HomOriented h => HomOriented (OpHom h)
   
 --------------------------------------------------------------------------------
 -- Forget' - HomOriented -
@@ -739,9 +739,94 @@ instance (FunctorialPoint h, Eq2 h, TransformableObjectClassTyp h) => Functorial
 instance ( HomOriented h
          , Transformable t Ort, Transformable t Typ
          , Transformable1 Op t
-         ) => HomOriented (Forget' t h) where
-  
+         ) => HomOriented (Forget' t h)
 
+--------------------------------------------------------------------------------
+-- Variance -
+
+-- | the variance of a homomorphism on 'Oriented' structures.
+data Variance = Covariant | Contravariant deriving (Read,Show,Eq,Enum,Bounded)
+
+--------------------------------------------------------------------------------
+-- MorV -
+
+-- | adjoining to a family of 'Covariant' homomorphisms on 'Oriented' structures the tow
+-- 'Contravariant' morphisms to and from 'Op'. 
+data MorV s h v x y where
+  HomCov    :: Transformable (ObjectClass h) s => h x y -> MorV s h Covariant x y
+  HomToOp   :: (Structure s x, Structure s (Op x)) => MorV s h Contravariant x (Op x)
+  HomFromOp :: (Structure s x, Structure s (Op x)) => MorV s h Contravariant (Op x) x
+
+--------------------------------------------------------------------------------
+-- homVariance -
+
+-- | the 'Variance' of a homomorphism on 'Oriented' structures.
+homVariance :: MorV s h v x y -> Variance
+homVariance h = case h of
+  HomCov _ -> Covariant
+  _        -> Contravariant
+  
+--------------------------------------------------------------------------------
+-- MorV - Entity2 -
+
+instance Show2 h => Show2 (MorV s h v) where
+  show2 (HomCov h) = show2 h
+  show2 HomToOp    = "ToOp"
+  show2 HomFromOp  = "FromOp"
+
+instance Eq2 h => Eq2 (MorV s h v) where
+  eq2 (HomCov f) (HomCov g) = eq2 f g
+  eq2 HomToOp HomToOp       = True
+  eq2 HomFromOp HomFromOp   = True
+
+instance Validable2 h => Validable2 (MorV s h v) where
+  valid2 (HomCov h) = valid2 h
+  valid2 _          = SValid
+
+instance (Entity2 h, Typeable s, Typeable v) => Entity2 (MorV s h v)
+  
+--------------------------------------------------------------------------------
+-- MorV - Morphism -
+
+instance Morphism h => Morphism (MorV s h v) where
+  type ObjectClass (MorV s h v) = s
+
+  homomorphous (HomCov h) = tauHom (homomorphous h)
+  homomorphous HomToOp    = Struct :>: Struct
+  homomorphous HomFromOp  = Struct :>: Struct
+
+--------------------------------------------------------------------------------
+-- MorV - Hom -
+
+instance Applicative h => Applicative (MorV s h v) where
+  amap (HomCov h) = amap h
+  amap HomToOp    = Op
+  amap HomFromOp  = fromOp
+
+instance ApplicativePoint h => ApplicativePoint (MorV s h v) where
+  pmap (HomCov h) = pmap h
+  pmap HomToOp    = id
+  pmap HomFromOp  = id
+
+instance (HomOriented h, Transformable s Ort, Transformable s Typ, Transformable1 Op s)
+  => HomOriented (MorV s h Covariant)
+
+--------------------------------------------------------------------------------
+-- PathMorV -
+
+type PathMorV s h v = C.Path (MorV s h v)
+
+--------------------------------------------------------------------------------
+-- HomV -
+
+newtype HomV s h v x y = HomV (PathMorV s h v x y)
+  deriving (Show2,Validable2)-- ,Entity2)
+
+-- deriving instance (Morphism h, Eq2 h, TransformableObjectClassTyp (MorV s h v)) => Eq2 (HomV s h v)
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- OpDuality -
 
@@ -816,5 +901,5 @@ instance (TransformableTyp s, Transformable1 Op s, TransformableOp s, Transforma
   => SDualityOriented OpDuality s (IsoOp s) Op where
   sdlToDualPnt _ _   = id
   sdlFromDualPnt _ _ = id
-
+-}
 
