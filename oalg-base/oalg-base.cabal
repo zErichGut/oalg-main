@@ -78,6 +78,7 @@ library
       OAlg.Data.Opposite
       OAlg.Data.Ord
       OAlg.Data.Ornt
+      OAlg.Data.Proxy
       OAlg.Data.Reducible
       OAlg.Data.Relation
       OAlg.Data.SDuality

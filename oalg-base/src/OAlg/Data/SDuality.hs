@@ -12,6 +12,7 @@
   , DataKinds
   , RankNTypes
   , PolyKinds
+  , GeneralizedNewtypeDeriving
 #-}
 
 -- |
@@ -40,7 +41,11 @@ module OAlg.Data.SDuality
 
   ) where
 
-import Data.Kind
+import Data.Typeable
+import Data.List ((++))
+
+import OAlg.Category.Path
+
 import OAlg.Data.Proxy
 
 import OAlg.Prelude hiding (Q)
@@ -99,7 +104,6 @@ class (SReflexive s i o, Transformable1 o s, ObjectClass i ~ s) => SDuality s i 
 -- | transformation to the dual structure.
 sdlTau :: SDuality s i o => q i o -> Struct s x -> Struct s (o x)
 sdlTau _ = tau1
-
 
 --------------------------------------------------------------------------------
 -- prpSDuality -
@@ -171,8 +175,6 @@ class (SReflexive s i o, BiFunctorial1 i (d i o), Transformable1 o s) => SDualit
 --------------------------------------------------------------------------------
 -- sdlRefl1 -
 
-data Q (i :: Type -> Type -> Type) (o :: Type -> Type) = Q
-
 -- | the associated reflection.
 sdlRefl1 :: SDuality1 d s i o => d i o a b -> Struct s x -> Inv2 i x (o (o x))
 sdlRefl1 d = sdlRefl (q d) where
@@ -232,4 +234,64 @@ prpSDuality1 d s xa xb xa'' = Prp "SDuality1" :<=>:
         )
       ]
   where Inv2 r r' = sdlRefl1 d s
+
+--------------------------------------------------------------------------------
+-- OMor -
+
+data OMor s o h x y where
+  OMor     :: Transformable (ObjectClass h) s => h x y -> OMor s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => OMor s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) => OMor s o h (o x) x
+
+instance Transformable s Typ => TransformableObjectClassTyp (OMor s o h)
+
+--------------------------------------------------------------------------------
+-- OMor - Entity2 -
+
+instance Show2 h => Show2 (OMor s o h) where
+  show2 (OMor h)  = "OMor (" ++ show2 h ++ ")"
+  show2 ToDual    = "ToDual"
+  show2 FromDual  = "FromDual"
+
+instance Eq2 h => Eq2 (OMor s o h) where
+  eq2 (OMor f) (OMor g) = eq2 f g
+  eq2 ToDual ToDual     = True
+  eq2 FromDual FromDual = True
+  eq2 _ _               = False
+
+instance Validable2 h => Validable2 (OMor s o h) where
+  valid2 (OMor h) = valid2 h
+  valid2 _          = SValid
+
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (OMor s o h)
+
+--------------------------------------------------------------------------------
+-- OMor - Morphism -
+
+instance Morphism h => Morphism (OMor s o h) where
+  type ObjectClass (OMor s o h) = s
+
+  homomorphous (OMor h) = tauHom (homomorphous h)
+  homomorphous ToDual    = Struct :>: Struct
+  homomorphous FromDual  = Struct :>: Struct
+
+--------------------------------------------------------------------------------
+-- PathOMor -
+
+type PathOMor s o h = Path (OMor s o h)
+
+--------------------------------------------------------------------------------
+-- OCat -
+
+newtype OCat s o h x y = OCat (PathOMor s o h x y)
+  deriving (Show2,Validable2)
+
+deriving instance (Morphism h, Eq2 h, Transformable s Typ) => Eq2 (OCat s o h)
+
+instance (Entity2 h, Morphism h, Transformable s Typ, Typeable s, Typeable o) => Entity2 (OCat s o h)
+
+
+
+
+
 
