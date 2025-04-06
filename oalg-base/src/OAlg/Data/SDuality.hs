@@ -58,9 +58,12 @@ import OAlg.Prelude hiding (Q)
 -- @__i__ __x__ (__o__ (__o__ x))@.
 --
 -- __Note__ The parameter @q i o@ serves only as a proxy for @__i__@ and @__o__@.
-class (Category i, Eq2 i) => SReflexive s i o where
-  sdlRefl :: q i o -> Struct s x -> Inv2 i x (o ( o x))
+class Category i => SReflexive s i o where
+  sdlRefl :: q i o -> Struct s x -> Inv2 i x (o (o x))
 
+instance SReflexive s (->) Op where
+  sdlRefl _ _ = Inv2 (Op . Op) (fromOp . fromOp)
+  
 --------------------------------------------------------------------------------
 -- SDuality -
 
@@ -89,15 +92,19 @@ class (Category i, Eq2 i) => SReflexive s i o where
 -- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDual' 
 -- as provided.
 --
--- (3) The parameter @q i o@ serves only as a proxy for @__i__@ and @__o__@.
-class (SReflexive s i o, Transformable1 o s, ObjectClass i ~ s) => SDuality s i o where
-  -- {-# MINIMAL (sdlToDual | sdlFromDual) #-}
+-- (3) The first parameter of type @__q i o__@ serves only as a proxy for @__i__@ and @__o__@.
+class (SReflexive s i o, Transformable1 o s, Transformable s (ObjectClass i)) => SDuality s i o where
+  {-# MINIMAL (sdlToDual | sdlFromDual) #-}
   sdlToDual :: q i o -> Struct s x -> i x (o x)
   sdlToDual q s = sdlFromDual q (sdlTau q s) . u where Inv2 u _ = sdlRefl q s
   
   sdlFromDual :: q i o -> Struct s x -> i (o x) x
   sdlFromDual q s = v . sdlToDual q (sdlTau q s) where Inv2 _ v = sdlRefl q s
 
+instance Transformable1 Op s => SDuality s (->) Op where
+  sdlToDual _ _   = Op
+  sdlFromDual _ _ = fromOp
+  
 --------------------------------------------------------------------------------
 -- sdlTau -
 
@@ -109,19 +116,32 @@ sdlTau _ = tau1
 -- prpSDuality -
 
 -- | validity according to 'SDuality'.
-prpSDuality :: SDuality s i o => q i o -> Struct s x -> Statement
-prpSDuality q s = Prp "SDuality" :<=>:
-  And [ Label "3" :<=>: ((sdlToDual q s'' . u) .=. (u' . sdlToDual q s)) :?> Params []  
-      , Label "2" :<=>: ((sdlToDual q s' . sdlToDual q s) .=. u) :?> Params []
-      , Label "1" :<=>: ((sdlFromDual q s . sdlToDual q s) .=. (cOne s)) :?> Params []
-      , Label "4" :<=>: ((sdlFromDual q s . sdlFromDual q s') .=. v) :?> Params []
+prpSDuality :: SDuality s i o
+  => (forall x y . i x y -> i x y -> Statement)
+  -> q i o -> Struct s x -> Statement
+prpSDuality (.=.) q s = Prp "SDuality" :<=>:
+  And [ Label "3" :<=>: ((sdlToDual q s'' . u) .=. (u' . sdlToDual q s))
+      , Label "2" :<=>: ((sdlToDual q s' . sdlToDual q s) .=. u)
+      , Label "1" :<=>: ((sdlFromDual q s . sdlToDual q s) .=. (cOne (tau s)))
+      , Label "4" :<=>: ((sdlFromDual q s . sdlFromDual q s') .=. v)
       ]
   where s'         = sdlTau q s
         s''        = sdlTau q s'
         Inv2 u v   = sdlRefl q s
         Inv2 u' _ = sdlRefl q s'
-        (.=.)      = eq2
-        
+
+prpSDualityEq2 :: (SDuality s i o, Eq2 i)
+  => q i o -> Struct s x -> Statement
+prpSDualityEq2 = prpSDuality (.=.) where f .=. g = Label "eq2" :<=>: eq2 f g :?> Params []
+
+--------------------------------------------------------------------------------
+-- SDualityType -
+
+-- | helper-class to circumvent undecidable instances.
+class SDuality s (->) o => SDualityType s o
+
+instance TransformableOp s => SDualityType s Op
+
 --------------------------------------------------------------------------------
 -- SDuality1 -
 
@@ -276,6 +296,17 @@ instance Morphism h => Morphism (OMor s o h) where
   homomorphous FromDual  = Struct :>: Struct
 
 --------------------------------------------------------------------------------
+-- OMor - Applicative -
+
+oMorType :: OMor s o h x y -> Proxy2 (->) o
+oMorType _ = Proxy2
+
+instance (Morphism h, Applicative h, SDualityType s o) => Applicative (OMor s o h) where
+  amap (OMor h)   = amap h
+  amap t@ToDual   = sdlToDual (oMorType t) (domain t)
+  amap f@FromDual = sdlFromDual (oMorType f) (range f)
+  
+--------------------------------------------------------------------------------
 -- PathOMor -
 
 type PathOMor s o h = Path (OMor s o h)
@@ -289,6 +320,7 @@ newtype OCat s o h x y = OCat (PathOMor s o h x y)
 deriving instance (Morphism h, Eq2 h, Transformable s Typ) => Eq2 (OCat s o h)
 
 instance (Entity2 h, Morphism h, Transformable s Typ, Typeable s, Typeable o) => Entity2 (OCat s o h)
+
 
 
 
