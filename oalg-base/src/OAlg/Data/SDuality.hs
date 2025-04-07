@@ -13,6 +13,7 @@
   , RankNTypes
   , PolyKinds
   , GeneralizedNewtypeDeriving
+  , DefaultSignatures
 #-}
 
 -- |
@@ -25,7 +26,7 @@
 -- Duality on structural data.
 module OAlg.Data.SDuality
   (
-
+{-
     -- * Structural Duality
     SDuality(..), sdlTau
 
@@ -38,7 +39,7 @@ module OAlg.Data.SDuality
     -- * Proposition
   , prpSDuality
   , prpSDuality1
-
+-}
   ) where
 
 import Data.Typeable
@@ -47,9 +48,190 @@ import Data.List ((++))
 import OAlg.Category.Path
 
 import OAlg.Data.Proxy
+import OAlg.Data.Either
 
-import OAlg.Prelude hiding (Q)
+import OAlg.Prelude
 
+--------------------------------------------------------------------------------
+-- OMap -
+
+-- | adjoining to a type family of morphisms 'ToDua' and 'FromDual'.
+data OMap s o h x y where
+  OMap     :: Transformable (ObjectClass h) s => h x y -> OMap s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => OMap s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) => OMap s o h (o x) x
+
+instance Transformable s Typ => TransformableObjectClassTyp (OMap s o h)
+
+--------------------------------------------------------------------------------
+-- OMap - Entity2 -
+
+instance Show2 h => Show2 (OMap s o h) where
+  show2 (OMap h)  = "OMap (" ++ show2 h ++ ")"
+  show2 ToDual    = "ToDual"
+  show2 FromDual  = "FromDual"
+
+instance Eq2 h => Eq2 (OMap s o h) where
+  eq2 (OMap f) (OMap g) = eq2 f g
+  eq2 ToDual ToDual     = True
+  eq2 FromDual FromDual = True
+  eq2 _ _               = False
+
+instance Validable2 h => Validable2 (OMap s o h) where
+  valid2 (OMap h) = valid2 h
+  valid2 _          = SValid
+
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (OMap s o h)
+
+--------------------------------------------------------------------------------
+-- OMap - Morphism -
+
+instance Morphism h => Morphism (OMap s o h) where
+  type ObjectClass (OMap s o h) = s
+
+  homomorphous (OMap h) = tauHom (homomorphous h)
+  homomorphous ToDual    = Struct :>: Struct
+  homomorphous FromDual  = Struct :>: Struct
+
+--------------------------------------------------------------------------------
+-- SReflexive -
+
+class SReflexive s o where
+  sdlRefl :: Struct s x -> Inv2 (->) x (o (o x))
+
+--------------------------------------------------------------------------------
+-- sdlRefl' -
+
+sdlRefl' :: SReflexive s o => q o -> Struct s x -> Inv2 (->) x (o (o x))
+sdlRefl' _ = sdlRefl
+
+--------------------------------------------------------------------------------
+-- SDuality -
+
+-- | duality of structured types.
+--
+-- __Property__ Let @'SDuality' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+-- Let @q@ be any proxy of @__q o__@ in
+--
+-- (1) @'sdlFromDual'' q s '.' 'sdlToDual'' q s '.=.' id@.
+class SDuality s o where
+  sdlToDual   :: Struct s x -> x -> o x
+  sdlFromDual :: Struct s x -> o x -> x
+  
+  default sdlFromDual :: (Transformable1 o s, SReflexive s o) => Struct s x -> o x -> x
+  sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
+
+instance TransformableOp s => SDuality s Op where
+  sdlToDual _   = Op
+  sdlFromDual _ = fromOp
+  
+--------------------------------------------------------------------------------
+-- sdlToDual' -
+
+sdlToDual' :: SDuality s o => q o -> Struct s x -> x -> o x
+sdlToDual' _ = sdlToDual
+
+--------------------------------------------------------------------------------
+-- sdlFromDual' -
+
+sdlFromDual' :: SDuality s o => q o ->  Struct s x -> o x -> x
+sdlFromDual' _ = sdlFromDual
+
+--------------------------------------------------------------------------------
+-- prpSDuality -
+
+prpSDuality :: SDuality s o
+  => (Show x, Eq x, XStandard x)
+  => q o
+  -> Struct s x -> Statement
+prpSDuality q s = Prp "SDuality" :<=>:
+  ((sdlFromDual' q s . sdlToDual' q s) .=. id)
+
+--------------------------------------------------------------------------------
+-- SDuality1 -
+
+-- | duality of 1-parameterized types over structured type.
+--
+-- __Properties__ Let @'SDuality' __s o a b__@, then for all @__x__@ and @s@ in @'Struct' __s x__@
+-- holds: Let @q@ be any proxy of @__q o a b__@ in
+--
+-- (1) @'sdlFromDualRight'' q s '.' 'sdlToDualLeft'' q s '.=.' 'id'@.
+--
+-- (2) @'sdlFromDualLeft'' q s '.' 'sdlToDualRight'' q s '.=.' 'id'@.
+class SDuality1 s o a b where
+  -- | mapping to the dual of @__a__@.
+  sdlToDualLeft :: Struct s x -> a x -> b (o x)
+
+  -- | mapping from the dual of @__b__@.
+  sdlFromDualRight :: Struct s x -> b (o x) -> a x
+
+  -- | mapping to the dual of @__b__@.
+  sdlToDualRight :: Struct s x -> b x -> a (o x)
+
+  -- | mapping from the dual of @__a__@.
+  sdlFromDualLeft :: Struct s x -> a (o x) -> b x
+
+--------------------------------------------------------------------------------
+-- sdlToDualLeft' -
+
+sdlToDualLeft' :: SDuality1 s o a b => q o a b -> Struct s x -> a x -> b (o x)
+sdlToDualLeft' _ = sdlToDualLeft
+
+--------------------------------------------------------------------------------
+-- sdlFromDualRigth' -
+
+sdlFromDualRight' :: SDuality1 s o a b => q o a b -> Struct s x -> b (o x) -> a x
+sdlFromDualRight' _ = sdlFromDualRight
+
+--------------------------------------------------------------------------------
+-- sdlToDualRigth' -
+
+sdlToDualRight' :: SDuality1 s o a b => q o a b -> Struct s x -> b x -> a (o x)
+sdlToDualRight' _ = sdlToDualRight
+
+--------------------------------------------------------------------------------
+-- sdlFromDualLeft'
+
+sdlFromDualLeft' :: SDuality1 s o a b => q o a b -> Struct s x -> a (o x) -> b x
+sdlFromDualLeft' _ = sdlFromDualLeft
+
+--------------------------------------------------------------------------------
+-- prpSDuality1 -
+
+prpSDuality1 :: SDuality1 s o a b
+  => (Show (a x), Eq (a x), XStandard (a x))
+  => (Show (b x), Eq (b x), XStandard (b x))
+  => q o a b -> Struct s x -> Statement
+prpSDuality1 q s = Prp "SDuality1" :<=>:
+  And [ Label "1" :<=>: (sdlFromDualRight' q s . sdlToDualLeft' q s .=. id)
+      , Label "2" :<=>: (sdlFromDualLeft' q s . sdlToDualRight' q s .=. id)
+      ]
+
+--------------------------------------------------------------------------------
+-- OMap - Applicative -
+
+instance (Morphism h, Applicative h, SDuality s o) => Applicative (OMap s o h) where
+  amap (OMap h)   = amap h
+  amap t@ToDual   = sdlToDual (domain t)
+  amap f@FromDual = sdlFromDual (range f)
+
+----------------------------------------
+-- OMap - Applicative1 -
+
+instance (Morphism h, Applicative1 h (Either1 a b), SDuality1 s o a b)
+  => Applicative1 (OMap s o h) (Either1 a b) where
+  amap1 (OMap h)   = amap1 h
+  amap1 t@ToDual   = \ab -> case ab of
+    Left1 a  -> Right1 $ sdlToDualLeft (domain t) a
+    Right1 b -> Left1 $ sdlToDualRight (domain t) b
+  amap1 f@FromDual = \ab -> case ab of
+    Left1 a  -> Right1 $ sdlFromDualLeft (range f) a
+    Right1 b -> Left1 $ sdlFromDualRight (range f) b
+
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- SReflexive -
 
@@ -142,6 +324,7 @@ class SDuality s (->) o => SDualityType s o
 
 instance TransformableOp s => SDualityType s Op
 
+{-
 --------------------------------------------------------------------------------
 -- SDuality1 -
 
@@ -150,47 +333,47 @@ instance TransformableOp s => SDualityType s Op
 -- __Property__ For all @d@ in @__d__ __i__ __o__ __a__ __b__@ and @s@ in @'Struct' __s__ __x__@ with
 -- @'SDuality1' __d__ __s__ __i__ __o__@, then holds:
 --
--- (1) @'sdlFromDual1Fst' d s '.' 'sdlToDual1Fst' d s = 'id'@.
+-- (1) @'sdlFromDualRight' d s '.' 'sdlToDualLeft' d s = 'id'@.
 --
--- (2) @'sdlToDual1Snd d ('sdlTau1' s) '.' 'sdlToDual1Fst' d s = 'amap1Fst' d r@
+-- (2) @'sdlToDualRight d ('sdlTau1' s) '.' 'sdlToDualLeft' d s = 'amap1Fst' d r@
 -- where @'Inv2' r _ = 'sdlRefl1' d s@.
 --
--- (3) @'sdlToDual1Snd' d s'' '.' 'amap1Snd' d r = 'amap1Fst' d r'' '.' 'sdlToDual1Snd' d s@ where
+-- (3) @'sdlToDualRight' d s'' '.' 'amap1Snd' d r = 'amap1Fst' d r'' '.' 'sdlToDualRight' d s@ where
 -- @s'' = 'sdlTau1' d s'@, @s' = 'sdlTau1' d s@, @'Inv2' r _ = 'sdlRefl1' d s@ and
 -- @'Inv2' r'' _ = 'sdlRefl1' d s'@.
 --
--- (4) @'sdlFromDual1Fst' d s '.' 'sdlFromDual1Snd' d ('sdlTau1' s) = 'amap1Fst' d r'@
+-- (4) @'sdlFromDualRight' d s '.' 'sdlFromDualLeft' d ('sdlTau1' s) = 'amap1Fst' d r'@
 -- where @'Inv2' _ r' = 'sdlRefl1' d s@.
 --
 -- __Note__
 --
 -- (1) The relation @'SDuality1' __d__ __s__ __i__ __o__@ is not necessarily /symmetric/,
--- i.e. @'sdlToDual1Fst' d s' '.' 'sdlFromDual1Fst' d s' = 'id'@ dose not hold in general!
+-- i.e. @'sdlToDualLeft' d s' '.' 'sdlFromDualRight' d s' = 'id'@ dose not hold in general!
 --
 -- (2) A sufficient condition for the properties 1 and 4 above is: The properties 2 and 3 hold and
--- @'sdlFromDual1Fst' d s = 'amap1Fst' d r' '.' 'sdlToDual1Snd' d s'@ and
--- @'amap1Snd' d r' '.' 'sdlToDual1Fst' d s'@ where @s' = 'sdlTau1' d s@ and
--- @Inv2 _ r' = sdlRefl1 d s@´. Hence it is sufficient to implement 'sdlToDual1Fst' and 'sdlToDual1Snd'
--- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDual1Fst' and
+-- @'sdlFromDualRight' d s = 'amap1Fst' d r' '.' 'sdlToDualRight' d s'@ and
+-- @'amap1Snd' d r' '.' 'sdlToDualLeft' d s'@ where @s' = 'sdlTau1' d s@ and
+-- @Inv2 _ r' = sdlRefl1 d s@´. Hence it is sufficient to implement 'sdlToDualLeft' and 'sdlToDualRight'
+-- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDualRight' and
 -- 'sdlFromFualSnd' as provided.
 class (SReflexive s i o, BiFunctorial1 i (d i o), Transformable1 o s) => SDuality1 d s i o where
-  {-# MINIMAL (sdlToDual1Fst, sdlToDual1Snd | sdlFromDual1Fst, sdlFromDual1Snd) #-}
+  {-# MINIMAL (sdlToDualLeft, sdlToDualRight | sdlFromDualRight, sdlFromDualLeft) #-}
   
   -- | mapping to the dual of @__a__ __x__@.
-  sdlToDual1Fst :: d i o a b -> Struct s x -> a x -> b (o x)
-  sdlToDual1Fst d s = sdlFromDual1Snd d (sdlTau1 d s) . amap1Fst d r where Inv2 r _ = sdlRefl1 d s
+  sdlToDualLeft :: d i o a b -> Struct s x -> a x -> b (o x)
+  sdlToDualLeft d s = sdlFromDualLeft d (sdlTau1 d s) . amap1Fst d r where Inv2 r _ = sdlRefl1 d s
 
   -- | mapping from the dual of @__a__ __x__@.
-  sdlFromDual1Fst :: d i o a b -> Struct s x -> b (o x) -> a x
-  sdlFromDual1Fst d s = amap1Fst d r' . sdlToDual1Snd d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+  sdlFromDualRight :: d i o a b -> Struct s x -> b (o x) -> a x
+  sdlFromDualRight d s = amap1Fst d r' . sdlToDualRight d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
 
   -- | mapping to the dual of @__b__ __x__@.
-  sdlToDual1Snd :: d i o a b -> Struct s x -> b x -> a (o x)
-  sdlToDual1Snd d s = sdlFromDual1Fst d (sdlTau1 d s) . amap1Snd d r where  Inv2 r _ = sdlRefl1 d s
+  sdlToDualRight :: d i o a b -> Struct s x -> b x -> a (o x)
+  sdlToDualRight d s = sdlFromDualRight d (sdlTau1 d s) . amap1Snd d r where  Inv2 r _ = sdlRefl1 d s
 
   -- | mapping from the dual of @__b__ __x__@.
-  sdlFromDual1Snd :: d i o a b -> Struct s x -> a (o x) -> b x
-  sdlFromDual1Snd d s = amap1Snd d r' . sdlToDual1Fst d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
+  sdlFromDualLeft :: d i o a b -> Struct s x -> a (o x) -> b x
+  sdlFromDualLeft d s = amap1Snd d r' . sdlToDualLeft d (sdlTau1 d s) where Inv2 _ r' = sdlRefl1 d s
 
 --------------------------------------------------------------------------------
 -- sdlRefl1 -
@@ -238,90 +421,125 @@ prpSDuality1 d s xa xb xa'' = Prp "SDuality1" :<=>:
                    s'' = sdlTau1 d s' 
                    Inv2 r _  =  sdlRefl1 d s
                    Inv2 r'' _ = sdlRefl1 d s'
-                in ((sdlToDual1Snd d s'' $ amap1Snd d r b) == (amap1Fst d r'' $ sdlToDual1Snd d s b))
+                in ((sdlToDualRight d s'' $ amap1Snd d r b) == (amap1Fst d r'' $ sdlToDualRight d s b))
                      :?> Params ["b x":=show b]
         )
       , Label "2" :<=>: Forall xa
-        (\a -> ((sdlToDual1Snd d (sdlTau1 d s) $ sdlToDual1Fst d s a) == amap1Fst d r a)
+        (\a -> ((sdlToDualRight d (sdlTau1 d s) $ sdlToDualLeft d s a) == amap1Fst d r a)
                   :?> Params ["a x":=show a]
         )
       , Label "1" :<=>: Forall xa
-        (\a -> ((sdlFromDual1Fst d s $ sdlToDual1Fst d s a) == a) :?> Params ["a x":=show a]   
+        (\a -> ((sdlFromDualRight d s $ sdlToDualLeft d s a) == a) :?> Params ["a x":=show a]   
         )
       , Label "4" :<=>: Forall xa''
-        (\a'' -> ((sdlFromDual1Fst d s $ sdlFromDual1Snd d (sdlTau1 d s) a'') == amap1Fst d r' a'')
+        (\a'' -> ((sdlFromDualRight d s $ sdlFromDualLeft d (sdlTau1 d s) a'') == amap1Fst d r' a'')
                    :?> Params ["a (o (o x))":=show a'']
         )
       ]
   where Inv2 r r' = sdlRefl1 d s
+-}
 
 --------------------------------------------------------------------------------
--- OMor -
+-- Duality -
 
-data OMor s o h x y where
-  OMor     :: Transformable (ObjectClass h) s => h x y -> OMor s o h x y
-  ToDual   :: (Structure s x, Structure s (o x)) => OMor s o h x (o x)
-  FromDual :: (Structure s x, Structure s (o x)) => OMor s o h (o x) x
-
-instance Transformable s Typ => TransformableObjectClassTyp (OMor s o h)
+newtype Duality d a x = Duality (Either1 a (d a) x)
 
 --------------------------------------------------------------------------------
--- OMor - Entity2 -
+-- SDuality1 -
 
-instance Show2 h => Show2 (OMor s o h) where
-  show2 (OMor h)  = "OMor (" ++ show2 h ++ ")"
+-- | duality for 1-parameterized types over structured types.
+--
+-- __Property__ Let @'SDuality' __s o d a__@, then for all @q@ in @__q__ __o__@, @__x__@  and
+--  @s@ in @'Struct' __s__ __x__@ holds:
+--
+-- (1) @'sdlFromDual1' q s '.' 'sdlToDual1' q s '.=.' 'id@.
+--
+-- (2) For all @a@ in @__a__ __x__@ holds: @'sdlToDual1' q s ('Duality' ('Left1' a))@ matches
+-- @'Duality1' ('Right1' a')@.
+class SDuality1 s o d a where
+  sdlToDual1 :: q o -> Struct s x -> Duality d a x -> Duality d a (o x)
+  sdlFromDual1 :: q o -> Struct s x -> Duality d a (o x) -> Duality d a x 
+  
+--------------------------------------------------------------------------------
+-- OMap -
+
+data OMap s o h x y where
+  OMap     :: Transformable (ObjectClass h) s => h x y -> OMap s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => OMap s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) => OMap s o h (o x) x
+
+instance Transformable s Typ => TransformableObjectClassTyp (OMap s o h)
+
+--------------------------------------------------------------------------------
+-- OMap - Entity2 -
+
+instance Show2 h => Show2 (OMap s o h) where
+  show2 (OMap h)  = "OMap (" ++ show2 h ++ ")"
   show2 ToDual    = "ToDual"
   show2 FromDual  = "FromDual"
 
-instance Eq2 h => Eq2 (OMor s o h) where
-  eq2 (OMor f) (OMor g) = eq2 f g
+instance Eq2 h => Eq2 (OMap s o h) where
+  eq2 (OMap f) (OMap g) = eq2 f g
   eq2 ToDual ToDual     = True
   eq2 FromDual FromDual = True
   eq2 _ _               = False
 
-instance Validable2 h => Validable2 (OMor s o h) where
-  valid2 (OMor h) = valid2 h
+instance Validable2 h => Validable2 (OMap s o h) where
+  valid2 (OMap h) = valid2 h
   valid2 _          = SValid
 
-instance (Entity2 h, Typeable s, Typeable o) => Entity2 (OMor s o h)
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (OMap s o h)
 
 --------------------------------------------------------------------------------
--- OMor - Morphism -
+-- OMap - Morphism -
 
-instance Morphism h => Morphism (OMor s o h) where
-  type ObjectClass (OMor s o h) = s
+instance Morphism h => Morphism (OMap s o h) where
+  type ObjectClass (OMap s o h) = s
 
-  homomorphous (OMor h) = tauHom (homomorphous h)
+  homomorphous (OMap h) = tauHom (homomorphous h)
   homomorphous ToDual    = Struct :>: Struct
   homomorphous FromDual  = Struct :>: Struct
 
 --------------------------------------------------------------------------------
--- OMor - Applicative -
+-- OMap - Applicative -
 
-oMorType :: OMor s o h x y -> Proxy2 (->) o
+oMorType :: OMap s o h x y -> Proxy2 (->) o
 oMorType _ = Proxy2
 
-instance (Morphism h, Applicative h, SDualityType s o) => Applicative (OMor s o h) where
-  amap (OMor h)   = amap h
+instance (Morphism h, Applicative h, SDualityType s o) => Applicative (OMap s o h) where
+  amap (OMap h)   = amap h
   amap t@ToDual   = sdlToDual (oMorType t) (domain t)
   amap f@FromDual = sdlFromDual (oMorType f) (range f)
-  
---------------------------------------------------------------------------------
--- PathOMor -
 
-type PathOMor s o h = Path (OMor s o h)
+----------------------------------------
+-- OMap - Applicative1 -
+
+oMorO :: OMap s o h x y -> Proxy o
+oMorO _ = Proxy
+
+instance (Morphism h, Applicative1 h (Duality d a), SDuality1 s o d a)
+  => Applicative1 (OMap s o h) (Duality d a) where
+  amap1 (OMap h)   = amap1 h
+  amap1 t@ToDual   = sdlToDual1 (oMorO t) (domain t)
+  amap1 f@FromDual = sdlFromDual1 (oMorO f) (range f) 
+
+
+--------------------------------------------------------------------------------
+-- PathOMap -
+
+type PathOMap s o h = Path (OMap s o h)
 
 --------------------------------------------------------------------------------
 -- OCat -
 
-newtype OCat s o h x y = OCat (PathOMor s o h x y)
+newtype OCat s o h x y = OCat (PathOMap s o h x y)
   deriving (Show2,Validable2)
 
 deriving instance (Morphism h, Eq2 h, Transformable s Typ) => Eq2 (OCat s o h)
 
 instance (Entity2 h, Morphism h, Transformable s Typ, Typeable s, Typeable o) => Entity2 (OCat s o h)
 
-
+-}
 
 
 

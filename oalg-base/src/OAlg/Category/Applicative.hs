@@ -66,3 +66,8 @@ instance Applicative1 (->) X where
 instance Applicative1 (->) [] where
   amap1 = map
 
+instance (Applicative1 f a, Applicative1 f b) => Applicative1 f (Either1 a b) where
+  amap1 f ab = case ab of
+    Left1 a -> Left1 $ amap1 f a
+    Right1 b -> Right1 $ amap1 f b
+
