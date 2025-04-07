@@ -94,6 +94,13 @@ instance Morphism h => Morphism (OMap s o h) where
   homomorphous FromDual  = Struct :>: Struct
 
 --------------------------------------------------------------------------------
+-- OMapPath -
+
+type OMapPath s o h = Path (OMap s o h)
+
+
+
+--------------------------------------------------------------------------------
 -- SReflexive -
 
 class SReflexive s o where
@@ -111,20 +118,29 @@ sdlRefl' _ = sdlRefl
 -- | duality of structured types.
 --
 -- __Property__ Let @'SDuality' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
--- Let @q@ be any proxy of @__q o__@ in
+-- Let @q@ be any proxy of @__q o__@, @s' = 'tau1' s@, @'Inv2' u v = 'sdlRefl' q s@ in
 --
--- (1) @'sdlFromDual'' q s '.' 'sdlToDual'' q s '.=.' id@.
-class SDuality s o where
+-- (1) @'sdlToDual'' q s' '.' 'sdlToDual'' q s '.=.' u@.
+--
+-- (2) @'sdlFromDual'' q s '.=.' v '.' 'sdlToDual'' q s'@.
+--
+-- __Implications__
+--
+-- (i1) @'sdlFromDual'' q s '.' 'sdlToDual'' q s '.=.' id@.
+--
+-- __Note__
+--
+-- (1) To reduce the burden of implementation, we consider only dualities based on a reflection
+-- 'SReflexive'.
+--
+-- (2) From the properties 1 and 2 follows the the property i1.
+class (SReflexive s o, Transformable1 o s) => SDuality s o where
   sdlToDual   :: Struct s x -> x -> o x
   sdlFromDual :: Struct s x -> o x -> x
-  
-  default sdlFromDual :: (Transformable1 o s, SReflexive s o) => Struct s x -> o x -> x
   sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
 
-instance TransformableOp s => SDuality s Op where
-  sdlToDual _   = Op
-  sdlFromDual _ = fromOp
-  
+class (SReflexive s o, SDuality s o, Transformable1 o s) => SReflexivDuality s o 
+
 --------------------------------------------------------------------------------
 -- sdlToDual' -
 
@@ -142,10 +158,22 @@ sdlFromDual' _ = sdlFromDual
 
 prpSDuality :: SDuality s o
   => (Show x, Eq x, XStandard x)
+  => (Show (o x), XStandard (o x))
+  => (Eq (o (o x)))
   => q o
   -> Struct s x -> Statement
 prpSDuality q s = Prp "SDuality" :<=>:
-  ((sdlFromDual' q s . sdlToDual' q s) .=. id)
+  And [ Label "1" :<=>: (sdlToDual' q s' . sdlToDual' q s .=. u)
+      , Label "2" :<=>: (sdlFromDual' q s .=. v . sdlToDual' q s')
+      ]
+  && ( Label "Implications" :<=>:
+  And [ Label "1" :<=>: (sdlFromDual' q s . sdlToDual' q s .=. id)
+      ]
+     )
+  where s'       = tau1 s
+        Inv2 u v = sdlRefl' q s
+        
+  
 
 --------------------------------------------------------------------------------
 -- SDuality1 -
