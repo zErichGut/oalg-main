@@ -57,6 +57,8 @@ instance XStandard N where xStandard = xN
 instance XStandard Z where xStandard = xZ
 instance XStandard Q where xStandard = xQ
 
+instance XStandard x => XStandard (Op x) where xStandard = amap1 Op xStandard
+
 --------------------------------------------------------------------------------
 -- xStandard' -
 

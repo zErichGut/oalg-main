@@ -52,51 +52,52 @@ import OAlg.Data.Either
 
 import OAlg.Prelude
 
+import OAlg.Structure.Oriented hiding (Path(..))
 --------------------------------------------------------------------------------
--- OMap -
+-- MapO -
 
 -- | adjoining to a type family of morphisms 'ToDua' and 'FromDual'.
-data OMap s o h x y where
-  OMap     :: Transformable (ObjectClass h) s => h x y -> OMap s o h x y
-  ToDual   :: (Structure s x, Structure s (o x)) => OMap s o h x (o x)
-  FromDual :: (Structure s x, Structure s (o x)) => OMap s o h (o x) x
+data MapO s o h x y where
+  MapO     :: Transformable (ObjectClass h) s => h x y -> MapO s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => MapO s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) => MapO s o h (o x) x
 
-instance Transformable s Typ => TransformableObjectClassTyp (OMap s o h)
-
+instance Transformable s Typ => TransformableObjectClassTyp (MapO s o h)
+  
 --------------------------------------------------------------------------------
--- OMap - Entity2 -
+-- MapO - Entity2 -
 
-instance Show2 h => Show2 (OMap s o h) where
-  show2 (OMap h)  = "OMap (" ++ show2 h ++ ")"
+instance Show2 h => Show2 (MapO s o h) where
+  show2 (MapO h)  = "MapO (" ++ show2 h ++ ")"
   show2 ToDual    = "ToDual"
   show2 FromDual  = "FromDual"
 
-instance Eq2 h => Eq2 (OMap s o h) where
-  eq2 (OMap f) (OMap g) = eq2 f g
+instance Eq2 h => Eq2 (MapO s o h) where
+  eq2 (MapO f) (MapO g) = eq2 f g
   eq2 ToDual ToDual     = True
   eq2 FromDual FromDual = True
   eq2 _ _               = False
 
-instance Validable2 h => Validable2 (OMap s o h) where
-  valid2 (OMap h) = valid2 h
+instance Validable2 h => Validable2 (MapO s o h) where
+  valid2 (MapO h) = valid2 h
   valid2 _          = SValid
 
-instance (Entity2 h, Typeable s, Typeable o) => Entity2 (OMap s o h)
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (MapO s o h)
 
 --------------------------------------------------------------------------------
--- OMap - Morphism -
+-- MapO - Morphism -
 
-instance Morphism h => Morphism (OMap s o h) where
-  type ObjectClass (OMap s o h) = s
+instance Morphism h => Morphism (MapO s o h) where
+  type ObjectClass (MapO s o h) = s
 
-  homomorphous (OMap h) = tauHom (homomorphous h)
+  homomorphous (MapO h) = tauHom (homomorphous h)
   homomorphous ToDual    = Struct :>: Struct
   homomorphous FromDual  = Struct :>: Struct
 
 --------------------------------------------------------------------------------
--- OMapPath -
+-- MapOPath -
 
-type OMapPath s o h = Path (OMap s o h)
+type MapOPath s o h = Path (MapO s o h)
 
 
 
@@ -106,6 +107,8 @@ type OMapPath s o h = Path (OMap s o h)
 class SReflexive s o where
   sdlRefl :: Struct s x -> Inv2 (->) x (o (o x))
 
+instance SReflexive s Op where sdlRefl _ = Inv2 (Op . Op) (fromOp . fromOp)
+  
 --------------------------------------------------------------------------------
 -- sdlRefl' -
 
@@ -115,31 +118,67 @@ sdlRefl' _ = sdlRefl
 --------------------------------------------------------------------------------
 -- SDuality -
 
--- | duality of structured types.
+-- | duality of structured types, based on a reflection.
 --
 -- __Property__ Let @'SDuality' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
--- Let @q@ be any proxy of @__q o__@, @s' = 'tau1' s@, @'Inv2' u v = 'sdlRefl' q s@ in
+-- Let @q@ be any proxy of @__q o__@, @s' = 'tau1' s@, @s'' = 'tau1' s'@,
+-- @'Inv2' u v = 'sdlRefl' q s@ and @'Inv2' _ v' = 'sdlRelf'' q s'@ in
 --
 -- (1) @'sdlToDual'' q s' '.' 'sdlToDual'' q s '.=.' u@.
 --
 -- (2) @'sdlFromDual'' q s '.=.' v '.' 'sdlToDual'' q s'@.
 --
+-- (3) @sdlToDual' q s . v .=. v' . sdlToDual' q s''@.
+--
 -- __Implications__
 --
 -- (i1) @'sdlFromDual'' q s '.' 'sdlToDual'' q s '.=.' id@.
 --
+-- (i2) @'sdlToDual'' q s . 'sdlFromDual'' q s '.=.' 'id'@.
+--
 -- __Note__
 --
--- (1) To reduce the burden of implementation, we consider only dualities based on a reflection
--- 'SReflexive'.
+-- (1) From the properties 1 and 2 follows the property i1.
 --
--- (2) From the properties 1 and 2 follows the the property i1.
+-- (2) Form the properties 1 and 3 follows the property i2.
 class (SReflexive s o, Transformable1 o s) => SDuality s o where
+  {-# MINIMAL (sdlToDual | sdlFromDual) #-}
   sdlToDual   :: Struct s x -> x -> o x
+  sdlToDual s = sdlFromDual (tau1 s) . u where Inv2 u _ = sdlRefl s
+  
   sdlFromDual :: Struct s x -> o x -> x
   sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
 
-class (SReflexive s o, SDuality s o, Transformable1 o s) => SReflexivDuality s o 
+instance TransformableOp s => SDuality s Op where
+  sdlToDual _   = Op
+  sdlFromDual _ = fromOp
+  
+{-
+ff :: SDuality s o => q o -> Struct s x -> o x -> o x
+-- ff q s = sdlToDual' q s . sdlFromDual' q s
+-- ff q s = sdlToDual' q s . v . sdlToDual' q s'
+-- ff q s = v' . sdlToDual' q s'' . sdlToDual' q s'
+ff q s = v' . u'
+  where s'        = tau1 s
+        -- s''       = tau1 s'
+        Inv2 _ v  = sdlRefl' q s
+        Inv2 u' v' = sdlRefl' q s'
+
+f1 :: SDuality s o => q o -> Struct s x -> o x -> x
+f1 q s = v . sdlToDual' q s'
+  where s'       = tau1 s
+        Inv2 _ v = sdlRefl s
+
+f2 :: SDuality s o => q o -> Struct s x -> o (o x) -> o x
+f2 q s = sdlToDual' q s . v
+  where Inv2 _ v = sdlRefl s
+
+f3 :: SDuality s o => q o -> Struct s x -> o (o x) -> o x
+f3 q s = v' . sdlToDual' q s''
+  where s'        = tau1 s
+        s''       = tau1 s'
+        Inv2 _ v' = sdlRefl s'
+-}
 
 --------------------------------------------------------------------------------
 -- sdlToDual' -
@@ -156,22 +195,28 @@ sdlFromDual' _ = sdlFromDual
 --------------------------------------------------------------------------------
 -- prpSDuality -
 
+-- | validity accoriding to 'SDuality'.
 prpSDuality :: SDuality s o
   => (Show x, Eq x, XStandard x)
-  => (Show (o x), XStandard (o x))
-  => (Eq (o (o x)))
+  => (Show (o x), Eq (o x), XStandard (o x))
+  => (Show (o (o x)), Eq (o (o x)), XStandard (o (o x)))
   => q o
   -> Struct s x -> Statement
 prpSDuality q s = Prp "SDuality" :<=>:
   And [ Label "1" :<=>: (sdlToDual' q s' . sdlToDual' q s .=. u)
       , Label "2" :<=>: (sdlFromDual' q s .=. v . sdlToDual' q s')
+      , Label "3" :<=>: (sdlToDual' q s . v .=. v' . sdlToDual' q s'')
+      -- , Label "3" :<=>: (sdlToDual' q s .=. sdlFromDual' q s' . u)
       ]
   && ( Label "Implications" :<=>:
-  And [ Label "1" :<=>: (sdlFromDual' q s . sdlToDual' q s .=. id)
+  And [ Label "i1" :<=>: (sdlFromDual' q s . sdlToDual' q s .=. id)
+      , Label "i2" :<=>: (sdlToDual' q s . sdlFromDual' q s .=. id)
       ]
      )
-  where s'       = tau1 s
-        Inv2 u v = sdlRefl' q s
+  where s'        = tau1 s
+        s''       = tau1 s'
+        Inv2 u v  = sdlRefl' q s
+        Inv2 _ v' = sdlRefl' q s'
         
   
 
@@ -236,19 +281,19 @@ prpSDuality1 q s = Prp "SDuality1" :<=>:
       ]
 
 --------------------------------------------------------------------------------
--- OMap - Applicative -
+-- MapO - Applicative -
 
-instance (Morphism h, Applicative h, SDuality s o) => Applicative (OMap s o h) where
-  amap (OMap h)   = amap h
+instance (Morphism h, Applicative h, SDuality s o) => Applicative (MapO s o h) where
+  amap (MapO h)   = amap h
   amap t@ToDual   = sdlToDual (domain t)
   amap f@FromDual = sdlFromDual (range f)
 
 ----------------------------------------
--- OMap - Applicative1 -
+-- MapO - Applicative1 -
 
 instance (Morphism h, Applicative1 h (Either1 a b), SDuality1 s o a b)
-  => Applicative1 (OMap s o h) (Either1 a b) where
-  amap1 (OMap h)   = amap1 h
+  => Applicative1 (MapO s o h) (Either1 a b) where
+  amap1 (MapO h)   = amap1 h
   amap1 t@ToDual   = \ab -> case ab of
     Left1 a  -> Right1 $ sdlToDualLeft (domain t) a
     Right1 b -> Left1 $ sdlToDualRight (domain t) b
@@ -489,78 +534,78 @@ class SDuality1 s o d a where
   sdlFromDual1 :: q o -> Struct s x -> Duality d a (o x) -> Duality d a x 
   
 --------------------------------------------------------------------------------
--- OMap -
+-- MapO -
 
-data OMap s o h x y where
-  OMap     :: Transformable (ObjectClass h) s => h x y -> OMap s o h x y
-  ToDual   :: (Structure s x, Structure s (o x)) => OMap s o h x (o x)
-  FromDual :: (Structure s x, Structure s (o x)) => OMap s o h (o x) x
+data MapO s o h x y where
+  MapO     :: Transformable (ObjectClass h) s => h x y -> MapO s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => MapO s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) => MapO s o h (o x) x
 
-instance Transformable s Typ => TransformableObjectClassTyp (OMap s o h)
+instance Transformable s Typ => TransformableObjectClassTyp (MapO s o h)
 
 --------------------------------------------------------------------------------
--- OMap - Entity2 -
+-- MapO - Entity2 -
 
-instance Show2 h => Show2 (OMap s o h) where
-  show2 (OMap h)  = "OMap (" ++ show2 h ++ ")"
+instance Show2 h => Show2 (MapO s o h) where
+  show2 (MapO h)  = "MapO (" ++ show2 h ++ ")"
   show2 ToDual    = "ToDual"
   show2 FromDual  = "FromDual"
 
-instance Eq2 h => Eq2 (OMap s o h) where
-  eq2 (OMap f) (OMap g) = eq2 f g
+instance Eq2 h => Eq2 (MapO s o h) where
+  eq2 (MapO f) (MapO g) = eq2 f g
   eq2 ToDual ToDual     = True
   eq2 FromDual FromDual = True
   eq2 _ _               = False
 
-instance Validable2 h => Validable2 (OMap s o h) where
-  valid2 (OMap h) = valid2 h
+instance Validable2 h => Validable2 (MapO s o h) where
+  valid2 (MapO h) = valid2 h
   valid2 _          = SValid
 
-instance (Entity2 h, Typeable s, Typeable o) => Entity2 (OMap s o h)
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (MapO s o h)
 
 --------------------------------------------------------------------------------
--- OMap - Morphism -
+-- MapO - Morphism -
 
-instance Morphism h => Morphism (OMap s o h) where
-  type ObjectClass (OMap s o h) = s
+instance Morphism h => Morphism (MapO s o h) where
+  type ObjectClass (MapO s o h) = s
 
-  homomorphous (OMap h) = tauHom (homomorphous h)
+  homomorphous (MapO h) = tauHom (homomorphous h)
   homomorphous ToDual    = Struct :>: Struct
   homomorphous FromDual  = Struct :>: Struct
 
 --------------------------------------------------------------------------------
--- OMap - Applicative -
+-- MapO - Applicative -
 
-oMorType :: OMap s o h x y -> Proxy2 (->) o
+oMorType :: MapO s o h x y -> Proxy2 (->) o
 oMorType _ = Proxy2
 
-instance (Morphism h, Applicative h, SDualityType s o) => Applicative (OMap s o h) where
-  amap (OMap h)   = amap h
+instance (Morphism h, Applicative h, SDualityType s o) => Applicative (MapO s o h) where
+  amap (MapO h)   = amap h
   amap t@ToDual   = sdlToDual (oMorType t) (domain t)
   amap f@FromDual = sdlFromDual (oMorType f) (range f)
 
 ----------------------------------------
--- OMap - Applicative1 -
+-- MapO - Applicative1 -
 
-oMorO :: OMap s o h x y -> Proxy o
+oMorO :: MapO s o h x y -> Proxy o
 oMorO _ = Proxy
 
 instance (Morphism h, Applicative1 h (Duality d a), SDuality1 s o d a)
-  => Applicative1 (OMap s o h) (Duality d a) where
-  amap1 (OMap h)   = amap1 h
+  => Applicative1 (MapO s o h) (Duality d a) where
+  amap1 (MapO h)   = amap1 h
   amap1 t@ToDual   = sdlToDual1 (oMorO t) (domain t)
   amap1 f@FromDual = sdlFromDual1 (oMorO f) (range f) 
 
 
 --------------------------------------------------------------------------------
--- PathOMap -
+-- PathMapO -
 
-type PathOMap s o h = Path (OMap s o h)
+type PathMapO s o h = Path (MapO s o h)
 
 --------------------------------------------------------------------------------
 -- OCat -
 
-newtype OCat s o h x y = OCat (PathOMap s o h x y)
+newtype OCat s o h x y = OCat (PathMapO s o h x y)
   deriving (Show2,Validable2)
 
 deriving instance (Morphism h, Eq2 h, Transformable s Typ) => Eq2 (OCat s o h)
