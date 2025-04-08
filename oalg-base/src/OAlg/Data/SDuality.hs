@@ -47,12 +47,10 @@ import Data.List ((++))
 
 import OAlg.Category.Path
 
-import OAlg.Data.Proxy
 import OAlg.Data.Either
 
 import OAlg.Prelude
 
-import OAlg.Structure.Oriented hiding (Path(..))
 --------------------------------------------------------------------------------
 -- MapO -
 
@@ -95,25 +93,257 @@ instance Morphism h => Morphism (MapO s o h) where
   homomorphous FromDual  = Struct :>: Struct
 
 --------------------------------------------------------------------------------
+-- MapO - Applicative -
+
+instance (Morphism h, Applicative h, SDuality s o) => Applicative (MapO s o h) where
+  amap (MapO h)   = amap h
+  amap t@ToDual   = sdlToDual (domain t)
+  amap f@FromDual = sdlFromDual (range f)
+
+----------------------------------------
+-- MapO - Applicative1 -
+
+instance (Morphism h, Applicative1 h (Either1 a b), SDuality1 s o a b)
+  => Applicative1 (MapO s o h) (Either1 a b) where
+  amap1 (MapO h)   = amap1 h
+  amap1 t@ToDual   = \ab -> case ab of
+    Left1 a  -> Right1 $ sdlToDualLeft (domain t) a
+    Right1 b -> Left1 $ sdlToDualRight (domain t) b
+  amap1 f@FromDual = \ab -> case ab of
+    Left1 a  -> Right1 $ sdlFromDualLeft (range f) a
+    Right1 b -> Left1 $ sdlFromDualRight (range f) b
+
+--------------------------------------------------------------------------------
 -- MapOPath -
 
 type MapOPath s o h = Path (MapO s o h)
 
-
-
 --------------------------------------------------------------------------------
 -- SReflexive -
 
-class SReflexive s o where
+-- | assigning to a @__s__@-structured object its co-object such that the
+-- reflexion property holds.
+--
+-- __Property__ Let @'SReflexive' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+-- Let @q@ be any proxy in @__q o__@, @s' = 'tau1' s@ and @s'' = 'tau1' s'@,
+-- @'Inv2' u v = 'sdlRelf'' q s@ and @'Inv2' _ v' = 'sdlRefl'' q s'@ in
+--
+-- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
+--
+-- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
+class Transformable1 o s => SReflexive s o where
+  sdlCo   :: Struct s x -> x -> o x
   sdlRefl :: Struct s x -> Inv2 (->) x (o (o x))
 
-instance SReflexive s Op where sdlRefl _ = Inv2 (Op . Op) (fromOp . fromOp)
-  
+--------------------------------------------------------------------------------
+-- sldCo' -
+
+-- | prefixing a proxy.
+sdlCo' :: SReflexive s o => q o -> Struct s x -> x -> o x
+sdlCo' _ = sdlCo
+
 --------------------------------------------------------------------------------
 -- sdlRefl' -
 
+-- | prefixing a proxy.
 sdlRefl' :: SReflexive s o => q o -> Struct s x -> Inv2 (->) x (o (o x))
 sdlRefl' _ = sdlRefl
+
+--------------------------------------------------------------------------------
+-- prpSReflexive -
+
+-- | validity according to 'SReflexion'.
+prpSReflexive :: SReflexive s o
+  => (Show x, Eq x, XStandard x)
+  => (Eq (o x))
+  => (Show (o (o x)), Eq (o (o x)), XStandard (o (o x)))
+  => q o -> Struct s x -> Statement
+prpSReflexive q s = Prp "SReflexive" :<=>:
+  And [ Label "sdlRefl" :<=>:
+          And [ (u . v .=. id)
+              , (v . u .=. id)
+              ]
+      , Label "1" :<=>: (sdlCo' q s' . sdlCo' q s .=. u)
+      , Label "2" :<=>: (sdlCo' q s . v .=. v' . sdlCo' q s'')
+      ]
+  where s'        = tau1 s
+        s''       = tau1 s'
+        Inv2 u v  = sdlRefl' q s
+        Inv2 _ v' = sdlRefl' q s'
+
+--------------------------------------------------------------------------------
+-- SDuality -
+
+-- | duality of @__s__@-structured types.
+--
+-- __Property__ Let @'SDuality' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+-- Let @q@ be any proxy of @__q o__@ in
+--
+-- (1) @'sdlFromDual'' q s '.' 'sdlToDual'' q s '.=.' 'id'@.
+--
+-- (2) @'sdlToDual'' q s '.' 'sdlFromDual'' q s '.=.' 'id'@.
+--
+-- __Note__ If a implementation of 'SDuality' is given by the default implemetation of 'SReflexive',
+-- then:
+--
+-- (1) the property 1 above follows from the property 1 of 'SReflextion' and the property for the
+-- reflexion 'sdlRefl'.
+--
+-- (2) the property 2 above follows from the property 2 of 'SReflexion' and the property for the
+-- reflexion 'sdlRefl'.
+class SDuality s o where
+  sdlToDual :: Struct s x -> x -> o x
+  default sdlToDual :: SReflexive s o => Struct s x -> x -> o x
+  sdlToDual = sdlCo
+
+  sdlFromDual :: Struct s x -> o x -> x
+  default sdlFromDual :: SReflexive s o => Struct s x -> o x -> x
+  sdlFromDual s = v . sdlCo (tau1 s) where Inv2 _ v = sdlRefl s
+
+instance SDuality s Op where
+  sdlToDual _   = Op
+  sdlFromDual _ = fromOp
+
+--------------------------------------------------------------------------------
+-- sdlToDual' -
+
+-- | prefixing a proxy.
+sdlToDual' :: SDuality s o => q o -> Struct s x -> x -> o x
+sdlToDual' _ = sdlToDual
+
+--------------------------------------------------------------------------------
+-- sdlFromDual' -
+
+-- | prefixing a proxy.
+sdlFromDual' :: SDuality s o => q o ->  Struct s x -> o x -> x
+sdlFromDual' _ = sdlFromDual
+
+--------------------------------------------------------------------------------
+-- prpSDuality -
+
+-- | validity accoriding to 'SDuality'.
+prpSDuality :: SDuality s o
+  => (Show x, Eq x, XStandard x)
+  => (Show (o x), Eq (o x), XStandard (o x))
+  => q o
+  -> Struct s x -> Statement
+prpSDuality q s = Prp "SDuality" :<=>:
+  And [ Label "1" :<=>: (sdlFromDual' q s . sdlToDual' q s .=. id)
+      , Label "2" :<=>: (sdlToDual' q s . sdlFromDual' q s .=. id)
+      ]
+
+--------------------------------------------------------------------------------
+-- SReflexive1 -
+
+class SReflexive1 s o a b where
+  sdlCo1   :: Struct s x -> a x -> b (o x)
+  sdlRefl1 :: q b -> Struct s x -> Inv2 (->) (a x) (a (o (o x)))
+  
+--------------------------------------------------------------------------------
+-- SDuality1 -
+
+-- | duality of 1-parameterized types over structured type.
+--
+-- __Properties__ Let @'SDuality' __s o a b__@, then for all @__x__@ and @s@ in @'Struct' __s x__@
+-- holds: Let @q@ be any proxy of @__q o a b__@ in
+--
+-- (1) @'sdlFromDualRight'' q s '.' 'sdlToDualLeft'' q s '.=.' 'id'@.
+--
+-- (2) @'sdlFromDualLeft'' q s '.' 'sdlToDualRight'' q s '.=.' 'id'@.
+class SDuality1 s o a b where
+  -- | mapping to the dual of @__a__@.
+  sdlToDualLeft :: Struct s x -> a x -> b (o x)
+  default sdlToDualLeft :: SReflexive1 s o a b => Struct s x -> a x -> b (o x)
+  sdlToDualLeft = sdlCo1
+
+  -- | mapping from the dual of @__b__@.
+  sdlFromDualRight :: Struct s x -> b (o x) -> a x
+
+  -- | mapping to the dual of @__b__@.
+  sdlToDualRight :: Struct s x -> b x -> a (o x)
+
+  -- | mapping from the dual of @__a__@.
+  sdlFromDualLeft :: Struct s x -> a (o x) -> b x
+
+--------------------------------------------------------------------------------
+-- sdlToDualLeft' -
+
+sdlToDualLeft' :: SDuality1 s o a b => q o a b -> Struct s x -> a x -> b (o x)
+sdlToDualLeft' _ = sdlToDualLeft
+
+--------------------------------------------------------------------------------
+-- sdlFromDualRigth' -
+
+sdlFromDualRight' :: SDuality1 s o a b => q o a b -> Struct s x -> b (o x) -> a x
+sdlFromDualRight' _ = sdlFromDualRight
+
+--------------------------------------------------------------------------------
+-- sdlToDualRigth' -
+
+sdlToDualRight' :: SDuality1 s o a b => q o a b -> Struct s x -> b x -> a (o x)
+sdlToDualRight' _ = sdlToDualRight
+
+--------------------------------------------------------------------------------
+-- sdlFromDualLeft'
+
+sdlFromDualLeft' :: SDuality1 s o a b => q o a b -> Struct s x -> a (o x) -> b x
+sdlFromDualLeft' _ = sdlFromDualLeft
+
+
+
+{-  
+  sdlToDual     :: Struct s x -> x -> o x
+  sdlFromBidual :: Struct s x -> o (o x) -> x
+
+instance TransformableOp s => SReflexive s Op where
+  sdlToDual _     = Op
+  sdlFromBidual _ = fromOp . fromOp
+
+--------------------------------------------------------------------------------
+-- sdlFromBidual' -
+
+-- | prefixing a proxy.
+sdlFromBidual' :: SReflexive s o => q o -> Struct s x -> o (o x) -> x
+sdlFromBidual' _ = sdlFromBidual
+
+--------------------------------------------------------------------------------
+-- sdlToBidual -
+
+-- | the induced mapping to the bi-dual objext, i.e. @'sdlToDual' ('tau1' s) '.' 'sdlToDual' s@.
+sdlToBidual :: SReflexive s o => Struct s x -> x -> o (o x)
+sdlToBidual s = sdlToDual (tau1 s) . sdlToDual s
+
+-- | prefixing a proxy.
+sdlToBidual' :: SReflexive s o => q o -> Struct s x -> x -> o (o x)
+sdlToBidual' _ = sdlToBidual
+
+--------------------------------------------------------------------------------
+-- sdlRefl -
+
+-- | the induced reflection, i.e. @'Inv2' ('sdlToBidual' s) ('sdlFromBidual' s)@.
+sdlRefl :: SReflexive s o => Struct s x -> Inv2 (->) x (o (o x))
+sdlRefl s = Inv2 (sdlToBidual s) (sdlFromBidual s)
+
+sdlRefl' :: SReflexive s o => q o -> Struct s x -> Inv2 (->) x (o (o x))
+sdlRefl' _ = sdlRefl
+
+--------------------------------------------------------------------------------
+-- prpSReflixive -
+
+-- | validity according to 'SReflexive'.
+prpSReflexive :: SReflexive s o
+  => (Show x, Eq x, XStandard x)
+  => (Show (o (o x)), Eq (o (o x)), XStandard (o (o x)))
+  => (Eq (o x))
+  => q o -> Struct s x -> Statement
+prpSReflexive q s = Prp "SReflexive" :<=>:
+  And [ Label "1" :<=>: (sdlToDual' q s' . sdlToDual' q s . sdlFromBidual' q s .=. id)
+      , Label "2" :<=>: (sdlFromBidual' q s . sdlToDual' q s' . sdlToDual' q s .=. id)
+      , Label "3" :<=>:
+          (sdlToDual' q s . sdlFromBidual' q s .=. sdlFromBidual' q s' . sdlToDual' q s'')
+      ]
+  where s'  = tau1 s
+        s'' = tau1 s'
 
 --------------------------------------------------------------------------------
 -- SDuality -
@@ -141,16 +371,11 @@ sdlRefl' _ = sdlRefl
 -- (1) From the properties 1 and 2 follows the property i1.
 --
 -- (2) Form the properties 1 and 3 follows the property i2.
-class (SReflexive s o, Transformable1 o s) => SDuality s o where
-  {-# MINIMAL (sdlToDual | sdlFromDual) #-}
-  sdlToDual   :: Struct s x -> x -> o x
-  sdlToDual s = sdlFromDual (tau1 s) . u where Inv2 u _ = sdlRefl s
-  
+class SReflexive s o => SDuality s o where
   sdlFromDual :: Struct s x -> o x -> x
   sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
 
 instance TransformableOp s => SDuality s Op where
-  sdlToDual _   = Op
   sdlFromDual _ = fromOp
   
 {-
@@ -179,12 +404,6 @@ f3 q s = v' . sdlToDual' q s''
         s''       = tau1 s'
         Inv2 _ v' = sdlRefl s'
 -}
-
---------------------------------------------------------------------------------
--- sdlToDual' -
-
-sdlToDual' :: SDuality s o => q o -> Struct s x -> x -> o x
-sdlToDual' _ = sdlToDual
 
 --------------------------------------------------------------------------------
 -- sdlFromDual' -
@@ -217,9 +436,9 @@ prpSDuality q s = Prp "SDuality" :<=>:
         s''       = tau1 s'
         Inv2 u v  = sdlRefl' q s
         Inv2 _ v' = sdlRefl' q s'
-        
+-}        
   
-
+{-
 --------------------------------------------------------------------------------
 -- SDuality1 -
 
@@ -301,7 +520,7 @@ instance (Morphism h, Applicative1 h (Either1 a b), SDuality1 s o a b)
     Left1 a  -> Right1 $ sdlFromDualLeft (range f) a
     Right1 b -> Left1 $ sdlFromDualRight (range f) b
 
-
+-}
 
 
 {-
