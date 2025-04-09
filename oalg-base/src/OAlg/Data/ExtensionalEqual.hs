@@ -8,8 +8,10 @@
 -- 
 -- extensional equality for functions.
 module OAlg.Data.ExtensionalEqual
-  ((.=.), prpExtensionalEqual)
+  ((.=.), prpInv2Type, prpExtensionalEqual)
   where
+
+import OAlg.Category.Definition (Inv2(..))
 
 import OAlg.Data.X
 import OAlg.Data.Statement
@@ -35,3 +37,14 @@ infix 4 .=.
 (.=.) :: (Show x, Eq y, XStandard x) => (x -> y) -> (x -> y) -> Statement
 (.=.) = prpExtensionalEqual xStandard
 
+--------------------------------------------------------------------------------
+-- prpInv2Type -
+
+-- | validity of 'Inv2' in the category of 'Type's.
+prpInv2Type :: (Show x, Show y, Eq x, Eq y, XStandard x, XStandard y)
+  => Inv2 (->) x y -> Statement
+prpInv2Type (Inv2 f g) = Prp "Inv2Type" :<=>:
+  And [ Label "f . g" :<=>: (f . g .=. id)
+      , Label "g . f" :<=>: (g . f .=. id)
+      ]
+  
