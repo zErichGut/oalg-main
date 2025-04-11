@@ -73,9 +73,9 @@ sdlRefl' _ = sdlRefl
 
 -- | validity according to 'SReflexion'.
 prpSReflexive :: SReflexive s o
-  => (Show x, Eq x, XStandard x)
-  => (Show (o x), Eq (o x), XStandard (o x))
-  => (Show (o (o x)), Eq (o (o x)), XStandard (o (o x)))
+  => Structure ExtEq x
+  => Structure ExtEq (o x)
+  => Structure ExtEq (o (o x))
   => q o -> Struct s x -> Statement
 prpSReflexive q s = Prp "SReflexive" :<=>:
   And [ Label "sdlRefl" :<=>: valid (Inv2 (ExtEqual u) (ExtEqual v))
@@ -132,8 +132,8 @@ sdlFromDual' _ = sdlFromDual
 
 -- | validity accoriding to 'SDualisable'.
 prpSDualisable :: SDualisable s o
-  => (Show x, Eq x, XStandard x)
-  => (Show (o x), Eq (o x), XStandard (o x))
+  => Structure ExtEq x
+  => Structure ExtEq (o x)
   => q o
   -> Struct s x -> Statement
 prpSDualisable q s = Prp "SDualisable" :<=>:
@@ -199,12 +199,12 @@ sdlReflRight' _ = sdlReflRight
 
 -- | validity accoriding to 'SReflexive1'.
 prpReflexive1 :: SReflexive1 s o a b
-  => (Show (a x), Eq (a x), XStandard (a x))
-  => (Show (a (o x)), Eq (a (o x)), XStandard (a (o x)))
-  => (Show (a (o (o x))), Eq (a (o (o x))), XStandard (a (o (o x))))
-  => (Show (b x), Eq (b x), XStandard (b x))
-  => (Show (b (o x)), Eq (b (o x)), XStandard (b (o x)))
-  => (Show (b (o (o x))), Eq (b (o (o x))), XStandard (b (o (o x))))
+  => Structure ExtEq (a x)
+  => Structure ExtEq (a (o x))
+  => Structure ExtEq (a (o (o x)))
+  => Structure ExtEq (b x)
+  => Structure ExtEq (b (o x))
+  => Structure ExtEq (b (o (o x)))
   => q o a b -> Struct s x -> Statement
 prpReflexive1 q s = Prp "Reflexive1" :<=>:
   And [ Label "1" :<=>: (ExtEqual (sdlCoRight' q s' . sdlCoLeft' q s) .=. ExtEqual uLeft)
