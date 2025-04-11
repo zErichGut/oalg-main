@@ -89,7 +89,7 @@ import OAlg.Data.X as X
 import OAlg.Data.Validable as Vlb
 import OAlg.Data.Boolean as Bol
 import OAlg.Data.Equal as Eql
-import OAlg.Data.ExtensionalEqual as ExtEql
+import OAlg.Data.ExtensionalEquality as ExtEql
 import OAlg.Data.Maybe as Myb
 import OAlg.Data.Show as Shw
 import OAlg.Data.Number as Nmb

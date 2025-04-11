@@ -1,7 +1,11 @@
 
+{-# LANGUAGE NoImplicitPrelude #-}
+
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 
 -- |
@@ -20,10 +24,13 @@ module OAlg.Data.Validable
 
     -- * XStandard
   , XStandard(..), relXStandard
+
+    -- * Extensional Equality
+  , ExtEqual(..), ExtEq
   )
   where
-import Prelude hiding ((.))
 
+import Control.Monad (return)
 import Control.DeepSeq (NFData(..))
 
 import Data.Ratio
@@ -31,15 +38,17 @@ import Data.Proxy
 
 import OAlg.Category.Definition
 
+import OAlg.Data.Boolean.Definition
 import OAlg.Data.Statement
+import OAlg.Data.Maybe
 import OAlg.Data.Either
 import OAlg.Data.Equal
+import OAlg.Data.ExtensionalEquality
 import OAlg.Data.Show
 import OAlg.Data.Ord
 import OAlg.Data.Number
 import OAlg.Data.Opposite
 import OAlg.Data.X
-
 
 import OAlg.Structure.Definition
 
@@ -202,12 +211,40 @@ instance Validable2 m => Validable (Forget t m x y) where
 
 instance Validable2 (Struct2 m)
 
-instance (Category c, Eq2 c, Show2 c) => Validable (Inv2 c x y) where
+--------------------------------------------------------------------------------
+-- ExtEqual -
+
+data ExtEqual x y where
+  ExtEqual :: (Show x, XStandard x, Eq x, Show y, XStandard y, Eq y) => (x -> y) -> ExtEqual x y
+
+instance EqExt ExtEqual where
+  ExtEqual f .=. ExtEqual g = prpExtensionalEqual xStandard f g
+    
+--------------------------------------------------------------------------------
+-- ExtEq -
+
+data ExtEq
+
+type instance Structure ExtEq x = (Show x, XStandard x, Eq x)
+
+instance Morphism ExtEqual where
+  type ObjectClass ExtEqual = ExtEq
+  homomorphous (ExtEqual _) = Struct :>: Struct
+
+instance Category ExtEqual where
+  cOne Struct = ExtEqual id
+  ExtEqual f . ExtEqual g = ExtEqual (f . g)
+
+--------------------------------------------------------------------------------
+-- Inv2 - Validable
+
+instance (Category c, EqExt c) => Validable (Inv2 c x y) where
   valid (Inv2 f f') = Label "Inv2" :<=>:
-    And [ Label "1" :<=>: ((f' . f) `eq2` cOne (domain f)) :?> Params ["f":=show2 f]
-        , Label "2" :<=>: ((f . f') `eq2` cOne (range f)) :?> Params ["f":=show2 f]
+    And [ Label "1" :<=>: (f' . f .=. cOne (domain f))
+        , Label "2" :<=>: (f . f' .=. cOne (range f))
         ]
     
-instance (Category c, Eq2 c, Show2 c) => Validable2 (Inv2 c)
+instance (Category c, EqExt c) => Validable2 (Inv2 c)
+
 
 

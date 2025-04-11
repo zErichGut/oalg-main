@@ -74,13 +74,13 @@ sdlRefl' _ = sdlRefl
 -- | validity according to 'SReflexion'.
 prpSReflexive :: SReflexive s o
   => (Show x, Eq x, XStandard x)
-  => (Eq (o x))
+  => (Show (o x), Eq (o x), XStandard (o x))
   => (Show (o (o x)), Eq (o (o x)), XStandard (o (o x)))
   => q o -> Struct s x -> Statement
 prpSReflexive q s = Prp "SReflexive" :<=>:
-  And [ Label "sdlRefl" :<=>: prpInv2Type (Inv2 u v)
-      , Label "1" :<=>: (sdlCo' q s' . sdlCo' q s .=. u)
-      , Label "2" :<=>: (sdlCo' q s . v .=. v' . sdlCo' q s'')
+  And [ Label "sdlRefl" :<=>: valid (Inv2 (ExtEqual u) (ExtEqual v))
+      , Label "1" :<=>: (ExtEqual (sdlCo' q s' . sdlCo' q s) .=. ExtEqual u)
+      , Label "2" :<=>: (ExtEqual (sdlCo' q s . v) .=. ExtEqual (v' . sdlCo' q s''))
       ]
   where s'        = tau1 s
         s''       = tau1 s'
@@ -137,7 +137,7 @@ prpSDualisable :: SDualisable s o
   => q o
   -> Struct s x -> Statement
 prpSDualisable q s = Prp "SDualisable" :<=>:
-  Label "1" :<=>: prpInv2Type (Inv2 (sdlFromDual' q s) (sdlToDual' q s))
+  Label "1" :<=>: valid (Inv2 (ExtEqual (sdlFromDual' q s)) (ExtEqual (sdlToDual' q s)))
 
 
 --------------------------------------------------------------------------------
@@ -199,18 +199,18 @@ sdlReflRight' _ = sdlReflRight
 
 -- | validity accoriding to 'SReflexive1'.
 prpReflexive1 :: SReflexive1 s o a b
-  => (Show (a x), XStandard (a x))
-  => (Eq (a (o x)))
+  => (Show (a x), Eq (a x), XStandard (a x))
+  => (Show (a (o x)), Eq (a (o x)), XStandard (a (o x)))
   => (Show (a (o (o x))), Eq (a (o (o x))), XStandard (a (o (o x))))
-  => (Show (b x), XStandard (b x))
-  => (Eq (b (o x)))
+  => (Show (b x), Eq (b x), XStandard (b x))
+  => (Show (b (o x)), Eq (b (o x)), XStandard (b (o x)))
   => (Show (b (o (o x))), Eq (b (o (o x))), XStandard (b (o (o x))))
   => q o a b -> Struct s x -> Statement
 prpReflexive1 q s = Prp "Reflexive1" :<=>:
-  And [ Label "1" :<=>: (sdlCoRight' q s' . sdlCoLeft' q s .=. uLeft)
-      , Label "2" :<=>: (sdlCoLeft' q s' . sdlCoRight' q s .=. uRight)
-      , Label "3" :<=>: (sdlCoLeft' q s . vLeft .=. vRight' . sdlCoLeft' q s'')
-      , Label "4" :<=>: (sdlCoRight' q s . vRight .=. vLeft' . sdlCoRight' q s'')
+  And [ Label "1" :<=>: (ExtEqual (sdlCoRight' q s' . sdlCoLeft' q s) .=. ExtEqual uLeft)
+      , Label "2" :<=>: (ExtEqual (sdlCoLeft' q s' . sdlCoRight' q s) .=. ExtEqual uRight)
+      , Label "3" :<=>: (ExtEqual (sdlCoLeft' q s . vLeft) .=. ExtEqual (vRight' . sdlCoLeft' q s''))
+      , Label "4" :<=>: (ExtEqual (sdlCoRight' q s . vRight) .=. ExtEqual (vLeft' . sdlCoRight' q s''))
       ]  
   where s'  = tau1 s
         s'' = tau1 s'
@@ -291,8 +291,8 @@ prpSDualisable1 :: SDualisable1 s o a b
   => (Show (a (o x)), Eq (a (o x)), XStandard (a (o x)))
   => q o a b -> Struct s x -> Statement
 prpSDualisable1 q s = Prp "SDualisable1" :<=>:
-  And [ Label "1" :<=>: prpInv2Type (Inv2 (sdlFromDualRight' q s) (sdlToDualLeft' q s))
-      , Label "2" :<=>: prpInv2Type (Inv2 (sdlFromDualLeft' q s) (sdlToDualRight' q s))
+  And [ Label "1" :<=>: valid (Inv2 (ExtEqual (sdlFromDualRight' q s)) (ExtEqual (sdlToDualLeft' q s)))
+      , Label "2" :<=>: valid (Inv2 (ExtEqual (sdlFromDualLeft' q s)) (ExtEqual (sdlToDualRight' q s)))
       ]
 
 
