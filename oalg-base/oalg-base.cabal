@@ -81,7 +81,7 @@ library
       OAlg.Data.Proxy
       OAlg.Data.Reducible
       OAlg.Data.Relation
-      OAlg.Data.SDuality
+      OAlg.Data.SDualisable
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular

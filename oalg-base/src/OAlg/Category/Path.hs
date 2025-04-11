@@ -202,12 +202,20 @@ instance Morphism m => Category (Path m) where
 -- Path - Applicative -
 
 instance Applicative m => Applicative (Path m) where
-  amap (IdPath _) x = x
-  amap (p :. f) x   = amap p (amap f x)
+  amap (IdPath _) = id
+  amap (f :. p)   = amap f . amap p
+
+instance Applicative1 m f => Applicative1 (Path m) f where
+  amap1 (IdPath _) = id
+  amap1 (f :. p)   = amap1 f . amap1 p
+  
 
 --------------------------------------------------------------------------------
 -- Path - Functorial -
+
 instance (Applicative m, Morphism m) => Functorial (Path m)
+
+instance (Applicative1 m f, Morphism m) => Functorial1 (Path m) f
 
 --------------------------------------------------------------------------------
 -- Path - Cayleyan2 -
