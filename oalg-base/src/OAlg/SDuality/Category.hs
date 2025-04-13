@@ -42,6 +42,7 @@ import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 
 import OAlg.SDuality.Definition
+import OAlg.SDuality.Variant
 
 --------------------------------------------------------------------------------
 -- SDualityMap -
@@ -49,11 +50,20 @@ import OAlg.SDuality.Definition
 -- | adjoining to a type family @__h__@ of morphisms the two morphisms 'ToDual' and 'FromDual'.
 data SDualityMap s o h x y where
   SDualityMap :: Transformable (ObjectClass h) s => h x y -> SDualityMap s o h x y
-  ToDual :: (Structure s x, Structure s (o x)) => SDualityMap s o h x (o x)
+  ToDual   :: (Structure s x, Structure s (o x)) => SDualityMap s o h x (o x)
   FromDual :: (Structure s x, Structure s (o x)) => SDualityMap s o h (o x) x
 
 instance Transformable s Typ => TransformableObjectClassTyp (SDualityMap s o h)
-  
+
+--------------------------------------------------------------------------------
+-- SDualityMap - Disjunctive -
+
+instance Disjunctive (SDualityMap s o h x y) where
+  variant (SDualityMap _) = Covariant
+  variant _               = Contravariant
+
+instance Disjunctive2 (SDualityMap s o h)
+
 --------------------------------------------------------------------------------
 -- SDualityMap - Entity2 -
 
@@ -92,6 +102,7 @@ instance (Morphism h, Applicative h, SDualisable s o) => Applicative (SDualityMa
   amap t@ToDual        = sdlToDual (domain t)
   amap f@FromDual      = sdlFromDual (range f)
 
+{-
 ----------------------------------------
 -- SDualityMap - Applicative1 -
 
@@ -106,6 +117,7 @@ instance (Morphism h, Applicative1 h a, Applicative1 h b, SDualisable1 s o a b)
   amap1 f@FromDual        = \ab -> case ab of
     Left1 a              -> Right1 $ sdlFromDualLeft (range f) a
     Right1 b             -> Left1 $ sdlFromDualRight (range f) b
+-}
 
 --------------------------------------------------------------------------------
 -- PathSDualityMap -
@@ -135,7 +147,13 @@ deriving instance (Morphism h, TransformableTyp s, Eq2 h) => Eq2 (SDualityCat s 
 
 instance (Morphism h, Entity2 h, TransformableTyp s, Typeable o, Typeable s)
   => Entity2 (SDualityCat s o h)
-  
+
+--------------------------------------------------------------------------------
+-- SDualityCat - Disjunctive -
+
+instance Disjunctive2 (SDualityCat s o h)    where variant2 = restrict variant2
+instance Disjunctive (SDualityCat s o h x y) where variant  = restrict variant
+
 --------------------------------------------------------------------------------
 -- SDualityCat - Constructable -
 
@@ -143,8 +161,7 @@ instance Exposable (SDualityCat s o h x y) where
   type Form (SDualityCat s o h x y) = PathSDualityMap s o h x y
   form (SDualityCat p) = p
 
-instance Constructable (SDualityCat s o h x y) where
-  make = SDualityCat . reduce
+instance Constructable (SDualityCat s o h x y) where make = SDualityCat . reduce
 
 --------------------------------------------------------------------------------
 -- SDualityCat - Category -
@@ -163,9 +180,84 @@ instance Morphism h => Category (SDualityCat s o h) where
 instance (Morphism h, Applicative h, SDualisable s o) => Applicative (SDualityCat s o h) where
   amap (SDualityCat p) = amap p
 
-
+{-
 instance (Morphism h, Applicative1 h a, Applicative1 h b, SDualisable1 s o a b)
   => Applicative1 (SDualityCat s o h) (Either1 a b) where
   amap1 (SDualityCat p) = amap1 p
+-}
+
+--------------------------------------------------------------------------------
+-- SDuality -
+
+-- | duality of 1-parameterized types over @__s__@-structured types.
+--
+-- __Property__ Let @d@ be in @'SDuality' __s o h a b__@. then for all @h@ in
+-- @'SDualityCat' __s o h x y__@ and @s@ in @'Struct' __s x__@ holds:
+--
+-- (1) If @'variant' h '==' 'Covariant'@ then holds:
+--
+--     (1) for all @a@ in @__a x__@ holds:
+--     @'amap1' h ('Left1' a)@ matches @'Left1' a'@ for some @a'@ in @__a y__@.
+--
+--     (2) for all @b@ in @__b x__@ holds:
+--     @'amap1' h ('Right1' b)@ matches @'Right' b'@ for some @b'@ in @__b y__@.
+--
+-- (2) If @'variant' h '==' 'Contravariant'@ then holds:
+--
+--     (1) for all @a@ in @__a x__@ holds:
+--     @'amap1' h ('Left1' a)@ matches @'Right1' b'@ for some @b'@ in @__b y__@.
+--
+--     (2) for all @b@ in @__b x__@ holds:
+--     @'amap1' h ('Right1' b)@ matches @'Left1' a'@ for some @a'@ in @__a y__@.
+data SDuality s o h a b where
+  SDuality :: (Transformable1 o s, Applicative1 (SDualityCat s o h) (Either1 a b))
+           => SDuality s o h a b
+
+--------------------------------------------------------------------------------
+-- prpSDuality -
+
+prpSDuality :: (Show1 a, Show1 b)
+  => SDuality s o h a b -> SDualityCat s o h x y
+  -> Struct s x -> X (Either1 a b x) -> Statement
+prpSDuality SDuality h Struct xab = Prp "SDuality" :<=>: Forall xab
+  (\ab            -> case variant h of
+    Covariant     -> case ab of
+      Left1 _     -> case amap1 h ab of
+        Left1 _   -> SValid
+        Right1 _  -> Label "1.1" :<=>: False :?> Params ["ab":=show1 ab]
+      Right1 _    -> case amap1 h ab of
+        Left1 _   -> Label "1.2" :<=>: False  :?> Params ["ab":=show1 ab]
+        Right1 _  -> SValid
+    Contravariant -> case ab of
+      Left1 _     -> case amap1 h ab of
+        Left1 _   -> Label "2.1" :<=>: False :?> Params ["ab":=show1 ab]
+        Right1 _  -> SValid
+      Right1 _    -> case amap1 h ab of
+        Left1 _   -> SValid
+        Right1 _  -> Label "1.2" :<=>: False  :?> Params ["ab":=show1 ab]
+  )
 
 
+{-  
+sToDual' :: q h -> Struct s x -> Struct s (o x) -> SDualityCat s o h x (o x)
+sToDual' _ s@Struct Struct = make (ToDual :. IdPath s)
+
+sToDual :: Transformable1 o s
+  => q h -> Struct s x -> SDualityCat s o h x (o x)
+sToDual q s = sToDual' q s (tau1 s)
+
+ff :: Applicative1 (SDualityCat s o h) (Either1 a b)
+  => Transformable1 o s
+  => q h -> Struct s x -> a x -> b (o x)
+ff q s a = case amap1 (sToDual q s) (Left1 a) of
+  Right1 b -> b
+  Left1 a' -> error "implerror"
+
+
+ph :: SDuality s o h a b -> Proxy h
+ph _ = Proxy
+
+gg :: SDuality s o h a b -> Struct s x -> a x -> b (o x)
+gg d@SDuality s a = case amap1 (sToDual (ph d) s) (Left1 a) of
+  Right1 b -> b
+-}

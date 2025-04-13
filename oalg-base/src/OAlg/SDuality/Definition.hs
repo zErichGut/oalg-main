@@ -23,6 +23,7 @@ module OAlg.SDuality.Definition
     SDualisable(..), sdlToDual', sdlFromDual'
   , SReflexive(..), sdlCo', sdlRefl'
 
+{-  
     -- * Dualisable 1
   , SDualisable1(..)
   , sdlToDualLeft', sdlFromDualLeft'  
@@ -34,6 +35,8 @@ module OAlg.SDuality.Definition
     -- * Proposition
   , prpSDualisable, prpSReflexive
   , prpReflexive1
+-}
+  
   ) where
 
 import OAlg.Prelude
@@ -90,16 +93,20 @@ prpSReflexive q s = Prp "SReflexive" :<=>:
 --------------------------------------------------------------------------------
 -- SDualisable -
 
--- | duality of @__s__@-structured types.
+-- | dualisable @__s__@-structured types.
 --
 -- __Property__ Let @'SDualisable' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
 -- Let @q@ be any proxy of @__q o__@ in
 --
 -- (1) @'Inv2' ('sdlFromDual'' q s) ('sdlToDual'' q s)@ is 'valid'.
 --
--- __Note__ If a implementation of 'SDualisable' is given by the default implemetation via 'SReflexive'
+-- __Note__
+--
+-- (1) If a implementation of 'SDualisable' is given by the default implemetation via 'SReflexive'
 -- then holds: The property 1 above follows from the property 1 and 2 of 'SReflextion' and the
 -- validity of 'sdlRefl'.
+--
+-- (2) This class is mearly used to implemnent the 'Applicative' property for 'SDualityCat'.
 class SDualisable s o where
   sdlToDual :: Struct s x -> x -> o x
   default sdlToDual :: SReflexive s o => Struct s x -> x -> o x
@@ -139,7 +146,7 @@ prpSDualisable :: SDualisable s o
 prpSDualisable q s = Prp "SDualisable" :<=>:
   Label "1" :<=>: valid (Inv2 (ExtEqual (sdlFromDual' q s)) (ExtEqual (sdlToDual' q s)))
 
-
+{-
 --------------------------------------------------------------------------------
 -- SReflexive1 -
 
@@ -365,5 +372,5 @@ srCo _ s = nn (sType s) . I
 
 sType :: Struct s x -> SS (->) x
 sType _ = SS Struct
-
+-}
 

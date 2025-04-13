@@ -67,7 +67,7 @@ library
       OAlg.Data.Dualisable
       OAlg.Data.Either
       OAlg.Data.Equal
-      OAlg.Data.ExtensionalEqual
+      OAlg.Data.ExtensionalEquality
       OAlg.Data.Filterable
       OAlg.Data.FinitelyPresentable
       OAlg.Data.Generator
@@ -81,7 +81,6 @@ library
       OAlg.Data.Proxy
       OAlg.Data.Reducible
       OAlg.Data.Relation
-      OAlg.Data.SDualisable
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular
@@ -166,6 +165,9 @@ library
       OAlg.Limes.Universal
       OAlg.Prelude
       OAlg.Proposition
+      OAlg.SDuality.Category
+      OAlg.SDuality.Definition
+      OAlg.SDuality.Variant
       OAlg.Structure.Additive
       OAlg.Structure.Additive.Definition
       OAlg.Structure.Additive.Proposition
