@@ -23,7 +23,6 @@ module OAlg.SDuality.Definition
     SDualisable(..), sdlToDual', sdlFromDual'
   , SReflexive(..), sdlCo', sdlRefl'
 
-{-  
     -- * Dualisable 1
   , SDualisable1(..)
   , sdlToDualLeft', sdlFromDualLeft'  
@@ -35,7 +34,7 @@ module OAlg.SDuality.Definition
     -- * Proposition
   , prpSDualisable, prpSReflexive
   , prpReflexive1
--}
+
   
   ) where
 
@@ -146,7 +145,6 @@ prpSDualisable :: SDualisable s o
 prpSDualisable q s = Prp "SDualisable" :<=>:
   Label "1" :<=>: valid (Inv2 (ExtEqual (sdlFromDual' q s)) (ExtEqual (sdlToDual' q s)))
 
-{-
 --------------------------------------------------------------------------------
 -- SReflexive1 -
 
@@ -372,5 +370,5 @@ srCo _ s = nn (sType s) . I
 
 sType :: Struct s x -> SS (->) x
 sType _ = SS Struct
--}
+
 
