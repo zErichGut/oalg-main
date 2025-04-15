@@ -13,23 +13,26 @@
 #-}
 
 -- |
--- Module      : OAlg.SDuality.Category
--- Description : category of structural dualities.
+-- Module      : OAlg.Category.SDual
+-- Description : category for structural dualities.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- category of structural dualities.
-module OAlg.SDuality.Category
+-- category for structural dualities.
+module OAlg.Category.SDual
   (
-{-
     -- * Category
     CatSDual()
     
     -- * Map
   , MapSDual(..)
   , PathMapSDual, rdcPathMapSDual
--}
+  , MapSDualApplicative
+
+    -- * Duality
+  , CatSDualDuality
+
   ) where
 
 import Control.Monad
@@ -41,24 +44,18 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
-import OAlg.Data.Proxy
-import OAlg.Data.Either
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
-
-import OAlg.SDuality.Definition
-import OAlg.SDuality.Variant
+import OAlg.Data.Variant
 
 --------------------------------------------------------------------------------
 -- MapSDual -
 
--- | adjoining to a type family @__h__@ of morphisms the two morphisms 'ToDual' and 'FromDual'.
+-- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
 data MapSDual s o h x y where
   MapSDual :: Transformable (ObjectClass h) s => h x y -> MapSDual s o h x y
   ToDual   :: (Structure s x, Structure s (o x)) => MapSDual s o h x (o x)
   FromDual :: (Structure s x, Structure s (o x)) => MapSDual s o h (o x) x
-
-instance Transformable s Typ => TransformableObjectClassTyp (MapSDual s o h)
 
 --------------------------------------------------------------------------------
 -- MapSDual - Disjunctive -
@@ -99,6 +96,9 @@ instance Morphism h => Morphism (MapSDual s o h) where
   homomorphous ToDual       = Struct :>: Struct
   homomorphous FromDual     = Struct :>: Struct
 
+instance Transformable s Typ => TransformableObjectClassTyp (MapSDual s o h)
+
+{-
 --------------------------------------------------------------------------------
 -- MapSDual - Applicative -
 
@@ -109,18 +109,24 @@ instance (Morphism h, Applicative h, SDualisable s o) => Applicative (MapSDual s
 
 --------------------------------------------------------------------------------
 -- SDual -
+newtype SDual (r :: (Type -> Type) -> (Type -> Type) -> (Type -> Type) -> Type) s (o :: Type -> Type)
+  a b x = SDual (Either1 a b x)
 
-newtype SDual a b x = SDual (Either1 a b x)
+sdlRefl1 :: SReflexive1 r s o a b => SDual r s o a b x -> r o a b
+sdlRefl1 (SDual _) = unit
 
-sctMapCvt :: (Applicative1 h a, Applicative1 h b) => h x y -> SDual a b x -> SDual a b y
+
+sctMapCvt :: (Applicative1 h a, Applicative1 h b) => h x y -> SDual r s o a b x -> SDual r s o a b y
 sctMapCvt h (SDual ab) = SDual $ case ab of
   Left1 a             -> Left1 $ amap1 h a
   Right1 b            -> Right1 $ amap1 h b
 
-sctToDual :: SDualisable1 s o a b => Struct s x -> SDual a b x -> SDual a b (o x)
-sctToDual s (SDual ab) = SDual $ case ab of
-  Left1 a             -> Right1 $ sdlToDualLeft s a
-  Right1 b            -> Left1 $ sdlToDualRight s b
+sctToDual :: SReflexive1 r s o a b => Struct s x -> SDual r s o a b x -> SDual r s o a b (o x)
+sctToDual s d@(SDual ab) = SDual $ case ab of
+  Left1 a             -> Right1 $ sdlToDualLeft r s a
+  Right1 b            -> Left1 $ sdlToDualRight r s b
+  where r = sdlRefl1 d 
+
 
 sctFromDual :: SDualisable1 s o a b => Struct s x -> SDual a b (o x) -> SDual a b x
 sctFromDual s (SDual ab) = SDual $ case ab of
@@ -130,11 +136,13 @@ sctFromDual s (SDual ab) = SDual $ case ab of
 ----------------------------------------
 -- MapSDual - Applicative1 -
 
-instance (Morphism h, Applicative1 h a, Applicative1 h b, SDualisable1 s o a b)
-  => Applicative1 (MapSDual s o h) (SDual a b) where
+
+instance (Morphism h, Applicative1 h a, Applicative1 h b, SReflexive1 r s o a b)
+  => Applicative1 (MapSDual s o h) (SDual r s o a b) where
   amap1 (MapSDual h) = sctMapCvt h
   amap1 t@ToDual     = sctToDual (domain t)
-  amap1 f@FromDual   = sctFromDual (range f)
+  amap1 f@FromDual   = error "nyi" -- sctFromDual (range f)
+-}  
 
 --------------------------------------------------------------------------------
 -- PathMapSDual -
@@ -192,6 +200,24 @@ instance Morphism h => Category (CatSDual s o h) where
   CatSDual f . CatSDual g = make (f . g)
 
 --------------------------------------------------------------------------------
+-- MapSDualApplicative -
+
+-- | helper class to avoid undecidable instances for application on 'CatSDual'.
+class Applicative (MapSDual s o h) => MapSDualApplicative s o h
+
+instance MapSDualApplicative s o h => Applicative (CatSDual s o h) where
+  amap (CatSDual p) = amap p
+
+--------------------------------------------------------------------------------
+-- CatSDualDuality -
+
+-- | applications respecting the relation given by 'toDual' and 'fromDual'.
+class MapSDualApplicative s o h => CatSDualDuality s o h
+
+instance (Morphism h, CatSDualDuality s o h) => Functorial (CatSDual s o h)
+
+{-
+--------------------------------------------------------------------------------
 -- CatSDual - Applicative -
 
 instance (Morphism h, Applicative h, SDualisable s o) => Applicative (CatSDual s o h) where
@@ -214,17 +240,12 @@ amapSDual :: Applicative1 (CatSDual s o h) (SDual a b)
   => q a b -> CatSDual s o h x y -> SDual a b x -> SDual a b y
 amapSDual _ = amap1
 
---------------------------------------------------------------------------------
--- Variant2 -
+-}
 
-data Variant2 v h x y where
-  Covariant2     :: h x y -> Variant2 Covariant h x y
-  Contravariant2 :: h x y -> Variant2 Contravariant h x y
 
-instance Applicative1 h f => Applicative1 (Variant2 v h) f where
-  amap1 (Covariant2 h)     = amap1 h
-  amap1 (Contravariant2 h) = amap1 h
-  
+
+
+{-
 --------------------------------------------------------------------------------
 -- sctToDual -
 
@@ -263,7 +284,7 @@ sctToDualLeft d s a = case sctMap d (sctToDual' d s) (SDual (Left1 a)) of
     -- Applicative1 (CatSDual s o h) (SDual a b) which yields to a
     -- non valid sctMap!!!
 
-
+-}
 
 
 {-

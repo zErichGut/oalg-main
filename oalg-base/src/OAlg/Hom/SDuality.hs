@@ -6,20 +6,22 @@
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
-  , DefaultSignatures
-  , FunctionalDependencies
+  , GADTs
 #-}
 
 -- |
--- Module      : OAlg.SDuality.Definition
+-- Module      : OAlg.Hom.SDuality
 -- Description : duality of structured data.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- Duality of structured data.
-module OAlg.SDuality.Definition
-  ( -- * Dualisable
+module OAlg.Hom.SDuality
+  (
+
+{-
+    -- * Dualisable
     SDualisable(..), sdlToDual', sdlFromDual'
   , SReflexive(..), sdlCo', sdlRefl'
 
@@ -27,18 +29,28 @@ module OAlg.SDuality.Definition
   , SDualisable1(..)
   , sdlToDualLeft', sdlFromDualLeft'  
   , sdlToDualRight', sdlFromDualRight'
+
   
-  , SReflexive1(..), sdlCoLeft', sdlCoRight'
+  , SReflexive1(..) --, sdlRefl1
+  , sdlFromDualLeft, sdlFromDualRight
+
+  , sdlCoLeft', sdlCoRight'
   , sdlReflLeft', sdlReflRight'
 
     -- * Proposition
   , prpSDualisable, prpSReflexive
   , prpReflexive1
-
+-}
   
   ) where
 
+import Data.Kind
+
 import OAlg.Prelude
+
+import OAlg.Category.SDual
+
+import OAlg.Data.Singleton
 
 --------------------------------------------------------------------------------
 -- SReflexive -
@@ -52,10 +64,33 @@ import OAlg.Prelude
 -- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
 --
 -- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
-class Transformable1 o s => SReflexive s o where
-  sdlCo   :: Struct s x -> x -> o x
-  sdlRefl :: Struct s x -> Inv2 (->) x (o (o x))
+class (Singleton (r o), Transformable1 o s) => SReflexive r s o where
+  sdlCo   :: r o -> Struct s x -> x -> o x  
+  sdlRefl :: r o -> Struct s x -> Inv2 (->) x (o (o x))
 
+
+--------------------------------------------------------------------------------
+-- OpDuality -
+
+data Duality (o :: Type -> Type) = Duality
+
+instance Singleton (Duality o) where unit = Duality
+
+instance Transformable1 Op s => SReflexive Duality s Op where
+  sdlCo _ _   = Op
+  sdlRefl _ _ = Inv2 (Op . Op) (fromOp . fromOp)
+
+-- class (SReflexive r s o,  => MapSDualReflexive r s o
+
+-- instance SReflexive r s o => Applicative (MapSDual s o h) where
+  
+{-
+class SReflexive r s o => ApplicativeSReflexive r s o
+
+instance SReflexive r s o => ApplicativeMapSDual s o h
+-}
+
+{-
 --------------------------------------------------------------------------------
 -- sldCo' -
 
@@ -165,12 +200,32 @@ prpSDualisable q s = Prp "SDualisable" :<=>:
 -- (3) @'sdlCoLeft'' q s '.' vLeft '.=.' vRight' '.' sdlCoLeft' q s''@.
 --
 -- (4) @'sdlCoRight'' q s '.' vRight '.=.' vLeft' '.' sdlCoRight' q s''@.
-class Transformable1 o s => SReflexive1 s o a b | a -> b, b -> a where
-  sdlCoLeft  :: Struct s x -> a x -> b (o x)
-  sdlCoRight :: Struct s x -> b x -> a (o x)
-  sdlReflLeft :: Struct s x -> Inv2 (->) (a x) (a (o (o x)))
-  sdlReflRight :: Struct s x -> Inv2 (->) (b x) (b (o (o x)))
+class (Singleton (r o a b), Transformable1 o s) => SReflexive1 r s o a b where
+  
+  sdlToDualLeft :: r o a b -> Struct s x -> a x -> b (o x)
+  sdlToDualRight :: r o a b -> Struct s x -> b x -> a (o x)
+  sdlReflLeft :: r o a b -> Struct s x -> Inv2 (->) (a x) (a (o (o x)))
+  sdlReflRight :: r o a b -> Struct s x -> Inv2 (->) (b x) (b (o (o x)))
 
+--------------------------------------------------------------------------------
+-- sdlRefl1 -
+
+sdlRefl1 :: SReflexive1 r s o a b => q s -> r o a b
+sdlRefl1 _ = unit
+
+--------------------------------------------------------------------------------
+-- sdlFromDualRight -
+
+sdlFromDualRight :: SReflexive1 r s o a b => r o a b -> Struct s x -> b (o x) -> a x
+sdlFromDualRight r s = v . sdlToDualRight r (tau1 s) where Inv2 _ v = sdlReflLeft r s
+
+--------------------------------------------------------------------------------
+-- sdlFromDualLeft -
+
+sdlFromDualLeft :: SReflexive1 r s o a b => r o a b -> Struct s x -> a (o x) -> b x
+sdlFromDualLeft r s = v . sdlToDualLeft r (tau1 s) where Inv2 _ v = sdlReflRight r s
+
+{-
 --------------------------------------------------------------------------------
 -- sdlCoLeft' -
 
@@ -370,5 +425,6 @@ srCo _ s = nn (sType s) . I
 
 sType :: Struct s x -> SS (->) x
 sType _ = SS Struct
+-}
 
-
+-}

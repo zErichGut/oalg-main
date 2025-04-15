@@ -6,21 +6,23 @@
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
+  , GADTs
   , PolyKinds
   , DefaultSignatures
+  , DataKinds
 #-}
 
 -- |
--- Module      : OAlg.SDuality.Variant
+-- Module      : OAlg.Data.Variant
 -- Description : concept of co- and contra.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- concept of co- and contra.
-module OAlg.SDuality.Variant
+module OAlg.Data.Variant
   ( -- * Variant
-    Variant(..)
+    Variant(..), Variant2(..), toVariant2
 
     -- * Disjunctive
   , Disjunctive(..), Disjunctive2(..)
@@ -29,6 +31,8 @@ module OAlg.SDuality.Variant
 import OAlg.Prelude
 
 import OAlg.Category.Path
+
+import OAlg.Data.Either
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
@@ -88,3 +92,21 @@ instance Disjunctive2 h => Disjunctive2 (Path h) where
 
 instance Disjunctive2 h => Disjunctive (Path h x y) where
   variant = variant2
+
+--------------------------------------------------------------------------------
+-- Variant2 -
+
+data Variant2 v h x y where
+  Covariant2     :: h x y -> Variant2 Covariant h x y
+  Contravariant2 :: h x y -> Variant2 Contravariant h x y
+
+instance Applicative1 h f => Applicative1 (Variant2 v h) f where
+  amap1 (Covariant2 h)     = amap1 h
+  amap1 (Contravariant2 h) = amap1 h
+
+toVariant2 :: Disjunctive2 h
+  => h x y -> Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y
+toVariant2 h = case variant2 h of
+  Contravariant -> Left2 (Contravariant2 h)
+  Covariant     -> Right2 (Covariant2 h)
+  
