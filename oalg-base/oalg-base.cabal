@@ -52,6 +52,7 @@ library
       OAlg.Category.Map
       OAlg.Category.Path
       OAlg.Category.Proposition
+      OAlg.Category.SDual
       OAlg.Category.Unify
       OAlg.Control.Action
       OAlg.Control.Exception
@@ -92,6 +93,7 @@ library
       OAlg.Data.Tree
       OAlg.Data.TypeLits
       OAlg.Data.Validable
+      OAlg.Data.Variant
       OAlg.Data.X
       OAlg.Entity.Definition
       OAlg.Entity.Diagram
@@ -145,6 +147,7 @@ library
       OAlg.Hom.Oriented.Definition
       OAlg.Hom.Oriented.Proposition
       OAlg.Hom.Proposition
+      OAlg.Hom.SDuality
       OAlg.Hom.Vectorial
       OAlg.Limes.Cone
       OAlg.Limes.Cone.Definition
@@ -165,9 +168,6 @@ library
       OAlg.Limes.Universal
       OAlg.Prelude
       OAlg.Proposition
-      OAlg.SDuality.Category
-      OAlg.SDuality.Definition
-      OAlg.SDuality.Variant
       OAlg.Structure.Additive
       OAlg.Structure.Additive.Definition
       OAlg.Structure.Additive.Proposition

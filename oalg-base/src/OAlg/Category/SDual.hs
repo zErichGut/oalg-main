@@ -23,15 +23,15 @@
 module OAlg.Category.SDual
   (
     -- * Category
-    CatSDual()
+    CatSDual(), sctToDual
     
     -- * Map
   , MapSDual(..)
   , PathMapSDual, rdcPathMapSDual
-  , MapSDualApplicative
+  -- , MapSDualApplicative, MapSDualApplicative1
 
     -- * Duality
-  , CatSDualDuality
+  -- , CatSDualDuality, CatSDualDuality1
 
   ) where
 
@@ -199,53 +199,8 @@ instance Morphism h => Category (CatSDual s o h) where
   cOne = make . IdPath
   CatSDual f . CatSDual g = make (f . g)
 
---------------------------------------------------------------------------------
--- MapSDualApplicative -
-
--- | helper class to avoid undecidable instances for application on 'CatSDual'.
-class Applicative (MapSDual s o h) => MapSDualApplicative s o h
-
-instance MapSDualApplicative s o h => Applicative (CatSDual s o h) where
-  amap (CatSDual p) = amap p
-
---------------------------------------------------------------------------------
--- CatSDualDuality -
-
--- | applications respecting the relation given by 'toDual' and 'fromDual'.
-class MapSDualApplicative s o h => CatSDualDuality s o h
-
-instance (Morphism h, CatSDualDuality s o h) => Functorial (CatSDual s o h)
-
-{-
---------------------------------------------------------------------------------
--- CatSDual - Applicative -
-
-instance (Morphism h, Applicative h, SDualisable s o) => Applicative (CatSDual s o h) where
-  amap (CatSDual p) = amap p
-
---------------------------------------------------------------------------------
--- CatSDual - Functorial1 -
-
-instance (Morphism h, Applicative1 h a, Applicative1 h b, SDualisable1 s o a b)
-  => Applicative1 (CatSDual s o h) (SDual a b) where
-  amap1 (CatSDual p) = amap1 p
-
-instance (Morphism h, Applicative1 h a, Applicative1 h b, SDualisable1 s o a b)
-  => Functorial1 (CatSDual s o h) (SDual a b)
-
---------------------------------------------------------------------------------
--- amapSDual -
-
-amapSDual :: Applicative1 (CatSDual s o h) (SDual a b)
-  => q a b -> CatSDual s o h x y -> SDual a b x -> SDual a b y
-amapSDual _ = amap1
-
--}
 
 
-
-
-{-
 --------------------------------------------------------------------------------
 -- sctToDual -
 
@@ -255,6 +210,7 @@ sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
 sctToDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
 sctToDual s = sctToDualStruct s (tau1 s)
 
+{-
 sctToDual' :: SDuality s o h a b -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
 sctToDual' SDuality = sctToDual
 

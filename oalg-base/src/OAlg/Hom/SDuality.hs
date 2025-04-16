@@ -7,6 +7,8 @@
   , FlexibleInstances
   , FlexibleContexts
   , GADTs
+  , StandaloneKindSignatures
+  , DataKinds
 #-}
 
 -- |
@@ -51,6 +53,8 @@ import OAlg.Prelude
 import OAlg.Category.SDual
 
 import OAlg.Data.Singleton
+import OAlg.Data.Constructable
+import OAlg.Data.Variant
 
 --------------------------------------------------------------------------------
 -- SReflexive -
@@ -68,18 +72,71 @@ class (Singleton (r o), Transformable1 o s) => SReflexive r s o where
   sdlCo   :: r o -> Struct s x -> x -> o x  
   sdlRefl :: r o -> Struct s x -> Inv2 (->) x (o (o x))
 
+--------------------------------------------------------------------------------
+-- sdlReflection -
+
+sdlReflection :: SReflexive r s o => f s x -> g r y -> r o
+sdlReflection _ _ = unit
 
 --------------------------------------------------------------------------------
--- OpDuality -
+-- sdlToDual' -
 
-data Duality (o :: Type -> Type) = Duality
+sdlToDual' :: SReflexive r s o => Struct s x -> SDual r x -> SDual r (o x)
+sdlToDual' s d@(SDual x) = SDual (sdlCo r s x) where r = sdlReflection s d
 
-instance Singleton (Duality o) where unit = Duality
+--------------------------------------------------------------------------------
+-- sdlFromDual' -
 
-instance Transformable1 Op s => SReflexive Duality s Op where
+sdlFromDual' :: SReflexive r s o => Struct s x -> SDual r (o x) -> SDual r x
+sdlFromDual' s x' = SDual (v x'') where
+  r         = sdlReflection s x'
+  SDual x'' = sdlToDual' (tau1 s) x'
+  Inv2 _ v  = sdlRefl r s
+  
+--------------------------------------------------------------------------------
+-- SReflection -
+
+data SReflection (o :: Type -> Type) = SReflection
+
+instance Singleton (SReflection o) where unit = SReflection
+
+instance Transformable1 Op s => SReflexive SReflection s Op where
   sdlCo _ _   = Op
   sdlRefl _ _ = Inv2 (Op . Op) (fromOp . fromOp)
 
+--------------------------------------------------------------------------------
+-- SDual -
+
+type SDual :: ((Type -> Type) -> Type) -> Type -> Type
+newtype SDual r x = SDual x
+
+instance (Morphism h, Applicative h, SReflexive r s o) => Applicative1 (MapSDual s o h) (SDual r) where
+  amap1 (MapSDual h) = \(SDual x) -> SDual $ amap h x
+  amap1 t@ToDual     = sdlToDual' (domain t)
+  amap1 f@FromDual   = sdlFromDual' (range f)
+
+instance (Morphism h, Applicative h, SReflexive r s o) => Applicative1 (CatSDual s o h) (SDual r) where
+  amap1 = amap1 . form
+  
+instance (Morphism h, Applicative h, SReflexive r s o) => Functorial1 (CatSDual s o h) (SDual r)
+
+--------------------------------------------------------------------------------
+-- sdlToDual -
+
+sdlToDual :: (Transformable1 o s, Functorial1 (CatSDual s o h) (d r))
+  => q h -> Struct s x -> d r x -> d r (o x)
+sdlToDual q s = amap1 toDual where
+  Contravariant2 toDual = sctToDual' q s
+  
+  sctToDual' :: Transformable1 o s
+             => q h -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
+  sctToDual' _ = sctToDual
+
+
+{-
+data SDual r s o x where
+  SDual :: SReflexive r s o => SDual r s o x
+-}  
 -- class (SReflexive r s o,  => MapSDualReflexive r s o
 
 -- instance SReflexive r s o => Applicative (MapSDual s o h) where
