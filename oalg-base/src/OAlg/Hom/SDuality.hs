@@ -68,9 +68,53 @@ import OAlg.Data.Variant
 -- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
 --
 -- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
-class (Singleton (r o), Transformable1 o s) => SReflexive r s o where
-  sdlCo   :: r o -> Struct s x -> x -> o x  
-  sdlRefl :: r o -> Struct s x -> Inv2 (->) x (o (o x))
+class (Category c, Transformable1 o s) => SReflexive c s o d where
+  sdlToDual :: Struct s x -> c (d x) (d (o x))
+  sdlRefl :: Struct s x -> Inv2 c (d x) (d (o (o x)))
+
+sdlFromDual :: SReflexive c s o d => Struct s x -> c (d (o x)) (d x)
+sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
+
+instance (Morphism h, ApplicativeG d h c, SReflexive c s o d)
+  => ApplicativeG d (MapSDual s o h) c where
+  amapG (MapSDual h) = amapG h
+  amapG t@ToDual   = sdlToDual (domain t)
+  amapG f@FromDual = sdlFromDual (range f)
+
+class TransformableGObjectClass d (MapSDual s o h) c => TransformableGMapSDual d s o h c
+
+instance ( Morphism h, ApplicativeG d h c, SReflexive c s o d
+         , TransformableGMapSDual d s o h c
+         )
+  => ApplicativeG d (CatSDual s o h) c where
+  amapG = amapG . form
+
+
+-- instance TransformableGMapSDual d s o h c => TransformableGObjectClass d (CatSDual s o h) c
+
+instance ( Morphism h, ApplicativeG d h c, SReflexive c s o d
+         -- {-, TransformableGMapSDual d s o h c
+         ) => FunctorialG d (CatSDual s o h) c
+
+
+{-
+
+--------------------------------------------------------------------------------
+-- SReflexive -
+
+-- | duality of @__s__@-structured types given by a reflection.
+--
+-- __Property__ Let @'SReflexive' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+-- Let @q@ be any proxy in @__q o__@, @s' = 'tau1' s@ and @s'' = 'tau1' s'@,
+-- @'Inv2' u v = 'sdlRelf'' q s@ and @'Inv2' _ v' = 'sdlRefl'' q s'@ in
+--
+-- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
+--
+-- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
+class Transformable1 o s => SReflexive s o where
+  sdlCo   :: Struct s x -> x -> o x  
+  sdlRefl :: Struct s x -> Inv2 (->) x (o (o x))
+
 
 --------------------------------------------------------------------------------
 -- sdlReflection -
@@ -123,14 +167,20 @@ instance (Morphism h, Applicative h, SReflexive r s o) => Functorial1 (CatSDual 
 --------------------------------------------------------------------------------
 -- sdlToDual -
 
-sdlToDual :: (Transformable1 o s, Functorial1 (CatSDual s o h) (d r))
-  => q h -> Struct s x -> d r x -> d r (o x)
+sdlToDual :: (Transformable1 o s, Functorial1 (CatSDual s o h) d)
+  => q h -> Struct s x -> d x -> d (o x)
 sdlToDual q s = amap1 toDual where
   Contravariant2 toDual = sctToDual' q s
   
   sctToDual' :: Transformable1 o s
              => q h -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
   sctToDual' _ = sctToDual
+-}
+
+
+
+
+
 
 
 {-

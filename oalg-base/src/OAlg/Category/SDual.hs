@@ -3,6 +3,7 @@
 
 {-# LANGUAGE
     TypeFamilies
+  , TypeOperators
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
@@ -22,6 +23,7 @@
 -- category for structural dualities.
 module OAlg.Category.SDual
   (
+{-    
     -- * Category
     CatSDual(), sctToDual
     
@@ -32,7 +34,7 @@ module OAlg.Category.SDual
 
     -- * Duality
   -- , CatSDualDuality, CatSDualDuality1
-
+-}
   ) where
 
 import Control.Monad
@@ -53,7 +55,7 @@ import OAlg.Data.Variant
 
 -- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
 data MapSDual s o h x y where
-  MapSDual :: Transformable (ObjectClass h) s => h x y -> MapSDual s o h x y
+  MapSDual :: (Morphism h, ObjectClass h ~ s) => h x y -> MapSDual s o h x y
   ToDual   :: (Structure s x, Structure s (o x)) => MapSDual s o h x (o x)
   FromDual :: (Structure s x, Structure s (o x)) => MapSDual s o h (o x) x
 
@@ -65,6 +67,7 @@ instance Disjunctive (MapSDual s o h x y) where
   variant _            = Contravariant
 
 instance Disjunctive2 (MapSDual s o h)
+
 
 --------------------------------------------------------------------------------
 -- MapSDual - Entity2 -
@@ -89,14 +92,121 @@ instance (Entity2 h, Typeable s, Typeable o) => Entity2 (MapSDual s o h)
 --------------------------------------------------------------------------------
 -- MapSDual - Morphism -
 
-instance Morphism h => Morphism (MapSDual s o h) where
+instance Morphism (MapSDual s o h) where
   type ObjectClass (MapSDual s o h) = s
 
-  homomorphous (MapSDual h) = tauHom (homomorphous h)
+  homomorphous (MapSDual h) = homomorphous h
   homomorphous ToDual       = Struct :>: Struct
   homomorphous FromDual     = Struct :>: Struct
 
 instance Transformable s Typ => TransformableObjectClassTyp (MapSDual s o h)
+
+--------------------------------------------------------------------------------
+-- PathMapSDual -
+
+type PathMapSDual s o h = Path (MapSDual s o h)
+
+--------------------------------------------------------------------------------
+-- rdcPathMapSDual -
+
+rdcPathMapSDual :: PathMapSDual s o h x y -> Rdc (PathMapSDual s o h x y)
+rdcPathMapSDual p = case p of
+  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathMapSDual
+  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathMapSDual
+  p' :. p''                -> rdcPathMapSDual p'' >>= return . (p' :.)
+  _                        -> return p
+
+instance Reducible (PathMapSDual s o h x y) where
+  reduce = reduceWith rdcPathMapSDual
+
+--------------------------------------------------------------------------------
+-- CatSDual -
+
+newtype CatSDual s o h x y = CatSDual (PathMapSDual s o h x y)
+  deriving (Show, Show2, Validable, Validable2)
+
+deriving instance (TransformableTyp s, Eq2 h) => Eq2 (CatSDual s o h)
+
+instance (Entity2 h, TransformableTyp s, Typeable o, Typeable s)
+  => Entity2 (CatSDual s o h)
+
+--------------------------------------------------------------------------------
+-- CatSDual - Disjunctive -
+
+instance Disjunctive2 (CatSDual s o h)    where variant2 = restrict variant2
+instance Disjunctive (CatSDual s o h x y) where variant  = restrict variant
+
+--------------------------------------------------------------------------------
+-- CatSDual - Constructable -
+
+instance Exposable (CatSDual s o h x y) where
+  type Form (CatSDual s o h x y) = PathMapSDual s o h x y
+  form (CatSDual p) = p
+
+instance Constructable (CatSDual s o h x y) where make = CatSDual . reduce
+
+--------------------------------------------------------------------------------
+-- CatSDual - Category -
+
+instance Morphism (CatSDual s o h) where
+  type ObjectClass (CatSDual s o h) = s
+  homomorphous (CatSDual p) = homomorphous p
+
+instance Category (CatSDual s o h) where
+  cOne = make . IdPath
+  CatSDual f . CatSDual g = make (f . g)
+
+--------------------------------------------------------------------------------
+-- SReflexive -
+
+-- | duality of @__s__@-structured types given by a reflection.
+--
+-- __Property__ Let @'SReflexive' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+-- Let @q@ be any proxy in @__q o__@, @s' = 'tau1' s@ and @s'' = 'tau1' s'@,
+-- @'Inv2' u v = 'sdlRelf'' q s@ and @'Inv2' _ v' = 'sdlRefl'' q s'@ in
+--
+-- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
+--
+-- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
+class (Category c, Transformable1 o s) => SReflexive c s o d where
+  toDualG :: Struct s x -> c (d x) (d (o x))
+  reflG :: Struct s x -> Inv2 c (d x) (d (o (o x)))
+
+fromDualG :: SReflexive c s o d => Struct s x -> c (d (o x)) (d x)
+fromDualG s = v . toDualG (tau1 s) where Inv2 _ v = reflG s
+
+instance (ApplicativeG d h c, SReflexive c s o d)
+  => ApplicativeG d (MapSDual s o h) c where
+  amapG (MapSDual h) = amapG h
+  amapG t@ToDual     = toDualG (domain t)
+  amapG f@FromDual   = fromDualG (range f)
+
+class (TransformableGObjectClass d (MapSDual s o h) c, TransformableG d s (ObjectClass c))
+  => TransformableGMapSDual d s o h c
+
+instance (ApplicativeG d h c, SReflexive c s o d, TransformableGMapSDual d s o h c)
+  => ApplicativeG d (CatSDual s o h) c where
+  amapG = amapG . form
+
+instance ( ApplicativeG d h c, SReflexive c s o d
+         , TransformableGMapSDual d s o h c
+         ) => FunctorialG d (CatSDual s o h) c
+
+
+{-
+--------------------------------------------------------------------------------
+-- sctToDual -
+
+sctToDualStruct :: Struct s x -> Struct s (o x) -> Variant2 Contravariant (CatSDual s o h) x (o x)
+sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
+
+sctToDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
+sctToDual s = sctToDualStruct s (tau1 s)
+-}
+
+
+
+
 
 {-
 --------------------------------------------------------------------------------
@@ -143,72 +253,6 @@ instance (Morphism h, Applicative1 h a, Applicative1 h b, SReflexive1 r s o a b)
   amap1 t@ToDual     = sctToDual (domain t)
   amap1 f@FromDual   = error "nyi" -- sctFromDual (range f)
 -}  
-
---------------------------------------------------------------------------------
--- PathMapSDual -
-
-type PathMapSDual s o h = Path (MapSDual s o h)
-
---------------------------------------------------------------------------------
--- rdcPathMapSDual -
-
-rdcPathMapSDual :: PathMapSDual s o h x y -> Rdc (PathMapSDual s o h x y)
-rdcPathMapSDual p = case p of
-  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathMapSDual
-  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathMapSDual
-  p' :. p''                -> rdcPathMapSDual p'' >>= return . (p' :.)
-  _                        -> return p
-
-instance Reducible (PathMapSDual s o h x y) where
-  reduce = reduceWith rdcPathMapSDual
-
---------------------------------------------------------------------------------
--- CatSDual -
-
-newtype CatSDual s o h x y = CatSDual (PathMapSDual s o h x y)
-  deriving (Show, Show2, Validable, Validable2)
-
-deriving instance (Morphism h, TransformableTyp s, Eq2 h) => Eq2 (CatSDual s o h)
-
-instance (Morphism h, Entity2 h, TransformableTyp s, Typeable o, Typeable s)
-  => Entity2 (CatSDual s o h)
-
---------------------------------------------------------------------------------
--- CatSDual - Disjunctive -
-
-instance Disjunctive2 (CatSDual s o h)    where variant2 = restrict variant2
-instance Disjunctive (CatSDual s o h x y) where variant  = restrict variant
-
---------------------------------------------------------------------------------
--- CatSDual - Constructable -
-
-instance Exposable (CatSDual s o h x y) where
-  type Form (CatSDual s o h x y) = PathMapSDual s o h x y
-  form (CatSDual p) = p
-
-instance Constructable (CatSDual s o h x y) where make = CatSDual . reduce
-
---------------------------------------------------------------------------------
--- CatSDual - Category -
-
-instance Morphism h => Morphism (CatSDual s o h) where
-  type ObjectClass (CatSDual s o h) = s
-  homomorphous (CatSDual p) = homomorphous p
-
-instance Morphism h => Category (CatSDual s o h) where
-  cOne = make . IdPath
-  CatSDual f . CatSDual g = make (f . g)
-
-
-
---------------------------------------------------------------------------------
--- sctToDual -
-
-sctToDualStruct :: Struct s x -> Struct s (o x) -> Variant2 Contravariant (CatSDual s o h) x (o x)
-sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
-
-sctToDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
-sctToDual s = sctToDualStruct s (tau1 s)
 
 {-
 sctToDual' :: SDuality s o h a b -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)

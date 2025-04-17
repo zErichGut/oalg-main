@@ -40,6 +40,7 @@ module OAlg.Category.Definition
   -- , toOp2Struct
 
     -- * Applicative
+  , ApplicativeG(..)
   , Applicative(..), ($)
   , Applicative1(..)
   
@@ -47,12 +48,14 @@ module OAlg.Category.Definition
   , Functorial, Functor(..)
   , Functorial1, Functor1(..)
   , BiFunctorial1(..), amap1Fst, amap1Snd
+  , FunctorialG
 
     -- * Forget
   , Forget(..)
 
     -- * Transformables
   , TransformableObjectClassTyp
+  , TransformableGObjectClass
   
   )
   where
@@ -443,3 +446,26 @@ instance Transformable t Typ => TransformableObjectClassTyp (Forget t h)
 -- @instance (..,'TransformableObjectClassTyp' m),..) => C m@ which will solve the problem!
 class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 
+--------------------------------------------------------------------------------
+-- TransformableGObjectClass -
+
+-- | helper class to avoid undecided instances.
+class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectClass t a b
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+-- | functorials from @'Category' __a__@ to @'Category' __b__@ according to the
+-- type function @__t__@.
+-- representable categories, i.e. covariant functors from an 'Applicative' category
+--   __c__ to @('->')@.
+--
+--   __Properties__ Let @'FunctorialG' __f a b__@, the holdst: 
+--
+--   (1) For all @__x__@ and  @s@ in @'Struct' ('ObjectClass' __a__) __x__@ holds:
+--   @'amapG' ('cOne' s) '.=.' 'cOne' ('tauG' s)@.
+--
+--   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
+--   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
+class (Category a, Category b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
+  => FunctorialG t a b

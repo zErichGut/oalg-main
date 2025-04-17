@@ -201,6 +201,11 @@ instance Morphism m => Category (Path m) where
 --------------------------------------------------------------------------------
 -- Path - Applicative -
 
+instance ( Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
+  => ApplicativeG t (Path m) c where
+  amapG (IdPath s) = cOne (tauG s)
+  amapG (f :. p)   = amapG f . amapG p
+
 instance Applicative m => Applicative (Path m) where
   amap (IdPath _) = id
   amap (f :. p)   = amap f . amap p
@@ -217,6 +222,12 @@ instance (Applicative m, Morphism m) => Functorial (Path m)
 
 instance (Applicative1 m f, Morphism m) => Functorial1 (Path m) f
 
+instance TransformableGObjectClass t m c => TransformableGObjectClass t (Path m) c
+instance ( Morphism m, Category c, ApplicativeG t m c
+         , TransformableGObjectClass t m c
+         )
+  => FunctorialG t (Path m) c
+  
 --------------------------------------------------------------------------------
 -- Path - Cayleyan2 -
 

@@ -39,29 +39,29 @@ import OAlg.Data.X
 -- ApplicativeG -
 
 -- | generalized application of a family of types.
-class ApplicativeG f a b where
+class ApplicativeG t a b where
   -- | application.
-  amapG :: a x y -> b (f x) (f y)
+  amapG :: a x y -> b (t x) (t y)
 
 --------------------------------------------------------------------------------
 -- amapG' -
 
 -- | prefixing a proxy.
-amapG' :: ApplicativeG f a b => q f a b -> a x y -> b (f x) (f y)
+amapG' :: ApplicativeG t a b => q t a b -> a x y -> b (t x) (t y)
 amapG' _ = amapG
 
 --------------------------------------------------------------------------------
 -- ApplicationG -
 
 -- | attest of being 'ApplicativeG'.
-data ApplicationG f a b where
-  ApplicationG :: ApplicativeG f a b => ApplicationG f a b
+data ApplicationG t a b where
+  ApplicationG :: ApplicativeG t a b => ApplicationG t a b
 
 --------------------------------------------------------------------------------
 -- apType -
 
 -- | application to @(->)@ based on @__f__@,
-apType :: ApplicativeG f h (->) => ApplicationG f h (->)
+apType :: ApplicativeG t h (->) => ApplicationG t h (->)
 apType = ApplicationG
 
 --------------------------------------------------------------------------------

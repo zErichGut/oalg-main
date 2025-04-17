@@ -28,6 +28,7 @@ module OAlg.Structure.Definition
   , Transformable(..)
   , Transformable1(..), TransformableOp, tauOp
   , TransformableTyp
+  , TransformableG(..)
 
     -- * Some Structure Types
   , Typ, tauTyp
@@ -168,3 +169,11 @@ instance Transformable s Typ => TestEquality (Struct s) where
   testEquality sa sb = te (tau sa) (tau sb) where
     te :: Struct Typ a -> Struct Typ b -> Maybe (a:~:b)
     te Struct Struct = eqT
+
+--------------------------------------------------------------------------------
+-- TransformableG -
+
+-- | transforming structural attests.
+class TransformableG t u v where
+  tauG :: Struct u x -> Struct v (t x)
+
