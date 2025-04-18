@@ -177,3 +177,6 @@ instance Transformable s Typ => TestEquality (Struct s) where
 class TransformableG t u v where
   tauG :: Struct u x -> Struct v (t x)
 
+instance TransformableG d s Type where
+  tauG _ = Struct
+  

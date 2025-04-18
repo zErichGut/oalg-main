@@ -22,7 +22,7 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-
+{-
     -- * Homomorphism
     HomOriented, omap, IsoOrt, IsoOriented
 
@@ -58,7 +58,7 @@ module OAlg.Hom.Oriented.Definition
 
     -- ** Path
   , isoCoPath
-
+-}
   )
   where
 
@@ -69,9 +69,11 @@ import Data.List((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.SDual
+
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
-import OAlg.Data.SDuality
+import OAlg.Data.SDualisable
 
 import OAlg.Category.Path as C
 
@@ -189,6 +191,49 @@ type IsoOrt s h = (FunctorialHomOriented h, Cayleyan2 h, Hom s h)
 -- | isomorphisms between 'Oriented' structures.
 type IsoOriented h = (FunctorialHomOriented h, Cayleyan2 h)
 
+--------------------------------------------------------------------------------
+-- HomEmpty -
+
+-- | the empty homomorphism.
+newtype HomEmpty s x y = HomEmpty (EntEmpty2 x y)
+  deriving (Show, Show2,Eq,Eq2,Validable,Validable2,Entity,Entity2)
+
+--------------------------------------------------------------------------------
+-- fromHomEmpty -
+
+fromHomEmpty :: HomEmpty s a b -> x
+fromHomEmpty (HomEmpty e) = fromEmpty2 e
+
+--------------------------------------------------------------------------------
+-- HomEmpty - Applicative -
+
+instance ApplicativeG t (HomEmpty s) b where amapG = fromHomEmpty
+instance Applicative (HomEmpty s)
+instance Applicative1 (HomEmpty s) f
+instance ApplicativePoint (HomEmpty s) where pmap = fromHomEmpty
+
+--------------------------------------------------------------------------------
+-- HomEmpty - HomOriented -
+
+instance Morphism (HomEmpty s) where
+  type ObjectClass (HomEmpty s) = s
+  domain = fromHomEmpty
+  range  = fromHomEmpty
+
+instance (TransformableOrt s, TransformableTyp s, TransformableOp s) => HomOriented (HomEmpty s)
+
+--------------------------------------------------------------------------------
+-- OpDuality -
+
+data OpDuality s h o where OpDuality :: OpDuality s (HomEmpty s) Op
+
+--------------------------------------------------------------------------------
+-- opDualityOrt -
+
+opDualityOrt :: OpDuality Ort (HomEmpty Ort) Op
+opDualityOrt = OpDuality
+
+{-
 --------------------------------------------------------------------------------
 -- IdHom -
 
@@ -746,6 +791,8 @@ instance ( HomOriented h
 
 -- | the variance of a homomorphism on 'Oriented' structures.
 data Variance = Covariant | Contravariant deriving (Read,Show,Eq,Enum,Bounded)
+-}
+
 
 {-
 --------------------------------------------------------------------------------

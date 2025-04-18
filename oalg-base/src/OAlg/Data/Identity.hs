@@ -16,6 +16,7 @@ module OAlg.Data.Identity
   , fromId
   , trafoFromId
   , trafoToId
+  , toIdG, fromIdG
   )
   where
 
@@ -49,3 +50,15 @@ trafoFromId i f x = i y where Id y = f x
 -- | transforming a @f :: x -> y@ to a @f' :: x -> Id y@.
 trafoToId :: (x -> y) -> x -> Id y
 trafoToId f = Id . f
+
+--------------------------------------------------------------------------------
+-- toIdG -
+
+toIdG :: (x -> y) -> Id x -> Id y
+toIdG = fmap
+
+--------------------------------------------------------------------------------
+-- fromIdG -
+
+fromIdG :: (Id x -> Id y) -> x -> y
+fromIdG i = fromId . i . Id 

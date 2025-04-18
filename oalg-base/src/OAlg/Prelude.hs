@@ -81,6 +81,7 @@ import OAlg.Control.Exception as Exc
 import OAlg.Category.Applicative as App
 import OAlg.Category.Definition as Cat
 import OAlg.Category.Proposition as Prp
+
 import OAlg.Control.Validate as Vld
 
 import OAlg.Data.Logical as Lgc
@@ -99,3 +100,4 @@ import OAlg.Data.Ord as Ord
 
 import OAlg.Entity.Definition as Ent
 import OAlg.Structure.Definition as Str
+

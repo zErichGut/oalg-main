@@ -56,6 +56,7 @@ module OAlg.Category.Definition
     -- * Transformables
   , TransformableObjectClassTyp
   , TransformableGObjectClass
+  , TransformableGObjectClassRange
   
   )
   where
@@ -469,3 +470,12 @@ class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectCl
 --   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
 class (Category a, Category b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
   => FunctorialG t a b
+
+--------------------------------------------------------------------------------
+-- TransformableGObjectClassRange -
+
+-- | helper class to avoid undecided instances.
+class TransformableG d s (ObjectClass c) => TransformableGObjectClassRange d s c
+
+instance TransformableGObjectClassRange d s (->)
+

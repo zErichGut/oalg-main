@@ -1,7 +1,7 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, FlexibleInstances #-}
 {-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -132,12 +132,12 @@ instance Validable (EntEmpty2 x y) where
   valid = fromEmpty2
 
 instance Show2 EntEmpty2
-
 instance Eq2 EntEmpty2
-
 instance Validable2 EntEmpty2
-
 instance Entity2 EntEmpty2
+instance ApplicativeG t EntEmpty2 b where amapG = fromEmpty2
+instance Applicative EntEmpty2
+instance Applicative1 EntEmpty2 f
 
 --------------------------------------------------------------------------------
 -- Entity2 - Instance -
@@ -145,4 +145,5 @@ instance Entity2 EntEmpty2
 instance (Entity2 f, Entity2 g) => Entity2 (Either2 f g)
 
 instance (Entity2 h, Typeable t) => Entity2 (Forget t h)
+
 

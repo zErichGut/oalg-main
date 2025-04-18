@@ -43,6 +43,9 @@ class ApplicativeG t a b where
   -- | application.
   amapG :: a x y -> b (t x) (t y)
 
+instance ApplicativeG Id (->) (->) where
+  amapG = toIdG
+  
 --------------------------------------------------------------------------------
 -- amapG' -
 
@@ -111,4 +114,4 @@ instance Applicative1 (->) X where amap1 = fmap
 
 instance Applicative1 (->) [] where amap1 = map
 
-
+instance Applicative1 (->) Id
