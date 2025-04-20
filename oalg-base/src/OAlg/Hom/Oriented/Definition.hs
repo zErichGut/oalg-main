@@ -73,7 +73,8 @@ import OAlg.Category.SDual
 
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
-import OAlg.Data.SDualisable
+import OAlg.Data.Identity
+import OAlg.Data.Variant
 
 import OAlg.Category.Path as C
 
@@ -178,7 +179,6 @@ type FunctorialHomOriented h = (HomOriented h, Functorial h, FunctorialPoint h)
 
 type instance Hom Ort h = HomOriented h
 
-
 --------------------------------------------------------------------------------
 -- IsoOrt -
 
@@ -205,7 +205,7 @@ fromHomEmpty :: HomEmpty s a b -> x
 fromHomEmpty (HomEmpty e) = fromEmpty2 e
 
 --------------------------------------------------------------------------------
--- HomEmpty - Applicative -
+-- HomEmpty - Instances -
 
 instance ApplicativeG t (HomEmpty s) b where amapG = fromHomEmpty
 instance Applicative (HomEmpty s)
@@ -222,16 +222,19 @@ instance Morphism (HomEmpty s) where
 
 instance (TransformableOrt s, TransformableTyp s, TransformableOp s) => HomOriented (HomEmpty s)
 
+instance HomOriented (Variant2 Covariant (CatSDual s Op h))
+
 --------------------------------------------------------------------------------
 -- OpDuality -
 
-data OpDuality s h o where OpDuality :: OpDuality s (HomEmpty s) Op
+data OpDuality s o h where OpDuality :: OpDuality s Op (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- opDualityOrt -
 
-opDualityOrt :: OpDuality Ort (HomEmpty Ort) Op
+opDualityOrt :: OpDuality Ort Op (HomEmpty Ort)
 opDualityOrt = OpDuality
+
 
 {-
 --------------------------------------------------------------------------------

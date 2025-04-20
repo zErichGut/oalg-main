@@ -7,10 +7,12 @@
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
+  , FunctionalDependencies
   , GADTs
   , StandaloneDeriving
   , GeneralizedNewtypeDeriving
   , DataKinds
+  , ConstraintKinds
 #-}
 
 -- |
@@ -29,9 +31,17 @@ module OAlg.Category.SDual
     -- * Map
   , MapSDual(..)
   , PathMapSDual, rdcPathMapSDual
+    
+    -- * Structural Duality
+    -- ** SDualisable
+  , SDualisable
+  , sdlToDual
+  , SReflexive(..), fromDualG
 
-    -- * Reflexive
-  , SReflexive(..)
+    -- ** SDualisable1
+  , SDualisable1, SDual(..)
+  , sdlToDualLeft
+
   ) where
 
 import Control.Monad
@@ -44,6 +54,7 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Data.Identity
+import OAlg.Data.Either
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 import OAlg.Data.Variant
@@ -163,7 +174,7 @@ sctToDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (CatSDua
 sctToDual s = sctToDualStruct s (tau1 s)
 
 sctToDual' :: Transformable1 o s
-  => q h o -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
+  => q o h -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
 sctToDual' _ = sctToDual
 
 --------------------------------------------------------------------------------
@@ -178,19 +189,28 @@ sctToDual' _ = sctToDual
 -- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
 --
 -- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
-class (Category c, Transformable1 o s) => SReflexive c s o d where
+class (Category c, Transformable1 o s, TransformableG d s (ObjectClass c))
+  => SReflexive c s o d where
   toDualG :: Struct s x -> c (d x) (d (o x))
   reflG :: Struct s x -> Inv2 c (d x) (d (o (o x)))
+
+instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (MapSDual s o h) c
+
+--------------------------------------------------------------------------------
+-- fromDualG -
+
+fromDualG :: SReflexive c s o d => Struct s x -> c (d (o x)) (d x)
+fromDualG s = v . toDualG (tau1 s) where Inv2 _ v = reflG s
+
+--------------------------------------------------------------------------------
+-- SReflexive - Instances -
 
 instance Transformable1 Op s => SReflexive (->) s Op Id where
   toDualG _ = toIdG Op 
   reflG _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
   
 --------------------------------------------------------------------------------
--- fromDualG -
-
-fromDualG :: SReflexive c s o d => Struct s x -> c (d (o x)) (d x)
-fromDualG s = v . toDualG (tau1 s) where Inv2 _ v = reflG s
+-- CatSDual - FunctorialG -
 
 instance (ApplicativeG d h c, SReflexive c s o d)
   => ApplicativeG d (MapSDual s o h) c where
@@ -198,12 +218,127 @@ instance (ApplicativeG d h c, SReflexive c s o d)
   amapG t@ToDual     = toDualG (domain t)
   amapG f@FromDual   = fromDualG (range f)
 
-instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (MapSDual s o h) c
-
-instance (ApplicativeG d h c, SReflexive c s o d, TransformableGObjectClassRange  d s c)
+instance (ApplicativeG d h c, SReflexive c s o d, TransformableGObjectClassRange d s c)
   => ApplicativeG d (CatSDual s o h) c where
   amapG = amapG . form
 
+
 instance (ApplicativeG d h c, SReflexive c s o d, TransformableGObjectClassRange d s c)
   => FunctorialG d (CatSDual s o h) c
+
+--------------------------------------------------------------------------------
+-- SDualisable -
+
+type SDualisable s o h = (Transformable1 o s, FunctorialG Id (CatSDual s o h) (->))
+
+--------------------------------------------------------------------------------
+-- sdlToDual -
+
+sdlToDual :: SDualisable s o h => q o h -> Struct s x -> x -> o x
+sdlToDual q s = fromIdG $ amapG toDual where Contravariant2 toDual = sctToDual' q s
+
+--------------------------------------------------------------------------------
+-- SReflexiveBi -
+
+class ( Category c, Transformable1 o s
+      , TransformableG a s (ObjectClass c)
+      , TransformableG b s (ObjectClass c)
+      )
+  => SReflexiveBi c s o a b | a -> b, b -> a where
+  toDualLft :: Struct s x -> c (a x) (b (o x))
+  toDualRgt :: Struct s x -> c (b x) (a (o x))
+  reflLft :: Struct s x -> Inv2 c (a x) (a (o (o x)))
+  reflRgt :: Struct s x -> Inv2 c (b x) (b (o (o x)))
+
+--------------------------------------------------------------------------------
+-- fromDualLft -
+
+fromDualLft :: SReflexiveBi c s o a b => Struct s x -> c (b (o x)) (a x)
+fromDualLft s = v . toDualRgt (tau1 s) where Inv2 _ v = reflLft s
+
+--------------------------------------------------------------------------------
+-- fromDualRgt -
+
+fromDualRgt :: SReflexiveBi c s o a b => Struct s x -> c (a (o x)) (b x)
+fromDualRgt s = v . toDualLft (tau1 s) where Inv2 _ v = reflRgt s
+
+--------------------------------------------------------------------------------
+-- SDual -
+
+newtype SDual a b x = SDual (Either1 a b x)
+
+--------------------------------------------------------------------------------
+-- fromSDual -
+
+fromSDual :: SDual a b x -> Either1 a b x
+fromSDual (SDual ab) = ab
+
+--------------------------------------------------------------------------------
+-- amapEither -
+
+amapEither :: (ApplicativeG a h (->), ApplicativeG b h (->)) => h x y -> Either1 a b x -> Either1 a b y
+amapEither h (Left1 a)  = Left1 (amapG h a)
+amapEither h (Right1 b) = Right1 (amapG h b) 
+
+--------------------------------------------------------------------------------
+-- toDualEither -
+
+toDualEither :: SReflexiveBi (->) s o a b => Struct s x -> Either1 a b x -> Either1 a b (o x)
+toDualEither s (Left1 a)  = Right1 (toDualLft s a)
+toDualEither s (Right1 b) = Left1 (toDualRgt s b)
+
+--------------------------------------------------------------------------------
+-- reflEitherTo -
+
+reflEitherTo :: SReflexiveBi (->) s o a b
+  => Struct s x -> (->) (Either1 a b x) (Either1 a b (o (o x)))
+reflEitherTo s (Left1 a)  = Left1 (u a)  where Inv2 u _ = reflLft s
+reflEitherTo s (Right1 b) = Right1 (u b) where Inv2 u _ = reflRgt s 
+
+--------------------------------------------------------------------------------
+-- reflEitherFrom -
+
+reflEitherFrom :: SReflexiveBi (->) s o a b
+  => Struct s x -> (->) (Either1 a b (o (o x))) (Either1 a b x)
+reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = reflLft s
+reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = reflRgt s
+
+
+------------------------------------------------------------------------------------------
+-- SDual - Reflexive -
+
+instance SReflexiveBi (->) s o a b => SReflexive (->) s o (SDual a b) where
+  toDualG s = SDual . toDualEither s . fromSDual
+
+  reflG s = Inv2 u v where
+    u = SDual . reflEitherTo s . fromSDual
+    v = SDual . reflEitherFrom s . fromSDual
+
+instance (ApplicativeG a h (->), ApplicativeG b h (->)) => ApplicativeG (SDual a b) h (->) where
+  amapG h = SDual . amapEither h . fromSDual
+
+--------------------------------------------------------------------------------
+-- SDualisable1 -
+
+type SDualisable1 s o h a b = (Transformable1 o s, FunctorialG (SDual a b) (CatSDual s o h) (->))
+
+--------------------------------------------------------------------------------
+-- implErrorOverlappingInstances -
+
+-- | implementation error arising from overlapping instances for
+-- @'FunctorialG' ('SDual' __a b__) ('CatSDual' __s o h__) ('->')@.
+implErrorOverlappingInstances :: AlgebraicException
+implErrorOverlappingInstances = ImplementationError
+                              ( "arising from overlapping instances for "
+                              ++ "FunctorialG (SDual a b) (CatSDual s o h) (->)"
+                              )
+                             
+--------------------------------------------------------------------------------
+-- sdlToDualLeft -
+
+sdlToDualLeft :: SDualisable1 s o h a b => q a b o h -> Struct s x -> a x -> b (o x)
+sdlToDualLeft q s = \a -> case amapG toDual (SDual (Left1 a)) of
+     SDual (Right1 b') -> b'
+     _                 -> throw implErrorOverlappingInstances
+  where Contravariant2 toDual = sctToDual' q s
 
