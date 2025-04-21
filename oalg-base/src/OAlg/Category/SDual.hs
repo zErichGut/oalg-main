@@ -186,6 +186,7 @@ sctToDual s = sctToDualStruct s (tau1 s)
 sctToDual' :: (ObjectClass h ~ s, Transformable1 o s)
   => q o h -> Struct s x -> Variant2 Contravariant (CatSDual o h) x (o x)
 sctToDual' _ = sctToDual
+
 {-
 --------------------------------------------------------------------------------
 -- SReflexive -
