@@ -112,6 +112,7 @@ instance Transformable s Typ => TransformableObjectClassTyp (MapSDual s o h)
 --------------------------------------------------------------------------------
 -- PathMapSDual -
 
+-- | path of 'MapSDual'.
 type PathMapSDual s o h = Path (MapSDual s o h)
 
 --------------------------------------------------------------------------------
@@ -130,6 +131,7 @@ instance Reducible (PathMapSDual s o h x y) where
 --------------------------------------------------------------------------------
 -- CatSDual -
 
+-- | category for structural dualities.
 newtype CatSDual s o h x y = CatSDual (PathMapSDual s o h x y)
   deriving (Show, Show2, Validable, Validable2)
 
@@ -167,12 +169,16 @@ instance Category (CatSDual s o h) where
 --------------------------------------------------------------------------------
 -- sctToDual -
 
+-- | using the structural constraints to constract the 'Contravariant' morphism of 'ToDual'
+-- in'CatSDual'.
 sctToDualStruct :: Struct s x -> Struct s (o x) -> Variant2 Contravariant (CatSDual s o h) x (o x)
 sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
 
+-- | 'ToDual' as a 'Contravaraint' morphism in 'CatSDual'.
 sctToDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
 sctToDual s = sctToDualStruct s (tau1 s)
 
+-- | prefixing a proxy.
 sctToDual' :: Transformable1 o s
   => q o h -> Struct s x -> Variant2 Contravariant (CatSDual s o h) x (o x)
 sctToDual' _ = sctToDual
@@ -182,19 +188,61 @@ sctToDual' _ = sctToDual
 
 -- | duality of @__s__@-structured types given by a reflection.
 --
--- __Property__ Let @'SReflexive' __s o__@, then for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
--- Let @q@ be any proxy in @__q o__@, @s' = 'tau1' s@ and @s'' = 'tau1' s'@,
--- @'Inv2' u v = 'sdlRelf'' q s@ and @'Inv2' _ v' = 'sdlRefl'' q s'@ in
+-- __Property__ Let @'SReflexive' __c s o d__@, then for all @__x__@ and @s@ in @'Struct' __s x__@
+-- holds:
 --
--- (1) @'sdlCo'' q s' '.' 'sdlCo'' q s '.=.' u@.
+-- (1) @'toDualG'' q s' '.' 'toDualG'' q s '.=.' u@.
 --
--- (2) @'sdlCo'' q s '.' v '.=.' v' . 'sdlCo'' q s''@.
+-- (2) @'toDualG'' q s '.' v '.=.' v' . 'toDualG'' q s''@.
+--
+-- where @q@ is any proxy in @__q c s o d__@, @s' = 'tau1' s@ , @s'' = 'tau1' s'@,
+-- @'Inv2' u v = 'relfG'' q s@ and @'Inv2' _ v' = 'reflG'' q s'@.
+--
+-- __Note__ The properties above imply that @'toDualG' s@ and @'fromDualG' s@ are inverse
+-- in @__c__@ for all @__x__@ and @s@ in @'Struct' __s x__@ and hence establish a duality
+-- within @__s__@ structured types.
 class (Category c, Transformable1 o s, TransformableG d s (ObjectClass c))
   => SReflexive c s o d where
   toDualG :: Struct s x -> c (d x) (d (o x))
   reflG :: Struct s x -> Inv2 c (d x) (d (o (o x)))
 
 instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (MapSDual s o h) c
+
+--------------------------------------------------------------------------------
+-- SReflection -
+
+-- | attest of being 'SReflexive'.
+data SReflection c s o d where SReflection :: SReflexive c s o d => SReflection c s o d
+
+--------------------------------------------------------------------------------
+-- toDualG' -
+
+-- | prefixing a proxy.
+toDualG' :: SReflexive c s o d => q c s o d -> Struct s x -> c (d x) (d (o x))
+toDualG' _ = toDualG
+
+--------------------------------------------------------------------------------
+-- reflG' -
+
+-- | prefixing a proxy.
+reflG' :: SReflexive c s o d => q c s o d -> Struct s x -> Inv2 c (d x) (d (o (o x)))
+reflG' _ = reflG
+
+--------------------------------------------------------------------------------
+-- prpSReflexive -
+
+-- | validity according to 'SReflexive'.
+prpSReflexive :: SReflexive c s o d
+  => EqExt c
+  => q c s o d -> Struct s x -> Statement
+prpSReflexive q s = Prp "SReflexive" :<=>:
+  And [ Label "1" :<=>: (toDualG' q s' . toDualG' q s .=. u)
+      , Label "2" :<=>: (toDualG' q s . v .=. v' . toDualG' q s'')
+      ]
+  where s'        = tau1 s
+        s''       = tau1 s' 
+        Inv2 u v  = reflG' q s
+        Inv2 _ v' = reflG' q s'
 
 --------------------------------------------------------------------------------
 -- fromDualG -
