@@ -136,8 +136,6 @@ instance Eq2 EntEmpty2
 instance Validable2 EntEmpty2
 instance Entity2 EntEmpty2
 instance ApplicativeG t EntEmpty2 b where amapG = fromEmpty2
-instance Applicative EntEmpty2
-instance Applicative1 EntEmpty2 f
 
 --------------------------------------------------------------------------------
 -- Entity2 - Instance -

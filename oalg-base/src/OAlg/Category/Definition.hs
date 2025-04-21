@@ -8,6 +8,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Category.Definition
@@ -41,13 +42,12 @@ module OAlg.Category.Definition
 
     -- * Applicative
   , ApplicativeG(..)
-  , Applicative(..), ($)
-  , Applicative1(..)
+  , Applicative, amap, ($)
+  , Applicative1, amap1
   
     -- * Functorial
   , Functorial, Functor(..)
   , Functorial1, Functor1(..)
-  , BiFunctorial1(..), amap1Fst, amap1Snd
   , FunctorialG
 
     -- * Forget
@@ -69,6 +69,7 @@ import Data.List ((++))
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.Identity
 
 import OAlg.Data.Opposite
 import OAlg.Data.Either
@@ -230,7 +231,8 @@ instance Morphism h => Morphism (Op2 h) where
 --------------------------------------------------------------------------------
 -- Category -
 infixr 9 .
--- | category of morphisms.
+
+  -- | category of morphisms.
 --
 --   __Properties__ Let __@c@__ be a type instance of the class 'Category', then
 --   holds:
@@ -249,12 +251,7 @@ class Morphism c => Category c where
 --------------------------------------------------------------------------------
 -- cOne' -
 
--- | the 'cOne' to a given @'Struct' ('ObjectClass' __c__)@. The type @__p c__@ serves only as
---   proxy and 'cOne'' is lazy in it.
---
---   __Note__ As 'ObjectClass' may be a non-injective type family,
---   the type checker needs some times a little bit more information
---   to pic the right 'cOne'.
+-- | prefixing a proxy.
 cOne' :: Category c => p c -> Struct (ObjectClass c) x -> c x x
 cOne' _ = cOne
 
@@ -272,21 +269,28 @@ instance Category (->) where
 instance Category c => Category (Op2 c) where
   cOne s = Op2 (cOne s)
   Op2 f . Op2 g = Op2 (g . f)
-  
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+-- | functorials from @'Category' __a__@ to @'Category' __b__@ according to the
+-- type function @__t__@.
+--
+--   __Properties__ Let @'FunctorialG' __f a b__@, the holdst: 
+--
+--   (1) For all @__x__@ and  @s@ in @'Struct' ('ObjectClass' __a__) __x__@ holds:
+--   @'amapG' ('cOne' s) '.=.' 'cOne' ('tauG' s)@.
+--
+--   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
+--   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
+class (Category a, Category b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
+  => FunctorialG t a b
+
 --------------------------------------------------------------------------------
 -- Functorial -
 
--- | representable categories, i.e. covariant functors from an 'Applicative' category
---   __c__ to @('->')@.
---
---   __Properties__ Let __@c@__ be a type instance of the class 'Functorial' then holds:
---
---   (1) #Fnc1#For all types __@x@__ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
---   @'amap' ('cOne' d) = 'id'@.
---
---   (1) #Fnc2#For all types __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
---   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amap' (f '.' g) = 'amap' f '.' 'amap' g@. 
-class (Category c, Applicative c) => Functorial c
+-- | functorials form @__c__@ to @('->')@ according to 'Id'.
+type Functorial c = FunctorialG Id c (->)
 
 --------------------------------------------------------------------------------
 -- Functor -
@@ -298,17 +302,8 @@ data Functor c where
 --------------------------------------------------------------------------------
 -- Functorial1 -
 
--- | representable categories, i.e. covariant functors from an 'Applicative1' category @__c__@ to
--- @('->')@.
---
--- __Properties__ Let the pair @(__c__,__f__)@ be a type instance of 'Functorial1', then holds:
---
--- (1) For all types @__x___@ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
--- @'amap1' ('cOne' d) = 'id'@.
---
--- (2) For all types @__x__@, @__y__@, @__z__@, @f@ in @__c__ __y__ __z__@ and
--- @g@ in @__c__ __x__ __y__@ holds: @'amap1' (f '.' g) = 'amap1' f '.' 'amap1' g@.
-class (Category c, Applicative1 c f) => Functorial1 c f 
+-- | functorials form @__c__@ to @('->')@ according to @__f__@.
+type Functorial1 c f = FunctorialG f c (->)
 
 --------------------------------------------------------------------------------
 -- Functor1 -
@@ -318,39 +313,6 @@ class (Category c, Applicative1 c f) => Functorial1 c f
 data Functor1 c f where
   Functor1 :: Functorial1 c f => Functor1 c f
 
---------------------------------------------------------------------------------
--- BiFunctorial1 -
-
--- | bi-functorials.
-class BiFunctorial1 c f where
-  -- | attest of being 'Functorial1' according to the category @__c__@
-  -- and the first parameter @__a__@.
-  fnc1Fst :: f a b -> Functor1 c a
-  
-  -- | attest of being 'Functorial1' according to the category @__c__@
-  -- and the second parameter @__b__@.  
-  fnc1Snd :: f a b -> Functor1 c b
-
---------------------------------------------------------------------------------
--- amap1Fst -
-
--- | application according to the first 'Functorial1'.
-amap1Fst :: BiFunctorial1 c d => d a b -> c x y -> a x -> a y
-amap1Fst d c = case fnc1Fst' d c of Functor1 -> amap1 c
-  where
-    fnc1Fst' :: BiFunctorial1 c d => d a b -> c x y -> Functor1 c a
-    fnc1Fst' d _ = fnc1Fst d
-
---------------------------------------------------------------------------------
--- amap1Snd -
-
--- | application according to the second 'Functorial1'.
-amap1Snd :: BiFunctorial1 c d => d a b -> c x y -> b x -> b y
-amap1Snd d c = case fnc1Snd' d c of Functor1 -> amap1 c
-  where
-    fnc1Snd' :: BiFunctorial1 c d => d a b -> c x y -> Functor1 c b
-    fnc1Snd' d _ = fnc1Snd d
-  
 --------------------------------------------------------------------------------
 -- Cayleyan2 -
 
@@ -421,16 +383,17 @@ instance Eq2 m => Eq (Forget t m x y) where
   
 instance Morphism m => Morphism (Forget t m) where
   type ObjectClass (Forget t m) = t
-
   homomorphous (Forget m) = tauHom (homomorphous m)
 
-instance Applicative m => Applicative (Forget t m) where
-  amap (Forget h) = amap h
+instance ApplicativeG d m c => ApplicativeG d (Forget t m) c where
+  amapG (Forget h) = amapG h
 
 instance Transformable t Typ => TransformableObjectClassTyp (Forget t h)
 
+instance TransformableGObjectClassRange d t c => TransformableGObjectClass d (Forget t h) c
+
 --------------------------------------------------------------------------------
---
+-- TransformableObjectClassTyp -
 
 -- | helper class to avoid undecided instances.
 --
@@ -453,23 +416,7 @@ class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 -- | helper class to avoid undecided instances.
 class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectClass t a b
 
---------------------------------------------------------------------------------
--- FunctorialG -
-
--- | functorials from @'Category' __a__@ to @'Category' __b__@ according to the
--- type function @__t__@.
--- representable categories, i.e. covariant functors from an 'Applicative' category
---   __c__ to @('->')@.
---
---   __Properties__ Let @'FunctorialG' __f a b__@, the holdst: 
---
---   (1) For all @__x__@ and  @s@ in @'Struct' ('ObjectClass' __a__) __x__@ holds:
---   @'amapG' ('cOne' s) '.=.' 'cOne' ('tauG' s)@.
---
---   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
---   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
-class (Category a, Category b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
-  => FunctorialG t a b
+instance TransformableGObjectClass t a (->)
 
 --------------------------------------------------------------------------------
 -- TransformableGObjectClassRange -

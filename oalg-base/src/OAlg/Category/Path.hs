@@ -201,28 +201,16 @@ instance Morphism m => Category (Path m) where
 --------------------------------------------------------------------------------
 -- Path - Applicative -
 
-instance ( Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
+instance (Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
   => ApplicativeG t (Path m) c where
   amapG (IdPath s) = cOne (tauG s)
   amapG (f :. p)   = amapG f . amapG p
 
-instance Applicative m => Applicative (Path m) where
-  amap (IdPath _) = id
-  amap (f :. p)   = amap f . amap p
-
-instance Applicative1 m f => Applicative1 (Path m) f where
-  amap1 (IdPath _) = id
-  amap1 (f :. p)   = amap1 f . amap1 p
-  
-
 --------------------------------------------------------------------------------
 -- Path - Functorial -
 
-instance (Applicative m, Morphism m) => Functorial (Path m)
-
-instance (Applicative1 m f, Morphism m) => Functorial1 (Path m) f
-
 instance TransformableGObjectClass t m c => TransformableGObjectClass t (Path m) c
+
 instance ( Morphism m, Category c, ApplicativeG t m c
          , TransformableGObjectClass t m c
          )
@@ -322,8 +310,16 @@ instance (Cayleyan2 h, TransformableObjectClassTyp h, Transformable t Typ)
 --------------------------------------------------------------------------------
 -- Forget' - Functorial -
 
-instance Applicative h => Applicative (Forget' t h) where amap (Forget' p) = amap p
 
-instance (Functorial h, TransformableObjectClassTyp h, Eq2 h)  => Functorial (Forget' t h)
+
+instance ( Category c, ApplicativeG d h c
+         , TransformableGObjectClassRange d t c
+         ) => ApplicativeG d (Forget' t h) c where amapG (Forget' p) = amapG p
+
+instance ( Category h, TransformableObjectClassTyp h, Eq2 h
+         , Category c
+         , ApplicativeG d h c
+         , TransformableGObjectClassRange d t c
+         )  => FunctorialG d (Forget' t h) c
 
 

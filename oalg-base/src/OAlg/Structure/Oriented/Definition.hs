@@ -30,6 +30,7 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Orientation
   , Orientation(..), opposite
+  , Pnt(..)
 
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
@@ -94,8 +95,8 @@ instance Entity p => Entity (Orientation p)
 instance Singleton u => Singleton (Orientation u) where
   unit = unit :> unit
 
-instance Applicative1 (->) Orientation where
-  amap1 f (a :> b) = f a :> f b
+instance ApplicativeG Orientation (->) (->) where
+  amapG f (a :> b) = f a :> f b
 
 instance XStandard p => XStandard (Orientation p) where
   xStandard = xTupple2 xStandard xStandard >>= return . uncurry (:>)
@@ -154,6 +155,12 @@ class (Entity q, Entity (Point q)) => Oriented q where
   -- | the end point of an arrow.
   end :: q -> Point q
   end a = e where _ :> e = orientation a
+
+--------------------------------------------------------------------------------
+-- Pnt -
+
+-- | type function for 'Point's.
+newtype Pnt x = Pnt (Point x)
 
 --------------------------------------------------------------------------------
 -- isEndo -

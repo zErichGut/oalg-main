@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs, DefaultSignatures #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 
 -- |
@@ -15,20 +16,21 @@
 --
 -- application on values.
 module OAlg.Category.Applicative
-  ( 
+  (
+
     -- * Applicative
-    Applicative(..), ($)
-  , Applicative1(..)
+    Applicative, amap, ($)
+  , Applicative1, amap1
 
     -- * Generalized
   , ApplicativeG(..), amapG'
   , ApplicationG(..), apType, apIdType
+
   )
   where
 
-import Control.Monad (Functor(..))
+import Control.Monad (fmap)
 
-import Prelude ((.))
 import Data.List (map)
 
 import OAlg.Data.Identity
@@ -38,13 +40,21 @@ import OAlg.Data.X
 --------------------------------------------------------------------------------
 -- ApplicativeG -
 
--- | generalized application of a family of types.
+-- | generalized application of family of types.
 class ApplicativeG t a b where
   -- | application.
   amapG :: a x y -> b (t x) (t y)
 
-instance ApplicativeG Id (->) (->) where
-  amapG = toIdG
+--------------------------------------------------------------------------------
+-- ApplicativeG - Instances -
+
+instance ApplicativeG Id (->) (->) where amapG = toIdG
+instance ApplicativeG X (->) (->)  where amapG = fmap
+instance ApplicativeG [] (->) (->) where amapG = map
+
+instance (ApplicativeG t f c, ApplicativeG t g c) => ApplicativeG t (Either2 f g) c where
+  amapG (Left2 f)  = amapG f
+  amapG (Right2 g) = amapG g
   
 --------------------------------------------------------------------------------
 -- amapG' -
@@ -63,7 +73,7 @@ data ApplicationG t a b where
 --------------------------------------------------------------------------------
 -- apType -
 
--- | application to @(->)@ based on @__f__@,
+-- | application to @(->)@ based on @__t__@,
 apType :: ApplicativeG t h (->) => ApplicationG t h (->)
 apType = ApplicationG
 
@@ -76,15 +86,16 @@ apIdType = ApplicationG
 
 --------------------------------------------------------------------------------
 -- Applicative -
-  
--- | family of types having a representation in @(->)@.
-class Applicative h where
-  -- | application.
-  amap :: h a b -> a -> b
-  default amap :: ApplicativeG Id h (->) => h a b -> a -> b
-  amap h = fromId . amapG' apIdType h . Id
 
-instance Applicative (->) where amap h = h  
+-- | representable @__h__@s according to 'Id'.
+type Applicative h = ApplicativeG Id h (->)
+
+--------------------------------------------------------------------------------
+-- amap -
+
+-- | representation of @__h__@ in @('->')@. 
+amap :: Applicative h => h x y -> x -> y
+amap h x = y where Id y = amapG h (Id x)
 
 --------------------------------------------------------------------------------
 -- ($)
@@ -92,26 +103,19 @@ instance Applicative (->) where amap h = h
 infixr 0 $
 
 -- | right associative application on values.
-($) :: Applicative h => h a b -> a -> b
+($) :: Applicative h => h x y -> x -> y
 ($) = amap
-
-instance (Applicative f, Applicative g) => Applicative (Either2 f g) where
-  amap (Left2 f)  = amap f
-  amap (Right2 g) = amap g
 
 --------------------------------------------------------------------------------
 -- Applicative1 -
 
--- | family of types having a representation in @f a -> f b@.
-class Applicative1 h f where
-  -- | application.
-  amap1 :: h a b -> f a -> f b
-  default amap1 :: ApplicativeG f h (->) => h a b -> f a -> f b
-  amap1 = amapG' apType
+-- | representable @__h__@s according to @__f__@.
+type Applicative1 h f = ApplicativeG f h (->)
 
-instance Applicative1 (->) X where amap1 = fmap
+--------------------------------------------------------------------------------
+-- amap1 -
 
+-- | representation of @__h__@ in @('->')@ according to @__f__@.
+amap1 :: Applicative1 h f => h x y -> f x -> f y
+amap1 = amapG
 
-instance Applicative1 (->) [] where amap1 = map
-
-instance Applicative1 (->) Id

@@ -86,7 +86,32 @@ import OAlg.Structure.Oriented as O
 
 import OAlg.Hom.Definition
 
+--------------------------------------------------------------------------------
+-- ApplicativePoint -
 
+-- | applications on 'Point's.
+type ApplicativePoint h = ApplicativeG Pnt h (->)
+
+--------------------------------------------------------------------------------
+-- pmap -
+
+-- | the induced mapping of 'Point's given by 'amapG'. 
+pmap :: ApplicativePoint h => h x y -> Point x -> Point y
+pmap h p = q where Pnt q = amapG h (Pnt p)
+
+--------------------------------------------------------------------------------
+-- omap -
+
+-- | the induced mapping of 'Orientation'.
+omap :: ApplicativePoint h => h a b -> Orientation (Point a) -> Orientation (Point b)
+omap = amapG . pmap
+
+--------------------------------------------------------------------------------
+-- FunctorialPoint -
+
+type FunctorialPoint h = FunctorialG Pnt h (->)
+
+{-
 --------------------------------------------------------------------------------
 -- ApplicativePoint -
 
@@ -101,6 +126,15 @@ instance ApplicativePoint h => ApplicativePoint (C.Path h) where
 instance ApplicativePoint h => ApplicativePoint (Forget t h) where
   pmap (Forget h) = pmap h
 
+instance ApplicativePoint h => ApplicativePoint (Variant2 v h) where
+  pmap (Covariant2 h)     = pmap h
+  pmap (Contravariant2 h) = pmap h
+
+instance ApplicativePoint h => ApplicativePoint (MapSDual s o h) where
+  pmap (MapSDual h) = pmap h
+  
+instance ApplicativePoint h => ApplicativePoint (CatSDual s o h) where
+  pmap = pmap . form
 
 --------------------------------------------------------------------------------
 -- omap -
@@ -125,6 +159,7 @@ omap h = amap1 (pmap h)
 class (Category h, ApplicativePoint h) => FunctorialPoint h
 
 instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
+-}
 
 --------------------------------------------------------------------------------
 -- HomOriented -
@@ -159,14 +194,20 @@ instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
-      , Transformable1 Op (ObjectClass h)
+      -- , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
-
 
 instance HomOriented h => HomOriented (C.Path h)
 
-instance (HomOriented h, Transformable1 Op t, Transformable t Ort, Transformable t Typ)
+
+instance (HomOriented h, Transformable t Ort, Transformable t Typ)
   => HomOriented (Forget t h)
+
+--------------------------------------------------------------------------------
+-- SReflexiveOriented -
+
+class (SReflexive (->) s o Id, SReflexive (->) s o Pnt, Transformable s Ort)
+  => SReflexiveOriented s o
 
 --------------------------------------------------------------------------------
 -- FunctorialHomOriented -
@@ -207,10 +248,12 @@ fromHomEmpty (HomEmpty e) = fromEmpty2 e
 --------------------------------------------------------------------------------
 -- HomEmpty - Instances -
 
-instance ApplicativeG t (HomEmpty s) b where amapG = fromHomEmpty
-instance Applicative (HomEmpty s)
-instance Applicative1 (HomEmpty s) f
-instance ApplicativePoint (HomEmpty s) where pmap = fromHomEmpty
+instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
+
+--------------------------------------------------------------------------------
+-- CatSDualV -
+
+type CatSDualV v s o h = Variant2 v (CatSDual s o h)
 
 --------------------------------------------------------------------------------
 -- HomEmpty - HomOriented -
@@ -220,9 +263,10 @@ instance Morphism (HomEmpty s) where
   domain = fromHomEmpty
   range  = fromHomEmpty
 
-instance (TransformableOrt s, TransformableTyp s, TransformableOp s) => HomOriented (HomEmpty s)
+instance (TransformableOrt s, TransformableTyp s) => HomOriented (HomEmpty s)
 
-instance HomOriented (Variant2 Covariant (CatSDual s Op h))
+instance ( HomOriented h, SReflexiveOriented s o, Transformable s Typ)
+  => HomOriented (Variant2 Covariant (CatSDual s o h))
 
 --------------------------------------------------------------------------------
 -- OpDuality -
@@ -234,6 +278,9 @@ data OpDuality s o h where OpDuality :: OpDuality s Op (HomEmpty s)
 
 opDualityOrt :: OpDuality Ort Op (HomEmpty Ort)
 opDualityOrt = OpDuality
+
+
+
 
 
 {-
