@@ -52,7 +52,6 @@ library
       OAlg.Category.Map
       OAlg.Category.Path
       OAlg.Category.Proposition
-      OAlg.Category.SDual
       OAlg.Category.Unify
       OAlg.Control.Action
       OAlg.Control.Exception
@@ -82,6 +81,7 @@ library
       OAlg.Data.Proxy
       OAlg.Data.Reducible
       OAlg.Data.Relation
+      OAlg.Data.SDualisable
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular

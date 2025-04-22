@@ -69,12 +69,11 @@ import Data.List((++))
 
 import OAlg.Prelude
 
-import OAlg.Category.SDual
-
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 import OAlg.Data.Identity
 import OAlg.Data.Variant
+import OAlg.Data.SDualisable
 
 import OAlg.Category.Path as C
 
@@ -203,6 +202,15 @@ instance HomOriented h => HomOriented (C.Path h)
 instance (HomOriented h, Transformable t Ort, Transformable t Typ)
   => HomOriented (Forget t h)
 
+------------------------------------------------------------------------------------------
+-- SDualisableOriented -
+
+class (SDualisableGMorphism (->) h o Id, SDualisableGMorphism (->) h o Pnt) => SDualisableOriented o h
+
+instance ( HomOriented h, SDualisableOriented o h)
+  => HomOriented (Variant2 Covariant (SDualCat o h))
+
+{-
 --------------------------------------------------------------------------------
 -- SReflexiveOriented -
 
@@ -278,6 +286,8 @@ data OpDuality s o h where OpDuality :: OpDuality s Op (HomEmpty s)
 
 opDualityOrt :: OpDuality Ort Op (HomEmpty Ort)
 opDualityOrt = OpDuality
+-}
+
 
 
 

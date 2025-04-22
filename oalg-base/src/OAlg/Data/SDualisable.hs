@@ -27,13 +27,11 @@ module OAlg.Data.SDualisable
     -- * Structural Duality
     -- ** Dualisable
     SDualisable, sdlToDual
-  
   , SDualisableG
   , SReflexiveG(..)
 
     -- ** Bi-Dualisable
-  , SBiDualisable
-  , sdlToDualLft
+  , SBiDualisable, sdlToDualLft
   , SDual(..)
 
     -- * Category
@@ -42,7 +40,7 @@ module OAlg.Data.SDualisable
     -- * Map
   , SDualMap(..)
   , PathSDualMap, rdcPathSDualMap
-    
+
   ) where
 
 import Control.Monad
@@ -65,108 +63,112 @@ import OAlg.Data.Variant
 -- SDualMap -
 
 -- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
-data SDualMap o h x y where
-  SDualMap :: h x y -> SDualMap o h x y
-  ToDual   :: (Structure (ObjectClass h) x, Structure (ObjectClass h) (o x)) => SDualMap o h x (o x)
-  FromDual :: (Structure (ObjectClass h) x, Structure (ObjectClass h) (o x)) =>  SDualMap o h (o x) x
-
-instance TransformableGObjectClass d h c => TransformableGObjectClass d (SDualMap o h) c
+data SDualMap s o h x y where
+  SDualMap :: h x y -> SDualMap s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => SDualMap s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) =>  SDualMap s o h (o x) x
 
 --------------------------------------------------------------------------------
 -- SDualMap - Disjunctive -
 
-instance Disjunctive (SDualMap o h x y) where
+instance Disjunctive (SDualMap s o h x y) where
   variant (SDualMap _) = Covariant
   variant _            = Contravariant
 
-instance Disjunctive2 (SDualMap o h)
+instance Disjunctive2 (SDualMap s o h)
 
 --------------------------------------------------------------------------------
 -- SDualMap - Entity2 -
 
-instance Show2 h => Show2 (SDualMap o h) where
+instance Show2 h => Show2 (SDualMap s o h) where
   show2 (SDualMap h) = "SDualMap (" ++ show2 h ++ ")"
   show2 ToDual       = "ToDual"
   show2 FromDual     = "FromDual"
 
-instance Eq2 h => Eq2 (SDualMap o h) where
+instance Eq2 h => Eq2 (SDualMap s o h) where
   eq2 (SDualMap f) (SDualMap g) = eq2 f g
   eq2 ToDual ToDual             = True
   eq2 FromDual FromDual         = True
   eq2 _ _                       = False
 
-instance Validable2 h => Validable2 (SDualMap o h) where
+instance Validable2 h => Validable2 (SDualMap s o h) where
   valid2 (SDualMap h) = valid2 h
   valid2 _            = SValid
 
-instance (Entity2 h, Typeable o) => Entity2 (SDualMap o h)
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (SDualMap s o h)
 
 --------------------------------------------------------------------------------
 -- SDualMap - Morphism -
 
-instance Morphism h => Morphism (SDualMap o h) where
-  type ObjectClass (SDualMap o h) = ObjectClass h
+instance (Morphism h, ObjectClass h ~ s) => Morphism (SDualMap s o h) where
+  type ObjectClass (SDualMap s o h) = s
 
   homomorphous (SDualMap h) = homomorphous h
   homomorphous ToDual       = Struct :>: Struct
   homomorphous FromDual     = Struct :>: Struct
 
-instance TransformableObjectClassTyp h => TransformableObjectClassTyp (SDualMap o h)
+instance (TransformableGObjectClass d h c, ObjectClass h ~ s)
+  => TransformableGObjectClass d (SDualMap s o h) c
+
+instance Transformable s Typ => TransformableObjectClassTyp (SDualMap s o h)
 
 --------------------------------------------------------------------------------
 -- PathSDualMap -
 
 -- | path of 'SDualMap'.
-type PathSDualMap o h = Path (SDualMap o h)
+type PathSDualMap s o h = Path (SDualMap s o h)
 
 --------------------------------------------------------------------------------
 -- rdcPathSDualMap -
 
-rdcPathSDualMap :: PathSDualMap o h x y -> Rdc (PathSDualMap o h x y)
+rdcPathSDualMap :: PathSDualMap s o h x y -> Rdc (PathSDualMap s o h x y)
 rdcPathSDualMap p = case p of
   FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathSDualMap
   ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathSDualMap
   p' :. p''                -> rdcPathSDualMap p'' >>= return . (p' :.)
   _                        -> return p
 
-instance Reducible (PathSDualMap o h x y) where
+instance Reducible (PathSDualMap s o h x y) where
   reduce = reduceWith rdcPathSDualMap
 
 --------------------------------------------------------------------------------
 -- SDualCat -
 
 -- | category for structural dualities.
-newtype SDualCat o h x y = SDualCat (PathSDualMap o h x y)
-  deriving (Show, Show2, Validable, Validable2)
+newtype SDualCat s o h x y = SDualCat (PathSDualMap s o h x y)
+  deriving (Show, Show2)
 
-deriving instance (Morphism h, TransformableObjectClassTyp h, Eq2 h) => Eq2 (SDualCat o h)
+deriving instance (Morphism h, ObjectClass h ~ s, Validable2 h) => Validable2 (SDualCat s o h)
+deriving instance (Morphism h, ObjectClass h ~ s, Validable2 h) => Validable (SDualCat s o h x y)
+deriving instance (Morphism h, ObjectClass h ~ s, Transformable s Typ, Eq2 h) => Eq2 (SDualCat s o h)
 
-instance (Morphism h, Entity2 h, TransformableObjectClassTyp h, Typeable o)
-  => Entity2 (SDualCat o h)
 
---------------------------------------------------------------------------------
--- SDualCat - Disjunctive -
-
-instance Disjunctive2 (SDualCat o h)    where variant2 = restrict variant2
-instance Disjunctive (SDualCat o h x y) where variant  = restrict variant
+instance (Morphism h, ObjectClass h ~ s, Entity2 h, Transformable s Typ, Typeable s, Typeable o)
+  => Entity2 (SDualCat s o h)
 
 --------------------------------------------------------------------------------
 -- SDualCat - Constructable -
 
-instance Exposable (SDualCat o h x y) where
-  type Form (SDualCat o h x y) = PathSDualMap o h x y
+instance Exposable (SDualCat s o h x y) where
+  type Form (SDualCat s o h x y) = PathSDualMap s o h x y
   form (SDualCat p) = p
 
-instance Constructable (SDualCat o h x y) where make = SDualCat . reduce
+instance Constructable (SDualCat s o h x y) where make = SDualCat . reduce
+
+--------------------------------------------------------------------------------
+-- SDualCat - Disjunctive -
+
+instance Disjunctive2 (SDualCat s o h)    where variant2 = restrict variant2
+instance Disjunctive (SDualCat s o h x y) where variant  = restrict variant
 
 --------------------------------------------------------------------------------
 -- SDualCat - Category -
 
-instance Morphism h => Morphism (SDualCat o h) where
-  type ObjectClass (SDualCat o h) = ObjectClass h
+instance (Morphism h, ObjectClass h ~ s) => Morphism (SDualCat s o h) where
+  type ObjectClass (SDualCat s o h) = s
   homomorphous (SDualCat p) = homomorphous p
 
-instance Morphism h => Category (SDualCat o h) where
+instance (Morphism h, ObjectClass h ~ s) => Category (SDualCat s o h) where
   cOne = make . IdPath
   SDualCat f . SDualCat g = make (f . g)
 
@@ -175,18 +177,16 @@ instance Morphism h => Category (SDualCat o h) where
 
 -- | using the structural constraints to constract the 'Contravariant' morphism of 'ToDual'
 -- in'SDualCat'.
-sctToDualStruct :: ObjectClass h ~ s
-  => Struct s x -> Struct s (o x) -> Variant2 Contravariant (SDualCat o h) x (o x)
+sctToDualStruct ::Struct s x -> Struct s (o x) -> Variant2 Contravariant (SDualCat s o h) x (o x)
 sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
 
 -- | 'ToDual' as a 'Contravaraint' morphism in 'SDualCat'.
-sctToDual :: (ObjectClass h ~ s, Transformable1 o s)
-  => Struct s x -> Variant2 Contravariant (SDualCat o h) x (o x)
+sctToDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (SDualCat s o h) x (o x)
 sctToDual s = sctToDualStruct s (tau1 s)
 
 -- | prefixing a proxy.
-sctToDual' :: (ObjectClass h ~ s, Transformable1 o s)
-  => q o h -> Struct s x -> Variant2 Contravariant (SDualCat o h) x (o x)
+sctToDual' :: Transformable1 o s
+  => q o h -> Struct s x -> Variant2 Contravariant (SDualCat s o h) x (o x)
 sctToDual' _ = sctToDual
 
 --------------------------------------------------------------------------------
@@ -276,38 +276,34 @@ instance Transformable1 Op s => SDualisableG (->) s Op Id where
   fromDualG _ = toIdG fromOp
 
 --------------------------------------------------------------------------------
--- SDualisableGMorphism -
-
--- | helper class to avoid undecidable instances.
-class (Morphism h, SDualisableG c (ObjectClass h) o d) => SDualisableGMorphism c h o d
-
---------------------------------------------------------------------------------
 -- SDualCat - FunctorialG -
 
-instance (ApplicativeG d h c, SDualisableGMorphism c h o d)
-  => ApplicativeG d (SDualMap o h) c where
+instance (Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d)
+  => ApplicativeG d (SDualMap s o h) c where
   amapG (SDualMap h) = amapG h
   amapG t@ToDual     = toDualG (domain t)
   amapG f@FromDual   = fromDualG (range f)
 
-instance ( ApplicativeG d h c, SDualisableGMorphism c h o d
+instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
          , TransformableGObjectClass d h c
-         ) => ApplicativeG d (SDualCat o h) c where
+         )
+  => ApplicativeG d (SDualCat s o h) c where
   amapG = amapG . form
 
-instance ( Category c, ApplicativeG d h c, SDualisableGMorphism c h o d
-         , TransformableGObjectClass d h c
-         ) => ApplicativeGMorphism d (SDualCat o h) c
+instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
+         , Category c, TransformableGObjectClass d h c
+         )
+  => ApplicativeGMorphism d (SDualCat s o h) c
 
-instance ( Category c, ApplicativeG d h c, SDualisableGMorphism c h o d
-         , TransformableGObjectClass d h c
-         ) => FunctorialG d (SDualCat o h) c
-
+instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
+         , Category c, TransformableGObjectClass d h c
+         )
+  => FunctorialG d (SDualCat s o h) c
 
 --------------------------------------------------------------------------------
--- SDualisableG -
+-- SDualisable -
 
-type SDualisable c s o h = (Transformable1 o s, ObjectClass h ~ s, FunctorialG Id (SDualCat o h) c)
+class (Transformable1 o s, FunctorialG Id (SDualCat s o h) c) => SDualisable c s o h
 
 --------------------------------------------------------------------------------
 -- sdlToDual -
@@ -331,6 +327,7 @@ class (SReflexiveG c s o a, SReflexiveG c s o b, Transformable1 o s)
   
   fromDualRgt :: Struct s x -> c (a (o x)) (b x)
   fromDualRgt s = v . toDualLft (tau1 s) where Inv2 _ v = reflG s
+
 --------------------------------------------------------------------------------
 -- SDual -
 
@@ -373,7 +370,6 @@ reflEitherFrom :: SBiDualisableG (->) s o a b
 reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = reflG s
 reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = reflG s
 
-
 ------------------------------------------------------------------------------------------
 -- SDual - SReflexive -
 
@@ -388,15 +384,9 @@ instance SBiDualisableG (->) s o a b => SDualisableG (->) s o (SDual a b) where
 --------------------------------------------------------------------------------
 -- SBiDualisable -
 
-class (Transformable1 o s, ObjectClass h ~ s, FunctorialG (SDual a b) (SDualCat o h) c)
-  => SBiDualisable c s o h a b
-
-class SDualisableGMorphism c h o (SDual a b) => SDualisableGMorphismSDual c h o a b
-
-instance ( Transformable1 o s, ObjectClass h ~ s, ApplicativeG (SDual a b) h c
-         , SDualisableGMorphismSDual c h o a b
-         , TransformableGObjectClass (SDual a b) h c
-         )
+-- | bi-structural duality given by a functorial from @'SDualCat' __o h__@ to @__c__@ according to
+-- @'SDual' __a b__@.
+class (Transformable1 o s, FunctorialG (SDual a b) (SDualCat s o h) c)
   => SBiDualisable c s o h a b
 
 --------------------------------------------------------------------------------
@@ -414,5 +404,3 @@ sdlToDualLft q s a = case amapG toDual (SDual (Left1 a)) of
      SDual (Right1 b') -> b'
      _                 -> throw (implErrorSBidualisable "sdlToDualLft")
   where Contravariant2 toDual = sctToDual' q s
-
-
