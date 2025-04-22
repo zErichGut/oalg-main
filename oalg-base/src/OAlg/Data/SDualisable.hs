@@ -15,33 +15,34 @@
 #-}
 
 -- |
--- Module      : OAlg.Category.SDual
--- Description : category for structural dualities.
+-- Module      : OAlg.Data.SDualisable
+-- Description : duality for structured types.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- category for structural dualities.
-module OAlg.Category.SDual
+-- duality for structured types.
+module OAlg.Data.SDualisable
   (
-{-    
+    -- * Structural Duality
+    -- ** Dualisable
+    SDualisable, sdlToDual
+  
+  , SDualisableG
+  , SReflexiveG(..)
+
+    -- ** Bi-Dualisable
+  , SBiDualisable
+  , sdlToDualLft
+  , SDual(..)
+
     -- * Category
-    CatSDual(), sctToDual, sctToDual'
+  , SDualCat(), sctToDual, sctToDual'
     
     -- * Map
-  , MapSDual(..)
-  , PathMapSDual, rdcPathMapSDual
+  , SDualMap(..)
+  , PathSDualMap, rdcPathSDualMap
     
-    -- * Structural Duality
-    -- ** SDualisableG
-  , SDualisableG
-  , sdlToDual
-  , SReflexiveG(..), fromDualG
-
-    -- ** SDualisable1
-  , SDualisable1, SDual(..)
-  , sdlToDualLeft
--}
   ) where
 
 import Control.Monad
@@ -61,131 +62,131 @@ import OAlg.Data.Variant
 
 
 --------------------------------------------------------------------------------
--- MapSDual -
+-- SDualMap -
 
 -- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
-data MapSDual o h x y where
-  MapSDual :: h x y -> MapSDual o h x y
-  ToDual   :: (Structure (ObjectClass h) x, Structure (ObjectClass h) (o x)) => MapSDual o h x (o x)
-  FromDual :: (Structure (ObjectClass h) x, Structure (ObjectClass h) (o x)) =>  MapSDual o h (o x) x
+data SDualMap o h x y where
+  SDualMap :: h x y -> SDualMap o h x y
+  ToDual   :: (Structure (ObjectClass h) x, Structure (ObjectClass h) (o x)) => SDualMap o h x (o x)
+  FromDual :: (Structure (ObjectClass h) x, Structure (ObjectClass h) (o x)) =>  SDualMap o h (o x) x
 
-instance TransformableGObjectClass d h c => TransformableGObjectClass d (MapSDual o h) c
+instance TransformableGObjectClass d h c => TransformableGObjectClass d (SDualMap o h) c
 
 --------------------------------------------------------------------------------
--- MapSDual - Disjunctive -
+-- SDualMap - Disjunctive -
 
-instance Disjunctive (MapSDual o h x y) where
-  variant (MapSDual _) = Covariant
+instance Disjunctive (SDualMap o h x y) where
+  variant (SDualMap _) = Covariant
   variant _            = Contravariant
 
-instance Disjunctive2 (MapSDual o h)
+instance Disjunctive2 (SDualMap o h)
 
 --------------------------------------------------------------------------------
--- MapSDual - Entity2 -
+-- SDualMap - Entity2 -
 
-instance Show2 h => Show2 (MapSDual o h) where
-  show2 (MapSDual h) = "MapSDual (" ++ show2 h ++ ")"
+instance Show2 h => Show2 (SDualMap o h) where
+  show2 (SDualMap h) = "SDualMap (" ++ show2 h ++ ")"
   show2 ToDual       = "ToDual"
   show2 FromDual     = "FromDual"
 
-instance Eq2 h => Eq2 (MapSDual o h) where
-  eq2 (MapSDual f) (MapSDual g) = eq2 f g
+instance Eq2 h => Eq2 (SDualMap o h) where
+  eq2 (SDualMap f) (SDualMap g) = eq2 f g
   eq2 ToDual ToDual             = True
   eq2 FromDual FromDual         = True
   eq2 _ _                       = False
 
-instance Validable2 h => Validable2 (MapSDual o h) where
-  valid2 (MapSDual h) = valid2 h
+instance Validable2 h => Validable2 (SDualMap o h) where
+  valid2 (SDualMap h) = valid2 h
   valid2 _            = SValid
 
-instance (Entity2 h, Typeable o) => Entity2 (MapSDual o h)
+instance (Entity2 h, Typeable o) => Entity2 (SDualMap o h)
 
 --------------------------------------------------------------------------------
--- MapSDual - Morphism -
+-- SDualMap - Morphism -
 
-instance Morphism h => Morphism (MapSDual o h) where
-  type ObjectClass (MapSDual o h) = ObjectClass h
+instance Morphism h => Morphism (SDualMap o h) where
+  type ObjectClass (SDualMap o h) = ObjectClass h
 
-  homomorphous (MapSDual h) = homomorphous h
+  homomorphous (SDualMap h) = homomorphous h
   homomorphous ToDual       = Struct :>: Struct
   homomorphous FromDual     = Struct :>: Struct
 
-instance TransformableObjectClassTyp h => TransformableObjectClassTyp (MapSDual o h)
+instance TransformableObjectClassTyp h => TransformableObjectClassTyp (SDualMap o h)
 
 --------------------------------------------------------------------------------
--- PathMapSDual -
+-- PathSDualMap -
 
--- | path of 'MapSDual'.
-type PathMapSDual o h = Path (MapSDual o h)
+-- | path of 'SDualMap'.
+type PathSDualMap o h = Path (SDualMap o h)
 
 --------------------------------------------------------------------------------
--- rdcPathMapSDual -
+-- rdcPathSDualMap -
 
-rdcPathMapSDual :: PathMapSDual o h x y -> Rdc (PathMapSDual o h x y)
-rdcPathMapSDual p = case p of
-  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathMapSDual
-  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathMapSDual
-  p' :. p''                -> rdcPathMapSDual p'' >>= return . (p' :.)
+rdcPathSDualMap :: PathSDualMap o h x y -> Rdc (PathSDualMap o h x y)
+rdcPathSDualMap p = case p of
+  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathSDualMap
+  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathSDualMap
+  p' :. p''                -> rdcPathSDualMap p'' >>= return . (p' :.)
   _                        -> return p
 
-instance Reducible (PathMapSDual o h x y) where
-  reduce = reduceWith rdcPathMapSDual
+instance Reducible (PathSDualMap o h x y) where
+  reduce = reduceWith rdcPathSDualMap
 
 --------------------------------------------------------------------------------
--- CatSDual -
+-- SDualCat -
 
 -- | category for structural dualities.
-newtype CatSDual o h x y = CatSDual (PathMapSDual o h x y)
+newtype SDualCat o h x y = SDualCat (PathSDualMap o h x y)
   deriving (Show, Show2, Validable, Validable2)
 
-deriving instance (Morphism h, TransformableObjectClassTyp h, Eq2 h) => Eq2 (CatSDual o h)
+deriving instance (Morphism h, TransformableObjectClassTyp h, Eq2 h) => Eq2 (SDualCat o h)
 
 instance (Morphism h, Entity2 h, TransformableObjectClassTyp h, Typeable o)
-  => Entity2 (CatSDual o h)
+  => Entity2 (SDualCat o h)
 
 --------------------------------------------------------------------------------
--- CatSDual - Disjunctive -
+-- SDualCat - Disjunctive -
 
-instance Disjunctive2 (CatSDual o h)    where variant2 = restrict variant2
-instance Disjunctive (CatSDual o h x y) where variant  = restrict variant
-
---------------------------------------------------------------------------------
--- CatSDual - Constructable -
-
-instance Exposable (CatSDual o h x y) where
-  type Form (CatSDual o h x y) = PathMapSDual o h x y
-  form (CatSDual p) = p
-
-instance Constructable (CatSDual o h x y) where make = CatSDual . reduce
+instance Disjunctive2 (SDualCat o h)    where variant2 = restrict variant2
+instance Disjunctive (SDualCat o h x y) where variant  = restrict variant
 
 --------------------------------------------------------------------------------
--- CatSDual - Category -
+-- SDualCat - Constructable -
 
-instance Morphism h => Morphism (CatSDual o h) where
-  type ObjectClass (CatSDual o h) = ObjectClass h
-  homomorphous (CatSDual p) = homomorphous p
+instance Exposable (SDualCat o h x y) where
+  type Form (SDualCat o h x y) = PathSDualMap o h x y
+  form (SDualCat p) = p
 
-instance Morphism h => Category (CatSDual o h) where
+instance Constructable (SDualCat o h x y) where make = SDualCat . reduce
+
+--------------------------------------------------------------------------------
+-- SDualCat - Category -
+
+instance Morphism h => Morphism (SDualCat o h) where
+  type ObjectClass (SDualCat o h) = ObjectClass h
+  homomorphous (SDualCat p) = homomorphous p
+
+instance Morphism h => Category (SDualCat o h) where
   cOne = make . IdPath
-  CatSDual f . CatSDual g = make (f . g)
+  SDualCat f . SDualCat g = make (f . g)
 
 --------------------------------------------------------------------------------
 -- sctToDual -
 
 -- | using the structural constraints to constract the 'Contravariant' morphism of 'ToDual'
--- in'CatSDual'.
+-- in'SDualCat'.
 sctToDualStruct :: ObjectClass h ~ s
-  => Struct s x -> Struct s (o x) -> Variant2 Contravariant (CatSDual o h) x (o x)
+  => Struct s x -> Struct s (o x) -> Variant2 Contravariant (SDualCat o h) x (o x)
 sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
 
--- | 'ToDual' as a 'Contravaraint' morphism in 'CatSDual'.
+-- | 'ToDual' as a 'Contravaraint' morphism in 'SDualCat'.
 sctToDual :: (ObjectClass h ~ s, Transformable1 o s)
-  => Struct s x -> Variant2 Contravariant (CatSDual o h) x (o x)
+  => Struct s x -> Variant2 Contravariant (SDualCat o h) x (o x)
 sctToDual s = sctToDualStruct s (tau1 s)
 
 -- | prefixing a proxy.
 sctToDual' :: (ObjectClass h ~ s, Transformable1 o s)
-  => q o h -> Struct s x -> Variant2 Contravariant (CatSDual o h) x (o x)
+  => q o h -> Struct s x -> Variant2 Contravariant (SDualCat o h) x (o x)
 sctToDual' _ = sctToDual
 
 --------------------------------------------------------------------------------
@@ -281,32 +282,32 @@ instance Transformable1 Op s => SDualisableG (->) s Op Id where
 class (Morphism h, SDualisableG c (ObjectClass h) o d) => SDualisableGMorphism c h o d
 
 --------------------------------------------------------------------------------
--- CatSDual - FunctorialG -
+-- SDualCat - FunctorialG -
 
 instance (ApplicativeG d h c, SDualisableGMorphism c h o d)
-  => ApplicativeG d (MapSDual o h) c where
-  amapG (MapSDual h) = amapG h
+  => ApplicativeG d (SDualMap o h) c where
+  amapG (SDualMap h) = amapG h
   amapG t@ToDual     = toDualG (domain t)
   amapG f@FromDual   = fromDualG (range f)
 
 instance ( ApplicativeG d h c, SDualisableGMorphism c h o d
          , TransformableGObjectClass d h c
-         ) => ApplicativeG d (CatSDual o h) c where
+         ) => ApplicativeG d (SDualCat o h) c where
   amapG = amapG . form
 
 instance ( Category c, ApplicativeG d h c, SDualisableGMorphism c h o d
          , TransformableGObjectClass d h c
-         ) => ApplicativeGMorphism d (CatSDual o h) c
+         ) => ApplicativeGMorphism d (SDualCat o h) c
 
 instance ( Category c, ApplicativeG d h c, SDualisableGMorphism c h o d
          , TransformableGObjectClass d h c
-         ) => FunctorialG d (CatSDual o h) c
+         ) => FunctorialG d (SDualCat o h) c
 
 
 --------------------------------------------------------------------------------
 -- SDualisableG -
 
-type SDualisable c s o h = (Transformable1 o s, ObjectClass h ~ s, FunctorialG Id (CatSDual o h) c)
+type SDualisable c s o h = (Transformable1 o s, ObjectClass h ~ s, FunctorialG Id (SDualCat o h) c)
 
 --------------------------------------------------------------------------------
 -- sdlToDual -
@@ -330,35 +331,6 @@ class (SReflexiveG c s o a, SReflexiveG c s o b, Transformable1 o s)
   
   fromDualRgt :: Struct s x -> c (a (o x)) (b x)
   fromDualRgt s = v . toDualLft (tau1 s) where Inv2 _ v = reflG s
-
-
-{-
---------------------------------------------------------------------------------
--- SDualisableBi -
-
-class ( Category c, Transformable1 o s
-      , TransformableG a s (ObjectClass c)
-      , TransformableG b s (ObjectClass c)
-      )
-  => SDualisableBi c s o a b | a -> b, b -> a where
-  toDualLft :: Struct s x -> c (a x) (b (o x))
-  toDualRgt :: Struct s x -> c (b x) (a (o x))
-  reflLft :: Struct s x -> Inv2 c (a x) (a (o (o x)))
-  reflRgt :: Struct s x -> Inv2 c (b x) (b (o (o x)))
-
---------------------------------------------------------------------------------
--- fromDualLft -
-
-fromDualLft :: SDualisableBi c s o a b => Struct s x -> c (b (o x)) (a x)
-fromDualLft s = v . toDualRgt (tau1 s) where Inv2 _ v = reflLft s
-
---------------------------------------------------------------------------------
--- fromDualRgt -
-
-fromDualRgt :: SDualisableBi c s o a b => Struct s x -> c (a (o x)) (b x)
-fromDualRgt s = v . toDualLft (tau1 s) where Inv2 _ v = reflRgt s
--}
-
 --------------------------------------------------------------------------------
 -- SDual -
 
@@ -416,7 +388,7 @@ instance SBiDualisableG (->) s o a b => SDualisableG (->) s o (SDual a b) where
 --------------------------------------------------------------------------------
 -- SBiDualisable -
 
-class (Transformable1 o s, ObjectClass h ~ s, FunctorialG (SDual a b) (CatSDual o h) c)
+class (Transformable1 o s, ObjectClass h ~ s, FunctorialG (SDual a b) (SDualCat o h) c)
   => SBiDualisable c s o h a b
 
 class SDualisableGMorphism c h o (SDual a b) => SDualisableGMorphismSDual c h o a b
@@ -428,23 +400,19 @@ instance ( Transformable1 o s, ObjectClass h ~ s, ApplicativeG (SDual a b) h c
   => SBiDualisable c s o h a b
 
 --------------------------------------------------------------------------------
--- implErrorOverlappingInstances -
+-- implErrorSBidualisable -
 
--- | implementation error arising from overlapping instances for
--- @'FunctorialG' ('SDual' __a b__) ('CatSDual' __s o h__) ('->')@.
-implErrorOverlappingInstances :: AlgebraicException
-implErrorOverlappingInstances = ImplementationError
-                              ( "arising from overlapping instances for "
-                              ++ "FunctorialG (SDual a b) (CatSDual o h) (->)"
-                              )
+-- | implementation error for 'SBiDualisable'
+implErrorSBidualisable :: String -> AlgebraicException
+implErrorSBidualisable f = ImplementationError ("SBiDualisable at: " ++ f)
                              
 --------------------------------------------------------------------------------
--- sdlToDualLeft -
+-- sdlToDualLft -
 
-sdlToDualLeft :: SBiDualisable (->) s o h a b => q a b o h -> Struct s x -> a x -> b (o x)
-sdlToDualLeft q s a = case amapG toDual (SDual (Left1 a)) of
+sdlToDualLft :: SBiDualisable (->) s o h a b => q a b o h -> Struct s x -> a x -> b (o x)
+sdlToDualLft q s a = case amapG toDual (SDual (Left1 a)) of
      SDual (Right1 b') -> b'
-     _                 -> throw implErrorOverlappingInstances
+     _                 -> throw (implErrorSBidualisable "sdlToDualLft")
   where Contravariant2 toDual = sctToDual' q s
 
 
