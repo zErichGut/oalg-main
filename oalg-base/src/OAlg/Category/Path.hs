@@ -26,6 +26,7 @@ module OAlg.Category.Path
     -- * Forget
   , Forget'(), forget'
   , Forget'Form
+
   )
   where
 
@@ -211,6 +212,10 @@ instance (Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
 
 instance TransformableGObjectClass t m c => TransformableGObjectClass t (Path m) c
 
+instance (Morphism m, Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
+  => ApplicativeGMorphism t (Path m) c
+
+
 instance ( Morphism m, Category c, ApplicativeG t m c
          , TransformableGObjectClass t m c
          )
@@ -316,10 +321,16 @@ instance ( Category c, ApplicativeG d h c
          , TransformableGObjectClassRange d t c
          ) => ApplicativeG d (Forget' t h) c where amapG (Forget' p) = amapG p
 
+instance ( Morphism h, Category c, ApplicativeG d h c
+         , TransformableGObjectClassRange d t c
+         )
+  => ApplicativeGMorphism d (Forget' t h) c
+
 instance ( Category h, TransformableObjectClassTyp h, Eq2 h
          , Category c
          , ApplicativeG d h c
          , TransformableGObjectClassRange d t c
          )  => FunctorialG d (Forget' t h) c
+
 
 

@@ -33,7 +33,6 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Data.Either
-import OAlg.Data.Identity
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative

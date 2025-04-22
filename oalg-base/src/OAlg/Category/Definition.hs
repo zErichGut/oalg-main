@@ -42,6 +42,7 @@ module OAlg.Category.Definition
 
     -- * Applicative
   , ApplicativeG(..)
+  , ApplicativeGMorphism
   , Applicative, amap, ($)
   , Applicative1, amap1
   
@@ -271,6 +272,13 @@ instance Category c => Category (Op2 c) where
   Op2 f . Op2 g = Op2 (g . f)
 
 --------------------------------------------------------------------------------
+-- ApplicativeGMorphism -
+
+-- | generalized application between morphisms respecting there object classes.
+class (Morphism a, Morphism b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
+  => ApplicativeGMorphism t a b
+  
+--------------------------------------------------------------------------------
 -- FunctorialG -
 
 -- | functorials from @'Category' __a__@ to @'Category' __b__@ according to the
@@ -283,8 +291,7 @@ instance Category c => Category (Op2 c) where
 --
 --   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
 --   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
-class (Category a, Category b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
-  => FunctorialG t a b
+class (Category a, Category b, ApplicativeGMorphism t a b) => FunctorialG t a b
 
 --------------------------------------------------------------------------------
 -- Functorial -
