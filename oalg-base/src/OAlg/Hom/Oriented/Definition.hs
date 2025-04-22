@@ -202,6 +202,35 @@ instance HomOriented h => HomOriented (C.Path h)
 instance (HomOriented h, Transformable t Ort, Transformable t Typ)
   => HomOriented (Forget t h)
 
+--------------------------------------------------------------------------------
+-- SDualisableOrietend -
+
+class (SDualisableG (->) s o Id, SDualisableG (->) s o Pnt, Transformable s Ort)
+  => SDualisableOriented s o
+
+--------------------------------------------------------------------------------
+-- prpSDualisableOriented -
+
+
+prpSDualisableOriented :: (SDualisableOriented s o, s ~ Ort)
+  => q o -> Struct Ort x -> Struct Ort (o x) -> X x -> Statement
+prpSDualisableOriented q s@Struct Struct xx = Prp "SDualisaableOriented" :<=>: Forall xx
+  (\x -> let Id x'   = toDualG' qId s (Id x)
+             Pnt sx' = toDualG' qPnt s (Pnt (start x))
+             Pnt ex' = toDualG' qPnt s (Pnt (end x)) 
+          in (start x' == ex') :?> Params []
+  )
+  where dId :: SDualisableG (->) Ort o Id => q o -> SDualityG (->) Ort o Id
+        dId _ = SDualityG
+        
+        dPnt :: SDualisableG (->) Ort o Pnt => q o -> SDualityG (->) Ort o Pnt
+        dPnt _ = SDualityG
+
+        qId  = dId q
+        qPnt = dPnt q
+
+
+{-
 ------------------------------------------------------------------------------------------
 -- SDualisableOriented -
 
@@ -209,13 +238,7 @@ class (SDualisableGMorphism (->) h o Id, SDualisableGMorphism (->) h o Pnt) => S
 
 instance ( HomOriented h, SDualisableOriented o h)
   => HomOriented (Variant2 Covariant (SDualCat o h))
-
-{-
---------------------------------------------------------------------------------
--- SReflexiveOriented -
-
-class (SReflexive (->) s o Id, SReflexive (->) s o Pnt, Transformable s Ort)
-  => SReflexiveOriented s o
+-}
 
 --------------------------------------------------------------------------------
 -- FunctorialHomOriented -
@@ -259,9 +282,9 @@ fromHomEmpty (HomEmpty e) = fromEmpty2 e
 instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
 
 --------------------------------------------------------------------------------
--- CatSDualV -
+-- SDualCatV -
 
-type CatSDualV v s o h = Variant2 v (CatSDual s o h)
+type SDualCatV v s o h = Variant2 v (SDualCat s o h)
 
 --------------------------------------------------------------------------------
 -- HomEmpty - HomOriented -
@@ -273,8 +296,9 @@ instance Morphism (HomEmpty s) where
 
 instance (TransformableOrt s, TransformableTyp s) => HomOriented (HomEmpty s)
 
-instance ( HomOriented h, SReflexiveOriented s o, Transformable s Typ)
-  => HomOriented (Variant2 Covariant (CatSDual s o h))
+
+instance (HomOriented h, ObjectClass h ~ s, SDualisableOriented s o)
+  => HomOriented (Variant2 Covariant (SDualCat s o h))
 
 --------------------------------------------------------------------------------
 -- OpDuality -
@@ -286,7 +310,7 @@ data OpDuality s o h where OpDuality :: OpDuality s Op (HomEmpty s)
 
 opDualityOrt :: OpDuality Ort Op (HomEmpty Ort)
 opDualityOrt = OpDuality
--}
+
 
 
 

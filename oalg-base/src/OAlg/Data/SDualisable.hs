@@ -27,11 +27,12 @@ module OAlg.Data.SDualisable
     -- * Structural Duality
     -- ** Dualisable
     SDualisable, sdlToDual
-  , SDualisableG
-  , SReflexiveG(..)
+  , SDualisableG(..)
+  , SReflexiveG(..), toDualG'
+  , SDualityG(..)
 
     -- ** Bi-Dualisable
-  , SBiDualisable, sdlToDualLft
+  , SBiDualisable(..), sdlToDualLft
   , SDual(..)
 
     -- * Category
@@ -41,6 +42,7 @@ module OAlg.Data.SDualisable
   , SDualMap(..)
   , PathSDualMap, rdcPathSDualMap
 
+  , ff
   ) where
 
 import Control.Monad
@@ -303,12 +305,16 @@ instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o
 --------------------------------------------------------------------------------
 -- SDualisable -
 
-class (Transformable1 o s, FunctorialG Id (SDualCat s o h) c) => SDualisable c s o h
+class (Transformable1 o s, FunctorialG Id (SDualCat s o h) (->)) => SDualisable s o h where
+
+
+ff :: (Transformable1 o s, FunctorialG Id (SDualCat s o h) (->)) => q o h -> Struct s x -> x -> o x
+ff q s = fromIdG $ amapG toDual where Contravariant2 toDual = sctToDual' q s
 
 --------------------------------------------------------------------------------
 -- sdlToDual -
 
-sdlToDual :: SDualisable (->) s o h => q o h -> Struct s x -> x -> o x
+sdlToDual :: SDualisable s o h => q o h -> Struct s x -> x -> o x
 sdlToDual q s = fromIdG $ amapG toDual where Contravariant2 toDual = sctToDual' q s
 
 -- sdlToDual :: SDualisableG (->) s o Id => q o -> Struct s x -> x -> o x
@@ -404,3 +410,4 @@ sdlToDualLft q s a = case amapG toDual (SDual (Left1 a)) of
      SDual (Right1 b') -> b'
      _                 -> throw (implErrorSBidualisable "sdlToDualLft")
   where Contravariant2 toDual = sctToDual' q s
+
