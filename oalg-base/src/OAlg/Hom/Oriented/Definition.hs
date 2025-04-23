@@ -69,13 +69,14 @@ import Data.List((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Path as C
+import OAlg.Category.SDual
+
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 import OAlg.Data.Identity
 import OAlg.Data.Variant
 import OAlg.Data.SDualisable
-
-import OAlg.Category.Path as C
 
 import OAlg.Structure.Oriented as O
 -- import OAlg.Structure.Multiplicative
@@ -209,16 +210,38 @@ class (SDualisableG (->) s o Id, SDualisableG (->) s o Pnt, Transformable s Ort)
   => SDualisableOriented s o
 
 --------------------------------------------------------------------------------
+-- sdlToDualPnt -
+
+sdlToDualPnt :: SDualisable s o Pnt => q o -> Struct s x -> Point x -> Point (o x)
+sdlToDualPnt q s p = p'
+  where Pnt p' = toDualG' qPnt s (Pnt p)
+  
+        dPnt :: SDualisableG (->) s o Pnt => q o -> SDualityG (->) s o Pnt
+        dPnt _ = SDualityG
+
+        qPnt = dPnt q
+
+sdlToDualArw :: SDualisable s o Id => q o -> Struct s x -> x -> o x
+sdlToDualArw _ = sdlToDual
+
+--------------------------------------------------------------------------------
 -- prpSDualisableOriented -
 
 
-prpSDualisableOriented :: (SDualisableOriented s o, s ~ Ort)
-  => q o -> Struct Ort x -> Struct Ort (o x) -> X x -> Statement
-prpSDualisableOriented q s@Struct Struct xx = Prp "SDualisaableOriented" :<=>: Forall xx
+prpSDualisableOriented :: (SDualisableOriented s o, s ~ Ort, XStandard x, XStandard (Point (o x)))
+  => q o -> Struct Ort x -> Struct Ort (o x) -> Statement
+prpSDualisableOriented q s@Struct Struct =
+  And [ Label "1" :<=>: (ExtEqual (start . sdlToDualArw q s) .=. ExtEqual (sdlToDualPnt q s . end))
+      ]
+{-
+  
   (\x -> let Id x'   = toDualG' qId s (Id x)
              Pnt sx' = toDualG' qPnt s (Pnt (start x))
              Pnt ex' = toDualG' qPnt s (Pnt (end x)) 
-          in (start x' == ex') :?> Params []
+          in And [ (start x' == ex') :?> Params []
+                 , (start (sdlToDualArw q s x) == sdlToDualPnt q s (end x)) :?> Params []
+                 -- , (start (sdlToDualArw qId s x) == ex') :?> Params []
+                 ]
   )
   where dId :: SDualisableG (->) Ort o Id => q o -> SDualityG (->) Ort o Id
         dId _ = SDualityG
@@ -228,7 +251,7 @@ prpSDualisableOriented q s@Struct Struct xx = Prp "SDualisaableOriented" :<=>: F
 
         qId  = dId q
         qPnt = dPnt q
-
+-}
 
 {-
 ------------------------------------------------------------------------------------------
