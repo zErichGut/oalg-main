@@ -111,56 +111,6 @@ omap = amapG . pmap
 
 type FunctorialPoint h = FunctorialG Pnt h (->)
 
-{-
---------------------------------------------------------------------------------
--- ApplicativePoint -
-
--- | applications on 'Point's.
-class ApplicativePoint h where
-  pmap :: h a b -> Point a -> Point b
-
-instance ApplicativePoint h => ApplicativePoint (C.Path h) where
-  pmap (IdPath _) p = p
-  pmap (f :. pth) p = pmap f $ pmap pth p
-
-instance ApplicativePoint h => ApplicativePoint (Forget t h) where
-  pmap (Forget h) = pmap h
-
-instance ApplicativePoint h => ApplicativePoint (Variant2 v h) where
-  pmap (Covariant2 h)     = pmap h
-  pmap (Contravariant2 h) = pmap h
-
-instance ApplicativePoint h => ApplicativePoint (MapSDual s o h) where
-  pmap (MapSDual h) = pmap h
-  
-instance ApplicativePoint h => ApplicativePoint (CatSDual s o h) where
-  pmap = pmap . form
-
---------------------------------------------------------------------------------
--- omap -
-
--- | the induced mapping of 'Orientation'.
-omap :: ApplicativePoint h => h a b -> Orientation (Point a) -> Orientation (Point b)
-omap h = amap1 (pmap h)
-
---------------------------------------------------------------------------------
--- FunctorialPoint -
-
--- | functorial applications on 'Point's.
---
--- __Properties__ Let @'FunctorialHomOriented' __h__@, then holds:
---
--- (1) For all @__a__@ and
--- @s@ in @'Struct' ('ObjectClass' __h__) __a__@ holds: @'pmap' ('cOne' s) '.=.' 'id'@.
---
--- (2) For all @__a__@, @__b__@, @__c__@, @f@ in @__h b c__@ and
--- @g@ in @__h a b__@ holds:
--- @'pmap' (f '.' g) '.=.' 'pmap' f '.' 'pmap' g@.
-class (Category h, ApplicativePoint h) => FunctorialPoint h
-
-instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
--}
-
 --------------------------------------------------------------------------------
 -- HomOriented -
 
@@ -169,9 +119,9 @@ instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
 -- __Property__ Let @__h__@ be an instance of 'HomOriented', then
 -- for all  @__a__@, @__b__@ and @f@ in @__h a b__@ holds:
 --
--- (1) @'start' '.' 'amap' f '.=.' 'pmap' f '.=.' 'start')@.
+-- (1) @'start' '.' 'amap' f '.=.' 'pmap' f '.=.' 'start'@.
 --
--- (2) @'end' '.=.' 'amap' f '.=.' 'pmap' f '.' 'end'@.
+-- (2) @'end' '.' 'amap' f '.=.' 'pmap' f '.' 'end'@.
 --
 -- We call such a @__h__@  a __/family of homomorphisms between oriented structures/__
 -- and an entity @f@ in @__h__ a__ b__@ a
@@ -194,7 +144,6 @@ instance (Morphism h, ApplicativePoint h) => FunctorialPoint (C.Path h)
 -- is a instances of 'OAlg.Data.Equal.Eq2'. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
-      -- , Transformable1 Op (ObjectClass h)
       ) => HomOriented h where
 
 instance HomOriented h => HomOriented (C.Path h)
@@ -209,59 +158,31 @@ instance (HomOriented h, Transformable t Ort, Transformable t Typ)
 class (SDualisableG (->) s o Id, SDualisableG (->) s o Pnt, Transformable s Ort)
   => SDualisableOriented s o
 
+instance SDualisableOriented Ort Op
+
 --------------------------------------------------------------------------------
--- sdlToDualPnt -
+-- homToDual -
 
-sdlToDualPnt :: SDualisable s o Pnt => q o -> Struct s x -> Point x -> Point (o x)
-sdlToDualPnt q s p = p'
-  where Pnt p' = toDualG' qPnt s (Pnt p)
-  
-        dPnt :: SDualisableG (->) s o Pnt => q o -> SDualityG (->) s o Pnt
-        dPnt _ = SDualityG
-
-        qPnt = dPnt q
-
-sdlToDualArw :: SDualisable s o Id => q o -> Struct s x -> x -> o x
-sdlToDualArw _ = sdlToDual
+homToDual :: Transformable1 o s
+  => q o -> Struct s x ->HomOrientedV Contravariant s o (HomEmpty s) x (o x)
+homToDual _ = sctToDual where
 
 --------------------------------------------------------------------------------
 -- prpSDualisableOriented -
 
 
-prpSDualisableOriented :: (SDualisableOriented s o, s ~ Ort, XStandard x, XStandard (Point (o x)))
-  => q o -> Struct Ort x -> Struct Ort (o x) -> Statement
-prpSDualisableOriented q s@Struct Struct =
-  And [ Label "1" :<=>: (ExtEqual (start . sdlToDualArw q s) .=. ExtEqual (sdlToDualPnt q s . end))
-      ]
-{-
-  
-  (\x -> let Id x'   = toDualG' qId s (Id x)
-             Pnt sx' = toDualG' qPnt s (Pnt (start x))
-             Pnt ex' = toDualG' qPnt s (Pnt (end x)) 
-          in And [ (start x' == ex') :?> Params []
-                 , (start (sdlToDualArw q s x) == sdlToDualPnt q s (end x)) :?> Params []
-                 -- , (start (sdlToDualArw qId s x) == ex') :?> Params []
-                 ]
-  )
-  where dId :: SDualisableG (->) Ort o Id => q o -> SDualityG (->) Ort o Id
-        dId _ = SDualityG
-        
-        dPnt :: SDualisableG (->) Ort o Pnt => q o -> SDualityG (->) Ort o Pnt
-        dPnt _ = SDualityG
+relSDualisableOriented :: (SDualisableOriented s o, XStandard x, XStandard (Point (o x)))
+  => q o -> Struct s x -> Struct s (o x) -> Statement
+relSDualisableOriented q s s' = case (tauOrt s,tauOrt s') of
+  (Struct,Struct) -> And [ Label "1" :<=>: (ExtEqual (start . amap t) .=. ExtEqual (pmap t . end))
+                         , Label "2" :<=>: (ExtEqual (end . amap t) .=. ExtEqual (pmap t . start))
+                         ]
+  where t = homToDual q s
 
-        qId  = dId q
-        qPnt = dPnt q
--}
-
-{-
-------------------------------------------------------------------------------------------
--- SDualisableOriented -
-
-class (SDualisableGMorphism (->) h o Id, SDualisableGMorphism (->) h o Pnt) => SDualisableOriented o h
-
-instance ( HomOriented h, SDualisableOriented o h)
-  => HomOriented (Variant2 Covariant (SDualCat o h))
--}
+-- | validity according to 'SDualisableOriented'.
+prpSDualisableOriented :: (SDualisableOriented s o, XStandard x, XStandard (Point (o x)))
+  => q o -> Struct s x -> Statement
+prpSDualisableOriented q s = Prp "SDualisableOriented" :<=>: relSDualisableOriented q s (tau1 s)
 
 --------------------------------------------------------------------------------
 -- FunctorialHomOriented -
@@ -305,9 +226,9 @@ fromHomEmpty (HomEmpty e) = fromEmpty2 e
 instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
 
 --------------------------------------------------------------------------------
--- SDualCatV -
+-- HomOrientedV -
 
-type SDualCatV v s o h = Variant2 v (SDualCat s o h)
+type HomOrientedV v s o h = Variant2 v (SDualCat s o h)
 
 --------------------------------------------------------------------------------
 -- HomEmpty - HomOriented -
@@ -320,7 +241,7 @@ instance Morphism (HomEmpty s) where
 instance (TransformableOrt s, TransformableTyp s) => HomOriented (HomEmpty s)
 
 
-instance (HomOriented h, ObjectClass h ~ s, SDualisableOriented s o)
+instance ( HomOriented h, ObjectClass h ~ s, SDualisableOriented s o)
   => HomOriented (Variant2 Covariant (SDualCat s o h))
 
 --------------------------------------------------------------------------------
@@ -333,7 +254,6 @@ data OpDuality s o h where OpDuality :: OpDuality s Op (HomEmpty s)
 
 opDualityOrt :: OpDuality Ort Op (HomEmpty Ort)
 opDualityOrt = OpDuality
-
 
 
 

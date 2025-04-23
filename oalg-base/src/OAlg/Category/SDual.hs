@@ -185,8 +185,8 @@ sctToDual' _ = sctToDual
 instance (Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d)
   => ApplicativeG d (SDualMap s o h) c where
   amapG (SDualMap h) = amapG h
-  amapG t@ToDual     = toDualG (domain t)
-  amapG f@FromDual   = fromDualG (range f)
+  amapG t@ToDual     = sdlToDual (domain t)
+  amapG f@FromDual   = sdlFromDual (range f)
 
 instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
          , TransformableGObjectClass d h c
@@ -235,27 +235,27 @@ toDualEither s (Right1 b) = Left1 (sdlToDualRgt s b)
 
 reflEitherTo :: SBiDualisableG (->) s o a b
   => Struct s x -> (->) (Either1 a b x) (Either1 a b (o (o x)))
-reflEitherTo s (Left1 a)  = Left1 (u a)  where Inv2 u _ = reflG s
-reflEitherTo s (Right1 b) = Right1 (u b) where Inv2 u _ = reflG s 
+reflEitherTo s (Left1 a)  = Left1 (u a)  where Inv2 u _ = sdlRefl s
+reflEitherTo s (Right1 b) = Right1 (u b) where Inv2 u _ = sdlRefl s 
 
 --------------------------------------------------------------------------------
 -- reflEitherFrom -
 
 reflEitherFrom :: SBiDualisableG (->) s o a b
   => Struct s x -> (->) (Either1 a b (o (o x))) (Either1 a b x)
-reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = reflG s
-reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = reflG s
+reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = sdlRefl s
+reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = sdlRefl s
 
 ------------------------------------------------------------------------------------------
 -- SDual - SReflexive -
 
 instance SBiDualisableG (->) s o a b => SReflexiveG (->) s o (SDual a b) where
-  reflG s = Inv2 u v where
+  sdlRefl s = Inv2 u v where
     u = SDual . reflEitherTo s . fromSDual
     v = SDual . reflEitherFrom s . fromSDual
     
 instance SBiDualisableG (->) s o a b => SDualisableG (->) s o (SDual a b) where
-  toDualG s = SDual . toDualEither s . fromSDual
+  sdlToDual s = SDual . toDualEither s . fromSDual
 
 --------------------------------------------------------------------------------
 -- implErrorSBidualisable -
