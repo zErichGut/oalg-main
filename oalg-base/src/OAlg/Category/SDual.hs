@@ -54,7 +54,7 @@ import OAlg.Data.SDualisable
 
 -- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
 data SDualMap s o h x y where
-  SDualMap :: h x y -> SDualMap s o h x y
+  SDualMap :: Transformable (ObjectClass h) s => h x y -> SDualMap s o h x y
   ToDual   :: (Structure s x, Structure s (o x)) => SDualMap s o h x (o x)
   FromDual :: (Structure s x, Structure s (o x)) =>  SDualMap s o h (o x) x
 
@@ -90,15 +90,14 @@ instance (Entity2 h, Typeable s, Typeable o) => Entity2 (SDualMap s o h)
 --------------------------------------------------------------------------------
 -- SDualMap - Morphism -
 
-instance (Morphism h, ObjectClass h ~ s) => Morphism (SDualMap s o h) where
+instance Morphism h => Morphism (SDualMap s o h) where
   type ObjectClass (SDualMap s o h) = s
 
-  homomorphous (SDualMap h) = homomorphous h
+  homomorphous (SDualMap h) = tauHom (homomorphous h)
   homomorphous ToDual       = Struct :>: Struct
   homomorphous FromDual     = Struct :>: Struct
 
-instance (TransformableGObjectClass d h c, ObjectClass h ~ s)
-  => TransformableGObjectClass d (SDualMap s o h) c
+instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (SDualMap s o h) c
 
 instance Transformable s Typ => TransformableObjectClassTyp (SDualMap s o h)
 
@@ -126,14 +125,13 @@ instance Reducible (PathSDualMap s o h x y) where
 
 -- | category for structural dualities.
 newtype SDualCat s o h x y = SDualCat (PathSDualMap s o h x y)
-  deriving (Show, Show2)
+  deriving (Show,Show2,Validable,Validable2)
 
-deriving instance (Morphism h, ObjectClass h ~ s, Validable2 h) => Validable2 (SDualCat s o h)
-deriving instance (Morphism h, ObjectClass h ~ s, Validable2 h) => Validable (SDualCat s o h x y)
-deriving instance (Morphism h, ObjectClass h ~ s, Transformable s Typ, Eq2 h) => Eq2 (SDualCat s o h)
+deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (SDualCat s o h x y)
+deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (SDualCat s o h)
 
 
-instance (Morphism h, ObjectClass h ~ s, Entity2 h, Transformable s Typ, Typeable s, Typeable o)
+instance (Morphism h, Entity2 h, Transformable s Typ, Typeable s, Typeable o)
   => Entity2 (SDualCat s o h)
 
 --------------------------------------------------------------------------------
@@ -182,31 +180,30 @@ sctToDual' _ = sctToDual
 --------------------------------------------------------------------------------
 -- SDualCat - FunctorialG -
 
-instance (Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d)
+instance (Morphism h, ApplicativeG d h c, SDualisableG c s o d)
   => ApplicativeG d (SDualMap s o h) c where
   amapG (SDualMap h) = amapG h
   amapG t@ToDual     = sdlToDual (domain t)
   amapG f@FromDual   = sdlFromDual (range f)
 
-instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
-         , TransformableGObjectClass d h c
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
+         , TransformableGObjectClassRange d s c
          )
   => ApplicativeG d (SDualCat s o h) c where
   amapG = amapG . form
 
 instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
-         , Category c, TransformableGObjectClass d h c
+         , Category c, TransformableGObjectClassRange d s c
          )
   => ApplicativeGMorphism d (SDualCat s o h) c
 
 instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
-         , Category c, TransformableGObjectClass d h c
+         , Category c, TransformableGObjectClassRange d s c
          )
   => FunctorialG d (SDualCat s o h) c
 
 --------------------------------------------------------------------------------
 -- SDual -
-
 
 newtype SDual a b x = SDual (Either1 a b x)
 
@@ -273,3 +270,4 @@ ff q s a = case amapG toDual (SDual (Left1 a)) of
      SDual (Right1 b') -> b'
      _                 -> throw (implErrorSBidualisable "sdlToDualLft")
   where toDual = sctToDual' q s
+
