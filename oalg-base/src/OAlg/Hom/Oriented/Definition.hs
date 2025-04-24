@@ -22,20 +22,30 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-{-
+
     -- * Homomorphism
-    HomOriented, omap, IsoOrt, IsoOriented
-
+    HomOrientedCovariant  -- , omap, IsoOrt, IsoOriented
+  , SDualisableOriented
+  , HomEmpty(), fromHomEmpty
+  , homToDual, homFromDual
+    
     -- * Applications
-  , ApplicativePoint(..), FunctorialPoint
+  , ApplicativePoint(..), pmap, omap
+  , FunctorialPoint
 
+  , module V
+  , module S
+  , module D
+
+
+{-
     -- * Functorial
   , FunctorialHomOriented
-{-
+
     -- * Duality
   , SDualityOriented(..)
   , OpDuality(..)
--}
+
     -- * IdHom
   , IdHom(..)
 
@@ -70,13 +80,13 @@ import Data.List((++))
 import OAlg.Prelude
 
 import OAlg.Category.Path as C
-import OAlg.Category.SDual
+import OAlg.Category.SDual as D
 
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 import OAlg.Data.Identity
-import OAlg.Data.Variant
-import OAlg.Data.SDualisable
+import OAlg.Data.Variant as V
+import OAlg.Data.SDualisable as S
 
 import OAlg.Structure.Oriented as O
 -- import OAlg.Structure.Multiplicative
@@ -112,9 +122,9 @@ omap = amapG . pmap
 type FunctorialPoint h = FunctorialG Pnt h (->)
 
 --------------------------------------------------------------------------------
--- HomOriented -
+-- HomOrientedCovariant -
 
--- | type family of homomorphisms between 'Oriented' structures.
+-- | type family of covariant homomorphisms between 'Oriented' structures.
 --
 -- __Property__ Let @__h__@ be an instance of 'HomOriented', then
 -- for all  @__a__@, @__b__@ and @f@ in @__h a b__@ holds:
@@ -122,69 +132,29 @@ type FunctorialPoint h = FunctorialG Pnt h (->)
 -- (1) @'start' '.' 'amap' f '.=.' 'pmap' f '.=.' 'start'@.
 --
 -- (2) @'end' '.' 'amap' f '.=.' 'pmap' f '.' 'end'@.
---
--- We call such a @__h__@  a __/family of homomorphisms between oriented structures/__
--- and an entity @f@ in @__h__ a__ b__@ a
--- __/covariant oriented homomorphism/__ - or __/oriented homomorphism/__ for short -
--- __/between/__ @__a__@ __/and/__ @__b__@. A covariant oriented homomorphism @f@ in
--- @__h__ ('Op' __a__) __b__@ or @__h__ __a__ ('Op' __b__)@ will be called a
--- __/contravariant oriented homomorphism between/__ @__a__@ __/and/__ @__b__@.
---
--- __Note__
---
--- (1) As @__h__@ is an instance of @'EmbeddableMorphism' __h__ 'Ort'@ it follows
--- that for all @__a__@, @__b__@ and @f@ in @__h a b__@ holds:
--- @'tauHom' ('homomorphous' f) :: 'Homomorphous' 'Ort' __a__ __b__@ and thus @__a__@ and @__b__@ are
--- 'Oriented' structures! How to work with this concretely see the implementation of
--- 'OAlg.Proposition.Homomorphism.Multiplicative.prpHomOrt' where the property above
--- is stated.
---
--- (2) The constraint @'Transformable' ('ObjectClass' __h__) 'Typ'@ for a family @__h__@ of
--- homomorphisms between 'Oriented' structures ensures that the type @'OAlg.Category.Path.Path' __h__@
--- is a instances of 'OAlg.Data.Equal.Eq2'. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
-      ) => HomOriented h where
+      ) => HomOrientedCovariant h where
 
-instance HomOriented h => HomOriented (C.Path h)
-
-
-instance (HomOriented h, Transformable t Ort, Transformable t Typ)
-  => HomOriented (Forget t h)
+instance HomOrientedCovariant h => HomOrientedCovariant (C.Path h)
 
 --------------------------------------------------------------------------------
 -- SDualisableOrietend -
 
--- | @__o__@-duality for 'Oriented' structures, i.e. 'homToDual' is a 'Contravariant' morphism.
+-- | contravariant duality of @__s__@-structured types according to @__o__@.
 --
--- __Property__ Let @'SDualisableOriented' __s o__@
+-- __Property__ Let @'SDualisableOriented' __s o__@. then for all @__x__@ and
+-- @s@ in @'Struct' __s x__@ holds:
+--
+-- (1) @'start' '.' 'amap' t '.=.' 'pmap' t '.' 'end'@.
+--
+-- (2) @'end' '.' 'amap' t '.=.' 'pmap' t '.' 'start'@.
+--
+-- where @q@ is any proxy in @__q o__@ and @'Contravariant' t = 'homToDual' q s@.
 class (SDualisableG (->) s o Id, SDualisableG (->) s o Pnt, Transformable s Ort)
   => SDualisableOriented s o
 
 instance (TransformableOrt s, TransformableOp s) => SDualisableOriented s Op
-
---------------------------------------------------------------------------------
--- FunctorialHomOriented -
-
--- | functorial application on 'Oriented' structures.
-type FunctorialHomOriented h = (HomOriented h, Functorial h, FunctorialPoint h)
-
---------------------------------------------------------------------------------
--- Hom -
-
-type instance Hom Ort h = HomOriented h
-
---------------------------------------------------------------------------------
--- IsoOrt -
-
--- | @s@-isomoprhisms.
-type IsoOrt s h = (FunctorialHomOriented h, Cayleyan2 h, Hom s h)
-
---------------------------------------------------------------------------------
--- IsoOriented -
-
--- | isomorphisms between 'Oriented' structures.
-type IsoOriented h = (FunctorialHomOriented h, Cayleyan2 h)
 
 --------------------------------------------------------------------------------
 -- HomEmpty -
@@ -205,55 +175,84 @@ fromHomEmpty (HomEmpty e) = fromEmpty2 e
 instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
 
 --------------------------------------------------------------------------------
--- HomOrientedV -
-
-type HomOrientedV v s o h = Variant2 v (SDualCat s o h)
-
---------------------------------------------------------------------------------
--- HomEmpty - HomOriented -
+-- HomEmpty - HomOrientedCovariant -
 
 instance Morphism (HomEmpty s) where
   type ObjectClass (HomEmpty s) = s
   domain = fromHomEmpty
   range  = fromHomEmpty
 
-instance (TransformableOrt s, TransformableTyp s) => HomOriented (HomEmpty s)
+instance (TransformableOrt s, TransformableTyp s)
+  => HomOrientedCovariant (HomEmpty s)
 
+instance (HomOrientedCovariant h, s ~ ObjectClass h, SDualisableOriented s o)
+  => HomOrientedCovariant (Variant2 Covariant (SDualCat s o h))
 
-instance (HomOriented h, s ~ ObjectClass h, SDualisableOriented s o)
-  => HomOriented (Variant2 Covariant (SDualCat s o h))
+--------------------------------------------------------------------------------
+-- HomOriented -
+
+-- | category of homomorphisms between oriented structures given by a type family @__h__@ of
+-- covariant homomorphisms.
+type HomOriented = SDualCat Ort
+
+-- , ObjectClass h ~ s, HomOrientedCovariant h, Transformable1 o s)
+
+{-
+--------------------------------------------------------------------------------
+-- HomOrientedV -
+
+type HomOrientedV v s o h = Variant2 v (SDualCat s o h)
+-}
 
 --------------------------------------------------------------------------------
 -- homToDual -
 
-homToDual :: Transformable1 o s
-  => q o -> Struct s x ->HomOrientedV Contravariant s o (HomEmpty s) x (o x)
+-- | 'ToDual' as a 'Contravaraint' morphism.
+homToDual :: Transformable1 o Ort
+  -- => q o -> Struct s x -> HomOrientedV Contravariant s o (HomEmpty s) x (o x)
+  => q o -> Struct Ort x -> Variant2 Contravariant (HomOriented o (HomEmpty Ort)) x (o x) 
 homToDual _ = sctToDual
 
 --------------------------------------------------------------------------------
--- prpSDualisableOriented -
+-- homFromDual -
 
--- | validity according to 'SDualisableOriented'.
-relSDualisableOriented :: SDualisableOriented s o
-  => q o -> Struct s x -> Struct s (o x) -> XOrt x -> Statement
-relSDualisableOriented q s s' xx = case (tauOrt s,tauOrt s') of
-  (Struct,Struct) -> Forall xx
-    (\x -> And [ Label "1" :<=>: ((start $ amap t x) == (pmap t $ end x)) :?> Params ["x":=show x]
-               , Label "2" :<=>: ((end $ amap t x) == (pmap t $ start x)) :?> Params ["x":=show x]
-               ]
-    )
-  where Contravariant2 t = homToDual q s
-
--- | validity according to 'SDualisableOriented'.
-prpSDualisableOriented :: SDualisableOriented s o
-  => q o -> Struct s x -> XOrt x -> Statement
-prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>: relSDualisableOriented q s (tau1 s) xx
-
-
+-- | 'FromDual' as a 'Contravaraint' morphism.
+homFromDual :: Transformable1 o Ort
+  => q o -> Struct Ort x -> Variant2 Contravariant (HomOriented o (HomEmpty Ort)) (o x) x
+homFromDual _ = sctFromDual
 
 
 
 {-
+
+instance (HomOrientedCovariant h, Transformable t Ort, Transformable t Typ)
+  => HomOrientedCovariant (Forget t h)
+
+
+--------------------------------------------------------------------------------
+-- FunctorialHomOrientedCovariant -
+
+-- | functorial application on 'Oriented' structures.
+type FunctorialHomOrientedCovariant h = (HomOrientedCovariant h, Functorial h, FunctorialPoint h)
+
+--------------------------------------------------------------------------------
+-- Hom -
+
+type instance Hom Ort h = HomOrientedCovariant h
+
+--------------------------------------------------------------------------------
+-- IsoOrt -
+
+-- | @s@-isomoprhisms.
+type IsoOrt s h = (FunctorialHomOrientedCovariant h, Cayleyan2 h, Hom s h)
+
+--------------------------------------------------------------------------------
+-- IsoOriented -
+
+-- | isomorphisms between 'Oriented' structures.
+type IsoOriented h = (FunctorialHomOrientedCovariant h, Cayleyan2 h)
+
+
 --------------------------------------------------------------------------------
 -- IdHom -
 
@@ -297,7 +296,7 @@ instance Cayleyan2 (IdHom s) where
   invert2 IdHom = IdHom
 
 --------------------------------------------------------------------------------
--- IdHom - HomOriented -
+-- IdHom - HomOrientedCovariant -
 
 instance Applicative (IdHom s) where
   amap IdHom = id
@@ -309,7 +308,7 @@ instance Functorial (IdHom s)
 instance FunctorialPoint (IdHom s)
 
 instance ( TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (IdHom s)
+  => HomOrientedCovariant (IdHom s)
 
 
 --------------------------------------------------------------------------------
@@ -429,7 +428,7 @@ instance ApplicativePoint (HomOp s) where
   pmap OppositeInv = id
 -}
 
-instance (TransformableOrt s, TransformableTyp s, TransformableOp s) => HomOriented (HomOp s)
+instance (TransformableOrt s, TransformableTyp s, TransformableOp s) => HomOrientedCovariant (HomOp s)
 
 --------------------------------------------------------------------------------
 -- PathHomOp -
@@ -503,7 +502,7 @@ instance ApplicativePoint (IsoOp s) where
 
 instance FunctorialPoint (IsoOp s)
 
-instance (TransformableOp s, TransformableOrt s, TransformableTyp s) => HomOriented (IsoOp s)
+instance (TransformableOp s, TransformableOrt s, TransformableTyp s) => HomOrientedCovariant (IsoOp s)
 
 {-
 --------------------------------------------------------------------------------
@@ -730,7 +729,7 @@ instance ApplicativePoint (OpMap O.Path s) where
   pmap FromOp1 = id
   
 instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (OpMap O.Path s)
+  => HomOrientedCovariant (OpMap O.Path s)
 
 --------------------------------------------------------------------------------
 -- IsoOpMap Path s - Hom -
@@ -742,7 +741,7 @@ instance ApplicativePoint (IsoOpMap O.Path s) where
   pmap = restrict pmap
   
 instance (TransformableOp s, TransformableOrt s, TransformableTyp s)
-  => HomOriented (IsoOpMap O.Path s) 
+  => HomOrientedCovariant (IsoOpMap O.Path s) 
 
 --------------------------------------------------------------------------------
 -- IsoOpMap Path s - Functorial -
@@ -791,20 +790,20 @@ instance ApplicativePoint h => ApplicativePoint (OpHom h) where
   pmap (OpHom h) = pmap h
   
 
-instance HomOriented h => HomOriented (OpHom h)
+instance HomOrientedCovariant h => HomOrientedCovariant (OpHom h)
   
 --------------------------------------------------------------------------------
--- Forget' - HomOriented -
+-- Forget' - HomOrientedCovariant -
 
 instance ApplicativePoint h => ApplicativePoint (Forget' t h) where
   pmap h = pmap (form h)
 
 instance (FunctorialPoint h, Eq2 h, TransformableObjectClassTyp h) => FunctorialPoint (Forget' t h)
 
-instance ( HomOriented h
+instance ( HomOrientedCovariant h
          , Transformable t Ort, Transformable t Typ
          , Transformable1 Op t
-         ) => HomOriented (Forget' t h)
+         ) => HomOrientedCovariant (Forget' t h)
 
 --------------------------------------------------------------------------------
 -- Variance -
@@ -870,7 +869,7 @@ instance (TransformableTyp s, Transformable1 Op s)
 -- @'Inv2' _ r' = sdlRefl1 d s@. Hence it is sufficient to implement 'sdlToDualPnt' 
 -- such that the properties 2 and 3 hold and leaving the implementation of 'sdlFromDualPnt' 
 -- as provided. 
-class (SDuality d s i o, FunctorialHomOriented i, Transformable s Ort)
+class (SDuality d s i o, FunctorialHomOrientedCovariant i, Transformable s Ort)
   => SDualityOriented d s i o where
   {-# MINIMAL (sdlToDualPnt | sdlFromDualPnt) #-}
 

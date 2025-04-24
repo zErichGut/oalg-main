@@ -25,7 +25,9 @@
 module OAlg.Category.SDual
   (
     -- * Category
-    SDualCat(), sctToDual, sctToDual'
+    SDualCat()
+  , sctToDual, sctToDual'
+  , sctFromDual, sctFromDual'
     
     -- * Map
   , SDualMap(..)
@@ -165,7 +167,7 @@ instance (Morphism h, ObjectClass h ~ s) => Category (SDualCat s o h) where
 
 -- | using the structural constraints to constract the 'Contravariant' morphism of 'ToDual'
 -- in'SDualCat'.
-sctToDualStruct ::Struct s x -> Struct s (o x) -> Variant2 Contravariant (SDualCat s o h) x (o x)
+sctToDualStruct :: Struct s x -> Struct s (o x) -> Variant2 Contravariant (SDualCat s o h) x (o x)
 sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
 
 -- | 'ToDual' as a 'Contravaraint' morphism in 'SDualCat'.
@@ -176,6 +178,23 @@ sctToDual s = sctToDualStruct s (tau1 s)
 sctToDual' :: Transformable1 o s
   => q o h -> Struct s x -> Variant2 Contravariant (SDualCat s o h) x (o x)
 sctToDual' _ = sctToDual
+
+--------------------------------------------------------------------------------
+-- sctFromDual -
+
+-- | using the structural constraints to constract the 'Contravariant' morphism of 'FromDual'
+-- in'SDualCat'.
+sctFromDualStruct :: Struct s x -> Struct s (o x) -> Variant2 Contravariant (SDualCat s o h) (o x) x
+sctFromDualStruct Struct s'@Struct = Contravariant2 $ make (FromDual :. IdPath s')
+
+-- | 'FromDual' as a 'Contravaraint' morphism in 'SDualCat'.
+sctFromDual :: Transformable1 o s => Struct s x -> Variant2 Contravariant (SDualCat s o h) (o x) x
+sctFromDual s = sctFromDualStruct s (tau1 s)
+
+-- | prefixing a proxy.
+sctFromDual' :: Transformable1 o s
+  => q o h -> Struct s x -> Variant2 Contravariant (SDualCat s o h) (o x) x
+sctFromDual' _ = sctFromDual
 
 --------------------------------------------------------------------------------
 -- SDualCat - FunctorialG -

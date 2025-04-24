@@ -7,6 +7,8 @@
   , FlexibleInstances
   , FlexibleContexts
   , GADTs
+  , StandaloneDeriving
+  , DeriveAnyClass
   , PolyKinds
   , DefaultSignatures
   , DataKinds
@@ -99,6 +101,11 @@ instance Disjunctive2 h => Disjunctive (Path h x y) where
 data Variant2 v h x y where
   Covariant2     :: h x y -> Variant2 Covariant h x y
   Contravariant2 :: h x y -> Variant2 Contravariant h x y
+
+deriving instance Show (h x y) => Show (Variant2 v h x y)
+
+--------------------------------------------------------------------------------
+-- toVariant2 -
 
 toVariant2 :: Disjunctive2 h
   => h x y -> Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y

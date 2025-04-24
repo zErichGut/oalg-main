@@ -19,6 +19,7 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
+{-    
     -- * Proposition
     prpIdHomOrt, prpHomOpOrt
 
@@ -35,6 +36,7 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * X
   , xIsoOpOrtFrom
+-}
   )
   where
 
@@ -44,8 +46,6 @@ import Control.Applicative
 import Data.Type.Equality
 
 import OAlg.Prelude
-
-import OAlg.Data.SDuality
 
 import OAlg.Category.Unify
 
@@ -67,21 +67,43 @@ type XHomOrt h = XAppl h
 -- prpHomOrt -
 
 -- | validity of homomorphisms between 'Oriented' for a given value in the domain.
-relHomOrtHomomorphous :: (Hom Ort h, Show2 h)
-  => Homomorphous Ort a b -> h a b -> a -> Statement
-relHomOrtHomomorphous (Struct:>:Struct) f x
-  = And [ (start fx == pmap f (start x)) :?> prms
-        , (end fx == pmap f (end x)) :?> prms
+relHomOrientedCovariant :: (HomOrientedCovariant h, Show2 h)
+  => Homomorphous Ort x y -> h x y -> x -> Statement
+relHomOrientedCovariant (Struct:>:Struct) h x
+  = And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":=show2 h,"x":=show x]
+        , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":=show2 h,"x":=show x]
         ]
-  where prms = Params ["f":=show2 f,"x":=show x]
-        fx = amap f x
+
+
+--------------------------------------------------------------------------------
+-- prpSDualisableOriented -
+
+-- | validity according to 'SDualisableOriented'.
+relSDualisableOriented :: SDualisableOriented Ort o
+  => q o -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
+relSDualisableOriented q s@Struct Struct xx = Forall xx
+    (\x -> And [ Label "1" :<=>: ((start $ amap t x) == (pmap t $ end x)) :?> Params ["x":=show x]
+               , Label "2" :<=>: ((end $ amap t x) == (pmap t $ start x)) :?> Params ["x":=show x]
+               ]
+    )
+  where Contravariant2 t = homToDual q s
+
+-- | validity according to 'SDualisableOriented'.
+prpSDualisableOriented :: SDualisableOriented Ort o
+  => q o -> Struct Ort x -> XOrt x -> Statement
+prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>: relSDualisableOriented q s (tau1 s) xx
+
+
+
+
+{-
 
 --------------------------------------------------------------------------------
 -- prpHomOrt1 -
 
 -- | validity of homomorphisms between 'Oriented' structures based on the given values.
-prpHomOrt1 :: (Hom Ort h, Show2 h) => h a b -> a -> Statement
-prpHomOrt1 f x = Prp "HomOrt1" :<=>: relHomOrtHomomorphous (tauHom (homomorphous f)) f x
+prpHomOrt1 :: (HomOrientedCovariant h, Show2 h) => h a b -> a -> Statement
+prpHomOrt1 f x = Prp "HomOrt1" :<=>: relHomOrientedCovariant (tauHom (homomorphous f)) f x
 
 
 
@@ -90,14 +112,14 @@ prpHomOrt1 f x = Prp "HomOrt1" :<=>: relHomOrtHomomorphous (tauHom (homomorphous
 prpHomOrt :: (Hom Ort h, Show2 h) => XHomOrt h -> Statement
 prpHomOrt xfx = Prp "HomOrt"
   :<=>: Forall xfx (\(SomeApplication f x)
-                    -> relHomOrtHomomorphous (tauHom (homomorphous f)) f x
+                    -> relHomOrientedCovariant (tauHom (homomorphous f)) f x
                    )
 
 -- | validity of homomorphisms between 'Oriented' structures based on the given
 -- random variable.
 prpHomOrt' :: (Hom Ort h, Show2 h) => h a b -> XOrt a -> Statement
 prpHomOrt' f xa = Label "prpHomOrt'" :<=>:
-  Forall xa (relHomOrtHomomorphous (tauHom (homomorphous f)) f)
+  Forall xa (relHomOrientedCovariant (tauHom (homomorphous f)) f)
   
 --------------------------------------------------------------------------------
 -- prpIdHomOrt -
@@ -326,3 +348,6 @@ xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
   o' Struct = make (OppositeInv :. IdPath Struct)
 -}
 
+
+
+-}
