@@ -26,7 +26,7 @@ module OAlg.Data.SDualisable
   (
     -- * Structural Duality
     -- ** Dualisable
-    SDualisable -- , sdlToDual
+    SDualisable
   , SDualisableG(..), SDualityG(..)
   , SReflexiveG(..), sdlToDual'
 
@@ -133,12 +133,12 @@ instance Transformable1 Op s => SDualisableG (->) s Op Id where
 idPnt :: Point x ~ Point y => Pnt x -> Pnt y
 idPnt (Pnt p) = Pnt p
   
-instance SReflexiveG (->) Ort Op Pnt where
+instance SReflexiveG (->) s Op Pnt where
   sdlRefl _ = Inv2 idPnt idPnt where
     
-instance SDualisableG (->) Ort Op Pnt where
+instance Transformable1 Op s => SDualisableG (->) s Op Pnt where
   sdlToDual _ = idPnt 
-  
+
 --------------------------------------------------------------------------------
 -- SDualisable -
 

@@ -155,34 +155,13 @@ instance (HomOriented h, Transformable t Ort, Transformable t Typ)
 --------------------------------------------------------------------------------
 -- SDualisableOrietend -
 
+-- | @__o__@-duality for 'Oriented' structures, i.e. 'homToDual' is a 'Contravariant' morphism.
+--
+-- __Property__ Let @'SDualisableOriented' __s o__@
 class (SDualisableG (->) s o Id, SDualisableG (->) s o Pnt, Transformable s Ort)
   => SDualisableOriented s o
 
-instance SDualisableOriented Ort Op
-
---------------------------------------------------------------------------------
--- homToDual -
-
-homToDual :: Transformable1 o s
-  => q o -> Struct s x ->HomOrientedV Contravariant s o (HomEmpty s) x (o x)
-homToDual _ = sctToDual where
-
---------------------------------------------------------------------------------
--- prpSDualisableOriented -
-
-
-relSDualisableOriented :: (SDualisableOriented s o, XStandard x, XStandard (Point (o x)))
-  => q o -> Struct s x -> Struct s (o x) -> Statement
-relSDualisableOriented q s s' = case (tauOrt s,tauOrt s') of
-  (Struct,Struct) -> And [ Label "1" :<=>: (ExtEqual (start . amap t) .=. ExtEqual (pmap t . end))
-                         , Label "2" :<=>: (ExtEqual (end . amap t) .=. ExtEqual (pmap t . start))
-                         ]
-  where t = homToDual q s
-
--- | validity according to 'SDualisableOriented'.
-prpSDualisableOriented :: (SDualisableOriented s o, XStandard x, XStandard (Point (o x)))
-  => q o -> Struct s x -> Statement
-prpSDualisableOriented q s = Prp "SDualisableOriented" :<=>: relSDualisableOriented q s (tau1 s)
+instance (TransformableOrt s, TransformableOp s) => SDualisableOriented s Op
 
 --------------------------------------------------------------------------------
 -- FunctorialHomOriented -
@@ -241,20 +220,34 @@ instance Morphism (HomEmpty s) where
 instance (TransformableOrt s, TransformableTyp s) => HomOriented (HomEmpty s)
 
 
-instance ( HomOriented h, ObjectClass h ~ s, SDualisableOriented s o)
+instance (HomOriented h, s ~ ObjectClass h, SDualisableOriented s o)
   => HomOriented (Variant2 Covariant (SDualCat s o h))
 
 --------------------------------------------------------------------------------
--- OpDuality -
+-- homToDual -
 
-data OpDuality s o h where OpDuality :: OpDuality s Op (HomEmpty s)
+homToDual :: Transformable1 o s
+  => q o -> Struct s x ->HomOrientedV Contravariant s o (HomEmpty s) x (o x)
+homToDual _ = sctToDual
 
 --------------------------------------------------------------------------------
--- opDualityOrt -
+-- prpSDualisableOriented -
 
-opDualityOrt :: OpDuality Ort Op (HomEmpty Ort)
-opDualityOrt = OpDuality
+-- | validity according to 'SDualisableOriented'.
+relSDualisableOriented :: SDualisableOriented s o
+  => q o -> Struct s x -> Struct s (o x) -> XOrt x -> Statement
+relSDualisableOriented q s s' xx = case (tauOrt s,tauOrt s') of
+  (Struct,Struct) -> Forall xx
+    (\x -> And [ Label "1" :<=>: ((start $ amap t x) == (pmap t $ end x)) :?> Params ["x":=show x]
+               , Label "2" :<=>: ((end $ amap t x) == (pmap t $ start x)) :?> Params ["x":=show x]
+               ]
+    )
+  where Contravariant2 t = homToDual q s
 
+-- | validity according to 'SDualisableOriented'.
+prpSDualisableOriented :: SDualisableOriented s o
+  => q o -> Struct s x -> XOrt x -> Statement
+prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>: relSDualisableOriented q s (tau1 s) xx
 
 
 
