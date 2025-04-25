@@ -30,6 +30,8 @@ module OAlg.Data.Variant
   , Disjunctive(..), Disjunctive2(..)
   ) where
 
+import Data.List ((++))
+
 import OAlg.Prelude
 
 import OAlg.Category.Path
@@ -103,6 +105,10 @@ data Variant2 v h x y where
   Contravariant2 :: h x y -> Variant2 Contravariant h x y
 
 deriving instance Show (h x y) => Show (Variant2 v h x y)
+
+instance Show2 h => Show2 (Variant2 v h) where
+  show2 (Covariant2 h) = "Covariant2 (" ++ show2 h ++ ")"
+  show2 (Contravariant2 h) = "Contravariant2 (" ++ show2 h ++ ")"
 
 --------------------------------------------------------------------------------
 -- toVariant2 -

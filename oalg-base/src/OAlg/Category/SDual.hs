@@ -24,6 +24,7 @@
 -- functor to dualisable structured types.
 module OAlg.Category.SDual
   (
+
     -- * Category
     SDualCat()
   , sctToDual, sctToDual'
@@ -132,7 +133,6 @@ newtype SDualCat s o h x y = SDualCat (PathSDualMap s o h x y)
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (SDualCat s o h x y)
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (SDualCat s o h)
 
-
 instance (Morphism h, Entity2 h, Transformable s Typ, Typeable s, Typeable o)
   => Entity2 (SDualCat s o h)
 
@@ -151,14 +151,15 @@ instance Constructable (SDualCat s o h x y) where make = SDualCat . reduce
 instance Disjunctive2 (SDualCat s o h)    where variant2 = restrict variant2
 instance Disjunctive (SDualCat s o h x y) where variant  = restrict variant
 
+
 --------------------------------------------------------------------------------
 -- SDualCat - Category -
 
-instance (Morphism h, ObjectClass h ~ s) => Morphism (SDualCat s o h) where
+instance Morphism h => Morphism (SDualCat s o h) where
   type ObjectClass (SDualCat s o h) = s
   homomorphous (SDualCat p) = homomorphous p
 
-instance (Morphism h, ObjectClass h ~ s) => Category (SDualCat s o h) where
+instance Morphism h => Category (SDualCat s o h) where
   cOne = make . IdPath
   SDualCat f . SDualCat g = make (f . g)
 
@@ -211,12 +212,12 @@ instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
   => ApplicativeG d (SDualCat s o h) c where
   amapG = amapG . form
 
-instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
          , Category c, TransformableGObjectClassRange d s c
          )
   => ApplicativeGMorphism d (SDualCat s o h) c
 
-instance ( Morphism h, ObjectClass h ~ s, ApplicativeG d h c, SDualisableG c s o d
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
          , Category c, TransformableGObjectClassRange d s c
          )
   => FunctorialG d (SDualCat s o h) c
@@ -289,4 +290,5 @@ ff q s a = case amapG toDual (SDual (Left1 a)) of
      SDual (Right1 b') -> b'
      _                 -> throw (implErrorSBidualisable "sdlToDualLft")
   where toDual = sctToDual' q s
+
 

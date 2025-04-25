@@ -22,7 +22,7 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-
+{-
     -- * Homomorphism
     HomOrientedCovariant  -- , omap, IsoOrt, IsoOriented
   , SDualisableOriented
@@ -36,7 +36,7 @@ module OAlg.Hom.Oriented.Definition
   , module V
   , module S
   , module D
-
+-}
 
 {-
     -- * Functorial
@@ -82,6 +82,8 @@ import OAlg.Prelude
 import OAlg.Category.Path as C
 import OAlg.Category.SDual as D
 
+import OAlg.Data.Proxy
+import OAlg.Data.Either
 import OAlg.Data.Constructable
 import OAlg.Data.Reducible
 import OAlg.Data.Identity
@@ -127,11 +129,11 @@ type FunctorialPoint h = FunctorialG Pnt h (->)
 -- | type family of covariant homomorphisms between 'Oriented' structures.
 --
 -- __Property__ Let @__h__@ be an instance of 'HomOriented', then
--- for all  @__a__@, @__b__@ and @f@ in @__h a b__@ holds:
+-- for all  @__a__@, @__b__@ and @h@ in @__h a b__@ holds:
 --
--- (1) @'start' '.' 'amap' f '.=.' 'pmap' f '.=.' 'start'@.
+-- (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
 --
--- (2) @'end' '.' 'amap' f '.=.' 'pmap' f '.' 'end'@.
+-- (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort, Transformable (ObjectClass h) Typ
       ) => HomOrientedCovariant h where
@@ -185,17 +187,126 @@ instance Morphism (HomEmpty s) where
 instance (TransformableOrt s, TransformableTyp s)
   => HomOrientedCovariant (HomEmpty s)
 
-instance (HomOrientedCovariant h, s ~ ObjectClass h, SDualisableOriented s o)
+--------------------------------------------------------------------------------
+-- SDualCat - HomOrientedCovariant -
+
+instance (HomOrientedCovariant h, SDualisableOriented s o, Transformable s Typ)
   => HomOrientedCovariant (Variant2 Covariant (SDualCat s o h))
 
 --------------------------------------------------------------------------------
 -- HomOriented -
 
 -- | category of homomorphisms between oriented structures given by a type family @__h__@ of
--- covariant homomorphisms.
-type HomOriented = SDualCat Ort
+-- covariant homomorphisms where @__o__@ is a oriented duality.
+--
+-- __Properties__ Let @h@ be in @'HomOriented' __o__ __h__@ with
+-- @'HomOrientedCovariant' __h__@ and @'SDualisableOriented' Ort __o__@, then holds:
+--
+-- (1) If @'variant' h '==' 'Covariant'@ then holds:
+--
+--     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+--
+--     (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+-- (2) If @'variant' h '==' 'Contravariant'@ then holds:
+--
+--     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+--     (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+newtype HomOriented o h x y = HomOriented (SDualCat Ort o h x y)
+  deriving (Show,Show2,Eq,Eq2)
 
--- , ObjectClass h ~ s, HomOrientedCovariant h, Transformable1 o s)
+--------------------------------------------------------------------------------
+-- HomOriented - Disjunctive -
+
+instance Disjunctive (HomOriented o h x y) where variant (HomOriented h) = variant h
+instance Disjunctive2 (HomOriented o h)
+
+--------------------------------------------------------------------------------
+-- HomOriented - Category -
+instance HomOrientedCovariant h => Morphism (HomOriented o h) where
+  type ObjectClass (HomOriented o h) = Ort
+  homomorphous (HomOriented h) = homomorphous h
+
+instance HomOrientedCovariant h => Category (HomOriented o h) where
+  cOne = HomOriented . cOne
+  HomOriented f . HomOriented g = HomOriented (f . g)
+
+--------------------------------------------------------------------------------
+-- HomOriented - Applicative -
+
+instance (HomOrientedCovariant h, SDualisableOriented Ort o)
+  => ApplicativeG Id (HomOriented o h) (->) where
+  amapG (HomOriented f) = amapG f
+
+instance (HomOrientedCovariant h, SDualisableOriented Ort o)
+  => ApplicativeG Pnt (HomOriented o h) (->) where
+  amapG (HomOriented f) = amapG f
+
+instance (HomOrientedCovariant h, SDualisableOriented Ort o)
+  => HomOrientedCovariant (Variant2 Covariant (HomOriented o h))
+
+--------------------------------------------------------------------------------
+-- homOrtToDual -
+
+homOrtToDual :: Transformable1 o Ort
+  => q o h -> Struct Ort x -> Variant2 Contravariant (HomOriented o h) x (o x)
+homOrtToDual q s = Contravariant2 (HomOriented t) where Contravariant2 t = sctToDual' q s
+  
+--------------------------------------------------------------------------------
+-- homOrtFromDual -
+
+homOrtFromDual :: Transformable1 o Ort
+  => q o h -> Struct Ort x -> Variant2 Contravariant (HomOriented o h) (o x) x
+homOrtFromDual q s = Contravariant2 (HomOriented t) where Contravariant2 t = sctFromDual' q s
+
+--------------------------------------------------------------------------------
+-- homOrtToCovariant -
+
+homOrtToCovariant :: (HomOrientedCovariant h, Transformable1 o Ort)
+  => Variant2 Contravariant (HomOriented o h) x y -> Variant2 Covariant (HomOriented o h) x (o y)
+homOrtToCovariant (Contravariant2 h) = Covariant2 (t . h) where
+  Contravariant2 t = homOrtToDual (q h) (range h)
+  q :: HomOriented o h x y -> Proxy2 o h
+  q _ = Proxy2
+  
+--------------------------------------------------------------------------------
+-- prpHomOrientedCovariant -
+
+-- | validity of homomorphisms between 'Oriented' for a given value in the domain.
+relHomOrientedCovariant :: (HomOrientedCovariant h, Show2 h)
+  => Homomorphous Ort x y -> h x y -> x -> Statement
+relHomOrientedCovariant (Struct:>:Struct) h x
+  = And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":=show2 h,"x":=show x]
+        , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":=show2 h,"x":=show x]
+        ]
+
+--------------------------------------------------------------------------------
+-- prpHomOriented -
+
+prpHomOriented :: (HomOrientedCovariant h, SDualisableOriented Ort o, Show2 h)
+  => HomOriented o h x y -> XOrt x -> Statement
+prpHomOriented h xx = Prp "HomOriented" :<=>: case toVariant2 h of
+  Right2 hCov -> Forall xx (relHomOrientedCovariant (tauHom (homomorphous h)) hCov)
+  Left2  hCnt -> prpHomOriented hCnt' xx where Covariant2 hCnt' = homOrtToCovariant hCnt
+
+--------------------------------------------------------------------------------
+-- HomOriented - Entity -
+
+instance (HomOrientedCovariant h, SDualisableOriented Ort o, Show2 h, XStandard x)
+  => Validable (HomOriented o h x y) where
+  valid h = prpHomOriented h xStandard
+
+instance ( HomOrientedCovariant h, SDualisableOriented Ort o, Entity2 h, XStandard x
+         , Typeable o, Typeable x, Typeable y
+         )
+  => Entity (HomOriented o h x y)
+
+
+
+
+
+
 
 {-
 --------------------------------------------------------------------------------
@@ -204,6 +315,7 @@ type HomOriented = SDualCat Ort
 type HomOrientedV v s o h = Variant2 v (SDualCat s o h)
 -}
 
+{-
 --------------------------------------------------------------------------------
 -- homToDual -
 
@@ -220,7 +332,7 @@ homToDual _ = sctToDual
 homFromDual :: Transformable1 o Ort
   => q o -> Struct Ort x -> Variant2 Contravariant (HomOriented o (HomEmpty Ort)) (o x) x
 homFromDual _ = sctFromDual
-
+-}
 
 
 {-
