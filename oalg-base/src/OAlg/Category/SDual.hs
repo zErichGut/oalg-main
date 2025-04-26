@@ -27,6 +27,7 @@ module OAlg.Category.SDual
 
     -- * Category
     SDualCat()
+  , sctForget
   , sctToDual, sctToDual'
   , sctFromDual, sctFromDual'
     
@@ -105,10 +106,33 @@ instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (SD
 instance Transformable s Typ => TransformableObjectClassTyp (SDualMap s o h)
 
 --------------------------------------------------------------------------------
+-- smpForget -
+
+smpForgetStruct :: (Transformable (ObjectClass h) t)
+  => Homomorphous t x y -> SDualMap s o h x y -> SDualMap t o h x y
+smpForgetStruct (Struct:>:Struct) m = case m of
+  SDualMap h -> SDualMap h
+  ToDual     -> ToDual
+  FromDual   -> FromDual
+
+smpForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
+  => SDualMap s o h x y -> SDualMap t o h x y
+smpForget m = smpForgetStruct (tauHom $ homomorphous m) m
+
+--------------------------------------------------------------------------------
 -- PathSDualMap -
 
 -- | path of 'SDualMap'.
 type PathSDualMap s o h = Path (SDualMap s o h)
+
+--------------------------------------------------------------------------------
+-- smpPathForget -
+
+smpPathForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
+  => PathSDualMap s o h x y -> PathSDualMap t o h x y
+smpPathForget p = case p of
+  IdPath s -> IdPath (tau s)
+  m :. p'  -> smpForget m :. smpPathForget p'
 
 --------------------------------------------------------------------------------
 -- rdcPathSDualMap -
@@ -151,7 +175,6 @@ instance Constructable (SDualCat s o h x y) where make = SDualCat . reduce
 instance Disjunctive2 (SDualCat s o h)    where variant2 = restrict variant2
 instance Disjunctive (SDualCat s o h x y) where variant  = restrict variant
 
-
 --------------------------------------------------------------------------------
 -- SDualCat - Category -
 
@@ -162,6 +185,13 @@ instance Morphism h => Morphism (SDualCat s o h) where
 instance Morphism h => Category (SDualCat s o h) where
   cOne = make . IdPath
   SDualCat f . SDualCat g = make (f . g)
+
+--------------------------------------------------------------------------------
+-- sctForget -
+
+sctForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
+  => SDualCat s o h x y -> SDualCat t o h x y
+sctForget (SDualCat p) = SDualCat (smpPathForget p)
 
 --------------------------------------------------------------------------------
 -- sctToDual -

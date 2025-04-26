@@ -30,7 +30,7 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Orientation
   , Orientation(..), opposite
-  , Pnt(..)
+  , Pnt(..), fromPntG
 
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
@@ -161,6 +161,12 @@ class (Entity q, Entity (Point q)) => Oriented q where
 
 -- | type function for 'Point's.
 newtype Pnt x = Pnt (Point x)
+
+--------------------------------------------------------------------------------
+-- fromPntG -
+
+fromPntG :: (Pnt x -> Pnt y) -> Point x -> Point y
+fromPntG f x = y where Pnt y = f (Pnt x)
 
 --------------------------------------------------------------------------------
 -- isEndo -

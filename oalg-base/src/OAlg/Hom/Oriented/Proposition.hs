@@ -75,23 +75,6 @@ relHomOrientedCovariant (Struct:>:Struct) h x
         ]
 
 
---------------------------------------------------------------------------------
--- prpSDualisableOriented -
-
--- | validity according to 'SDualisableOriented'.
-relSDualisableOriented :: SDualisableOriented Ort o
-  => q o -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
-relSDualisableOriented q s@Struct Struct xx = Forall xx
-    (\x -> And [ Label "1" :<=>: ((start $ amap t x) == (pmap t $ end x)) :?> Params ["x":=show x]
-               , Label "2" :<=>: ((end $ amap t x) == (pmap t $ start x)) :?> Params ["x":=show x]
-               ]
-    )
-  where Contravariant2 t = homToDual q s
-
--- | validity according to 'SDualisableOriented'.
-prpSDualisableOriented :: SDualisableOriented Ort o
-  => q o -> Struct Ort x -> XOrt x -> Statement
-prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>: relSDualisableOriented q s (tau1 s) xx
 
 
 
