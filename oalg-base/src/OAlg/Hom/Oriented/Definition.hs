@@ -97,7 +97,7 @@ import OAlg.Structure.Oriented as O
 -- import OAlg.Structure.Additive
 -- import OAlg.Structure.Distributive
 
-import OAlg.Hom.Definition
+-- import OAlg.Hom.Definition
 
 --------------------------------------------------------------------------------
 -- ApplicativePoint -
@@ -162,16 +162,20 @@ class ( SDualisableG (->) s o Id, SDualisableG (->) s o Pnt
 instance (TransformableOrt s, TransformableOp s) => SDualisableOriented s Op
 
 --------------------------------------------------------------------------------
--- ff -
+-- sdlToDualArw -
 
-ff :: SDualisableOriented s o => q o -> Struct s x -> x -> (o x)
-ff _ = fromIdG . sdlToDual
+sdlToDualArw :: SDualisableOriented s o => q o -> Struct s x -> x -> (o x)
+sdlToDualArw _ = fromIdG . sdlToDual
 
-gg :: SDualisableOriented s o => q o -> Struct s x -> Pnt x -> Pnt (o x)
-gg _ = sdlToDual
+--------------------------------------------------------------------------------
+-- sdlToDualPnt - 
 
-hh :: SDualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
-hh q s x = x' where Pnt x' = gg q s (Pnt x)
+sdlToDualPnt :: SDualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
+sdlToDualPnt q s x = x' where
+  Pnt x' = toDualPnt q s (Pnt x)
+  
+  toDualPnt :: SDualisableOriented s o => q o -> Struct s x -> Pnt x -> Pnt (o x)
+  toDualPnt _ = sdlToDual
 
 --------------------------------------------------------------------------------
 -- prpSDualisableOriented -
@@ -185,8 +189,8 @@ relSDualisableOriented q s Struct Struct xx = Forall xx
                ]
     )
   where
-    tArw = ff q s
-    tPnt = hh q s
+    tArw = sdlToDualArw q s
+    tPnt = sdlToDualPnt q s
 
 
 -- | validity according to 'SDualisableOriented'.
@@ -224,6 +228,98 @@ instance Morphism (HomEmpty s) where
 instance (TransformableOrt s, TransformableTyp s)
   => HomOriented (HomEmpty s)
 
+--------------------------------------------------------------------------------
+-- HomCovariant -
+
+type HomCovariant = Variant2 Covariant
+
+--------------------------------------------------------------------------------
+-- HomContravariant -
+
+type HomContravariant = Variant2 Contravariant
+
+--------------------------------------------------------------------------------
+-- HomOrientedDualisable -
+
+class ( Category h, Disjunctive2 h
+      , Applicative h, ApplicativePoint h
+      , ObjectClass h ~ s, Transformable s Ort, Transformable1 o s
+      ) => HomOrientedDualisable s o h where
+  homToDual :: Struct s x -> HomContravariant h x (o x)
+  homFromDual :: Struct s x -> HomContravariant h (o x) x
+
+--------------------------------------------------------------------------------
+-- homToDual' -
+
+homToDual' :: HomOrientedDualisable s o h => q o h -> Struct s x -> Variant2 Contravariant h x (o x)
+homToDual' _ = homToDual
+
+--------------------------------------------------------------------------------
+-- homFromDual -
+
+homFromDual' :: HomOrientedDualisable s o h => q o h -> Struct s x -> Variant2 Contravariant h (o x) x
+homFromDual' _ = homFromDual
+
+--------------------------------------------------------------------------------
+-- prpHomOrientedDualisable -
+
+prpHomOrientedDualisable :: HomOrientedDualisable s o h
+  => q o h -> Struct s x -> XOrt x -> Statement
+prpHomOrientedDualisable q s xx = Prp "HomOrientedDualisable" :<=>:
+  And [ Label "1" :<=>: (variant2 (cOne' (q' q) s) == Covariant) :?> Params []
+      ]
+
+  where q' :: forall q (o :: Type -> Type) (h :: Type -> Type -> Type) . q o h -> Proxy h
+        q' _ = Proxy
+
+ff :: Statement
+ff = prpHomOrientedDualisable
+  (Proxy2 :: Proxy2 Op (Hom Ort Op (HomEmpty Ort)))
+  (Struct :: Struct Ort OS)
+  xStandard
+  
+--------------------------------------------------------------------------------
+-- Hom -
+
+newtype Hom s o h x y = Hom (SDualCat s o h x y) deriving (Show,Show2,Disjunctive,Disjunctive2)
+
+deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (Hom s o h x y)
+deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (Hom s o h)
+
+--------------------------------------------------------------------------------
+-- hom -
+
+hom :: (Morphism h, Transformable (ObjectClass h) s) => h x y -> Hom s o h x y
+hom h = Hom $ make (SDualMap h :. IdPath (tau (domain h)))
+--------------------------------------------------------------------------------
+-- Hom - Category -
+
+instance Morphism h => Morphism (Hom s o h) where
+  type ObjectClass (Hom s o h) = s
+  homomorphous (Hom h) = homomorphous h
+
+instance Morphism h => Category (Hom s o h) where
+  cOne = Hom . cOne
+  Hom f . Hom g = Hom (f . g)
+
+--------------------------------------------------------------------------------
+-- Hom - Applicative -
+
+instance (HomOriented h, SDualisableOriented s o) => ApplicativeG Id (Hom s o h) (->) where
+  amapG (Hom h) = amapG h
+
+instance (HomOriented h, SDualisableOriented s o) => ApplicativeG Pnt (Hom s o h) (->) where
+  amapG (Hom h) = amapG h
+
+--------------------------------------------------------------------------------
+-- Hom - HomOrientedDualisable -
+
+instance (HomOriented h, SDualisableOriented s o, Transformable1 o s)
+  => HomOrientedDualisable s o (Hom s o h) where
+  homToDual s = Contravariant2 (Hom t) where Contravariant2 t = sctToDual s
+  homFromDual s = Contravariant2 (Hom f) where Contravariant2 f = sctFromDual s
+  
+{-
 --------------------------------------------------------------------------------
 -- SDualCat - HomOriented -
 
@@ -359,6 +455,9 @@ instance ( HomOriented h, SDualisableOriented Ort o, Entity2 h, XStandard x
          , Typeable o, Typeable x, Typeable y
          )
   => Entity (HomOrt o h x y)
+-}
+
+
 
 
 {-
