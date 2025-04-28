@@ -186,6 +186,8 @@ instance Morphism h => Category (SDualCat s o h) where
   cOne = make . IdPath
   SDualCat f . SDualCat g = make (f . g)
 
+instance Morphism h => CategoryDisjunctive (SDualCat s o h)
+
 --------------------------------------------------------------------------------
 -- sctForget -
 

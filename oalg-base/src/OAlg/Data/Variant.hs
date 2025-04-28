@@ -3,6 +3,7 @@
 
 {-# LANGUAGE
     TypeFamilies
+  , TypeOperators
   , MultiParamTypeClasses
   , FlexibleInstances
   , FlexibleContexts
@@ -28,6 +29,10 @@ module OAlg.Data.Variant
 
     -- * Disjunctive
   , Disjunctive(..), Disjunctive2(..)
+  , CategoryDisjunctive
+
+    -- * Proposition
+  , prpCategoryDisjunctive
   ) where
 
 import Data.List ((++))
@@ -35,8 +40,10 @@ import Data.List ((++))
 import OAlg.Prelude
 
 import OAlg.Category.Path
+import OAlg.Category.Unify
 
 import OAlg.Data.Either
+import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
@@ -130,4 +137,45 @@ instance Morphism h => Morphism (Variant2 v h) where
 instance ApplicativeG t h c => ApplicativeG t (Variant2 v h) c where
   amapG (Covariant2 h)     = amapG h
   amapG (Contravariant2 h) = amapG h
+
+--------------------------------------------------------------------------------
+-- CategoryDisjunctive -
+
+-- | disjunctive category.
+--
+--  __Properties__ Let @'CategoryDisjunctive' __c__@, then holds:
+--
+-- (1) For all @__x__@ and @s@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
+-- @'variant2' ('cOne' s) '==' 'Covariante'@.
+--
+-- (2) For all @__x__@, @__y__@, @__z__@, @f@ in @__c y z__@ and @g@ in @__c x y__@ holds:
+-- @'variant2' (f '.' g) '==' 'variant2' f '*' 'variant2' g@.
+class (Category c, Disjunctive2 c) => CategoryDisjunctive c
+
+instance (Morphism h, Disjunctive2 h) => CategoryDisjunctive (Path h)
+
+--------------------------------------------------------------------------------
+-- prpCategoryDisjunctiveOne -
+
+relCategoryDisjunctiveOne :: (CategoryDisjunctive c, ObjectClass c ~ s)
+  => q c -> Struct s x -> Statement
+relCategoryDisjunctiveOne q s = (variant2 (cOne' q s) == Covariant) :?> Params []
+
+relCategoryDisjunctiveMlt :: (CategoryDisjunctive c, Show2 c)
+  => c y z -> c x y -> Statement
+relCategoryDisjunctiveMlt f g
+  = (variant2 (f . g) == variant2 f * variant2 g) :?> Params ["f":=show2 f,"g":=show2 g]
+
+-- | validity according to 'CategoryDisjunctive'.
+prpCategoryDisjunctive :: (CategoryDisjunctive c, Show2 c)
+  => X (SomeObjectClass c) -> X (SomeCmpb2 c) -> Statement
+prpCategoryDisjunctive xs xfg = Prp "CategoryDisjunctive" :<=>:
+  And [ Label "1" :<=>: Forall xs (\(SomeObjectClass s) -> relCategoryDisjunctiveOne q s)
+      , Label "2" :<=>: Forall xfg (\(SomeCmpb2 f g) -> relCategoryDisjunctiveMlt f g)
+      ]
+  where
+    q = qCat xs
+    
+    qCat :: X (SomeObjectClass c) -> Proxy c
+    qCat _ = Proxy
 
