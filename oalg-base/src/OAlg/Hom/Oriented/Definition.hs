@@ -289,8 +289,10 @@ relHomOrtDVariantMlt _ _ f g
 
 relHomOrtDApplCovariant :: (HomDisjunctiveOriented s o h, Show2 h)
   => q o -> Struct s x -> Homomorphous Ort x y -> HomVariant Covariant h x y  -> x -> Statement
-relHomOrtDApplCovariant _ _ (Struct:>:Struct) h  x = Label "Covariant"
-  :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
+relHomOrtDApplCovariant _ _ (Struct:>:Struct) h  x = Label "Covariant" :<=>:
+  And [ (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
+      , (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
+      ]
 
 relHomOrtDApplVariant :: (HomDisjunctiveOriented s o h, Show2 h)
   => q o -> Either2 (HomVariant Contravariant h) (HomVariant Covariant h) x y
@@ -310,13 +312,12 @@ prpHomOrtDApplVariant q xsa = Prp "HomOrtDApplVariant" :<=>: Forall xsa
   
 
 prpHomDisjunctiveOriented :: (HomDisjunctiveOriented s o h, Show2 h)
-  => q s o -> X (SomeObjectClass h) -> X (SomeCmpb2 h) -> X (SomeApplication h) -> Statement
-prpHomDisjunctiveOriented q xo xfg xsa = Prp "HomDisjunctiveOriented" :<=>:
-  And [ prpCategoryDisjunctive xo xfg
-      , prpHomOrtDApplVariant q xsa
+  => q s o -> X (SomeApplication h) -> Statement
+prpHomDisjunctiveOriented q xsa = Prp "HomDisjunctiveOriented" :<=>:
+  And [ prpHomOrtDApplVariant q xsa
       ]
 
-
+{-
 hdoXSomeCmpb2 :: HomDisjunctiveOriented s o h
   => q s o -> X (SomeCmpb2 h) -> X (SomeCmpb2 h)
 hdoXSomeCmpb2 q xsc = xscN 10 q xsc where
@@ -382,7 +383,7 @@ ff = prpHomDisjunctiveOriented qso xo xfg xsa where
 
   xsa :: X (SomeApplication (HomOrtOpEmpty Ort))
   xsa = amap1 (\x -> SomeApplication tOS x) xStandard
-  
+-}  
 --------------------------------------------------------------------------------
 -- HomOrt -
 
@@ -393,10 +394,10 @@ deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (HomOrt s o h x
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (HomOrt s o h)
 
 --------------------------------------------------------------------------------
--- homOrt -
+-- homOrtCov -
 
-homOrt :: (Morphism h, Transformable (ObjectClass h) s) => h x y -> HomOrt s o h x y
-homOrt h = HomOrt $ make (SDualMap h :. IdPath (tau (domain h)))
+homOrtCov :: (HomOriented h, Transformable (ObjectClass h) s) => h x y -> HomOrt s o h x y
+homOrtCov = HomOrt . sctCov
 
 --------------------------------------------------------------------------------
 -- HomOrt - Category -

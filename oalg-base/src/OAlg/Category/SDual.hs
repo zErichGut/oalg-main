@@ -26,18 +26,22 @@ module OAlg.Category.SDual
   (
 
     -- * Category
-    SDualCat()
+    SDualCat(), sctCov
   , sctForget
   , sctToDual, sctToDual'
   , sctFromDual, sctFromDual'
     
-    -- * Map
-  , SDualMap(..)
-  , PathSDualMap, rdcPathSDualMap
+    -- * Morphism
+  , SDualMrph(..)
+  , PathSDualMrph, rdcPathSDualMrph
+
+    -- * X
+  , xSctSomeCmpb2
 
   ) where
 
 import Control.Monad
+import Control.Applicative ((<|>))
 
 import Data.Typeable
 import Data.List ((++))
@@ -45,6 +49,7 @@ import Data.List ((++))
 import OAlg.Prelude
 
 import OAlg.Category.Path
+import OAlg.Category.Unify
 
 import OAlg.Data.Either
 import OAlg.Data.Reducible
@@ -54,104 +59,104 @@ import OAlg.Data.SDualisable
 
 
 --------------------------------------------------------------------------------
--- SDualMap -
+-- SDualMrph -
 
 -- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
-data SDualMap s o h x y where
-  SDualMap :: Transformable (ObjectClass h) s => h x y -> SDualMap s o h x y
-  ToDual   :: (Structure s x, Structure s (o x)) => SDualMap s o h x (o x)
-  FromDual :: (Structure s x, Structure s (o x)) =>  SDualMap s o h (o x) x
+data SDualMrph s o h x y where
+  SDualCov :: Transformable (ObjectClass h) s => h x y -> SDualMrph s o h x y
+  ToDual   :: (Structure s x, Structure s (o x)) => SDualMrph s o h x (o x)
+  FromDual :: (Structure s x, Structure s (o x)) =>  SDualMrph s o h (o x) x
 
 --------------------------------------------------------------------------------
--- SDualMap - Disjunctive -
+-- SDualCov - Disjunctive -
 
-instance Disjunctive (SDualMap s o h x y) where
-  variant (SDualMap _) = Covariant
+instance Disjunctive (SDualMrph s o h x y) where
+  variant (SDualCov _) = Covariant
   variant _            = Contravariant
 
-instance Disjunctive2 (SDualMap s o h)
+instance Disjunctive2 (SDualMrph s o h)
 
 --------------------------------------------------------------------------------
--- SDualMap - Entity2 -
+-- SDualCov - Entity2 -
 
-instance Show2 h => Show2 (SDualMap s o h) where
-  show2 (SDualMap h) = "SDualMap (" ++ show2 h ++ ")"
+instance Show2 h => Show2 (SDualMrph s o h) where
+  show2 (SDualCov h) = "SDualCov (" ++ show2 h ++ ")"
   show2 ToDual       = "ToDual"
   show2 FromDual     = "FromDual"
 
-instance Eq2 h => Eq2 (SDualMap s o h) where
-  eq2 (SDualMap f) (SDualMap g) = eq2 f g
+instance Eq2 h => Eq2 (SDualMrph s o h) where
+  eq2 (SDualCov f) (SDualCov g) = eq2 f g
   eq2 ToDual ToDual             = True
   eq2 FromDual FromDual         = True
   eq2 _ _                       = False
 
-instance Validable2 h => Validable2 (SDualMap s o h) where
-  valid2 (SDualMap h) = valid2 h
+instance Validable2 h => Validable2 (SDualMrph s o h) where
+  valid2 (SDualCov h) = valid2 h
   valid2 _            = SValid
 
-instance (Entity2 h, Typeable s, Typeable o) => Entity2 (SDualMap s o h)
+instance (Entity2 h, Typeable s, Typeable o) => Entity2 (SDualMrph s o h)
 
 --------------------------------------------------------------------------------
--- SDualMap - Morphism -
+-- SDualCov - Morphism -
 
-instance Morphism h => Morphism (SDualMap s o h) where
-  type ObjectClass (SDualMap s o h) = s
+instance Morphism h => Morphism (SDualMrph s o h) where
+  type ObjectClass (SDualMrph s o h) = s
 
-  homomorphous (SDualMap h) = tauHom (homomorphous h)
+  homomorphous (SDualCov h) = tauHom (homomorphous h)
   homomorphous ToDual       = Struct :>: Struct
   homomorphous FromDual     = Struct :>: Struct
 
-instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (SDualMap s o h) c
+instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (SDualMrph s o h) c
 
-instance Transformable s Typ => TransformableObjectClassTyp (SDualMap s o h)
+instance Transformable s Typ => TransformableObjectClassTyp (SDualMrph s o h)
 
 --------------------------------------------------------------------------------
 -- smpForget -
 
 smpForgetStruct :: (Transformable (ObjectClass h) t)
-  => Homomorphous t x y -> SDualMap s o h x y -> SDualMap t o h x y
+  => Homomorphous t x y -> SDualMrph s o h x y -> SDualMrph t o h x y
 smpForgetStruct (Struct:>:Struct) m = case m of
-  SDualMap h -> SDualMap h
+  SDualCov h -> SDualCov h
   ToDual     -> ToDual
   FromDual   -> FromDual
 
 smpForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
-  => SDualMap s o h x y -> SDualMap t o h x y
+  => SDualMrph s o h x y -> SDualMrph t o h x y
 smpForget m = smpForgetStruct (tauHom $ homomorphous m) m
 
 --------------------------------------------------------------------------------
--- PathSDualMap -
+-- PathSDualCov -
 
--- | path of 'SDualMap'.
-type PathSDualMap s o h = Path (SDualMap s o h)
+-- | path of 'SDualCov'.
+type PathSDualMrph s o h = Path (SDualMrph s o h)
 
 --------------------------------------------------------------------------------
 -- smpPathForget -
 
 smpPathForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
-  => PathSDualMap s o h x y -> PathSDualMap t o h x y
+  => PathSDualMrph s o h x y -> PathSDualMrph t o h x y
 smpPathForget p = case p of
   IdPath s -> IdPath (tau s)
   m :. p'  -> smpForget m :. smpPathForget p'
 
 --------------------------------------------------------------------------------
--- rdcPathSDualMap -
+-- rdcPathSDualMrph -
 
-rdcPathSDualMap :: PathSDualMap s o h x y -> Rdc (PathSDualMap s o h x y)
-rdcPathSDualMap p = case p of
-  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathSDualMap
-  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathSDualMap
-  p' :. p''                -> rdcPathSDualMap p'' >>= return . (p' :.)
+rdcPathSDualMrph :: PathSDualMrph s o h x y -> Rdc (PathSDualMrph s o h x y)
+rdcPathSDualMrph p = case p of
+  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathSDualMrph
+  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathSDualMrph
+  p' :. p''                -> rdcPathSDualMrph p'' >>= return . (p' :.)
   _                        -> return p
 
-instance Reducible (PathSDualMap s o h x y) where
-  reduce = reduceWith rdcPathSDualMap
+instance Reducible (PathSDualMrph s o h x y) where
+  reduce = reduceWith rdcPathSDualMrph
 
 --------------------------------------------------------------------------------
 -- SDualCat -
 
 -- | category for structural dualities.
-newtype SDualCat s o h x y = SDualCat (PathSDualMap s o h x y)
+newtype SDualCat s o h x y = SDualCat (PathSDualMrph s o h x y)
   deriving (Show,Show2,Validable,Validable2)
 
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (SDualCat s o h x y)
@@ -164,7 +169,7 @@ instance (Morphism h, Entity2 h, Transformable s Typ, Typeable s, Typeable o)
 -- SDualCat - Constructable -
 
 instance Exposable (SDualCat s o h x y) where
-  type Form (SDualCat s o h x y) = PathSDualMap s o h x y
+  type Form (SDualCat s o h x y) = PathSDualMrph s o h x y
   form (SDualCat p) = p
 
 instance Constructable (SDualCat s o h x y) where make = SDualCat . reduce
@@ -187,6 +192,16 @@ instance Morphism h => Category (SDualCat s o h) where
   SDualCat f . SDualCat g = make (f . g)
 
 instance Morphism h => CategoryDisjunctive (SDualCat s o h)
+
+--------------------------------------------------------------------------------
+-- sctCov -
+
+-- | the induced morphism.
+--
+-- __Note__ The resulting morphism is 'Covarant'.
+sctCov :: (Morphism h, Transformable (ObjectClass h) s)
+  => h x y -> SDualCat s o h x y
+sctCov h = make (SDualCov h :. IdPath (tau (domain h)))
 
 --------------------------------------------------------------------------------
 -- sctForget -
@@ -233,8 +248,8 @@ sctFromDual' _ = sctFromDual
 -- SDualCat - FunctorialG -
 
 instance (Morphism h, ApplicativeG d h c, SDualisableG c s o d)
-  => ApplicativeG d (SDualMap s o h) c where
-  amapG (SDualMap h) = amapG h
+  => ApplicativeG d (SDualMrph s o h) c where
+  amapG (SDualCov h) = amapG h
   amapG t@ToDual     = sdlToDual (domain t)
   amapG f@FromDual   = sdlFromDual (range f)
 
@@ -323,4 +338,80 @@ ff q s a = case amapG toDual (SDual (Left1 a)) of
      _                 -> throw (implErrorSBidualisable "sdlToDualLft")
   where toDual = sctToDual' q s
 
+--------------------------------------------------------------------------------
+-- xSomeMrphSDualCat -
 
+-- | random variable for some morphism for @'SDualCat' __s o h__@.
+--
+-- [Pre] Not both input random variables are empty.
+--
+-- [Post] The resulting random variable is not empty
+xSomeMrphSDualCat :: (Morphism h, Transformable (ObjectClass h) s)
+  => X (SomeObjectClass (SDualCat s o h)) -> X (SomeMorphism h) -> X (SomeMorphism (SDualCat s o h))
+xSomeMrphSDualCat xso xsh
+  =   amap1 someOne xso
+  <|> amap1 (\(SomeMorphism h) -> SomeMorphism (sctCov h)) xsh
+
+--------------------------------------------------------------------------------
+-- xSctAdjOne -
+
+xSctAdjOne :: Morphism h => SomeMorphism (SDualCat s o h) -> X (SomeCmpb2 (SDualCat s o h))
+xSctAdjOne (SomeMorphism f)
+  =   return (SomeCmpb2 f (cOne (domain f)))
+  <|> return (SomeCmpb2 (cOne (range f)) f)
+
+--------------------------------------------------------------------------------
+-- xSctAdjDual -
+
+xSctAdjDual :: (Morphism h, Transformable1 o s)
+  => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
+xSctAdjDual n xfg = xAdjToDual n xfg <|> xAdjFromDual n xfg <|> xAdjToFromDual n xfg where
+  
+  xAdjToDual :: (Morphism h, Transformable1 o s)
+    => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
+  xAdjToDual n xfg | n == 0    = xfg'
+                   | otherwise = xfg' <|> xSctAdjDual (pred n) xfg'
+    where xfg' = amap1 adjToDual xfg
+          
+  adjToDual :: (Morphism h, Transformable1 o s)
+    => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
+  adjToDual (SomeCmpb2 f g) = SomeCmpb2 (d . f) g where
+    Contravariant2 d = sctToDual (range f)
+
+  xAdjFromDual :: (Morphism h, Transformable1 o s)
+    => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
+  xAdjFromDual n xfg | n == 0    = xfg'
+                     | otherwise = xfg' <|> xSctAdjDual (pred n) xfg'
+    where xfg' = amap1 adjFromDual xfg
+          
+  adjFromDual :: (Morphism h, Transformable1 o s)
+    => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
+  adjFromDual (SomeCmpb2 f g) = SomeCmpb2 f (g . d) where
+    Contravariant2 d = sctFromDual (domain g)
+
+  xAdjToFromDual :: (Morphism h, Transformable1 o s)
+    => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
+  xAdjToFromDual n xfg | n == 0    = xfg'
+                       | otherwise = xfg' <|> xSctAdjDual (pred n) xfg'
+    where xfg' = amap1 adjToFromDual xfg
+          
+  adjToFromDual :: (Morphism h, Transformable1 o s)
+    => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
+  adjToFromDual (SomeCmpb2 f g) = SomeCmpb2 (f . df) (dg . g) where
+    Contravariant2 dg = sctToDual (range g)
+    Contravariant2 df = sctFromDual (range g)
+
+--------------------------------------------------------------------------------
+-- xSctSomeCmpb2 -
+
+-- | random variable for some composable morphism in @'SDualCat' __s o h__@ where 'cOne' and @h@ are
+-- adjont with 'ToDual' and 'FromDual'.
+--
+-- [Pre] Not both input random variables are empty.
+--
+-- [Post] The resulting random variable is not empty
+xSctSomeCmpb2 :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
+  => N -> X (SomeObjectClass (SDualCat s o h)) -> X (SomeMorphism h)
+  -> X (SomeCmpb2 (SDualCat s o h))
+xSctSomeCmpb2 n xo xf = xSctAdjDual n xfg where
+  xfg = join $ amap1 xSctAdjOne $ xSomeMrphSDualCat xo xf

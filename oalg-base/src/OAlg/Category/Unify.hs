@@ -23,6 +23,7 @@ module OAlg.Category.Unify
     -- * Morphism
     SomeMorphism(..), SomeObjectClass(..)
   , SomeMorphismSite(..)
+  , someOne
   
     -- * Path
   , SomePath(..), somePath
@@ -144,6 +145,13 @@ instance Validable (SomeObjectClass m) where
   valid (SomeObjectClass o) = valid o
 
 instance Typeable m => Entity (SomeObjectClass m)
+
+--------------------------------------------------------------------------------
+-- someOne
+
+-- | some 'cOne' for some object class.
+someOne :: Category c => SomeObjectClass c -> SomeMorphism c
+someOne (SomeObjectClass s) = SomeMorphism (cOne s) 
 
 --------------------------------------------------------------------------------
 -- SomePathSite -
