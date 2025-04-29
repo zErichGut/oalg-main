@@ -15,12 +15,13 @@
 module OAlg.Data.Proxy
   ( module Prx
 
-  , Proxy2(..)
+  , Proxy2(..), Proxy3(..)
   )
   where
 
 import Data.Proxy as Prx
 
-data Proxy2 x y = Proxy2 deriving (Read,Show)
+data Proxy2 a b = Proxy2 deriving (Read,Show,Eq,Ord)
+data Proxy3 a b c = Proxy3 deriving (Read,Show,Eq,Ord) 
   
 

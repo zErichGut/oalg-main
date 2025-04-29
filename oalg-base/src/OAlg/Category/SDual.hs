@@ -357,55 +357,43 @@ xSomeMrphSDualCat xso xsh
 
 xSctAdjOne :: Morphism h => SomeMorphism (SDualCat s o h) -> X (SomeCmpb2 (SDualCat s o h))
 xSctAdjOne (SomeMorphism f)
-  =   return (SomeCmpb2 f (cOne (domain f)))
-  <|> return (SomeCmpb2 (cOne (range f)) f)
+  = xOneOf [SomeCmpb2 f (cOne (domain f)), SomeCmpb2 (cOne (range f)) f]
 
 --------------------------------------------------------------------------------
 -- xSctAdjDual -
 
+-- | adjoining @n@-times 'ToDua' to the left or 'FromDual' to the right or @'FromDual' '.' 'ToDual'@
+-- in the middle.
 xSctAdjDual :: (Morphism h, Transformable1 o s)
-  => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
-xSctAdjDual n xfg = xAdjToDual n xfg <|> xAdjFromDual n xfg <|> xAdjToFromDual n xfg where
+  => N -> SomeCmpb2 (SDualCat s o h) -> X (SomeCmpb2 (SDualCat s o h))
+xSctAdjDual 0 fg = return fg
+xSctAdjDual n fg = xOneOfX [ amap1 adjToDual $ xSctAdjDual (pred n) fg
+                           , amap1 adjFromDual $ xSctAdjDual (pred n) fg
+                           , amap1 adjFromToDual $ xSctAdjDual (pred n) fg
+                           ]
+  where
   
-  xAdjToDual :: (Morphism h, Transformable1 o s)
-    => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
-  xAdjToDual n xfg | n == 0    = xfg'
-                   | otherwise = xfg' <|> xSctAdjDual (pred n) xfg'
-    where xfg' = amap1 adjToDual xfg
-          
-  adjToDual :: (Morphism h, Transformable1 o s)
-    => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
-  adjToDual (SomeCmpb2 f g) = SomeCmpb2 (d . f) g where
-    Contravariant2 d = sctToDual (range f)
+    adjToDual :: (Morphism h, Transformable1 o s)
+      => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
+    adjToDual (SomeCmpb2 f g) = SomeCmpb2 (d . f) g where
+      Contravariant2 d = sctToDual (range f)
 
-  xAdjFromDual :: (Morphism h, Transformable1 o s)
-    => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
-  xAdjFromDual n xfg | n == 0    = xfg'
-                     | otherwise = xfg' <|> xSctAdjDual (pred n) xfg'
-    where xfg' = amap1 adjFromDual xfg
-          
-  adjFromDual :: (Morphism h, Transformable1 o s)
-    => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
-  adjFromDual (SomeCmpb2 f g) = SomeCmpb2 f (g . d) where
-    Contravariant2 d = sctFromDual (domain g)
+    adjFromDual :: (Morphism h, Transformable1 o s)
+      => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
+    adjFromDual (SomeCmpb2 f g) = SomeCmpb2 f (g . d) where
+      Contravariant2 d = sctFromDual (domain g)
 
-  xAdjToFromDual :: (Morphism h, Transformable1 o s)
-    => N -> X (SomeCmpb2 (SDualCat s o h)) -> X (SomeCmpb2 (SDualCat s o h))
-  xAdjToFromDual n xfg | n == 0    = xfg'
-                       | otherwise = xfg' <|> xSctAdjDual (pred n) xfg'
-    where xfg' = amap1 adjToFromDual xfg
-          
-  adjToFromDual :: (Morphism h, Transformable1 o s)
-    => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
-  adjToFromDual (SomeCmpb2 f g) = SomeCmpb2 (f . df) (dg . g) where
-    Contravariant2 dg = sctToDual (range g)
-    Contravariant2 df = sctFromDual (range g)
+    adjFromToDual :: (Morphism h, Transformable1 o s)
+      => SomeCmpb2 (SDualCat s o h) -> SomeCmpb2 (SDualCat s o h)
+    adjFromToDual (SomeCmpb2 f g) = SomeCmpb2 (f . df) (dg . g) where
+      Contravariant2 dg = sctToDual (range g)
+      Contravariant2 df = sctFromDual (range g)
 
 --------------------------------------------------------------------------------
 -- xSctSomeCmpb2 -
 
 -- | random variable for some composable morphism in @'SDualCat' __s o h__@ where 'cOne' and @h@ are
--- adjont with 'ToDual' and 'FromDual'.
+-- adjoined with maximal @n@ times 'ToDual' or 'FromDual' or @'FromDual' '.' 'ToDual'@
 --
 -- [Pre] Not both input random variables are empty.
 --
@@ -413,5 +401,5 @@ xSctAdjDual n xfg = xAdjToDual n xfg <|> xAdjFromDual n xfg <|> xAdjToFromDual n
 xSctSomeCmpb2 :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
   => N -> X (SomeObjectClass (SDualCat s o h)) -> X (SomeMorphism h)
   -> X (SomeCmpb2 (SDualCat s o h))
-xSctSomeCmpb2 n xo xf = xSctAdjDual n xfg where
+xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
   xfg = join $ amap1 xSctAdjOne $ xSomeMrphSDualCat xo xf

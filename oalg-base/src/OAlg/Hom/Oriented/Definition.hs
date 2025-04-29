@@ -239,6 +239,28 @@ type HomVariant = Variant2
 -- HomDisjunctiveOriented -
 
 -- | disjunctive homomorphism between 'Oriented' structures.
+--
+-- __Properties__ Let @'HomDisjunctiveOriented' __s o h__@, then holds:
+--
+-- (1) For all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+--
+--     (1) @'homOrtFromDual' s '.' 'homOrtToDual' s '.=.' 'cOne' s@.
+--
+--     (2) @'homOrtToDual' s '.' 'homOrtFromDual' s '.=.' 'cOne' ('tau1' s)@.
+--
+-- (2) For all @__x__@, @__y__@, @h@ in @__h x y__@ and @x@ in @__x__@ holds:
+--
+--     (1) If @'variant2' h '==' 'Covariant'@ then holds:
+--
+--         (1) @'start' ('amap' h x) '==' 'pmap' h ('start' x)@.
+--
+--         (2) @'end' ('amap' h x) '==' 'pmap' h ('end' x)@.
+--
+--     (2) If @'variant2' h '==' 'Contravariant'@ then holds:
+--
+--         (1) @'start' ('amap' h x) '==' 'pmap' h ('end' x)@.
+--
+--         (2) @'end' ('amap' h x) '==' 'pmap' h ('start' x)@.
 class ( CategoryDisjunctive h
       , Functorial h, FunctorialPoint h
       , ObjectClass h ~ s, Transformable s Ort, Transformable1 o s
@@ -273,117 +295,64 @@ homOrtFromDual' :: HomDisjunctiveOriented s o h
 homOrtFromDual' _ = homOrtFromDual
 
 --------------------------------------------------------------------------------
--- prpHomDisjunctiveOriented -
+-- prpHomDisjOrtDual -
 
-relHomOrtDVariantOne :: HomDisjunctiveOriented s o h
+relHomDisjOrtDual :: (HomDisjunctiveOriented s o h, Eq2 h)
   => q o h -> Struct s x -> Statement
-relHomOrtDVariantOne q s = (variant2 (cOne' (qh q) s) == Covariant) :?> Params []
-  where
-    qh :: forall q (o :: Type -> Type) (h :: Type -> Type -> Type) . q o h -> Proxy h
-    qh _ = Proxy
+relHomDisjOrtDual q s
+  = And [ Label "1" :<=>: eq2 (fromDual . toDual) (cOne s) :?> Params []
+        , Label "2" :<=>: eq2 (toDual . fromDual) (cOne (tau1 s)) :?> Params []
+        ]
+  where Contravariant2 toDual   = homOrtToDual' q s
+        Contravariant2 fromDual = homOrtFromDual' q s
 
-relHomOrtDVariantMlt :: HomDisjunctiveOriented s o h
-  => p o -> Struct s x -> h y z -> h x y -> Statement
-relHomOrtDVariantMlt _ _ f g
-  = Label "1.2" :<=>: (variant2 (f . g) == variant2 f * variant2 g) :?> Params []
+prpHomDisjOrtDual :: (HomDisjunctiveOriented s o h, Eq2 h)
+  => q s o h -> X (SomeObjectClass h) -> Statement
+prpHomDisjOrtDual q xso = Prp "HomDisjOrtDual" :<=>: Forall xso
+  (\(SomeObjectClass s) -> relHomDisjOrtDual (q' q) s
+  )
+  where q' :: forall q s (o :: Type -> Type) (h :: Type -> Type -> Type) . q s o h -> Proxy2 o h
+        q' _ = Proxy2
+        
+--------------------------------------------------------------------------------
+-- prpHomDisjOrtVariant -
 
-relHomOrtDApplCovariant :: (HomDisjunctiveOriented s o h, Show2 h)
+relHomDisjOrtCovariant :: (HomDisjunctiveOriented s o h, Show2 h)
   => q o -> Struct s x -> Homomorphous Ort x y -> HomVariant Covariant h x y  -> x -> Statement
-relHomOrtDApplCovariant _ _ (Struct:>:Struct) h  x = Label "Covariant" :<=>:
-  And [ (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
-      , (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
+relHomDisjOrtCovariant _ _ (Struct:>:Struct) h  x = Label "Covariant" :<=>:
+  And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
+      , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
-relHomOrtDApplVariant :: (HomDisjunctiveOriented s o h, Show2 h)
+relHomDisjOrtVariant :: (HomDisjunctiveOriented s o h, Show2 h)
   => q o -> Either2 (HomVariant Contravariant h) (HomVariant Covariant h) x y
   -> Struct s x -> x -> Statement
-relHomOrtDApplVariant q h s x = case h of
-  Right2 hCov -> relHomOrtDApplCovariant q s (tauHom (homomorphous h)) hCov x
-  Left2 hCnt  -> relHomOrtDApplVariant q (Right2 (homOrtToCovariant (q' q hCnt) s hCnt)) s x
+relHomDisjOrtVariant q h s x = case h of
+  Right2 hCov -> Label "Covariant" :<=>: relHomDisjOrtCovariant q s (tauHom (homomorphous h)) hCov x
+  Left2 hCnt  -> Label "Contravariant" :<=>:
+                   relHomDisjOrtVariant q (Right2 (homOrtToCovariant (q' q hCnt) s hCnt)) s x
   where q' :: forall q f (h :: Type -> Type -> Type) (o :: Type -> Type) x y
             . q o -> f h x y -> Proxy2 o h
         q' _ _ = Proxy2
 
-prpHomOrtDApplVariant :: (HomDisjunctiveOriented s o h, Show2 h)
+prpHomDisjOrtVariant :: (HomDisjunctiveOriented s o h, Show2 h)
   => q s o -> X (SomeApplication h) -> Statement
-prpHomOrtDApplVariant q xsa = Prp "HomOrtDApplVariant" :<=>: Forall xsa
-  (\(SomeApplication h x) -> relHomOrtDApplVariant q (toVariant2 h) (domain h) x
+prpHomDisjOrtVariant q xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
+  (\(SomeApplication h x) -> relHomDisjOrtVariant q (toVariant2 h) (domain h) x
   )
   
+--------------------------------------------------------------------------------
+-- prpHomDisjunctiveOriented -
 
-prpHomDisjunctiveOriented :: (HomDisjunctiveOriented s o h, Show2 h)
-  => q s o -> X (SomeApplication h) -> Statement
-prpHomDisjunctiveOriented q xsa = Prp "HomDisjunctiveOriented" :<=>:
-  And [ prpHomOrtDApplVariant q xsa
+prpHomDisjunctiveOriented :: (HomDisjunctiveOriented s o h, Show2 h, Eq2 h)
+  => q s o -> X (SomeObjectClass h) -> X (SomeApplication h) -> Statement
+prpHomDisjunctiveOriented q xso xsa = Prp "HomDisjunctiveOriented" :<=>:
+  And [ prpHomDisjOrtDual (q' q xso) xso
+      , prpHomDisjOrtVariant q xsa
       ]
+  where q' :: forall q s (o :: Type -> Type) h . q s o -> X (SomeObjectClass h) -> Proxy3 s o h
+        q' _ _ = Proxy3
 
-{-
-hdoXSomeCmpb2 :: HomDisjunctiveOriented s o h
-  => q s o -> X (SomeCmpb2 h) -> X (SomeCmpb2 h)
-hdoXSomeCmpb2 q xsc = xscN 10 q xsc where
-  xscN :: HomDisjunctiveOriented s o h
-    => N -> q s o -> X (SomeCmpb2 h) -> X (SomeCmpb2 h)
-  xscN 0 _ xsc = xsc
-  xscN n q xsc = xsc <|> xscN (pred n) q (adjDualN n q xsc)
-
-  adjDualN :: HomDisjunctiveOriented s o h
-    => N -> q s o -> X (SomeCmpb2 h) -> X (SomeCmpb2 h)
-  adjDualN 0 _ xsc = xsc
-  adjDualN n q xsc = adjToDualN n q xsc <|> adjFromDualN n q xsc
-
-  adjToDualN :: HomDisjunctiveOriented s o h
-    => N -> q s o -> X (SomeCmpb2 h) -> X (SomeCmpb2 h)
-  adjToDualN n q xsc = xsc' <|> adjDualN (pred n) q xsc' where
-    xsc' = amap1 (adjToDual q) xsc
-
-  adjToDual :: HomDisjunctiveOriented s o h
-    => q s o -> SomeCmpb2 h -> SomeCmpb2 h
-  adjToDual q sc@(SomeCmpb2 f g) = SomeCmpb2 (d . f) g where
-    Contravariant2 d = homOrtToDual' (qoh q sc) (range f)
-
-  adjFromDualN :: HomDisjunctiveOriented s o h
-    => N -> q s o -> X (SomeCmpb2 h) -> X (SomeCmpb2 h)
-  adjFromDualN n q xsc = xsc' <|> adjDualN (pred n) q xsc' where
-    xsc' = amap1 (adjFromDual q) xsc
-
-  adjFromDual :: HomDisjunctiveOriented s o h
-    => q s o -> SomeCmpb2 h -> SomeCmpb2 h
-  adjFromDual q sc@(SomeCmpb2 f g) = SomeCmpb2 f (g . d) where
-    Contravariant2 d = homOrtFromDual' (qoh q sc) (domain g)
-  
-  qoh :: forall q s (o :: Type -> Type) f (h :: Type -> Type -> Type) . q s o -> f h -> Proxy2 o h
-  qoh _ _ = Proxy2
-
-type HomOrtOpEmpty s = HomOrt s Op (HomEmpty s)
-
-ff :: Statement
-ff = prpHomDisjunctiveOriented qso xo xfg xsa where
-
-  qoh = Proxy2 :: Proxy2 Op (HomOrtOpEmpty Ort)
-  qso = Proxy2 :: Proxy2 Ort Op
-  sOS = Struct :: Struct Ort OS
-  sN  = Struct :: Struct Ort N
-
-  Contravariant2 fOS = homOrtFromDual' qoh sOS
-  Contravariant2 tOS = homOrtToDual' qoh sOS
-    
-  Contravariant2 fN = homOrtFromDual' qoh sN
-  Contravariant2 tN = homOrtToDual' qoh sN
-
-  xo :: X (SomeObjectClass (HomOrtOpEmpty Ort))
-  xo  = return (SomeObjectClass (Struct :: Struct Ort OS))
-  
-  xfg :: X (SomeCmpb2 (HomOrtOpEmpty Ort))
-  xfg = hdoXSomeCmpb2 qso xsc where
-    xsc =   return (SomeCmpb2 fOS tOS)
-        <|> return (SomeCmpb2 fOS (cOne (domain fOS)))
-        <|> return (SomeCmpb2 (cOne (range tOS)) tOS)
-        <|> return (SomeCmpb2 fN tN)
-            
-
-  xsa :: X (SomeApplication (HomOrtOpEmpty Ort))
-  xsa = amap1 (\x -> SomeApplication tOS x) xStandard
--}  
 --------------------------------------------------------------------------------
 -- HomOrt -
 
@@ -392,6 +361,49 @@ newtype HomOrt s o h x y = HomOrt (SDualCat s o h x y)
 
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (HomOrt s o h x y)
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (HomOrt s o h)
+
+--------------------------------------------------------------------------------
+-- HomOrtOpEmpty -
+
+type HomOrtOpEmpty s = HomOrt s Op (HomEmpty s)
+
+--------------------------------------------------------------------------------
+-- prpHomOrtOpEmpty -
+
+-- | validity of @'HomOrtOpEmpty' 'Ort'´@.
+prpHomOrtOpEmpty :: Statement
+prpHomOrtOpEmpty
+  = And [ prpCategoryDisjunctive xo xfg
+        , prpFunctorial1 xse
+        , prpHomDisjunctiveOriented qso xo xsa
+        ] where
+  
+  qoh = Proxy2 :: Proxy2 Op (HomOrtOpEmpty Ort)
+  qso = Proxy2 :: Proxy2 Ort Op
+  sOS = Struct :: Struct Ort OS
+  sN  = Struct :: Struct Ort N
+
+  Contravariant2 tOS = homOrtToDual' qoh sOS    
+  Contravariant2 tN = homOrtToDual' qoh sN
+
+  xse :: X (SomeEntity (HomOrtOpEmpty Ort))
+  xse = xOneOfX [ amap1 (SomeEntity (Struct :: Struct Ort OS)) xStandard
+                , amap1 (SomeEntity (Struct :: Struct Ort N)) xStandard
+                ]
+
+  xoSct :: X (SomeObjectClass (SDualCat Ort Op (HomEmpty Ort)))
+  xoSct = amap1 (\(SomeEntity s _) -> SomeObjectClass s) xse
+
+  xo :: X (SomeObjectClass (HomOrtOpEmpty Ort))
+  xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
+
+  xfg :: X (SomeCmpb2 (HomOrtOpEmpty Ort))
+  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
+
+  xsa :: X (SomeApplication (HomOrtOpEmpty Ort))
+  xsa = xOneOfX [ amap1 (SomeApplication tOS) xStandard
+                , amap1 (SomeApplication tN)  xStandard
+                ]
 
 --------------------------------------------------------------------------------
 -- homOrtCov -
