@@ -31,7 +31,7 @@ module OAlg.Category.Proposition
   , prpFunctorial, XFnct(..)
   , prpFunctorial1
   , prpFunctorial2, SomeCmpbAppl(..)
-  , prpFunctorialG, prpFunctorialGExtEqual
+  , prpFunctorialG
 
     -- * Cayleyan2
   , prpCayleyan2
@@ -424,16 +424,3 @@ prpFunctorialG q xo xfg = Prp "FunctorialG" :<=>:
   And [ Label "cOne" :<=>: Forall xo (\(SomeObjectClass s) -> relFunctorialGOne q s)
       , Label "." :<=>: Forall xfg (\(SomeCmpb2 f g) -> relFunctorialGCmp q f g)
       ] 
-
---------------------------------------------------------------------------------
--- prpFunctorialGExtEqual -
-
-prpFunctorialGExtEqual :: FunctorialExtEqual t c
-  => q t c -> X (SomeObjectClass c) -> X (SomeCmpb2 c) -> Statement
-prpFunctorialGExtEqual q xo xfg = Prp "FunctorialGExtEqual" :<=>: prpFunctorialG (q' q) xo' xfg' where
-  q' :: forall q (t :: Type -> Type) c . q t c -> Proxy3 t (Cat c) ExtEqual
-  q' _ = Proxy3
-
-  xo' = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xo
-  xfg' = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (Cat f) (Cat g)) xfg
-

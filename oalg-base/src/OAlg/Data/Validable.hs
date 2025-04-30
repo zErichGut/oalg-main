@@ -28,8 +28,7 @@ module OAlg.Data.Validable
 
     -- * Extensional Equality
   , ExtEqual(..), ExtEq
-  , FunctorialExtEqual, extEqual
-  , Cat(..)
+  , extEqual
   )
   where
 
@@ -275,40 +274,11 @@ instance (Category c, EqExt c) => Validable2 (Inv2 c)
 --------------------------------------------------------------------------------
 -- extEqual -
 
-extEqualS :: ApplicativeG t c (->) => Homomorphous ExtEq (t x) (t y) -> c x y -> ExtEqual (t x) (t y)
+-- | embedding 'amapG' of a 'Applicative1' to 'ExtEqual'.
+extEqualS :: Applicative1 c t => Homomorphous ExtEq (t x) (t y) -> c x y -> ExtEqual (t x) (t y)
 extEqualS (Struct:>:Struct) f = ExtEqual $ amapG f
 
-extEqual :: (Morphism c, ApplicativeG t c (->), TransformableG t (ObjectClass c) ExtEq)
+-- | embedding 'amapG' of a 'Applicative1' to 'ExtEqual'.
+extEqual :: (Morphism c, Applicative1 c t, TransformableG t (ObjectClass c) ExtEq)
   => c x y -> ExtEqual (t x) (t y)
 extEqual f = extEqualS (tauG (domain f):>:tauG (range f)) f
-
---------------------------------------------------------------------------------
--- Cat -
-
--- | wrapper for 'Category' to avoid overlapping instances.
-newtype Cat c x y = Cat (c x y)
-
-instance Morphism c => Morphism (Cat c) where
-  type ObjectClass (Cat c) = ObjectClass c
-  homomorphous (Cat c) = homomorphous c
-
-instance Category c => Category (Cat c) where
-  cOne = Cat . cOne
-  Cat f . Cat g = Cat (f . g)
-
---------------------------------------------------------------------------------
--- FunctorialExtEqual -
-
-
--- | helper class for @'FunctorialG' __t c__ (->)@ to avoid undecidable instances.
-class (Category c, FunctorialG t c (->), TransformableG t (ObjectClass c) ExtEq)
-  => FunctorialExtEqual t c
-
-instance FunctorialExtEqual t c => ApplicativeG t (Cat c) ExtEqual where
-  amapG (Cat f) = extEqual f
-
-instance FunctorialExtEqual t c => ApplicativeGMorphism t (Cat c) ExtEqual
-
-instance FunctorialExtEqual t c => FunctorialG t (Cat c) ExtEqual
-
-

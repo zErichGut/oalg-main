@@ -370,13 +370,13 @@ type HomOrtOpEmpty s = HomOrt s Op (HomEmpty s)
 --------------------------------------------------------------------------------
 -- OrtX -
 
+instance HomOriented h => ApplicativeG Id (HomOrt OrtX Op h) ExtEqual where amapG = extEqual
+instance HomOriented h => ApplicativeGMorphism Id (HomOrt OrtX Op h) ExtEqual
+instance HomOriented h => FunctorialG Id (HomOrt OrtX Op h) ExtEqual
 
-
-instance FunctorialExtEqual Id (HomOrt OrtX Op (HomEmpty OrtX))
-
-
-
-instance FunctorialExtEqual Pnt (HomOrt OrtX Op (HomEmpty OrtX))
+instance HomOriented h => ApplicativeG Pnt (HomOrt OrtX Op h) ExtEqual where amapG = extEqual
+instance HomOriented h => ApplicativeGMorphism Pnt (HomOrt OrtX Op h) ExtEqual
+instance HomOriented h => FunctorialG Pnt (HomOrt OrtX Op h) ExtEqual
 
 --------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
@@ -385,14 +385,14 @@ instance FunctorialExtEqual Pnt (HomOrt OrtX Op (HomEmpty OrtX))
 prpHomOrtOpEmpty :: Statement
 prpHomOrtOpEmpty
   = And [ prpCategoryDisjunctive xo xfg
-        , prpFunctorialGExtEqual qId xo xfg
-        , prpFunctorialGExtEqual qPt xo xfg
+        , prpFunctorialG qId xo xfg
+        , prpFunctorialG qPt xo xfg
         , prpHomDisjunctiveOriented qso xo xsa
         ] where
   
   qso = Proxy2 :: Proxy2 OrtX Op
-  qId = Proxy2 :: Proxy2 Id (HomOrt OrtX Op (HomEmpty OrtX))
-  qPt = Proxy2 :: Proxy2 Pnt (HomOrt OrtX Op (HomEmpty OrtX))
+  qId = Proxy3 :: Proxy3 Id (HomOrt OrtX Op (HomEmpty OrtX)) ExtEqual
+  qPt = Proxy3 :: Proxy3 Pnt (HomOrt OrtX Op (HomEmpty OrtX)) ExtEqual
   
   xoSct :: X (SomeObjectClass (SDualCat OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
