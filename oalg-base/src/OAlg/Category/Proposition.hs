@@ -31,6 +31,7 @@ module OAlg.Category.Proposition
   , prpFunctorial, XFnct(..)
   , prpFunctorial1
   , prpFunctorial2, SomeCmpbAppl(..)
+  , prpFunctorialG, prpFunctorialGExtEqual
 
     -- * Cayleyan2
   , prpCayleyan2
@@ -48,17 +49,21 @@ module OAlg.Category.Proposition
 
 import Control.Monad
 import Control.Exception
+import Data.Kind
 
-import Data.Proxy
 
 import OAlg.Control.Exception
 
+import OAlg.Category.Applicative
 import OAlg.Category.Definition
 import OAlg.Structure.Definition
 
 import OAlg.Category.Path
 import OAlg.Category.Unify
 
+
+import OAlg.Data.Proxy
+import OAlg.Data.ExtensionalEquality
 import OAlg.Data.Logical
 import OAlg.Data.X
 import OAlg.Data.Number
@@ -67,6 +72,7 @@ import OAlg.Data.Opposite
 import OAlg.Data.Statement
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.Validable
 
 import OAlg.Entity.Definition
 
@@ -383,3 +389,51 @@ xFnct xfd@(XFnctMrphSite xmd xox) = XFnct xse xsca where
         -> Struct Ent z -> Struct Ent x
         -> Struct (ObjectClass c) x -> X (SomeCmpbAppl c)
   xsca' f g xox Struct Struct so = xox so >>= return . SomeCmpbAppl f g 
+
+--------------------------------------------------------------------------------
+-- relFunctorialGOne -
+
+relFunctorialGOne :: (FunctorialG t a b, EqExt b) => q t a b -> Struct (ObjectClass a) x -> Statement
+relFunctorialGOne q s = amapG (cOne' (qa q) s) .=. cOne' (qb q) (tauG' (qt q) s) where
+
+  qa :: forall q (t :: Type -> Type) (a :: Type -> Type -> Type) (b :: Type -> Type -> Type)
+      . q t a b -> Proxy a
+  qa _ = Proxy
+
+  qb :: forall q (t :: Type -> Type) (a :: Type -> Type -> Type) (b :: Type -> Type -> Type)
+      . q t a b -> Proxy b
+  qb _ = Proxy
+
+  qt :: forall q (t :: Type -> Type) (a :: Type -> Type -> Type) (b :: Type -> Type -> Type)
+      . q t a b -> Proxy t
+  qt _ = Proxy
+
+--------------------------------------------------------------------------------
+-- relFunctorialGCmp -
+
+relFunctorialGCmp :: (FunctorialG t a b, EqExt b) => q t a b -> a y z -> a x y -> Statement
+relFunctorialGCmp q f g = amapG' q (f . g) .=. (amapG' q f . amapG' q g)
+
+--------------------------------------------------------------------------------
+-- prpFunctorialG -
+
+-- | validity according to 'FunctorialG'.
+prpFunctorialG :: (FunctorialG t a b, EqExt b)
+  => q t a b -> X (SomeObjectClass a) -> X (SomeCmpb2 a) -> Statement
+prpFunctorialG q xo xfg = Prp "FunctorialG" :<=>:
+  And [ Label "cOne" :<=>: Forall xo (\(SomeObjectClass s) -> relFunctorialGOne q s)
+      , Label "." :<=>: Forall xfg (\(SomeCmpb2 f g) -> relFunctorialGCmp q f g)
+      ] 
+
+--------------------------------------------------------------------------------
+-- prpFunctorialGExtEqual -
+
+prpFunctorialGExtEqual :: FunctorialExtEqual t c
+  => q t c -> X (SomeObjectClass c) -> X (SomeCmpb2 c) -> Statement
+prpFunctorialGExtEqual q xo xfg = Prp "FunctorialGExtEqual" :<=>: prpFunctorialG (q' q) xo' xfg' where
+  q' :: forall q (t :: Type -> Type) c . q t c -> Proxy3 t (Cat c) ExtEqual
+  q' _ = Proxy3
+
+  xo' = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xo
+  xfg' = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (Cat f) (Cat g)) xfg
+

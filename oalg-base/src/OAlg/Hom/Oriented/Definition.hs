@@ -206,7 +206,7 @@ prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
 
 -- | the empty homomorphism.
 newtype HomEmpty s x y = HomEmpty (EntEmpty2 x y)
-  deriving (Show, Show2,Eq,Eq2,Validable,Validable2,Entity,Entity2)
+  deriving (Show, Show2,Eq,Eq2,EqExt,Validable,Validable2,Entity,Entity2)
 
 --------------------------------------------------------------------------------
 -- fromHomEmpty -
@@ -368,39 +368,64 @@ deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (HomOrt s o h)
 type HomOrtOpEmpty s = HomOrt s Op (HomEmpty s)
 
 --------------------------------------------------------------------------------
+-- OrtX -
+
+data OrtX
+
+type instance Structure OrtX x = (Oriented x, XStandard x, Show (Pnt x), XStandard (Pnt x))
+
+instance Transformable OrtX Typ where tau Struct = Struct
+instance TransformableTyp OrtX
+
+instance Transformable OrtX Ort where tau Struct = Struct
+instance TransformableOrt OrtX 
+
+instance Transformable1 Op OrtX where tau1 Struct = Struct
+instance TransformableOp OrtX
+
+instance TransformableG Id OrtX ExtEq where tauG Struct = Struct
+
+instance FunctorialExtEqual Id (HomOrt OrtX Op (HomEmpty OrtX))
+
+instance TransformableG Pnt OrtX ExtEq where tauG Struct = Struct
+
+instance FunctorialExtEqual Pnt (HomOrt OrtX Op (HomEmpty OrtX))
+
+--------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
 
 -- | validity of @'HomOrtOpEmpty' 'Ort'´@.
 prpHomOrtOpEmpty :: Statement
 prpHomOrtOpEmpty
   = And [ prpCategoryDisjunctive xo xfg
-        , prpFunctorial1 xse
+        , prpFunctorialGExtEqual qEx xo xfg
+        , prpFunctorialGExtEqual qPt xo xfg
         , prpHomDisjunctiveOriented qso xo xsa
         ] where
   
-  qoh = Proxy2 :: Proxy2 Op (HomOrtOpEmpty Ort)
-  qso = Proxy2 :: Proxy2 Ort Op
-  sOS = Struct :: Struct Ort OS
-  sN  = Struct :: Struct Ort N
+  qoh = Proxy2 :: Proxy2 Op (HomOrt OrtX Op (HomEmpty OrtX))
+  qso = Proxy2 :: Proxy2 OrtX Op
+  qEx = Proxy2 :: Proxy2 Id (HomOrt OrtX Op (HomEmpty OrtX))
+  qPt = Proxy2 :: Proxy2 Pnt (HomOrt OrtX Op (HomEmpty OrtX))
+  sOS = Struct :: Struct OrtX OS
+  sN  = Struct :: Struct OrtX N
+  
 
   Contravariant2 tOS = homOrtToDual' qoh sOS    
   Contravariant2 tN = homOrtToDual' qoh sN
 
-  xse :: X (SomeEntity (HomOrtOpEmpty Ort))
-  xse = xOneOfX [ amap1 (SomeEntity (Struct :: Struct Ort OS)) xStandard
-                , amap1 (SomeEntity (Struct :: Struct Ort N)) xStandard
-                ]
+  xoSct :: X (SomeObjectClass (SDualCat OrtX Op (HomEmpty OrtX)))
+  xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
+                 , SomeObjectClass (Struct :: Struct OrtX N)
+                 ]
 
-  xoSct :: X (SomeObjectClass (SDualCat Ort Op (HomEmpty Ort)))
-  xoSct = amap1 (\(SomeEntity s _) -> SomeObjectClass s) xse
-
-  xo :: X (SomeObjectClass (HomOrtOpEmpty Ort))
+  xo :: X (SomeObjectClass (HomOrt OrtX Op (HomEmpty OrtX)))
   xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
 
-  xfg :: X (SomeCmpb2 (HomOrtOpEmpty Ort))
+  xfg :: X (SomeCmpb2 (HomOrt OrtX Op (HomEmpty OrtX)))
   xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
 
-  xsa :: X (SomeApplication (HomOrtOpEmpty Ort))
+  xsa :: X (SomeApplication (HomOrt OrtX Op (HomEmpty OrtX)))
   xsa = xOneOfX [ amap1 (SomeApplication tOS) xStandard
                 , amap1 (SomeApplication tN)  xStandard
                 ]

@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 
@@ -27,6 +27,8 @@ module OAlg.Data.Validable
 
     -- * Extensional Equality
   , ExtEqual(..), ExtEq
+  , FunctorialExtEqual, extEqual
+  , Cat(..)
   )
   where
 
@@ -34,12 +36,14 @@ import Control.Monad (return)
 import Control.DeepSeq (NFData(..))
 
 import Data.Ratio
-import Data.Proxy
 
+import OAlg.Category.Applicative
 import OAlg.Category.Definition
 
+import OAlg.Data.Proxy
 import OAlg.Data.Boolean.Definition
 import OAlg.Data.Statement
+import OAlg.Data.Identity
 import OAlg.Data.Maybe
 import OAlg.Data.Either
 import OAlg.Data.Equal
@@ -67,6 +71,7 @@ instance XStandard Z where xStandard = xZ
 instance XStandard Q where xStandard = xQ
 
 instance XStandard x => XStandard (Op x) where xStandard = amap1 Op xStandard
+instance XStandard x => XStandard (Id x) where xStandard = amap1 Id xStandard
 
 --------------------------------------------------------------------------------
 -- xStandard' -
@@ -127,6 +132,8 @@ instance Validable x => Validable (Closure x) where
   valid x' = case x' of
     It x -> valid x
     _    -> SValid
+
+instance Validable x => Validable (Id x) where valid (Id x) = valid x
 
 instance Validable (Proxy x) where
   valid Proxy = SValid
@@ -246,5 +253,43 @@ instance (Category c, EqExt c) => Validable (Inv2 c x y) where
     
 instance (Category c, EqExt c) => Validable2 (Inv2 c)
 
+--------------------------------------------------------------------------------
+-- extEqual -
+
+extEqualS :: ApplicativeG t c (->) => Homomorphous ExtEq (t x) (t y) -> c x y -> ExtEqual (t x) (t y)
+extEqualS (Struct:>:Struct) f = ExtEqual $ amapG f
+
+extEqual :: (Morphism c, ApplicativeG t c (->), TransformableG t (ObjectClass c) ExtEq)
+  => c x y -> ExtEqual (t x) (t y)
+extEqual f = extEqualS (tauG (domain f):>:tauG (range f)) f
+
+--------------------------------------------------------------------------------
+-- Cat -
+
+-- | wrapper for 'Category' to avoid overlapping instances.
+newtype Cat c x y = Cat (c x y)
+
+instance Morphism c => Morphism (Cat c) where
+  type ObjectClass (Cat c) = ObjectClass c
+  homomorphous (Cat c) = homomorphous c
+
+instance Category c => Category (Cat c) where
+  cOne = Cat . cOne
+  Cat f . Cat g = Cat (f . g)
+
+--------------------------------------------------------------------------------
+-- FunctorialExtEqual -
+
+
+-- | helper class for @'FunctorialG' __t c__ (->)@ to avoid undecidable instances.
+class (Category c, FunctorialG t c (->), TransformableG t (ObjectClass c) ExtEq)
+  => FunctorialExtEqual t c
+
+instance FunctorialExtEqual t c => ApplicativeG t (Cat c) ExtEqual where
+  amapG (Cat f) = extEqual f
+
+instance FunctorialExtEqual t c => ApplicativeGMorphism t (Cat c) ExtEqual
+
+instance FunctorialExtEqual t c => FunctorialG t (Cat c) ExtEqual
 
 

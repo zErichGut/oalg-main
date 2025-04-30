@@ -30,7 +30,7 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Orientation
   , Orientation(..), opposite
-  , Pnt(..), fromPntG
+  , Pnt(..), pntOp, fromPntG
 
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
@@ -75,6 +75,7 @@ import OAlg.Structure.Exception
 
 --------------------------------------------------------------------------------
 -- Orientation -
+
 infix 5 :>
   
 -- | orientation given by the start point as its first component and the end point as its
@@ -161,6 +162,26 @@ class (Entity q, Entity (Point q)) => Oriented q where
 
 -- | type function for 'Point's.
 newtype Pnt x = Pnt (Point x)
+
+instance Oriented x => Show (Pnt x) where show (Pnt p) = show p
+instance Oriented x => Eq (Pnt x) where (Pnt p) == (Pnt q) = p == q
+instance Oriented x => Validable (Pnt x) where valid (Pnt x) = valid x
+instance Oriented x => Entity (Pnt x)
+
+instance XStandard (Pnt (Orientation Symbol)) where xStandard = amap1 Pnt xStandard
+
+instance XStandard (Pnt N) where xStandard = return (Pnt ())
+
+--------------------------------------------------------------------------------
+-- pntOp -
+
+-- | tho oposit point.
+pntOp :: Pnt x -> Pnt (Op x)
+pntOp (Pnt p) = Pnt p
+
+instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Op x)) where
+  xStandard = amap1 pntOp xStandard
+
 
 --------------------------------------------------------------------------------
 -- fromPntG -

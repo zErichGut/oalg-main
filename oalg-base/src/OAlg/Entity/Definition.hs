@@ -43,10 +43,10 @@ import OAlg.Category.Definition
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
+import OAlg.Data.ExtensionalEquality
 import OAlg.Data.Validable
 import OAlg.Data.Number
 import OAlg.Data.Opposite
-
 import OAlg.Data.Either
 import OAlg.Data.Symbol
 
@@ -133,6 +133,7 @@ instance Validable (EntEmpty2 x y) where
 
 instance Show2 EntEmpty2
 instance Eq2 EntEmpty2
+instance EqExt EntEmpty2
 instance Validable2 EntEmpty2
 instance Entity2 EntEmpty2
 instance ApplicativeG t EntEmpty2 b where amapG = fromEmpty2

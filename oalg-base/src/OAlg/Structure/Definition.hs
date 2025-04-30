@@ -28,7 +28,7 @@ module OAlg.Structure.Definition
   , Transformable(..)
   , Transformable1(..), TransformableOp, tauOp
   , TransformableTyp
-  , TransformableG(..)
+  , TransformableG(..), tauG'
 
     -- * Some Structure Types
   , Typ, tauTyp
@@ -179,4 +179,11 @@ class TransformableG t u v where
 
 instance TransformableG d s Type where
   tauG _ = Struct
-  
+
+--------------------------------------------------------------------------------
+-- tauG' -
+
+-- | prefixing a proxy.
+tauG' :: TransformableG t u v => q t -> Struct u x -> Struct v (t x)
+tauG' _ = tauG
+
