@@ -27,8 +27,8 @@ module OAlg.Data.Validable
   , XStd, xStd, xStdStruct
 
     -- * Extensional Equality
-  , ExtEqual(..), ExtEq
-  , extEqual
+  , EqualExt(..), EqE
+  , equalExt
   )
   where
 
@@ -47,7 +47,7 @@ import OAlg.Data.Identity
 import OAlg.Data.Maybe
 import OAlg.Data.Either
 import OAlg.Data.Equal
-import OAlg.Data.ExtensionalEquality
+import OAlg.Data.EqualExtensional
 import OAlg.Data.Show
 import OAlg.Data.Ord
 import OAlg.Data.Number
@@ -237,28 +237,42 @@ instance Validable2 m => Validable (Forget t m x y) where
 instance Validable2 (Struct2 m)
 
 --------------------------------------------------------------------------------
--- ExtEqual -
+-- EqualExt -
 
-data ExtEqual x y where
-  ExtEqual :: (Show x, XStandard x, Eq x, Show y, XStandard y, Eq y) => (x -> y) -> ExtEqual x y
+-- | wraper for testing functions according to 'prpExtensionalEqual'.
+data EqualExt x y where
+  EqualExt :: (Show x, XStandard x, Eq x, Show y, XStandard y, Eq y) => (x -> y) -> EqualExt x y
 
-instance EqExt ExtEqual where
-  ExtEqual f .=. ExtEqual g = prpExtensionalEqual xStandard f g
+instance EqExt EqualExt where
+  EqualExt f .=. EqualExt g = prpExtensionalEqual xStandard f g
     
 --------------------------------------------------------------------------------
--- ExtEq -
+-- EqE -
 
-data ExtEq
+-- | 'Structure'-type for 'EqualExt', i.e. 'Show', 'XStandard' and 'Eq'.
+data EqE
 
-type instance Structure ExtEq x = (Show x, XStandard x, Eq x)
+type instance Structure EqE x = (Show x, XStandard x, Eq x)
 
-instance Morphism ExtEqual where
-  type ObjectClass ExtEqual = ExtEq
-  homomorphous (ExtEqual _) = Struct :>: Struct
+instance Morphism EqualExt where
+  type ObjectClass EqualExt = EqE
+  homomorphous (EqualExt _) = Struct :>: Struct
 
-instance Category ExtEqual where
-  cOne Struct = ExtEqual id
-  ExtEqual f . ExtEqual g = ExtEqual (f . g)
+instance Category EqualExt where
+  cOne Struct = EqualExt id
+  EqualExt f . EqualExt g = EqualExt (f . g)
+
+--------------------------------------------------------------------------------
+-- equalExt -
+
+-- | embedding 'amapG' of a 'Applicative1' to 'EqualExt'.
+equalExtS :: Applicative1 c t => Homomorphous EqE (t x) (t y) -> c x y -> EqualExt (t x) (t y)
+equalExtS (Struct:>:Struct) f = EqualExt $ amapG f
+
+-- | embedding 'amapG' of a 'Applicative1' to 'EqualExt'.
+equalExt :: (Morphism c, Applicative1 c t, TransformableG t (ObjectClass c) EqE)
+  => c x y -> EqualExt (t x) (t y)
+equalExt f = equalExtS (tauG (domain f):>:tauG (range f)) f
 
 --------------------------------------------------------------------------------
 -- Inv2 - Validable
@@ -271,14 +285,3 @@ instance (Category c, EqExt c) => Validable (Inv2 c x y) where
     
 instance (Category c, EqExt c) => Validable2 (Inv2 c)
 
---------------------------------------------------------------------------------
--- extEqual -
-
--- | embedding 'amapG' of a 'Applicative1' to 'ExtEqual'.
-extEqualS :: Applicative1 c t => Homomorphous ExtEq (t x) (t y) -> c x y -> ExtEqual (t x) (t y)
-extEqualS (Struct:>:Struct) f = ExtEqual $ amapG f
-
--- | embedding 'amapG' of a 'Applicative1' to 'ExtEqual'.
-extEqual :: (Morphism c, Applicative1 c t, TransformableG t (ObjectClass c) ExtEq)
-  => c x y -> ExtEqual (t x) (t y)
-extEqual f = extEqualS (tauG (domain f):>:tauG (range f)) f

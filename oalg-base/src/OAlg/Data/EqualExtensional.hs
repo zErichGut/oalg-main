@@ -8,14 +8,14 @@
 {-# LANGUAGE DefaultSignatures #-}
 
 -- |
--- Module      : OAlg.Data.ExtensionalEquality
+-- Module      : OAlg.Data.EqualExtensional
 -- Description : extensional equality.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- extensional equality.
-module OAlg.Data.ExtensionalEquality
+module OAlg.Data.EqualExtensional
   ( EqExt(..), prpExtensionalEqual
   )
   where

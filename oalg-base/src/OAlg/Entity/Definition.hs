@@ -43,7 +43,7 @@ import OAlg.Category.Definition
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
-import OAlg.Data.ExtensionalEquality
+import OAlg.Data.EqualExtensional
 import OAlg.Data.Validable
 import OAlg.Data.Number
 import OAlg.Data.Opposite

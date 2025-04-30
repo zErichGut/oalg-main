@@ -63,7 +63,7 @@ import OAlg.Category.Unify
 
 
 import OAlg.Data.Proxy
-import OAlg.Data.ExtensionalEquality
+import OAlg.Data.EqualExtensional
 import OAlg.Data.Logical
 import OAlg.Data.X
 import OAlg.Data.Number
@@ -72,7 +72,6 @@ import OAlg.Data.Opposite
 import OAlg.Data.Statement
 import OAlg.Data.Show
 import OAlg.Data.Equal
-import OAlg.Data.Validable
 
 import OAlg.Entity.Definition
 

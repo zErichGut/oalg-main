@@ -421,8 +421,8 @@ instance TransformableOrt OrtX
 instance Transformable1 Op OrtX where tau1 Struct = Struct
 instance TransformableOp OrtX
 
-instance TransformableG Id OrtX ExtEq where tauG Struct = Struct
-instance TransformableG Pnt OrtX ExtEq where tauG Struct = Struct
+instance TransformableG Id OrtX EqE where tauG Struct = Struct
+instance TransformableG Pnt OrtX EqE where tauG Struct = Struct
 
 --------------------------------------------------------------------------------
 -- TransformableOrt -

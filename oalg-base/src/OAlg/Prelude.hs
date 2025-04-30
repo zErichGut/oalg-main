@@ -1,4 +1,5 @@
 
+
 {-# LANGUAGE GADTs, TypeFamilies, StandaloneDeriving, TypeOperators #-}
 
 -- |
@@ -27,7 +28,7 @@ module OAlg.Prelude
   , module Lgc
   , module Bol
   , module Eql
-  , module ExtEql
+  , module EqlExt
   , module Myb
   , module Shw
   , module Nmb
@@ -90,7 +91,7 @@ import OAlg.Data.X as X
 import OAlg.Data.Validable as Vlb
 import OAlg.Data.Boolean as Bol
 import OAlg.Data.Equal as Eql
-import OAlg.Data.ExtensionalEquality as ExtEql
+import OAlg.Data.EqualExtensional as EqlExt
 import OAlg.Data.Maybe as Myb
 import OAlg.Data.Show as Shw
 import OAlg.Data.Number as Nmb
