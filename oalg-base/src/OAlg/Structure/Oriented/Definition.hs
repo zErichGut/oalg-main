@@ -36,6 +36,7 @@ module OAlg.Structure.Oriented.Definition
   , Path(..), pthLength, pthOne, pthMlt
 
     -- * X
+  , OrtX
     -- ** Site
   , XOrtSite(..), XStandardOrtSite(..)
   , XStandardOrtSiteTo, XStandardOrtSiteFrom
@@ -67,6 +68,7 @@ import OAlg.Prelude
 
 import OAlg.Data.Canonical
 import OAlg.Data.Singleton
+import OAlg.Data.Identity
 import OAlg.Data.Symbol
 
 import OAlg.Category.Unify
@@ -397,6 +399,30 @@ instance Transformable Ort Typ where tau Struct = Struct
 instance Transformable Ort Ent where tau Struct = Struct
 instance Transformable1 Op Ort where tau1 Struct = Struct
 instance TransformableOp Ort
+
+--------------------------------------------------------------------------------
+-- OrtX -
+
+-- | type representing the class of 'Oriented' structures with associated standard random
+-- variables.
+data OrtX
+
+type instance Structure OrtX x = (Oriented x, XStandard x, XStandard (Pnt x))
+
+
+instance Transformable OrtX XStd where tau Struct = Struct
+
+instance Transformable OrtX Typ where tau Struct = Struct
+instance TransformableTyp OrtX
+
+instance Transformable OrtX Ort where tau Struct = Struct
+instance TransformableOrt OrtX 
+
+instance Transformable1 Op OrtX where tau1 Struct = Struct
+instance TransformableOp OrtX
+
+instance TransformableG Id OrtX ExtEq where tauG Struct = Struct
+instance TransformableG Pnt OrtX ExtEq where tauG Struct = Struct
 
 --------------------------------------------------------------------------------
 -- TransformableOrt -

@@ -24,6 +24,7 @@ module OAlg.Data.Validable
 
     -- * XStandard
   , XStandard(..), relXStandard
+  , XStd, xStd, xStdStruct
 
     -- * Extensional Equality
   , ExtEqual(..), ExtEq
@@ -89,6 +90,24 @@ xStandard' _ = xStandard
 relXStandard :: XStandard x => p x -> Statement
 relXStandard px = Forall (xStandard' px) valid where
 
+--------------------------------------------------------------------------------
+-- XStd -
+
+-- | type representing the class of 'XStandard' structures.
+data XStd
+
+type instance Structure XStd x = (XStandard x)
+
+--------------------------------------------------------------------------------
+-- xStd -
+
+xStdStruct :: Struct XStd x -> X x
+xStdStruct Struct = xStandard
+
+-- | the associated standard random variable for the 'domain'.
+xStd :: (Morphism m, Transformable (ObjectClass m) XStd) => m x y -> X x
+xStd m = xStdStruct (tau (domain m)) where
+  
 --------------------------------------------------------------------------------
 -- Validable -
 

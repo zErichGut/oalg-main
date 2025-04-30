@@ -370,24 +370,11 @@ type HomOrtOpEmpty s = HomOrt s Op (HomEmpty s)
 --------------------------------------------------------------------------------
 -- OrtX -
 
-data OrtX
 
-type instance Structure OrtX x = (Oriented x, XStandard x, Show (Pnt x), XStandard (Pnt x))
-
-instance Transformable OrtX Typ where tau Struct = Struct
-instance TransformableTyp OrtX
-
-instance Transformable OrtX Ort where tau Struct = Struct
-instance TransformableOrt OrtX 
-
-instance Transformable1 Op OrtX where tau1 Struct = Struct
-instance TransformableOp OrtX
-
-instance TransformableG Id OrtX ExtEq where tauG Struct = Struct
 
 instance FunctorialExtEqual Id (HomOrt OrtX Op (HomEmpty OrtX))
 
-instance TransformableG Pnt OrtX ExtEq where tauG Struct = Struct
+
 
 instance FunctorialExtEqual Pnt (HomOrt OrtX Op (HomEmpty OrtX))
 
@@ -398,22 +385,15 @@ instance FunctorialExtEqual Pnt (HomOrt OrtX Op (HomEmpty OrtX))
 prpHomOrtOpEmpty :: Statement
 prpHomOrtOpEmpty
   = And [ prpCategoryDisjunctive xo xfg
-        , prpFunctorialGExtEqual qEx xo xfg
+        , prpFunctorialGExtEqual qId xo xfg
         , prpFunctorialGExtEqual qPt xo xfg
         , prpHomDisjunctiveOriented qso xo xsa
         ] where
   
-  qoh = Proxy2 :: Proxy2 Op (HomOrt OrtX Op (HomEmpty OrtX))
   qso = Proxy2 :: Proxy2 OrtX Op
-  qEx = Proxy2 :: Proxy2 Id (HomOrt OrtX Op (HomEmpty OrtX))
+  qId = Proxy2 :: Proxy2 Id (HomOrt OrtX Op (HomEmpty OrtX))
   qPt = Proxy2 :: Proxy2 Pnt (HomOrt OrtX Op (HomEmpty OrtX))
-  sOS = Struct :: Struct OrtX OS
-  sN  = Struct :: Struct OrtX N
   
-
-  Contravariant2 tOS = homOrtToDual' qoh sOS    
-  Contravariant2 tN = homOrtToDual' qoh sN
-
   xoSct :: X (SomeObjectClass (SDualCat OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
@@ -426,9 +406,12 @@ prpHomOrtOpEmpty
   xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
 
   xsa :: X (SomeApplication (HomOrt OrtX Op (HomEmpty OrtX)))
-  xsa = xOneOfX [ amap1 (SomeApplication tOS) xStandard
-                , amap1 (SomeApplication tN)  xStandard
-                ]
+  xsa = join
+      $ amap1
+          (  (\(SomeMorphism m) -> xSomeAppl m)
+           . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
+          )
+      $ xfg
 
 --------------------------------------------------------------------------------
 -- homOrtCov -

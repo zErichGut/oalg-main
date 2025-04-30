@@ -34,6 +34,7 @@ module OAlg.Category.Unify
 
     -- * Application
   , SomeApplication(..)
+  , xSomeAppl
 
   )
   where
@@ -47,6 +48,7 @@ import OAlg.Category.Definition
 import OAlg.Structure.Definition
 import OAlg.Category.Path
 
+import OAlg.Data.X
 import OAlg.Data.Dualisable
 import OAlg.Data.Opposite
 import OAlg.Data.Validable
@@ -62,6 +64,14 @@ import OAlg.Entity.Definition
 -- | some application.
 data SomeApplication h where
   SomeApplication :: h x y -> x -> SomeApplication h
+
+--------------------------------------------------------------------------------
+-- xSomeAppl -
+
+-- | random variable for some application.
+xSomeAppl :: (Morphism m, Transformable (ObjectClass m) XStd) => m x y -> X (SomeApplication m)
+xSomeAppl m = amap1 (SomeApplication m) (xStd m)
+
 
 --------------------------------------------------------------------------------
 -- SomeMorphism -
