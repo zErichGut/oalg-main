@@ -11,10 +11,10 @@
 -- disjoint union of data.
 module OAlg.Data.Either
   ( -- * Either
-    Either(..)
+    Either(..), either
 
     -- * Either1
-  , Either1(..)
+  , Either1(..), either1
   
     -- * Either2
   , Either2(..)
@@ -46,6 +46,15 @@ instance (Eq1 f, Eq1 g) => Eq1 (Either1 f g) where
 
 instance (Eq1 f, Eq1 g) => Eq (Either1 f g x) where
   (==) = eq1
+
+--------------------------------------------------------------------------------
+-- either1 -
+
+-- | the induced map.
+either1 :: (f x -> y) -> (g x -> y) -> Either1 f g x -> y
+either1 f _ (Left1 fx)  = f fx
+either1 _ g (Right1 gx) = g gx
+
 --------------------------------------------------------------------------------
 -- Either2 -
 

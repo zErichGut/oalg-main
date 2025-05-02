@@ -25,6 +25,7 @@ module OAlg.Hom.Oriented.Definition
     
     -- ** Disjunctive
     HomDisjunctiveOriented(..)
+  , homOrtToBiDual, homOrtFromBiDual
   , homOrtToDual', homOrtFromDual'
   , homOrtToCovariant
   , HomVariant
@@ -42,6 +43,13 @@ module OAlg.Hom.Oriented.Definition
 
     -- * Category Hom Oriented
   , HomOrt(..), homOrt
+
+    -- ** Empty
+  , HomOrtEmpty
+  , homOrtToDualEmpty
+
+  , module V
+  , module S
   )
   where
 
@@ -230,6 +238,22 @@ homOrtFromDual' :: HomDisjunctiveOriented s o h
 homOrtFromDual' _ = homOrtFromDual
 
 --------------------------------------------------------------------------------
+-- homOrtToBiDual -
+
+homOrtToBiDual :: HomDisjunctiveOriented s o h => Struct s x -> HomVariant Covariant h x (o (o x))
+homOrtToBiDual s = Covariant2 (t' . t)  where
+  Contravariant2 t  = homOrtToDual s
+  Contravariant2 t' = homOrtToDual (tau1 s)
+
+--------------------------------------------------------------------------------
+-- homOrtFromBiDual -
+
+homOrtFromBiDual :: HomDisjunctiveOriented s o h => Struct s x -> HomVariant Covariant h (o (o x)) x
+homOrtFromBiDual s = Covariant2 (f . f') where
+  Contravariant2 f' = homOrtFromDual (tau1 s)
+  Contravariant2 f  = homOrtFromDual s
+
+--------------------------------------------------------------------------------
 -- HomOrt -
 
 newtype HomOrt s o h x y = HomOrt (SDualCat s o h x y)
@@ -238,12 +262,16 @@ newtype HomOrt s o h x y = HomOrt (SDualCat s o h x y)
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (HomOrt s o h x y)
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (HomOrt s o h)
 
-instance HomOriented h => ApplicativeG Id (HomOrt OrtX Op h) EqualExt where amapG = equalExt
-instance HomOriented h => ApplicativeGMorphism Id (HomOrt OrtX Op h) EqualExt
+instance (HomOriented h, SDualisableOriented OrtX o)
+  => ApplicativeG Id (HomOrt OrtX o h) EqualExt where amapG = equalExt
+instance (HomOriented h, SDualisableOriented OrtX o)
+  => ApplicativeGMorphism Id (HomOrt OrtX o h) EqualExt
 instance HomOriented h => FunctorialG Id (HomOrt OrtX Op h) EqualExt
 
-instance HomOriented h => ApplicativeG Pnt (HomOrt OrtX Op h) EqualExt where amapG = equalExt
-instance HomOriented h => ApplicativeGMorphism Pnt (HomOrt OrtX Op h) EqualExt
+instance (HomOriented h, SDualisableOriented OrtX o)
+  => ApplicativeG Pnt (HomOrt OrtX o h) EqualExt where amapG = equalExt
+instance (HomOriented h, SDualisableOriented OrtX o)
+  => ApplicativeGMorphism Pnt (HomOrt OrtX o h) EqualExt
 instance HomOriented h => FunctorialG Pnt (HomOrt OrtX Op h) EqualExt
 
 --------------------------------------------------------------------------------
@@ -287,6 +315,20 @@ instance (HomOriented h, SDualisableOriented s o, Transformable1 o s)
   => HomDisjunctiveOriented s o (HomOrt s o h) where
   homOrtToDual s = Contravariant2 (HomOrt t) where Contravariant2 t = sctToDual s
   homOrtFromDual s = Contravariant2 (HomOrt f) where Contravariant2 f = sctFromDual s
+  
+--------------------------------------------------------------------------------
+-- HomOrtEmpty -
+
+-- | shortcut.
+type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
+
+--------------------------------------------------------------------------------
+-- homOrtToDualEmpty -
+
+-- | from 'homOrtToDual' induced. 
+homOrtToDualEmpty :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => Struct s x -> HomVariant Contravariant (HomOrtEmpty s o) x (o x)
+homOrtToDualEmpty = homOrtToDual
 
 
 

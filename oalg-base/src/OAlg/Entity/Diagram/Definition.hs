@@ -19,7 +19,7 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
-
+{-
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows, dgMap
@@ -51,18 +51,23 @@ module OAlg.Entity.Diagram.Definition
   , xDiagram
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
+-}
   )
   where
 
 import Control.Monad 
 
+import Data.Kind
 import Data.Typeable
 import Data.Array as A hiding (range)
 import Data.Foldable (toList)
 
 import OAlg.Prelude hiding (T)
 
-import OAlg.Data.SDuality
+import OAlg.Category.SDual
+
+import OAlg.Data.Either
+import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
@@ -231,6 +236,195 @@ dgCenter (DiagramSink c _)   = c
 dgCenter (DiagramSource c _) = c
 
 --------------------------------------------------------------------------------
+-- dgMapCov -
+
+-- | mapping of a diagram via a 'Covariant' homomorphism on 'Oriented' structures.
+--
+-- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
+-- @'Covariant2' h@ in @'HomVariant' 'Covariant' __h a b__@ with
+-- @'HomDisjunctiveOriented' __s o h__@, then holds:
+--
+-- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
+--
+-- (2) @'dgPoints' ('dgMapCov' q h d) '==' 'amap1' ('pmap' h) ('dgPoints' d)@.
+--
+-- where @q@ is any proxy in @__q s o__@.
+dgMapCov :: HomDisjunctiveOriented s o h
+  => q s o -> HomVariant Covariant h a b -> Diagram t n m a -> Diagram t n m b
+dgMapCov _ (Covariant2 h) d = case d of
+  DiagramEmpty             -> DiagramEmpty
+  DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
+  DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
+  DiagramChainFrom s as    -> DiagramChainFrom  (hPnt s) (amap1 hArw as)
+  DiagramParallelLR l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramParallelRL l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramSink e as         -> DiagramSink (hPnt e) (amap1 hArw as)
+  DiagramSource s as       -> DiagramSource (hPnt s) (amap1 hArw as)
+  DiagramGeneral ps aijs   -> DiagramGeneral (amap1 hPnt ps)
+                                (amap1 (\(a,o) -> (hArw a,o)) aijs)
+  where hPnt = pmap h
+        hArw = amap h
+
+{-
+instance (HomOriented h, SDualisableOriented s o)
+  => ApplicativeG (Diagram t n m) (HomVariant Covariant (HomOrt s o h)) (->) where
+  amapG h = dgMapCov (q h) h where
+    q :: HomVariant Covariant (HomOrt s o h) x y -> Proxy2 s o
+    q _ = Proxy2
+-}
+--------------------------------------------------------------------------------
+-- dgMapCnt -
+
+-- | mapping of a diagram via a 'Contravariant' homomorphism on 'Oriented' structures.
+--
+-- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
+-- @'Contravariant2' h@ in @'HomVariant' 'Contravariant' __h a b__@ with
+-- @'HomDisjunctiveOriented' __s o h__@, then holds:
+--
+-- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
+--
+-- (2) @'dgPoints' ('dgMapCov' q h d) '==' 'amap1' ('pmap' h) ('dgPoints' d)@.
+--
+-- where @q@ is any proxy in @__q s o__@.
+dgMapCnt :: HomDisjunctiveOriented s o h
+  => q s o -> HomVariant Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
+dgMapCnt _ (Contravariant2 h) d = case d of
+  DiagramEmpty             -> DiagramEmpty
+  DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
+  DiagramChainTo e as      -> DiagramChainFrom (hPnt e) (amap1 hArw as)
+  DiagramChainFrom s as    -> DiagramChainTo (hPnt s) (amap1 hArw as)
+  DiagramParallelLR l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramParallelRL l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramSink e as         -> DiagramSource (hPnt e) (amap1 hArw as)
+  DiagramSource s as       -> DiagramSink (hPnt s) (amap1 hArw as)
+  DiagramGeneral ps aijs   -> DiagramGeneral
+                                (amap1 hPnt ps)
+                                (amap1 (\(a,o) -> (hArw a,opposite o)) aijs)
+  where hPnt = pmap h
+        hArw = amap h
+
+--------------------------------------------------------------------------------
+-- SD1 -
+
+newtype SD1 d x = SD1 (Dual1 d x)
+
+type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
+
+fromSD1 :: SD1 d x -> Dual1 d x
+fromSD1 (SD1 d) = d
+
+mapSD1 :: (Dual1 d x -> Dual1 d y) -> SD1 d x -> SD1 d y
+mapSD1 f (SD1 x) = SD1 (f x)
+
+dgMapCov' :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => HomVariant Covariant (HomOrtEmpty s o) x y -> Diagram t n m x -> Diagram t n m y
+dgMapCov' h = dgMapCov (q h) h where
+  q :: HomVariant Covariant (HomOrtEmpty s o) x y -> Proxy2 s o
+  q _ = Proxy2
+
+dgMapCntEmpty :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => HomVariant Contravariant (HomOrtEmpty s o) x y
+  -> Diagram t n m x -> Diagram (Dual t) n m y
+dgMapCntEmpty h = dgMapCnt (q h) h where
+  q :: HomVariant v (HomOrtEmpty s o) x y -> Proxy2 s o
+  q _ = Proxy2
+
+
+dgMapToBiDual :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => HomVariant Covariant (HomOrtEmpty s o) x (o (o x))
+  -> Diagram t n m x -> Diagram t n m (o (o x))
+dgMapToBiDual = dgMapCov'
+
+dgMapFromBiDual :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => HomVariant Covariant (HomOrtEmpty s o) (o (o x)) x
+  -> Diagram t n m (o (o x)) -> Diagram t n m x 
+dgMapFromBiDual = dgMapCov'
+
+instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => SReflexiveG (->) s o (Diagram t n m) where
+  sdlRefl s = Inv2 u v where
+    Contravariant2 t = homOrtToDualEmpty s
+    Contravariant2 t' = homOrtToDualEmpty (tau1 s)
+    u = dgMapCov' $ Covariant2 (t' . t)
+    
+    v = dgMapFromBiDual (homOrtFromBiDual s)
+
+instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+  => SReflexiveG (->) s o (SD1 (Diagram t n m)) where
+  sdlRefl s = Inv2 u v where
+    u = mapSD1 $ dgMapToBiDual (homOrtToBiDual s)
+    v = mapSD1 $ dgMapFromBiDual (homOrtFromBiDual s)
+
+instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o, Dual (Dual t) ~ t)
+  => SBiDualisableG (->) s o (Diagram t n m) (SD1 (Diagram t n m)) where
+  sdlToDualLft s = SD1 . dgMapCntEmpty (homOrtToDualEmpty s)
+  sdlToDualRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSD1
+
+
+{-
+--------------------------------------------------------------------------------
+-- Diagram - Dual -
+
+
+type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
+
+--------------------------------------------------------------------------------
+-- SDualDigram -
+
+newtype SDuality d s (o :: Type -> Type) x = SDuality (Either1 d (Dual1 d) x)
+
+
+sdProxy :: SDuality d s o x -> Proxy2 s o
+sdProxy _ = Proxy2
+
+
+class HomDisjunctiveOriented s o h => SD s o h d where
+  sdMapCov :: q s o -> HomVariant Covariant h x y -> d x -> d y
+  sdMapCnt :: q s o -> HomVariant Contravariant h x y -> d x -> (Dual1 d) y
+
+instance HomDisjunctiveOriented s o h => SD s o h (Diagram t n m) where
+  sdMapCov = dgMapCov
+  sdMapCnt = dgMapCnt
+
+sdMapLeft :: SD s o h d => q s o -> h x y -> d x -> SDuality d s o y
+sdMapLeft q h d = SDuality $ case toVariant2 h of
+  Right2 hCov -> Left1 $ sdMapCov q hCov d
+  Left2 hCnt  -> Right1 $ sdMapCnt q hCnt d
+
+sdMapRight :: (SD s o h d, Dual1 (Dual1 d) ~ d) => q s o -> h x y -> Dual1 d x -> SDuality d s o y
+sdMapRight q h d = SDuality $ case toVariant2 h of
+    Right2 hCov -> Right1 $ sdMapCov q hCov d
+    -- Left2 hCnt  -> Left1 $ sdMapCnt q hCnt d
+-}
+
+{-
+--------------------------------------------------------------------------------
+-- dgMap -
+
+dgMapLeft :: HomDisjunctiveOriented s o h
+  => q s o -> h a b -> Diagram t n m a -> SDualDiagram s o t n m b
+dgMapLeft q h d = SDualDiagram $ case toVariant2 h of
+  Right2 hCov -> Left1 $ dgMapCov q hCov d
+  Left2 hCnt  -> Right1 $ dgMapCnt q hCnt d
+
+dgMapRight :: (HomDisjunctiveOriented s o h, Dual (Dual t) ~ t)
+  => q s o -> h a b -> Diagram (Dual t) n m a -> SDualDiagram s o t n m b
+dgMapRight q h d     = SDualDiagram $ case toVariant2 h of
+    Right2 hCov -> Right1 $ dgMapCov q hCov d
+    Left2 hCnt  -> Left1 $ dgMapCnt q hCnt d
+
+dgMap :: (HomDisjunctiveOriented s o h, Dual (Dual t) ~ t)
+  => h a b -> SDualDiagram s o t n m a -> SDualDiagram s o t n m b
+dgMap h s@(SDualDiagram d) = either1 (dgMapLeft q h) (dgMapRight q h) d where q = sdProxy s
+
+
+instance HomDisjunctiveOriented s o h
+  => ApplicativeG (SDualDiagram s o Discrete n m) h (->) where
+  amapG = dgMap
+-}
+
+{-
+--------------------------------------------------------------------------------
 -- dgMap -
 
 -- | mapping of a diagram via a homomorphism on 'Oriented' structures.
@@ -269,12 +463,6 @@ dgMap h d = case d of
 instance HomOriented h => Applicative1 h (Diagram t n m) where amap1 = dgMap
 
 instance FunctorialHomOriented h => Functorial1 h (Diagram t n m)
-
---------------------------------------------------------------------------------
--- Diagram - Dual -
-
-type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
-type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
 
 --------------------------------------------------------------------------------
 -- coDiagram -
@@ -863,3 +1051,4 @@ xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientat
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
 
+-}

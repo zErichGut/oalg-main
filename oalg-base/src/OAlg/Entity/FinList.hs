@@ -67,9 +67,9 @@ deriving instance Ord x => Ord (FinList n x)
 instance Show a => Show (FinList n a) where
   show xs = "[|" L.++ (join $ tween "," $ amap1 show $ toList xs) L.++ "|]"
 
-instance Applicative1 (->) (FinList n) where
-  amap1 _ Nil     = Nil
-  amap1 f (a:|as) = f a :| amap1 f as
+instance ApplicativeG (FinList n) (->) (->) where
+  amapG _ Nil     = Nil
+  amapG f (a:|as) = f a :| amapG f as
 
 instance Validable a => Validable (FinList n a) where
   valid as = vld 0 as where
@@ -203,8 +203,8 @@ deriving instance Show a => Show (SomeFinList a)
 instance Validable a => Validable (SomeFinList a) where
   valid (SomeFinList xs) = valid xs
 
-instance Applicative1 (->) SomeFinList where
-  amap1 f (SomeFinList xs) = SomeFinList (amap1 f xs)
+instance ApplicativeG SomeFinList (->) (->)  where
+  amapG f (SomeFinList xs) = SomeFinList (amapG f xs)
   
 
 --------------------------------------------------------------------------------
