@@ -23,6 +23,7 @@ module OAlg.Category.Definition
   ( 
     -- * Category
     Category(..), cOne'
+  , Sub(..), cOneSub
 
     -- | __Some basic definitions in the category @('->')@__
   , id
@@ -55,12 +56,15 @@ module OAlg.Category.Definition
   , Forget(..)
 
     -- * Transformables
+  , TransformableObjectClass 
   , TransformableObjectClassTyp
   , TransformableGObjectClass
   , TransformableGObjectClassRange
   
   )
   where
+
+import Data.Bool
 
 import Data.Type.Equality
 import Data.Typeable
@@ -321,6 +325,34 @@ data Functor1 c f where
   Functor1 :: Functorial1 c f => Functor1 c f
 
 --------------------------------------------------------------------------------
+-- TransformableObjectClass -
+
+-- | helper class to avoid undecided instances.
+class Transformable s (ObjectClass c) => TransformableObjectClass s c
+
+--------------------------------------------------------------------------------
+-- Sub -
+
+-- | sub category of @__c__@ according to the 'ObjectClass' @__s__@.
+data Sub s c x y where
+  Sub :: (Structure s x, Structure s y) => c x y -> Sub s c x y 
+
+instance Morphism (Sub s c) where
+  type ObjectClass (Sub s c) = s
+  homomorphous (Sub _) = Struct :>: Struct
+
+--------------------------------------------------------------------------------
+-- cOneSub -
+
+-- | the 'cOne' of @'Sub' __s c__@
+cOneSub :: (Category c, t ~ ObjectClass c) => Struct s x -> Struct t x  -> Sub s c x x
+cOneSub Struct = Sub . cOne
+
+instance (Category c, TransformableObjectClass s c) => Category (Sub s c) where
+  cOne s = cOneSub s (tau s)
+  Sub f . Sub g = Sub (f . g)
+  
+--------------------------------------------------------------------------------
 -- Cayleyan2 -
 
 -- | category of isomorphisms.
@@ -332,6 +364,15 @@ data Functor1 c f where
 class (Category c, Eq2 c) => Cayleyan2 c where
   invert2 :: c x y -> c y x
 
+--------------------------------------------------------------------------------
+-- Cayleyan2 - Instance -
+
+instance Cayleyan2 (Homomorphous m) where
+  invert2 (d :>: r) = r :>: d  
+
+instance Cayleyan2 c => Cayleyan2 (Op2 c) where
+  invert2 (Op2 f) = Op2 (invert2 f)
+  
 --------------------------------------------------------------------------------
 -- Inv2 -
 
@@ -345,15 +386,27 @@ class (Category c, Eq2 c) => Cayleyan2 c where
 -- (2) @f '.' f' '==' 'cOne' ('range' f)@.
 data Inv2 c x y = Inv2 (c x y) (c y x) deriving (Show, Eq)
 
---------------------------------------------------------------------------------
--- Cayleyan2 - Instance -
-
-instance Cayleyan2 (Homomorphous m) where
-  invert2 (d :>: r) = r :>: d  
-
-instance Cayleyan2 c => Cayleyan2 (Op2 c) where
-  invert2 (Op2 f) = Op2 (invert2 f)
+instance Eq2 c => Eq2 (Inv2 c) where
+  eq2 (Inv2 f g) (Inv2 f' g') = eq2 f f' && eq2 g g'
   
+instance Morphism c => Morphism (Inv2 c) where
+  type ObjectClass (Inv2 c) = ObjectClass c
+  homomorphous (Inv2 f _) = homomorphous f
+
+instance Category c => Category (Inv2 c) where
+  cOne s = Inv2 o o where o = cOne s
+  Inv2 f g . Inv2 f' g' = Inv2 (f . f') (g' . g)
+
+instance (Category c, Eq2 c) => Cayleyan2 (Inv2 c) where
+  invert2 (Inv2 f g) = Inv2 g f
+
+instance FunctorialG t a b => ApplicativeG t (Inv2 a) (Inv2 b) where
+  amapG (Inv2 f g) = Inv2 (amapG f) (amapG g)
+
+instance FunctorialG t a b => ApplicativeGMorphism t (Inv2 a) (Inv2 b)
+
+instance FunctorialG t a b => FunctorialG t (Inv2 a) (Inv2 b)
+
 --------------------------------------------------------------------------------
 -- Either2 - Morphism -
 

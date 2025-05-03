@@ -139,7 +139,37 @@ prpHomDisjunctiveOriented q xso xsa = Prp "HomDisjunctiveOriented" :<=>:
 --------------------------------------------------------------------------------
 --
 
+{-
+gg :: Id x -> Id (Op (Op x))
+gg = error "nxi"
+
+ff :: Struct OrtX x -> EqualExt (Id x) (Id (Op (Op x)))
+ff Struct = EqualExt gg
+-}
+
+aa :: Struct Typ x -> Inv2 (->) (Id x) (Id (Op (Op x)))
+aa = sdlRefl
+
+bb :: Homomorphous s x y -> c x y -> Sub s c x y
+bb (Struct:>:Struct) = Sub
+
+cc :: Struct OrtX x -> Homomorphous OrtX (Id x) (Id (Op (Op x)))
+cc = error "nyi"
+
+dd :: Struct OrtX x -> Inv2 (->) (Id x) (Id (Op (Op x)))
+dd s = aa (tau s)
+
+ff :: Struct OrtX x -> Inv2 (Sub OrtX (->)) (Id x) (Id (Op (Op x)))
+ff s = error "nyi" -- bb (cc s) $ aa (tau s)
+
+hh :: Inv2 (Sub OrtX (->)) x y -> Inv2 EqualExt x y
+hh = error "nyi"
+
+
 instance SReflexiveG EqualExt OrtX Op Id where
+  sdlRefl s = hh $ ff s
+
+    
 instance SDualisableG EqualExt OrtX Op Id where
 
 instance TransformableGObjectClassRange Id OrtX EqualExt

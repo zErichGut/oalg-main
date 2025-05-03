@@ -257,7 +257,7 @@ instance HomOriented h => Category (HomOrt s o h) where
 --------------------------------------------------------------------------------
 -- HomOrt - Functorial -
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
+instance ( HomOriented h, ApplicativeG d h c, SDualisableG c s o d
          , TransformableGObjectClassRange d s c
          )
   => ApplicativeG d (HomOrt s o h) c where
