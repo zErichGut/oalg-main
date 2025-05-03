@@ -41,6 +41,7 @@ module OAlg.Prelude
   
     -- * Dual
   , module Dlb
+  , module SDlb
   , module Op
 
     -- * Ord
@@ -96,6 +97,7 @@ import OAlg.Data.Maybe as Myb
 import OAlg.Data.Show as Shw
 import OAlg.Data.Number as Nmb
 import OAlg.Data.Dualisable as Dlb
+import OAlg.Data.SDualisable as SDlb
 import OAlg.Data.Opposite as Op
 import OAlg.Data.Ord as Ord
 

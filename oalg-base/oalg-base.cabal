@@ -52,7 +52,7 @@ library
       OAlg.Category.Map
       OAlg.Category.Path
       OAlg.Category.Proposition
-      OAlg.Category.SDual
+      OAlg.Category.SDuality
       OAlg.Category.Unify
       OAlg.Control.Action
       OAlg.Control.Exception

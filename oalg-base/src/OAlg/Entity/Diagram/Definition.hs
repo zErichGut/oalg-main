@@ -64,7 +64,7 @@ import Data.Foldable (toList)
 
 import OAlg.Prelude hiding (T)
 
-import OAlg.Category.SDual
+import OAlg.Category.SDuality
 
 import OAlg.Data.Either
 import OAlg.Data.Proxy
@@ -304,21 +304,13 @@ dgMapCnt _ (Contravariant2 h) d = case d of
         hArw = amap h
 
 --------------------------------------------------------------------------------
--- SD1 -
-
-newtype SD1 d x = SD1 (Dual1 d x)
+-- Diagram - Duality -
 
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
-fromSD1 :: SD1 d x -> Dual1 d x
-fromSD1 (SD1 d) = d
-
-mapSD1 :: (Dual1 d x -> Dual1 d y) -> SD1 d x -> SD1 d y
-mapSD1 f (SD1 x) = SD1 (f x)
-
-dgMapCov' :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
+dgMapCovEmpty :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
   => HomVariant Covariant (HomOrtEmpty s o) x y -> Diagram t n m x -> Diagram t n m y
-dgMapCov' h = dgMapCov (q h) h where
+dgMapCovEmpty h = dgMapCov (q h) h where
   q :: HomVariant Covariant (HomOrtEmpty s o) x y -> Proxy2 s o
   q _ = Proxy2
 
@@ -329,36 +321,77 @@ dgMapCntEmpty h = dgMapCnt (q h) h where
   q :: HomVariant v (HomOrtEmpty s o) x y -> Proxy2 s o
   q _ = Proxy2
 
-
-dgMapToBiDual :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
-  => HomVariant Covariant (HomOrtEmpty s o) x (o (o x))
-  -> Diagram t n m x -> Diagram t n m (o (o x))
-dgMapToBiDual = dgMapCov'
-
-dgMapFromBiDual :: (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
-  => HomVariant Covariant (HomOrtEmpty s o) (o (o x)) x
-  -> Diagram t n m (o (o x)) -> Diagram t n m x 
-dgMapFromBiDual = dgMapCov'
-
 instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
   => SReflexiveG (->) s o (Diagram t n m) where
   sdlRefl s = Inv2 u v where
     Contravariant2 t = homOrtToDualEmpty s
     Contravariant2 t' = homOrtToDualEmpty (tau1 s)
-    u = dgMapCov' $ Covariant2 (t' . t)
-    
-    v = dgMapFromBiDual (homOrtFromBiDual s)
+    u = dgMapCovEmpty $ Covariant2 (t' . t)
+
+    Contravariant2 f = homOrtFromDualEmpty s
+    Contravariant2 f' = homOrtFromDualEmpty (tau1 s)
+    v = dgMapCovEmpty $ Covariant2 (f . f')
 
 instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
-  => SReflexiveG (->) s o (SD1 (Diagram t n m)) where
-  sdlRefl s = Inv2 u v where
-    u = mapSD1 $ dgMapToBiDual (homOrtToBiDual s)
-    v = mapSD1 $ dgMapFromBiDual (homOrtFromBiDual s)
+  => SReflexiveG (->) s o (SDual (Diagram t n m)) where
+  sdlRefl s = Inv2 (mapSDual u) (mapSDual v) where Inv2 u v = sdlRefl s
 
 instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o, Dual (Dual t) ~ t)
-  => SBiDualisableG (->) s o (Diagram t n m) (SD1 (Diagram t n m)) where
-  sdlToDualLft s = SD1 . dgMapCntEmpty (homOrtToDualEmpty s)
-  sdlToDualRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSD1
+  => SBiDualisableG (->) s o (Diagram t n m) (SDual (Diagram t n m)) where
+  sdlToDualLft s = SDual . dgMapCntEmpty (homOrtToDualEmpty s)
+  sdlToDualRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSDual
+
+--------------------------------------------------------------------------------
+-- dgToOp -
+
+-- | to the dual diagram accroding to the @__Op__@-duality with inverse 'dgFromOp'.
+dgToOpS :: Dual (Dual t) :~: t -> Struct Ort x -> Diagram t n m x -> SDual (Diagram t n m) (Op x)
+dgToOpS Refl = sdlToDualLft
+
+-- | to the dual diagram accroding to the @__Op__@-duality with inverse 'dgFromOp'.
+dgToOp :: Oriented x =>  Dual (Dual t) :~: t -> Diagram t n m x -> Diagram (Dual t) n m (Op x)
+dgToOp r d = fromSDual $ dgToOpS r (s d) d where
+  s :: Oriented x => q x -> Struct Ort x
+  s _ = Struct
+
+--------------------------------------------------------------------------------
+-- dgFromOp -
+
+-- | from the dual diagram accroding to the @__Op__@-duality with inverse 'dgToOp'.
+dgFromOpS :: Dual (Dual t) :~: t -> Struct Ort x -> SDual (Diagram t n m) (Op x) -> Diagram t n m x
+dgFromOpS Refl = sdlFromDualLft
+
+-- | from the dual diagram accroding to the @__Op__@-duality
+dgFromOp :: Oriented x => Dual (Dual t) :~: t -> Diagram (Dual t) n m (Op x) -> Diagram t n m x
+dgFromOp r d' = dgFromOpS r (s d') (SDual d') where
+  s :: Oriented x => q (Op x) -> Struct Ort x
+  s _ = Struct
+
+--------------------------------------------------------------------------------
+-- DiagramDuality -
+
+type DiagramDuality t n m = SDuality (Diagram t n m) (SDual (Diagram t n m))
+
+
+ff :: ( Morphism h
+         , ApplicativeG (SDuality (Diagram t n m) (SDual (Diagram t n m))) h (->)
+         , TransformableOrt s, TransformableTyp s
+         , SDualisableOriented s o
+         , Dual (Dual t) ~ t
+         )
+  => HomOrt s o h x y -> DiagramDuality t n m x -> DiagramDuality t n m y
+ff = amapG
+
+
+instance ( Morphism h
+         , ApplicativeG (SDuality (Diagram t n m) (SDual (Diagram t n m))) h (->)
+         , TransformableOrt s, TransformableTyp s
+         , SDualisableOriented s o
+         , Dual (Dual t) ~ t
+         )
+  => ApplicativeG (SDuality (Diagram t n m) (SDual (Diagram t n m))) (HomOrt s o h) (->) where
+  amapG (HomOrt h) = amapG h
+
 
 
 {-

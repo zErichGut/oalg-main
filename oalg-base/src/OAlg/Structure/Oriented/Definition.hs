@@ -25,7 +25,11 @@ module OAlg.Structure.Oriented.Definition
     Oriented(..), Total, EntityPoint, OrdPoint, isEndo, isEndoAt
   , OS, Ort, tauOrt, structOrtOp, TransformableOrt
 
-    -- * Transposable
+    -- * Duality
+    -- ** Op
+  , SDualisableGPnt
+  
+    -- ** Transposable
   , TransposableOriented
 
     -- * Orientation
@@ -186,6 +190,12 @@ instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Op x)) where
 
 
 --------------------------------------------------------------------------------
+-- SDualisableGPnt -
+
+-- | helper class to avoid undecidable instances.
+class SDualisableG (->) s o Pnt => SDualisableGPnt s o
+
+--------------------------------------------------------------------------------
 -- fromPntG -
 
 fromPntG :: (Pnt x -> Pnt y) -> Point x -> Point y
@@ -247,7 +257,22 @@ instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (Som
   type Point (SomeMorphism m) = SomeObjectClass m
   start (SomeMorphism f) = SomeObjectClass (domain f)
   end (SomeMorphism f) = SomeObjectClass (range f)
+
+
+--------------------------------------------------------------------------------
+-- Op - SDualisableG -
+
+idPnt :: Point x ~ Point y => Pnt x -> Pnt y
+idPnt (Pnt p) = Pnt p
   
+instance SReflexiveG (->) s Op Pnt where
+  sdlRefl _ = Inv2 idPnt idPnt where
+    
+instance Transformable1 Op s => SDualisableG (->) s Op Pnt where
+  sdlToDual _ = idPnt 
+
+instance TransformableOp s => SDualisableGPnt s Op
+
 --------------------------------------------------------------------------------
 -- TransposableOriented -
 

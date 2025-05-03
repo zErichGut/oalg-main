@@ -28,22 +28,29 @@ module OAlg.Data.SDualisable
     -- ** Dualisable
     SDualisable
   , SDualisableG(..), SDualityG(..)
+  , SDualisableGId --, SDualisableGPnt
   , SReflexiveG(..), sdlToDual'
 
     -- ** Bi-Dualisable
   , SBiDualisable, SBiDualisableG(..)
 
+    -- * SDual
+  , SDual(..), fromSDual, mapSDual
     -- * Proposition
   , prpSDualisableG
 
   ) where
 
-import OAlg.Prelude
+-- import OAlg.Prelude
+import OAlg.Category.Definition
 
 import OAlg.Data.Identity
+import OAlg.Data.Opposite
+import OAlg.Data.Dualisable
+import OAlg.Data.EqualExtensional
+import OAlg.Data.Statement.Definition
 
-import OAlg.Structure.Oriented.Definition
-
+import OAlg.Structure.Definition
 --------------------------------------------------------------------------------
 -- SReflexiveG -
 
@@ -75,6 +82,24 @@ class (SReflexiveG c s o d, Transformable1 o s) => SDualisableG c s o d where
   sdlToDual :: Struct s x -> c (d x) (d (o x))
   sdlFromDual :: Struct s x -> c (d (o x)) (d x)
   sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
+
+--------------------------------------------------------------------------------
+-- SDualisableGId -
+
+-- | helper class to avoid undecidable instances.
+class SDualisableG (->) s o Id => SDualisableGId s o
+
+--------------------------------------------------------------------------------
+-- Op - SDualisable -
+
+instance SReflexiveG (->) s Op Id where
+  sdlRefl _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
+  
+instance Transformable1 Op s => SDualisableG (->) s Op Id where
+  sdlToDual _   = toIdG Op
+  sdlFromDual _ = toIdG fromOp
+
+instance TransformableOp s => SDualisableGId s Op
 
 --------------------------------------------------------------------------------
 -- SDualityG -
@@ -121,25 +146,6 @@ prpSDualisableG q s = Prp "SDualisableG" :<=>:
         Inv2 _ v' = sdlRefl' q s'
 
 --------------------------------------------------------------------------------
--- SDualisableG - Instances -
-
-instance SReflexiveG (->) s Op Id where
-  sdlRefl _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
-  
-instance Transformable1 Op s => SDualisableG (->) s Op Id where
-  sdlToDual _   = toIdG Op
-  sdlFromDual _ = toIdG fromOp
-
-idPnt :: Point x ~ Point y => Pnt x -> Pnt y
-idPnt (Pnt p) = Pnt p
-  
-instance SReflexiveG (->) s Op Pnt where
-  sdlRefl _ = Inv2 idPnt idPnt where
-    
-instance Transformable1 Op s => SDualisableG (->) s Op Pnt where
-  sdlToDual _ = idPnt 
-
---------------------------------------------------------------------------------
 -- SDualisable -
 
 -- | dualisable for the category @('->')@.
@@ -164,3 +170,24 @@ class (SReflexiveG c s o a, SReflexiveG c s o b, Transformable1 o s)
 
 -- | bi-dualisable for for the category @('->')@.
 type SBiDualisable = SBiDualisableG (->)
+
+--------------------------------------------------------------------------------
+-- SDual -
+
+-- | wrapper for @'Dual1' __d x__@.
+newtype SDual d x = SDual (Dual1 d x)
+
+--------------------------------------------------------------------------------
+-- fromSDual -
+
+-- | deconstructing 'SDual'
+fromSDual :: SDual d x -> Dual1 d x
+fromSDual (SDual d) = d
+
+--------------------------------------------------------------------------------
+-- mapSDual -
+
+-- | mapping 'SDual'.
+mapSDual :: (Dual1 d x -> Dual1 d y) -> SDual d x -> SDual d y
+mapSDual f (SDual x) = SDual (f x)
+

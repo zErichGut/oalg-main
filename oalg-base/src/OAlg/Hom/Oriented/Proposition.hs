@@ -39,7 +39,7 @@ import Data.Kind
 
 import OAlg.Prelude
 
-import OAlg.Category.SDual
+import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
 import OAlg.Data.Identity
@@ -137,6 +137,19 @@ prpHomDisjunctiveOriented q xso xsa = Prp "HomDisjunctiveOriented" :<=>:
         q' _ _ = Proxy3
 
 --------------------------------------------------------------------------------
+--
+
+instance SReflexiveG EqualExt OrtX Op Id where
+instance SDualisableG EqualExt OrtX Op Id where
+
+instance TransformableGObjectClassRange Id OrtX EqualExt
+
+
+instance SReflexiveG EqualExt OrtX Op Pnt
+instance SDualisableG EqualExt OrtX Op Pnt
+
+instance TransformableGObjectClassRange Pnt OrtX EqualExt
+--------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
 
 -- | validity of @'HomOrtOpEmpty' 'Ort'´@.
@@ -152,7 +165,7 @@ prpHomOrtOpEmpty
   qId = Proxy3 :: Proxy3 Id (HomOrt OrtX Op (HomEmpty OrtX)) EqualExt
   qPt = Proxy3 :: Proxy3 Pnt (HomOrt OrtX Op (HomEmpty OrtX)) EqualExt
   
-  xoSct :: X (SomeObjectClass (SDualCat OrtX Op (HomEmpty OrtX)))
+  xoSct :: X (SomeObjectClass (SDualityCategory OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
                  ]
