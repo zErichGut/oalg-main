@@ -174,10 +174,19 @@ instance Oriented x => Eq (Pnt x) where (Pnt p) == (Pnt q) = p == q
 instance Oriented x => Validable (Pnt x) where valid (Pnt x) = valid x
 instance Oriented x => Entity (Pnt x)
 
-instance XStandard (Pnt (Orientation Symbol)) where xStandard = amap1 Pnt xStandard
 
+instance XStandard (Pnt (Orientation Symbol)) where xStandard = amap1 Pnt xStandard
 instance XStandard (Pnt N) where xStandard = return (Pnt ())
 
+--------------------------------------------------------------------------------
+-- pntId -
+
+pntId :: Pnt x -> Pnt (Id x)
+pntId (Pnt p) = Pnt p
+
+instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Id x)) where
+  xStandard = amap1 pntId xStandard
+  
 --------------------------------------------------------------------------------
 -- pntOp -
 
@@ -245,6 +254,10 @@ instance Oriented Q where
   type Point Q = ()
   orientation _ = ():>()
 
+instance Oriented x => Oriented (Id x) where
+  type Point (Id x) = Point x
+  orientation (Id x) = orientation x
+
 instance Entity p => Oriented (Orientation p) where
   type Point (Orientation p) = p
   orientation = id
@@ -290,6 +303,7 @@ instance Entity p => TransposableOriented (Orientation p)
 instance TransposableOriented N
 instance TransposableOriented Z
 instance TransposableOriented Q
+
 --------------------------------------------------------------------------------
 -- Path -
 

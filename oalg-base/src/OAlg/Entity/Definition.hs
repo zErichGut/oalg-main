@@ -42,6 +42,7 @@ import Data.Typeable
 import OAlg.Category.Definition
 
 import OAlg.Data.Show
+import OAlg.Data.Identity
 import OAlg.Data.Equal
 import OAlg.Data.EqualExtensional
 import OAlg.Data.Validable
@@ -68,6 +69,7 @@ instance Entity Symbol
 instance Entity N
 instance Entity Z
 instance Entity Q
+instance Entity x => Entity (Id x)
 
 instance Entity a => Entity [a]
 instance (Entity a,Entity b) => Entity (a,b)

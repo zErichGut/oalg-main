@@ -1,4 +1,5 @@
 
+
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -9,6 +10,9 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
+
+-- {-# LANGUAGE UndecidableInstances #-}
+
 
 -- |
 -- Module      : OAlg.Hom.Oriented.Proposition
@@ -34,6 +38,8 @@ module OAlg.Hom.Oriented.Proposition
   where
 
 import Control.Monad
+
+import Data.Typeable
 
 import Data.Kind
 
@@ -139,46 +145,32 @@ prpHomDisjunctiveOriented q xso xsa = Prp "HomDisjunctiveOriented" :<=>:
 --------------------------------------------------------------------------------
 --
 
-{-
-gg :: Id x -> Id (Op (Op x))
-gg = error "nxi"
+instance TransformableObjectClass OrtX (->)
 
-ff :: Struct OrtX x -> EqualExt (Id x) (Id (Op (Op x)))
-ff Struct = EqualExt gg
--}
+instance ApplicativeG Id (Sub OrtX (->)) EqualExt where
+  amapG (Sub f) = EqualExt (amap1 f)
+  
+instance ApplicativeGMorphism Id (Sub OrtX (->)) EqualExt
+instance FunctorialG Id (Sub OrtX (->)) EqualExt
 
-aa :: Struct Typ x -> Inv2 (->) (Id x) (Id (Op (Op x)))
-aa = sdlRefl
-
-bb :: Homomorphous s x y -> c x y -> Sub s c x y
-bb (Struct:>:Struct) = Sub
-
-cc :: Struct OrtX x -> Homomorphous OrtX (Id x) (Id (Op (Op x)))
-cc = error "nyi"
-
-dd :: Struct OrtX x -> Inv2 (->) (Id x) (Id (Op (Op x)))
-dd s = aa (tau s)
-
-ff :: Struct OrtX x -> Inv2 (Sub OrtX (->)) (Id x) (Id (Op (Op x)))
-ff s = error "nyi" -- bb (cc s) $ aa (tau s)
-
-hh :: Inv2 (Sub OrtX (->)) x y -> Inv2 EqualExt x y
-hh = error "nyi"
-
+tauType :: Struct s x -> Struct Type x
+tauType _ = Struct
 
 instance SReflexiveG EqualExt OrtX Op Id where
-  sdlRefl s = hh $ ff s
+  sdlRefl s@Struct = Inv2 (EqualExt u) (EqualExt v) where Inv2 u v = sdlRefl (tauType s)
 
-    
 instance SDualisableG EqualExt OrtX Op Id where
+  sdlToDual s@Struct = EqualExt t where t = sdlToDual (tauType s)
+
+instance Transformable1 f Type where tau1 _ = Struct
 
 instance TransformableGObjectClassRange Id OrtX EqualExt
-
 
 instance SReflexiveG EqualExt OrtX Op Pnt
 instance SDualisableG EqualExt OrtX Op Pnt
 
 instance TransformableGObjectClassRange Pnt OrtX EqualExt
+
 --------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
 

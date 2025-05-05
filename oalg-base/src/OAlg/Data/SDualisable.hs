@@ -51,6 +51,7 @@ import OAlg.Data.EqualExtensional
 import OAlg.Data.Statement.Definition
 
 import OAlg.Structure.Definition
+
 --------------------------------------------------------------------------------
 -- SReflexiveG -
 
