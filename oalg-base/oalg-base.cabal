@@ -49,6 +49,7 @@ library
       OAlg.Adjunction.Limes
       OAlg.Category.Applicative
       OAlg.Category.Definition
+      OAlg.Category.DualisableG
       OAlg.Category.Map
       OAlg.Category.Path
       OAlg.Category.Proposition
@@ -82,7 +83,6 @@ library
       OAlg.Data.Proxy
       OAlg.Data.Reducible
       OAlg.Data.Relation
-      OAlg.Data.SDualisable
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular

@@ -316,7 +316,7 @@ instance (Cayleyan2 h, TransformableObjectClassTyp h, Transformable t Typ)
 -- Forget' - Functorial -
 
 
-
+{-
 instance ( Category c, ApplicativeG d h c
          , TransformableGObjectClassRange d t c
          ) => ApplicativeG d (Forget' t h) c where amapG (Forget' p) = amapG p
@@ -331,6 +331,6 @@ instance ( Category h, TransformableObjectClassTyp h, Eq2 h
          , ApplicativeG d h c
          , TransformableGObjectClassRange d t c
          )  => FunctorialG d (Forget' t h) c
-
+-}
 
 

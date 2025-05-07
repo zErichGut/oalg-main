@@ -34,7 +34,7 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Orientation
   , Orientation(..), opposite
-  , Pnt(..), pntOp, fromPntG
+  , Pnt(..), idPnt
 
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
@@ -178,31 +178,19 @@ instance Oriented x => Entity (Pnt x)
 instance XStandard (Pnt (Orientation Symbol)) where xStandard = amap1 Pnt xStandard
 instance XStandard (Pnt N) where xStandard = return (Pnt ())
 
---------------------------------------------------------------------------------
--- pntId -
-
-pntId :: Pnt x -> Pnt (Id x)
-pntId (Pnt p) = Pnt p
-
 instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Id x)) where
-  xStandard = amap1 pntId xStandard
+  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Id x)) xStandard
   
---------------------------------------------------------------------------------
--- pntOp -
-
--- | tho oposit point.
-pntOp :: Pnt x -> Pnt (Op x)
-pntOp (Pnt p) = Pnt p
 
 instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Op x)) where
-  xStandard = amap1 pntOp xStandard
+  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Op x)) xStandard
 
 
 --------------------------------------------------------------------------------
 -- SDualisableGPnt -
 
 -- | helper class to avoid undecidable instances.
-class SDualisableG (->) s o Pnt => SDualisableGPnt s o
+class SDualisableG (->) o Pnt => SDualisableGPnt o
 
 --------------------------------------------------------------------------------
 -- fromPntG -
@@ -278,13 +266,14 @@ instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (Som
 idPnt :: Point x ~ Point y => Pnt x -> Pnt y
 idPnt (Pnt p) = Pnt p
   
-instance SReflexiveG (->) s Op Pnt where
+instance SReflexiveG (->) Op Pnt where
   sdlRefl _ = Inv2 idPnt idPnt where
     
-instance Transformable1 Op s => SDualisableG (->) s Op Pnt where
-  sdlToDual _ = idPnt 
+instance SDualisableG (->) Op Pnt where
+  sdlToDual _   = idPnt
+  sdlFromDual _ = idPnt
 
-instance TransformableOp s => SDualisableGPnt s Op
+instance SDualisableGPnt Op
 
 --------------------------------------------------------------------------------
 -- TransposableOriented -
@@ -436,7 +425,7 @@ type instance Structure Ort x = Oriented x
 
 instance Transformable Ort Typ where tau Struct = Struct
 instance Transformable Ort Ent where tau Struct = Struct
-instance Transformable1 Op Ort where tau1 Struct = Struct
+instance TransformableG Op Ort Ort where tauG Struct = Struct
 instance TransformableOp Ort
 
 --------------------------------------------------------------------------------
@@ -457,7 +446,7 @@ instance TransformableTyp OrtX
 instance Transformable OrtX Ort where tau Struct = Struct
 instance TransformableOrt OrtX 
 
-instance Transformable1 Op OrtX where tau1 Struct = Struct
+instance TransformableG Op OrtX OrtX where tauG Struct = Struct
 instance TransformableOp OrtX
 
 instance TransformableG Id OrtX EqE where tauG Struct = Struct

@@ -89,7 +89,7 @@ data EntOrd
 
 type instance Structure EntOrd x = (Entity x, Ord x)
 
-instance Transformable1 [] EntOrd where tau1 Struct = Struct
+instance TransformableG [] EntOrd EntOrd where tauG Struct = Struct
 
 --------------------------------------------------------------------------------
 -- Entity1 -

@@ -24,7 +24,6 @@
 -- functor for dualisable structured types.
 module OAlg.Category.SDuality
   (
-
     -- * Duality
     SDuality(..)
 
@@ -58,7 +57,7 @@ import OAlg.Data.Either
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 import OAlg.Data.Variant
-import OAlg.Data.SDualisable
+
 
 
 --------------------------------------------------------------------------------
@@ -112,7 +111,6 @@ instance Morphism h => Morphism (SDualityMorphism s o h) where
 instance TransformableGObjectClassRange d s c => TransformableGObjectClass d (SDualityMorphism s o h) c
 
 instance Transformable s Typ => TransformableObjectClassTyp (SDualityMorphism s o h)
-
 --------------------------------------------------------------------------------
 -- smpForget -
 
@@ -254,25 +252,37 @@ sctFromDual' _ = sctFromDual
 --------------------------------------------------------------------------------
 -- SDualityCategory - FunctorialG -
 
-instance (Morphism h, ApplicativeG d h c, SDualisableG c s o d)
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+         , TransformableObjectClass s c
+         -- Transformable s (ObjectClass c)
+         -- Struct s x -> Struct (ObjectClass c) x
+         )
   => ApplicativeG d (SDualityMorphism s o h) c where
   amapG (SMrphCov h) = amapG h
-  amapG t@ToDual     = sdlToDual (domain t)
-  amapG f@FromDual   = sdlFromDual (range f)
+  amapG t@ToDual     = sdlToDual (tau (domain t))
+  amapG f@FromDual   = sdlFromDual (tau (range f))
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
+
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+         , TransformableObjectClass s c
+         -- Transformable s (ObjectClass c)
+         -- Struct s x -> Struct (ObjectClass c) x
          , TransformableGObjectClassRange d s c
+         -- TransformableG d s (ObjectClass c)
+         -- Struct s x -> Sturct (ObjectClass c) (d x)
          )
   => ApplicativeG d (SDualityCategory s o h) c where
   amapG = amapG . form
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
-         , Category c, TransformableGObjectClassRange d s c
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+         , TransformableObjectClass s c
+         , TransformableGObjectClassRange d s c
          )
   => ApplicativeGMorphism d (SDualityCategory s o h) c
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c s o d
-         , Category c, TransformableGObjectClassRange d s c
+instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+         , TransformableObjectClass s c
+         , TransformableGObjectClassRange d s c
          )
   => FunctorialG d (SDualityCategory s o h) c
 
@@ -299,35 +309,36 @@ amapEither h (Right1 b) = Right1 (amapG h b)
 --------------------------------------------------------------------------------
 -- toDualEither -
 
-toDualEither :: SBiDualisableG (->) s o a b => Struct s x -> Either1 a b x -> Either1 a b (o x)
+toDualEither :: SBiDualisableG (->) o a b
+  => Struct (ObjectClass (->)) x -> Either1 a b x -> Either1 a b (o x)
 toDualEither s (Left1 a)  = Right1 (sdlToDualLft s a)
 toDualEither s (Right1 b) = Left1 (sdlToDualRgt s b)
 
 --------------------------------------------------------------------------------
 -- reflEitherTo -
 
-reflEitherTo :: SBiDualisableG (->) s o a b
-  => Struct s x -> (->) (Either1 a b x) (Either1 a b (o (o x)))
+reflEitherTo :: SBiDualisableG (->) o a b
+  => Struct (ObjectClass (->)) x -> (->) (Either1 a b x) (Either1 a b (o (o x)))
 reflEitherTo s (Left1 a)  = Left1 (u a)  where Inv2 u _ = sdlRefl s
 reflEitherTo s (Right1 b) = Right1 (u b) where Inv2 u _ = sdlRefl s 
 
 --------------------------------------------------------------------------------
 -- reflEitherFrom -
 
-reflEitherFrom :: SBiDualisableG (->) s o a b
-  => Struct s x -> (->) (Either1 a b (o (o x))) (Either1 a b x)
+reflEitherFrom :: SBiDualisableG (->) o a b
+  => Struct (ObjectClass (->)) x -> (->) (Either1 a b (o (o x))) (Either1 a b x)
 reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = sdlRefl s
 reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = sdlRefl s
 
 ------------------------------------------------------------------------------------------
 -- SDuality - SReflexive -
 
-instance SBiDualisableG (->) s o a b => SReflexiveG (->) s o (SDuality a b) where
+instance SBiDualisableG (->) o a b => SReflexiveG (->) o (SDuality a b) where
   sdlRefl s = Inv2 u v where
     u = SDuality . reflEitherTo s . fromSDuality
     v = SDuality . reflEitherFrom s . fromSDuality
     
-instance SBiDualisableG (->) s o a b => SDualisableG (->) s o (SDuality a b) where
+instance SBiDualisableG (->) o a b => SDualisableG (->) o (SDuality a b) where
   sdlToDual s = SDuality . toDualEither s . fromSDuality
 
 --------------------------------------------------------------------------------
@@ -346,7 +357,8 @@ implErrorSBidualisable f = ImplementationError ("SBiDualisable at: " ++ f)
 --
 -- [Post] The resulting random variable is not empty
 xSomeMrphSDualityCategory :: (Morphism h, Transformable (ObjectClass h) s)
-  => X (SomeObjectClass (SDualityCategory s o h)) -> X (SomeMorphism h) -> X (SomeMorphism (SDualityCategory s o h))
+  => X (SomeObjectClass (SDualityCategory s o h)) -> X (SomeMorphism h)
+  -> X (SomeMorphism (SDualityCategory s o h))
 xSomeMrphSDualityCategory xso xsh
   =   amap1 someOne xso
   <|> amap1 (\(SomeMorphism h) -> SomeMorphism (sctCov h)) xsh
@@ -354,7 +366,8 @@ xSomeMrphSDualityCategory xso xsh
 --------------------------------------------------------------------------------
 -- xSctAdjOne -
 
-xSctAdjOne :: Morphism h => SomeMorphism (SDualityCategory s o h) -> X (SomeCmpb2 (SDualityCategory s o h))
+xSctAdjOne :: Morphism h
+  => SomeMorphism (SDualityCategory s o h) -> X (SomeCmpb2 (SDualityCategory s o h))
 xSctAdjOne (SomeMorphism f)
   = xOneOf [SomeCmpb2 f (cOne (domain f)), SomeCmpb2 (cOne (range f)) f]
 
@@ -402,3 +415,4 @@ xSctSomeCmpb2 :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o 
   -> X (SomeCmpb2 (SDualityCategory s o h))
 xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
   xfg = join $ amap1 xSctAdjOne $ xSomeMrphSDualityCategory xo xf
+

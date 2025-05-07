@@ -8,6 +8,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Definition
@@ -26,7 +27,7 @@ module OAlg.Structure.Definition
 
     -- * Transformable
   , Transformable(..)
-  , Transformable1(..), TransformableOp, tauOp
+  , Transformable1, tau1, TransformableOp, tauOp
   , TransformableTyp
   , TransformableG(..), tauG'
 
@@ -139,38 +140,6 @@ instance Transformable s Type where
   tau _ = Struct
 
 --------------------------------------------------------------------------------
--- Transformable1 -
-
--- | transforming structural attests.
-class Transformable1 f s where
-  tau1 :: Struct s x -> Struct s (f x)
-
---------------------------------------------------------------------------------
--- TransformableOp -
-
--- | helper class to avoid undecidable instances.
-class Transformable1 Op s => TransformableOp s
-
---------------------------------------------------------------------------------
--- tauOp -
-
--- | 'tau' for 'Op'.
-tauOp :: Transformable1 Op s => Struct s x -> Struct s (Op x)
-tauOp = tau1
-
---------------------------------------------------------------------------------
--- TransformableTyp -
-
--- | helper class to avoid undecidable instances.
-class Transformable s Typ => TransformableTyp s
-
-
-instance Transformable s Typ => TestEquality (Struct s) where
-  testEquality sa sb = te (tau sa) (tau sb) where
-    te :: Struct Typ a -> Struct Typ b -> Maybe (a:~:b)
-    te Struct Struct = eqT
-
---------------------------------------------------------------------------------
 -- TransformableG -
 
 -- | transforming structural attests.
@@ -187,3 +156,40 @@ instance TransformableG d s Type where
 tauG' :: TransformableG t u v => q t -> Struct u x -> Struct v (t x)
 tauG' _ = tauG
 
+--------------------------------------------------------------------------------
+-- Transformable1 -
+
+-- | transforming structural attests.
+type Transformable1 f s = TransformableG f s s
+
+--------------------------------------------------------------------------------
+-- tau1 -
+
+-- | transformation1. (needed for backward compatibility!).
+tau1 :: Transformable1 f s => Struct s x -> Struct s (f x)
+tau1 = tauG
+
+--------------------------------------------------------------------------------
+-- TransformableOp -
+
+-- | helper class to avoid undecidable instances.
+class Transformable1 Op s => TransformableOp s
+
+--------------------------------------------------------------------------------
+-- tauOp -
+
+-- | 'tau' for 'Op'.
+tauOp :: Transformable1 Op s => Struct s x -> Struct s (Op x)
+tauOp = tauG
+
+--------------------------------------------------------------------------------
+-- TransformableTyp -
+
+-- | helper class to avoid undecidable instances.
+class Transformable s Typ => TransformableTyp s
+
+
+instance Transformable s Typ => TestEquality (Struct s) where
+  testEquality sa sb = te (tau sa) (tau sb) where
+    te :: Struct Typ a -> Struct Typ b -> Maybe (a:~:b)
+    te Struct Struct = eqT

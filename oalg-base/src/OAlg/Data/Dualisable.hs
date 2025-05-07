@@ -91,7 +91,7 @@ fromBidual' _ = fromBidual
 --------------------------------------------------------------------------------
 -- Transposable -
 
--- | transposable types..
+-- | transposable types.
 --
 --   __Property__ Let __@x@__ be a 'Transposable', then holds:
 --  For all @x@ in __@x@__ holds: @'transpose' ('transpose' x) '==' x@.

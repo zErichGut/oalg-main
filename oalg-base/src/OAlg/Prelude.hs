@@ -41,7 +41,7 @@ module OAlg.Prelude
   
     -- * Dual
   , module Dlb
-  , module SDlb
+  , module DlbG
   , module Op
 
     -- * Ord
@@ -80,8 +80,10 @@ import Data.Type.Equality (type (~))
 import System.IO (IO,putStrLn)
 
 import OAlg.Control.Exception as Exc
+
 import OAlg.Category.Applicative as App
 import OAlg.Category.Definition as Cat
+import OAlg.Category.DualisableG as DlbG
 import OAlg.Category.Proposition as Prp
 
 import OAlg.Control.Validate as Vld
@@ -97,7 +99,6 @@ import OAlg.Data.Maybe as Myb
 import OAlg.Data.Show as Shw
 import OAlg.Data.Number as Nmb
 import OAlg.Data.Dualisable as Dlb
-import OAlg.Data.SDualisable as SDlb
 import OAlg.Data.Opposite as Op
 import OAlg.Data.Ord as Ord
 

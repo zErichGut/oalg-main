@@ -384,7 +384,7 @@ type instance Structure Mlt x = Multiplicative x
 instance Transformable Mlt Typ where tau Struct = Struct
 instance Transformable Mlt Ent where tau Struct = Struct
 instance Transformable Mlt Ort where tau Struct = Struct
-instance Transformable1 Op Mlt where tau1 Struct = Struct
+instance TransformableG Op Mlt Mlt where tauG Struct = Struct
 instance TransformableOp Mlt
 
 --------------------------------------------------------------------------------

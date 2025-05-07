@@ -100,7 +100,7 @@ instance Transformable Dst Mlt where tau Struct = Struct
 instance Transformable Dst Fbr where tau Struct = Struct
 instance Transformable Dst FbrOrt where tau Struct = Struct
 instance Transformable Dst Add where tau Struct = Struct
-instance Transformable1 Op Dst where tau1 Struct = Struct
+instance TransformableG Op Dst Dst where tauG Struct = Struct
 instance TransformableOp Dst
 
 --------------------------------------------------------------------------------
