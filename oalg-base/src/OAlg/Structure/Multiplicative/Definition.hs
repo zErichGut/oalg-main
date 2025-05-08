@@ -347,10 +347,12 @@ instance Multiplicative c => Validable (Inv c) where
         ]
     where prms = Params ["f":=show f,"f'":=show f']
 
-instance Multiplicative c => Entity (Inv c)
-
+type instance Point (Inv c) = Point c
+instance ShowPoint c => ShowPoint (Inv c)
+instance EqPoint c => EqPoint (Inv c)
+instance ValidablePoint c => ValidablePoint (Inv c)
+instance TypeablePoint c => TypeablePoint (Inv c)
 instance Multiplicative c => Oriented (Inv c) where
-  type Point (Inv c) = Point c
   orientation (Inv f _) = orientation f
 
 instance Multiplicative c => Multiplicative (Inv c) where

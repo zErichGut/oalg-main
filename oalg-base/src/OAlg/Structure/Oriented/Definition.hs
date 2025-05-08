@@ -23,8 +23,15 @@ module OAlg.Structure.Oriented.Definition
   (
 
     -- * Oriented
-    Oriented(..), Total, EntityPoint, OrdPoint, isEndo, isEndoAt
+    Oriented(..), Total, isEndo, isEndoAt
   , OS, Ort, tauOrt, structOrtOp, TransformableOrt
+
+    -- * Point
+  , Point, ShowPoint, EqPoint, OrdPoint, ValidablePoint, TypeablePoint
+  , EntityPoint
+  , Pnt(..)
+  , idPnt, toPntG, fromPntG
+ 
 
     -- * Duality
     -- ** Op
@@ -35,8 +42,6 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Orientation
   , Orientation(..), opposite
-  , Pnt(..)
-  , idPnt, toPntG, fromPntG
 
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
@@ -143,14 +148,15 @@ class Ord (Point x) => OrdPoint x
 -- | helper class to avoid undecidable instances.
 class Validable (Point x) => ValidablePoint x
 
+-- | helper class to avoid undecidable instances.
 class Typeable (Point x) => TypeablePoint x
+
+-- | helper class to avoid undecidable instances.
+class Singleton (Point x) => SingletonPoint x
 
 -- | helper class to avoid undecidable instances.
 -- class Entity (Point x) => EntityPoint x
 type EntityPoint x = (ShowPoint x, EqPoint x, ValidablePoint x, TypeablePoint x)
-
--- | helper class to avoid undecidable instances.
-class SDualisableG (->) o Pnt => SDualisableGPnt o
 
 --------------------------------------------------------------------------------
 -- Point - () -
@@ -204,6 +210,12 @@ newtype Pnt x = Pnt (Point x)
 deriving instance ShowPoint x => Show (Pnt x)
 deriving instance EqPoint x => Eq (Pnt x)
 deriving instance ValidablePoint x => Validable (Pnt x)
+
+--------------------------------------------------------------------------------
+-- Pnt - helper classes -
+
+-- | helper class to avoid undecidable instances.
+class SDualisableG (->) o Pnt => SDualisableGPnt o
 
 ---------------------------------------------------------------------
 -- idPnt -
@@ -421,8 +433,6 @@ instance Oriented q => Validable (Path q) where
     vld s f []     = start f .==. s
     vld s f (g:gs) = valid g && start f .==. end g && vld s g gs 
 
-
-
 type instance Point (Path q) = Point q
 instance ShowPoint q => ShowPoint (Path q)
 instance EqPoint q => EqPoint (Path q)
@@ -476,18 +486,17 @@ pthMlt (Path s fs) p@(Path t gs)
 --------------------------------------------------------------------------------
 -- Total -
 
--- | structures where its associated 'Point' type is singleton. They yield
--- globally defiend algebraic operations.
-class Singleton (Point x) => Total x
+-- | total orientations.
+type Total = SingletonPoint
 
-instance Total ()
-instance Total Int
-instance Total Integer
-instance Total N
-instance Total Z
-instance Total Q
-instance Total q => Total (Path q)
-instance Total x => Total (Op x)
+instance SingletonPoint ()
+instance SingletonPoint Int
+instance SingletonPoint Integer
+instance SingletonPoint N
+instance SingletonPoint Z
+instance SingletonPoint Q
+instance SingletonPoint q => SingletonPoint (Path q)
+instance SingletonPoint x => SingletonPoint (Op x)
 
 --------------------------------------------------------------------------------
 -- Ort -

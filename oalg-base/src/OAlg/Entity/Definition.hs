@@ -43,14 +43,9 @@ import Data.Typeable
 import OAlg.Category.Definition
 
 import OAlg.Data.Show
-import OAlg.Data.Identity
 import OAlg.Data.Equal
 import OAlg.Data.EqualExtensional
 import OAlg.Data.Validable
-import OAlg.Data.Number
-import OAlg.Data.Opposite
-import OAlg.Data.Either
-import OAlg.Data.Symbol
 
 import OAlg.Structure.Definition
 

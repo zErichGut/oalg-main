@@ -8,6 +8,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Fibred.Definition
@@ -20,6 +21,7 @@
 -- every value in @__f__@ has a 'root'.
 module OAlg.Structure.Fibred.Definition
   (
+{-    
     -- * Fibred
     Fibred(..), Fbr, TransformableFbr, tauFbr
 
@@ -31,22 +33,86 @@ module OAlg.Structure.Fibred.Definition
 
     -- * Sheaf
   , Sheaf(..)
+-}
   )
   where
 
 import Control.Exception
 
+import Data.Typeable
 import Data.List((++),map)
 import Data.Foldable
 
 import OAlg.Prelude
 
+import OAlg.Data.Identity
 import OAlg.Data.Canonical
 import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented.Definition
 import OAlg.Structure.Multiplicative.Definition
+
+--------------------------------------------------------------------------------
+-- Root -
+
+-- | the type of roots.
+type family Root x
+
+--------------------------------------------------------------------------------
+-- Root - helper classes -
+
+-- | helper class to avoid undecidable instances.
+class Show (Root x) => ShowRoot x
+
+-- | helper class to avoid undecidable instances.
+class Eq (Root x) => EqRoot x
+
+-- | helper class to avoid undecidable instances.
+class Ord (Root x) => OrdRoot x
+
+-- | helper class to avoid undecidable instances.
+class Validable (Root x) => ValidableRoot x
+
+-- | helper class to avoid undecidable instances.
+class Typeable (Root x) => TypeableRoot x
+-- | helper class to avoid undecidable instances.
+
+-- | helper class to avoid undecidable instances.
+class Singleton (Root f) => SingletonRoot f
+
+type EntityRoot x = (ShowRoot x, EqRoot x, ValidableRoot x, TypeableRoot x)
+
+--------------------------------------------------------------------------------
+-- Root - () -
+
+type instance Root () = Orientation ()
+
+instance ShowRoot ()
+instance EqRoot ()
+instance ValidableRoot ()
+instance TypeableRoot ()
+
+--------------------------------------------------------------------------------
+-- Root - Id -
+
+type instance Root (Id x) = Root x
+
+instance ShowRoot x => ShowRoot (Id x)
+instance EqRoot x => EqRoot (Id x)
+instance ValidableRoot x => ValidableRoot (Id x)
+instance TypeableRoot x => TypeableRoot (Id x)
+
+--------------------------------------------------------------------------------
+-- Root - Op -
+
+type instance Root (Op x) = Root x
+
+instance ShowRoot x => ShowRoot (Op x)
+instance EqRoot x => EqRoot (Op x)
+instance ValidableRoot x => ValidableRoot (Op x)
+instance TypeableRoot x => TypeableRoot (Op x)
+
 
 --------------------------------------------------------------------------------
 -- Fibred -
@@ -60,13 +126,9 @@ import OAlg.Structure.Multiplicative.Definition
 --
 -- (2) For 'OAlg.Structure.Distributive.Definition.Distributive' structures the only thing to be
 -- implemented is the 'Root' type and should be defined as @'Root' d = 'Orientation' p@ where-- @p = 'Point' d@ (see the default implementation of 'root').
-class (Entity f, Entity (Root f)) => Fibred f where
-  -- | the type of roots.
-  type Root f
-
+class (Entity f, EntityRoot f) => Fibred f where
   -- | the 'root' of a stalk in @f@.
   root :: f -> Root f
-  -- default root :: FibredOriented f => f -> Root f
   default root :: (Root f ~ Orientation (Point f), Oriented f) => f -> Root f
   root = orientation
 
@@ -90,51 +152,68 @@ type instance Structure FOr x = FibredOriented x
 --------------------------------------------------------------------------------
 -- Fibred - Instance -
 
-instance Fibred () where
-  type Root () = Orientation ()
+instance Fibred ()
 instance FibredOriented ()
 
-instance Fibred Int where
-  type Root Int = Orientation ()
+type instance Root Int = Orientation ()
+instance ShowRoot Int
+instance EqRoot Int
+instance ValidableRoot Int
+instance TypeableRoot Int
+instance Fibred Int
 instance FibredOriented Int
 
-instance Fibred Integer where
-  type Root Integer = Orientation ()
+type instance Root Integer = Orientation ()
+instance ShowRoot Integer
+instance EqRoot Integer
+instance ValidableRoot Integer
+instance TypeableRoot Integer
+instance Fibred Integer
 instance FibredOriented Integer
 
-instance Fibred N where
-  type Root N = Orientation ()
+type instance Root N = Orientation ()
+instance ShowRoot N
+instance EqRoot N
+instance ValidableRoot N
+instance TypeableRoot N
+instance Fibred N
 instance FibredOriented N
 
-instance Fibred Z where
-  type Root Z = Orientation ()
+type instance Root Z = Orientation ()
+instance ShowRoot Z
+instance EqRoot Z
+instance ValidableRoot Z
+instance TypeableRoot Z
+instance Fibred Z
 instance FibredOriented Z
 
-instance Fibred Q where
-  type Root Q = Orientation ()
+type instance Root Q = Orientation ()
+instance ShowRoot Q
+instance EqRoot Q
+instance ValidableRoot Q
+instance TypeableRoot Q
+instance Fibred Q
 instance FibredOriented Q
 
+type instance Root (Orientation p) = Orientation p
+instance Show p => ShowRoot (Orientation p)
+instance Eq p => EqRoot (Orientation p)
+instance Validable p => ValidableRoot (Orientation p)
+instance Typeable p => TypeableRoot (Orientation p)
 instance Entity p => Fibred (Orientation p) where
-  type Root (Orientation p) = Orientation p
 instance Entity p => FibredOriented (Orientation p)
 
-instance FibredOriented f => Fibred (Op f) where
-  type Root (Op f) = Orientation (Point f)
-instance FibredOriented f => FibredOriented (Op f)
+instance Fibred x => Fibred (Id x) where root (Id x) = root x
+instance FibredOriented x => FibredOriented (Id x)
 
---------------------------------------------------------------------------------
--- OrdRoot -
+instance FibredOriented x => Fibred (Op x)
+instance FibredOriented x => FibredOriented (Op x)
 
--- | type where the associated root type is ordered.
---
---  __Note__ Helper class to circumvent undecidable instances.
-class Ord (Root f) => OrdRoot f
 
 --------------------------------------------------------------------------------
 -- TotalRoot -
 
--- | type where the associated root type is a singleton.
-class Singleton (Root f) => TotalRoot f
+type TotalRoot = SingletonRoot
 
 --------------------------------------------------------------------------------
 -- Sheaf -
@@ -154,7 +233,7 @@ class Singleton (Root f) => TotalRoot f
 -- to a new sheaf having the same 'root'. But as @('++')@ is not commutative they
 -- are equipped with a 'Multiplicative' structure.
 data Sheaf f = Sheaf (Root f) [f]
-
+{-
 deriving instance Fibred f => Show (Sheaf f)
 deriving instance Fibred f => Eq (Sheaf f)
 
@@ -250,6 +329,6 @@ instance TransformableFbrOrt FbrOrt
 -- | 'tau' for 'FbrOrt'.
 tauFbrOrt :: Transformable s FbrOrt => Struct s x -> Struct FbrOrt x
 tauFbrOrt = tau
-
+-}
 
 
