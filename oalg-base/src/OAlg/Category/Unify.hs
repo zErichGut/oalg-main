@@ -99,8 +99,6 @@ instance (Morphism m, TransformableObjectClassTyp m, Typeable m, Eq2 m)
 instance Validable2 m => Validable (SomeMorphism m) where
   valid (SomeMorphism f) = valid2 f
 
-instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Entity (SomeMorphism m)
-
 --------------------------------------------------------------------------------
 -- SomeEntity -
 
@@ -153,8 +151,6 @@ instance Eq (SomeObjectClass m) where
 
 instance Validable (SomeObjectClass m) where
   valid (SomeObjectClass o) = valid o
-
-instance Typeable m => Entity (SomeObjectClass m)
 
 --------------------------------------------------------------------------------
 -- someOne

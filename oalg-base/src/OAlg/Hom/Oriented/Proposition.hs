@@ -24,6 +24,7 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
+{-    
     -- * Disjunctive Homomorphism
     prpHomDisjunctiveOriented
   , prpHomDisjOrtDual
@@ -34,6 +35,7 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomOrt
   , prpHomOrtOpEmpty
+-}
   )
   where
 
@@ -61,7 +63,7 @@ import OAlg.Hom.Oriented.Definition
 -- prpSDualisableOriented -
 
 -- | validity according to 'SDualisableOriented'.
-relSDualisableOriented :: SDualisableOriented s o
+relSDualisableOriented :: SDualisableOriented o s
   => q o -> Struct s x -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
 relSDualisableOriented q s Struct Struct xx = Forall xx
     (\x -> And [ Label "1" :<=>: ((start $ tArw x) == (tPnt $ end x)) :?> Params ["x":=show x]
@@ -74,17 +76,20 @@ relSDualisableOriented q s Struct Struct xx = Forall xx
 
 
 -- | validity according to 'SDualisableOriented'.
-prpSDualisableOriented :: SDualisableOriented s o
+prpSDualisableOriented :: SDualisableOriented o s
   => q o -> Struct s x -> XOrt x -> Statement
 prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
-  relSDualisableOriented q s sOrt (tau1 sOrt) xx where sOrt = tauOrt s
+  relSDualisableOriented q s (tau s) (tau (tauO s)) xx where
+
+  tauO :: TransformableG o s s => Struct s x -> Struct s (o x)
+  tauO = tauG
 
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtDual -
 
-relHomDisjOrtDual :: (HomDisjunctiveOriented s o h, Eq2 h)
-  => q o h -> Struct s x -> Statement
+relHomDisjOrtDual :: (HomDisjunctiveOriented o h, Eq2 h)
+  => q o h -> Struct (ObjectClass h) x -> Statement
 relHomDisjOrtDual q s
   = And [ Label "1" :<=>: eq2 (fromDual . toDual) (cOne s) :?> Params []
         , Label "2" :<=>: eq2 (toDual . fromDual) (cOne (tau1 s)) :?> Params []
@@ -93,27 +98,27 @@ relHomDisjOrtDual q s
         Contravariant2 fromDual = homOrtFromDual' q s
 
 -- | validity according to 'HomDisjunctiveOriented' for (1.1) and (1.2).
-prpHomDisjOrtDual :: (HomDisjunctiveOriented s o h, Eq2 h)
-  => q s o h -> X (SomeObjectClass h) -> Statement
+prpHomDisjOrtDual :: (HomDisjunctiveOriented o h, Eq2 h)
+  => q o h -> X (SomeObjectClass h) -> Statement
 prpHomDisjOrtDual q xso = Prp "HomDisjOrtDual" :<=>: Forall xso
-  (\(SomeObjectClass s) -> relHomDisjOrtDual (q' q) s
+  (\(SomeObjectClass s) -> relHomDisjOrtDual q s
   )
-  where q' :: forall q s (o :: Type -> Type) (h :: Type -> Type -> Type) . q s o h -> Proxy2 o h
-        q' _ = Proxy2
-        
+
+
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -
 
-relHomDisjOrtCovariant :: (HomDisjunctiveOriented s o h, Show2 h)
-  => q o -> Struct s x -> Homomorphous Ort x y -> HomVariant Covariant h x y  -> x -> Statement
+relHomDisjOrtCovariant :: (HomDisjunctiveOriented o h, Show2 h)
+  => q o -> Struct (ObjectClass h) x -> Homomorphous Ort x y
+  -> HomVariant Covariant h x y  -> x -> Statement
 relHomDisjOrtCovariant _ _ (Struct:>:Struct) h  x = Label "Covariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
-relHomDisjOrtVariant :: (HomDisjunctiveOriented s o h, Show2 h)
+relHomDisjOrtVariant :: (HomDisjunctiveOriented o h, Show2 h)
   => q o -> Either2 (HomVariant Contravariant h) (HomVariant Covariant h) x y
-  -> Struct s x -> x -> Statement
+  -> Struct (ObjectClass h) x -> x -> Statement
 relHomDisjOrtVariant q h s x = case h of
   Right2 hCov -> Label "Covariant" :<=>: relHomDisjOrtCovariant q s (tauHom (homomorphous h)) hCov x
   Left2 hCnt  -> Label "Contravariant" :<=>:
@@ -123,25 +128,25 @@ relHomDisjOrtVariant q h s x = case h of
         q' _ _ = Proxy2
 
 -- | validity according to 'HomDisjunctiveOriented' for (2.1) and (2.2).
-prpHomDisjOrtVariant :: (HomDisjunctiveOriented s o h, Show2 h)
-  => q s o -> X (SomeApplication h) -> Statement
+prpHomDisjOrtVariant :: (HomDisjunctiveOriented o h, Show2 h)
+  => q o -> X (SomeApplication h) -> Statement
 prpHomDisjOrtVariant q xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
   (\(SomeApplication h x) -> relHomDisjOrtVariant q (toVariant2 h) (domain h) x
   )
-  
+ 
 --------------------------------------------------------------------------------
 -- prpHomDisjunctiveOriented -
 
 -- | validity according to 'HomDisjunctiveOriented'.
-prpHomDisjunctiveOriented :: (HomDisjunctiveOriented s o h, Show2 h, Eq2 h)
-  => q s o -> X (SomeObjectClass h) -> X (SomeApplication h) -> Statement
+prpHomDisjunctiveOriented :: (HomDisjunctiveOriented o h, Show2 h, Eq2 h)
+  => q o -> X (SomeObjectClass h) -> X (SomeApplication h) -> Statement
 prpHomDisjunctiveOriented q xso xsa = Prp "HomDisjunctiveOriented" :<=>:
   And [ prpHomDisjOrtDual (q' q xso) xso
       , prpHomDisjOrtVariant q xsa
       ]
-  where q' :: forall q s (o :: Type -> Type) h . q s o -> X (SomeObjectClass h) -> Proxy3 s o h
-        q' _ _ = Proxy3
-
+  where q' :: forall q (o :: Type -> Type) h . q o -> X (SomeObjectClass h) -> Proxy2 o h
+        q' _ _ = Proxy2
+{-
 --------------------------------------------------------------------------------
 --
 
@@ -156,12 +161,6 @@ instance FunctorialG Id (Sub OrtX (->)) EqualExt
 tauType :: Struct s x -> Struct Type x
 tauType _ = Struct
 
-instance SReflexiveG EqualExt OrtX Op Id where
-  sdlRefl s@Struct = Inv2 (EqualExt u) (EqualExt v) where Inv2 u v = sdlRefl (tauType s)
-
-instance SDualisableG EqualExt OrtX Op Id where
-  sdlToDual s@Struct = EqualExt t where t = sdlToDual (tauType s)
-
 instance Transformable1 f Type where tau1 _ = Struct
 
 instance TransformableGObjectClassRange Id OrtX EqualExt
@@ -170,6 +169,28 @@ instance SReflexiveG EqualExt OrtX Op Pnt
 instance SDualisableG EqualExt OrtX Op Pnt
 
 instance TransformableGObjectClassRange Pnt OrtX EqualExt
+-}
+
+instance TransformableGObjectClassRange Id OrtX EqualExt
+instance TransformableG Op EqE EqE
+instance Transformable OrtX EqE where tau Struct = Struct
+instance TransformableObjectClass OrtX EqualExt
+
+instance SReflexiveG EqualExt Op Id where
+  sdlRefl s@Struct = Inv2 (EqualExt u) (EqualExt v) where Inv2 u v = sdlRefl (tauType s)
+
+instance SDualisableG EqualExt Op Id where
+  sdlToDual s@Struct = EqualExt t where t = sdlToDual (tauType s)
+
+instance SReflexiveG EqualExt Op Pnt where
+  sdlRefl s@Struct = Inv2 (EqualExt u) (EqualExt v) where
+    Inv2 u v = sdlRefl' q (tauType s)
+    q = SDualityG :: SDualityG (->) Op Pnt
+
+{-
+instance SDualisableG EqualExt Op Pnt where
+  sdlToDual s@Struct = EqualExt t where t = sdlToDual (tauType s)
+-}
 
 --------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
@@ -205,6 +226,10 @@ prpHomOrtOpEmpty
            . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
           )
       $ xfg
+
+
+
+
 
 
 

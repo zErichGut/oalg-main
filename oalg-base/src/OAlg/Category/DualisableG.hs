@@ -31,7 +31,8 @@ module OAlg.Category.DualisableG
     SDualisable
   , SDualisableG(..), SDualityG(..)
   , SDualisableGId --, SDualisableGPnt
-  , SReflexiveG(..), sdlToDual'
+  , SReflexiveG(..), sdlRefl'
+  , sdlToDual'
 
     -- ** Bi-Dualisable
   , SBiDualisable, SBiDualisableG(..)

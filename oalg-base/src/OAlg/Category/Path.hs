@@ -38,7 +38,6 @@ import qualified Data.List as L
 
 import OAlg.Category.Definition
 import OAlg.Structure.Definition
-import OAlg.Entity.Definition
 
 import OAlg.Data.Logical
 import OAlg.Data.Equal
@@ -179,8 +178,6 @@ instance (Morphism m, TransformableObjectClassTyp m, Eq2 m) => Eq2 (Path m) wher
 instance Eq2 (Path m) => Eq (Path m x y) where
   (==) = eq2
 
-instance (Morphism h, TransformableObjectClassTyp h, Entity2 h) => Entity2 (Path h)  
-
 --------------------------------------------------------------------------------
 -- Path - Morphism -
 
@@ -263,13 +260,6 @@ instance (Morphism h, Validable2 h) => Validable2 (Forget' t h) where
 
 instance (Morphism h, Validable2 h) => Validable (Forget' t h x y) where
   valid = valid2
-
-instance (Entity2 h, Morphism h, Transformable t Typ, Typeable t) => Entity2 (Forget' t h)
-
-instance ( Entity2 h, Morphism h, Transformable t Typ
-         , Typeable t, Typeable x, Typeable y
-         )
-  => Entity (Forget' t h x y)
 
 --------------------------------------------------------------------------------
 -- Forget' - Constructable -

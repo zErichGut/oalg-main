@@ -26,10 +26,11 @@ module OAlg.Structure.Definition
   , Structure2, Struct2(..)
 
     -- * Transformable
-  , Transformable(..)
+  , Transformable(..), tauType
   , Transformable1, tau1, TransformableOp, tauOp
   , TransformableTyp
   , TransformableG(..), tauG'
+  
 
     -- * Some Structure Types
   , Typ, tauTyp
@@ -109,6 +110,13 @@ tauTyp = tau
 -- Type -
 
 type instance Structure Type x = ()
+
+--------------------------------------------------------------------------------
+-- tauType -
+
+-- | transformbing to 'Type'-structure.
+tauType :: Struct s x -> Struct Type x
+tauType _ = Struct
 
 --------------------------------------------------------------------------------
 -- Ord' -

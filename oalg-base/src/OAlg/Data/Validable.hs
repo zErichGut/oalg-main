@@ -62,7 +62,7 @@ import OAlg.Structure.Definition
 -- | standard random variable for __@x@__.
 --
 --   __Property__ For all @x@ in the range of 'xStandard' holds: @'valid' x@.
-class Validable x => XStandard x where
+class XStandard x where
   xStandard :: X x
 
 instance XStandard () where xStandard = return ()
@@ -86,7 +86,7 @@ xStandard' _ = xStandard
 
 -- | validity of the standard random variable associated to __@x@__
 --   (__@p x@__ just serves as proxy and will not be evaluated).
-relXStandard :: XStandard x => p x -> Statement
+relXStandard :: (Validable x, XStandard x) => p x -> Statement
 relXStandard px = Forall (xStandard' px) valid where
 
 --------------------------------------------------------------------------------

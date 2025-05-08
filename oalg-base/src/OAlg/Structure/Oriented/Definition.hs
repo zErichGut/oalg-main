@@ -9,7 +9,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Oriented.Definition
@@ -21,6 +21,7 @@
 -- definition of 'Oriented' structures.
 module OAlg.Structure.Oriented.Definition
   (
+
     -- * Oriented
     Oriented(..), Total, EntityPoint, OrdPoint, isEndo, isEndoAt
   , OS, Ort, tauOrt, structOrtOp, TransformableOrt
@@ -34,7 +35,8 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Orientation
   , Orientation(..), opposite
-  , Pnt(..), idPnt
+  , Pnt(..)
+  , idPnt, toPntG, fromPntG
 
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
@@ -58,7 +60,7 @@ module OAlg.Structure.Oriented.Definition
     -- ** Orientation
   , XStandardPoint
   , xStartOrnt, xEndOrnt
-  
+
   )
   where
 
@@ -97,8 +99,6 @@ data Orientation p = p :> p deriving (Show,Eq,Ord)
 instance Validable p => Validable (Orientation p) where
   valid (s :> e) = And [valid s,valid e]
 
-instance Entity p => Entity (Orientation p)
-
 instance Singleton u => Singleton (Orientation u) where
   unit = unit :> unit
 
@@ -123,6 +123,132 @@ opposite (s:>e) = e:>s
 type OS = Orientation Symbol
 
 --------------------------------------------------------------------------------
+-- Point -
+
+-- | the associated type of points.
+type family Point x
+
+--------------------------------------------------------------------------------
+-- Point - helper classes -
+
+-- | helper class to avoid undecidable instances.
+class Show (Point x) => ShowPoint x
+
+-- | helper class to avoid undecidable instances.
+class Eq (Point x) => EqPoint x
+
+-- | helper class to avoid undecidable instances.
+class Ord (Point x) => OrdPoint x
+
+-- | helper class to avoid undecidable instances.
+class Validable (Point x) => ValidablePoint x
+
+class Typeable (Point x) => TypeablePoint x
+
+-- | helper class to avoid undecidable instances.
+-- class Entity (Point x) => EntityPoint x
+type EntityPoint x = (ShowPoint x, EqPoint x, ValidablePoint x, TypeablePoint x)
+
+-- | helper class to avoid undecidable instances.
+class SDualisableG (->) o Pnt => SDualisableGPnt o
+
+--------------------------------------------------------------------------------
+-- Point - () -
+
+type instance Point () = ()
+
+instance ShowPoint ()
+instance EqPoint ()
+instance OrdPoint ()
+instance ValidablePoint ()
+instance TypeablePoint ()
+--------------------------------------------------------------------------------
+-- Point - Id -
+
+type instance Point (Id x) = Point x
+
+instance ShowPoint x => ShowPoint (Id x)
+instance EqPoint x => EqPoint (Id x)
+instance OrdPoint x => OrdPoint (Id x)
+instance ValidablePoint x => ValidablePoint (Id x)
+instance TypeablePoint x => TypeablePoint (Id x)
+
+--------------------------------------------------------------------------------
+-- Point - Op -
+
+type instance Point (Op x) = Point x
+
+instance ShowPoint x => ShowPoint (Op x)
+instance EqPoint x => EqPoint (Op x)
+instance OrdPoint x => OrdPoint (Op x)
+instance ValidablePoint x => ValidablePoint (Op x)
+instance TypeablePoint x => TypeablePoint (Op x)
+
+--------------------------------------------------------------------------------
+-- Point - Orientation -
+
+type instance Point (Orientation x) = x
+
+instance Show x => ShowPoint (Orientation x)
+instance Eq x => EqPoint (Orientation x)
+instance Ord x => OrdPoint (Orientation x)
+instance Validable x => ValidablePoint (Orientation x)
+instance Typeable x => TypeablePoint (Orientation x)
+
+--------------------------------------------------------------------------------
+-- Pnt -
+
+-- | type function for 'Point's.
+newtype Pnt x = Pnt (Point x)
+
+deriving instance ShowPoint x => Show (Pnt x)
+deriving instance EqPoint x => Eq (Pnt x)
+deriving instance ValidablePoint x => Validable (Pnt x)
+
+---------------------------------------------------------------------
+-- idPnt -
+
+idPnt :: Point x ~ Point y => Pnt x -> Pnt y
+idPnt (Pnt p) = Pnt p  
+
+--------------------------------------------------------------------------------
+-- toPntG -
+
+-- | to 'Pnt',
+toPntG :: (Point x -> Point y) -> Pnt x -> Pnt y
+toPntG f (Pnt x) = Pnt (f x)
+
+--------------------------------------------------------------------------------
+-- fromPntG -
+
+-- | from 'Pnt'.
+fromPntG :: (Pnt x -> Pnt y) -> Point x -> Point y
+fromPntG f p = p' where Pnt p' = f (Pnt p)
+
+--------------------------------------------------------------------------------
+-- Pnt - instance -
+
+instance XStandard p => XStandard (Pnt (Orientation p)) where xStandard = amap1 Pnt xStandard
+
+instance XStandard (Pnt x) => XStandard (Pnt (Id x)) where
+  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Id x)) xStandard
+
+instance XStandard (Pnt x) => XStandard (Pnt (Op x)) where
+  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Op x)) xStandard
+
+--------------------------------------------------------------------------------
+-- Op - SDualisableG -
+
+instance SReflexiveG (->) Op Pnt where
+  sdlRefl _ = Inv2 idPnt idPnt where
+    
+instance SDualisableG (->) Op Pnt where
+  sdlToDual _   = idPnt
+  sdlFromDual _ = idPnt
+
+instance SDualisableGPnt Op
+
+--------------------------------------------------------------------------------
 -- Oriented -
 
 -- | types with a 'Oriented' structure. The values of an 'Oriented' structure will
@@ -145,11 +271,8 @@ type OS = Orientation Symbol
 -- 'Morphism's given by the type checker, but we gain all the functionality of
 -- 'Oriented' structures, i.e we can define homomorphisms,
 -- limits etc on 'Morphism's.
-class (Entity q, Entity (Point q)) => Oriented q where
+class (Entity q, EntityPoint q) => Oriented q where
   {-# MINIMAL orientation | (start,end) #-}
-  
-  -- | the associated type of points.
-  type Point q
   
   -- | the orientation of an arrow.
   orientation :: q -> Orientation (Point q)
@@ -164,39 +287,75 @@ class (Entity q, Entity (Point q)) => Oriented q where
   end a = e where _ :> e = orientation a
 
 --------------------------------------------------------------------------------
--- Pnt -
+-- Oriented - Instance -
 
--- | type function for 'Point's.
-newtype Pnt x = Pnt (Point x)
+instance Oriented () where
+  orientation _ = ():>()
 
-instance Oriented x => Show (Pnt x) where show (Pnt p) = show p
-instance Oriented x => Eq (Pnt x) where (Pnt p) == (Pnt q) = p == q
-instance Oriented x => Validable (Pnt x) where valid (Pnt x) = valid x
-instance Oriented x => Entity (Pnt x)
+type instance Point Int = ()
+instance ShowPoint Int
+instance EqPoint Int
+instance OrdPoint Int
+instance ValidablePoint Int
+instance TypeablePoint Int
+instance Oriented Int where
+  orientation _ = ():>()
+
+type instance Point Integer = ()
+instance ShowPoint Integer
+instance EqPoint Integer
+instance OrdPoint Integer
+instance ValidablePoint Integer
+instance TypeablePoint Integer
+instance Oriented Integer where
+  orientation _ = ():>()
+
+type instance Point N = ()
+instance ShowPoint N
+instance EqPoint N
+instance OrdPoint N
+instance ValidablePoint N
+instance TypeablePoint N
+instance Oriented N where
+  orientation _ = ():>()
 
 
-instance XStandard (Pnt (Orientation Symbol)) where xStandard = amap1 Pnt xStandard
-instance XStandard (Pnt N) where xStandard = return (Pnt ())
+type instance Point Z = ()
+instance ShowPoint Z
+instance EqPoint Z
+instance OrdPoint Z
+instance ValidablePoint Z
+instance TypeablePoint Z
+instance Oriented Z where
+  orientation _ = ():>()
 
-instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Id x)) where
-  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Id x)) xStandard
-  
+type instance Point Q = ()
+instance ShowPoint Q
+instance EqPoint Q
+instance OrdPoint Q
+instance ValidablePoint Q
+instance TypeablePoint Q
+instance Oriented Q where
+  orientation _ = ():>()
 
-instance (Oriented x, XStandard (Pnt x)) => XStandard (Pnt (Op x)) where
-  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Op x)) xStandard
+instance Oriented x => Oriented (Id x) where
+  orientation (Id x) = orientation x
 
+instance Entity p => Oriented (Orientation p) where
+  orientation = id
 
---------------------------------------------------------------------------------
--- SDualisableGPnt -
+instance Oriented q => Oriented (Op q) where
+  orientation (Op a) = opposite (orientation a)
 
--- | helper class to avoid undecidable instances.
-class SDualisableG (->) o Pnt => SDualisableGPnt o
+type instance Point (SomeMorphism m) = SomeObjectClass m
+instance ShowPoint (SomeMorphism m)
+instance EqPoint (SomeMorphism m)
+instance ValidablePoint (SomeMorphism m)
+instance Typeable m => TypeablePoint (SomeMorphism m)
 
---------------------------------------------------------------------------------
--- fromPntG -
-
-fromPntG :: (Pnt x -> Pnt y) -> Point x -> Point y
-fromPntG f x = y where Pnt y = f (Pnt x)
+instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (SomeMorphism m) where
+  start (SomeMorphism f) = SomeObjectClass (domain f)
+  end (SomeMorphism f) = SomeObjectClass (range f)
 
 --------------------------------------------------------------------------------
 -- isEndo -
@@ -214,66 +373,6 @@ isEndo a = start a == end a
 -- | check for being an endo at the given point.
 isEndoAt :: Oriented a => Point a -> a -> Bool
 isEndoAt p a = orientation a == p :> p
-
---------------------------------------------------------------------------------
--- Oriented - Instance -
-
-instance Oriented () where
-  type Point () = ()
-  orientation _ = ():>()
-
-instance Oriented Int where
-  type Point Int = ()
-  orientation _ = ():>()
-  
-instance Oriented Integer where
-  type Point Integer = ()
-  orientation _ = ():>()
-  
-instance Oriented N where
-  type Point N = ()
-  orientation _ = ():>()
-
-instance Oriented Z where
-  type Point Z = ()
-  orientation _ = ():>()
-
-instance Oriented Q where
-  type Point Q = ()
-  orientation _ = ():>()
-
-instance Oriented x => Oriented (Id x) where
-  type Point (Id x) = Point x
-  orientation (Id x) = orientation x
-
-instance Entity p => Oriented (Orientation p) where
-  type Point (Orientation p) = p
-  orientation = id
-
-instance Oriented q => Oriented (Op q) where
-  type Point (Op q) = Point q
-  orientation (Op a) = opposite (orientation a)
-  
-instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (SomeMorphism m) where
-  type Point (SomeMorphism m) = SomeObjectClass m
-  start (SomeMorphism f) = SomeObjectClass (domain f)
-  end (SomeMorphism f) = SomeObjectClass (range f)
-
-
---------------------------------------------------------------------------------
--- Op - SDualisableG -
-
-idPnt :: Point x ~ Point y => Pnt x -> Pnt y
-idPnt (Pnt p) = Pnt p
-  
-instance SReflexiveG (->) Op Pnt where
-  sdlRefl _ = Inv2 idPnt idPnt where
-    
-instance SDualisableG (->) Op Pnt where
-  sdlToDual _   = idPnt
-  sdlFromDual _ = idPnt
-
-instance SDualisableGPnt Op
 
 --------------------------------------------------------------------------------
 -- TransposableOriented -
@@ -310,8 +409,8 @@ instance TransposableOriented Q
 -- __Note__ Paths admit a canonical embedding in to 'OAlg.Entity.Product.Product'.
 data Path q = Path (Point q) [q]
 
-deriving instance Oriented q => Show (Path q)
-deriving instance Oriented q => Eq (Path q)
+deriving instance (Show q, ShowPoint q) => Show (Path q)
+deriving instance (Eq q, EqPoint q) => Eq (Path q)
 
 instance Foldable Path where
   foldr op b (Path _ fs) = foldr op b fs 
@@ -322,13 +421,17 @@ instance Oriented q => Validable (Path q) where
     vld s f []     = start f .==. s
     vld s f (g:gs) = valid g && start f .==. end g && vld s g gs 
 
-instance Oriented q => Entity (Path q)
 
+
+type instance Point (Path q) = Point q
+instance ShowPoint q => ShowPoint (Path q)
+instance EqPoint q => EqPoint (Path q)
+instance ValidablePoint q => ValidablePoint (Path q)
+instance TypeablePoint q => TypeablePoint (Path q)
 instance Oriented q => Oriented (Path q) where
-  type Point (Path q) = Point q
   orientation (Path s [])    = s:>s
   orientation (Path s (f:_)) = s:>end f
- 
+
 type instance Dual (Path q) = Path (Op q)
 
 instance Oriented q => Dualisable (Path q) where
@@ -387,35 +490,6 @@ instance Total q => Total (Path q)
 instance Total x => Total (Op x)
 
 --------------------------------------------------------------------------------
--- EntityPoint -
-
--- | helper class to avoid undecidable instances.
-class Entity (Point x) => EntityPoint x
-
-instance EntityPoint ()
-instance EntityPoint Int
-instance EntityPoint Integer
-instance EntityPoint N
-instance EntityPoint Z
-instance EntityPoint Q
-instance EntityPoint q => EntityPoint (Path q)
-instance EntityPoint x => EntityPoint (Op x)
-
---------------------------------------------------------------------------------
--- OrdPoint -
-
--- | helper class to circumvent undecidable instances.
-class Ord (Point x) => OrdPoint x
-
-instance OrdPoint ()
-instance OrdPoint Int
-instance OrdPoint Integer
-instance OrdPoint N
-instance OrdPoint Z
-instance OrdPoint Q
-instance OrdPoint q => OrdPoint (Path q)
-
---------------------------------------------------------------------------------
 -- Ort -
 
 -- | type representing the class of 'Oriented' structures.
@@ -427,6 +501,22 @@ instance Transformable Ort Typ where tau Struct = Struct
 instance Transformable Ort Ent where tau Struct = Struct
 instance TransformableG Op Ort Ort where tauG Struct = Struct
 instance TransformableOp Ort
+
+--------------------------------------------------------------------------------
+-- TransformableOrt -
+
+-- | transformable to 'Oriented' structure.
+class Transformable s Ort => TransformableOrt s
+
+instance TransformableTyp Ort
+instance TransformableOrt Ort
+
+--------------------------------------------------------------------------------
+-- tauOrt -
+
+-- | transforming to 'Ort'.
+tauOrt :: Transformable s Ort => Struct s x -> Struct Ort x
+tauOrt = tau
 
 --------------------------------------------------------------------------------
 -- OrtX -
@@ -451,22 +541,6 @@ instance TransformableOp OrtX
 
 instance TransformableG Id OrtX EqE where tauG Struct = Struct
 instance TransformableG Pnt OrtX EqE where tauG Struct = Struct
-
---------------------------------------------------------------------------------
--- TransformableOrt -
-
--- | transformable to 'Oriented' structure.
-class Transformable s Ort => TransformableOrt s
-
-instance TransformableTyp Ort
-instance TransformableOrt Ort
-
---------------------------------------------------------------------------------
--- tauOrt -
-
--- | transforming to 'Ort'.
-tauOrt :: Transformable s Ort => Struct s x -> Struct Ort x
-tauOrt = tau
 
 --------------------------------------------------------------------------------
 -- structOrtOp -
@@ -666,6 +740,7 @@ instance XStandard p => XStandardPoint (Orientation p)
 data XOrtOrientation q
   = XOrtOrientation (X (Orientation (Point q))) (Orientation (Point q) -> X q)
 
+
 instance Oriented q => Validable (XOrtOrientation q) where
   valid x@(XOrtOrientation xo xq) = Label (show $ typeOf x) :<=>:
     And [ valid xo
@@ -757,4 +832,6 @@ instance XStandard p => XStandardOrtOrientation (Orientation p) where
 
 instance XStandardOrtOrientation Z where
   xStandardOrtOrientation = XOrtOrientation (return (():>())) (const xStandard)
+
+
 
