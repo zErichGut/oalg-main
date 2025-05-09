@@ -39,7 +39,7 @@ module OAlg.Hom.Oriented.Proposition
   )
   where
 
-import Control.Monad
+import Control.Monad hiding (Functor(..))
 
 import Data.Typeable
 
@@ -172,7 +172,7 @@ instance TransformableGObjectClassRange Pnt OrtX EqualExt
 -}
 
 instance TransformableGObjectClassRange Id OrtX EqualExt
-instance TransformableG Op EqE EqE
+instance TransformableG Op EqE EqE where tauG Struct = Struct
 instance Transformable OrtX EqE where tau Struct = Struct
 instance TransformableObjectClass OrtX EqualExt
 
@@ -182,10 +182,71 @@ instance SReflexiveG EqualExt Op Id where
 instance SDualisableG EqualExt Op Id where
   sdlToDual s@Struct = EqualExt t where t = sdlToDual (tauType s)
 
+instance SDualisableOriented Op OrtX
+
+lemma1 :: Homomorphous EqE x y -> (x -> y) -> EqualExt x y
+lemma1 (Struct:>:Struct) = EqualExt
+
+lemma2 :: Struct EqE x -> Homomorphous EqE (Id x) (Id (Op (Op x)))
+lemma2 Struct = Struct :>: Struct
+
+-- ff :: Struct EqEPnt x -> Homomorphous EqEPnt (Pnt x) (Pnt (Op (Op x)))
+
+data EqEPnt
+
+type instance Structure EqEPnt x
+  = (Show x, ShowPoint x, Eq x, EqPoint x, XStandard x, XStandardPoint x) 
+
+-- class XStandard (Point x) => XStandardPoint x
+
+type EE = Sub EqEPnt (->)
+gg :: Struct EqEPnt x -> Inv2 EE (Pnt x) (Pnt (Op (Op (x))))
+gg s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = sdlRefl (tauType s)
+
+instance SReflexiveG EE Op Pnt where
+  sdlRefl = gg
+
+instance TransformableG Op EqEPnt EqEPnt where tauG Struct = Struct
+instance SDualisableG EE Op Pnt where
+  sdlToDual s@Struct = Sub t where t = sdlToDual (tauType s)
+
+pp :: Sub EqEPnt (->) x y -> Sub EqEPnt (->) x y-> Statement
+pp (Sub f) (Sub g) = prpExtensionalEqual xStandard f g
+
+instance EqExt EE where
+  Sub f .=. Sub g = prpExtensionalEqual xStandard f g
+
+instance Transformable OrtX EqEPnt where tau Struct = Struct
+instance TransformableObjectClass OrtX (Sub EqEPnt (->))
+
+instance TransformableG Pnt OrtX EqEPnt where tauG Struct = Struct
+instance TransformableGObjectClassRange Pnt OrtX (Sub EqEPnt (->))
+-- instance Transformable EqEPnt EqE where tau Struct = Struct
+-- instance TransformableObjectClass EqEPnt EqualExt
+-- instance SReflexiveG (Sub EqEPnt EqualExt) Op Pnt where
+  
+
+{-
+ff :: Struct EqE x -> Inv2 EqualExt (Pnt x) (Pnt (Op (Op x)))
+ff = error "nyi"
+
 instance SReflexiveG EqualExt Op Pnt where
-  sdlRefl s@Struct = Inv2 (EqualExt u) (EqualExt v) where
+  sdlRefl = ff
+
+gg :: Struct OrtX x -> Inv2 (Sub OrtX EqualExt) (Pnt x) (Pnt (Op (Op x)))
+gg s@Struct = Inv2 (Sub (EqualExt u)) (Sub (EqualExt v)) where
     Inv2 u v = sdlRefl' q (tauType s)
     q = SDualityG :: SDualityG (->) Op Pnt
+
+instance SReflexiveG (Sub OrtX EqualExt) Op Pnt where
+  sdlRefl = gg
+-}
+{-  
+  sdlRefl s@Struct = Inv2 (ff u) (ff v) where
+    Inv2 u v = sdlRefl' q (tau s)
+    q = SDualityG :: SDualityG (Sub OrtX (->)) Op Pnt
+-}
+-- tauOrtX :: Struct OrtX 
 
 {-
 instance SDualisableG EqualExt Op Pnt where
@@ -201,12 +262,12 @@ prpHomOrtOpEmpty
   = And [ prpCategoryDisjunctive xo xfg
         , prpFunctorialG qId xo xfg
         , prpFunctorialG qPt xo xfg
-        , prpHomDisjunctiveOriented qso xo xsa
+        , prpHomDisjunctiveOriented qo xo xsa
         ] where
   
-  qso = Proxy2 :: Proxy2 OrtX Op
-  qId = Proxy3 :: Proxy3 Id (HomOrt OrtX Op (HomEmpty OrtX)) EqualExt
-  qPt = Proxy3 :: Proxy3 Pnt (HomOrt OrtX Op (HomEmpty OrtX)) EqualExt
+  qo  = Proxy :: Proxy Op
+  qId = FunctorG :: FunctorG Id (HomOrt OrtX Op (HomEmpty OrtX)) EqualExt
+  qPt = FunctorG :: FunctorG Pnt (HomOrt OrtX Op (HomEmpty OrtX)) EE
   
   xoSct :: X (SomeObjectClass (SDualityCategory OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)

@@ -60,13 +60,15 @@ instance Validable Variant where
   valid Covariant = SValid
   valid _         = SValid
 
-instance Entity Variant
-
 --------------------------------------------------------------------------------
 -- Variant - Multiplicative -
 
+type instance Point Variant = ()
+instance ShowPoint Variant
+instance EqPoint Variant
+instance ValidablePoint Variant
+instance TypeablePoint Variant
 instance Oriented Variant where
-  type Point Variant = ()
   orientation _ = () :> ()
 
 instance Multiplicative Variant where

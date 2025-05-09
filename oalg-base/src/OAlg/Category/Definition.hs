@@ -50,7 +50,7 @@ module OAlg.Category.Definition
     -- * Functorial
   , Functorial, Functor(..)
   , Functorial1, Functor1(..)
-  , FunctorialG
+  , FunctorialG, FunctorG(..)
 
     -- * Forget
   , Forget(..)
@@ -298,6 +298,13 @@ class (Morphism a, Morphism b, ApplicativeG t a b, TransformableG t (ObjectClass
 class (Category a, Category b, ApplicativeGMorphism t a b) => FunctorialG t a b
 
 --------------------------------------------------------------------------------
+-- FunctorG -
+
+-- | attest of being 'FunctorialG'.
+data FunctorG t a b where
+  FunctorG :: FunctorialG t a b => FunctorG t a b
+  
+--------------------------------------------------------------------------------
 -- Functorial -
 
 -- | functorials form @__c__@ to @('->')@ according to 'Id'.
@@ -331,6 +338,7 @@ data Functor1 c f where
 class Transformable s (ObjectClass c) => TransformableObjectClass s c
 
 instance TransformableObjectClass s (->)
+
 --------------------------------------------------------------------------------
 -- Sub -
 

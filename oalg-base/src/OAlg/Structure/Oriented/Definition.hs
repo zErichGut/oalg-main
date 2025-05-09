@@ -154,9 +154,11 @@ class Typeable (Point x) => TypeablePoint x
 -- | helper class to avoid undecidable instances.
 class Singleton (Point x) => SingletonPoint x
 
--- | helper class to avoid undecidable instances.
--- class Entity (Point x) => EntityPoint x
+-- | 'Point' as 'Entity'.
 type EntityPoint x = (ShowPoint x, EqPoint x, ValidablePoint x, TypeablePoint x)
+
+-- | helper class to avoid undecidable instances.
+class XStandard (Point a) => XStandardPoint a
 
 --------------------------------------------------------------------------------
 -- Point - () -
@@ -178,6 +180,7 @@ instance EqPoint x => EqPoint (Id x)
 instance OrdPoint x => OrdPoint (Id x)
 instance ValidablePoint x => ValidablePoint (Id x)
 instance TypeablePoint x => TypeablePoint (Id x)
+instance XStandardPoint x => XStandardPoint (Id x)
 
 --------------------------------------------------------------------------------
 -- Point - Op -
@@ -189,6 +192,7 @@ instance EqPoint x => EqPoint (Op x)
 instance OrdPoint x => OrdPoint (Op x)
 instance ValidablePoint x => ValidablePoint (Op x)
 instance TypeablePoint x => TypeablePoint (Op x)
+instance XStandardPoint x => XStandardPoint (Op x)
 
 --------------------------------------------------------------------------------
 -- Point - Orientation -
@@ -200,6 +204,7 @@ instance Eq x => EqPoint (Orientation x)
 instance Ord x => OrdPoint (Orientation x)
 instance Validable x => ValidablePoint (Orientation x)
 instance Typeable x => TypeablePoint (Orientation x)
+instance XStandard p => XStandardPoint (Orientation p)
 
 --------------------------------------------------------------------------------
 -- Pnt -
@@ -207,9 +212,19 @@ instance Typeable x => TypeablePoint (Orientation x)
 -- | type function for 'Point's.
 newtype Pnt x = Pnt (Point x)
 
+type instance Point (Pnt x) = Point x
+
 deriving instance ShowPoint x => Show (Pnt x)
 deriving instance EqPoint x => Eq (Pnt x)
 deriving instance ValidablePoint x => Validable (Pnt x)
+deriving instance XStandardPoint x => XStandard (Pnt x)
+
+
+instance ShowPoint x => ShowPoint (Pnt x)
+instance EqPoint x => EqPoint (Pnt x)
+instance ValidablePoint x => ValidablePoint (Pnt x)
+instance XStandardPoint x => XStandardPoint (Pnt x)
+
 
 --------------------------------------------------------------------------------
 -- Pnt - helper classes -
@@ -236,17 +251,6 @@ toPntG f (Pnt x) = Pnt (f x)
 -- | from 'Pnt'.
 fromPntG :: (Pnt x -> Pnt y) -> Point x -> Point y
 fromPntG f p = p' where Pnt p' = f (Pnt p)
-
---------------------------------------------------------------------------------
--- Pnt - instance -
-
-instance XStandard p => XStandard (Pnt (Orientation p)) where xStandard = amap1 Pnt xStandard
-
-instance XStandard (Pnt x) => XStandard (Pnt (Id x)) where
-  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Id x)) xStandard
-
-instance XStandard (Pnt x) => XStandard (Pnt (Op x)) where
-  xStandard = amap1 (idPnt :: Pnt x -> Pnt (Op x)) xStandard
 
 --------------------------------------------------------------------------------
 -- Op - SDualisableG -
@@ -310,6 +314,7 @@ instance EqPoint Int
 instance OrdPoint Int
 instance ValidablePoint Int
 instance TypeablePoint Int
+instance XStandardPoint Int
 instance Oriented Int where
   orientation _ = ():>()
 
@@ -319,6 +324,7 @@ instance EqPoint Integer
 instance OrdPoint Integer
 instance ValidablePoint Integer
 instance TypeablePoint Integer
+instance XStandardPoint Integer
 instance Oriented Integer where
   orientation _ = ():>()
 
@@ -328,6 +334,7 @@ instance EqPoint N
 instance OrdPoint N
 instance ValidablePoint N
 instance TypeablePoint N
+instance XStandardPoint N
 instance Oriented N where
   orientation _ = ():>()
 
@@ -338,6 +345,7 @@ instance EqPoint Z
 instance OrdPoint Z
 instance ValidablePoint Z
 instance TypeablePoint Z
+instance XStandardPoint Z
 instance Oriented Z where
   orientation _ = ():>()
 
@@ -347,6 +355,7 @@ instance EqPoint Q
 instance OrdPoint Q
 instance ValidablePoint Q
 instance TypeablePoint Q
+instance XStandardPoint Q
 instance Oriented Q where
   orientation _ = ():>()
 
@@ -534,8 +543,8 @@ tauOrt = tau
 -- variables.
 data OrtX
 
-type instance Structure OrtX x = (Oriented x, XStandard x, XStandard (Pnt x))
-
+type instance Structure OrtX x
+  = (Oriented x, XStandard x, XStandardPoint x)
 
 instance Transformable OrtX XStd where tau Struct = Struct
 
@@ -722,17 +731,6 @@ instance XStandard p => XStandardOrtSiteTo (Orientation p)
 class XStandardOrtSite From a => XStandardOrtSiteFrom a
 
 instance XStandard p => XStandardOrtSiteFrom (Orientation p)
-
---------------------------------------------------------------------------------
--- XStandardPoint -
-
--- | standard random variable of 'Point's of @__a__@.
-class XStandard (Point a) => XStandardPoint a
-
-instance XStandardPoint N
-instance XStandardPoint Z
-instance XStandardPoint Q
-instance XStandard p => XStandardPoint (Orientation p)
 
 --------------------------------------------------------------------------------
 -- XOrtOrientation -

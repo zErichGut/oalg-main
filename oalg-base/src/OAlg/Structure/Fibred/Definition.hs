@@ -21,19 +21,20 @@
 -- every value in @__f__@ has a 'root'.
 module OAlg.Structure.Fibred.Definition
   (
-{-    
     -- * Fibred
-    Fibred(..), Fbr, TransformableFbr, tauFbr
+    Fibred(..)
+  , Fbr, TransformableFbr, tauFbr
+  
+    -- * Root
+  , Root, ShowRoot, EqRoot, ValidableRoot, TypeableRoot
+  , OrdRoot, TotalRoot
 
     -- * Fibred Oriented
   , FibredOriented, FbrOrt, TransformableFbrOrt, tauFbrOrt
 
-    -- * Spezial classes
-  , OrdRoot, TotalRoot
-
     -- * Sheaf
   , Sheaf(..)
--}
+
   )
   where
 
@@ -233,9 +234,9 @@ type TotalRoot = SingletonRoot
 -- to a new sheaf having the same 'root'. But as @('++')@ is not commutative they
 -- are equipped with a 'Multiplicative' structure.
 data Sheaf f = Sheaf (Root f) [f]
-{-
-deriving instance Fibred f => Show (Sheaf f)
-deriving instance Fibred f => Eq (Sheaf f)
+
+deriving instance (Show f, ShowRoot f) => Show (Sheaf f)
+deriving instance (Eq f, EqRoot f) => Eq (Sheaf f)
 
 instance Foldable Sheaf where
   foldr op b (Sheaf _ fs) = foldr op b fs
@@ -245,14 +246,21 @@ instance Fibred f => Validable (Sheaf f) where
     vld _ []     = SValid 
     vld r (f:fs) = valid f && (root f .==. r) && vld r fs
 
-instance Fibred f => Entity (Sheaf f)
-
+type instance Root (Sheaf f) = Root f
+instance ShowRoot f => ShowRoot (Sheaf f)
+instance EqRoot f => EqRoot (Sheaf f)
+instance ValidableRoot f => ValidableRoot (Sheaf f)
+instance TypeableRoot f => TypeableRoot (Sheaf f)
 instance Fibred f => Fibred (Sheaf f) where
-  type Root (Sheaf f) = Root f
   root (Sheaf r _) = r
 
+
+type instance Point (Sheaf f) = Root f
+instance ShowRoot f => ShowPoint (Sheaf f)
+instance EqRoot f => EqPoint (Sheaf f)
+instance ValidableRoot f => ValidablePoint (Sheaf f)
+instance TypeableRoot f => TypeablePoint (Sheaf f)
 instance Fibred f => Oriented (Sheaf f) where
-  type Point (Sheaf f) = Root f
   orientation s = root s :> root s
 
 -- | @'Data.List.(++)'@ is not commutative!
@@ -329,6 +337,6 @@ instance TransformableFbrOrt FbrOrt
 -- | 'tau' for 'FbrOrt'.
 tauFbrOrt :: Transformable s FbrOrt => Struct s x -> Struct FbrOrt x
 tauFbrOrt = tau
--}
+
 
 

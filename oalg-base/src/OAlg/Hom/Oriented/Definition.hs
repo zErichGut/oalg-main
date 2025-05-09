@@ -145,7 +145,7 @@ sdlToDualPnt q s x = x' where
 
 -- | the empty homomorphism.
 newtype HomEmpty s x y = HomEmpty (EntEmpty2 x y)
-  deriving (Show, Show2,Eq,Eq2,EqExt,Validable,Validable2,Entity,Entity2)
+  deriving (Show, Show2,Eq,Eq2,EqExt,Validable,Validable2)
 
 --------------------------------------------------------------------------------
 -- fromHomEmpty -

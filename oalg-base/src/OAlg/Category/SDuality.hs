@@ -96,8 +96,6 @@ instance Validable2 h => Validable2 (SDualityMorphism s o h) where
   valid2 (SMrphCov h) = valid2 h
   valid2 _            = SValid
 
-instance (Entity2 h, Typeable s, Typeable o) => Entity2 (SDualityMorphism s o h)
-
 --------------------------------------------------------------------------------
 -- SMrphCov - Morphism -
 
@@ -162,9 +160,6 @@ newtype SDualityCategory s o h x y = SDualityCategory (PathSDualityMorphism s o 
 
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (SDualityCategory s o h x y)
 deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (SDualityCategory s o h)
-
-instance (Morphism h, Entity2 h, Transformable s Typ, Typeable s, Typeable o)
-  => Entity2 (SDualityCategory s o h)
 
 --------------------------------------------------------------------------------
 -- SDualityCategory - Constructable -
