@@ -16,7 +16,7 @@
 -- 
 -- extensional equality.
 module OAlg.Data.EqualExtensional
-  ( EqExt(..), prpExtensionalEqual
+  ( EqExt(..), prpEqualExt
   )
   where
 
@@ -47,12 +47,12 @@ class EqExt c where
   f .=. g = eq2 f g :?> Params []
 
 --------------------------------------------------------------------------------
--- prpExtensionalEqual -
+-- prpEqualExt -
 
 -- | validity for two functions being __/extensional equal/__, i.e. for all @f@ and @g@ in
 -- @__x__ -> __y__@ and @x@ in @__x__@ holds: @f x '==' g y@.
-prpExtensionalEqual :: (Show x, Eq y) => X x -> (x -> y) -> (x -> y) -> Statement
-prpExtensionalEqual xx f g = Prp "ExtensionalEqual" :<=>: Forall xx
+prpEqualExt :: (Show x, Eq y) => X x -> (x -> y) -> (x -> y) -> Statement
+prpEqualExt xx f g = Prp "ExtensionalEqual" :<=>: Forall xx
   (\x -> (f x == g x) :?> Params ["x":=show x]
   )
 

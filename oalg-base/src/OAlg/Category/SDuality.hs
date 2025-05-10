@@ -45,7 +45,6 @@ module OAlg.Category.SDuality
 import Control.Monad
 import Control.Applicative ((<|>))
 
-import Data.Typeable
 import Data.List ((++))
 
 import OAlg.Prelude

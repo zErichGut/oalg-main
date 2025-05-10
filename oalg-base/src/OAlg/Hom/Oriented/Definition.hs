@@ -297,6 +297,8 @@ class ( SDualisableG (->) o Id, SDualisableG (->) o Pnt
       ) => SDualisableOriented o s
 
 instance SDualisableOriented Op Ort
+instance SDualisableOriented Op OrtX
+
 
 --------------------------------------------------------------------------------
 -- sdlToDualArw -

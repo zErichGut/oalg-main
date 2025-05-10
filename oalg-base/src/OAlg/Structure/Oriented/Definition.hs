@@ -46,8 +46,12 @@ module OAlg.Structure.Oriented.Definition
     -- * Path
   , Path(..), pthLength, pthOne, pthMlt
 
+    -- * Extensional Equlity
+  , EqualExtOrt, EqEOrt
+  
     -- * X
   , OrtX
+
     -- ** Site
   , XOrtSite(..), XStandardOrtSite(..)
   , XStandardOrtSiteTo, XStandardOrtSiteFrom
@@ -559,6 +563,46 @@ instance TransformableOp OrtX
 
 instance TransformableG Id OrtX EqE where tauG Struct = Struct
 instance TransformableG Pnt OrtX EqE where tauG Struct = Struct
+
+--------------------------------------------------------------------------------
+-- EqEOrt
+
+-- | type representing extensional equality for 'Oriented' structures.
+data EqEOrt
+
+type instance Structure EqEOrt x
+  = (Show x, ShowPoint x, Eq x, EqPoint x, XStandard x, XStandardPoint x) 
+
+--------------------------------------------------------------------------------
+-- EqualExtOrt -
+
+-- | category of extensional equality for 'Oriented' structures.
+type EqualExtOrt = Sub EqEOrt (->)
+
+instance EqExt EqualExtOrt where
+  Sub f .=. Sub g = prpEqualExt xStandard f g
+
+instance Transformable OrtX EqEOrt where tau Struct = Struct
+instance TransformableObjectClass OrtX EqualExtOrt
+
+instance TransformableG Id OrtX EqEOrt where tauG Struct = Struct
+instance TransformableGObjectClassRange Id OrtX EqualExtOrt
+
+instance TransformableG Pnt OrtX EqEOrt where tauG Struct = Struct
+instance TransformableGObjectClassRange Pnt OrtX EqualExtOrt
+
+instance SReflexiveG EqualExtOrt Op Id where
+  sdlRefl s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = sdlRefl (tauType s)
+
+instance SDualisableG EqualExtOrt Op Id where
+  sdlToDual s@Struct = Sub t where t = sdlToDual (tauType s)
+
+instance SReflexiveG EqualExtOrt Op Pnt where
+  sdlRefl s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = sdlRefl (tauType s)
+
+instance TransformableG Op EqEOrt EqEOrt where tauG Struct = Struct
+instance SDualisableG EqualExtOrt Op Pnt where
+  sdlToDual s@Struct = Sub t where t = sdlToDual (tauType s)
 
 --------------------------------------------------------------------------------
 -- structOrtOp -

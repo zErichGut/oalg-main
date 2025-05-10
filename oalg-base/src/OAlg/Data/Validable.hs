@@ -235,39 +235,30 @@ instance Validable2 m => Validable (Forget t m x y) where
   valid = valid2
 
 instance Validable2 (Struct2 m)
-
---------------------------------------------------------------------------------
--- EqualExt -
-
--- | wraper for testing functions according to 'prpExtensionalEqual'.
-data EqualExt x y where
-  EqualExt :: (Show x, XStandard x, Eq x, Show y, XStandard y, Eq y) => (x -> y) -> EqualExt x y
-
-instance EqExt EqualExt where
-  EqualExt f .=. EqualExt g = prpExtensionalEqual xStandard f g
     
 --------------------------------------------------------------------------------
 -- EqE -
 
--- | 'Structure'-type for 'EqualExt', i.e. 'Show', 'XStandard' and 'Eq'.
+-- | type representing extensional equality.
 data EqE
 
 type instance Structure EqE x = (Show x, XStandard x, Eq x)
 
-instance Morphism EqualExt where
-  type ObjectClass EqualExt = EqE
-  homomorphous (EqualExt _) = Struct :>: Struct
+--------------------------------------------------------------------------------
+-- EqualExt -
 
-instance Category EqualExt where
-  cOne Struct = EqualExt id
-  EqualExt f . EqualExt g = EqualExt (f . g)
+-- | category of extensional equality.
+type EqualExt = Sub EqE (->)
+
+instance EqExt EqualExt where
+  Sub f .=. Sub g = prpEqualExt xStandard f g
 
 --------------------------------------------------------------------------------
 -- equalExt -
 
 -- | embedding 'amapG' of a 'Applicative1' to 'EqualExt'.
 equalExtS :: Applicative1 c t => Homomorphous EqE (t x) (t y) -> c x y -> EqualExt (t x) (t y)
-equalExtS (Struct:>:Struct) f = EqualExt $ amapG f
+equalExtS (Struct:>:Struct) f = Sub $ amapG f
 
 -- | embedding 'amapG' of a 'Applicative1' to 'EqualExt'.
 equalExt :: (Morphism c, Applicative1 c t, TransformableG t (ObjectClass c) EqE)
