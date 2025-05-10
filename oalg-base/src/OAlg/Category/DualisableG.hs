@@ -1,5 +1,4 @@
 
-
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE
@@ -28,20 +27,18 @@ module OAlg.Category.DualisableG
 
     -- * Structural Duality
     -- ** Dualisable
-    SDualisable
-  , SDualisableG(..), SDualityG(..)
-  , SDualisableGId --, SDualisableGPnt
-  , SReflexiveG(..), sdlRefl'
-  , sdlToDual'
+    DualisableG(..), SDualityG(..)
+  , DualisableGId
+  , ReflexiveG(..), reflG'
+  , toDualG'
 
     -- ** Bi-Dualisable
-  , SBiDualisable, SBiDualisableG(..)
+  , DualisableGBi(..)
 
     -- * SDual
   , SDual(..), fromSDual, mapSDual
     -- * Proposition
-  , prpSDualisableG
-
+  , prpDualisableG
     
   ) where
 
@@ -57,124 +54,112 @@ import OAlg.Structure.Definition
 
 
 --------------------------------------------------------------------------------
--- SReflexiveG -
+-- ReflexiveG -
 
--- | category @__c__@ equipped with a reflection on the sub set of its object class given by @__s__@. 
-class Category c => SReflexiveG c o d where
-  sdlRefl :: Struct (ObjectClass c) x -> Inv2 c (d x) (d (o (o x)))
+-- | category @__c__@ equipped with a reflection.
+class Category c => ReflexiveG c o d where
+  reflG :: Struct (ObjectClass c) x -> Inv2 c (d x) (d (o (o x)))
 
 --------------------------------------------------------------------------------
--- SDualisableG -
+-- DualisableG -
 
--- | duality of @__s__@-structured types given by a reflection.
+-- | category @__c__@ equipped with a duality via a reflection.
 --
--- __Property__ Let @'SDualisableG' __c s o d__@, then for all @__x__@ and @s@ in @'Struct' __s x__@
+-- __Property__ Let @'DualisableG' __c s o d__@, then for all @__x__@ and @s@ in @'Struct' __s x__@
 -- holds:
 --
--- (1) @'sdlToDual'' q s' '.' 'sdlToDual'' q s '.=.' u@.
+-- (1) @'toDualG'' q s' '.' 'toDualG'' q s '.=.' u@.
 --
--- (2) @'sdlToDual'' q s '.' v '.=.' v' . 'sdlToDual'' q s''@.
+-- (2) @'toDualG'' q s '.' v '.=.' v' . 'toDualG'' q s''@.
 --
--- (3) @'sdlFromDual'' q s '.=.' v '.' 'sdlToDual'' q s'@.
+-- (3) @'fromDualG'' q s '.=.' v '.' 'toDualG'' q s'@.
 --
 -- where @q@ is any proxy in @__q c s o d__@, @s' = 'tau1' s@ , @s'' = 'tau1' s'@,
--- @'Inv2' u v = 'relfG'' q s@ and @'Inv2' _ v' = 'sdlRefl'' q s'@.
+-- @'Inv2' u v = 'relfG'' q s@ and @'Inv2' _ v' = 'reflG'' q s'@.
 --
--- __Note__ The properties above imply that @'sdlToDual' s@ and @'sdlFromDual' s@ are inverse
+-- __Note__ The properties above imply that @'toDualG' s@ and @'fromDualG' s@ are inverse
 -- in @__c__@ for all @__x__@ and @s@ in @'Struct' __s x__@ and hence establish a duality
 -- within @__s__@ structured types.
-class (SReflexiveG c o d, Transformable1 o (ObjectClass c)) => SDualisableG c o d where
-  sdlToDual :: Struct (ObjectClass c) x -> c (d x) (d (o x))
-  sdlFromDual :: Struct (ObjectClass c) x -> c (d (o x)) (d x)
-  sdlFromDual s = v . sdlToDual (tau1 s) where Inv2 _ v = sdlRefl s
+class (ReflexiveG c o d, Transformable1 o (ObjectClass c)) => DualisableG c o d where
+  toDualG :: Struct (ObjectClass c) x -> c (d x) (d (o x))
+  fromDualG :: Struct (ObjectClass c) x -> c (d (o x)) (d x)
+  fromDualG s = v . toDualG (tau1 s) where Inv2 _ v = reflG s
 
 --------------------------------------------------------------------------------
--- SDualisableGId -
+-- DualisableGId -
 
 -- | helper class to avoid undecidable instances.
-class SDualisableG (->) o Id => SDualisableGId o
+class DualisableG (->) o Id => DualisableGId o
 
 --------------------------------------------------------------------------------
 -- Op - SDualisable -
 
-instance SReflexiveG (->) Op Id where
-  sdlRefl _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
+instance ReflexiveG (->) Op Id where
+  reflG _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
 
-instance SDualisableG (->) Op Id where
-  sdlToDual _   = amap1 Op
-  sdlFromDual _ = amap1 fromOp
+instance DualisableG (->) Op Id where
+  toDualG _   = amap1 Op
+  fromDualG _ = amap1 fromOp
 
-instance SDualisableGId Op
+instance DualisableGId Op
 
 --------------------------------------------------------------------------------
 -- SDualityG -
 
--- | attest of being 'SDualisableG'.
-data SDualityG c o d where SDualityG :: SDualisableG c o d => SDualityG c o d
-
+-- | attest of being 'DualisableG'.
+data SDualityG c o d where SDualityG :: DualisableG c o d => SDualityG c o d
 
 --------------------------------------------------------------------------------
--- sdlRefl' -
+-- reflG' -
 
 -- | prefixing a proxy.
-sdlRefl' :: SDualisableG c o d => q c o d -> Struct (ObjectClass c) x -> Inv2 c (d x) (d (o (o x)))
-sdlRefl' _ = sdlRefl
+reflG' :: DualisableG c o d => q c o d -> Struct (ObjectClass c) x -> Inv2 c (d x) (d (o (o x)))
+reflG' _ = reflG
 
 --------------------------------------------------------------------------------
--- sdlToDual' -
+-- toDualG' -
 
 -- | prefixing a proxy.
-sdlToDual' :: SDualisableG c o d => q c o d -> Struct (ObjectClass c) x -> c (d x) (d (o x))
-sdlToDual' _ = sdlToDual
+toDualG' :: DualisableG c o d => q c o d -> Struct (ObjectClass c) x -> c (d x) (d (o x))
+toDualG' _ = toDualG
 
 --------------------------------------------------------------------------------
--- sdlFromDual' -
+-- fromDualG' -
 
 -- | prefixing a proxy.
-sdlFromDual' :: SDualisableG c o d => q c o d -> Struct (ObjectClass c) x -> c (d (o x)) (d x)
-sdlFromDual' _ = sdlFromDual
+fromDualG' :: DualisableG c o d => q c o d -> Struct (ObjectClass c) x -> c (d (o x)) (d x)
+fromDualG' _ = fromDualG
 
 --------------------------------------------------------------------------------
--- prpSDualisableG -
+-- prpDualisableG -
 
--- | validity according to 'SDualisableG'.
-prpSDualisableG :: (SDualisableG c o d, EqExt c)
+-- | validity according to 'DualisableG'.
+prpDualisableG :: (DualisableG c o d, EqExt c)
   => q c o d -> Struct (ObjectClass c) x -> Statement
-prpSDualisableG q s = Prp "SDualisableG" :<=>:
-  And [ Label "1" :<=>: (sdlToDual' q s' . sdlToDual' q s .=. u)
-      , Label "2" :<=>: (sdlToDual' q s . v .=. v' . sdlToDual' q s'')
-      , Label "3" :<=>: (sdlFromDual' q s .=. v . sdlToDual' q s')
+prpDualisableG q s = Prp "DualisableG" :<=>:
+  And [ Label "1" :<=>: (toDualG' q s' . toDualG' q s .=. u)
+      , Label "2" :<=>: (toDualG' q s . v .=. v' . toDualG' q s'')
+      , Label "3" :<=>: (fromDualG' q s .=. v . toDualG' q s')
       ]
   where s'        = tau1 s
         s''       = tau1 s' 
-        Inv2 u v  = sdlRefl' q s
-        Inv2 _ v' = sdlRefl' q s'
+        Inv2 u v  = reflG' q s
+        Inv2 _ v' = reflG' q s'
 
 --------------------------------------------------------------------------------
--- SDualisable -
+-- DualisableGBi -
 
--- | dualisable for the category @('->')@.
-type SDualisable = SDualisableG (->)
+-- | category @__c__@ equipped with a bi-duality via reflections.
+class (ReflexiveG c o a, ReflexiveG c o b, Transformable1 o (ObjectClass c))
+  => DualisableGBi c o a b where
+  toDualGLft :: Struct (ObjectClass c) x -> c (a x) (b (o x))
+  toDualGRgt :: Struct (ObjectClass c) x -> c (b x) (a (o x))
 
---------------------------------------------------------------------------------
--- SBiDualisableG -
-
-class (SReflexiveG c o a, SReflexiveG c o b, Transformable1 o (ObjectClass c))
-  => SBiDualisableG c o a b where
-  sdlToDualLft :: Struct (ObjectClass c) x -> c (a x) (b (o x))
-  sdlToDualRgt :: Struct (ObjectClass c) x -> c (b x) (a (o x))
-
-  sdlFromDualLft :: Struct (ObjectClass c) x -> c (b (o x)) (a x)
-  sdlFromDualLft s = v . sdlToDualRgt (tau1 s) where Inv2 _ v = sdlRefl s
+  fromDualGLft :: Struct (ObjectClass c) x -> c (b (o x)) (a x)
+  fromDualGLft s = v . toDualGRgt (tau1 s) where Inv2 _ v = reflG s
   
-  sdlFromDualRgt :: Struct (ObjectClass c) x -> c (a (o x)) (b x)
-  sdlFromDualRgt s = v . sdlToDualLft (tau1 s) where Inv2 _ v = sdlRefl s
-
---------------------------------------------------------------------------------
--- SBiDualisable -
-
--- | bi-dualisable for for the category @('->')@.
-type SBiDualisable = SBiDualisableG (->)
+  fromDualGRgt :: Struct (ObjectClass c) x -> c (a (o x)) (b x)
+  fromDualGRgt s = v . toDualGLft (tau1 s) where Inv2 _ v = reflG s
 
 --------------------------------------------------------------------------------
 -- SDual -

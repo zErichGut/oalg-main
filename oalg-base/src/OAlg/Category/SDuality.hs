@@ -16,12 +16,12 @@
 
 -- |
 -- Module      : OAlg.Category.SDuality
--- Description : functor for dualisable structured types.
+-- Description : functor to dualisable structured types.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- functor for dualisable structured types.
+-- functor to dualisable structured types.
 module OAlg.Category.SDuality
   (
     -- * Duality
@@ -246,35 +246,29 @@ sctFromDual' _ = sctFromDual
 --------------------------------------------------------------------------------
 -- SDualityCategory - FunctorialG -
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+instance ( Morphism h, ApplicativeG d h c, DualisableG c o d
          , TransformableObjectClass s c
-         -- Transformable s (ObjectClass c)
-         -- Struct s x -> Struct (ObjectClass c) x
          )
   => ApplicativeG d (SDualityMorphism s o h) c where
   amapG (SMrphCov h) = amapG h
-  amapG t@ToDual     = sdlToDual (tau (domain t))
-  amapG f@FromDual   = sdlFromDual (tau (range f))
+  amapG t@ToDual     = toDualG (tau (domain t))
+  amapG f@FromDual   = fromDualG (tau (range f))
 
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+instance ( Morphism h, ApplicativeG d h c, DualisableG c o d
          , TransformableObjectClass s c
-         -- Transformable s (ObjectClass c)
-         -- Struct s x -> Struct (ObjectClass c) x
          , TransformableGObjectClassRange d s c
-         -- TransformableG d s (ObjectClass c)
-         -- Struct s x -> Sturct (ObjectClass c) (d x)
          )
   => ApplicativeG d (SDualityCategory s o h) c where
   amapG = amapG . form
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+instance ( Morphism h, ApplicativeG d h c, DualisableG c o d
          , TransformableObjectClass s c
          , TransformableGObjectClassRange d s c
          )
   => ApplicativeGMorphism d (SDualityCategory s o h) c
 
-instance ( Morphism h, ApplicativeG d h c, SDualisableG c o d
+instance ( Morphism h, ApplicativeG d h c, DualisableG c o d
          , TransformableObjectClass s c
          , TransformableGObjectClassRange d s c
          )
@@ -303,37 +297,37 @@ amapEither h (Right1 b) = Right1 (amapG h b)
 --------------------------------------------------------------------------------
 -- toDualEither -
 
-toDualEither :: SBiDualisableG (->) o a b
+toDualEither :: DualisableGBi (->) o a b
   => Struct (ObjectClass (->)) x -> Either1 a b x -> Either1 a b (o x)
-toDualEither s (Left1 a)  = Right1 (sdlToDualLft s a)
-toDualEither s (Right1 b) = Left1 (sdlToDualRgt s b)
+toDualEither s (Left1 a)  = Right1 (toDualGLft s a)
+toDualEither s (Right1 b) = Left1 (toDualGRgt s b)
 
 --------------------------------------------------------------------------------
 -- reflEitherTo -
 
-reflEitherTo :: SBiDualisableG (->) o a b
+reflEitherTo :: DualisableGBi (->) o a b
   => Struct (ObjectClass (->)) x -> (->) (Either1 a b x) (Either1 a b (o (o x)))
-reflEitherTo s (Left1 a)  = Left1 (u a)  where Inv2 u _ = sdlRefl s
-reflEitherTo s (Right1 b) = Right1 (u b) where Inv2 u _ = sdlRefl s 
+reflEitherTo s (Left1 a)  = Left1 (u a)  where Inv2 u _ = reflG s
+reflEitherTo s (Right1 b) = Right1 (u b) where Inv2 u _ = reflG s 
 
 --------------------------------------------------------------------------------
 -- reflEitherFrom -
 
-reflEitherFrom :: SBiDualisableG (->) o a b
+reflEitherFrom :: DualisableGBi (->) o a b
   => Struct (ObjectClass (->)) x -> (->) (Either1 a b (o (o x))) (Either1 a b x)
-reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = sdlRefl s
-reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = sdlRefl s
+reflEitherFrom s (Left1 a'') = Left1 (v a'') where Inv2 _ v   = reflG s
+reflEitherFrom s (Right1 b'') = Right1 (v b'') where Inv2 _ v = reflG s
 
 ------------------------------------------------------------------------------------------
 -- SDuality - SReflexive -
 
-instance SBiDualisableG (->) o a b => SReflexiveG (->) o (SDuality a b) where
-  sdlRefl s = Inv2 u v where
+instance DualisableGBi (->) o a b => ReflexiveG (->) o (SDuality a b) where
+  reflG s = Inv2 u v where
     u = SDuality . reflEitherTo s . fromSDuality
     v = SDuality . reflEitherFrom s . fromSDuality
     
-instance SBiDualisableG (->) o a b => SDualisableG (->) o (SDuality a b) where
-  sdlToDual s = SDuality . toDualEither s . fromSDuality
+instance DualisableGBi (->) o a b => DualisableG (->) o (SDuality a b) where
+  toDualG s = SDuality . toDualEither s . fromSDuality
 
 --------------------------------------------------------------------------------
 -- implErrorSBidualisable -

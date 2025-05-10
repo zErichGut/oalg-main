@@ -35,7 +35,7 @@ module OAlg.Structure.Oriented.Definition
 
     -- * Duality
     -- ** Op
-  , SDualisableGPnt
+  , DualisableGPnt
   
     -- ** Transposable
   , TransposableOriented
@@ -174,6 +174,8 @@ instance EqPoint ()
 instance OrdPoint ()
 instance ValidablePoint ()
 instance TypeablePoint ()
+instance XStandardPoint ()
+
 --------------------------------------------------------------------------------
 -- Point - Id -
 
@@ -234,7 +236,7 @@ instance XStandardPoint x => XStandardPoint (Pnt x)
 -- Pnt - helper classes -
 
 -- | helper class to avoid undecidable instances.
-class SDualisableG (->) o Pnt => SDualisableGPnt o
+class DualisableG (->) o Pnt => DualisableGPnt o
 
 ---------------------------------------------------------------------
 -- idPnt -
@@ -257,16 +259,16 @@ fromPntG :: (Pnt x -> Pnt y) -> Point x -> Point y
 fromPntG f p = p' where Pnt p' = f (Pnt p)
 
 --------------------------------------------------------------------------------
--- Op - SDualisableG -
+-- Op - DualisableG -
 
-instance SReflexiveG (->) Op Pnt where
-  sdlRefl _ = Inv2 idPnt idPnt where
+instance ReflexiveG (->) Op Pnt where
+  reflG _ = Inv2 idPnt idPnt where
     
-instance SDualisableG (->) Op Pnt where
-  sdlToDual _   = idPnt
-  sdlFromDual _ = idPnt
+instance DualisableG (->) Op Pnt where
+  toDualG _   = idPnt
+  fromDualG _ = idPnt
 
-instance SDualisableGPnt Op
+instance DualisableGPnt Op
 
 --------------------------------------------------------------------------------
 -- Oriented -
@@ -591,18 +593,18 @@ instance TransformableGObjectClassRange Id OrtX EqualExtOrt
 instance TransformableG Pnt OrtX EqEOrt where tauG Struct = Struct
 instance TransformableGObjectClassRange Pnt OrtX EqualExtOrt
 
-instance SReflexiveG EqualExtOrt Op Id where
-  sdlRefl s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = sdlRefl (tauType s)
+instance ReflexiveG EqualExtOrt Op Id where
+  reflG s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG (tauType s)
 
-instance SDualisableG EqualExtOrt Op Id where
-  sdlToDual s@Struct = Sub t where t = sdlToDual (tauType s)
+instance DualisableG EqualExtOrt Op Id where
+  toDualG s@Struct = Sub t where t = toDualG (tauType s)
 
-instance SReflexiveG EqualExtOrt Op Pnt where
-  sdlRefl s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = sdlRefl (tauType s)
+instance ReflexiveG EqualExtOrt Op Pnt where
+  reflG s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG (tauType s)
 
 instance TransformableG Op EqEOrt EqEOrt where tauG Struct = Struct
-instance SDualisableG EqualExtOrt Op Pnt where
-  sdlToDual s@Struct = Sub t where t = sdlToDual (tauType s)
+instance DualisableG EqualExtOrt Op Pnt where
+  toDualG s@Struct = Sub t where t = toDualG (tauType s)
 
 --------------------------------------------------------------------------------
 -- structOrtOp -

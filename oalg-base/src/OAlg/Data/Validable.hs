@@ -66,6 +66,8 @@ class XStandard x where
   xStandard :: X x
 
 instance XStandard () where xStandard = return ()
+instance XStandard Int where xStandard = xInt
+instance XStandard Integer where xStandard = xInteger
 instance XStandard N where xStandard = xN
 instance XStandard Z where xStandard = xZ
 instance XStandard Q where xStandard = xQ

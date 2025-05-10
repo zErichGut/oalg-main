@@ -66,8 +66,8 @@ relSDualisableOriented q s Struct Struct xx = Forall xx
                ]
     )
   where
-    tArw = sdlToDualArw q s
-    tPnt = sdlToDualPnt q s
+    tArw = toDualArw q s
+    tPnt = toDualPnt q s
 
 
 -- | validity according to 'SDualisableOriented'.
@@ -161,7 +161,7 @@ prpHomOrtOpEmpty
   xoSct :: X (SomeObjectClass (SDualityCategory OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
-                 , SomeObjectClass (Struct :: Struct OrtX Z)
+                 , SomeObjectClass (Struct :: Struct OrtX Q)
                  ]
 
   xo :: X (SomeObjectClass (HomOrt OrtX Op (HomEmpty OrtX)))
