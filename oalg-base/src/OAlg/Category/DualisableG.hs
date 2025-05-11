@@ -24,7 +24,6 @@
 -- generalized duality for categories.
 module OAlg.Category.DualisableG
   (
-
     -- * Structural Duality
     -- ** Dualisable
     DualisableG(..), SDualityG(..)
@@ -39,7 +38,7 @@ module OAlg.Category.DualisableG
   , SDual(..), fromSDual, mapSDual
     -- * Proposition
   , prpDualisableG
-    
+
   ) where
 
 import OAlg.Category.Definition
@@ -56,110 +55,110 @@ import OAlg.Structure.Definition
 --------------------------------------------------------------------------------
 -- ReflexiveG -
 
--- | category @__c__@ equipped with a reflection.
-class Category c => ReflexiveG c o d where
-  reflG :: Struct (ObjectClass c) x -> Inv2 c (d x) (d (o (o x)))
+-- | category @__c__@ equipped with a reflection on a subset of @'ObjectClass' __c__@ given by @__r__@.
+class (Category c, Transformable r (ObjectClass c)) => ReflexiveG r c o d where
+  reflG :: Struct r x -> Inv2 c (d x) (d (o (o x)))
 
 --------------------------------------------------------------------------------
 -- DualisableG -
 
 -- | category @__c__@ equipped with a duality via a reflection.
 --
--- __Property__ Let @'DualisableG' __c s o d__@, then for all @__x__@ and @s@ in @'Struct' __s x__@
+-- __Property__ Let @'DualisableG' __r c o d__@, then for all @__x__@ and @r@ in @'Struct' __r x__@
 -- holds:
 --
--- (1) @'toDualG'' q s' '.' 'toDualG'' q s '.=.' u@.
+-- (1) @'toDualG'' q r' '.' 'toDualG'' q r '.=.' u@.
 --
--- (2) @'toDualG'' q s '.' v '.=.' v' . 'toDualG'' q s''@.
+-- (2) @'toDualG'' q r '.' v '.=.' v' . 'toDualG'' q r''@.
 --
--- (3) @'fromDualG'' q s '.=.' v '.' 'toDualG'' q s'@.
+-- (3) @'fromDualG'' q r '.=.' v '.' 'toDualG'' q r'@.
 --
--- where @q@ is any proxy in @__q c s o d__@, @s' = 'tau1' s@ , @s'' = 'tau1' s'@,
--- @'Inv2' u v = 'relfG'' q s@ and @'Inv2' _ v' = 'reflG'' q s'@.
+-- where @q@ is any proxy in @__q c o d__@, @r' = 'tau1' r@ , @r'' = 'tau1' r'@,
+-- @'Inv2' u v = 'relfG'' q r@ and @'Inv2' _ v' = 'reflG'' q r'@.
 --
--- __Note__ The properties above imply that @'toDualG' s@ and @'fromDualG' s@ are inverse
--- in @__c__@ for all @__x__@ and @s@ in @'Struct' __s x__@ and hence establish a duality
--- within @__s__@ structured types.
-class (ReflexiveG c o d, Transformable1 o (ObjectClass c)) => DualisableG c o d where
-  toDualG :: Struct (ObjectClass c) x -> c (d x) (d (o x))
-  fromDualG :: Struct (ObjectClass c) x -> c (d (o x)) (d x)
-  fromDualG s = v . toDualG (tau1 s) where Inv2 _ v = reflG s
+-- __Note__ The properties above imply that @'toDualG' r@ and @'fromDualG' r@ are inverse
+-- in @__c__@ for all @__x__@ and @r@ in @'Struct' __r x__@ and hence establish a duality
+-- within @__r__@ structured types.
+class (ReflexiveG r c o d, Transformable1 o r) => DualisableG r c o d where
+  toDualG :: Struct r x -> c (d x) (d (o x))
+  fromDualG :: Struct r x -> c (d (o x)) (d x)
+  fromDualG r = v . toDualG (tau1 r) where Inv2 _ v = reflG r
 
 --------------------------------------------------------------------------------
 -- DualisableGId -
 
 -- | helper class to avoid undecidable instances.
-class DualisableG (->) o Id => DualisableGId o
+class DualisableG r (->) o Id => DualisableGId r o
 
 --------------------------------------------------------------------------------
 -- Op - SDualisable -
 
-instance ReflexiveG (->) Op Id where
+instance ReflexiveG r (->) Op Id where
   reflG _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
 
-instance DualisableG (->) Op Id where
+instance TransformableOp r => DualisableG r (->) Op Id where
   toDualG _   = amap1 Op
   fromDualG _ = amap1 fromOp
 
-instance DualisableGId Op
+instance TransformableOp r => DualisableGId r Op
 
 --------------------------------------------------------------------------------
 -- SDualityG -
 
 -- | attest of being 'DualisableG'.
-data SDualityG c o d where SDualityG :: DualisableG c o d => SDualityG c o d
+data SDualityG r c o d where SDualityG :: DualisableG r c o d => SDualityG r c o d
 
 --------------------------------------------------------------------------------
 -- reflG' -
 
 -- | prefixing a proxy.
-reflG' :: DualisableG c o d => q c o d -> Struct (ObjectClass c) x -> Inv2 c (d x) (d (o (o x)))
+reflG' :: ReflexiveG r c o d => q c o d -> Struct r x -> Inv2 c (d x) (d (o (o x)))
 reflG' _ = reflG
 
 --------------------------------------------------------------------------------
 -- toDualG' -
 
 -- | prefixing a proxy.
-toDualG' :: DualisableG c o d => q c o d -> Struct (ObjectClass c) x -> c (d x) (d (o x))
+toDualG' :: DualisableG r c o d => q c o d -> Struct r x -> c (d x) (d (o x))
 toDualG' _ = toDualG
 
 --------------------------------------------------------------------------------
 -- fromDualG' -
 
 -- | prefixing a proxy.
-fromDualG' :: DualisableG c o d => q c o d -> Struct (ObjectClass c) x -> c (d (o x)) (d x)
+fromDualG' :: DualisableG r c o d => q c o d -> Struct r x -> c (d (o x)) (d x)
 fromDualG' _ = fromDualG
 
 --------------------------------------------------------------------------------
 -- prpDualisableG -
 
 -- | validity according to 'DualisableG'.
-prpDualisableG :: (DualisableG c o d, EqExt c)
-  => q c o d -> Struct (ObjectClass c) x -> Statement
-prpDualisableG q s = Prp "DualisableG" :<=>:
-  And [ Label "1" :<=>: (toDualG' q s' . toDualG' q s .=. u)
-      , Label "2" :<=>: (toDualG' q s . v .=. v' . toDualG' q s'')
-      , Label "3" :<=>: (fromDualG' q s .=. v . toDualG' q s')
+prpDualisableG :: (DualisableG r c o d, EqExt c)
+  => q c o d -> Struct r x -> Statement
+prpDualisableG q r = Prp "DualisableG" :<=>:
+  And [ Label "1" :<=>: (toDualG' q r' . toDualG' q r .=. u)
+      , Label "2" :<=>: (toDualG' q r . v .=. v' . toDualG' q r'')
+      , Label "3" :<=>: (fromDualG' q r .=. v . toDualG' q r')
       ]
-  where s'        = tau1 s
-        s''       = tau1 s' 
-        Inv2 u v  = reflG' q s
-        Inv2 _ v' = reflG' q s'
+  where r'        = tau1 r
+        r''       = tau1 r' 
+        Inv2 u v  = reflG' q r
+        Inv2 _ v' = reflG' q r'
 
 --------------------------------------------------------------------------------
 -- DualisableGBi -
 
 -- | category @__c__@ equipped with a bi-duality via reflections.
-class (ReflexiveG c o a, ReflexiveG c o b, Transformable1 o (ObjectClass c))
-  => DualisableGBi c o a b where
-  toDualGLft :: Struct (ObjectClass c) x -> c (a x) (b (o x))
-  toDualGRgt :: Struct (ObjectClass c) x -> c (b x) (a (o x))
+class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
+  => DualisableGBi r c o a b where
+  toDualGLft :: Struct r x -> c (a x) (b (o x))
+  toDualGRgt :: Struct r x -> c (b x) (a (o x))
 
-  fromDualGLft :: Struct (ObjectClass c) x -> c (b (o x)) (a x)
-  fromDualGLft s = v . toDualGRgt (tau1 s) where Inv2 _ v = reflG s
+  fromDualGLft :: Struct r x -> c (b (o x)) (a x)
+  fromDualGLft r = v . toDualGRgt (tau1 r) where Inv2 _ v = reflG r
   
-  fromDualGRgt :: Struct (ObjectClass c) x -> c (a (o x)) (b x)
-  fromDualGRgt s = v . toDualGLft (tau1 s) where Inv2 _ v = reflG s
+  fromDualGRgt :: Struct r x -> c (a (o x)) (b x)
+  fromDualGRgt r = v . toDualGLft (tau1 r) where Inv2 _ v = reflG r
 
 --------------------------------------------------------------------------------
 -- SDual -
@@ -180,5 +179,4 @@ fromSDual (SDual d) = d
 -- | mapping 'SDual'.
 mapSDual :: (Dual1 d x -> Dual1 d y) -> SDual d x -> SDual d y
 mapSDual f (SDual x) = SDual (f x)
-
 

@@ -77,8 +77,6 @@ instance Validable a => Validable (FinList n a) where
     vld _ Nil = SValid
     vld i (a:|as) = (Label (show i) :<=>: valid a) && vld (succ i) as
 
-instance (Typeable n, Entity a) => Entity (FinList n a)
-
 --------------------------------------------------------------------------------
 -- toW -
 

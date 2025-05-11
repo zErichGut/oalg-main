@@ -21,13 +21,12 @@
 -- definition of 'Oriented' structures.
 module OAlg.Structure.Oriented.Definition
   (
-
     -- * Oriented
-    Oriented(..), Total, isEndo, isEndoAt
+    Oriented(..), isEndo, isEndoAt
   , OS, Ort, tauOrt, structOrtOp, TransformableOrt
 
     -- * Point
-  , Point, ShowPoint, EqPoint, OrdPoint, ValidablePoint, TypeablePoint
+  , Point, ShowPoint, EqPoint, OrdPoint, SingletonPoint, Total, ValidablePoint, TypeablePoint
   , EntityPoint
   , Pnt(..)
   , idPnt, toPntG, fromPntG
@@ -69,7 +68,6 @@ module OAlg.Structure.Oriented.Definition
     -- ** Orientation
   , XStandardPoint
   , xStartOrnt, xEndOrnt
-
   )
   where
 
@@ -172,6 +170,7 @@ type instance Point () = ()
 instance ShowPoint ()
 instance EqPoint ()
 instance OrdPoint ()
+instance SingletonPoint ()
 instance ValidablePoint ()
 instance TypeablePoint ()
 instance XStandardPoint ()
@@ -184,6 +183,7 @@ type instance Point (Id x) = Point x
 instance ShowPoint x => ShowPoint (Id x)
 instance EqPoint x => EqPoint (Id x)
 instance OrdPoint x => OrdPoint (Id x)
+instance SingletonPoint x => SingletonPoint (Id x)
 instance ValidablePoint x => ValidablePoint (Id x)
 instance TypeablePoint x => TypeablePoint (Id x)
 instance XStandardPoint x => XStandardPoint (Id x)
@@ -196,6 +196,7 @@ type instance Point (Op x) = Point x
 instance ShowPoint x => ShowPoint (Op x)
 instance EqPoint x => EqPoint (Op x)
 instance OrdPoint x => OrdPoint (Op x)
+instance SingletonPoint x => SingletonPoint (Op x)
 instance ValidablePoint x => ValidablePoint (Op x)
 instance TypeablePoint x => TypeablePoint (Op x)
 instance XStandardPoint x => XStandardPoint (Op x)
@@ -208,9 +209,16 @@ type instance Point (Orientation x) = x
 instance Show x => ShowPoint (Orientation x)
 instance Eq x => EqPoint (Orientation x)
 instance Ord x => OrdPoint (Orientation x)
+instance Singleton x => SingletonPoint (Orientation x)
 instance Validable x => ValidablePoint (Orientation x)
 instance Typeable x => TypeablePoint (Orientation x)
 instance XStandard p => XStandardPoint (Orientation p)
+
+--------------------------------------------------------------------------------
+-- Total -
+
+-- | total orientations.
+type Total = SingletonPoint
 
 --------------------------------------------------------------------------------
 -- Pnt -
@@ -236,7 +244,7 @@ instance XStandardPoint x => XStandardPoint (Pnt x)
 -- Pnt - helper classes -
 
 -- | helper class to avoid undecidable instances.
-class DualisableG (->) o Pnt => DualisableGPnt o
+class DualisableG r (->) o Pnt => DualisableGPnt r o
 
 ---------------------------------------------------------------------
 -- idPnt -
@@ -261,14 +269,14 @@ fromPntG f p = p' where Pnt p' = f (Pnt p)
 --------------------------------------------------------------------------------
 -- Op - DualisableG -
 
-instance ReflexiveG (->) Op Pnt where
+instance ReflexiveG r (->) Op Pnt where
   reflG _ = Inv2 idPnt idPnt where
     
-instance DualisableG (->) Op Pnt where
+instance TransformableOp r => DualisableG r (->) Op Pnt where
   toDualG _   = idPnt
   fromDualG _ = idPnt
 
-instance DualisableGPnt Op
+instance TransformableOp r => DualisableGPnt r Op
 
 --------------------------------------------------------------------------------
 -- Oriented -
@@ -318,6 +326,7 @@ type instance Point Int = ()
 instance ShowPoint Int
 instance EqPoint Int
 instance OrdPoint Int
+instance SingletonPoint Int
 instance ValidablePoint Int
 instance TypeablePoint Int
 instance XStandardPoint Int
@@ -328,6 +337,7 @@ type instance Point Integer = ()
 instance ShowPoint Integer
 instance EqPoint Integer
 instance OrdPoint Integer
+instance SingletonPoint Integer
 instance ValidablePoint Integer
 instance TypeablePoint Integer
 instance XStandardPoint Integer
@@ -338,17 +348,18 @@ type instance Point N = ()
 instance ShowPoint N
 instance EqPoint N
 instance OrdPoint N
+instance SingletonPoint N
 instance ValidablePoint N
 instance TypeablePoint N
 instance XStandardPoint N
 instance Oriented N where
   orientation _ = ():>()
 
-
 type instance Point Z = ()
 instance ShowPoint Z
 instance EqPoint Z
 instance OrdPoint Z
+instance SingletonPoint Z
 instance ValidablePoint Z
 instance TypeablePoint Z
 instance XStandardPoint Z
@@ -359,6 +370,7 @@ type instance Point Q = ()
 instance ShowPoint Q
 instance EqPoint Q
 instance OrdPoint Q
+instance SingletonPoint Q
 instance ValidablePoint Q
 instance TypeablePoint Q
 instance XStandardPoint Q
@@ -451,6 +463,7 @@ instance Oriented q => Validable (Path q) where
 type instance Point (Path q) = Point q
 instance ShowPoint q => ShowPoint (Path q)
 instance EqPoint q => EqPoint (Path q)
+instance SingletonPoint q => SingletonPoint (Path q)
 instance ValidablePoint q => ValidablePoint (Path q)
 instance TypeablePoint q => TypeablePoint (Path q)
 instance Oriented q => Oriented (Path q) where
@@ -497,21 +510,6 @@ pthMlt :: Oriented q => Path q -> Path q -> Path q
 pthMlt (Path s fs) p@(Path t gs)
   | s == end p = Path t (fs++gs)
   | otherwise  = throw NotMultiplicable
-
---------------------------------------------------------------------------------
--- Total -
-
--- | total orientations.
-type Total = SingletonPoint
-
-instance SingletonPoint ()
-instance SingletonPoint Int
-instance SingletonPoint Integer
-instance SingletonPoint N
-instance SingletonPoint Z
-instance SingletonPoint Q
-instance SingletonPoint q => SingletonPoint (Path q)
-instance SingletonPoint x => SingletonPoint (Op x)
 
 --------------------------------------------------------------------------------
 -- Ort -
@@ -592,19 +590,19 @@ instance TransformableGObjectClassRange Id OrtX EqualExtOrt
 
 instance TransformableG Pnt OrtX EqEOrt where tauG Struct = Struct
 instance TransformableGObjectClassRange Pnt OrtX EqualExtOrt
-
-instance ReflexiveG EqualExtOrt Op Id where
-  reflG s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG (tauType s)
-
-instance DualisableG EqualExtOrt Op Id where
-  toDualG s@Struct = Sub t where t = toDualG (tauType s)
-
-instance ReflexiveG EqualExtOrt Op Pnt where
-  reflG s@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG (tauType s)
-
 instance TransformableG Op EqEOrt EqEOrt where tauG Struct = Struct
-instance DualisableG EqualExtOrt Op Pnt where
-  toDualG s@Struct = Sub t where t = toDualG (tauType s)
+
+instance ReflexiveG OrtX EqualExtOrt Op Id where
+  reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
+
+instance DualisableG OrtX EqualExtOrt Op Id where
+  toDualG r@Struct = Sub t where t = toDualG r
+
+instance ReflexiveG OrtX EqualExtOrt Op Pnt where
+  reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
+
+instance DualisableG OrtX EqualExtOrt Op Pnt where
+  toDualG r@Struct = Sub t where t = toDualG r 
 
 --------------------------------------------------------------------------------
 -- structOrtOp -
@@ -885,6 +883,4 @@ instance XStandard p => XStandardOrtOrientation (Orientation p) where
 
 instance XStandardOrtOrientation Z where
   xStandardOrtOrientation = XOrtOrientation (return (():>())) (const xStandard)
-
-
 

@@ -26,8 +26,7 @@ module OAlg.Structure.Fibred.Definition
   , Fbr, TransformableFbr, tauFbr
   
     -- * Root
-  , Root, ShowRoot, EqRoot, ValidableRoot, TypeableRoot
-  , OrdRoot, TotalRoot
+  , Root, ShowRoot, EqRoot, OrdRoot, SingletonRoot, TotalRoot, ValidableRoot, TypeableRoot
 
     -- * Fibred Oriented
   , FibredOriented, FbrOrt, TransformableFbrOrt, tauFbrOrt
@@ -92,6 +91,7 @@ type instance Root () = Orientation ()
 instance ShowRoot ()
 instance EqRoot ()
 instance ValidableRoot ()
+instance SingletonRoot ()
 instance TypeableRoot ()
 
 --------------------------------------------------------------------------------
@@ -102,6 +102,7 @@ type instance Root (Id x) = Root x
 instance ShowRoot x => ShowRoot (Id x)
 instance EqRoot x => EqRoot (Id x)
 instance ValidableRoot x => ValidableRoot (Id x)
+instance SingletonRoot x => SingletonRoot (Id x)
 instance TypeableRoot x => TypeableRoot (Id x)
 
 --------------------------------------------------------------------------------
@@ -112,8 +113,8 @@ type instance Root (Op x) = Root x
 instance ShowRoot x => ShowRoot (Op x)
 instance EqRoot x => EqRoot (Op x)
 instance ValidableRoot x => ValidableRoot (Op x)
+instance SingletonRoot x => SingletonRoot (Op x)
 instance TypeableRoot x => TypeableRoot (Op x)
-
 
 --------------------------------------------------------------------------------
 -- Fibred -
@@ -161,6 +162,7 @@ instance ShowRoot Int
 instance EqRoot Int
 instance ValidableRoot Int
 instance TypeableRoot Int
+instance SingletonRoot Int
 instance Fibred Int
 instance FibredOriented Int
 
@@ -168,6 +170,7 @@ type instance Root Integer = Orientation ()
 instance ShowRoot Integer
 instance EqRoot Integer
 instance ValidableRoot Integer
+instance SingletonRoot Integer
 instance TypeableRoot Integer
 instance Fibred Integer
 instance FibredOriented Integer
@@ -176,6 +179,7 @@ type instance Root N = Orientation ()
 instance ShowRoot N
 instance EqRoot N
 instance ValidableRoot N
+instance SingletonRoot N
 instance TypeableRoot N
 instance Fibred N
 instance FibredOriented N
@@ -184,6 +188,7 @@ type instance Root Z = Orientation ()
 instance ShowRoot Z
 instance EqRoot Z
 instance ValidableRoot Z
+instance SingletonRoot Z
 instance TypeableRoot Z
 instance Fibred Z
 instance FibredOriented Z
@@ -192,6 +197,7 @@ type instance Root Q = Orientation ()
 instance ShowRoot Q
 instance EqRoot Q
 instance ValidableRoot Q
+instance SingletonRoot Q
 instance TypeableRoot Q
 instance Fibred Q
 instance FibredOriented Q
@@ -200,6 +206,7 @@ type instance Root (Orientation p) = Orientation p
 instance Show p => ShowRoot (Orientation p)
 instance Eq p => EqRoot (Orientation p)
 instance Validable p => ValidableRoot (Orientation p)
+instance Singleton p => SingletonRoot (Orientation p)
 instance Typeable p => TypeableRoot (Orientation p)
 instance Entity p => Fibred (Orientation p) where
 instance Entity p => FibredOriented (Orientation p)

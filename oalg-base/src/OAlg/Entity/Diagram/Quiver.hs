@@ -61,8 +61,6 @@ instance Validable (Quiver n m) where
             , vld (succ j) n os
             ]
 
-instance (Typeable n, Typeable m) => Entity (Quiver n m)
-
 --------------------------------------------------------------------------------
 -- Duality -
 
