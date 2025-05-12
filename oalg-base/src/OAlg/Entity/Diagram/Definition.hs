@@ -9,6 +9,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 
+{-# LANGUAGE UndecidableInstances #-}
 -- |
 -- Module      : OAlg.Entity.Diagram.Definition
 -- Description : definition of diagrams on oriented structures
@@ -313,40 +314,21 @@ type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
 -- instance DualisableGBi (->) o (Diagram t n m) (SDual (Diagram t n m)) where
 
-dgMapCovEmpty :: (TransformableOrt s, SDualisableOriented o s)
-  => HomVariant Covariant (HomOrtEmpty s o) x y -> Diagram t n m x -> Diagram t n m y
+dgMapCovEmpty :: (TransformableOrt s, SDualisableOriented r s o)
+  => HomVariant Covariant (HomOrtEmpty r s o) x y -> Diagram t n m x -> Diagram t n m y
 dgMapCovEmpty h = dgMapCov (q h) h where
-  q :: HomVariant Covariant (HomOrtEmpty s o) x y -> Proxy o
+  q :: HomVariant Covariant (HomOrtEmpty r s o) x y -> Proxy o
   q _ = Proxy
 
-ff :: (TransformableOrt s, SDualisableOriented o s)
-  => Struct s x -> Inv2 (Sub s (->)) (Diagram t n m x) (Diagram t n m (o (o x)))
-ff = error "nyi"
-
-gg :: (TransformableOrt s, SDualisableOriented o s)
-  => Struct s x -> Inv2 (->) (Diagram t n m x) (Diagram t n m (o (o x)))
-gg s = Inv2 u v where
-    Contravariant2 t = homOrtToDualEmpty s
-    Contravariant2 t' = homOrtToDualEmpty (tau1 s)
-    u = dgMapCovEmpty $ Covariant2 (t' . t)
-
-    Contravariant2 f = homOrtFromDualEmpty s
-    Contravariant2 f' = homOrtFromDualEmpty (tau1 s)
-    v = dgMapCovEmpty $ Covariant2 (f . f') 
-
-dgMapCntEmpty :: (TransformableOrt s, SDualisableOriented o s)
-  => HomVariant Contravariant (HomOrtEmpty s o) x y
+dgMapCntEmpty :: (TransformableOrt s, SDualisableOriented r s o)
+  => HomVariant Contravariant (HomOrtEmpty r s o) x y
   -> Diagram t n m x -> Diagram (Dual t) n m y
 dgMapCntEmpty h = dgMapCnt (q h) h where
-  q :: HomVariant v (HomOrtEmpty s o) x y -> Proxy o
+  q :: HomVariant v (HomOrtEmpty r s o) x y -> Proxy o
   q _ = Proxy
 
-
-instance (TransformableOrt s, SDualisableOriented o s) -- SDualisableOriented o Ort
-  => ReflexiveG (Sub s (->)) o (Diagram t n m) where
-  reflG = ff
-{-
-  
+instance (TransformableOrt s, SDualisableOriented Ort Ort o) -- SDualisableOriented o Ort
+  => ReflexiveG s (->) o (Diagram t n m) where
   reflG s = Inv2 u v where
     sOrt = tauOrt s
     Contravariant2 t = homOrtToDualEmpty sOrt
@@ -356,17 +338,27 @@ instance (TransformableOrt s, SDualisableOriented o s) -- SDualisableOriented o 
     Contravariant2 f = homOrtFromDualEmpty sOrt
     Contravariant2 f' = homOrtFromDualEmpty (tau1 sOrt)
     v = dgMapCovEmpty $ Covariant2 (f . f')
--}
+
+instance (TransformableOrt s, SDualisableOriented Ort Ort o)
+  => ReflexiveG s (->) o (SDual (Diagram t n m)) where
+  reflG s = Inv2 (mapSDual u) (mapSDual v) where Inv2 u v = reflG s
+
+instance ( TransformableOrt s, SDualisableOriented Ort Ort o
+         , TransformableG o s s
+         , SDualisableOriented Ort s o
+         , Dual (Dual t) ~ t
+         )
+  => DualisableGBi s (->) o (Diagram t n m) (SDual (Diagram t n m)) where
+  toDualGLft s = SDual . dgMapCntEmpty (homOrtToDualEmpty s)
+  toDualGRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSDual
+
+homOrtToDualOp :: (TransformableOrt s, TransformableOp s)
+  => Struct s x -> HomOrtEmpty Ort s Op x (Op x)
+homOrtToDualOp s = t where Contravariant2 t = homOrtToDual s
+
+type DiagramDuaity t n m = SDuality (Diagram t n m) (SDual (Diagram t n m))
+
 {-
-instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o)
-  => SReflexiveG (->) s o (SDual (Diagram t n m)) where
-  sdlRefl s = Inv2 (mapSDual u) (mapSDual v) where Inv2 u v = sdlRefl s
-
-instance (TransformableOrt s, TransformableTyp s, SDualisableOriented s o, Dual (Dual t) ~ t)
-  => SBiDualisableG (->) s o (Diagram t n m) (SDual (Diagram t n m)) where
-  sdlToDualLft s = SDual . dgMapCntEmpty (homOrtToDualEmpty s)
-  sdlToDualRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSDual
-
 --------------------------------------------------------------------------------
 -- dgToOp -
 

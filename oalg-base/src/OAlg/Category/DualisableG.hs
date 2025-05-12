@@ -94,7 +94,7 @@ class DualisableG r (->) o Id => DualisableGId r o
 -- Op - SDualisable -
 
 instance ReflexiveG r (->) Op Id where
-  reflG _   = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
+  reflG _ = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
 
 instance TransformableOp r => DualisableG r (->) Op Id where
   toDualG _   = amap1 Op

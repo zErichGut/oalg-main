@@ -31,6 +31,7 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomOrt
   , prpHomOrtOpEmpty
+
   )
   where
 
@@ -54,12 +55,13 @@ import OAlg.Structure.Oriented as O
 
 import OAlg.Hom.Oriented.Definition
 
+
 --------------------------------------------------------------------------------
 -- prpSDualisableOriented -
 
 -- | validity according to 'SDualisableOriented'.
-relSDualisableOriented :: SDualisableOriented o s
-  => q o -> Struct s x -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
+relSDualisableOriented :: SDualisableOriented r s o
+  => q r o -> Struct s x -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
 relSDualisableOriented q s Struct Struct xx = Forall xx
     (\x -> And [ Label "1" :<=>: ((start $ tArw x) == (tPnt $ end x)) :?> Params ["x":=show x]
                , Label "2" :<=>: ((end $ tArw x) == (tPnt $ start x)) :?> Params ["x":=show x]
@@ -69,10 +71,9 @@ relSDualisableOriented q s Struct Struct xx = Forall xx
     tArw = toDualArw q s
     tPnt = toDualPnt q s
 
-
 -- | validity according to 'SDualisableOriented'.
-prpSDualisableOriented :: SDualisableOriented o s
-  => q o -> Struct s x -> XOrt x -> Statement
+prpSDualisableOriented :: SDualisableOriented r s o
+  => q r o -> Struct s x -> XOrt x -> Statement
 prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
   relSDualisableOriented q s (tau s) (tau (tauO s)) xx where
 
@@ -98,7 +99,6 @@ prpHomDisjOrtDual :: (HomDisjunctiveOriented o h, Eq2 h)
 prpHomDisjOrtDual q xso = Prp "HomDisjOrtDual" :<=>: Forall xso
   (\(SomeObjectClass s) -> relHomDisjOrtDual q s
   )
-
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -
@@ -145,6 +145,7 @@ prpHomDisjunctiveOriented q xso xsa = Prp "HomDisjunctiveOriented" :<=>:
 --------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
 
+
 -- | validity of @'HomOrtOpEmpty' 'Ort'´@.
 prpHomOrtOpEmpty :: Statement
 prpHomOrtOpEmpty
@@ -155,25 +156,26 @@ prpHomOrtOpEmpty
         ] where
   
   qo  = Proxy :: Proxy Op
-  qId = FunctorG :: FunctorG Id (HomOrt OrtX Op (HomEmpty OrtX)) EqualExtOrt
-  qPt = FunctorG :: FunctorG Pnt (HomOrt OrtX Op (HomEmpty OrtX)) EqualExtOrt
+  qId = FunctorG :: FunctorG Id (HomOrt OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
+  qPt = FunctorG :: FunctorG Pnt (HomOrt OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
   
-  xoSct :: X (SomeObjectClass (SDualityCategory OrtX Op (HomEmpty OrtX)))
+  xoSct :: X (SomeObjectClass (SDualityCategory OrtX OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
                  , SomeObjectClass (Struct :: Struct OrtX Q)
                  ]
 
-  xo :: X (SomeObjectClass (HomOrt OrtX Op (HomEmpty OrtX)))
+  xo :: X (SomeObjectClass (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
   xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
 
-  xfg :: X (SomeCmpb2 (HomOrt OrtX Op (HomEmpty OrtX)))
+  xfg :: X (SomeCmpb2 (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
   xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
 
-  xsa :: X (SomeApplication (HomOrt OrtX Op (HomEmpty OrtX)))
+  xsa :: X (SomeApplication (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
   xsa = join
       $ amap1
           (  (\(SomeMorphism m) -> xSomeAppl m)
            . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
           )
       $ xfg
+
