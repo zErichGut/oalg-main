@@ -30,6 +30,7 @@ module OAlg.Structure.Definition
   , Transformable1, tau1, TransformableOp, tauOp
   , TransformableTyp
   , TransformableG(..), tauG'
+  , TransformableGRefl
   
 
     -- * Some Structure Types
@@ -165,6 +166,12 @@ tauG' :: TransformableG t u v => q t -> Struct u x -> Struct v (t x)
 tauG' _ = tauG
 
 --------------------------------------------------------------------------------
+-- TransformableGRefl -
+
+-- | helper class to avoid undecidable instances.
+class TransformableG o s s => TransformableGRefl o s
+
+--------------------------------------------------------------------------------
 -- Transformable1 -
 
 -- | transforming structural attests.
@@ -195,7 +202,6 @@ tauOp = tauG
 
 -- | helper class to avoid undecidable instances.
 class Transformable s Typ => TransformableTyp s
-
 
 instance Transformable s Typ => TestEquality (Struct s) where
   testEquality sa sb = te (tau sa) (tau sb) where

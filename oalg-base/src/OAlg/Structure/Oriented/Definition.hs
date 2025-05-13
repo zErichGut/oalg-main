@@ -522,6 +522,7 @@ type instance Structure Ort x = Oriented x
 instance Transformable Ort Typ where tau Struct = Struct
 instance Transformable Ort Ent where tau Struct = Struct
 instance TransformableG Op Ort Ort where tauG Struct = Struct
+instance TransformableGRefl Op Ort
 instance TransformableOp Ort
 
 --------------------------------------------------------------------------------

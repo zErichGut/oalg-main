@@ -25,7 +25,9 @@
 module OAlg.Category.SDuality
   (
     -- * Duality
-    SDuality(..)
+    SDuality(..), SDualisable
+    
+  , SDualityBi(..), invSDuality
 
     -- * Category
   , SDualityCategory(), sctCov
@@ -293,17 +295,17 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
   => FunctorialG d (SDualityCategory r s o h) c
 
 --------------------------------------------------------------------------------
--- SDuality -
+-- SDualityBi -
 
 -- | duality-pairing for the two structural types @__a__@ and @__b__@, i.e. the
 -- disjoint union.
-newtype SDuality a b x = SDuality (Either1 a b x)
+newtype SDualityBi a b x = SDualityBi (Either1 a b x)
 
 --------------------------------------------------------------------------------
--- fromSDuality -
+-- fromSDualityBi -
 
-fromSDuality :: SDuality a b x -> Either1 a b x
-fromSDuality (SDuality ab) = ab
+fromSDualityBi :: SDualityBi a b x -> Either1 a b x
+fromSDualityBi (SDualityBi ab) = ab
 
 --------------------------------------------------------------------------------
 -- amapEither -
@@ -337,16 +339,46 @@ reflEitherFrom r (Left1 a'') = Left1 (v a'') where Inv2 _ v   = reflG r
 reflEitherFrom r (Right1 b'') = Right1 (v b'') where Inv2 _ v = reflG r
 
 ------------------------------------------------------------------------------------------
--- SDuality - SReflexive -
+-- SDualityBi - SReflexive -
 
-instance DualisableGBi r (->) o a b => ReflexiveG r (->) o (SDuality a b) where
+instance DualisableGBi r (->) o a b => ReflexiveG r (->) o (SDualityBi a b) where
   reflG r = Inv2 u v where
-    u = SDuality . reflEitherTo r . fromSDuality
-    v = SDuality . reflEitherFrom r . fromSDuality
+    u = SDualityBi . reflEitherTo r . fromSDualityBi
+    v = SDualityBi . reflEitherFrom r . fromSDualityBi
 
-instance DualisableGBi r (->) o a b => DualisableG r (->) o (SDuality a b) where
-  toDualG r = SDuality . toDualEither r . fromSDuality
+instance DualisableGBi r (->) o a b => DualisableG r (->) o (SDualityBi a b) where
+  toDualG r = SDualityBi . toDualEither r . fromSDualityBi
 
+--------------------------------------------------------------------------------
+-- SDuality -
+
+-- | duality for 'Dual1'-dualisable types.
+data SDuality a x = SLeft (a x) | SRight ((Dual1 a) x)
+
+--------------------------------------------------------------------------------
+-- SDualisable -
+
+-- | helper class to avoid undecidable instances.
+class DualisableGBi r (->) o a (SDual a) => SDualisable r o a
+
+--------------------------------------------------------------------------------
+-- invSDuality -
+
+-- | isomorphism between 'SDuality' and 'SDualityBi'.
+invSDuality :: Inv2 (->) (SDuality a x) (SDualityBi a (SDual a) x)
+invSDuality = Inv2 t f where
+  t (SLeft a)   = SDualityBi (Left1 a)
+  t (SRight a') = SDualityBi (Right1 (SDual a'))
+  
+  f (SDualityBi (Left1 a))           = SLeft a
+  f (SDualityBi (Right1 (SDual a'))) = SRight a'
+
+instance SDualisable r o a => ReflexiveG r (->) o (SDuality a) where
+  reflG r = (inv2 invSDuality) . reflG r . invSDuality
+
+instance (SDualisable r o a, TransformableGRefl o r) => DualisableG r (->) o (SDuality a) where
+  toDualG r = v . toDualG r . u where Inv2 u v = invSDuality
+  
 --------------------------------------------------------------------------------
 -- xSomeMrphSDualityCategory -
 

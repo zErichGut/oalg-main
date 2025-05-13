@@ -9,7 +9,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 
-{-# LANGUAGE UndecidableInstances #-}
+-- {-# LANGUAGE UndecidableInstances #-}
 -- |
 -- Module      : OAlg.Entity.Diagram.Definition
 -- Description : definition of diagrams on oriented structures
@@ -161,8 +161,8 @@ data Diagram t n m a where
   DiagramGeneral    :: FinList n (Point a) -> FinList m (a,Orientation N)
     -> Diagram General n m a
 
-deriving instance Oriented a => Show (Diagram t n m a)
-deriving instance Oriented a => Eq (Diagram t n m a)
+deriving instance (Show a, ShowPoint a) => Show (Diagram t n m a)
+deriving instance (Eq a, EqPoint a) => Eq (Diagram t n m a)
 
 --------------------------------------------------------------------------------
 -- dgType -
@@ -308,11 +308,16 @@ dgMapCnt _ (Contravariant2 h) d = case d of
         hArw = amap h
 
 --------------------------------------------------------------------------------
+-- SDualisableOrientedRefl -
+
+class SDualisableOriented s s o => SDualisableOrientedRefl s o
+
+instance (TransformableOrt s, TransformableOp s) => SDualisableOrientedRefl s Op
+
+--------------------------------------------------------------------------------
 -- Diagram - Duality -
 
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
-
--- instance DualisableGBi (->) o (Diagram t n m) (SDual (Diagram t n m)) where
 
 dgMapCovEmpty :: (TransformableOrt s, SDualisableOriented r s o)
   => HomVariant Covariant (HomOrtEmpty r s o) x y -> Diagram t n m x -> Diagram t n m y
@@ -327,24 +332,24 @@ dgMapCntEmpty h = dgMapCnt (q h) h where
   q :: HomVariant v (HomOrtEmpty r s o) x y -> Proxy o
   q _ = Proxy
 
-instance (TransformableOrt s, SDualisableOriented Ort Ort o) -- SDualisableOriented o Ort
+instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
   => ReflexiveG s (->) o (Diagram t n m) where
   reflG s = Inv2 u v where
-    sOrt = tauOrt s
-    Contravariant2 t = homOrtToDualEmpty sOrt
-    Contravariant2 t' = homOrtToDualEmpty (tau1 sOrt)
+    r = tauOrt s
+    Contravariant2 t = homOrtToDualEmpty r
+    Contravariant2 t' = homOrtToDualEmpty (tau1 r)
     u = dgMapCovEmpty $ Covariant2 (t' . t)
 
-    Contravariant2 f = homOrtFromDualEmpty sOrt
-    Contravariant2 f' = homOrtFromDualEmpty (tau1 sOrt)
+    Contravariant2 f = homOrtFromDualEmpty r
+    Contravariant2 f' = homOrtFromDualEmpty (tau1 r)
     v = dgMapCovEmpty $ Covariant2 (f . f')
 
-instance (TransformableOrt s, SDualisableOriented Ort Ort o)
+instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
   => ReflexiveG s (->) o (SDual (Diagram t n m)) where
   reflG s = Inv2 (mapSDual u) (mapSDual v) where Inv2 u v = reflG s
 
-instance ( TransformableOrt s, SDualisableOriented Ort Ort o
-         , TransformableG o s s
+instance ( TransformableOrt s, SDualisableOrientedRefl Ort o
+         , TransformableGRefl o s
          , SDualisableOriented Ort s o
          , Dual (Dual t) ~ t
          )
@@ -352,11 +357,30 @@ instance ( TransformableOrt s, SDualisableOriented Ort Ort o
   toDualGLft s = SDual . dgMapCntEmpty (homOrtToDualEmpty s)
   toDualGRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSDual
 
+instance ( TransformableOrt s, SDualisableOrientedRefl Ort o
+         , TransformableGRefl o s
+         , SDualisableOriented Ort s o
+         , Dual (Dual t) ~ t
+         )
+  => SDualisable s o (Diagram t n m)
+
+
+deriving instance (Show a, ShowPoint a) => Show (SDuality (Diagram t n m) a)
+
+dgToOp :: Oriented x => HomOrtEmpty Ort Ort Op x (Op x)
+dgToOp = t where Contravariant2 t = homOrtToDual (Struct :: Oriented x => Struct Ort x)
+
+dgFromOp :: Oriented x => HomOrtEmpty Ort Ort Op (Op x) x
+dgFromOp = f where Contravariant2 f = homOrtFromDual (Struct :: Oriented x => Struct Ort x)
+
+{-
 homOrtToDualOp :: (TransformableOrt s, TransformableOp s)
   => Struct s x -> HomOrtEmpty Ort s Op x (Op x)
 homOrtToDualOp s = t where Contravariant2 t = homOrtToDual s
 
 type DiagramDuaity t n m = SDuality (Diagram t n m) (SDual (Diagram t n m))
+-}
+
 
 {-
 --------------------------------------------------------------------------------
