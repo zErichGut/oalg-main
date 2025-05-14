@@ -38,9 +38,11 @@ module OAlg.Hom.Oriented.Definition
     -- ** Duality
   , SDualisableOriented
   , toDualArw, toDualPnt
+  , SDualisableOrientedRefl
 
     -- * Hom Oriented
   , HomOrt, homOrt
+  , toOpOrt, fromOpOrt
 
     -- ** Empty
   , HomOrtEmpty
@@ -249,6 +251,15 @@ toDualPnt q s = fromPntG (toDualG' (d q s r) r) where
   d _ _ _ = SDualityG
 
 --------------------------------------------------------------------------------
+-- SDualisableOrientedRefl -
+
+-- | helper class to avoid undecidable instances.
+class SDualisableOriented s s o => SDualisableOrientedRefl s o
+
+instance (TransformableOrt s, TransformableOp s) => SDualisableOrientedRefl s Op
+
+
+--------------------------------------------------------------------------------
 -- HomOrt - HomDisjunctiveOriented -
 
 instance (HomOriented h, SDualisableOriented r s o)
@@ -285,5 +296,17 @@ homOrtToDualEmpty = homOrtToDual
 homOrtFromDualEmpty :: (SDualisableOriented Ort s o, TransformableOrt s)
   => Struct s x -> SVariant Contravariant (HomOrtEmpty Ort s o) (o x) x
 homOrtFromDualEmpty = homOrtFromDual
+
+--------------------------------------------------------------------------------
+-- toOpOrt -
+
+toOpOrt :: Oriented x => HomOrtEmpty Ort Ort Op x (Op x)
+toOpOrt = t where Contravariant2 t = homOrtToDual (Struct :: Oriented x => Struct Ort x)
+
+--------------------------------------------------------------------------------
+-- fromOpOrt -
+
+fromOpOrt :: Oriented x => HomOrtEmpty Ort Ort Op (Op x) x
+fromOpOrt = f where Contravariant2 f = homOrtFromDual (Struct :: Oriented x => Struct Ort x)
 
 

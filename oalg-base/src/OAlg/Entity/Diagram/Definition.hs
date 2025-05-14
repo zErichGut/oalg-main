@@ -267,15 +267,6 @@ dgMapCov _ (Covariant2 h) d = case d of
   where hPnt = pmap h
         hArw = amap h
 
-
-{-
-instance (HomOriented h, SDualisableOriented s o)
-  => ApplicativeG (Diagram t n m) (SVariant Covariant (HomOrt s o h)) (->) where
-  amapG h = dgMapCov (q h) h where
-    q :: SVariant Covariant (HomOrt s o h) x y -> Proxy2 s o
-    q _ = Proxy2
--}
-
 --------------------------------------------------------------------------------
 -- dgMapCnt -
 
@@ -306,13 +297,6 @@ dgMapCnt _ (Contravariant2 h) d = case d of
                                 (amap1 (\(a,o) -> (hArw a,opposite o)) aijs)
   where hPnt = pmap h
         hArw = amap h
-
---------------------------------------------------------------------------------
--- SDualisableOrientedRefl -
-
-class SDualisableOriented s s o => SDualisableOrientedRefl s o
-
-instance (TransformableOrt s, TransformableOp s) => SDualisableOrientedRefl s Op
 
 --------------------------------------------------------------------------------
 -- Diagram - Duality -
@@ -364,285 +348,7 @@ instance ( TransformableOrt s, SDualisableOrientedRefl Ort o
          )
   => SDualisable s o (Diagram t n m)
 
-
 deriving instance (Show a, ShowPoint a) => Show (SDuality (Diagram t n m) a)
-
-dgToOp :: Oriented x => HomOrtEmpty Ort Ort Op x (Op x)
-dgToOp = t where Contravariant2 t = homOrtToDual (Struct :: Oriented x => Struct Ort x)
-
-dgFromOp :: Oriented x => HomOrtEmpty Ort Ort Op (Op x) x
-dgFromOp = f where Contravariant2 f = homOrtFromDual (Struct :: Oriented x => Struct Ort x)
-
-{-
-homOrtToDualOp :: (TransformableOrt s, TransformableOp s)
-  => Struct s x -> HomOrtEmpty Ort s Op x (Op x)
-homOrtToDualOp s = t where Contravariant2 t = homOrtToDual s
-
-type DiagramDuaity t n m = SDuality (Diagram t n m) (SDual (Diagram t n m))
--}
-
-
-{-
---------------------------------------------------------------------------------
--- dgToOp -
-
--- | to the dual diagram accroding to the @__Op__@-duality with inverse 'dgFromOp'.
-dgToOpS :: Dual (Dual t) :~: t -> Struct Ort x -> Diagram t n m x -> SDual (Diagram t n m) (Op x)
-dgToOpS Refl = sdlToDualLft
-
--- | to the dual diagram accroding to the @__Op__@-duality with inverse 'dgFromOp'.
-dgToOp :: Oriented x =>  Dual (Dual t) :~: t -> Diagram t n m x -> Diagram (Dual t) n m (Op x)
-dgToOp r d = fromSDual $ dgToOpS r (s d) d where
-  s :: Oriented x => q x -> Struct Ort x
-  s _ = Struct
-
---------------------------------------------------------------------------------
--- dgFromOp -
-
--- | from the dual diagram accroding to the @__Op__@-duality with inverse 'dgToOp'.
-dgFromOpS :: Dual (Dual t) :~: t -> Struct Ort x -> SDual (Diagram t n m) (Op x) -> Diagram t n m x
-dgFromOpS Refl = sdlFromDualLft
-
--- | from the dual diagram accroding to the @__Op__@-duality
-dgFromOp :: Oriented x => Dual (Dual t) :~: t -> Diagram (Dual t) n m (Op x) -> Diagram t n m x
-dgFromOp r d' = dgFromOpS r (s d') (SDual d') where
-  s :: Oriented x => q (Op x) -> Struct Ort x
-  s _ = Struct
-
---------------------------------------------------------------------------------
--- DiagramDuality -
-
-type DiagramDuality t n m = SDuality (Diagram t n m) (SDual (Diagram t n m))
-
-
-ff :: ( Morphism h
-         , ApplicativeG (SDuality (Diagram t n m) (SDual (Diagram t n m))) h (->)
-         , TransformableOrt s, TransformableTyp s
-         , SDualisableOriented s o
-         , Dual (Dual t) ~ t
-         )
-  => HomOrt s o h x y -> DiagramDuality t n m x -> DiagramDuality t n m y
-ff = amapG
-
-
-instance ( Morphism h
-         , ApplicativeG (SDuality (Diagram t n m) (SDual (Diagram t n m))) h (->)
-         , TransformableOrt s, TransformableTyp s
-         , SDualisableOriented s o
-         , Dual (Dual t) ~ t
-         )
-  => ApplicativeG (SDuality (Diagram t n m) (SDual (Diagram t n m))) (HomOrt s o h) (->) where
-  amapG (HomOrt h) = amapG h
-
-
-
-
---------------------------------------------------------------------------------
--- Diagram - Dual -
-
-
-type instance Dual (Diagram t n m a) = Dual1 (Diagram t n m) (Op a)
-
---------------------------------------------------------------------------------
--- SDualDigram -
-
-newtype SDuality d s (o :: Type -> Type) x = SDuality (Either1 d (Dual1 d) x)
-
-
-sdProxy :: SDuality d s o x -> Proxy2 s o
-sdProxy _ = Proxy2
-
-
-class HomDisjunctiveOriented s o h => SD s o h d where
-  sdMapCov :: q s o -> SVariant Covariant h x y -> d x -> d y
-  sdMapCnt :: q s o -> SVariant Contravariant h x y -> d x -> (Dual1 d) y
-
-instance HomDisjunctiveOriented s o h => SD s o h (Diagram t n m) where
-  sdMapCov = dgMapCov
-  sdMapCnt = dgMapCnt
-
-sdMapLeft :: SD s o h d => q s o -> h x y -> d x -> SDuality d s o y
-sdMapLeft q h d = SDuality $ case toVariant2 h of
-  Right2 hCov -> Left1 $ sdMapCov q hCov d
-  Left2 hCnt  -> Right1 $ sdMapCnt q hCnt d
-
-sdMapRight :: (SD s o h d, Dual1 (Dual1 d) ~ d) => q s o -> h x y -> Dual1 d x -> SDuality d s o y
-sdMapRight q h d = SDuality $ case toVariant2 h of
-    Right2 hCov -> Right1 $ sdMapCov q hCov d
-    -- Left2 hCnt  -> Left1 $ sdMapCnt q hCnt d
--}
-
-{-
---------------------------------------------------------------------------------
--- dgMap -
-
-dgMapLeft :: HomDisjunctiveOriented s o h
-  => q s o -> h a b -> Diagram t n m a -> SDualDiagram s o t n m b
-dgMapLeft q h d = SDualDiagram $ case toVariant2 h of
-  Right2 hCov -> Left1 $ dgMapCov q hCov d
-  Left2 hCnt  -> Right1 $ dgMapCnt q hCnt d
-
-dgMapRight :: (HomDisjunctiveOriented s o h, Dual (Dual t) ~ t)
-  => q s o -> h a b -> Diagram (Dual t) n m a -> SDualDiagram s o t n m b
-dgMapRight q h d     = SDualDiagram $ case toVariant2 h of
-    Right2 hCov -> Right1 $ dgMapCov q hCov d
-    Left2 hCnt  -> Left1 $ dgMapCnt q hCnt d
-
-dgMap :: (HomDisjunctiveOriented s o h, Dual (Dual t) ~ t)
-  => h a b -> SDualDiagram s o t n m a -> SDualDiagram s o t n m b
-dgMap h s@(SDualDiagram d) = either1 (dgMapLeft q h) (dgMapRight q h) d where q = sdProxy s
-
-
-instance HomDisjunctiveOriented s o h
-  => ApplicativeG (SDualDiagram s o Discrete n m) h (->) where
-  amapG = dgMap
--}
-
-{-
---------------------------------------------------------------------------------
--- dgMap -
-
--- | mapping of a diagram via a homomorphism on 'Oriented' structures.
---
--- __Definition__ Let @h@ be in @__h__ __a__ __b__@ and @d@ in @'Diagram' ___t__ __n__ __m__ __a__@
--- with @'Hom' 'Ort' __h__@, then we define @d' = 'dgMap' h d@ as follows: Let @hPnt = 'pmap' h@ and
--- @hArw = ''amap' h@ in
---
--- @
--- d' = case d of
---   DiagramEmpty             -> DiagramEmpty
---   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
---   DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
---   DiagramChainFrom s as    -> DiagramChainFrom  (hPnt s) (amap1 hArw as)
---   DiagramParallelLR l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
---   DiagramParallelRL l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
---   DiagramSink e as         -> DiagramSink (hPnt e) (amap1 hArw as)
---   DiagramSource s as       -> DiagramSource (hPnt s) (amap1 hArw as)
---   DiagramGeneral ps aijs   -> DiagramGeneral (amap1 hPnt ps) (amap1 (\(a,o) -> (hArw a,o)) aijs)
--- @
-dgMap :: Hom Ort h => h a b -> Diagram t n m a -> Diagram t n m b
-dgMap h d = case d of
-  DiagramEmpty             -> DiagramEmpty
-  DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
-  DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
-  DiagramChainFrom s as    -> DiagramChainFrom  (hPnt s) (amap1 hArw as)
-  DiagramParallelLR l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
-  DiagramParallelRL l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
-  DiagramSink e as         -> DiagramSink (hPnt e) (amap1 hArw as)
-  DiagramSource s as       -> DiagramSource (hPnt s) (amap1 hArw as)
-  DiagramGeneral ps aijs   -> DiagramGeneral (amap1 hPnt ps)
-                                (amap1 (\(a,o) -> (hArw a,o)) aijs)
-  where hPnt = pmap h
-        hArw = amap h
-
-instance HomOriented h => Applicative1 h (Diagram t n m) where amap1 = dgMap
-
-instance FunctorialHomOriented h => Functorial1 h (Diagram t n m)
-
---------------------------------------------------------------------------------
--- coDiagram -
-
--- | mapping a diagram to its co-diagram according to the given structural duality on oriented
--- structures.
---
--- __Definition__ Let @q@ be in @__q__ __i__ __o__@, @s@ in @'Struct' __s__ __a__@ and
--- @d@ in @'Diagram' __t__ __n__ __m__ __a__@ with @'SDualityOriented' __q__ __s__ __i__ __o__@, then
--- we define @d' = 'coDiagram' q s d@ as follows: Let @coPnt = 'sdlToDualPnt' q s@ and
--- @coArw = 'sdlToDual' q s@ in
---
--- @
--- d' = case d of
---   DiagramEmpty             -> DiagramEmpty
---   DiagramDiscrete ps       -> DiagramDiscrete (amap1 coPnt ps)
---   DiagramChainTo p as      -> DiagramChainFrom (coPnt p) (amap1 coArw as)
---   DiagramChainFrom p as    -> DiagramChainTo (coPnt p) (amap1 coArw as)
---   DiagramParallelLR l r as -> DiagramParallelRL (coPnt l) (coPnt r) (amap1 coArw as)
---   DiagramParallelRL l r as -> DiagramParallelLR (coPnt l) (coPnt r) (amap1 coArw as)
---   DiagramSink p as         -> DiagramSource (coPnt p) (amap1 coArw as)
---   DiagramSource p as       -> DiagramSink (coPnt p) (amap1 coArw as)
---   DiagramGeneral ps aijs   -> DiagramGeneral (amap1 coPnt ps) (amap1 (\(a,o) -> (coArw a,opposite o)) aijs)
--- @
---
--- From the definition above, the definition for 'dgMap', the properties for 'SDuality' and
--- 'SDualityOriented' follows easily:
---
--- __Properties__ For all @q@ in @__q__ __i__ __o__@ and @s@ in @'Struct' __s__ __x__@ with
--- @'SDualityOriented __q__ __s__ __i__ __o__@ holds:
---
--- (1) @'coDiagram' q s' '.' 'coDiagram' q s '.=.' 'dgMap' r@ where
--- @s' = 'sdlTau' q s@ and @'Inv2' r _ = 'sdlRefl' q s@.
---
--- (2) @'coDiagram' q s'' '.' 'dgMap' r '.=.' 'dgMap' r'' '.' 'coDiagram' q s@ where
--- @s' = 'sdlTau' q s@, @s'' = 'sdlTau' q s'@, @'Inv2' r _ = 'sdlRefl' q s@ and
--- @'Inv2' r'' _ = 'sdlRefl' q s'@.
-coDiagram :: SDualityOriented d s i o
-  => d i o -> Struct s a
-  -> Diagram t n m a -> Dual1 (Diagram t n m) (o a)
-coDiagram q s d = case d of
-  DiagramEmpty             -> DiagramEmpty
-  DiagramDiscrete ps       -> DiagramDiscrete (amap1 coPnt ps)
-  DiagramChainTo e as      -> DiagramChainFrom (coPnt e) (amap1 coArw as)
-  DiagramChainFrom s as    -> DiagramChainTo (coPnt s) (amap1 coArw as)
-  DiagramParallelLR l r as -> DiagramParallelRL (coPnt l) (coPnt r) (amap1 coArw as)
-  DiagramParallelRL l r as -> DiagramParallelLR (coPnt l) (coPnt r) (amap1 coArw as)
-  DiagramSink e as         -> DiagramSource (coPnt e) (amap1 coArw as)
-  DiagramSource s as       -> DiagramSink (coPnt s) (amap1 coArw as)
-  DiagramGeneral ps aijs   -> DiagramGeneral
-                                (amap1 coPnt ps)
-                                (amap1 (\(a,o) -> (coArw a,opposite o)) aijs)
-
-  where coPnt = sdlToDualPnt q s
-        coArw = sdlToDual q s
-
---------------------------------------------------------------------------------
--- DiagramDuality -
-
--- | 'SDuality1' for 'Diagram's where 'sdlToDual1Fst' and 'sdlToDualSnd' are given by 'coDiagram'.
---
--- __Note__
---
--- (1) The definition of 'sdlToDualSnd' is also given by 'coDiagram' under the assumption of
--- @'Dual' ('Dual' __t__) ':~:' __t__@.
---
--- (2) From the properties of 'coDiagram' and the note 3 of 'SDuality1' follows, that all the
--- properties of 'SDuality1' for 'DiagramDuality' holds.
-data DiagramDuality q s i o a b where
-  DiagramDuality
-    :: SDualityOriented q s i o
-    => q i o
-    -> Dual (Dual t) :~: t
-    -> DiagramDuality q s i o (Diagram t n m) (Dual1 (Diagram t n m))
-
-instance BiFunctorial1 i (DiagramDuality q s i o) where
-  fnc1Fst (DiagramDuality _ _) = Functor1
-  fnc1Snd (DiagramDuality _ _) = Functor1
-
-instance SReflexive s i o => SDuality1 (DiagramDuality q s) s i o where
-  sdlToDual1Fst (DiagramDuality q _)    = coDiagram q
-  sdlToDual1Snd (DiagramDuality q Refl) = coDiagram q
-
---------------------------------------------------------------------------------
--- DiagramOpDuality -
-
--- | 'DiagramDuality' according to 'IsoOp'.
-type DiagramOpDuality s = DiagramDuality OpDuality s (IsoOp s) Op
-  
---------------------------------------------------------------------------------
--- dgOpDuality -
-
--- | 'Op'-duality for 'Diagram's.
-dgOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s)
-  => Dual (Dual t) :~: t
-  -> DiagramOpDuality s (Diagram t n m) (Dual1 (Diagram t n m))
-dgOpDuality = DiagramDuality OpDuality
-
---------------------------------------------------------------------------------
--- dgOpDualityOrt -
-
--- | 'Op'-duality for 'Diagram' on 'Ort'-structures.
-dgOpDualityOrt :: Dual (Dual t) :~: t
-  -> DiagramOpDuality Ort (Diagram t n m) (Dual1 (Diagram t n m))
-dgOpDualityOrt = dgOpDuality
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -
@@ -693,31 +399,27 @@ instance Oriented a => Validable (Diagram t n m a) where
               , vld (succ l) ps aijs
               ]
 
-    _ -> valid $ sdlToDual1Fst dOp sOrt d
+    _ -> case dgTypeRefl d of Refl -> valid d' where SRight d' = amapG toOpOrt (SLeft d) 
 
-    where dOp  = dgOpDualityOrt (dgTypeRefl d)
-          sOrt = Struct :: Oriented x => Struct Ort x
-    
-          prm :: N -> Message
+    where prm :: N -> Message
           prm i = Params["i":=show i]
           lC = Label "chain"
           lE = Label "end"
           lO = Label "orientation"
           lB = Label "bound"
-    
---------------------------------------------------------------------------------
--- Diagram - Entity -
-
-instance (Oriented a, Typeable t, Typeable n, Typeable m) => Entity (Diagram t n m a)
-
 --------------------------------------------------------------------------------
 -- Diagram - Oriented -
 
+type instance Point (Diagram (Parallel d) n m a) = Point a
+instance (Show a, ShowPoint a) => ShowPoint (Diagram (Parallel d) n m a)
+instance (Eq a, EqPoint a) => EqPoint (Diagram (Parallel d) n m a)
+instance Oriented a => ValidablePoint (Diagram (Parallel d) n m a)
+instance TypeablePoint a => TypeablePoint (Diagram (Parallel d) n m a)
 instance (Oriented a, Typeable d, Typeable n, Typeable m)
   => Oriented (Diagram (Parallel d) n m a) where
-  type Point (Diagram (Parallel d) n m a) = Point a
   orientation (DiagramParallelLR l r _) = l:>r
   orientation (DiagramParallelRL l r _) = r:>l
+
 
 --------------------------------------------------------------------------------
 -- dgQuiver -
@@ -738,9 +440,9 @@ dgQuiver (DiagramSink _ as) = Quiver (SW (toW os)) os where
   snk _ Nil     = Nil
   snk j (_:|os) = (j:>0):|snk (succ j) os
 dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
-dgQuiver d = coQuiverInv $ dgQuiver $ sdlToDual1Fst dOp sOrt d where
-  dOp  = dgOpDualityOrt (dgTypeRefl d)
-  sOrt = Struct :: Oriented a => Struct Ort a
+dgQuiver d = case dgTypeRefl d of Refl -> coQuiverInv $ dgQuiver d' where
+                                            SRight d' = amapG toOpOrt (SLeft d)
+
 
 --------------------------------------------------------------------------------
 -- chnToStart -
@@ -765,22 +467,25 @@ chnFromStart (DiagramChainFrom s _) = s
 -- chnFromEnd -
 
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
-chnFromEnd d@(DiagramChainFrom _ _) = chnToStart $ sdlToDual1Fst dOp sOrt d where
-  dOp  = dgOpDualityOrt (dgTypeRefl d)
-  sOrt = Struct :: Oriented a => Struct Ort a
-
+chnFromEnd d@(DiagramChainFrom _ _) = chnToStart d' where SRight d' = amapG toOpOrt (SLeft d)
 
 --------------------------------------------------------------------------------
 -- Diagram (Chain t) - Oriented -
 
+type instance Point (Diagram (Chain t) n m a) = Point a
+instance ShowPoint a => ShowPoint (Diagram (Chain t) n m a)
+instance EqPoint a => EqPoint (Diagram (Chain t) n m a)
+instance Oriented a => ValidablePoint (Diagram (Chain t) n m a)
+instance TypeablePoint a => TypeablePoint (Diagram (Chain t) n m a)
 instance (Oriented a, Typeable t, Typeable n, Typeable m) => Oriented (Diagram (Chain t) n m a) where
-  type Point (Diagram (Chain t) n m a) = Point a
+  
   start (DiagramChainFrom s _) = s
   start d@(DiagramChainTo _ _) = chnToStart d
 
   end d@(DiagramChainFrom _ _) = chnFromEnd d
   end (DiagramChainTo e _)     = e
 
+{-
 --------------------------------------------------------------------------------
 -- dgPrlAdjZero -
 
