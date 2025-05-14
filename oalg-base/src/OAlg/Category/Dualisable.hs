@@ -15,14 +15,14 @@
 #-}
 
 -- |
--- Module      : OAlg.Category.DualisableG
+-- Module      : OAlg.Category.Dualisable
 -- Description : generalized duality for categories.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- generalized duality for categories.
-module OAlg.Category.DualisableG
+module OAlg.Category.Dualisable
   (
     -- * Structural Duality
     -- ** Dualisable
@@ -34,8 +34,6 @@ module OAlg.Category.DualisableG
     -- ** Bi-Dualisable
   , DualisableGBi(..)
 
-    -- * SDual
-  , SDual(..), fromSDual, mapSDual
     -- * Proposition
   , prpDualisableG
 
@@ -159,24 +157,4 @@ class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
   
   fromDualGRgt :: Struct r x -> c (a (o x)) (b x)
   fromDualGRgt r = v . toDualGLft (tau1 r) where Inv2 _ v = reflG r
-
---------------------------------------------------------------------------------
--- SDual -
-
--- | wrapper for @'Dual1' __d x__@.
-newtype SDual d x = SDual (Dual1 d x)
-
---------------------------------------------------------------------------------
--- fromSDual -
-
--- | deconstructing 'SDual'
-fromSDual :: SDual d x -> Dual1 d x
-fromSDual (SDual d) = d
-
---------------------------------------------------------------------------------
--- mapSDual -
-
--- | mapping 'SDual'.
-mapSDual :: (Dual1 d x -> Dual1 d y) -> SDual d x -> SDual d y
-mapSDual f (SDual x) = SDual (f x)
 

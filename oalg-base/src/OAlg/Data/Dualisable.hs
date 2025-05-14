@@ -15,6 +15,7 @@
 module OAlg.Data.Dualisable
   ( -- * Dual
     Dual, Dual1
+  , Dl1(..), fromDl1, mapDl1
 
     -- * Dualisable
   , Dualisable(..), fromDual'
@@ -49,6 +50,26 @@ type family Dual (x :: k) :: k
 
 -- | the associated parameterized dual kind.
 type family Dual1 (c :: k -> Type) :: k -> Type
+
+--------------------------------------------------------------------------------
+-- Dl1 -
+
+-- | wrapper for @'Dual1' __d x__@.
+newtype Dl1 d x = Dl1 (Dual1 d x)
+
+--------------------------------------------------------------------------------
+-- fromDl1 -
+
+-- | deconstructing 'Dl1'
+fromDl1 :: Dl1 d x -> Dual1 d x
+fromDl1 (Dl1 d) = d
+
+--------------------------------------------------------------------------------
+-- mapDl1 -
+
+-- | mapping 'Dl1'.
+mapDl1 :: (Dual1 d x -> Dual1 d y) -> Dl1 d x -> Dl1 d y
+mapDl1 f (Dl1 x) = Dl1 (f x)
 
 --------------------------------------------------------------------------------
 -- Dualisable -

@@ -83,7 +83,7 @@ import OAlg.Control.Exception as Exc
 
 import OAlg.Category.Applicative as App
 import OAlg.Category.Definition as Cat
-import OAlg.Category.DualisableG as DlbG
+import OAlg.Category.Dualisable as DlbG
 import OAlg.Category.Proposition as Prp
 
 import OAlg.Control.Validate as Vld

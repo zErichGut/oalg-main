@@ -243,7 +243,7 @@ dgCenter (DiagramSource c _) = c
 -- | mapping of a diagram via a 'Covariant' homomorphism on 'Oriented' structures.
 --
 -- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
--- @'Covariant2' h@ in @'HomVariant' 'Covariant' __h a b__@ with
+-- @'Covariant2' h@ in @'SVariant' 'Covariant' __h a b__@ with
 -- @'HomDisjunctiveOriented' __s o h__@, then holds:
 --
 -- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
@@ -252,7 +252,7 @@ dgCenter (DiagramSource c _) = c
 --
 -- where @q@ is any proxy in @__q s o__@.
 dgMapCov :: HomDisjunctiveOriented o h
-  => q o -> HomVariant Covariant h a b -> Diagram t n m a -> Diagram t n m b
+  => q o -> SVariant Covariant h a b -> Diagram t n m a -> Diagram t n m b
 dgMapCov _ (Covariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
@@ -270,9 +270,9 @@ dgMapCov _ (Covariant2 h) d = case d of
 
 {-
 instance (HomOriented h, SDualisableOriented s o)
-  => ApplicativeG (Diagram t n m) (HomVariant Covariant (HomOrt s o h)) (->) where
+  => ApplicativeG (Diagram t n m) (SVariant Covariant (HomOrt s o h)) (->) where
   amapG h = dgMapCov (q h) h where
-    q :: HomVariant Covariant (HomOrt s o h) x y -> Proxy2 s o
+    q :: SVariant Covariant (HomOrt s o h) x y -> Proxy2 s o
     q _ = Proxy2
 -}
 
@@ -282,7 +282,7 @@ instance (HomOriented h, SDualisableOriented s o)
 -- | mapping of a diagram via a 'Contravariant' homomorphism on 'Oriented' structures.
 --
 -- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
--- @'Contravariant2' h@ in @'HomVariant' 'Contravariant' __h a b__@ with
+-- @'Contravariant2' h@ in @'SVariant' 'Contravariant' __h a b__@ with
 -- @'HomDisjunctiveOriented' __s o h__@, then holds:
 --
 -- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
@@ -291,7 +291,7 @@ instance (HomOriented h, SDualisableOriented s o)
 --
 -- where @q@ is any proxy in @__q s o__@.
 dgMapCnt :: HomDisjunctiveOriented o h
-  => q o -> HomVariant Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
+  => q o -> SVariant Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
 dgMapCnt _ (Contravariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
@@ -320,16 +320,16 @@ instance (TransformableOrt s, TransformableOp s) => SDualisableOrientedRefl s Op
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
 dgMapCovEmpty :: (TransformableOrt s, SDualisableOriented r s o)
-  => HomVariant Covariant (HomOrtEmpty r s o) x y -> Diagram t n m x -> Diagram t n m y
+  => SVariant Covariant (HomOrtEmpty r s o) x y -> Diagram t n m x -> Diagram t n m y
 dgMapCovEmpty h = dgMapCov (q h) h where
-  q :: HomVariant Covariant (HomOrtEmpty r s o) x y -> Proxy o
+  q :: SVariant Covariant (HomOrtEmpty r s o) x y -> Proxy o
   q _ = Proxy
 
 dgMapCntEmpty :: (TransformableOrt s, SDualisableOriented r s o)
-  => HomVariant Contravariant (HomOrtEmpty r s o) x y
+  => SVariant Contravariant (HomOrtEmpty r s o) x y
   -> Diagram t n m x -> Diagram (Dual t) n m y
 dgMapCntEmpty h = dgMapCnt (q h) h where
-  q :: HomVariant v (HomOrtEmpty r s o) x y -> Proxy o
+  q :: SVariant v (HomOrtEmpty r s o) x y -> Proxy o
   q _ = Proxy
 
 instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
@@ -345,17 +345,17 @@ instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
     v = dgMapCovEmpty $ Covariant2 (f . f')
 
 instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
-  => ReflexiveG s (->) o (SDual (Diagram t n m)) where
-  reflG s = Inv2 (mapSDual u) (mapSDual v) where Inv2 u v = reflG s
+  => ReflexiveG s (->) o (Dl1 (Diagram t n m)) where
+  reflG s = Inv2 (mapDl1 u) (mapDl1 v) where Inv2 u v = reflG s
 
 instance ( TransformableOrt s, SDualisableOrientedRefl Ort o
          , TransformableGRefl o s
          , SDualisableOriented Ort s o
          , Dual (Dual t) ~ t
          )
-  => DualisableGBi s (->) o (Diagram t n m) (SDual (Diagram t n m)) where
-  toDualGLft s = SDual . dgMapCntEmpty (homOrtToDualEmpty s)
-  toDualGRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromSDual
+  => DualisableGBi s (->) o (Diagram t n m) (Dl1 (Diagram t n m)) where
+  toDualGLft s = Dl1 . dgMapCntEmpty (homOrtToDualEmpty s)
+  toDualGRgt s = dgMapCntEmpty (homOrtToDualEmpty s) . fromDl1
 
 instance ( TransformableOrt s, SDualisableOrientedRefl Ort o
          , TransformableGRefl o s
@@ -454,8 +454,8 @@ sdProxy _ = Proxy2
 
 
 class HomDisjunctiveOriented s o h => SD s o h d where
-  sdMapCov :: q s o -> HomVariant Covariant h x y -> d x -> d y
-  sdMapCnt :: q s o -> HomVariant Contravariant h x y -> d x -> (Dual1 d) y
+  sdMapCov :: q s o -> SVariant Covariant h x y -> d x -> d y
+  sdMapCnt :: q s o -> SVariant Contravariant h x y -> d x -> (Dual1 d) y
 
 instance HomDisjunctiveOriented s o h => SD s o h (Diagram t n m) where
   sdMapCov = dgMapCov

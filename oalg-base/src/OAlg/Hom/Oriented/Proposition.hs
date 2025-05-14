@@ -105,14 +105,14 @@ prpHomDisjOrtDual q xso = Prp "HomDisjOrtDual" :<=>: Forall xso
 
 relHomDisjOrtCovariant :: (HomDisjunctiveOriented o h, Show2 h)
   => q o -> Struct (ObjectClass h) x -> Homomorphous Ort x y
-  -> HomVariant Covariant h x y  -> x -> Statement
+  -> SVariant Covariant h x y  -> x -> Statement
 relHomDisjOrtCovariant _ _ (Struct:>:Struct) h  x = Label "Covariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
 relHomDisjOrtVariant :: (HomDisjunctiveOriented o h, Show2 h)
-  => q o -> Either2 (HomVariant Contravariant h) (HomVariant Covariant h) x y
+  => q o -> Either2 (SVariant Contravariant h) (SVariant Covariant h) x y
   -> Struct (ObjectClass h) x -> x -> Statement
 relHomDisjOrtVariant q h s x = case h of
   Right2 hCov -> Label "Covariant" :<=>: relHomDisjOrtCovariant q s (tauHom (homomorphous h)) hCov x
@@ -159,7 +159,7 @@ prpHomOrtOpEmpty
   qId = FunctorG :: FunctorG Id (HomOrt OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
   qPt = FunctorG :: FunctorG Pnt (HomOrt OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
   
-  xoSct :: X (SomeObjectClass (SDualityCategory OrtX OrtX Op (HomEmpty OrtX)))
+  xoSct :: X (SomeObjectClass (SHom OrtX OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
                  , SomeObjectClass (Struct :: Struct OrtX Q)
@@ -169,7 +169,7 @@ prpHomOrtOpEmpty
   xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
 
   xfg :: X (SomeCmpb2 (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
-  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
+  xfg = xSctSomeCmpb2 10 xoSct XEmpty
 
   xsa :: X (SomeApplication (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
   xsa = join

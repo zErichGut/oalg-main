@@ -16,28 +16,27 @@
 
 -- |
 -- Module      : OAlg.Category.SDuality
--- Description : functor to dualisable structured types.
+-- Description : functor for dualisable structured types.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- functor to dualisable structured types.
+-- functor for dualisable parameterized types over structured types.
 module OAlg.Category.SDuality
   (
     -- * Duality
-    SDuality(..), SDualisable
-    
+    SDuality(..), SDualisable    
   , SDualityBi(..), invSDuality
-
+  
     -- * Category
-  , SDualityCategory(), sctCov
-  , sctForget
-  , sctToDual, sctToDual'
-  , sctFromDual, sctFromDual'
+  , SHom(), SVariant
+  , sCov
+  , sForget
+  , sToDual, sToDual'
+  , sFromDual, sFromDual'
     
-    -- * Morphism
-  , SDualityMorphism(..)
-  , PathSDualityMorphism, rdcPathSDualityMorphism
+  , SMorphism(..)
+  , PathSMorphism, rdcPathSMorphism
 
     -- * X
   , xSctSomeCmpb2
@@ -60,116 +59,116 @@ import OAlg.Data.Constructable
 import OAlg.Data.Variant
 
 --------------------------------------------------------------------------------
--- SDualityMorphism -
+-- SMorphism -
 
--- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'ToDual' and 'FromDual'.
-data SDualityMorphism r s o h x y where
-  SMrphCov :: Transformable (ObjectClass h) s => h x y -> SDualityMorphism r s o h x y
-  ToDual   :: (Structure s x, Structure s (o x)) => SDualityMorphism r s o h x (o x)
-  FromDual :: (Structure s x, Structure s (o x)) =>  SDualityMorphism r s o h (o x) x
+-- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'SToDual' and 'SFromDual'.
+data SMorphism r s o h x y where
+  SCov :: Transformable (ObjectClass h) s => h x y -> SMorphism r s o h x y
+  SToDual :: (Structure s x, Structure s (o x)) => SMorphism r s o h x (o x)
+  SFromDual :: (Structure s x, Structure s (o x)) =>  SMorphism r s o h (o x) x
 
 --------------------------------------------------------------------------------
 -- smpBaseDomain -
 
-smpBaseDomain :: (Morphism h, Transformable s r) => SDualityMorphism r s o h x y -> Struct r x
+smpBaseDomain :: (Morphism h, Transformable s r) => SMorphism r s o h x y -> Struct r x
 smpBaseDomain = tau . domain
 
 --------------------------------------------------------------------------------
 -- smpBaseRange -
 
-smpBaseRange :: (Morphism h, Transformable s r) => SDualityMorphism r s o h x y -> Struct r y
+smpBaseRange :: (Morphism h, Transformable s r) => SMorphism r s o h x y -> Struct r y
 smpBaseRange = tau . range
 
 --------------------------------------------------------------------------------
--- SMrphCov - Disjunctive -
+-- SCov - Disjunctive -
 
-instance Disjunctive (SDualityMorphism r s o h x y) where
-  variant (SMrphCov _) = Covariant
-  variant _            = Contravariant
+instance Disjunctive (SMorphism r s o h x y) where
+  variant (SCov _) = Covariant
+  variant _        = Contravariant
 
-instance Disjunctive2 (SDualityMorphism r s o h)
+instance Disjunctive2 (SMorphism r s o h)
 
 --------------------------------------------------------------------------------
--- SMrphCov - Entity2 -
+-- SCov - Entity2 -
 
-instance Show2 h => Show2 (SDualityMorphism r s o h) where
-  show2 (SMrphCov h) = "SMrphCov (" ++ show2 h ++ ")"
-  show2 ToDual       = "ToDual"
-  show2 FromDual     = "FromDual"
+instance Show2 h => Show2 (SMorphism r s o h) where
+  show2 (SCov h) = "SCov (" ++ show2 h ++ ")"
+  show2 SToDual       = "SToDual"
+  show2 SFromDual     = "SFromDual"
 
-instance Eq2 h => Eq2 (SDualityMorphism r s o h) where
-  eq2 (SMrphCov f) (SMrphCov g) = eq2 f g
-  eq2 ToDual ToDual             = True
-  eq2 FromDual FromDual         = True
+instance Eq2 h => Eq2 (SMorphism r s o h) where
+  eq2 (SCov f) (SCov g) = eq2 f g
+  eq2 SToDual SToDual             = True
+  eq2 SFromDual SFromDual         = True
   eq2 _ _                       = False
 
-instance Validable2 h => Validable2 (SDualityMorphism r s o h) where
-  valid2 (SMrphCov h) = valid2 h
+instance Validable2 h => Validable2 (SMorphism r s o h) where
+  valid2 (SCov h) = valid2 h
   valid2 _            = SValid
 
 --------------------------------------------------------------------------------
--- SMrphCov - Morphism -
+-- SCov - Morphism -
 
-instance Morphism h => Morphism (SDualityMorphism r s o h) where
-  type ObjectClass (SDualityMorphism r s o h) = s
+instance Morphism h => Morphism (SMorphism r s o h) where
+  type ObjectClass (SMorphism r s o h) = s
 
-  homomorphous (SMrphCov h) = tauHom (homomorphous h)
-  homomorphous ToDual       = Struct :>: Struct
-  homomorphous FromDual     = Struct :>: Struct
+  homomorphous (SCov h) = tauHom (homomorphous h)
+  homomorphous SToDual       = Struct :>: Struct
+  homomorphous SFromDual     = Struct :>: Struct
 
 instance TransformableGObjectClassRange d s c
-  => TransformableGObjectClass d (SDualityMorphism r s o h) c
+  => TransformableGObjectClass d (SMorphism r s o h) c
 
-instance Transformable s Typ => TransformableObjectClassTyp (SDualityMorphism r s o h)
+instance Transformable s Typ => TransformableObjectClassTyp (SMorphism r s o h)
 
 --------------------------------------------------------------------------------
 -- smpForget -
 
 smpForgetStruct :: (Transformable (ObjectClass h) t)
-  => Homomorphous t x y -> SDualityMorphism r s o h x y -> SDualityMorphism r t o h x y
+  => Homomorphous t x y -> SMorphism r s o h x y -> SMorphism r t o h x y
 smpForgetStruct (Struct:>:Struct) m = case m of
-  SMrphCov h -> SMrphCov h
-  ToDual     -> ToDual
-  FromDual   -> FromDual
+  SCov h -> SCov h
+  SToDual     -> SToDual
+  SFromDual   -> SFromDual
 
 smpForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
-  => SDualityMorphism r s o h x y -> SDualityMorphism r t o h x y
+  => SMorphism r s o h x y -> SMorphism r t o h x y
 smpForget m = smpForgetStruct (tauHom $ homomorphous m) m
 
 --------------------------------------------------------------------------------
--- PathSMrphCov -
+-- PathSCov -
 
--- | path of 'SMrphCov'.
-type PathSDualityMorphism r s o h = Path (SDualityMorphism r s o h)
+-- | path of 'SCov'.
+type PathSMorphism r s o h = Path (SMorphism r s o h)
 
 --------------------------------------------------------------------------------
 -- smpPathForget -
 
 smpPathForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
-  => PathSDualityMorphism r s o h x y -> PathSDualityMorphism r t o h x y
+  => PathSMorphism r s o h x y -> PathSMorphism r t o h x y
 smpPathForget p = case p of
   IdPath s -> IdPath (tau s)
   m :. p'  -> smpForget m :. smpPathForget p'
 
 --------------------------------------------------------------------------------
--- rdcPathSDualityMorphism -
+-- rdcPathSMorphism -
 
-rdcPathSDualityMorphism :: PathSDualityMorphism r s o h x y -> Rdc (PathSDualityMorphism r s o h x y)
-rdcPathSDualityMorphism p = case p of
-  FromDual :. ToDual :. p' -> reducesTo p' >>= rdcPathSDualityMorphism
-  ToDual :. FromDual :. p' -> reducesTo p' >>= rdcPathSDualityMorphism
-  p' :. p''                -> rdcPathSDualityMorphism p'' >>= return . (p' :.)
+rdcPathSMorphism :: PathSMorphism r s o h x y -> Rdc (PathSMorphism r s o h x y)
+rdcPathSMorphism p = case p of
+  SFromDual :. SToDual :. p' -> reducesTo p' >>= rdcPathSMorphism
+  SToDual :. SFromDual :. p' -> reducesTo p' >>= rdcPathSMorphism
+  p' :. p''                -> rdcPathSMorphism p'' >>= return . (p' :.)
   _                        -> return p
 
-instance Reducible (PathSDualityMorphism r s o h x y) where
-  reduce = reduceWith rdcPathSDualityMorphism
+instance Reducible (PathSMorphism r s o h x y) where
+  reduce = reduceWith rdcPathSMorphism
 
 --------------------------------------------------------------------------------
--- SDualityCategory -
+-- SHom -
 
 -- | category for structural dualities.
 --
--- __Property__ Let @h@ be in @'SDualityCategory __r s o h x y__@ with
+-- __Property__ Let @h@ be in @'SHom __r s o h x y__@ with
 -- @'Morphism' __h__@, @'ApplicativeG' __d h c__@, @'DualisableG' __r c o d__@, then holds:
 --
 -- (1) @'amapG' h '.=.' 'amapG' ('stcForget' h)@
@@ -179,120 +178,125 @@ instance Reducible (PathSDualityMorphism r s o h x y) where
 --
 -- __Note__ The property above states that relaxing the constraints given by @__s__@ to the
 -- constraints given by @__r__@ dose not alter the applicative behavior.
-newtype SDualityCategory r s o h x y = SDualityCategory (PathSDualityMorphism r s o h x y)
+newtype SHom r s o h x y = SHom (PathSMorphism r s o h x y)
   deriving (Show,Show2,Validable,Validable2)
 
-deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (SDualityCategory r s o h x y)
-deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (SDualityCategory r s o h)
+deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq (SHom r s o h x y)
+deriving instance (Morphism h, Transformable s Typ, Eq2 h) => Eq2 (SHom r s o h)
 
 --------------------------------------------------------------------------------
--- SDualityCategory - Constructable -
+-- SHom - Constructable -
 
-instance Exposable (SDualityCategory r s o h x y) where
-  type Form (SDualityCategory r s o h x y) = PathSDualityMorphism r s o h x y
-  form (SDualityCategory p) = p
+instance Exposable (SHom r s o h x y) where
+  type Form (SHom r s o h x y) = PathSMorphism r s o h x y
+  form (SHom p) = p
 
-instance Constructable (SDualityCategory r s o h x y) where make = SDualityCategory . reduce
-
---------------------------------------------------------------------------------
--- SDualityCategory - Disjunctive -
-
-instance Disjunctive2 (SDualityCategory r s o h)    where variant2 = restrict variant2
-instance Disjunctive (SDualityCategory r s o h x y) where variant  = restrict variant
+instance Constructable (SHom r s o h x y) where make = SHom . reduce
 
 --------------------------------------------------------------------------------
--- SDualityCategory - Category -
+-- SHom - Disjunctive -
 
-instance Morphism h => Morphism (SDualityCategory r s o h) where
-  type ObjectClass (SDualityCategory r s o h) = s
-  homomorphous (SDualityCategory p) = homomorphous p
+instance Disjunctive2 (SHom r s o h)    where variant2 = restrict variant2
+instance Disjunctive (SHom r s o h x y) where variant  = restrict variant
 
-instance Morphism h => Category (SDualityCategory r s o h) where
+--------------------------------------------------------------------------------
+-- SHom - Category -
+
+instance Morphism h => Morphism (SHom r s o h) where
+  type ObjectClass (SHom r s o h) = s
+  homomorphous (SHom p) = homomorphous p
+
+instance Morphism h => Category (SHom r s o h) where
   cOne = make . IdPath
-  SDualityCategory f . SDualityCategory g = make (f . g)
+  SHom f . SHom g = make (f . g)
 
-instance Morphism h => CategoryDisjunctive (SDualityCategory r s o h)
+instance Morphism h => CategoryDisjunctive (SHom r s o h)
 
 --------------------------------------------------------------------------------
--- sctCov -
+-- SVariant -
+
+type SVariant = Variant2
+
+--------------------------------------------------------------------------------
+-- sCov -
 
 -- | the induced morphism.
 --
 -- __Note__ The resulting morphism is 'Covarant'.
-sctCov :: (Morphism h, Transformable (ObjectClass h) s)
-  => h x y -> SDualityCategory r s o h x y
-sctCov h = make (SMrphCov h :. IdPath (tau (domain h)))
+sCov :: (Morphism h, Transformable (ObjectClass h) s)
+  => h x y -> SHom r s o h x y
+sCov h = make (SCov h :. IdPath (tau (domain h)))
 
 --------------------------------------------------------------------------------
--- sctForget -
+-- sForget -
 
-sctForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
-  => SDualityCategory r s o h x y -> SDualityCategory r t o h x y
-sctForget (SDualityCategory p) = SDualityCategory (smpPathForget p)
+sForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
+  => SHom r s o h x y -> SHom r t o h x y
+sForget (SHom p) = SHom (smpPathForget p)
 
 --------------------------------------------------------------------------------
--- sctToDual -
+-- sToDual -
 
--- | using the structural constraints to constract the 'Contravariant' morphism of 'ToDual'
--- in'SDualityCategory'.
-sctToDualStruct :: Struct s x -> Struct s (o x)
-  -> Variant2 Contravariant (SDualityCategory r s o h) x (o x)
-sctToDualStruct s@Struct Struct = Contravariant2 $ make (ToDual :. IdPath s)
+-- | using the structural constraints to constract the 'Contravariant' morphism of 'SToDual'
+-- in'SHom'.
+sToDualStruct :: Struct s x -> Struct s (o x)
+  -> SVariant Contravariant (SHom r s o h) x (o x)
+sToDualStruct s@Struct Struct = Contravariant2 $ make (SToDual :. IdPath s)
 
--- | 'ToDual' as a 'Contravaraint' morphism in 'SDualityCategory'.
-sctToDual :: Transformable1 o s
-  => Struct s x -> Variant2 Contravariant (SDualityCategory r s o h) x (o x)
-sctToDual s = sctToDualStruct s (tau1 s)
+-- | 'SToDual' as a 'Contravaraint' morphism in 'SHom'.
+sToDual :: Transformable1 o s
+  => Struct s x -> SVariant Contravariant (SHom r s o h) x (o x)
+sToDual s = sToDualStruct s (tau1 s)
 
 -- | prefixing a proxy.
-sctToDual' :: Transformable1 o s
-  => q o h -> Struct s x -> Variant2 Contravariant (SDualityCategory r s o h) x (o x)
-sctToDual' _ = sctToDual
+sToDual' :: Transformable1 o s
+  => q o h -> Struct s x -> SVariant Contravariant (SHom r s o h) x (o x)
+sToDual' _ = sToDual
 
 --------------------------------------------------------------------------------
--- sctFromDual -
+-- sFromDual -
 
--- | using the structural constraints to constract the 'Contravariant' morphism of 'FromDual'
--- in'SDualityCategory'.
-sctFromDualStruct :: Struct s x -> Struct s (o x)
-  -> Variant2 Contravariant (SDualityCategory r s o h) (o x) x
-sctFromDualStruct Struct s'@Struct = Contravariant2 $ make (FromDual :. IdPath s')
+-- | using the structural constraints to constract the 'Contravariant' morphism of 'SFromDual'
+-- in'SHom'.
+sFromDualStruct :: Struct s x -> Struct s (o x)
+  -> SVariant Contravariant (SHom r s o h) (o x) x
+sFromDualStruct Struct s'@Struct = Contravariant2 $ make (SFromDual :. IdPath s')
 
--- | 'FromDual' as a 'Contravaraint' morphism in 'SDualityCategory'.
-sctFromDual :: Transformable1 o s
-  => Struct s x -> Variant2 Contravariant (SDualityCategory r s o h) (o x) x
-sctFromDual s = sctFromDualStruct s (tau1 s)
+-- | 'SFromDual' as a 'Contravaraint' morphism in 'SHom'.
+sFromDual :: Transformable1 o s
+  => Struct s x -> SVariant Contravariant (SHom r s o h) (o x) x
+sFromDual s = sFromDualStruct s (tau1 s)
 
 -- | prefixing a proxy.
-sctFromDual' :: Transformable1 o s
-  => q o h -> Struct s x -> Variant2 Contravariant (SDualityCategory r s o h) (o x) x
-sctFromDual' _ = sctFromDual
+sFromDual' :: Transformable1 o s
+  => q o h -> Struct s x -> SVariant Contravariant (SHom r s o h) (o x) x
+sFromDual' _ = sFromDual
 
 --------------------------------------------------------------------------------
--- SDualityCategory - FunctorialG -
+-- SHom - FunctorialG -
 
 instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r)
-  => ApplicativeG d (SDualityMorphism r s o h) c where
-  amapG (SMrphCov h) = amapG h
-  amapG t@ToDual     = toDualG (smpBaseDomain t)
-  amapG f@FromDual   = fromDualG (smpBaseRange f)
+  => ApplicativeG d (SMorphism r s o h) c where
+  amapG (SCov h) = amapG h
+  amapG t@SToDual     = toDualG (smpBaseDomain t)
+  amapG f@SFromDual   = fromDualG (smpBaseRange f)
 
 instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          , Transformable s r, TransformableGObjectClassRange d s c
          )
-  => ApplicativeG d (SDualityCategory r s o h) c where
+  => ApplicativeG d (SHom r s o h) c where
   amapG = amapG . form
 
 instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          , Transformable s r, TransformableGObjectClassRange d s c
          )
-  => ApplicativeGMorphism d (SDualityCategory r s o h) c
+  => ApplicativeGMorphism d (SHom r s o h) c
 
 instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          , Transformable s r
          , TransformableGObjectClassRange d s c
          )
-  => FunctorialG d (SDualityCategory r s o h) c
+  => FunctorialG d (SHom r s o h) c
 
 --------------------------------------------------------------------------------
 -- SDualityBi -
@@ -359,19 +363,19 @@ data SDuality a x = SLeft (a x) | SRight ((Dual1 a) x)
 -- SDualisable -
 
 -- | helper class to avoid undecidable instances.
-class DualisableGBi r (->) o a (SDual a) => SDualisable r o a
+class DualisableGBi r (->) o d (Dl1 d) => SDualisable r o d
 
 --------------------------------------------------------------------------------
 -- invSDuality -
 
 -- | isomorphism between 'SDuality' and 'SDualityBi'.
-invSDuality :: Inv2 (->) (SDuality a x) (SDualityBi a (SDual a) x)
+invSDuality :: Inv2 (->) (SDuality a x) (SDualityBi a (Dl1 a) x)
 invSDuality = Inv2 t f where
   t (SLeft a)   = SDualityBi (Left1 a)
-  t (SRight a') = SDualityBi (Right1 (SDual a'))
+  t (SRight a') = SDualityBi (Right1 (Dl1 a'))
   
   f (SDualityBi (Left1 a))           = SLeft a
-  f (SDualityBi (Right1 (SDual a'))) = SRight a'
+  f (SDualityBi (Right1 (Dl1 a'))) = SRight a'
 
 instance SDualisable r o a => ReflexiveG r (->) o (SDuality a) where
   reflG r = (inv2 invSDuality) . reflG r . invSDuality
@@ -380,35 +384,35 @@ instance (SDualisable r o a, TransformableGRefl o r) => DualisableG r (->) o (SD
   toDualG r = v . toDualG r . u where Inv2 u v = invSDuality
   
 --------------------------------------------------------------------------------
--- xSomeMrphSDualityCategory -
+-- xSomeMrphSHom -
 
--- | random variable for some morphism for @'SDualityCategory' __s o h__@.
+-- | random variable for some morphism for @'SHom' __s o h__@.
 --
 -- [Pre] Not both input random variables are empty.
 --
 -- [Post] The resulting random variable is not empty
-xSomeMrphSDualityCategory :: (Morphism h, Transformable (ObjectClass h) s)
-  => X (SomeObjectClass (SDualityCategory r s o h)) -> X (SomeMorphism h)
-  -> X (SomeMorphism (SDualityCategory r s o h))
-xSomeMrphSDualityCategory xso xsh
+xSomeMrphSHom :: (Morphism h, Transformable (ObjectClass h) s)
+  => X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism h)
+  -> X (SomeMorphism (SHom r s o h))
+xSomeMrphSHom xso xsh
   =   amap1 someOne xso
-  <|> amap1 (\(SomeMorphism h) -> SomeMorphism (sctCov h)) xsh
+  <|> amap1 (\(SomeMorphism h) -> SomeMorphism (sCov h)) xsh
 
 --------------------------------------------------------------------------------
 -- xSctAdjOne -
 
 xSctAdjOne :: Morphism h
-  => SomeMorphism (SDualityCategory r s o h) -> X (SomeCmpb2 (SDualityCategory r s o h))
+  => SomeMorphism (SHom r s o h) -> X (SomeCmpb2 (SHom r s o h))
 xSctAdjOne (SomeMorphism f)
   = xOneOf [SomeCmpb2 f (cOne (domain f)), SomeCmpb2 (cOne (range f)) f]
 
 --------------------------------------------------------------------------------
 -- xSctAdjDual -
 
--- | adjoining @n@-times 'ToDua' to the left or 'FromDual' to the right or @'FromDual' '.' 'ToDual'@
+-- | adjoining @n@-times 'ToDua' to the left or 'SFromDual' to the right or @'SFromDual' '.' 'SToDual'@
 -- in the middle.
 xSctAdjDual :: (Morphism h, Transformable1 o s)
-  => N -> SomeCmpb2 (SDualityCategory r s o h) -> X (SomeCmpb2 (SDualityCategory r s o h))
+  => N -> SomeCmpb2 (SHom r s o h) -> X (SomeCmpb2 (SHom r s o h))
 xSctAdjDual 0 fg = return fg
 xSctAdjDual n fg = xOneOfX [ amap1 adjToDual $ xSctAdjDual (pred n) fg
                            , amap1 adjFromDual $ xSctAdjDual (pred n) fg
@@ -417,34 +421,34 @@ xSctAdjDual n fg = xOneOfX [ amap1 adjToDual $ xSctAdjDual (pred n) fg
   where
   
     adjToDual :: (Morphism h, Transformable1 o s)
-      => SomeCmpb2 (SDualityCategory r s o h) -> SomeCmpb2 (SDualityCategory r s o h)
+      => SomeCmpb2 (SHom r s o h) -> SomeCmpb2 (SHom r s o h)
     adjToDual (SomeCmpb2 f g) = SomeCmpb2 (d . f) g where
-      Contravariant2 d = sctToDual (range f)
+      Contravariant2 d = sToDual (range f)
 
     adjFromDual :: (Morphism h, Transformable1 o s)
-      => SomeCmpb2 (SDualityCategory r s o h) -> SomeCmpb2 (SDualityCategory r s o h)
+      => SomeCmpb2 (SHom r s o h) -> SomeCmpb2 (SHom r s o h)
     adjFromDual (SomeCmpb2 f g) = SomeCmpb2 f (g . d) where
-      Contravariant2 d = sctFromDual (domain g)
+      Contravariant2 d = sFromDual (domain g)
 
     adjFromToDual :: (Morphism h, Transformable1 o s)
-      => SomeCmpb2 (SDualityCategory r s o h) -> SomeCmpb2 (SDualityCategory r s o h)
+      => SomeCmpb2 (SHom r s o h) -> SomeCmpb2 (SHom r s o h)
     adjFromToDual (SomeCmpb2 f g) = SomeCmpb2 (f . df) (dg . g) where
-      Contravariant2 dg = sctToDual (range g)
-      Contravariant2 df = sctFromDual (range g)
+      Contravariant2 dg = sToDual (range g)
+      Contravariant2 df = sFromDual (range g)
 
 --------------------------------------------------------------------------------
 -- xSctSomeCmpb2 -
 
--- | random variable for some composable morphism in @'SDualityCategory' __s o h__@ where 'cOne' and @h@ are
+-- | random variable for some composable morphism in @'SHom' __s o h__@ where 'cOne' and @h@ are
 -- adjoined with maximal @n@ times 'ToDual' or 'FromDual' or @'FromDual' '.' 'ToDual'@
 --
 -- [Pre] Not both input random variables are empty.
 --
 -- [Post] The resulting random variable is not empty
 xSctSomeCmpb2 :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
-  => N -> X (SomeObjectClass (SDualityCategory r s o h)) -> X (SomeMorphism h)
-  -> X (SomeCmpb2 (SDualityCategory r s o h))
+  => N -> X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism h)
+  -> X (SomeCmpb2 (SHom r s o h))
 xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
-  xfg = join $ amap1 xSctAdjOne $ xSomeMrphSDualityCategory xo xf
+  xfg = join $ amap1 xSctAdjOne $ xSomeMrphSHom xo xf
 
 
