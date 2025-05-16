@@ -222,7 +222,7 @@ type SVariant = Variant2
 
 -- | the induced morphism.
 --
--- __Note__ The resulting morphism is 'Covarant'.
+-- __Note__ The resulting morphism is 'Covariant'.
 sCov :: (Morphism h, Transformable (ObjectClass h) s)
   => h x y -> SHom r s o h x y
 sCov h = make (SCov h :. IdPath (tau (domain h)))

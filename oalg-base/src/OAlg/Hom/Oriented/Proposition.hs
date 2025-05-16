@@ -156,8 +156,8 @@ prpHomOrtOpEmpty
         ] where
   
   qo  = Proxy :: Proxy Op
-  qId = FunctorG :: FunctorG Id (HomOrt OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
-  qPt = FunctorG :: FunctorG Pnt (HomOrt OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
+  qId = FunctorG :: FunctorG Id (SHom OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
+  qPt = FunctorG :: FunctorG Pnt (SHom OrtX OrtX Op (HomEmpty OrtX)) EqualExtOrt
   
   xoSct :: X (SomeObjectClass (SHom OrtX OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
@@ -165,13 +165,13 @@ prpHomOrtOpEmpty
                  , SomeObjectClass (Struct :: Struct OrtX Q)
                  ]
 
-  xo :: X (SomeObjectClass (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
+  xo :: X (SomeObjectClass (SHom OrtX OrtX Op (HomEmpty OrtX)))
   xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
 
-  xfg :: X (SomeCmpb2 (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
+  xfg :: X (SomeCmpb2 (SHom OrtX OrtX Op (HomEmpty OrtX)))
   xfg = xSctSomeCmpb2 10 xoSct XEmpty
 
-  xsa :: X (SomeApplication (HomOrt OrtX OrtX Op (HomEmpty OrtX)))
+  xsa :: X (SomeApplication (SHom OrtX OrtX Op (HomEmpty OrtX)))
   xsa = join
       $ amap1
           (  (\(SomeMorphism m) -> xSomeAppl m)

@@ -49,7 +49,7 @@ library
       OAlg.Adjunction.Limes
       OAlg.Category.Applicative
       OAlg.Category.Definition
-      OAlg.Category.DualisableG
+      OAlg.Category.Dualisable
       OAlg.Category.Map
       OAlg.Category.Path
       OAlg.Category.Proposition

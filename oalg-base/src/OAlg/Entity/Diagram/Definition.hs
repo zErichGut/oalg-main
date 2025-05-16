@@ -9,7 +9,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
 -- |
 -- Module      : OAlg.Entity.Diagram.Definition
 -- Description : definition of diagrams on oriented structures
@@ -304,16 +303,16 @@ dgMapCnt _ (Contravariant2 h) d = case d of
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
 dgMapCovEmpty :: (TransformableOrt s, SDualisableOriented r s o)
-  => SVariant Covariant (HomOrtEmpty r s o) x y -> Diagram t n m x -> Diagram t n m y
+  => SVariant Covariant (SHom r s o (HomEmpty s)) x y -> Diagram t n m x -> Diagram t n m y
 dgMapCovEmpty h = dgMapCov (q h) h where
-  q :: SVariant Covariant (HomOrtEmpty r s o) x y -> Proxy o
+  q :: SVariant Covariant (SHom r s o (HomEmpty s)) x y -> Proxy o
   q _ = Proxy
 
 dgMapCntEmpty :: (TransformableOrt s, SDualisableOriented r s o)
-  => SVariant Contravariant (HomOrtEmpty r s o) x y
+  => SVariant Contravariant (SHom r s o (HomEmpty s)) x y
   -> Diagram t n m x -> Diagram (Dual t) n m y
 dgMapCntEmpty h = dgMapCnt (q h) h where
-  q :: SVariant v (HomOrtEmpty r s o) x y -> Proxy o
+  q :: SVariant v (SHom r s o (HomEmpty s)) x y -> Proxy o
   q _ = Proxy
 
 instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
@@ -327,7 +326,7 @@ instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
     Contravariant2 f = homOrtFromDualEmpty r
     Contravariant2 f' = homOrtFromDualEmpty (tau1 r)
     v = dgMapCovEmpty $ Covariant2 (f . f')
-
+{-
 instance (TransformableOrt s, SDualisableOrientedRefl Ort o)
   => ReflexiveG s (->) o (Dl1 (Diagram t n m)) where
   reflG s = Inv2 (mapDl1 u) (mapDl1 v) where Inv2 u v = reflG s
@@ -411,8 +410,8 @@ instance Oriented a => Validable (Diagram t n m a) where
 -- Diagram - Oriented -
 
 type instance Point (Diagram (Parallel d) n m a) = Point a
-instance (Show a, ShowPoint a) => ShowPoint (Diagram (Parallel d) n m a)
-instance (Eq a, EqPoint a) => EqPoint (Diagram (Parallel d) n m a)
+instance ShowPoint a => ShowPoint (Diagram (Parallel d) n m a)
+instance EqPoint a => EqPoint (Diagram (Parallel d) n m a)
 instance Oriented a => ValidablePoint (Diagram (Parallel d) n m a)
 instance TypeablePoint a => TypeablePoint (Diagram (Parallel d) n m a)
 instance (Oriented a, Typeable d, Typeable n, Typeable m)
@@ -485,7 +484,7 @@ instance (Oriented a, Typeable t, Typeable n, Typeable m) => Oriented (Diagram (
   end d@(DiagramChainFrom _ _) = chnFromEnd d
   end (DiagramChainTo e _)     = e
 
-{-
+
 --------------------------------------------------------------------------------
 -- dgPrlAdjZero -
 
@@ -603,16 +602,14 @@ xSink (SW m') xe@(XEnd _ xea) = do
 -- | the induced random variables of diagrams.
 xDiagram :: Oriented a => Dual (Dual t) :~: t
   -> XDiagram t n m a -> X (Diagram t n m a)
-xDiagram rt xd = case xd of
+xDiagram rt@Refl xd = case xd of
   XDiagramEmpty           -> return DiagramEmpty
   XDiagramDiscrete n xp   -> xDiscrete xd n xp
   XDiagramChainTo m xs    -> xChain m xs
   XDiagramParallelLR m xo -> xParallel m xo
   XDiagramSink m xe       -> xSink m xe
-  _                       ->   amap1 (sdlFromDual1Fst dOp sOrt)
+  _                       ->   amap1 (\d' -> let SLeft d = amapG fromOpOrt (SRight d') in d)
                              $ xDiagram (rt' rt) $ coXDiagram xd
-  where dOp  = dgOpDualityOrt rt
-        sOrt = Struct :: Oriented a => Struct Ort a
 
 --------------------------------------------------------------------------------
 -- X (Diagram t n m OS) - Standard -
@@ -682,14 +679,15 @@ instance Oriented a => Eq (SomeDiagram a) where
 instance Oriented a => Validable (SomeDiagram a) where
   valid (SomeDiagram d) = valid d
 
-instance Oriented a => Entity (SomeDiagram a)
-
 --------------------------------------------------------------------------------
 -- sdgMap -
 
 -- | mapping of some diagram via a homomorphism on 'Oriented' structures.
-sdgMap :: Hom Ort h => h a b -> SomeDiagram a -> SomeDiagram b
-sdgMap h (SomeDiagram a) = SomeDiagram (dgMap h a)
+sdgMap :: HomOriented h => h a b -> SomeDiagram a -> SomeDiagram b
+-- sdgMap h (SomeDiagram a) = SomeDiagram (dgMap h a)
+-- sdgMap h (SomeDiagram a) = SomeDiagram (amapG h' a) where Covariant2 h' = homOrt h
+sdgMap h (SomeDiagram a) = SomeDiagram (dgMapCov q (homOrt h) a) where q = Proxy :: Proxy Op
+-- sdgMap h = error "nyi"
 
 --------------------------------------------------------------------------------
 -- SomeDiagram - Duality -
