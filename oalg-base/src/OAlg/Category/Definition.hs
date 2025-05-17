@@ -23,7 +23,7 @@ module OAlg.Category.Definition
   ( 
     -- * Category
     Category(..), cOne'
-  , Sub(..), cOneSub
+  , Sub(..), cOneSub, sub, subG
 
     -- | __Some basic definitions in the category @('->')@__
   , id
@@ -36,7 +36,7 @@ module OAlg.Category.Definition
   
     -- * Morphism
   , Morphism(..)
-  , Homomorphous(..), tauHom, tau1Hom
+  , Homomorphous(..), tauHom, tauHomG, tau1Hom
   , eqlDomain, eqlRange, eqlEndo
   , eqlMorphism
   -- , toOp2Struct
@@ -57,8 +57,10 @@ module OAlg.Category.Definition
 
     -- * Transformables
   , TransformableObjectClass 
+
   , TransformableObjectClassTyp
   , TransformableGObjectClass
+  , TransformableGObjectClassDomain
   , TransformableGObjectClassRange
   
   )
@@ -174,6 +176,14 @@ instance Eq2 (Homomorphous m)
 -- | transforming homomorphous structural attests. 
 tauHom :: Transformable s t => Homomorphous s x y -> Homomorphous t x y
 tauHom (d :>: r) = tau d :>: tau r
+
+--------------------------------------------------------------------------------
+-- tauHomG -
+
+-- | transforming homomorphous structural attests.
+tauHomG :: TransformableG t u v => Homomorphous u x y -> Homomorphous v (t x) (t y)
+tauHomG (d :>: r) = tauG d :>: tauG r
+
 
 --------------------------------------------------------------------------------
 -- tau1Hom -
@@ -360,7 +370,45 @@ cOneSub Struct = Sub . cOne
 instance (Category c, TransformableObjectClass s c) => Category (Sub s c) where
   cOne s = cOneSub s (tau s)
   Sub f . Sub g = Sub (f . g)
-  
+
+--------------------------------------------------------------------------------
+-- sub -
+
+-- | restricting a morphism.
+sub' :: Homomorphous s x y -> h x y -> Sub s h x y
+sub' (Struct:>:Struct) = Sub
+
+-- | restricting a morphism.
+sub :: (Morphism h, Transformable (ObjectClass h) s) => h x y -> Sub s h x y
+sub h = sub' (tauHom (homomorphous h)) h
+
+--------------------------------------------------------------------------------
+-- subG -
+
+subG' :: ApplicativeG d a b => Homomorphous t (d x) (d y) -> a x y -> Sub t b (d x) (d y)
+subG' (Struct:>:Struct) h = Sub (amapG h)
+
+subG :: (Morphism a, ApplicativeG d a b, TransformableG d (ObjectClass a) t)
+  => Sub s a x y -> Sub t b (d x) (d y)
+subG (Sub a) = subG' (tauHomG (homomorphous a)) a 
+
+instance (Morphism a, ApplicativeG d a b, TransformableGObjectClassDomain d a t)
+  => ApplicativeG d (Sub s a) (Sub t b) where
+  amapG = subG
+
+instance ( Morphism a, ApplicativeG d a b, TransformableGObjectClassDomain d a t
+         , TransformableG d s t
+         )
+  => ApplicativeGMorphism d (Sub s a) (Sub t b)
+
+instance ( FunctorialG d a b, TransformableGObjectClassDomain d a t
+         , TransformableG d s t
+         , TransformableObjectClass s a
+         , TransformableObjectClass t b
+         )
+  => FunctorialG d (Sub s a) (Sub t b)
+
+
 --------------------------------------------------------------------------------
 -- Cayleyan2 -
 
@@ -493,6 +541,13 @@ class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectClass t a b
 
 instance TransformableGObjectClass t a (->)
+
+--------------------------------------------------------------------------------
+-- TransformableGObjectClassDomain -
+
+-- | helper class to avoid undecided instances.
+class TransformableG d (ObjectClass a) t => TransformableGObjectClassDomain d a t
+
 
 --------------------------------------------------------------------------------
 -- TransformableGObjectClassRange -

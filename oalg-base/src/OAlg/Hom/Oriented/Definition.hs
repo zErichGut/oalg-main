@@ -22,12 +22,10 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-{-    
+
     -- * Hom Oriented    
     -- ** Disjunctive
-    HomDisjunctiveOriented(..)
-  , homOrtToDual', homOrtFromDual'
-  , homOrtToCovariant
+    HomDisjunctiveOriented
 
     -- ** Covariant
   , HomOriented, HomEmpty
@@ -39,18 +37,16 @@ module OAlg.Hom.Oriented.Definition
     -- ** Duality
   , SDualisableOriented
   , toDualArw, toDualPnt
-  , SDualisableOrientedRefl
 
     -- * Hom Oriented
   , HomOrt, homOrt
-  , toOpOrt, fromOpOrt
 
     -- ** Empty
   , HomOrtEmpty
-  , homOrtToDualEmpty, homOrtFromDualEmpty
+  , toOpOrt, fromOpOrt
 
   , module V
--}
+
   )
   where
 
@@ -135,6 +131,32 @@ instance Morphism (HomEmpty s) where
 instance TransformableOrt s => HomOriented (HomEmpty s)
 
 --------------------------------------------------------------------------------
+-- HomDisjunctiveOriented -
+
+-- | disjunctive homomorphism between 'Oriented' structures.
+--
+-- __Properties__ Let @'HomDisjunctiveOriented' __h__@, then holds:
+--
+-- (1) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
+--
+--     (1) If @'variant2' h '==' 'Covariant'@ then holds:
+--
+--         (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+--
+--         (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+--     (2) If @'variant2' h '==' 'Contravariant'@ then holds:
+--
+--         (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+--         (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+class ( CategoryDisjunctive h
+      , Functorial h, FunctorialPoint h
+      , Transformable (ObjectClass h) Ort
+      )
+  => HomDisjunctiveOriented h where
+
+--------------------------------------------------------------------------------
 -- SDualisableOriented -
 
 -- | duality according to @__o__@ on @__s__@-structured 'Oriented' types,
@@ -157,7 +179,7 @@ instance (TransformableOrt s, TransformableOp s) => SDualisableOriented s Op
 --------------------------------------------------------------------------------
 -- toDualArw -
 
--- | the dual arrow induced by @'DualisableG __r__ (->) __o__ 'Id'@.
+-- | the dual arrow induced by @'DualisableG __s__ (->) __o__ 'Id'@.
 --
 -- __Note__ The induced mapping is independent of @__s__@!
 toDualArw :: SDualisableOriented s o => q o -> Struct s x -> x -> o x
@@ -168,7 +190,7 @@ toDualArw q s = fromIdG (toDualG' (d q s) (tauOrt s)) where
 --------------------------------------------------------------------------------
 -- toDualPnt -
 
--- | the dual point induced by @'DualisableG' (->) __o__ 'Pnt'@.
+-- | the dual point induced by @'DualisableG' __s__ (->) __o__ 'Pnt'@.
 --
 -- __Note__ The induced mapping is independent of @__s__@!
 toDualPnt :: SDualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
@@ -176,7 +198,42 @@ toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
   d :: SDualisableOriented s o => q o -> Struct s x -> SDualityG Ort (->) o Pnt
   d _ _ = SDualityG
 
+--------------------------------------------------------------------------------
+-- HomOrt -
+
+type HomOrt = SHom Ort
+
+instance (HomOriented h, SDualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
+
+--------------------------------------------------------------------------------
+-- homOrt -
+
+-- | embedding of 'HomOriented' to 'HomOrt'.
+homOrt :: (HomOriented h, Transformable (ObjectClass h) s)
+  => h x y -> SVariant Covariant (HomOrt s o h) x y
+homOrt = sCov
+
+--------------------------------------------------------------------------------
+-- HomOrtEmpty -
+
+type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
+
+--------------------------------------------------------------------------------
+-- toOpOrt -
+
+toOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
+toOpOrt = sToDual Struct
+
+--------------------------------------------------------------------------------
+-- fromOpOrt -
+
+fromOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
+fromOpOrt = sFromDual Struct
+
+
+
 {-
+
 --------------------------------------------------------------------------------
 -- SDualisableOrientedRefl -
 
@@ -184,7 +241,7 @@ toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
 class SDualisableOriented s s o => SDualisableOrientedRefl s o
 
 instance (TransformableOrt s, TransformableOp s) => SDualisableOrientedRefl s Op
--}
+
 
 --------------------------------------------------------------------------------
 -- HomOrt -
@@ -221,58 +278,6 @@ ff = amap
 
 gg :: (HomOriented h, SDualisableOriented s o) => HomOrt s o h x y -> Point x -> Point y
 gg = pmap
-
---------------------------------------------------------------------------------
--- HomOrtEmpty -
-
-type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
-
---------------------------------------------------------------------------------
--- toOpOrt -
-
-toOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
-toOpOrt = Contravariant2 (HomOrt t) where Contravariant2 t = sToDual Struct
-
---------------------------------------------------------------------------------
--- fromOpOrt -
-
-fromOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
-fromOpOrt = Contravariant2 (HomOrt t) where Contravariant2 t = sFromDual Struct
-
-{-
---------------------------------------------------------------------------------
--- HomDisjunctiveOriented -
-
--- | disjunctive homomorphism between 'Oriented' structures.
---
--- __Properties__ Let @'HomDisjunctiveOriented' __s o h__@, then holds:
---
--- (1) For all @__x__@ and @s@ in @'Struct' __s x__@ holds:
---
---     (1) @'homOrtFromDual' s '.' 'homOrtToDual' s '.=.' 'cOne' s@.
---
---     (2) @'homOrtToDual' s '.' 'homOrtFromDual' s '.=.' 'cOne' ('tau1' s)@.
---
--- (2) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
---
---     (1) If @'variant2' h '==' 'Covariant'@ then holds:
---
---         (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
---
---         (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
---
---     (2) If @'variant2' h '==' 'Contravariant'@ then holds:
---
---         (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
---
---         (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
-class ( CategoryDisjunctive h
-      , Functorial h, FunctorialPoint h
-      , Transformable (ObjectClass h) Ort, Transformable1 o (ObjectClass h)
-      )
-  => HomDisjunctiveOriented o h where
-  homOrtToDual :: Struct (ObjectClass h) x -> SVariant Contravariant h x (o x)
-  homOrtFromDual :: Struct (ObjectClass h) x -> SVariant Contravariant h (o x) x
 
 --------------------------------------------------------------------------------
 -- homOrtToDual' -
@@ -318,15 +323,6 @@ instance (HomOriented h, SDualisableOriented r s o)
 type HomOrt = SHom Ort Ort Op
 
 --------------------------------------------------------------------------------
--- homOrt -
-
--- | embedding of 'HomOriented' to 'HomOrt'.
-homOrt :: (HomOriented h, Transformable (ObjectClass h) s)
-  => h x y -> SVariant Covariant (SHom r s o h) x y
-homOrt = Covariant2 . sCov
-
-
---------------------------------------------------------------------------------
 -- HomOrtEmpty -
 
 -- | shortcut.
@@ -357,6 +353,6 @@ toOpOrt = t where Contravariant2 t = homOrtToDual (Struct :: Oriented x => Struc
 
 fromOpOrt :: Oriented x => HomOrtEmpty (Op x) x
 fromOpOrt = f where Contravariant2 f = homOrtFromDual (Struct :: Oriented x => Struct Ort x)
-
-
 -}
+
+

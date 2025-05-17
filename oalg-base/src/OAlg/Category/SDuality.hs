@@ -212,6 +212,10 @@ instance Morphism h => Category (SHom r s o h) where
 
 instance Morphism h => CategoryDisjunctive (SHom r s o h)
 
+instance TransformableObjectClass s (SHom r s o h)
+
+instance TransformableG d s t => TransformableGObjectClassDomain d (SHom r s o h) t
+
 --------------------------------------------------------------------------------
 -- SVariant -
 
@@ -224,8 +228,8 @@ type SVariant = Variant2
 --
 -- __Note__ The resulting morphism is 'Covariant'.
 sCov :: (Morphism h, Transformable (ObjectClass h) s)
-  => h x y -> SHom r s o h x y
-sCov h = make (SCov h :. IdPath (tau (domain h)))
+  => h x y -> SVariant Covariant (SHom r s o h) x y
+sCov h = Covariant2 $ make (SCov h :. IdPath (tau (domain h)))
 
 --------------------------------------------------------------------------------
 -- sForget -
@@ -396,7 +400,7 @@ xSomeMrphSHom :: (Morphism h, Transformable (ObjectClass h) s)
   -> X (SomeMorphism (SHom r s o h))
 xSomeMrphSHom xso xsh
   =   amap1 someOne xso
-  <|> amap1 (\(SomeMorphism h) -> SomeMorphism (sCov h)) xsh
+  <|> amap1 (\(SomeMorphism h) -> let Covariant2 h' = sCov h in SomeMorphism h') xsh
 
 --------------------------------------------------------------------------------
 -- xSctAdjOne -
