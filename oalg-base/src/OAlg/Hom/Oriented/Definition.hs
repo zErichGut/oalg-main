@@ -22,10 +22,11 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-
     -- * Hom Oriented    
     -- ** Disjunctive
-    HomDisjunctiveOriented
+    HomDisjunctiveOriented(..)
+  , homOrtDual, homOrtDual'
+  , homOrtToCov, homOrtToCov'
 
     -- ** Covariant
   , HomOriented, HomEmpty
@@ -137,7 +138,10 @@ instance TransformableOrt s => HomOriented (HomEmpty s)
 --
 -- __Properties__ Let @'HomDisjunctiveOriented' __h__@, then holds:
 --
--- (1) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
+-- (1) For all @__x__@ and @s@ in @'Struct' ('ObjectClass' __h__) __x__ holds:
+-- @'homOrtDual' s@ is 'valid'. 
+--
+-- (2) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
 --
 --     (1) If @'variant2' h '==' 'Covariant'@ then holds:
 --
@@ -154,7 +158,36 @@ class ( CategoryDisjunctive h
       , Functorial h, FunctorialPoint h
       , Transformable (ObjectClass h) Ort
       )
-  => HomDisjunctiveOriented h where
+  => HomDisjunctiveOriented h o where
+  homOrtToDual :: Struct (ObjectClass h) x -> SVariant Contravariant h x (o x)
+  homOrtFromDual :: Struct (ObjectClass h) x -> SVariant Contravariant h (o x) x
+
+--------------------------------------------------------------------------------
+-- homOrtDual -
+
+-- | the induced isomorphism.
+homOrtDual :: HomDisjunctiveOriented h o => Struct (ObjectClass h) x -> Inv2 h x (o x)
+homOrtDual s = Inv2 t f where
+  Contravariant2 t = homOrtToDual s
+  Contravariant2 f = homOrtFromDual s
+
+-- | the induced isomorphism.
+homOrtDual'  :: HomDisjunctiveOriented h o => q h o -> Struct (ObjectClass h) x -> Inv2 h x (o x)
+homOrtDual' _ = homOrtDual
+
+--------------------------------------------------------------------------------
+-- homOrtToCov -
+
+-- | mapping a 'Contravariant' homomoprphism to its 'Covariant'. 
+homOrtToCov :: HomDisjunctiveOriented h o
+  => SVariant Contravariant h x y -> SVariant Covariant h x (o y)
+homOrtToCov (Contravariant2 h) = Covariant2 (t . h) where
+  Contravariant2 t = homOrtToDual (range h)
+
+-- | mapping a 'Contravariant' homomoprphism to its 'Covariant'. 
+homOrtToCov' :: HomDisjunctiveOriented h o
+  => q o -> SVariant Contravariant h x y -> SVariant Covariant h x (o y)
+homOrtToCov' _ = homOrtToCov
 
 --------------------------------------------------------------------------------
 -- SDualisableOriented -
@@ -203,7 +236,9 @@ toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
 
 type HomOrt = SHom Ort
 
-instance (HomOriented h, SDualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
+instance (HomOriented h, SDualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h) o where
+  homOrtToDual   = sToDual
+  homOrtFromDual = sFromDual
 
 --------------------------------------------------------------------------------
 -- homOrt -

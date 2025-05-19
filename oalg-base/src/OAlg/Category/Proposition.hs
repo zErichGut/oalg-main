@@ -43,6 +43,9 @@ module OAlg.Category.Proposition
 
     -- ** Functorial
   , xFnct, xMrphSite, XFnctMrphSite(..)
+
+    -- * Inv2
+  , relInvEq2
   
   )
   where
@@ -222,6 +225,18 @@ prpCayleyan2 xmp = Prp "Cayleyan2"
                                , ((f . f') == cOne (range f)) :?> prm
                                ]
                    )
+
+--------------------------------------------------------------------------------
+-- relInvEq2 -
+
+-- | validity according to 'Inv2'.
+relInvEq2 :: (Category c, Eq2 c, Show2 c) => Inv2 c x y -> Statement
+relInvEq2 (Inv2 f g)
+  = And [ Label "g . f" :<=>: ((g . f) .=. cOne (domain f)) :?> prms
+        , Label "f . g" :<=>: ((f . g) .=. cOne (domain g)) :?> prms
+        ]
+    where (.=.) = eq2
+          prms  = Params ["f":=show2 f, "g":=show2 g]
 
 --------------------------------------------------------------------------------
 -- XMrphSite -
