@@ -1,6 +1,4 @@
 
-
-
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -143,6 +141,9 @@ prpHomOrtOpEmpty
   xoSct :: X (SomeObjectClass (HomOrtEmpty OrtX Op))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
+                 , SomeObjectClass (Struct :: Struct OrtX (Op (OS)))
+                 , SomeObjectClass (Struct :: Struct OrtX (Id (OS)))
+                 , SomeObjectClass (Struct :: Struct OrtX (Id Z))
                  ]
 
   xo :: X (SomeObjectClass (HomOrtEmpty OrtX Op))

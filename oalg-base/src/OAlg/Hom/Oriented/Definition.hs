@@ -44,6 +44,7 @@ module OAlg.Hom.Oriented.Definition
 
     -- ** Empty
   , HomOrtEmpty
+  , homOrtToDualEmpty, homOrtFromDualEmpty
   , toOpOrt, fromOpOrt
 
   , module V
@@ -254,16 +255,33 @@ homOrt = sCov
 type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
 
 --------------------------------------------------------------------------------
+-- homOrtToDualEmpty -
+
+-- | from 'homOrtToDual' induced.
+homOrtToDualEmpty :: (TransformableOrt s, SDualisableOriented s o)
+  => Struct s x -> SVariant Contravariant (HomOrtEmpty s o) x (o x)
+homOrtToDualEmpty = homOrtToDual 
+
+--------------------------------------------------------------------------------
+-- homOrtFromDualEmpty -
+
+-- | from 'homOrtFromDual' induced.
+homOrtFromDualEmpty :: (TransformableOrt s, SDualisableOriented s o)
+  => Struct s x -> SVariant Contravariant (HomOrtEmpty s o) (o x) x
+homOrtFromDualEmpty = homOrtFromDual
+
+
+--------------------------------------------------------------------------------
 -- toOpOrt -
 
 toOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
-toOpOrt = sToDual Struct
+toOpOrt = homOrtToDualEmpty Struct
 
 --------------------------------------------------------------------------------
 -- fromOpOrt -
 
 fromOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
-fromOpOrt = sFromDual Struct
+fromOpOrt = homOrtFromDualEmpty Struct
 
 
 
