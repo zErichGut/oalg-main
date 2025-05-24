@@ -235,7 +235,7 @@ dgCenter :: Diagram (Star t) n m c -> Point c
 dgCenter (DiagramSink c _)   = c
 dgCenter (DiagramSource c _) = c
 
-
+{-
 --------------------------------------------------------------------------------
 -- dgMapCov -
 
@@ -671,15 +671,57 @@ instance Oriented a => Eq (SomeDiagram a) where
 instance Oriented a => Validable (SomeDiagram a) where
   valid (SomeDiagram d) = valid d
 
-{-
 --------------------------------------------------------------------------------
 -- sdgMap -
+{-
+newtype HomOrtCov h x y = HomOrtCov (h x y)
+
+instance HomOriented h => Morphism (HomOrtCov h) where
+  type ObjectClass (HomOrtCov h) = ObjectClass h
+  homomorphous (HomOrtCov h) = homomorphous h
+
+homOrtOp :: HomOriented h => h x y -> SVariant Covariant (HomOrt Ort Op h) x y
+homOrtOp = homOrt
+
+instance HomOriented h => ApplicativeG (SDuality (Diagram t n m)) (HomOrtCov h) (->) where
+  amapG (HomOrtCov h) sd = case sd of
+    SLeft d -> SLeft (dgMapCov q (homOrtOp h) d)
+    SRight d -> SRight (dgMapCov q (homOrtOp h) d)
+
+    where q = Proxy :: Proxy Op
+
+ff :: ( HomOriented h, Dual (Dual t) ~ t, SDualisableOriented Ort o
+      , TransformableGRefl o Ort, Transformable s Ort
+      )
+  => HomOrt s o (HomOrtCov h) a b -> SDuality (Diagram t n m) a -> SDuality (Diagram t n m) b
+ff = amapG
+
+
+data SD a x = SL (a x) | SR (Dual1 a x)
+
+gg :: (HomDisjunctiveOriented h o, Dual (Dual t) ~ t)
+  => q o -> h x y -> SD (Diagram t n m) x -> SD (Diagram t n m) y
+gg q h sd      = case toVariant2 h of
+  Left2 hCnt  -> case sd of
+    SL d      -> SR (dgMapCnt q hCnt d)
+    SR d'     -> SL (dgMapCnt q hCnt d') -- Dual (Dual t) ~ t
+  Right2 hCov -> case sd of
+    SL d      -> SL (dgMapCov q hCov d)
+    SR d'     -> SR (dgMapCov q hCov d')
+-}
 
 -- | mapping of some diagram via a homomorphism on 'Oriented' structures.
-sdgMap :: HomOriented h => h a b -> SomeDiagram a -> SomeDiagram b
+sdgMap :: (HomOriented h, TransformableOrt s, SDualisableOriented s o)
+  => HomOrt s o h a b -> SomeDiagram a -> SomeDiagram b
+sdgMap h (SomeDiagram d) = case dgTypeRefl d of
+  Refl                  -> case amapG h (SLeft d) of
+    SLeft d'  -> SomeDiagram d'
+    SRight d' -> SomeDiagram d'
+  
+-- sdgMap :: HomOriented h => h a b -> SomeDiagram a -> SomeDiagram b
 -- sdgMap h (SomeDiagram a) = SomeDiagram (dgMap h a)
 -- sdgMap h (SomeDiagram a) = SomeDiagram (amapG h' a) where Covariant2 h' = homOrt h
-sdgMap h (SomeDiagram a) = SomeDiagram (dgMapCov q (homOrt h) a) where q = Proxy :: Proxy Op
+-- sdgMap h (SomeDiagram a) = SomeDiagram (dgMapCov q (homOrt h) a) where q = Proxy :: Proxy Op
 -- sdgMap h = error "nyi"
 
 
@@ -742,7 +784,7 @@ sdgOpDuality = SomeDiagramDuality OpDuality
 -- | 'Op'-duality for 'SomeDiagram' on 'Ort'-structures.
 sdgOpDualityOrt :: SomeDiagramOpDuality Ort SomeDiagram (Dual1 SomeDiagram)
 sdgOpDualityOrt = sdgOpDuality
--}
+
 
 --------------------------------------------------------------------------------
 -- xSomeDiagram -
@@ -817,7 +859,7 @@ xSomeDiagram xn xTo xFrom xO = do
     d = sdgOpDualityOrt
     s = Struct :: Oriented a => Struct Ort a
 -}
-{-
+
 --------------------------------------------------------------------------------
 -- dstSomeDiagram -
 

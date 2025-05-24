@@ -25,8 +25,7 @@
 module OAlg.Category.SDuality
   (
     -- * Duality
-    SDuality(..), SDualisable    
-  , SDualityBi(..), invSDuality
+    SDuality(..)
   
     -- * Category
   , SHom(), SVariant
@@ -53,7 +52,6 @@ import OAlg.Prelude
 import OAlg.Category.Path
 import OAlg.Category.Unify
 
-import OAlg.Data.Either
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 import OAlg.Data.Variant
@@ -281,9 +279,9 @@ sFromDual' _ = sFromDual
 
 instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r)
   => ApplicativeG d (SMorphism r s o h) c where
-  amapG (SCov h) = amapG h
-  amapG t@SToDual     = toDualG (smpBaseDomain t)
-  amapG f@SFromDual   = fromDualG (smpBaseRange f)
+  amapG (SCov h)    = amapG h
+  amapG t@SToDual   = toDualG (smpBaseDomain t)
+  amapG f@SFromDual = fromDualG (smpBaseRange f)
 
 instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          , Transformable s r, TransformableGObjectClassRange d s c
@@ -303,11 +301,19 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
   => FunctorialG d (SHom r s o h) c
 
 --------------------------------------------------------------------------------
+-- SDuality -
+
+-- | duality for 'Dual1'-dualisable types.
+data SDuality a x = SLeft (a x) | SRight (Dual1 a x)
+
+{-
+--------------------------------------------------------------------------------
 -- SDualityBi -
 
 -- | duality-pairing for the two structural types @__a__@ and @__b__@, i.e. the
 -- disjoint union.
 newtype SDualityBi a b x = SDualityBi (Either1 a b x)
+
 
 --------------------------------------------------------------------------------
 -- fromSDualityBi -
@@ -358,12 +364,6 @@ instance DualisableGBi r (->) o a b => DualisableG r (->) o (SDualityBi a b) whe
   toDualG r = SDualityBi . toDualEither r . fromSDualityBi
 
 --------------------------------------------------------------------------------
--- SDuality -
-
--- | duality for 'Dual1'-dualisable types.
-data SDuality a x = SLeft (a x) | SRight ((Dual1 a) x)
-
---------------------------------------------------------------------------------
 -- SDualisable -
 
 -- | helper class to avoid undecidable instances.
@@ -378,7 +378,7 @@ invSDuality = Inv2 t f where
   t (SLeft a)   = SDualityBi (Left1 a)
   t (SRight a') = SDualityBi (Right1 (Dl1 a'))
   
-  f (SDualityBi (Left1 a))           = SLeft a
+  f (SDualityBi (Left1 a))         = SLeft a
   f (SDualityBi (Right1 (Dl1 a'))) = SRight a'
 
 instance SDualisable r o a => ReflexiveG r (->) o (SDuality a) where
@@ -386,7 +386,8 @@ instance SDualisable r o a => ReflexiveG r (->) o (SDuality a) where
 
 instance (SDualisable r o a, TransformableGRefl o r) => DualisableG r (->) o (SDuality a) where
   toDualG r = v . toDualG r . u where Inv2 u v = invSDuality
-  
+-}
+
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -
 

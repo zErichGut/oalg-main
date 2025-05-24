@@ -20,6 +20,7 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
+{-    
     -- * Disjunctive Homomorphism
     prpHomDisjunctiveOriented
 
@@ -28,7 +29,7 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomOrt
   , prpHomOrtOpEmpty
-
+-}
   )
   where
 
@@ -70,9 +71,9 @@ prpSDualisableOriented :: SDualisableOriented s o
 prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
   relSDualisableOriented q s (tau s) (tau (tauO s)) xx where
 
-  tauO :: TransformableG o s s => Struct s x -> Struct s (o x)
+  tauO :: Transformable1 o s => Struct s x -> Struct s (o x)
   tauO = tauG
-
+{-
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtDual -
 
@@ -85,42 +86,48 @@ prpHomDisjOrtDual :: (HomDisjunctiveOriented h o, Eq2 h, Show2 h)
  => q h o -> X (SomeObjectClass h) -> Statement
 prpHomDisjOrtDual q xso = Prp "HomDisjOrtDual" :<=>: Forall xso
   (\(SomeObjectClass s) -> relHomDisjOrtDual q s)
-  
+-}
+
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -
 
-relHomDisjOrtCov :: (HomDisjunctiveOriented h o, Show2 h)
-  => q o -> Homomorphous Ort x y -> SVariant Covariant h x y  -> x -> Statement
-relHomDisjOrtCov _ (Struct:>:Struct) h  x = Label "Covariant" :<=>:
+relHomDisjOrtCov :: (HomDisjunctiveOriented h, Show2 h)
+  => Homomorphous Ort x y -> SVariant Covariant h x y  -> x -> Statement
+relHomDisjOrtCov (Struct:>:Struct) h  x = Label "Covariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
-relHomDisjOrtVariant :: (HomDisjunctiveOriented h o, Show2 h)
-  => q o -> Either2 (SVariant Contravariant h) (SVariant Covariant h) x y
-  -> x -> Statement
-relHomDisjOrtVariant q h x = case h of
-  Right2 hCov -> Label "Covariant" :<=>: relHomDisjOrtCov q (tauHom (homomorphous h)) hCov x
-  Left2 hCnt -> Label "Contravariant" :<=>: relHomDisjOrtVariant q (Right2 (homOrtToCov' q hCnt)) x
+relHomDisjOrtCnt :: (HomDisjunctiveOriented h, Show2 h)
+  => Homomorphous Ort x y -> SVariant Contravariant h x y  -> x -> Statement
+relHomDisjOrtCnt (Struct:>:Struct) h  x = Label "Contravariant" :<=>:
+  And [ Label "1" :<=>: (start (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
+      , Label "2" :<=>: (end (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
+      ]
+
+relHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
+  => Either2 (SVariant Contravariant h) (SVariant Covariant h) x y -> x -> Statement
+relHomDisjOrtVariant h x = case h of
+  Right2 hCov -> relHomDisjOrtCov (tauHom (homomorphous h)) hCov x
+  Left2 hCnt  -> relHomDisjOrtCnt (tauHom (homomorphous h)) hCnt x
 
 -- | validity according to property (2) of 'HomDisjunctiveOriented'.
-prpHomDisjOrtVariant :: (HomDisjunctiveOriented h o, Show2 h)
-  => q o -> X (SomeApplication h) -> Statement
-prpHomDisjOrtVariant q xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
-  (\(SomeApplication h x) -> relHomDisjOrtVariant q (toVariant2 h) x
+prpHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomDisjOrtVariant xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
+  (\(SomeApplication h x) -> relHomDisjOrtVariant (toVariant2 h) x
   )
 
 --------------------------------------------------------------------------------
 -- prpHomDisjunctiveOriented -
 
 -- | validity according to 'HomDisjunctiveOriented'.
-prpHomDisjunctiveOriented :: (HomDisjunctiveOriented h o, Show2 h, Eq2 h)
-  => q h o -> X (SomeObjectClass h) -> X (SomeApplication h) -> Statement
-prpHomDisjunctiveOriented q xo xa = Prp "HomDisjunctiveOriented" :<=>:
-  And [ prpHomDisjOrtVariant q xa
-      , prpHomDisjOrtDual q xo
+prpHomDisjunctiveOriented :: (HomDisjunctiveOriented h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
+  And [ prpHomDisjOrtVariant xa
       ]
-
+{-
 --------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
 
@@ -166,3 +173,4 @@ prpHomOrtOpEmpty
           )
       $ xfg
 
+-}
