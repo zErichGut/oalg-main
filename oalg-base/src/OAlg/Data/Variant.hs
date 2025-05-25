@@ -29,10 +29,11 @@ module OAlg.Data.Variant
 
     -- * Disjunctive
   , Disjunctive(..), Disjunctive2(..)
-  , CategoryDisjunctive
+  , CategoryDisjunctive, CategoryDualisable(..)
 
     -- * Proposition
   , prpCategoryDisjunctive
+  , prpCategoryDualisable
   ) where
 
 import Data.List ((++))
@@ -181,3 +182,52 @@ prpCategoryDisjunctive xs xfg = Prp "CategoryDisjunctive" :<=>:
     qCat :: X (SomeObjectClass c) -> Proxy c
     qCat _ = Proxy
 
+--------------------------------------------------------------------------------
+-- CategoryDualisable -
+
+-- | disjunctive category admitting duality morphisms.
+--
+-- __Property__ Let @'CategoryDualisable' __o h__@, then for all @__x__@ and @s@ in
+-- @'Struct' ('ObjectClass __h__) __x__@holds:
+--
+-- (1) @f '.' t '.=.' 'cOne' ('domain' t)@.
+--
+-- (2) @t '.' f '.=.' 'cOne' ('domain' f)@.
+--
+-- where @'Contravariant2' t = 'cToDual' s@ and @'Contravariant2' f = 'cFromDual' s@.
+class CategoryDisjunctive h => CategoryDualisable o h where
+  cToDual :: Struct (ObjectClass h) x -> Variant2 Contravariant h x (o x)
+  cFromDual :: Struct (ObjectClass h) x -> Variant2 Contravariant h (o x) x
+
+--------------------------------------------------------------------------------
+-- cToDual' -
+
+cToDual' :: CategoryDualisable o h
+  => q o h -> Struct (ObjectClass h) x -> Variant2 Contravariant h x (o x)
+cToDual' _ = cToDual
+
+--------------------------------------------------------------------------------
+-- cFromDual' -
+
+cFromDual' :: CategoryDualisable o h
+  => q o h -> Struct (ObjectClass h) x -> Variant2 Contravariant h (o x) x
+cFromDual' _ = cFromDual
+
+--------------------------------------------------------------------------------
+-- prpCategoryDualisable o h -
+
+relCategoryDualisable :: (CategoryDualisable o h, EqExt h)
+  => q o h -> Struct (ObjectClass h) x -> Statement
+relCategoryDualisable q s 
+  = And [ Label "1" :<=>: (f . t .=. cOne (domain t))
+        , Label "2" :<=>: (t . f .=. cOne (domain f))
+        ]
+  where Contravariant2 t = cToDual' q s
+        Contravariant2 f = cFromDual' q s
+
+-- | validity according to 'CategoryDualisable'.
+prpCategoryDualisable :: (CategoryDualisable o h, EqExt h)
+  => q o h -> Struct (ObjectClass h) x -> Statement
+prpCategoryDualisable q s = Prp "CategoryDualisable"
+  :<=>: relCategoryDualisable q s
+  

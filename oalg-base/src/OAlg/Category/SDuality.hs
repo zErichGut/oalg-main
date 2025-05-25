@@ -275,6 +275,13 @@ sFromDual' :: Transformable1 o s
 sFromDual' _ = sFromDual
 
 --------------------------------------------------------------------------------
+-- SHom - CategoryDualisable -
+
+instance (Morphism h, TransformableGRefl o s) => CategoryDualisable o (SHom r s o h) where
+  cToDual = sToDual
+  cFromDual = sFromDual
+
+--------------------------------------------------------------------------------
 -- SHom - FunctorialG -
 
 instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r)

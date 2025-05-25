@@ -30,7 +30,6 @@ module OAlg.Hom.Oriented.Definition
   , HomOriented, HomEmpty
 
     -- * Dualisable
-  , HomDualisableOriented(..)
   , SDualisableOriented
   , toDualArw, toDualPnt
   
@@ -174,56 +173,6 @@ toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
   d _ _ = SDualityG
 
 --------------------------------------------------------------------------------
--- HomDualisableOrientedDualisable -
-
--- | dualisable disjunctive homomorphisms between 'Oriented' structures.
---
--- __Property__ Let @'HomDualisableOriented' __o h__@, then for all @__x__@ and @s@ in
--- @'Struct' ('ObjectClass __h__) __x__@holds:
---
--- (1) @f '.' t '.=.' 'cOne' ('domain' t)@.
---
--- (2) @t '.' f '.=.' 'cOne' ('domain' f)@.
---
--- where @'Contravariant2' t = 'homOrtToDual' s@ and @'Contravariant2' f = 'homOrtFromDual' s@.
-class ( HomDisjunctiveOriented h
-      , CategoryDisjunctive h, Functorial1 h Id, Functorial1 h Pnt
-      ) => HomDualisableOriented o h where
-  homOrtToDual :: Struct (ObjectClass h) x -> SVariant Contravariant h x (o x)
-  homOrtFromDual :: Struct (ObjectClass h) x -> SVariant Contravariant h (o x) x
-
---------------------------------------------------------------------------------
--- homOrtToDual' -
-
-homOrtToDual' :: HomDualisableOriented o h
-  => q o h -> Struct (ObjectClass h) x -> SVariant Contravariant h x (o x)
-homOrtToDual' _ = homOrtToDual
-
---------------------------------------------------------------------------------
--- homOrtFromDual' -
-
-homOrtFromDual' :: HomDualisableOriented o h
-  => q o h -> Struct (ObjectClass h) x -> SVariant Contravariant h (o x) x
-homOrtFromDual' _ = homOrtFromDual
-
---------------------------------------------------------------------------------
--- prpHomDualisableOriented o h -
-
-relHomDualisableOriented :: (HomDualisableOriented o h, EqExt h)
-  => q o h -> Struct (ObjectClass h) x -> Statement
-relHomDualisableOriented q s 
-  = And [ Label "1" :<=>: (f . t .=. cOne (domain t))
-        , Label "2" :<=>: (t . f .=. cOne (domain f))
-        ]
-  where Contravariant2 t = homOrtToDual' q s
-        Contravariant2 f = homOrtFromDual' q s
-
-prpHomDualisableOriented :: (HomDualisableOriented o h, EqExt h)
-  => q o h -> Struct (ObjectClass h) x -> Statement
-prpHomDualisableOriented q s = Prp "HomDualisableOriented"
-  :<=>: relHomDualisableOriented q s
-  
---------------------------------------------------------------------------------
 -- HomEmpty -
 
 -- | the empty homomorphism.
@@ -270,6 +219,10 @@ instance HomOriented h => Category (HomOrt s o h) where
 
 instance HomOriented h => CategoryDisjunctive (HomOrt s o h)
 
+instance (HomOriented h, TransformableGRefl o s) => CategoryDualisable o (HomOrt s o h) where
+  cToDual s = Contravariant2 (HomOrt t) where Contravariant2 t = cToDual s
+  cFromDual s = Contravariant2 (HomOrt f) where Contravariant2 f = cFromDual s
+
 instance (HomOriented h, SDualisableOriented s o) => ApplicativeG Id (HomOrt s o h) (->) where
   amapG (HomOrt h) = amapG h
 
@@ -284,11 +237,6 @@ instance (HomOriented h, SDualisableOriented s o) => ApplicativeGMorphism Pnt (H
 instance (HomOriented h, SDualisableOriented s o) => FunctorialG Pnt (HomOrt s o h) (->)
 
 instance (HomOriented h, SDualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
-
-
-instance (HomOriented h, SDualisableOriented s o) => HomDualisableOriented o (HomOrt s o h) where
-  homOrtToDual s = Contravariant2 (HomOrt t) where Contravariant2 t = sToDual s
-  homOrtFromDual s = Contravariant2 (HomOrt f) where Contravariant2 f = sFromDual s
 
 --------------------------------------------------------------------------------
 -- homOrt -
@@ -307,13 +255,13 @@ type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
 -- toOpOrt -
 
 toOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
-toOpOrt = homOrtToDual Struct
+toOpOrt = cToDual Struct
 
 --------------------------------------------------------------------------------
 -- fromOpOrt -
 
 fromOpOrt :: Oriented x => SVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
-fromOpOrt = homOrtFromDual Struct
+fromOpOrt = cFromDual Struct
 
 
 
