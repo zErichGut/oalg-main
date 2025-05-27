@@ -46,7 +46,6 @@ import OAlg.Category.Path
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
 
 --------------------------------------------------------------------------------
@@ -65,6 +64,8 @@ import OAlg.Hom.Oriented.Definition
 class (HomOriented h, Transformable (ObjectClass h) Mlt) => HomMultiplicative h
 
 instance HomMultiplicative h => HomMultiplicative (Path h)
+
+instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- HomDisjunctiveMultiplicative -
@@ -91,6 +92,9 @@ instance HomMultiplicative h => HomMultiplicative (Path h)
 --     @'amap' h (x '*' y) '==' 'amap' h y '*' 'amap' h x@.
 class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjunctiveMultiplicative h
 
+instance HomDisjunctiveMultiplicative h => HomMultiplicative (Variant2 Covariant h)
+instance HomDisjunctiveMultiplicative h => HomDisjunctiveMultiplicative (Variant2 Contravariant h)
+
 --------------------------------------------------------------------------------
 -- SDualisableMultiplicative -
 
@@ -108,6 +112,9 @@ class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjun
 -- where @q@ is any proxy for @__o__@.
 class (SDualisableOriented s o, Transformable s Mlt) => SDualisableMultiplicative s o
 
+instance (HomMultiplicative h, SDualisableMultiplicative s o)
+  => HomDisjunctiveMultiplicative (HomOrt s o h)
+  
 --------------------------------------------------------------------------------
 -- prpSDualisableMultiplicativeOne -
 
