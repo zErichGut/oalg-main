@@ -19,6 +19,7 @@
 -- natural transformations between 'Diagram's.
 module OAlg.Entity.Diagram.Transformation
   (
+{-    
     -- * Transformation
     Transformation(..), trfs
 
@@ -26,7 +27,7 @@ module OAlg.Entity.Diagram.Transformation
   , coTransformation
   , TransformationDuality(..), TransformationOpDuality
   , trfOpDuality, trfOpDualityMlt
-
+-}
   ) where
 
 import Data.Typeable
@@ -93,7 +94,7 @@ data Transformation t n m a
 -- | the underlying list of factors.
 trfs :: Transformation t n m a -> FinList n a
 trfs (Transformation _ _ fs) = fs
-
+{-
 --------------------------------------------------------------------------------
 -- trfMap -
 
@@ -375,3 +376,4 @@ instance ( Algebraic a
          )
   => Algebraic (Transformation t n m a)
 
+-}

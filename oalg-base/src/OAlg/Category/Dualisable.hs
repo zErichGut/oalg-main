@@ -30,6 +30,7 @@ module OAlg.Category.Dualisable
   , DualisableGId
   , ReflexiveG(..), reflG'
   , toDualG'
+  , tauO
 
     -- ** Bi-Dualisable
   , DualisableGBi(..)
@@ -48,6 +49,11 @@ import OAlg.Data.Statement.Definition
 
 import OAlg.Structure.Definition
 
+--------------------------------------------------------------------------------
+-- tauO -
+
+tauO :: Transformable1 o s => Struct s x -> Struct s (o x)
+tauO = tauG
 
 --------------------------------------------------------------------------------
 -- ReflexiveG -

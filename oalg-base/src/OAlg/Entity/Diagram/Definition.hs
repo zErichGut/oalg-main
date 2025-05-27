@@ -21,7 +21,8 @@ module OAlg.Entity.Diagram.Definition
   (
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
-  , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows, dgMap
+  , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
+  , dgMap, dgMapCov, dgMapCnt
   , dgQuiver
 
      -- ** Chain

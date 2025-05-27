@@ -47,7 +47,6 @@ import OAlg.Structure.Oriented as O
 
 import OAlg.Hom.Oriented.Definition
 
-
 --------------------------------------------------------------------------------
 -- prpSDualisableOriented -
 
@@ -68,9 +67,6 @@ prpSDualisableOriented :: SDualisableOriented s o
   => q o -> Struct s x -> XOrt x -> Statement
 prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
   relSDualisableOriented q s (tau s) (tau (tauO s)) xx where
-
-  tauO :: Transformable1 o s => Struct s x -> Struct s (o x)
-  tauO = tauG
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -

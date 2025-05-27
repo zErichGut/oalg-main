@@ -145,13 +145,13 @@ instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Variant2 Contravari
 -- __Properties__ Let @'SDualisableOriented' __o s__@ then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
 -- 
--- (1) @'start' '.' 'toDualArw' q '.=.' 'toDualPnt' q '.' 'end'@.
+-- (1) @'start' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'end'@.
 --
--- (2) @'end' '.' 'toDualArw' q '==' 'toDualPnt' q '.' 'start'@.
+-- (2) @'end' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'start'@.
 --
 -- where @q@ is any proxy for @__o__@.
 class ( DualisableG Ort (->) o Id, DualisableG Ort (->) o Pnt
-      , Transformable s Ort, TransformableG o s s
+      , TransformableG o s s, Transformable s Ort
       )
   => SDualisableOriented s o
 
