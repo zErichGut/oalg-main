@@ -27,7 +27,7 @@ module OAlg.Data.Validable
   , XStd, xStd, xStdStruct
 
     -- * Extensional Equality
-  , EqualExt(..), EqE
+  , EqualExt, EqE
   , equalExt
   )
   where

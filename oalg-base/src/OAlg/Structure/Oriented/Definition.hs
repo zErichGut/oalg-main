@@ -565,6 +565,8 @@ instance TransformableOp OrtX
 instance TransformableG Id OrtX EqE where tauG Struct = Struct
 instance TransformableG Pnt OrtX EqE where tauG Struct = Struct
 
+instance TransformableGRefl Op OrtX
+
 --------------------------------------------------------------------------------
 -- EqEOrt
 

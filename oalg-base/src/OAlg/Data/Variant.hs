@@ -120,6 +120,10 @@ instance Show2 h => Show2 (Variant2 v h) where
   show2 (Covariant2 h) = "Covariant2 (" ++ show2 h ++ ")"
   show2 (Contravariant2 h) = "Contravariant2 (" ++ show2 h ++ ")"
 
+instance Disjunctive2 (Variant2 v h) where
+  variant2 (Covariant2 _)     = Covariant
+  variant2 (Contravariant2 _) = Contravariant
+  
 --------------------------------------------------------------------------------
 -- toVariant2 -
 
@@ -227,7 +231,8 @@ relCategoryDualisable q s
 
 -- | validity according to 'CategoryDualisable'.
 prpCategoryDualisable :: (CategoryDualisable o h, EqExt h)
-  => q o h -> Struct (ObjectClass h) x -> Statement
-prpCategoryDualisable q s = Prp "CategoryDualisable"
-  :<=>: relCategoryDualisable q s
+  -- => q o h -> Struct (ObjectClass h) x -> Statement
+  => q o h -> X (SomeObjectClass h) -> Statement
+prpCategoryDualisable q xo = Prp "CategoryDualisable" :<=>: Forall xo
+  (\(SomeObjectClass s) -> relCategoryDualisable q s)
   

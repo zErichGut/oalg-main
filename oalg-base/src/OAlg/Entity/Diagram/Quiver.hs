@@ -21,8 +21,6 @@ module OAlg.Entity.Diagram.Quiver
   , coQuiver, coQuiverInv
   ) where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented

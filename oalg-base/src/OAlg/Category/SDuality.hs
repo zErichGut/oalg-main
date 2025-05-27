@@ -25,10 +25,10 @@
 module OAlg.Category.SDuality
   (
     -- * Duality
-    SDuality(..)
+    SDuality(..) -- , SVariant(..), sVariant2, sVariant
   
     -- * Category
-  , SHom(), SVariant
+  , SHom()
   , sCov
   , sForget
   , sToDual, sToDual'
@@ -215,18 +215,13 @@ instance TransformableObjectClass s (SHom r s o h)
 instance TransformableG d s t => TransformableGObjectClassDomain d (SHom r s o h) t
 
 --------------------------------------------------------------------------------
--- SVariant -
-
-type SVariant = Variant2
-
---------------------------------------------------------------------------------
 -- sCov -
 
 -- | the induced morphism.
 --
 -- __Note__ The resulting morphism is 'Covariant'.
 sCov :: (Morphism h, Transformable (ObjectClass h) s)
-  => h x y -> SVariant Covariant (SHom r s o h) x y
+  => h x y -> Variant2 Covariant (SHom r s o h) x y
 sCov h = Covariant2 $ make (SCov h :. IdPath (tau (domain h)))
 
 --------------------------------------------------------------------------------
@@ -242,17 +237,17 @@ sForget (SHom p) = SHom (smpPathForget p)
 -- | using the structural constraints to constract the 'Contravariant' morphism of 'SToDual'
 -- in'SHom'.
 sToDualStruct :: Struct s x -> Struct s (o x)
-  -> SVariant Contravariant (SHom r s o h) x (o x)
+  -> Variant2 Contravariant (SHom r s o h) x (o x)
 sToDualStruct s@Struct Struct = Contravariant2 $ make (SToDual :. IdPath s)
 
 -- | 'SToDual' as a 'Contravaraint' morphism in 'SHom'.
 sToDual :: Transformable1 o s
-  => Struct s x -> SVariant Contravariant (SHom r s o h) x (o x)
+  => Struct s x -> Variant2 Contravariant (SHom r s o h) x (o x)
 sToDual s = sToDualStruct s (tau1 s)
 
 -- | prefixing a proxy.
 sToDual' :: Transformable1 o s
-  => q o h -> Struct s x -> SVariant Contravariant (SHom r s o h) x (o x)
+  => q o h -> Struct s x -> Variant2 Contravariant (SHom r s o h) x (o x)
 sToDual' _ = sToDual
 
 --------------------------------------------------------------------------------
@@ -261,17 +256,17 @@ sToDual' _ = sToDual
 -- | using the structural constraints to constract the 'Contravariant' morphism of 'SFromDual'
 -- in'SHom'.
 sFromDualStruct :: Struct s x -> Struct s (o x)
-  -> SVariant Contravariant (SHom r s o h) (o x) x
+  -> Variant2 Contravariant (SHom r s o h) (o x) x
 sFromDualStruct Struct s'@Struct = Contravariant2 $ make (SFromDual :. IdPath s')
 
 -- | 'SFromDual' as a 'Contravaraint' morphism in 'SHom'.
 sFromDual :: Transformable1 o s
-  => Struct s x -> SVariant Contravariant (SHom r s o h) (o x) x
+  => Struct s x -> Variant2 Contravariant (SHom r s o h) (o x) x
 sFromDual s = sFromDualStruct s (tau1 s)
 
 -- | prefixing a proxy.
 sFromDual' :: Transformable1 o s
-  => q o h -> Struct s x -> SVariant Contravariant (SHom r s o h) (o x) x
+  => q o h -> Struct s x -> Variant2 Contravariant (SHom r s o h) (o x) x
 sFromDual' _ = sFromDual
 
 --------------------------------------------------------------------------------
@@ -312,6 +307,29 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
 
 -- | duality for 'Dual1'-dualisable types.
 data SDuality a x = SLeft (a x) | SRight (Dual1 a x)
+
+--------------------------------------------------------------------------------
+-- SVariant -
+
+-- | vaiant for 'Dual1'-dualisable types.
+data SVariant v h x y where
+  SCovariant     :: h x y -> SVariant Covariant h x y
+  SContravariant :: h x y -> SVariant Contravariant h x y
+
+sVariant2 :: SVariant v h x y -> Variant2 v h x y
+sVariant2 (SCovariant h) = Covariant2 h
+sVariant2 (SContravariant h) = Contravariant2 h
+
+sVariant :: Variant2 v h x y -> SVariant v h x y
+sVariant (Covariant2 h) = SCovariant h
+sVariant (Contravariant2 h) = SContravariant h
+
+instance Morphism h => Morphism (SVariant v h) where
+  type ObjectClass (SVariant v h) = ObjectClass h
+  homomorphous h = homomorphous (sVariant2 h)
+
+instance ApplicativeG t h c => ApplicativeG t (SVariant Covariant h) c where
+  amapG (SCovariant h) = amapG h
 
 {-
 --------------------------------------------------------------------------------

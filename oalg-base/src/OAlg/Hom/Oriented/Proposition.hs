@@ -20,7 +20,6 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
-{-    
     -- * Disjunctive Homomorphism
     prpHomDisjunctiveOriented
 
@@ -29,7 +28,6 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomOrt
   , prpHomOrtOpEmpty
--}
   )
   where
 
@@ -73,40 +71,26 @@ prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
 
   tauO :: Transformable1 o s => Struct s x -> Struct s (o x)
   tauO = tauG
-{-
---------------------------------------------------------------------------------
--- prpHomDisjOrtDual -
-
--- | validity accoring to property (1) of 'HomDisjunctiveOriented',
-relHomDisjOrtDual :: (HomDisjunctiveOriented h o, Eq2 h, Show2 h)
- => q h o -> Struct (ObjectClass h) x -> Statement
-relHomDisjOrtDual q s = relInvEq2 (homOrtDual' q s)
-
-prpHomDisjOrtDual :: (HomDisjunctiveOriented h o, Eq2 h, Show2 h)
- => q h o -> X (SomeObjectClass h) -> Statement
-prpHomDisjOrtDual q xso = Prp "HomDisjOrtDual" :<=>: Forall xso
-  (\(SomeObjectClass s) -> relHomDisjOrtDual q s)
--}
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -
 
 relHomDisjOrtCov :: (HomDisjunctiveOriented h, Show2 h)
-  => Homomorphous Ort x y -> SVariant Covariant h x y  -> x -> Statement
-relHomDisjOrtCov (Struct:>:Struct) h  x = Label "Covariant" :<=>:
+  => Homomorphous Ort x y -> Variant2 Covariant h x y  -> x -> Statement
+relHomDisjOrtCov (Struct:>:Struct) h x = Label "Covariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
 relHomDisjOrtCnt :: (HomDisjunctiveOriented h, Show2 h)
-  => Homomorphous Ort x y -> SVariant Contravariant h x y  -> x -> Statement
-relHomDisjOrtCnt (Struct:>:Struct) h  x = Label "Contravariant" :<=>:
+  => Homomorphous Ort x y -> Variant2 Contravariant h x y  -> x -> Statement
+relHomDisjOrtCnt (Struct:>:Struct) h x = Label "Contravariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
 relHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
-  => Either2 (SVariant Contravariant h) (SVariant Covariant h) x y -> x -> Statement
+  => Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y -> x -> Statement
 relHomDisjOrtVariant h x = case h of
   Right2 hCov -> relHomDisjOrtCov (tauHom (homomorphous h)) hCov x
   Left2 hCnt  -> relHomDisjOrtCnt (tauHom (homomorphous h)) hCnt x
@@ -127,7 +111,7 @@ prpHomDisjunctiveOriented :: (HomDisjunctiveOriented h, Show2 h)
 prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
   And [ prpHomDisjOrtVariant xa
       ]
-{-
+
 --------------------------------------------------------------------------------
 -- prpHomOrtOpEmpty -
 
@@ -135,17 +119,18 @@ prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
 prpHomOrtOpEmpty :: Statement
 prpHomOrtOpEmpty
   = And [ prpCategoryDisjunctive xo xfg
+        , prpCategoryDualisable q xo
         , prpFunctorialG qId' xo' xfg'
         , prpFunctorialG qPt' xo' xfg'
-        , prpHomDisjunctiveOriented q xo xsa
+        , prpHomDisjunctiveOriented xsa
         ] where
 
-  q    = Proxy2 :: Proxy2 (HomOrtEmpty OrtX Op) Op
+  q    = Proxy2 :: Proxy2 Op (HomOrtEmpty OrtX Op)
   qId' = FunctorG :: FunctorG Id (Sub OrtX (HomOrtEmpty OrtX Op)) EqualExtOrt
   qPt' = FunctorG :: FunctorG Pnt (Sub OrtX (HomOrtEmpty OrtX Op)) EqualExtOrt
 
   
-  xoSct :: X (SomeObjectClass (HomOrtEmpty OrtX Op))
+  xoSct :: X (SomeObjectClass (SHom Ort OrtX Op (HomEmpty OrtX)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
                  , SomeObjectClass (Struct :: Struct OrtX (Op (OS)))
@@ -160,7 +145,7 @@ prpHomOrtOpEmpty
   xo' = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xo
 
   xfg :: X (SomeCmpb2 (HomOrtEmpty OrtX Op))
-  xfg = xSctSomeCmpb2 10 xoSct XEmpty
+  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
 
   xfg' :: X (SomeCmpb2 (Sub OrtX (HomOrtEmpty OrtX Op)))
   xfg' = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (sub f) (sub g)) xfg
@@ -173,4 +158,4 @@ prpHomOrtOpEmpty
           )
       $ xfg
 
--}
+

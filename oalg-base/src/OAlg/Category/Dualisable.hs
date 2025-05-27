@@ -43,7 +43,6 @@ import OAlg.Category.Definition
 
 import OAlg.Data.Identity
 import OAlg.Data.Opposite
-import OAlg.Data.Dualisable
 import OAlg.Data.EqualExtensional
 import OAlg.Data.Statement.Definition
 
