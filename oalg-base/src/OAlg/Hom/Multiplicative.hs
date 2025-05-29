@@ -1,19 +1,216 @@
 
+
 {-# LANGUAGE NoImplicitPrelude #-}
+
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
+
 
 -- |
 -- Module      : OAlg.Hom.Multiplicative
--- Description : homomorphisms between multiplicative structures
+-- Description : definition of homomorphisms between multiplicative structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- homomorphisms between 'OAlg.Structure.Multiplicative.Definition.Multiplicative' structures.
+-- definition of homomorphisms between 'Multiplicative' structures.
 module OAlg.Hom.Multiplicative
-  ( module Mlt
-  , module Prp
+  (
+    -- * Disjunctive
+    HomDisjunctiveMultiplicative
+
+    -- * Covariant
+  , HomMultiplicative
+
+    -- * Dualisable
+  , SDualisableMultiplicative
+
+    -- * Proposition
+  , prpHomDisjunctiveMultiplicative
+  , prpHomOrtMultiplicative, prpHomOrtOpEmptyMlt
+  , prpSDualisableMultiplicativeOne
+  , prpSDualisableMultiplicativeMlt
+  , relMapMltOne, relMapMltCov, relMapMltCnt
   )
   where
 
-import OAlg.Hom.Multiplicative.Definition as Mlt
-import OAlg.Hom.Multiplicative.Proposition as Prp
+import OAlg.Prelude
+
+import OAlg.Data.Identity
+
+import OAlg.Category.SDuality
+import OAlg.Category.Unify
+import OAlg.Category.Path
+
+-- this modules are imported to make the description easier
+import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Multiplicative
+
+import OAlg.Hom.Oriented.Definition
+
+--------------------------------------------------------------------------------
+-- HomMultiplicative -
+
+-- | covariant homomorphisms between 'Multiplicative' structures.
+--
+-- __Propoerty__ Let @'HomMultiplicative' __h__@, then
+-- for all __@a@__, __@b@__ and @h@ in __@h@__ __@a@__ __@b@__ holds:
+--
+-- (1) For all @p@ in @'Point' __a__@ holds:
+--     @'amap' h ('one' p) '==' 'one' ('pmap' h p)@.
+--
+-- (2) For all @x@, @y@ in __@a@__ with @'start' x '==' 'end' y@ holds:
+--     @'amap'h (x '*' y) '==' 'amap' h x '*' 'amap' h y@.
+class (HomOriented h, Transformable (ObjectClass h) Mlt) => HomMultiplicative h
+
+instance HomMultiplicative h => HomMultiplicative (Path h)
+
+instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty s)
+
+--------------------------------------------------------------------------------
+-- HomDisjunctiveMultiplicative -
+
+-- | disjunctive homomorphisms between 'Multiplicative' structures.
+--
+-- __Propoerty__ Let @'HomDisjunctiveMultiplicative' __h__@, then
+-- for all __@a@__, __@b@__ and @h@ in __@h@__ __@a@__ __@b@__ holds:
+--
+-- (1) If @'variant2' h '==' 'Covariant'@ then holds:
+--
+--     (1) For all @p@ in @'Point' __a__@ holds:
+--     @'amap' h ('one' p) '==' 'one' ('pmap' h p)@.
+--
+--     (2) For all @x@, @y@ in __@a@__ with @'start' x '==' 'end' y@ holds:
+--     @'amap' h (x '*' y) '==' 'amap' h x '*' 'amap' h y@.
+--
+-- (2) If @'variant2' h '==' 'Contravariant'@ then holds:
+--
+--     (1) For all @p@ in @'Point' __a__@ holds:
+--     @'amap' h ('one' p) '==' 'one' ('pmap' h p)@.
+--
+--     (2) For all @x@, @y@ in __@a@__ with @'start' x '==' 'end' y@ holds:
+--     @'amap' h (x '*' y) '==' 'amap' h y '*' 'amap' h x@.
+class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjunctiveMultiplicative h
+
+instance HomDisjunctiveMultiplicative h => HomMultiplicative (Variant2 Covariant h)
+instance HomDisjunctiveMultiplicative h => HomDisjunctiveMultiplicative (Variant2 Contravariant h)
+
+--------------------------------------------------------------------------------
+-- SDualisableMultiplicative -
+
+-- | duality according to @__o__@ on @__s__@-structured 'Multiplicative' types,
+--
+-- __Properties__ Let @'SDualisableMultiplicative' __o s__@ then for all @__x__@
+-- and @s@ in @'Struct' __s x__@ holds:
+-- 
+-- (1) For all @p@ in @'Point' __x__@ holds:
+-- @'toDualArw' q s ('one' p) '==' 'one' ('toDualPnt' q s p)@. 
+--
+-- (2) For all @x@, @y@ in @__x__@ with @'start' x '==' 'end' y@ holds:
+-- @'toDualArw' q s (x '*' y) '==' 'toDualArw' q s y '*' 'toDualArw' q s x@.
+--
+-- where @q@ is any proxy for @__o__@.
+class (SDualisableOriented s o, Transformable s Mlt) => SDualisableMultiplicative s o
+
+instance (HomMultiplicative h, SDualisableMultiplicative s o)
+  => HomDisjunctiveMultiplicative (HomOrt s o h)
+
+instance SDualisableMultiplicative MltX Op
+
+--------------------------------------------------------------------------------
+-- relMapMltOne -
+
+relMapMltOne :: Struct Mlt x -> Struct Mlt y
+  -> (x -> y) -> (Point x -> Point y) -> X (Point x) -> Statement
+relMapMltOne Struct Struct mArw mPnt xp = Forall xp
+  (\p -> (mArw (one p) == one (mPnt p)) :?> Params ["p":=show p])
+
+--------------------------------------------------------------------------------
+-- relMapMlt -
+
+relMapMltCov :: Struct Mlt x -> Struct Mlt y -> (x -> y) -> X (Mltp2 x) -> Statement
+relMapMltCov Struct Struct mArw xmp = Label "Cov" :<=>: Forall xmp
+  (\(Mltp2 f g) -> (mArw (f * g) == mArw f * mArw g) :?> Params ["f":=show f,"g":=show g])
+
+relMapMltCnt :: Struct Mlt x -> Struct Mlt y -> (x -> y) -> X (Mltp2 x) -> Statement
+relMapMltCnt Struct Struct mArw xmp = Label "Cnt" :<=>: Forall xmp
+  (\(Mltp2 f g) -> (mArw (f * g) == mArw g * mArw f) :?> Params ["f":=show f,"g":=show g])
+  
+--------------------------------------------------------------------------------
+-- prpSDualisableMultiplicativeOne -
+
+-- | validity according to 'SDualisableMultiplicative', property 1.
+prpSDualisableMultiplicativeOne :: SDualisableMultiplicative s o
+  => q o -> Struct s x -> X (Point x) -> Statement
+prpSDualisableMultiplicativeOne q s xp = Prp "SDualisableMultiplicativeOne" :<=>: Label "1" :<=>:
+  relMapMltOne (tau s) (tau (tauO s)) mArw mPnt xp where
+    mArw = toDualArw q s
+    mPnt = toDualPnt q s
+
+--------------------------------------------------------------------------------
+-- prpSDualisableMultiplicativeMlt -
+
+-- | validity according to 'SDualisableMultiplicative', property 2.
+prpSDualisableMultiplicativeMlt :: SDualisableMultiplicative s o
+  => q o -> Struct s x -> X (Mltp2 x) -> Statement
+prpSDualisableMultiplicativeMlt q s xmp = Prp "SDualisableMultiplicativeMlt" :<=>: Label "2" :<=>:
+  relMapMltCnt (tau s) (tau (tauO s)) mArw xmp where
+    mArw = toDualArw q s
+
+--------------------------------------------------------------------------------
+-- prpHomDisjunctiveMultiplicative -
+
+prpHomDisjunctiveMultiplicative :: HomDisjunctiveMultiplicative h
+  => h x y -> XMlt x -> Statement
+prpHomDisjunctiveMultiplicative h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMultipliative"
+  :<=>: case variant2 h of
+    Covariant     -> Label "Cov" :<=>:
+      And [ relMapMltOne sx sy mArw mPnt xp
+          , relMapMltCov sx sy mArw xm2
+          ]
+    Contravariant -> Label "Cnt" :<=>:
+      And [ relMapMltOne sx sy mArw mPnt xp
+          , relMapMltCnt sx sy mArw xm2
+          ]
+  where
+    sx = tau (domain h)
+    sy = tau (range h)
+    
+    mArw = amap h
+    mPnt = pmap h
+
+--------------------------------------------------------------------------------
+-- prpHomOrtMultiplicative -
+
+prpHomOrtMultiplicative :: (HomMultiplicative h, SDualisableMultiplicative s o)
+  => Struct MltX x -> HomOrt s o h x y -> Statement
+prpHomOrtMultiplicative Struct h = prpHomDisjunctiveMultiplicative h xStandardMlt
+  
+--------------------------------------------------------------------------------
+-- prpHomOrtOpEmptyMlt -
+
+-- | validity for @'HomOrtEmpty' 'MltX' 'Op'@ beeing 'HomDisjunctiveMultiplicative'.
+prpHomOrtOpEmptyMlt :: Statement
+prpHomOrtOpEmptyMlt = Prp "prpHomOrtOpEmptyMlt" :<=>:
+  And [ Forall xm (\(SomeMorphism h) -> prpHomOrtMultiplicative (domain h) h)
+      ]
+
+  where
+
+    xo :: X (SomeObjectClass (SHom Ort MltX Op (HomEmpty MltX)))
+    xo = xOneOf [ SomeObjectClass (Struct :: Struct MltX OS)
+                , SomeObjectClass (Struct :: Struct MltX N)
+                , SomeObjectClass (Struct :: Struct MltX (Op OS))
+                , SomeObjectClass (Struct :: Struct MltX (Id OS))
+                ]
+
+    
+    xm :: X (SomeMorphism (HomOrtEmpty MltX Op))
+    xm = amap1 (\(SomeMorphism h) -> SomeMorphism (HomOrt h)) $ xSctSomeMrph 10 xo

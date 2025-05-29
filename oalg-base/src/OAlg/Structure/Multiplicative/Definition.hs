@@ -53,6 +53,7 @@ import OAlg.Control.Solver
 
 import OAlg.Prelude
 
+import OAlg.Data.Identity
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Exception
@@ -161,6 +162,12 @@ instance Multiplicative c => Multiplicative (Op c) where
   one = Op . one
   Op f * Op g = Op (g * f)
   npower (Op f) n = Op (npower f n)
+
+instance Multiplicative c => Multiplicative (Id c) where
+  one = Id . one
+  Id f * Id g = Id (f * g)
+  npower (Id f) n = Id (npower f n)
+
 
 --------------------------------------------------------------------------------
 -- one' -

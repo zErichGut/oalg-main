@@ -13,6 +13,7 @@ module OAlg.Data.Opposite
   (
     -- * Op
     Op(..), fromOp, fromOpOp
+  , toOpG
 
     -- * Op2
   , Op2(..)
@@ -48,6 +49,13 @@ instance Logical a => Logical (Op a) where
 -- | from @'Op' x@.
 fromOp :: Op x -> x
 fromOp (Op x) = x
+
+--------------------------------------------------------------------------------
+-- toOpG -
+
+
+toOpG :: (x -> y) -> Op x -> Op y
+toOpG f (Op x) = Op (f x)
 
 --------------------------------------------------------------------------------
 -- fromOpOp -

@@ -26,6 +26,7 @@ module OAlg.Structure.Multiplicative.Proposition
   , coXMlt
 
     -- * X
+  , MltX
   , XStandardMlt(..)
   , xMlt, xMltp2, xMltp3
   , xoMlt
@@ -47,6 +48,7 @@ import Control.Applicative
 
 import OAlg.Prelude
 
+import OAlg.Data.Identity
 import OAlg.Data.Singleton
 import OAlg.Data.Symbol
 
@@ -261,7 +263,36 @@ coXMltInv :: Dual (XMlt c) -> XMlt c
 coXMltInv = xMltFromOpOp . coXMlt
 
 --------------------------------------------------------------------------------
--- XStandarMultiplicative -
+-- MltX -
+
+data MltX
+
+type instance Structure MltX x = (Multiplicative x, XStandardMlt x)
+
+instance TransformableG Op MltX MltX where tauG Struct = Struct
+instance TransformableOp MltX
+
+instance XStandardMlt x => XStandardMlt (Op x) where
+  xStandardMlt = coXMlt xStandardMlt
+
+instance Transformable MltX Ort where tau Struct = Struct
+instance TransformableOrt MltX
+
+instance Transformable MltX Mlt where tau Struct = Struct
+instance TransformableMlt MltX
+
+instance Transformable MltX Typ where tau Struct = Struct
+
+instance XStandardMlt c => XStandardMlt (Id c) where
+  xStandardMlt = XMlt xn xp x' xe' x2' x3' where
+    XMlt xn xp x xe x2 x3 = xStandardMlt
+    x'  = amap1 Id x
+    xe' = amap1 (\(Endo f) -> Endo (Id f)) xe
+    x2' = amap1 (\(Mltp2 f g) -> Mltp2 (Id f) (Id g)) x2
+    x3' = amap1 (\(Mltp3 f g h) -> Mltp3 (Id f) (Id g) (Id h)) x3
+
+--------------------------------------------------------------------------------
+-- XStandarMlt -
 
 -- | standard random variable for 'Multiplicative' structures.
 class XStandardMlt c where

@@ -38,6 +38,7 @@ module OAlg.Category.SDuality
   , PathSMorphism, rdcPathSMorphism
 
     -- * X
+  , xSctSomeMrph
   , xSctSomeCmpb2
 
   ) where
@@ -481,4 +482,9 @@ xSctSomeCmpb2 :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o 
 xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
   xfg = join $ amap1 xSctAdjOne $ xSomeMrphSHom xo xf
 
+--------------------------------------------------------------------------------
+-- xSctSomeMrph -
 
+xSctSomeMrph :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
+  => N -> X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism (SHom r s o h))
+xSctSomeMrph n xo = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) $ xSctSomeCmpb2 n xo XEmpty
