@@ -22,7 +22,7 @@ module OAlg.Entity.Diagram.Definition
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
-  , dgMap, dgMapCov, dgMapCnt
+  , dgMapCov, dgMapCnt
   , dgQuiver
 
      -- ** Chain
@@ -54,8 +54,6 @@ import Data.Foldable (toList)
 import OAlg.Prelude hiding (T)
 
 import OAlg.Category.SDuality
-
-import OAlg.Data.Either
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
@@ -288,27 +286,20 @@ dgMapCnt (Contravariant2 h) d = case d of
 
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
---------------------------------------------------------------------------------
--- dgMap -
-
-dgMap :: (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
-  => h a b -> SDuality (Diagram t n m) a -> SDuality (Diagram t n m) b
-dgMap h sd     = case toVariant2 h of
-  Right2 hCov -> case sd of
-    SLeft d   -> SLeft $ dgMapCov hCov d
-    SRight d  -> SRight $ dgMapCov hCov d
-  Left2 hCnt  -> case sd of
-    SLeft d   -> SRight $ dgMapCnt hCnt d
-    SRight d  -> SLeft $ dgMapCnt hCnt d
-
-instance (HomOriented h, SDualisableOriented s o, Dual (Dual t) ~ t)
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => SDualisable h (Diagram t n m) where
+  smapCov  = dgMapCov
+  smapCov' = dgMapCov
+  smapCnt  = dgMapCnt
+  smapCnt' = dgMapCnt
+  
+instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
   => ApplicativeG (SDuality (Diagram t n m)) (HomOrt s o h) (->) where
-  amapG = dgMap
+  amapG = smap
 
-instance (HomOriented h, SDualisableOriented s o, Dual (Dual t) ~ t)
+instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
   => ApplicativeGMorphism (SDuality (Diagram t n m)) (HomOrt s o h) (->)
 
-instance (HomOriented h, SDualisableOriented s o, Dual (Dual t) ~ t)
+instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
   => FunctorialG (SDuality (Diagram t n m)) (HomOrt s o h) (->)
 
 --------------------------------------------------------------------------------
@@ -646,18 +637,18 @@ instance Oriented a => Validable (SomeDiagram a) where
 sdgMap :: HomDisjunctiveOriented h
   => h a b -> SomeDiagram a -> SomeDiagram b
 sdgMap h (SomeDiagram d) = case dgTypeRefl d of
-  Refl                  -> case dgMap h (SLeft d) of
+  Refl                  -> case smap h (SLeft d) of
     SLeft d'            -> SomeDiagram d'
     SRight d'           -> SomeDiagram d'
   
-instance (HomOriented h, SDualisableOriented s o)
+instance (HomOriented h, DualisableOriented s o)
   => ApplicativeG SomeDiagram (HomOrt s o h) (->) where
   amapG = sdgMap
 
-instance (HomOriented h, SDualisableOriented s o)
+instance (HomOriented h, DualisableOriented s o)
   => ApplicativeGMorphism SomeDiagram (HomOrt s o h) (->)
 
-instance (HomOriented h, SDualisableOriented s o)
+instance (HomOriented h, DualisableOriented s o)
   => FunctorialG SomeDiagram (HomOrt s o h) (->)
 
 --------------------------------------------------------------------------------

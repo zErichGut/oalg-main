@@ -35,7 +35,9 @@ import Data.Array as A
 
 import OAlg.Prelude
 
-import OAlg.Data.SDuality
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
@@ -48,7 +50,7 @@ import OAlg.Structure.Algebraic
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Multiplicative.Definition
+import OAlg.Hom.Multiplicative
 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
@@ -94,10 +96,35 @@ data Transformation t n m a
 -- | the underlying list of factors.
 trfs :: Transformation t n m a -> FinList n a
 trfs (Transformation _ _ fs) = fs
-{-
+
 --------------------------------------------------------------------------------
 -- trfMap -
 
+trfMapCov :: HomMultiplicative h => h a b -> Transformation t n m a -> Transformation t n m b
+trfMapCov h (Transformation a b ts) = Transformation (dgMapCov h a) (dgMapCov h b) (amap1 (amap h) ts)
+
+trfMapCnt :: HomDisjunctiveMultiplicative h
+  => Variant2 Contravariant h a b -> Transformation t n m a -> Transformation (Dual t) n m b
+trfMapCnt h (Transformation a b ts) = Transformation (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h) ts)
+
+--------------------------------------------------------------------------------
+-- Transformation - Dual1 -
+
+type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m
+
+instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
+  => SDualisable h (Transformation t n m) where
+  smapCov  = trfMapCov
+  smapCov' = trfMapCov
+  smapCnt  = trfMapCnt
+  smapCnt' = trfMapCnt  
+
+instance (HomMultiplicative h, DualisableMultiplicative s o, Dual (Dual t) ~ t)
+  => ApplicativeG (SDuality (Transformation t n m)) (HomOrt s o h) (->) where
+  amapG = smap
+
+  
+{-
 trfMap :: Hom Mlt h => h a b -> Transformation t n m a -> Transformation t n m b
 trfMap h (Transformation a b ts) = Transformation (amap1 h a) (amap1 h b) (amap1 (amap h) ts)
 

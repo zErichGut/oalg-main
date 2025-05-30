@@ -30,7 +30,7 @@ module OAlg.Hom.Oriented.Definition
   , HomOriented, HomEmpty
 
     -- * Dualisable
-  , SDualisableOriented
+  , DualisableOriented
   , toDualArw, toDualPnt
   
     -- * Applicative
@@ -138,11 +138,11 @@ instance HomDisjunctiveOriented h => HomOriented (Variant2 Covariant h)
 instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Variant2 Contravariant h)
 
 --------------------------------------------------------------------------------
--- SDualisableOriented -
+-- DualisableOriented -
 
 -- | duality according to @__o__@ on @__s__@-structured 'Oriented' types,
 --
--- __Properties__ Let @'SDualisableOriented' __o s__@ then for all @__x__@
+-- __Properties__ Let @'DualisableOriented' __o s__@ then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
 -- 
 -- (1) @'start' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'end'@.
@@ -153,9 +153,9 @@ instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Variant2 Contravari
 class ( DualisableG Ort (->) o Id, DualisableG Ort (->) o Pnt
       , TransformableG o s s, Transformable s Ort
       )
-  => SDualisableOriented s o
+  => DualisableOriented s o
 
-instance (TransformableOrt s, TransformableOp s) => SDualisableOriented s Op
+instance (TransformableOrt s, TransformableOp s) => DualisableOriented s Op
 
 --------------------------------------------------------------------------------
 -- toDualArw -
@@ -163,10 +163,10 @@ instance (TransformableOrt s, TransformableOp s) => SDualisableOriented s Op
 -- | the dual arrow induced by @'DualisableG __s__ (->) __o__ 'Id'@.
 --
 -- __Note__ The induced mapping is independent of @__s__@!
-toDualArw :: SDualisableOriented s o => q o -> Struct s x -> x -> o x
+toDualArw :: DualisableOriented s o => q o -> Struct s x -> x -> o x
 toDualArw q s = fromIdG (toDualG' (d q s) (tauOrt s)) where
-  d :: SDualisableOriented s o => q o -> Struct s x -> SDualityG Ort (->) o Id
-  d _ _ = SDualityG
+  d :: DualisableOriented s o => q o -> Struct s x -> DualityG Ort (->) o Id
+  d _ _ = DualityG
 
 --------------------------------------------------------------------------------
 -- toDualPnt -
@@ -174,10 +174,10 @@ toDualArw q s = fromIdG (toDualG' (d q s) (tauOrt s)) where
 -- | the dual point induced by @'DualisableG' __s__ (->) __o__ 'Pnt'@.
 --
 -- __Note__ The induced mapping is independent of @__s__@!
-toDualPnt :: SDualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
+toDualPnt :: DualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
 toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
-  d :: SDualisableOriented s o => q o -> Struct s x -> SDualityG Ort (->) o Pnt
-  d _ _ = SDualityG
+  d :: DualisableOriented s o => q o -> Struct s x -> DualityG Ort (->) o Pnt
+  d _ _ = DualityG
 
 --------------------------------------------------------------------------------
 -- HomEmpty -
@@ -230,20 +230,20 @@ instance (HomOriented h, TransformableGRefl o s) => CategoryDualisable o (HomOrt
   cToDual s   = Contravariant2 (HomOrt t) where Contravariant2 t = cToDual s
   cFromDual s = Contravariant2 (HomOrt f) where Contravariant2 f = cFromDual s
 
-instance (HomOriented h, SDualisableOriented s o) => ApplicativeG Id (HomOrt s o h) (->) where
+instance (HomOriented h, DualisableOriented s o) => ApplicativeG Id (HomOrt s o h) (->) where
   amapG (HomOrt h) = amapG h
 
-instance (HomOriented h, SDualisableOriented s o) => ApplicativeGMorphism Id (HomOrt s o h) (->)
-instance (HomOriented h, SDualisableOriented s o) => FunctorialG Id (HomOrt s o h) (->)
+instance (HomOriented h, DualisableOriented s o) => ApplicativeGMorphism Id (HomOrt s o h) (->)
+instance (HomOriented h, DualisableOriented s o) => FunctorialG Id (HomOrt s o h) (->)
 
 
-instance (HomOriented h, SDualisableOriented s o) => ApplicativeG Pnt (HomOrt s o h) (->) where
+instance (HomOriented h, DualisableOriented s o) => ApplicativeG Pnt (HomOrt s o h) (->) where
   amapG (HomOrt h) = amapG h
 
-instance (HomOriented h, SDualisableOriented s o) => ApplicativeGMorphism Pnt (HomOrt s o h) (->)
-instance (HomOriented h, SDualisableOriented s o) => FunctorialG Pnt (HomOrt s o h) (->)
+instance (HomOriented h, DualisableOriented s o) => ApplicativeGMorphism Pnt (HomOrt s o h) (->)
+instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomOrt s o h) (->)
 
-instance (HomOriented h, SDualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
+instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
 
 --------------------------------------------------------------------------------
 -- homOrt -

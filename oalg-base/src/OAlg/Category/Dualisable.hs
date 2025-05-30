@@ -26,7 +26,7 @@ module OAlg.Category.Dualisable
   (
     -- * Structural Duality
     -- ** Dualisable
-    DualisableG(..), SDualityG(..)
+    DualisableG(..), DualityG(..)
   , DualisableGId
   , ReflexiveG(..), reflG'
   , toDualG'
@@ -106,10 +106,10 @@ instance TransformableOp r => DualisableG r (->) Op Id where
 instance TransformableOp r => DualisableGId r Op
 
 --------------------------------------------------------------------------------
--- SDualityG -
+-- DualityG -
 
 -- | attest of being 'DualisableG'.
-data SDualityG r c o d where SDualityG :: DualisableG r c o d => SDualityG r c o d
+data DualityG r c o d where DualityG :: DualisableG r c o d => DualityG r c o d
 
 --------------------------------------------------------------------------------
 -- reflG' -

@@ -24,7 +24,7 @@ module OAlg.Hom.Oriented.Proposition
     prpHomDisjunctiveOriented
 
     -- * Duality
-  , prpSDualisableOriented
+  , prpDualisableOriented
 
     -- * HomOrt
   , prpHomOrtOpEmpty
@@ -48,12 +48,12 @@ import OAlg.Structure.Oriented as O
 import OAlg.Hom.Oriented.Definition
 
 --------------------------------------------------------------------------------
--- prpSDualisableOriented -
+-- prpDualisableOriented -
 
--- | validity according to 'SDualisableOriented'.
-relSDualisableOriented :: SDualisableOriented s o
+-- | validity according to 'DualisableOriented'.
+relDualisableOriented :: DualisableOriented s o
   => q o -> Struct s x -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
-relSDualisableOriented q s Struct Struct xx = Forall xx
+relDualisableOriented q s Struct Struct xx = Forall xx
     (\x -> And [ Label "1" :<=>: ((start $ tArw x) == (tPnt $ end x)) :?> Params ["x":=show x]
                , Label "2" :<=>: ((end $ tArw x) == (tPnt $ start x)) :?> Params ["x":=show x]
                ]
@@ -62,11 +62,11 @@ relSDualisableOriented q s Struct Struct xx = Forall xx
     tArw = toDualArw q s
     tPnt = toDualPnt q s
 
--- | validity according to 'SDualisableOriented'.
-prpSDualisableOriented :: SDualisableOriented s o
+-- | validity according to 'DualisableOriented'.
+prpDualisableOriented :: DualisableOriented s o
   => q o -> Struct s x -> XOrt x -> Statement
-prpSDualisableOriented q s xx = Prp "SDualisableOriented" :<=>:
-  relSDualisableOriented q s (tau s) (tau (tauO s)) xx where
+prpDualisableOriented q s xx = Prp "DualisableOriented" :<=>:
+  relDualisableOriented q s (tau s) (tau (tauO s)) xx where
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -

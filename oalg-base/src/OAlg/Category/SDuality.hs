@@ -25,8 +25,8 @@
 module OAlg.Category.SDuality
   (
     -- * Duality
-    SDuality(..) -- , SVariant(..), sVariant2, sVariant
-  
+    SDuality(..), SDualisable(..), smap
+
     -- * Category
   , SHom()
   , sCov
@@ -55,6 +55,7 @@ import OAlg.Category.Unify
 
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
+import OAlg.Data.Either
 import OAlg.Data.Variant
 
 --------------------------------------------------------------------------------
@@ -331,6 +332,28 @@ instance Morphism h => Morphism (SVariant v h) where
 
 instance ApplicativeG t h c => ApplicativeG t (SVariant Covariant h) c where
   amapG (SCovariant h) = amapG h
+
+--------------------------------------------------------------------------------
+-- SDualisable -
+
+-- | duality for 'Disjunctive2' morphisms.
+class (Disjunctive2 h, Dual1 (Dual1 d) ~ d) => SDualisable h d where
+  smapCov  :: Variant2 Covariant h x y -> d x -> d y
+  smapCov' :: Variant2 Covariant h x y -> Dual1 d x -> Dual1 d y 
+  smapCnt  :: Variant2 Contravariant h x y -> d x -> Dual1 d y
+  smapCnt' :: Variant2 Contravariant h x y -> Dual1 d x -> d y
+
+smap :: SDualisable h d => h x y -> SDuality d x -> SDuality d y
+smap h sd      = case toVariant2 h of
+  Right2 hCov -> case sd of
+    SLeft d   -> SLeft $ smapCov hCov d
+    SRight d  -> SRight $ smapCov' hCov d
+  Left2 hCnt  -> case sd of
+    SLeft d   -> SRight $ smapCnt hCnt d
+    SRight d  -> SLeft $ smapCnt' hCnt d
+
+
+
 
 {-
 --------------------------------------------------------------------------------

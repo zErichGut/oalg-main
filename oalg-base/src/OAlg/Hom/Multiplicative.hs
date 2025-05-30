@@ -30,13 +30,13 @@ module OAlg.Hom.Multiplicative
   , HomMultiplicative
 
     -- * Dualisable
-  , SDualisableMultiplicative
+  , DualisableMultiplicative
 
     -- * Proposition
   , prpHomDisjunctiveMultiplicative
   , prpHomOrtMultiplicative, prpHomOrtOpEmptyMlt
-  , prpSDualisableMultiplicativeOne
-  , prpSDualisableMultiplicativeMlt
+  , prpDualisableMultiplicativeOne
+  , prpDualisableMultiplicativeMlt
   , relMapMltOne, relMapMltCov, relMapMltCnt
   )
   where
@@ -49,7 +49,6 @@ import OAlg.Category.SDuality
 import OAlg.Category.Unify
 import OAlg.Category.Path
 
--- this modules are imported to make the description easier
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
 
@@ -103,11 +102,11 @@ instance HomDisjunctiveMultiplicative h => HomMultiplicative (Variant2 Covariant
 instance HomDisjunctiveMultiplicative h => HomDisjunctiveMultiplicative (Variant2 Contravariant h)
 
 --------------------------------------------------------------------------------
--- SDualisableMultiplicative -
+-- DualisableMultiplicative -
 
 -- | duality according to @__o__@ on @__s__@-structured 'Multiplicative' types,
 --
--- __Properties__ Let @'SDualisableMultiplicative' __o s__@ then for all @__x__@
+-- __Properties__ Let @'DualisableMultiplicative' __o s__@ then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
 -- 
 -- (1) For all @p@ in @'Point' __x__@ holds:
@@ -117,12 +116,12 @@ instance HomDisjunctiveMultiplicative h => HomDisjunctiveMultiplicative (Variant
 -- @'toDualArw' q s (x '*' y) '==' 'toDualArw' q s y '*' 'toDualArw' q s x@.
 --
 -- where @q@ is any proxy for @__o__@.
-class (SDualisableOriented s o, Transformable s Mlt) => SDualisableMultiplicative s o
+class (DualisableOriented s o, Transformable s Mlt) => DualisableMultiplicative s o
 
-instance (HomMultiplicative h, SDualisableMultiplicative s o)
+instance (HomMultiplicative h, DualisableMultiplicative s o)
   => HomDisjunctiveMultiplicative (HomOrt s o h)
 
-instance SDualisableMultiplicative MltX Op
+instance DualisableMultiplicative MltX Op
 
 --------------------------------------------------------------------------------
 -- relMapMltOne -
@@ -144,23 +143,23 @@ relMapMltCnt Struct Struct mArw xmp = Label "Cnt" :<=>: Forall xmp
   (\(Mltp2 f g) -> (mArw (f * g) == mArw g * mArw f) :?> Params ["f":=show f,"g":=show g])
   
 --------------------------------------------------------------------------------
--- prpSDualisableMultiplicativeOne -
+-- prpDualisableMultiplicativeOne -
 
--- | validity according to 'SDualisableMultiplicative', property 1.
-prpSDualisableMultiplicativeOne :: SDualisableMultiplicative s o
+-- | validity according to 'DualisableMultiplicative', property 1.
+prpDualisableMultiplicativeOne :: DualisableMultiplicative s o
   => q o -> Struct s x -> X (Point x) -> Statement
-prpSDualisableMultiplicativeOne q s xp = Prp "SDualisableMultiplicativeOne" :<=>: Label "1" :<=>:
+prpDualisableMultiplicativeOne q s xp = Prp "DualisableMultiplicativeOne" :<=>: Label "1" :<=>:
   relMapMltOne (tau s) (tau (tauO s)) mArw mPnt xp where
     mArw = toDualArw q s
     mPnt = toDualPnt q s
 
 --------------------------------------------------------------------------------
--- prpSDualisableMultiplicativeMlt -
+-- prpDualisableMultiplicativeMlt -
 
--- | validity according to 'SDualisableMultiplicative', property 2.
-prpSDualisableMultiplicativeMlt :: SDualisableMultiplicative s o
+-- | validity according to 'DualisableMultiplicative', property 2.
+prpDualisableMultiplicativeMlt :: DualisableMultiplicative s o
   => q o -> Struct s x -> X (Mltp2 x) -> Statement
-prpSDualisableMultiplicativeMlt q s xmp = Prp "SDualisableMultiplicativeMlt" :<=>: Label "2" :<=>:
+prpDualisableMultiplicativeMlt q s xmp = Prp "DualisableMultiplicativeMlt" :<=>: Label "2" :<=>:
   relMapMltCnt (tau s) (tau (tauO s)) mArw xmp where
     mArw = toDualArw q s
 
@@ -189,7 +188,7 @@ prpHomDisjunctiveMultiplicative h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMul
 --------------------------------------------------------------------------------
 -- prpHomOrtMultiplicative -
 
-prpHomOrtMultiplicative :: (HomMultiplicative h, SDualisableMultiplicative s o)
+prpHomOrtMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
   => Struct MltX x -> HomOrt s o h x y -> Statement
 prpHomOrtMultiplicative Struct h = prpHomDisjunctiveMultiplicative h xStandardMlt
   

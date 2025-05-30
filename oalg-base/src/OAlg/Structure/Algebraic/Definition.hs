@@ -111,7 +111,7 @@ instance Transformable (Alg k) FbrOrt where tau Struct = Struct
 instance Transformable (Alg k) Add where tau Struct = Struct
 instance Transformable (Alg k) Dst where tau Struct = Struct
 instance Transformable (Alg k) (Vec k) where tau Struct = Struct
-instance Transformable1 Op (Alg k) where tau1 Struct = Struct
+instance TransformableG Op (Alg k) (Alg k) where tauG Struct = Struct
 
 --------------------------------------------------------------------------------
 -- TransformableAlg -

@@ -97,10 +97,9 @@ instance Vectorial v => Validable (VectorSheaf v) where
                            , vld r xs
                            ]
 
-instance Vectorial v => Entity (VectorSheaf v)
-
 --------------------------------------------------------------------------------
 -- Instances -
+
 instance Vectorial () where
   type Scalar () = Q
   (!) = qtimes
