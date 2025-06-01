@@ -142,8 +142,6 @@ library
       OAlg.Hom.Distributive
       OAlg.Hom.Fibred
       OAlg.Hom.Multiplicative
-      OAlg.Hom.Multiplicative.Definition
-      OAlg.Hom.Multiplicative.Proposition
       OAlg.Hom.Oriented
       OAlg.Hom.Oriented.Definition
       OAlg.Hom.Oriented.Proposition

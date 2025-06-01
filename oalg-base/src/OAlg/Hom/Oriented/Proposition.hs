@@ -20,6 +20,8 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
+
+{-    
     -- * Disjunctive Homomorphism
     prpHomDisjunctiveOriented
 
@@ -28,6 +30,7 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomOrt
   , prpHomOrtOpEmpty
+-}
   )
   where
 
@@ -72,21 +75,21 @@ prpDualisableOriented q s xx = Prp "DualisableOriented" :<=>:
 -- prpHomDisjOrtVariant -
 
 relHomDisjOrtCov :: (HomDisjunctiveOriented h, Show2 h)
-  => Homomorphous Ort x y -> Variant2 Covariant h x y  -> x -> Statement
+  => Homomorphous Ort x y -> HVariant Covariant h x y  -> x -> Statement
 relHomDisjOrtCov (Struct:>:Struct) h x = Label "Covariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
 relHomDisjOrtCnt :: (HomDisjunctiveOriented h, Show2 h)
-  => Homomorphous Ort x y -> Variant2 Contravariant h x y  -> x -> Statement
+  => Homomorphous Ort x y -> HVariant Contravariant h x y  -> x -> Statement
 relHomDisjOrtCnt (Struct:>:Struct) h x = Label "Contravariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
 relHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
-  => Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y -> x -> Statement
+  => Either2 (HVariant Contravariant h) (HVariant Covariant h) x y -> x -> Statement
 relHomDisjOrtVariant h x = case h of
   Right2 hCov -> relHomDisjOrtCov (tauHom (homomorphous h)) hCov x
   Left2 hCnt  -> relHomDisjOrtCnt (tauHom (homomorphous h)) hCnt x
@@ -95,7 +98,7 @@ relHomDisjOrtVariant h x = case h of
 prpHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
   => X (SomeApplication h) -> Statement
 prpHomDisjOrtVariant xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
-  (\(SomeApplication h x) -> relHomDisjOrtVariant (toVariant2 h) x
+  (\(SomeApplication h x) -> relHomDisjOrtVariant (hVariant h) x
   )
 
 --------------------------------------------------------------------------------
@@ -153,5 +156,6 @@ prpHomOrtOpEmpty
            . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
           )
       $ xfg
+
 
 

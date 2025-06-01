@@ -311,46 +311,34 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
 data SDuality a x = SLeft (a x) | SRight (Dual1 a x)
 
 --------------------------------------------------------------------------------
--- SVariant -
-
--- | vaiant for 'Dual1'-dualisable types.
-data SVariant v h x y where
-  SCovariant     :: h x y -> SVariant Covariant h x y
-  SContravariant :: h x y -> SVariant Contravariant h x y
-
-sVariant2 :: SVariant v h x y -> Variant2 v h x y
-sVariant2 (SCovariant h) = Covariant2 h
-sVariant2 (SContravariant h) = Contravariant2 h
-
-sVariant :: Variant2 v h x y -> SVariant v h x y
-sVariant (Covariant2 h) = SCovariant h
-sVariant (Contravariant2 h) = SContravariant h
-
-instance Morphism h => Morphism (SVariant v h) where
-  type ObjectClass (SVariant v h) = ObjectClass h
-  homomorphous h = homomorphous (sVariant2 h)
-
-instance ApplicativeG t h c => ApplicativeG t (SVariant Covariant h) c where
-  amapG (SCovariant h) = amapG h
-
---------------------------------------------------------------------------------
 -- SDualisable -
 
 -- | duality for 'Disjunctive2' morphisms.
 class (Disjunctive2 h, Dual1 (Dual1 d) ~ d) => SDualisable h d where
   smapCov  :: Variant2 Covariant h x y -> d x -> d y
-  smapCov' :: Variant2 Covariant h x y -> Dual1 d x -> Dual1 d y 
-  smapCnt  :: Variant2 Contravariant h x y -> d x -> Dual1 d y
-  smapCnt' :: Variant2 Contravariant h x y -> Dual1 d x -> d y
+  smapCovDual :: Variant2 Covariant h x y -> Dual1 d x -> Dual1 d y 
+  smapToDual  :: Variant2 Contravariant h x y -> d x -> Dual1 d y
+  smapFromDual :: Variant2 Contravariant h x y -> Dual1 d x -> d y
+
+-- smapCovDual' :: SDualisable h d => q d -> Variant2 Covariant h x y -> Dual1 d x -> Dual1 d x
+-- smapCovDual' _ = smapCovDual
+
+--------------------------------------------------------------------------------
+-- smap -
 
 smap :: SDualisable h d => h x y -> SDuality d x -> SDuality d y
 smap h sd      = case toVariant2 h of
   Right2 hCov -> case sd of
     SLeft d   -> SLeft $ smapCov hCov d
-    SRight d  -> SRight $ smapCov' hCov d
+    SRight d  -> SRight $ smapCovDual hCov d
   Left2 hCnt  -> case sd of
-    SLeft d   -> SRight $ smapCnt hCnt d
-    SRight d  -> SLeft $ smapCnt' hCnt d
+    SLeft d   -> SRight $ smapToDual hCnt d
+    SRight d  -> SLeft $ smapFromDual hCnt d
+
+
+
+
+
 
 
 

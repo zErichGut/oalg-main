@@ -265,8 +265,8 @@ dgMapCov h d = case d of
 --
 -- where @q@ is any proxy in @__q s o__@.
 dgMapCnt :: HomDisjunctiveOriented h
-  => Variant2 Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
-dgMapCnt (Contravariant2 h) d = case d of
+  => HVariant Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
+dgMapCnt h d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
   DiagramChainTo e as      -> DiagramChainFrom (hPnt e) (amap1 hArw as)
@@ -287,20 +287,25 @@ dgMapCnt (Contravariant2 h) d = case d of
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
 instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => SDualisable h (Diagram t n m) where
-  smapCov  = dgMapCov
-  smapCov' = dgMapCov
-  smapCnt  = dgMapCnt
-  smapCnt' = dgMapCnt
-  
-instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
-  => ApplicativeG (SDuality (Diagram t n m)) (HomOrt s o h) (->) where
+  smapCov      = dgMapCov . HVariant
+  smapCovDual  = dgMapCov . HVariant
+  smapToDual   = dgMapCnt . HVariant
+  smapFromDual = dgMapCnt . HVariant
+
+
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+  => ApplicativeG (SDuality (Diagram t n m)) h (->) where
   amapG = smap
 
-instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
-  => ApplicativeGMorphism (SDuality (Diagram t n m)) (HomOrt s o h) (->)
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+  => ApplicativeGMorphism (SDuality (Diagram t n m)) h (->)
 
+
+{-
 instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
   => FunctorialG (SDuality (Diagram t n m)) (HomOrt s o h) (->)
+-}
+
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -

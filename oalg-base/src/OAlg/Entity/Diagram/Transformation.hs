@@ -104,7 +104,7 @@ trfMapCov :: HomMultiplicative h => h a b -> Transformation t n m a -> Transform
 trfMapCov h (Transformation a b ts) = Transformation (dgMapCov h a) (dgMapCov h b) (amap1 (amap h) ts)
 
 trfMapCnt :: HomDisjunctiveMultiplicative h
-  => Variant2 Contravariant h a b -> Transformation t n m a -> Transformation (Dual t) n m b
+  => HVariant Contravariant h a b -> Transformation t n m a -> Transformation (Dual t) n m b
 trfMapCnt h (Transformation a b ts) = Transformation (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h) ts)
 
 --------------------------------------------------------------------------------
@@ -114,13 +114,13 @@ type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m
 
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
   => SDualisable h (Transformation t n m) where
-  smapCov  = trfMapCov
-  smapCov' = trfMapCov
-  smapCnt  = trfMapCnt
-  smapCnt' = trfMapCnt  
+  smapCov      = trfMapCov . HVariant
+  smapCovDual  = trfMapCov . HVariant
+  smapToDual   = trfMapCnt . HVariant
+  smapFromDual = trfMapCnt . HVariant  
 
-instance (HomMultiplicative h, DualisableMultiplicative s o, Dual (Dual t) ~ t)
-  => ApplicativeG (SDuality (Transformation t n m)) (HomOrt s o h) (->) where
+instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
+  => ApplicativeG (SDuality (Transformation t n m)) h (->) where
   amapG = smap
 
   

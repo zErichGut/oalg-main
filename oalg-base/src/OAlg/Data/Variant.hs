@@ -141,10 +141,6 @@ instance Morphism h => Morphism (Variant2 v h) where
   homomorphous (Covariant2 h)     = homomorphous h
   homomorphous (Contravariant2 h) = homomorphous h
 
-instance ApplicativeG t h c => ApplicativeG t (Variant2 v h) c where
-  amapG (Covariant2 h)     = amapG h
-  amapG (Contravariant2 h) = amapG h
-
 --------------------------------------------------------------------------------
 -- CategoryDisjunctive -
 

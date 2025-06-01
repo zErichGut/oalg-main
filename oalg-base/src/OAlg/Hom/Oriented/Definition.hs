@@ -22,9 +22,9 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-
     -- * Disjunctive
     HomDisjunctiveOriented
+  , HVariant(..), hVariant
 
     -- * Covariant
   , HomOriented, HomEmpty
@@ -58,6 +58,7 @@ import OAlg.Category.Path
 import OAlg.Category.SDuality
 
 import OAlg.Data.Identity
+import OAlg.Data.Either
 import OAlg.Data.Variant as V
 
 import OAlg.Structure.Oriented hiding (Path(..))
@@ -132,10 +133,39 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort
       , Disjunctive2 h
       )
-  => HomDisjunctiveOriented h where
+  => HomDisjunctiveOriented h
 
-instance HomDisjunctiveOriented h => HomOriented (Variant2 Covariant h)
-instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Variant2 Contravariant h)
+--------------------------------------------------------------------------------
+--  HVariant -
+
+newtype HVariant v h x y = HVariant (Variant2 v h x y)
+  deriving (Show,Show2,Disjunctive2)
+
+instance Morphism h => Morphism (HVariant v h) where
+  type ObjectClass (HVariant v h) = ObjectClass h
+  homomorphous (HVariant h) = homomorphous h
+
+instance ApplicativeG Id h (->) => ApplicativeG Id (HVariant v h) (->) where
+  amapG (HVariant (Covariant2 h))    = amapG h
+  amapG (HVariant (Contravariant2 h)) = amapG h
+
+instance ApplicativeG Pnt h (->) => ApplicativeG Pnt (HVariant v h) (->) where
+  amapG (HVariant (Covariant2 h))    = amapG h
+  amapG (HVariant (Contravariant2 h)) = amapG h
+
+--------------------------------------------------------------------------------
+-- hVariant -
+
+hVariant :: Disjunctive2 h => h x y -> Either2 (HVariant Contravariant h) (HVariant Covariant h) x y
+hVariant h = case toVariant2 h of
+  Left2 hCnt  -> Left2 (HVariant hCnt)
+  Right2 hCov -> Right2 (HVariant hCov)
+
+--------------------------------------------------------------------------------
+-- HVariant - Hom -
+
+instance HomDisjunctiveOriented h => HomOriented (HVariant Covariant h)
+instance HomDisjunctiveOriented h => HomDisjunctiveOriented (HVariant v h)
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -
@@ -250,8 +280,8 @@ instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomO
 
 -- | embedding of 'HomOriented' to 'HomOrt'.
 homOrt :: (HomOriented h, Transformable (ObjectClass h) s)
-  => h x y -> Variant2 Covariant (HomOrt s o h) x y
-homOrt h = Covariant2 (HomOrt h') where Covariant2 h' = sCov h
+  => h x y -> HVariant Covariant (HomOrt s o h) x y
+homOrt h = HVariant (Covariant2 (HomOrt h')) where Covariant2 h' = sCov h
 
 --------------------------------------------------------------------------------
 -- HomOrtEmpty -
@@ -266,12 +296,12 @@ instance EqExt (HomOrtEmpty OrtX Op)
 --------------------------------------------------------------------------------
 -- toOpOrt -
 
-toOpOrt :: Oriented x => Variant2 Contravariant (HomOrtEmpty Ort Op) x (Op x)
-toOpOrt = cToDual Struct
+toOpOrt :: Oriented x => HVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
+toOpOrt = HVariant (cToDual Struct)
 
 --------------------------------------------------------------------------------
 -- fromOpOrt -
 
-fromOpOrt :: Oriented x => Variant2 Contravariant (HomOrtEmpty Ort Op) (Op x) x
-fromOpOrt = cFromDual Struct
+fromOpOrt :: Oriented x => HVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
+fromOpOrt = HVariant (cFromDual Struct)
 
