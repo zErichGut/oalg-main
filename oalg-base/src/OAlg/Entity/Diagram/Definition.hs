@@ -286,26 +286,19 @@ dgMapCnt h d = case d of
 
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
-instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => SDualisable h (Diagram t n m) where
-  smapCov      = dgMapCov . HVariant
-  smapCovDual  = dgMapCov . HVariant
-  smapToDual   = dgMapCnt . HVariant
-  smapFromDual = dgMapCnt . HVariant
+instance HomDisjunctiveOriented h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
+  amapG = dgMapCov . HVariant
 
+instance HomDisjunctiveOriented h
+  => ApplicativeGMorphism (Diagram t n m) (Variant2 Covariant h) (->)
+  
+instance FunctorialOriented h => FunctorialG (Diagram t n m) (Variant2 Covariant h) (->)
 
-instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
-  => ApplicativeG (SDuality (Diagram t n m)) h (->) where
-  amapG = smap
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => ApplicativeS h (Diagram t n m) where
+  vToDual   = dgMapCnt . HVariant
+  vFromDual = dgMapCnt . HVariant
 
-instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
-  => ApplicativeGMorphism (SDuality (Diagram t n m)) h (->)
-
-
-{-
-instance (HomOriented h, DualisableOriented s o, Dual (Dual t) ~ t)
-  => FunctorialG (SDuality (Diagram t n m)) (HomOrt s o h) (->)
--}
-
+instance (FunctorialOriented h, Dual (Dual t) ~ t) => FunctorialS h (Diagram t n m)
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -

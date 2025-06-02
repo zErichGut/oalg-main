@@ -157,6 +157,10 @@ class (Category c, Disjunctive2 c) => CategoryDisjunctive c
 
 instance (Morphism h, Disjunctive2 h) => CategoryDisjunctive (Path h)
 
+instance CategoryDisjunctive h => Category (Variant2 Covariant h) where
+  cOne = Covariant2 . cOne
+  Covariant2 f . Covariant2 g = Covariant2 (f . g)
+
 --------------------------------------------------------------------------------
 -- prpCategoryDisjunctiveOne -
 

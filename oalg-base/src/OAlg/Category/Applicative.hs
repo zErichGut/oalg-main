@@ -40,7 +40,7 @@ import OAlg.Data.X
 --------------------------------------------------------------------------------
 -- ApplicativeG -
 
--- | generalized application of family of types.
+-- | generalized application.
 class ApplicativeG t a b where
   -- | application.
   amapG :: a x y -> b (t x) (t y)

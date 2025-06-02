@@ -20,8 +20,6 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
-
-{-    
     -- * Disjunctive Homomorphism
     prpHomDisjunctiveOriented
 
@@ -30,7 +28,6 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomOrt
   , prpHomOrtOpEmpty
--}
   )
   where
 

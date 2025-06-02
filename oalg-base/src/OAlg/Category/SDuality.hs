@@ -25,7 +25,9 @@
 module OAlg.Category.SDuality
   (
     -- * Duality
-    SDuality(..), SDualisable(..), smap
+    SDuality(..)
+  , ApplicativeS(..), smap
+  , FunctorialS
 
     -- * Category
   , SHom()
@@ -275,7 +277,7 @@ sFromDual' _ = sFromDual
 -- SHom - CategoryDualisable -
 
 instance (Morphism h, TransformableGRefl o s) => CategoryDualisable o (SHom r s o h) where
-  cToDual = sToDual
+  cToDual   = sToDual
   cFromDual = sFromDual
 
 --------------------------------------------------------------------------------
@@ -311,119 +313,44 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
 data SDuality a x = SLeft (a x) | SRight (Dual1 a x)
 
 --------------------------------------------------------------------------------
--- SDualisable -
+-- ApplicativeS -
 
--- | duality for 'Disjunctive2' morphisms.
-class (Disjunctive2 h, Dual1 (Dual1 d) ~ d) => SDualisable h d where
-  smapCov  :: Variant2 Covariant h x y -> d x -> d y
-  smapCovDual :: Variant2 Covariant h x y -> Dual1 d x -> Dual1 d y 
-  smapToDual  :: Variant2 Contravariant h x y -> d x -> Dual1 d y
-  smapFromDual :: Variant2 Contravariant h x y -> Dual1 d x -> d y
-
--- smapCovDual' :: SDualisable h d => q d -> Variant2 Covariant h x y -> Dual1 d x -> Dual1 d x
--- smapCovDual' _ = smapCovDual
+-- | application on 'Disjunctive2' types.
+class ( Disjunctive2 h
+      , Applicative1 (Variant2 Covariant h) d, Applicative1 (Variant2 Covariant h) (Dual1 d)
+      ) => ApplicativeS h d where
+  vToDual  :: Variant2 Contravariant h x y -> d x -> Dual1 d y
+  vFromDual :: Variant2 Contravariant h x y -> Dual1 d x -> d y
 
 --------------------------------------------------------------------------------
 -- smap -
 
-smap :: SDualisable h d => h x y -> SDuality d x -> SDuality d y
+-- | the induced mapping.
+smap :: ApplicativeS h d => h x y -> SDuality d x -> SDuality d y
 smap h sd      = case toVariant2 h of
   Right2 hCov -> case sd of
-    SLeft d   -> SLeft $ smapCov hCov d
-    SRight d  -> SRight $ smapCovDual hCov d
+    SLeft d   -> SLeft $ amapG hCov d 
+    SRight d  -> SRight $ amapG hCov d
   Left2 hCnt  -> case sd of
-    SLeft d   -> SRight $ smapToDual hCnt d
-    SRight d  -> SLeft $ smapFromDual hCnt d
+    SLeft d   -> SRight $ vToDual hCnt d
+    SRight d  -> SLeft $ vFromDual hCnt d
 
-
-
-
-
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- SDualityBi -
-
--- | duality-pairing for the two structural types @__a__@ and @__b__@, i.e. the
--- disjoint union.
-newtype SDualityBi a b x = SDualityBi (Either1 a b x)
-
+instance ApplicativeS h d => ApplicativeG (SDuality d) h (->) where
+  amapG = smap
 
 --------------------------------------------------------------------------------
--- fromSDualityBi -
+-- FunctorialS -
 
-fromSDualityBi :: SDualityBi a b x -> Either1 a b x
-fromSDualityBi (SDualityBi ab) = ab
+-- | 'smap' as 'FunctorialG'-application.
+--
+-- __Properties__ Let @'FunctorialS' __h d__@
+class ( CategoryDisjunctive h, ApplicativeS h d
+      , Functorial1 (Variant2 Covariant h) d
+      , Functorial1 (Variant2 Covariant h) (Dual1 d)
+      ) => FunctorialS h d
 
---------------------------------------------------------------------------------
--- amapEither -
-
-amapEither :: (ApplicativeG a h (->), ApplicativeG b h (->)) => h x y -> Either1 a b x -> Either1 a b y
-amapEither h (Left1 a)  = Left1 (amapG h a)
-amapEither h (Right1 b) = Right1 (amapG h b) 
-
---------------------------------------------------------------------------------
--- toDualEither -
-
-toDualEither :: DualisableGBi r (->) o a b
-  => Struct r x -> Either1 a b x -> Either1 a b (o x)
-toDualEither r (Left1 a)  = Right1 (toDualGLft r a)
-toDualEither r (Right1 b) = Left1 (toDualGRgt r b)
-
---------------------------------------------------------------------------------
--- reflEitherTo -
-
-reflEitherTo :: DualisableGBi r (->) o a b
-  => Struct r x -> (->) (Either1 a b x) (Either1 a b (o (o x)))
-reflEitherTo r (Left1 a)  = Left1 (u a)  where Inv2 u _ = reflG r
-reflEitherTo r (Right1 b) = Right1 (u b) where Inv2 u _ = reflG r 
-
---------------------------------------------------------------------------------
--- reflEitherFrom -
-
-reflEitherFrom :: DualisableGBi r (->) o a b
-  => Struct r x -> (->) (Either1 a b (o (o x))) (Either1 a b x)
-reflEitherFrom r (Left1 a'') = Left1 (v a'') where Inv2 _ v   = reflG r
-reflEitherFrom r (Right1 b'') = Right1 (v b'') where Inv2 _ v = reflG r
-
-------------------------------------------------------------------------------------------
--- SDualityBi - SReflexive -
-
-instance DualisableGBi r (->) o a b => ReflexiveG r (->) o (SDualityBi a b) where
-  reflG r = Inv2 u v where
-    u = SDualityBi . reflEitherTo r . fromSDualityBi
-    v = SDualityBi . reflEitherFrom r . fromSDualityBi
-
-instance DualisableGBi r (->) o a b => DualisableG r (->) o (SDualityBi a b) where
-  toDualG r = SDualityBi . toDualEither r . fromSDualityBi
-
---------------------------------------------------------------------------------
--- SDualisable -
-
--- | helper class to avoid undecidable instances.
-class DualisableGBi r (->) o d (Dl1 d) => SDualisable r o d
-
---------------------------------------------------------------------------------
--- invSDuality -
-
--- | isomorphism between 'SDuality' and 'SDualityBi'.
-invSDuality :: Inv2 (->) (SDuality a x) (SDualityBi a (Dl1 a) x)
-invSDuality = Inv2 t f where
-  t (SLeft a)   = SDualityBi (Left1 a)
-  t (SRight a') = SDualityBi (Right1 (Dl1 a'))
-  
-  f (SDualityBi (Left1 a))         = SLeft a
-  f (SDualityBi (Right1 (Dl1 a'))) = SRight a'
-
-instance SDualisable r o a => ReflexiveG r (->) o (SDuality a) where
-  reflG r = (inv2 invSDuality) . reflG r . invSDuality
-
-instance (SDualisable r o a, TransformableGRefl o r) => DualisableG r (->) o (SDuality a) where
-  toDualG r = v . toDualG r . u where Inv2 u v = invSDuality
--}
+instance FunctorialS h d => ApplicativeGMorphism (SDuality d) h (->)
+instance FunctorialS h d => FunctorialG (SDuality d) h (->)
 
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -

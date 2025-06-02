@@ -112,17 +112,21 @@ trfMapCnt h (Transformation a b ts) = Transformation (dgMapCnt h b) (dgMapCnt h 
 
 type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m
 
-instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
-  => SDualisable h (Transformation t n m) where
-  smapCov      = trfMapCov . HVariant
-  smapCovDual  = trfMapCov . HVariant
-  smapToDual   = trfMapCnt . HVariant
-  smapFromDual = trfMapCnt . HVariant  
+instance HomDisjunctiveMultiplicative h
+  => ApplicativeG (Transformation t n m) (Variant2 Covariant h) (->) where
+  amapG = trfMapCov . HVariant
 
+instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
+  => ApplicativeS h (Transformation t n m) where
+  vToDual   = trfMapCnt . HVariant
+  vFromDual = trfMapCnt . HVariant  
+
+
+{-
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
   => ApplicativeG (SDuality (Transformation t n m)) h (->) where
   amapG = smap
-
+-}
   
 {-
 trfMap :: Hom Mlt h => h a b -> Transformation t n m a -> Transformation t n m b

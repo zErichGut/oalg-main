@@ -91,7 +91,8 @@ type FunctorialPoint h = FunctorialG Pnt h (->)
 --------------------------------------------------------------------------------
 -- FunctorialOriented -
 
-type FunctorialOriented h = (Functorial h, FunctorialPoint h)
+class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
+  => FunctorialOriented h 
 
 --------------------------------------------------------------------------------
 -- HomOriented -
@@ -274,6 +275,8 @@ instance (HomOriented h, DualisableOriented s o) => ApplicativeGMorphism Pnt (Ho
 instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomOrt s o h) (->)
 
 instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
+
+instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomOrt s o h)
 
 --------------------------------------------------------------------------------
 -- homOrt -
