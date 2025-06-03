@@ -124,6 +124,10 @@ instance (HomMultiplicative h, DualisableMultiplicative s o)
 instance DualisableMultiplicative MltX Op
 
 --------------------------------------------------------------------------------
+-- FunctorialMultiplicative -
+
+-- class (FunctorialOriented h 
+--------------------------------------------------------------------------------
 -- relMapMltOne -
 
 relMapMltOne :: Struct Mlt x -> Struct Mlt y

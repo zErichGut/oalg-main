@@ -214,6 +214,13 @@ class Validable1 p where
 instance Validable1 Proxy
 instance Validable1 (Struct s)
 
+instance (Validable1 a, Validable1 b) => Validable1 (Either1 a b) where
+  valid1 (Left1 a) = valid1 a
+  valid1 (Right1 b) = valid1 b
+
+instance (Validable1 a, Validable1 b) => Validable (Either1 a b x) where
+  valid = valid1
+  
 --------------------------------------------------------------------------------
 -- Validable2 -
 

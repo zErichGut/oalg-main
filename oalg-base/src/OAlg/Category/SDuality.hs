@@ -28,6 +28,7 @@ module OAlg.Category.SDuality
     SDuality(..)
   , ApplicativeS(..), smap
   , FunctorialS
+  , ShowDual1, EqDual1, ValidableDual1
 
     -- * Category
   , SHom()
@@ -39,10 +40,13 @@ module OAlg.Category.SDuality
   , SMorphism(..)
   , PathSMorphism, rdcPathSMorphism
 
+    -- * Proposition
+  , prpFunctorialS, SomeApplSDuality(..)
+
     -- * X
   , xSctSomeMrph
   , xSctSomeCmpb2
-
+  
   ) where
 
 import Control.Monad
@@ -306,12 +310,36 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          )
   => FunctorialG d (SHom r s o h) c
 
+
 --------------------------------------------------------------------------------
 -- SDuality -
 
 -- | duality for 'Dual1'-dualisable types.
-data SDuality a x = SLeft (a x) | SRight (Dual1 a x)
+newtype SDuality d x = SDuality (Either1 (Dual1 d) d x)
 
+--------------------------------------------------------------------------------
+-- ShowDual1 -
+
+class (Show1 d, Show1 (Dual1 d)) => ShowDual1 d
+
+deriving instance ShowDual1 d => Show1 (SDuality d)
+deriving instance ShowDual1 d => Show (SDuality d x)
+
+--------------------------------------------------------------------------------
+-- EqDual1 -
+
+class (Eq1 d, Eq1 (Dual1 d)) => EqDual1 d
+
+deriving instance EqDual1 d => Eq1 (SDuality d)
+deriving instance EqDual1 d => Eq (SDuality d x)
+
+--------------------------------------------------------------------------------
+-- ValidableSDuality -
+
+class (Validable1 d, Validable1 (Dual1 d)) => ValidableDual1 d
+
+deriving instance ValidableDual1 d => Validable1 (SDuality d)
+deriving instance ValidableDual1 d => Validable (SDuality d x)
 --------------------------------------------------------------------------------
 -- ApplicativeS -
 
@@ -327,13 +355,13 @@ class ( Disjunctive2 h
 
 -- | the induced mapping.
 smap :: ApplicativeS h d => h x y -> SDuality d x -> SDuality d y
-smap h sd      = case toVariant2 h of
+smap h (SDuality sd) = SDuality $ case toVariant2 h of
   Right2 hCov -> case sd of
-    SLeft d   -> SLeft $ amapG hCov d 
-    SRight d  -> SRight $ amapG hCov d
+    Left1 d   -> Left1  $ amapG hCov d 
+    Right1 d  -> Right1 $ amapG hCov d   
   Left2 hCnt  -> case sd of
-    SLeft d   -> SRight $ vToDual hCnt d
-    SRight d  -> SLeft $ vFromDual hCnt d
+    Left1 d   -> Right1 $ vFromDual hCnt d
+    Right1 d  -> Left1  $ vToDual hCnt d
 
 instance ApplicativeS h d => ApplicativeG (SDuality d) h (->) where
   amapG = smap
@@ -341,9 +369,15 @@ instance ApplicativeS h d => ApplicativeG (SDuality d) h (->) where
 --------------------------------------------------------------------------------
 -- FunctorialS -
 
--- | 'smap' as 'FunctorialG'-application.
+-- | 'smap' as a 'FunctorialG'-application.
 --
--- __Properties__ Let @'FunctorialS' __h d__@
+-- __Properties__ Let @'FunctorialS' __h d__@ then holds:
+--
+-- (1) For all @__x__@, @__y__@, @__z__@, @f@ in @__h y z__@ and @g@ in @__h x y__@ holds:
+-- @'smap' (f '.' g) '.=.' 'smap' f '.' 'smap' g@.
+--
+-- __Note__ From @'FunctorialS' __h d__@ follwos that @'FunctorialG' ('SDuality' __d__) __h__@
+-- holds.
 class ( CategoryDisjunctive h, ApplicativeS h d
       , Functorial1 (Variant2 Covariant h) d
       , Functorial1 (Variant2 Covariant h) (Dual1 d)
@@ -352,6 +386,26 @@ class ( CategoryDisjunctive h, ApplicativeS h d
 instance FunctorialS h d => ApplicativeGMorphism (SDuality d) h (->)
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
 
+--------------------------------------------------------------------------------
+-- SomeApplSDuality -
+
+data SomeApplSDuality h d where
+  SomeApplSDuality :: (Show2 h, ShowDual1 d, EqDual1 d)
+    => h y z -> h x y -> SDuality d x -> SomeApplSDuality h d
+
+--------------------------------------------------------------------------------
+-- relFunctorialS -
+
+relFunctorialS :: (FunctorialS h d, Show2 h, ShowDual1 d,  EqDual1 d)
+  => h y z -> h x y -> SDuality d x -> Statement
+relFunctorialS f g d = (smap (f . g) d == (smap f . smap g) d)
+  :?> Params ["f":=show2 f, "g":=show2 g, "d":=show d]
+
+prpFunctorialS :: FunctorialS h d
+  => X (SomeApplSDuality h d) -> Statement
+prpFunctorialS xsd = Prp "FunctorialS" :<=>:
+  Forall xsd (\(SomeApplSDuality f g d) -> relFunctorialS f g d)
+  
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -
 
@@ -426,3 +480,4 @@ xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
 xSctSomeMrph :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
   => N -> X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism (SHom r s o h))
 xSctSomeMrph n xo = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) $ xSctSomeCmpb2 n xo XEmpty
+

@@ -116,11 +116,19 @@ instance HomDisjunctiveMultiplicative h
   => ApplicativeG (Transformation t n m) (Variant2 Covariant h) (->) where
   amapG = trfMapCov . HVariant
 
+instance HomDisjunctiveMultiplicative h
+  => ApplicativeGMorphism (Transformation t n m) (Variant2 Covariant h) (->)
+
+instance (FunctorialOriented h, HomDisjunctiveMultiplicative h)
+  => FunctorialG (Transformation t n m) (Variant2 Covariant h) (->)
+
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
   => ApplicativeS h (Transformation t n m) where
   vToDual   = trfMapCnt . HVariant
   vFromDual = trfMapCnt . HVariant  
 
+instance (FunctorialOriented h, HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
+  => FunctorialS h (Transformation t n m)
 
 {-
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)

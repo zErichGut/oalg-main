@@ -55,6 +55,8 @@ import OAlg.Prelude hiding (T)
 
 import OAlg.Category.SDuality
 
+import OAlg.Data.Either
+
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
@@ -349,7 +351,8 @@ instance Oriented a => Validable (Diagram t n m a) where
               , vld (succ l) ps aijs
               ]
 
-    _ -> case dgTypeRefl d of Refl -> valid d' where SRight d' = amapG toOpOrt (SLeft d)
+    _ -> case dgTypeRefl d of Refl -> valid d' where
+                                SDuality (Left1 d') = amapG toOpOrt (SDuality (Right1 d))
     where prm :: N -> Message
           prm i = Params["i":=show i]
           lC = Label "chain"
@@ -391,7 +394,7 @@ dgQuiver (DiagramSink _ as) = Quiver (SW (toW os)) os where
   snk j (_:|os) = (j:>0):|snk (succ j) os
 dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
 dgQuiver d = case dgTypeRefl d of Refl -> coQuiverInv $ dgQuiver d' where
-                                            SRight d' = amapG toOpOrt (SLeft d)
+                                            SDuality (Left1 d') = amapG toOpOrt (SDuality (Right1 d))
 
 
 --------------------------------------------------------------------------------
@@ -417,7 +420,8 @@ chnFromStart (DiagramChainFrom s _) = s
 -- chnFromEnd -
 
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
-chnFromEnd d@(DiagramChainFrom _ _) = chnToStart d' where SRight d' = amapG toOpOrt (SLeft d)
+chnFromEnd d@(DiagramChainFrom _ _) = chnToStart d' where
+  SDuality (Left1 d') = amapG toOpOrt (SDuality (Right1 d))
 
 --------------------------------------------------------------------------------
 -- Diagram (Chain t) - Oriented -
@@ -558,7 +562,9 @@ xDiagram rt@Refl xd = case xd of
   XDiagramChainTo m xs    -> xChain m xs
   XDiagramParallelLR m xo -> xParallel m xo
   XDiagramSink m xe       -> xSink m xe
-  _                       ->   amap1 (\d' -> let SLeft d = amapG fromOpOrt (SRight d') in d)
+  _                       ->   amap1 (\d' -> let SDuality (Right1 d)
+                                                   = amapG fromOpOrt (SDuality (Left1 d'))
+                                             in d)
                              $ xDiagram (rt' rt) $ coXDiagram xd
 
 --------------------------------------------------------------------------------
@@ -634,10 +640,10 @@ instance Oriented a => Validable (SomeDiagram a) where
 -- | mapping of some diagram via a homomorphismd on 'Oriented' structures.
 sdgMap :: HomDisjunctiveOriented h
   => h a b -> SomeDiagram a -> SomeDiagram b
-sdgMap h (SomeDiagram d) = case dgTypeRefl d of
-  Refl                  -> case smap h (SLeft d) of
-    SLeft d'            -> SomeDiagram d'
-    SRight d'           -> SomeDiagram d'
+sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
+  Refl                   -> case smap h (SDuality (Right1 d)) of
+    SDuality (Right1 d') -> SomeDiagram d'
+    SDuality (Left1  d') -> SomeDiagram d'
   
 instance (HomOriented h, DualisableOriented s o)
   => ApplicativeG SomeDiagram (HomOrt s o h) (->) where
