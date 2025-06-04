@@ -19,6 +19,7 @@
 module OAlg.Data.Validable
   ( -- * Validable
     Validable(..), rnfValid
+  , ValidableDual1
 
   , Validable1(..), Validable2(..)
 
@@ -43,6 +44,7 @@ import OAlg.Category.Definition
 import OAlg.Data.Proxy
 import OAlg.Data.Boolean.Definition
 import OAlg.Data.Statement
+import OAlg.Data.Dualisable
 import OAlg.Data.Identity
 import OAlg.Data.Maybe
 import OAlg.Data.Either
@@ -214,13 +216,16 @@ class Validable1 p where
 instance Validable1 Proxy
 instance Validable1 (Struct s)
 
-instance (Validable1 a, Validable1 b) => Validable1 (Either1 a b) where
-  valid1 (Left1 a) = valid1 a
-  valid1 (Right1 b) = valid1 b
+instance (Validable (a x), Validable (b x)) => Validable (Either1 a b x) where
+  valid (Left1 a) = valid a
+  valid (Right1 b) = valid b
 
-instance (Validable1 a, Validable1 b) => Validable (Either1 a b x) where
-  valid = valid1
-  
+--------------------------------------------------------------------------------
+-- ValidableDual1 -
+
+-- | helper class to avoid undecidable instances.
+class Validable (Dual1 d x) => ValidableDual1 d x
+
 --------------------------------------------------------------------------------
 -- Validable2 -
 

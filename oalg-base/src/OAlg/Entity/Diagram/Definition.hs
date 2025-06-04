@@ -288,6 +288,10 @@ dgMapCnt h d = case d of
 
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
+instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
+instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
+instance Oriented a => ValidableDual1 (Diagram t n m) a
+
 instance HomDisjunctiveOriented h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
   amapG = dgMapCov . HVariant
 

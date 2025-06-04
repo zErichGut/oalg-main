@@ -98,6 +98,12 @@ trfs :: Transformation t n m a -> FinList n a
 trfs (Transformation _ _ fs) = fs
 
 --------------------------------------------------------------------------------
+-- trfTypeRefl -
+
+trfTypeRefl :: Transformation t n m a -> Dual (Dual t) :~: t
+trfTypeRefl (Transformation a _ _) = dgTypeRefl a
+
+--------------------------------------------------------------------------------
 -- trfMap -
 
 trfMapCov :: HomMultiplicative h => h a b -> Transformation t n m a -> Transformation t n m b
@@ -112,6 +118,9 @@ trfMapCnt h (Transformation a b ts) = Transformation (dgMapCnt h b) (dgMapCnt h 
 
 type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m
 
+instance (Show a, ShowPoint a) => ShowDual1 (Transformation t n m) a
+instance (Eq a, EqPoint a) => EqDual1 (Transformation t n m) a
+
 instance HomDisjunctiveMultiplicative h
   => ApplicativeG (Transformation t n m) (Variant2 Covariant h) (->) where
   amapG = trfMapCov . HVariant
@@ -119,7 +128,7 @@ instance HomDisjunctiveMultiplicative h
 instance HomDisjunctiveMultiplicative h
   => ApplicativeGMorphism (Transformation t n m) (Variant2 Covariant h) (->)
 
-instance (FunctorialOriented h, HomDisjunctiveMultiplicative h)
+instance FunctorialMultiplicative h
   => FunctorialG (Transformation t n m) (Variant2 Covariant h) (->)
 
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
@@ -127,84 +136,8 @@ instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
   vToDual   = trfMapCnt . HVariant
   vFromDual = trfMapCnt . HVariant  
 
-instance (FunctorialOriented h, HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
+instance (FunctorialMultiplicative h, Dual (Dual t) ~ t)
   => FunctorialS h (Transformation t n m)
-
-{-
-instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
-  => ApplicativeG (SDuality (Transformation t n m)) h (->) where
-  amapG = smap
--}
-  
-{-
-trfMap :: Hom Mlt h => h a b -> Transformation t n m a -> Transformation t n m b
-trfMap h (Transformation a b ts) = Transformation (amap1 h a) (amap1 h b) (amap1 (amap h) ts)
-
-instance HomMultiplicative h => Applicative1 h (Transformation t n m) where amap1 = trfMap
-
-instance (FunctorialHomOriented h, HomMultiplicative h) => Functorial1 h (Transformation t n m)
-
---------------------------------------------------------------------------------
--- Transformaltion - Duality -
-
-type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m 
-type instance Dual (Transformation t n m a) = Dual1 (Transformation t n m) (Op a)
-
-
--- | the dual transformation.
-coTransformation :: SDualityMultiplicative d s i o
-  => d i o -> Struct s a -> Transformation t n m a -> Dual1 (Transformation t n m) (o a)
-coTransformation dlt stc (Transformation a b ts)
-  = Transformation (coDiagram dlt stc b) (coDiagram dlt stc a) (amap1 coFct ts) where
-  coFct = sdlToDual dlt stc
-
---------------------------------------------------------------------------------
--- TransformationDuality -
-
--- | 'SDuality1' for 'Transformation's where 'sdlToDual1Fst' and 'sdlToDualSnd' are given by
--- 'coTransformation'.
---
--- __Note__
---
--- (1) The definition of 'sdlToDualSnd' is also given by 'coTransformation' and the assumption that
--- @'Dual' ('Dual' __t__) ':~:' __t__@.
---
--- (2) From the properties of 'coTransformation' and the note 3 of 'SDuality1' follows, that all the
--- properties of 'SDuality1' for 'TransformationDuality' holds.
-data TransformationDuality d s i o a b where
-  TransformationDuality
-    :: SDualityMultiplicative d s i o
-    => d i o
-    -> Dual (Dual t) :~: t
-    -> TransformationDuality d s i o (Transformation t n m) (Dual1 (Transformation t n m))
-
-instance BiFunctorial1 i (TransformationDuality d s i o) where
-  fnc1Fst (TransformationDuality _ _) = Functor1
-  fnc1Snd (TransformationDuality _ _) = Functor1
-
-instance SReflexive s i o => SDuality1 (TransformationDuality d s) s i o where
-  sdlToDual1Fst (TransformationDuality d _)    = coTransformation d
-  sdlToDual1Snd (TransformationDuality d Refl) = coTransformation d 
-
---------------------------------------------------------------------------------
--- TransformationOpDuality -
-
-type TransformationOpDuality s = TransformationDuality OpDuality s (IsoOp s) Op
-
---------------------------------------------------------------------------------
--- trfOpDuality -
-
-trfOpDuality :: (TransformableTyp s, TransformableOp s, TransformableOrt s, TransformableMlt s)
-  => Dual (Dual t) :~: t
-  -> TransformationOpDuality s (Transformation t n m) (Dual1 (Transformation t n m))
-trfOpDuality = TransformationDuality OpDuality
-
---------------------------------------------------------------------------------
--- trfOpDualityMlt -
-
-trfOpDualityMlt :: Dual (Dual t) :~: t
-  -> TransformationOpDuality Mlt (Transformation t n m) (Dual1 (Transformation t n m))
-trfOpDualityMlt = trfOpDuality
 
 --------------------------------------------------------------------------------
 -- Transformation - Entity -
@@ -327,10 +260,11 @@ vldTr t@(Transformation a b ts) = case (a,b) of
     -> vldTrPrlLR (p,p',fs) (q,q',gs) ts
   (DiagramSink p fs,DiagramSink q gs)       -> vldTrSink (p,fs) (q,gs) ts
   (DiagramGeneral _ _,DiagramGeneral _ _)   -> vldTrGen a b ts
-  _                                         -> vldTr $ sdlToDual1Fst dOp sMlt t where
-    dOp  = trfOpDualityMlt (dgTypeRefl a)
-    sMlt = Struct :: Multiplicative a => Struct Mlt a 
 
+  _                                         -> case trfTypeRefl t of
+    Refl -> vldTr t' where SDuality (Left1 t') = amapG toOpMlt (SDuality (Right1 t))
+
+{-
 instance Multiplicative a => Validable (Transformation t n m a) where
   valid t@(Transformation a b _) = Label "Transformation" :<=>:
     And [ valid (a,b) 

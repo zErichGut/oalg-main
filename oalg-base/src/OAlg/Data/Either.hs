@@ -1,5 +1,5 @@
 
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, StandaloneDeriving #-}
 
 -- |
 -- Module      : OAlg.Data.Either
@@ -32,6 +32,10 @@ data Either1 f g x where
   Left1  :: f x -> Either1 f g x
   Right1 :: g x -> Either1 f g x
 
+deriving instance (Show (f x), Show (g x)) => Show (Either1 f g x)
+deriving instance (Eq (f x), Eq (g x)) => Eq (Either1 f g x)
+
+{-
 instance (Show1 f, Show1 g) => Show1 (Either1 f g) where
   show1 (Left1 f)  = "Left11 (" ++ show1 f ++ ")"
   show1 (Right1 g) = "Right1 (" ++ show1 g ++ ")"
@@ -46,6 +50,7 @@ instance (Eq1 f, Eq1 g) => Eq1 (Either1 f g) where
 
 instance (Eq1 f, Eq1 g) => Eq (Either1 f g x) where
   (==) = eq1
+-}
 
 --------------------------------------------------------------------------------
 -- either1 -
@@ -65,6 +70,7 @@ data Either2 f g a b where
 
 --------------------------------------------------------------------------------
 -- Either2 -
+
 instance (Show2 f, Show2 g) => Show2 (Either2 f g) where
   show2 (Left2 f)  = "Left2 (" ++ show2 f ++ ")"
   show2 (Right2 g) = "Right2 (" ++ show2 g ++ ")"

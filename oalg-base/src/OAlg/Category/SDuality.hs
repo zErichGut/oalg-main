@@ -46,7 +46,7 @@ module OAlg.Category.SDuality
     -- * X
   , xSctSomeMrph
   , xSctSomeCmpb2
-  
+
   ) where
 
 import Control.Monad
@@ -310,36 +310,16 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          )
   => FunctorialG d (SHom r s o h) c
 
-
 --------------------------------------------------------------------------------
 -- SDuality -
 
 -- | duality for 'Dual1'-dualisable types.
 newtype SDuality d x = SDuality (Either1 (Dual1 d) d x)
 
---------------------------------------------------------------------------------
--- ShowDual1 -
+deriving instance (Show (d x), ShowDual1 d x) => Show (SDuality d x)
+deriving instance (Eq (d x), EqDual1 d x) => Eq (SDuality d x)
+deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDuality d x)
 
-class (Show1 d, Show1 (Dual1 d)) => ShowDual1 d
-
-deriving instance ShowDual1 d => Show1 (SDuality d)
-deriving instance ShowDual1 d => Show (SDuality d x)
-
---------------------------------------------------------------------------------
--- EqDual1 -
-
-class (Eq1 d, Eq1 (Dual1 d)) => EqDual1 d
-
-deriving instance EqDual1 d => Eq1 (SDuality d)
-deriving instance EqDual1 d => Eq (SDuality d x)
-
---------------------------------------------------------------------------------
--- ValidableSDuality -
-
-class (Validable1 d, Validable1 (Dual1 d)) => ValidableDual1 d
-
-deriving instance ValidableDual1 d => Validable1 (SDuality d)
-deriving instance ValidableDual1 d => Validable (SDuality d x)
 --------------------------------------------------------------------------------
 -- ApplicativeS -
 
@@ -387,16 +367,25 @@ instance FunctorialS h d => ApplicativeGMorphism (SDuality d) h (->)
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
 
 --------------------------------------------------------------------------------
+-- Iso -
+
+data Iso v h x y = Iso (Variant2 v h x y) (Variant2 v h y x)
+
+imap :: FunctorialS h d => Iso v h x y -> SDuality d x -> SDuality d y
+imap (Iso (Covariant2 h) _)     = smap h
+imap (Iso (Contravariant2 h) _) = smap h
+
+--------------------------------------------------------------------------------
 -- SomeApplSDuality -
 
 data SomeApplSDuality h d where
-  SomeApplSDuality :: (Show2 h, ShowDual1 d, EqDual1 d)
+  SomeApplSDuality :: (Show2 h, Show (SDuality d x), Eq (SDuality d z))
     => h y z -> h x y -> SDuality d x -> SomeApplSDuality h d
 
 --------------------------------------------------------------------------------
 -- relFunctorialS -
 
-relFunctorialS :: (FunctorialS h d, Show2 h, ShowDual1 d,  EqDual1 d)
+relFunctorialS :: (FunctorialS h d, Show2 h, Show (SDuality d x), Eq (SDuality d z))
   => h y z -> h x y -> SDuality d x -> Statement
 relFunctorialS f g d = (smap (f . g) d == (smap f . smap g) d)
   :?> Params ["f":=show2 f, "g":=show2 g, "d":=show d]
@@ -405,7 +394,7 @@ prpFunctorialS :: FunctorialS h d
   => X (SomeApplSDuality h d) -> Statement
 prpFunctorialS xsd = Prp "FunctorialS" :<=>:
   Forall xsd (\(SomeApplSDuality f g d) -> relFunctorialS f g d)
-  
+
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -
 

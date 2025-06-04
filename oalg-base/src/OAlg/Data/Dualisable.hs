@@ -1,5 +1,5 @@
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DataKinds #-}
@@ -16,6 +16,7 @@ module OAlg.Data.Dualisable
   ( -- * Dual
     Dual, Dual1
   , Dl1(..), fromDl1, mapDl1
+  , ShowDual1, EqDual1
 
     -- * Dualisable
   , Dualisable(..), fromDual'
@@ -56,6 +57,18 @@ type family Dual1 (c :: k -> Type) :: k -> Type
 
 -- | wrapper for @'Dual1' __d x__@.
 newtype Dl1 d x = Dl1 (Dual1 d x)
+
+--------------------------------------------------------------------------------
+-- ShowDual1 -
+
+-- | helper class to avoid undecidable instances.
+class Show (Dual1 d x) => ShowDual1 d x
+
+--------------------------------------------------------------------------------
+-- EqDual1 -
+
+-- | helper class to avoid undecidable instances.
+class Eq (Dual1 d x) => EqDual1 d x
 
 --------------------------------------------------------------------------------
 -- fromDl1 -

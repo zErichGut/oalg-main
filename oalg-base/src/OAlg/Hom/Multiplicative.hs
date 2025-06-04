@@ -25,6 +25,8 @@ module OAlg.Hom.Multiplicative
   (
     -- * Disjunctive
     HomDisjunctiveMultiplicative
+  , FunctorialMultiplicative
+  , toOpMlt, fromOpMlt
 
     -- * Covariant
   , HomMultiplicative
@@ -121,12 +123,29 @@ class (DualisableOriented s o, Transformable s Mlt) => DualisableMultiplicative 
 instance (HomMultiplicative h, DualisableMultiplicative s o)
   => HomDisjunctiveMultiplicative (HomOrt s o h)
 
+instance DualisableMultiplicative Mlt Op
 instance DualisableMultiplicative MltX Op
 
 --------------------------------------------------------------------------------
 -- FunctorialMultiplicative -
 
--- class (FunctorialOriented h 
+class (FunctorialOriented h, HomDisjunctiveMultiplicative h) => FunctorialMultiplicative h
+
+instance (HomMultiplicative h, DualisableMultiplicative s o)
+  => FunctorialMultiplicative (HomOrt s o h)
+
+--------------------------------------------------------------------------------
+-- toOpMlt -
+
+toOpMlt :: Multiplicative x => HVariant Contravariant (HomOrtEmpty Mlt Op) x (Op x)
+toOpMlt = HVariant (cToDual Struct)
+
+--------------------------------------------------------------------------------
+-- fromOpMlt -
+
+fromOpMlt :: Multiplicative x => HVariant Contravariant (HomOrtEmpty Mlt Op) (Op x) x
+fromOpMlt = HVariant (cFromDual Struct)
+
 --------------------------------------------------------------------------------
 -- relMapMltOne -
 
