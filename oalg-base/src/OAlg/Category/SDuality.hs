@@ -367,15 +367,6 @@ instance FunctorialS h d => ApplicativeGMorphism (SDuality d) h (->)
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
 
 --------------------------------------------------------------------------------
--- Iso -
-
-data Iso v h x y = Iso (Variant2 v h x y) (Variant2 v h y x)
-
-imap :: FunctorialS h d => Iso v h x y -> SDuality d x -> SDuality d y
-imap (Iso (Covariant2 h) _)     = smap h
-imap (Iso (Contravariant2 h) _) = smap h
-
---------------------------------------------------------------------------------
 -- SomeApplSDuality -
 
 data SomeApplSDuality h d where

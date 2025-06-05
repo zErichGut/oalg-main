@@ -24,7 +24,7 @@ module OAlg.Hom.Oriented.Definition
   (
     -- * Disjunctive
     HomDisjunctiveOriented
-  , HVariant(..), hVariant
+  , HVariant(..), hVariant, hInv2
 
     -- * Covariant
   , HomOriented, HomEmpty
@@ -46,6 +46,7 @@ module OAlg.Hom.Oriented.Definition
     -- ** HomOrtEmpty
   , HomOrtEmpty
   , toOpOrt, fromOpOrt
+  , isoOpOrt
 
   , module V
 
@@ -136,11 +137,13 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       )
   => HomDisjunctiveOriented h
 
+instance (CategoryDisjunctive h, HomDisjunctiveOriented h) => HomDisjunctiveOriented (Inv2 h)
+
 --------------------------------------------------------------------------------
 --  HVariant -
 
 newtype HVariant v h x y = HVariant (Variant2 v h x y)
-  deriving (Show,Show2,Disjunctive2)
+  deriving (Show,Show2,Disjunctive2,Validable)
 
 instance Morphism h => Morphism (HVariant v h) where
   type ObjectClass (HVariant v h) = ObjectClass h
@@ -161,6 +164,12 @@ hVariant :: Disjunctive2 h => h x y -> Either2 (HVariant Contravariant h) (HVari
 hVariant h = case toVariant2 h of
   Left2 hCnt  -> Left2 (HVariant hCnt)
   Right2 hCov -> Right2 (HVariant hCov)
+
+--------------------------------------------------------------------------------
+-- hInv2 -
+
+hInv2 :: CategoryDisjunctive h => HVariant v (Inv2 h) x y -> HVariant v (Inv2 h) y x
+hInv2 (HVariant i) = HVariant (vInv2 i)
 
 --------------------------------------------------------------------------------
 -- HVariant - Hom -
@@ -294,17 +303,27 @@ type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
 instance TransformableGObjectClassDomain Id (HomOrt OrtX Op (HomEmpty OrtX)) EqEOrt
 instance TransformableGObjectClassDomain Pnt (HomOrt OrtX Op (HomEmpty OrtX)) EqEOrt
 instance TransformableObjectClass OrtX (HomOrt OrtX Op (HomEmpty OrtX))
-instance EqExt (HomOrtEmpty OrtX Op)
+instance Transformable s Typ => EqExt (HomOrtEmpty s Op)
+
+--------------------------------------------------------------------------------
+-- isoOpOrt -
+
+-- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
+isoOpOrt :: Oriented x => HVariant Contravariant (Inv2 (HomOrtEmpty Ort Op)) x (Op x)
+isoOpOrt = HVariant (Contravariant2 (Inv2 t f)) where
+  Contravariant2 t = cToDual Struct
+  Contravariant2 f = cFromDual Struct
 
 --------------------------------------------------------------------------------
 -- toOpOrt -
 
 toOpOrt :: Oriented x => HVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
-toOpOrt = HVariant (cToDual Struct)
+toOpOrt = HVariant (Contravariant2 t) where HVariant (Contravariant2 (Inv2 t _)) = isoOpOrt
 
 --------------------------------------------------------------------------------
 -- fromOpOrt -
 
 fromOpOrt :: Oriented x => HVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
-fromOpOrt = HVariant (cFromDual Struct)
+fromOpOrt = HVariant (Contravariant2 f) where HVariant (Contravariant2 (Inv2 _ f)) = isoOpOrt
+
 

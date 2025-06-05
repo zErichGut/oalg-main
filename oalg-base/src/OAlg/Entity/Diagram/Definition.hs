@@ -356,7 +356,7 @@ instance Oriented a => Validable (Diagram t n m a) where
               ]
 
     _ -> case dgTypeRefl d of Refl -> valid d' where
-                                SDuality (Left1 d') = amapG toOpOrt (SDuality (Right1 d))
+                                SDuality (Left1 d') = amapG isoOpOrt (SDuality (Right1 d))
     where prm :: N -> Message
           prm i = Params["i":=show i]
           lC = Label "chain"

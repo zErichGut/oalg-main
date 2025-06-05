@@ -30,6 +30,7 @@ module OAlg.Data.Variant
     -- * Disjunctive
   , Disjunctive(..), Disjunctive2(..)
   , CategoryDisjunctive, CategoryDualisable(..)
+  , vInv2
 
     -- * Proposition
   , prpCategoryDisjunctive
@@ -116,6 +117,11 @@ data Variant2 v h x y where
 
 deriving instance Show (h x y) => Show (Variant2 v h x y)
 
+instance (Disjunctive2 h, Validable (h x y)) => Validable (Variant2 v h x y) where
+  valid h = Label "Variant2" :<=>: case h of
+    Covariant2 hCov     -> valid hCov && (variant2 hCov == Covariant) :?> Params []
+    Contravariant2 hCnt -> valid hCnt && (variant2 hCnt == Contravariant) :?> Params []
+
 instance Show2 h => Show2 (Variant2 v h) where
   show2 (Covariant2 h) = "Covariant2 (" ++ show2 h ++ ")"
   show2 (Contravariant2 h) = "Contravariant2 (" ++ show2 h ++ ")"
@@ -123,7 +129,7 @@ instance Show2 h => Show2 (Variant2 v h) where
 instance Disjunctive2 (Variant2 v h) where
   variant2 (Covariant2 _)     = Covariant
   variant2 (Contravariant2 _) = Contravariant
-  
+
 --------------------------------------------------------------------------------
 -- toVariant2 -
 
@@ -160,6 +166,17 @@ instance (Morphism h, Disjunctive2 h) => CategoryDisjunctive (Path h)
 instance CategoryDisjunctive h => Category (Variant2 Covariant h) where
   cOne = Covariant2 . cOne
   Covariant2 f . Covariant2 g = Covariant2 (f . g)
+
+instance CategoryDisjunctive h => Disjunctive2 (Inv2 h) where
+  variant2 (Inv2 f _) = variant2 f
+  
+--------------------------------------------------------------------------------
+-- vInv2 -
+
+-- | the inverse 'Variant2'.
+vInv2 :: CategoryDisjunctive c => Variant2 v (Inv2 c) x y -> Variant2 v (Inv2 c) y x
+vInv2 (Covariant2 i) = Covariant2 (inv2 i)
+vInv2 (Contravariant2 i) = Contravariant2 (inv2 i)
 
 --------------------------------------------------------------------------------
 -- prpCategoryDisjunctiveOne -

@@ -457,13 +457,16 @@ instance Category c => Category (Inv2 c) where
 instance (Category c, Eq2 c) => Cayleyan2 (Inv2 c) where
   invert2 = inv2
 
+instance ApplicativeG t a b => ApplicativeG t (Inv2 a) b where
+  amapG (Inv2 f _) = amapG f
+{-
 instance FunctorialG t a b => ApplicativeG t (Inv2 a) (Inv2 b) where
   amapG (Inv2 f g) = Inv2 (amapG f) (amapG g)
 
 instance FunctorialG t a b => ApplicativeGMorphism t (Inv2 a) (Inv2 b)
 
 instance FunctorialG t a b => FunctorialG t (Inv2 a) (Inv2 b)
-
+-}
 --------------------------------------------------------------------------------
 -- inv2 -
 
