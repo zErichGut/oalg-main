@@ -25,7 +25,7 @@
 -- concept of co- and contra.
 module OAlg.Data.Variant
   ( -- * Variant
-    Variant(..), Variant2(..), toVariant2
+    Variant(..), Variant2(..), toVariant2, vmap2
 
     -- * Disjunctive
   , Disjunctive(..), Disjunctive2(..)
@@ -117,11 +117,6 @@ data Variant2 v h x y where
 
 deriving instance Show (h x y) => Show (Variant2 v h x y)
 
-instance (Disjunctive2 h, Validable (h x y)) => Validable (Variant2 v h x y) where
-  valid h = Label "Variant2" :<=>: case h of
-    Covariant2 hCov     -> valid hCov && (variant2 hCov == Covariant) :?> Params []
-    Contravariant2 hCnt -> valid hCnt && (variant2 hCnt == Contravariant) :?> Params []
-
 instance Show2 h => Show2 (Variant2 v h) where
   show2 (Covariant2 h) = "Covariant2 (" ++ show2 h ++ ")"
   show2 (Contravariant2 h) = "Contravariant2 (" ++ show2 h ++ ")"
@@ -129,6 +124,11 @@ instance Show2 h => Show2 (Variant2 v h) where
 instance Disjunctive2 (Variant2 v h) where
   variant2 (Covariant2 _)     = Covariant
   variant2 (Contravariant2 _) = Contravariant
+
+instance (Disjunctive2 h, Validable (h x y)) => Validable (Variant2 v h x y) where
+  valid h = Label "Variant2" :<=>: case h of
+    Covariant2 hCov     -> valid hCov && (variant2 hCov == Covariant) :?> Params []
+    Contravariant2 hCnt -> valid hCnt && (variant2 hCnt == Contravariant) :?> Params []
 
 --------------------------------------------------------------------------------
 -- toVariant2 -
@@ -138,7 +138,15 @@ toVariant2 :: Disjunctive2 h
 toVariant2 h = case variant2 h of
   Contravariant -> Left2 (Contravariant2 h)
   Covariant     -> Right2 (Covariant2 h)
-  
+
+--------------------------------------------------------------------------------
+-- vmap2 -
+
+-- | application on 'Variant2'.
+vmap2 :: ApplicativeG t h b => Variant2 v h x y -> b (t x) (t y)
+vmap2 (Covariant2 h)     = amapG h
+vmap2 (Contravariant2 h) = amapG h
+
 --------------------------------------------------------------------------------
 -- Variant2 - Morphism -
 

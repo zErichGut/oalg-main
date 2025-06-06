@@ -24,7 +24,6 @@ module OAlg.Hom.Oriented.Definition
   (
     -- * Disjunctive
     HomDisjunctiveOriented
-  , HVariant(..), hVariant, hInv2
 
     -- * Covariant
   , HomOriented, HomEmpty
@@ -44,12 +43,9 @@ module OAlg.Hom.Oriented.Definition
   , HomOrt(..), homOrt
 
     -- ** HomOrtEmpty
-  , HomOrtEmpty
-  , toOpOrt, fromOpOrt
-  , isoOpOrt
+  , HomOrtEmpty, isoOpOrt
 
   , module V
-
   )
   where
 
@@ -59,7 +55,6 @@ import OAlg.Category.Path
 import OAlg.Category.SDuality
 
 import OAlg.Data.Identity
-import OAlg.Data.Either
 import OAlg.Data.Variant as V
 
 import OAlg.Structure.Oriented hiding (Path(..))
@@ -136,46 +131,6 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       , Disjunctive2 h
       )
   => HomDisjunctiveOriented h
-
-instance (CategoryDisjunctive h, HomDisjunctiveOriented h) => HomDisjunctiveOriented (Inv2 h)
-
---------------------------------------------------------------------------------
---  HVariant -
-
-newtype HVariant v h x y = HVariant (Variant2 v h x y)
-  deriving (Show,Show2,Disjunctive2,Validable)
-
-instance Morphism h => Morphism (HVariant v h) where
-  type ObjectClass (HVariant v h) = ObjectClass h
-  homomorphous (HVariant h) = homomorphous h
-
-instance ApplicativeG Id h (->) => ApplicativeG Id (HVariant v h) (->) where
-  amapG (HVariant (Covariant2 h))    = amapG h
-  amapG (HVariant (Contravariant2 h)) = amapG h
-
-instance ApplicativeG Pnt h (->) => ApplicativeG Pnt (HVariant v h) (->) where
-  amapG (HVariant (Covariant2 h))    = amapG h
-  amapG (HVariant (Contravariant2 h)) = amapG h
-
---------------------------------------------------------------------------------
--- hVariant -
-
-hVariant :: Disjunctive2 h => h x y -> Either2 (HVariant Contravariant h) (HVariant Covariant h) x y
-hVariant h = case toVariant2 h of
-  Left2 hCnt  -> Left2 (HVariant hCnt)
-  Right2 hCov -> Right2 (HVariant hCov)
-
---------------------------------------------------------------------------------
--- hInv2 -
-
-hInv2 :: CategoryDisjunctive h => HVariant v (Inv2 h) x y -> HVariant v (Inv2 h) y x
-hInv2 (HVariant i) = HVariant (vInv2 i)
-
---------------------------------------------------------------------------------
--- HVariant - Hom -
-
-instance HomDisjunctiveOriented h => HomOriented (HVariant Covariant h)
-instance HomDisjunctiveOriented h => HomDisjunctiveOriented (HVariant v h)
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -
@@ -292,8 +247,8 @@ instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomOrt s
 
 -- | embedding of 'HomOriented' to 'HomOrt'.
 homOrt :: (HomOriented h, Transformable (ObjectClass h) s)
-  => h x y -> HVariant Covariant (HomOrt s o h) x y
-homOrt h = HVariant (Covariant2 (HomOrt h')) where Covariant2 h' = sCov h
+  => h x y -> Variant2 Covariant (HomOrt s o h) x y
+homOrt h = Covariant2 (HomOrt h') where Covariant2 h' = sCov h
 
 --------------------------------------------------------------------------------
 -- HomOrtEmpty -
@@ -309,21 +264,7 @@ instance Transformable s Typ => EqExt (HomOrtEmpty s Op)
 -- isoOpOrt -
 
 -- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpOrt :: Oriented x => HVariant Contravariant (Inv2 (HomOrtEmpty Ort Op)) x (Op x)
-isoOpOrt = HVariant (Contravariant2 (Inv2 t f)) where
+isoOpOrt :: Oriented x => Variant2 Contravariant (Inv2 (HomOrtEmpty Ort Op)) x (Op x)
+isoOpOrt = Contravariant2 (Inv2 t f) where
   Contravariant2 t = cToDual Struct
   Contravariant2 f = cFromDual Struct
-
---------------------------------------------------------------------------------
--- toOpOrt -
-
-toOpOrt :: Oriented x => HVariant Contravariant (HomOrtEmpty Ort Op) x (Op x)
-toOpOrt = HVariant (Contravariant2 t) where HVariant (Contravariant2 (Inv2 t _)) = isoOpOrt
-
---------------------------------------------------------------------------------
--- fromOpOrt -
-
-fromOpOrt :: Oriented x => HVariant Contravariant (HomOrtEmpty Ort Op) (Op x) x
-fromOpOrt = HVariant (Contravariant2 f) where HVariant (Contravariant2 (Inv2 _ f)) = isoOpOrt
-
-

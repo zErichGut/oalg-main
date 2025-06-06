@@ -1,4 +1,5 @@
 
+
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -106,12 +107,15 @@ trfTypeRefl (Transformation a _ _) = dgTypeRefl a
 --------------------------------------------------------------------------------
 -- trfMap -
 
-trfMapCov :: HomMultiplicative h => h a b -> Transformation t n m a -> Transformation t n m b
-trfMapCov h (Transformation a b ts) = Transformation (dgMapCov h a) (dgMapCov h b) (amap1 (amap h) ts)
+trfMapCov :: HomDisjunctiveMultiplicative h
+  => Variant2 Covariant h a b -> Transformation t n m a -> Transformation t n m b
+trfMapCov h@(Covariant2 h') (Transformation a b ts)
+  = Transformation (dgMapCov h a) (dgMapCov h b) (amap1 (amap h') ts)
 
 trfMapCnt :: HomDisjunctiveMultiplicative h
-  => HVariant Contravariant h a b -> Transformation t n m a -> Transformation (Dual t) n m b
-trfMapCnt h (Transformation a b ts) = Transformation (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h) ts)
+  => Variant2 Contravariant h a b -> Transformation t n m a -> Transformation (Dual t) n m b
+trfMapCnt h@(Contravariant2 h') (Transformation a b ts)
+  = Transformation (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h') ts)
 
 --------------------------------------------------------------------------------
 -- Transformation - Dual1 -
@@ -123,18 +127,18 @@ instance (Eq a, EqPoint a) => EqDual1 (Transformation t n m) a
 
 instance HomDisjunctiveMultiplicative h
   => ApplicativeG (Transformation t n m) (Variant2 Covariant h) (->) where
-  amapG = trfMapCov . HVariant
+  amapG = trfMapCov
 
 instance HomDisjunctiveMultiplicative h
   => ApplicativeGMorphism (Transformation t n m) (Variant2 Covariant h) (->)
 
-instance FunctorialMultiplicative h
+instance (CategoryDisjunctive h, HomDisjunctiveMultiplicative h)
   => FunctorialG (Transformation t n m) (Variant2 Covariant h) (->)
-
+  
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
   => ApplicativeS h (Transformation t n m) where
-  vToDual   = trfMapCnt . HVariant
-  vFromDual = trfMapCnt . HVariant  
+  vToDual   = trfMapCnt
+  vFromDual = trfMapCnt  
 
 instance (FunctorialMultiplicative h, Dual (Dual t) ~ t)
   => FunctorialS h (Transformation t n m)
@@ -262,20 +266,18 @@ vldTr t@(Transformation a b ts) = case (a,b) of
   (DiagramGeneral _ _,DiagramGeneral _ _)   -> vldTrGen a b ts
 
   _                                         -> case trfTypeRefl t of
-    Refl -> vldTr t' where SDuality (Left1 t') = amapG toOpMlt (SDuality (Right1 t))
+    Refl -> vldTr t' where
+      SDuality (Left1 t') = amapG toOp (SDuality (Right1 t))
+      Contravariant2 (Inv2 toOp _) = isoOpMlt
 
-{-
+
 instance Multiplicative a => Validable (Transformation t n m a) where
   valid t@(Transformation a b _) = Label "Transformation" :<=>:
     And [ valid (a,b) 
         , vldTr t
         ]
 
-instance ( Multiplicative a
-         , Typeable t, Typeable n, Typeable m
-         )
-  => Entity (Transformation t n m a)
-
+{-
 --------------------------------------------------------------------------------
 -- Multiplicative -
 

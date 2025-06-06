@@ -41,7 +41,6 @@ module OAlg.Entity.Diagram.Definition
   , xDiagram
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
-
   )
   where
 
@@ -222,6 +221,7 @@ dgCenter :: Diagram (Star t) n m c -> Point c
 dgCenter (DiagramSink c _)   = c
 dgCenter (DiagramSource c _) = c
 
+
 --------------------------------------------------------------------------------
 -- dgMapCov -
 
@@ -236,9 +236,9 @@ dgCenter (DiagramSource c _) = c
 -- (2) @'dgPoints' ('dgMapCov' q h d) '==' 'amap1' ('pmap' h) ('dgPoints' d)@.
 --
 -- where @q@ is any proxy in @__q s o__@.
-dgMapCov :: HomOriented h
-  => h a b -> Diagram t n m a -> Diagram t n m b
-dgMapCov h d = case d of
+dgMapCov :: HomDisjunctiveOriented h
+  => Variant2 Covariant h a b -> Diagram t n m a -> Diagram t n m b
+dgMapCov (Covariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
   DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
@@ -267,8 +267,8 @@ dgMapCov h d = case d of
 --
 -- where @q@ is any proxy in @__q s o__@.
 dgMapCnt :: HomDisjunctiveOriented h
-  => HVariant Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
-dgMapCnt h d = case d of
+  => Variant2 Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
+dgMapCnt (Contravariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
   DiagramChainTo e as      -> DiagramChainFrom (hPnt e) (amap1 hArw as)
@@ -290,19 +290,18 @@ type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 
 instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
 instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
-instance Oriented a => ValidableDual1 (Diagram t n m) a
 
 instance HomDisjunctiveOriented h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
-  amapG = dgMapCov . HVariant
+  amapG = dgMapCov
 
-instance HomDisjunctiveOriented h
-  => ApplicativeGMorphism (Diagram t n m) (Variant2 Covariant h) (->)
-  
-instance FunctorialOriented h => FunctorialG (Diagram t n m) (Variant2 Covariant h) (->)
+instance HomDisjunctiveOriented h => ApplicativeGMorphism (Diagram t n m) (Variant2 Covariant h) (->)
+
+instance (CategoryDisjunctive h, HomDisjunctiveOriented h)
+  => FunctorialG (Diagram t n m) (Variant2 Covariant h) (->)
 
 instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => ApplicativeS h (Diagram t n m) where
-  vToDual   = dgMapCnt . HVariant
-  vFromDual = dgMapCnt . HVariant
+  vToDual   = dgMapCnt
+  vFromDual = dgMapCnt
 
 instance (FunctorialOriented h, Dual (Dual t) ~ t) => FunctorialS h (Diagram t n m)
 
@@ -355,14 +354,19 @@ instance Oriented a => Validable (Diagram t n m a) where
               , vld (succ l) ps aijs
               ]
 
-    _ -> case dgTypeRefl d of Refl -> valid d' where
-                                SDuality (Left1 d') = amapG isoOpOrt (SDuality (Right1 d))
+    _ -> case dgTypeRefl d of
+      Refl -> valid d' where
+        SDuality (Left1 d')          = amapG toOp (SDuality (Right1 d))
+        Contravariant2 (Inv2 toOp _) = isoOpOrt
     where prm :: N -> Message
           prm i = Params["i":=show i]
           lC = Label "chain"
           lE = Label "end"
           lO = Label "orientation"
           lB = Label "bound"
+
+
+instance Oriented a => ValidableDual1 (Diagram t n m) a
 
 --------------------------------------------------------------------------------
 -- Diagram - Oriented -
@@ -397,8 +401,10 @@ dgQuiver (DiagramSink _ as) = Quiver (SW (toW os)) os where
   snk _ Nil     = Nil
   snk j (_:|os) = (j:>0):|snk (succ j) os
 dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
-dgQuiver d = case dgTypeRefl d of Refl -> coQuiverInv $ dgQuiver d' where
-                                            SDuality (Left1 d') = amapG toOpOrt (SDuality (Right1 d))
+dgQuiver d = case dgTypeRefl d of
+  Refl -> coQuiverInv $ dgQuiver d' where
+    SDuality (Left1 d') = amapG toOp (SDuality (Right1 d))
+    Contravariant2 (Inv2 toOp _) = isoOpOrt
 
 
 --------------------------------------------------------------------------------
@@ -425,7 +431,8 @@ chnFromStart (DiagramChainFrom s _) = s
 
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
 chnFromEnd d@(DiagramChainFrom _ _) = chnToStart d' where
-  SDuality (Left1 d') = amapG toOpOrt (SDuality (Right1 d))
+  SDuality (Left1 d') = amapG toOp (SDuality (Right1 d))
+  Contravariant2 (Inv2 toOp _) = isoOpOrt
 
 --------------------------------------------------------------------------------
 -- Diagram (Chain t) - Oriented -
@@ -567,7 +574,8 @@ xDiagram rt@Refl xd = case xd of
   XDiagramParallelLR m xo -> xParallel m xo
   XDiagramSink m xe       -> xSink m xe
   _                       ->   amap1 (\d' -> let SDuality (Right1 d)
-                                                   = amapG fromOpOrt (SDuality (Left1 d'))
+                                                   = amapG fromOp (SDuality (Left1 d'))
+                                                 Contravariant2 (Inv2 _ fromOp) = isoOpOrt
                                              in d)
                              $ xDiagram (rt' rt) $ coXDiagram xd
 
@@ -648,7 +656,7 @@ sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
   Refl                   -> case smap h (SDuality (Right1 d)) of
     SDuality (Right1 d') -> SomeDiagram d'
     SDuality (Left1  d') -> SomeDiagram d'
-  
+
 instance (HomOriented h, DualisableOriented s o)
   => ApplicativeG SomeDiagram (HomOrt s o h) (->) where
   amapG = sdgMap
@@ -703,20 +711,22 @@ xSomeDiagram xn xTo xFrom xO = do
     = amap1 SomeDiagram $ xDiagram Refl (XDiagramChainTo n xTo)
 
   xChainFrom :: Oriented a => Any n -> XOrtSite From a -> X (SomeDiagram a)
-  xChainFrom n xFrom = amap1 (sdgMap fromOpOrt) $ xChainTo n (coXOrtSite xFrom) where
+  xChainFrom n xFrom = amap1 (sdgMap fromOp) $ xChainTo n (coXOrtSite xFrom) where
+    Contravariant2 (Inv2 _ fromOp) = isoOpOrt
   
   xParallelLR :: Oriented a => Any n -> XOrtOrientation a -> X (SomeDiagram a)
   xParallelLR n xO = amap1 SomeDiagram $ xDiagram Refl (XDiagramParallelLR n xO)
    
   xParallelRL :: Oriented a => Any n -> XOrtOrientation a -> X (SomeDiagram a)
-  xParallelRL n xO = amap1 (sdgMap fromOpOrt) $ xParallelLR n (coXOrtOrientation xO) where
-
+  xParallelRL n xO = amap1 (sdgMap fromOp) $ xParallelLR n (coXOrtOrientation xO) where
+    Contravariant2 (Inv2 _ fromOp) = isoOpOrt
+    
   xSink :: Oriented a => Any n -> XOrtSite To a -> X (SomeDiagram a)
   xSink n xTo = amap1 SomeDiagram $ xDiagram Refl (XDiagramSink n xTo)
 
   xSource :: Oriented a => Any n -> XOrtSite From a -> X (SomeDiagram a)
-  xSource n xFrom = amap1 (sdgMap fromOpOrt) $ xSink n (coXOrtSite xFrom) where
-
+  xSource n xFrom = amap1 (sdgMap fromOp) $ xSink n (coXOrtSite xFrom) where
+    Contravariant2 (Inv2 _ fromOp) = isoOpOrt
 
 --------------------------------------------------------------------------------
 -- dstSomeDiagram -
@@ -733,5 +743,6 @@ dstSomeDiagram n xd = putDstr cnstr n xd where
 xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientation p))
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
+
 
 

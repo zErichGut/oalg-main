@@ -26,7 +26,7 @@ module OAlg.Hom.Multiplicative
     -- * Disjunctive
     HomDisjunctiveMultiplicative
   , FunctorialMultiplicative
-  , toOpMlt, fromOpMlt
+  , isoOpMlt
 
     -- * Covariant
   , HomMultiplicative
@@ -40,6 +40,7 @@ module OAlg.Hom.Multiplicative
   , prpDualisableMultiplicativeOne
   , prpDualisableMultiplicativeMlt
   , relMapMltOne, relMapMltCov, relMapMltCnt
+
   )
   where
 
@@ -100,9 +101,6 @@ instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty
 --     @'amap' h (x '*' y) '==' 'amap' h y '*' 'amap' h x@.
 class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjunctiveMultiplicative h
 
-instance HomDisjunctiveMultiplicative h => HomMultiplicative (HVariant Covariant h)
-instance HomDisjunctiveMultiplicative h => HomDisjunctiveMultiplicative (HVariant v h)
-
 --------------------------------------------------------------------------------
 -- DualisableMultiplicative -
 
@@ -135,16 +133,12 @@ instance (HomMultiplicative h, DualisableMultiplicative s o)
   => FunctorialMultiplicative (HomOrt s o h)
 
 --------------------------------------------------------------------------------
--- toOpMlt -
+-- isoOpMlt -
 
-toOpMlt :: Multiplicative x => HVariant Contravariant (HomOrtEmpty Mlt Op) x (Op x)
-toOpMlt = HVariant (cToDual Struct)
-
---------------------------------------------------------------------------------
--- fromOpMlt -
-
-fromOpMlt :: Multiplicative x => HVariant Contravariant (HomOrtEmpty Mlt Op) (Op x) x
-fromOpMlt = HVariant (cFromDual Struct)
+isoOpMlt :: Multiplicative x => Variant2 Contravariant (Inv2 (HomOrtEmpty Mlt Op)) x (Op x)
+isoOpMlt = Contravariant2 (Inv2 t f) where
+  Contravariant2 t = cToDual Struct
+  Contravariant2 f = cFromDual Struct
 
 --------------------------------------------------------------------------------
 -- relMapMltOne -
@@ -236,3 +230,4 @@ prpHomOrtOpEmptyMlt = Prp "prpHomOrtOpEmptyMlt" :<=>:
     
     xm :: X (SomeMorphism (HomOrtEmpty MltX Op))
     xm = amap1 (\(SomeMorphism h) -> SomeMorphism (HomOrt h)) $ xSctSomeMrph 10 xo
+
