@@ -20,15 +20,10 @@
 -- natural transformations between 'Diagram's.
 module OAlg.Entity.Diagram.Transformation
   (
-{-    
     -- * Transformation
-    Transformation(..), trfs
+    Transformation(..), trfs, trfTypeRefl
+  , trfMapCov, trfMapCnt
 
-    -- * Duality
-  , coTransformation
-  , TransformationDuality(..), TransformationOpDuality
-  , trfOpDuality, trfOpDualityMlt
--}
   ) where
 
 import Data.Typeable
@@ -49,7 +44,6 @@ import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial as V
 import OAlg.Structure.Algebraic
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
 import OAlg.Hom.Multiplicative
 
@@ -277,15 +271,18 @@ instance Multiplicative a => Validable (Transformation t n m a) where
         , vldTr t
         ]
 
-{-
 --------------------------------------------------------------------------------
 -- Multiplicative -
 
+type instance Point (Transformation t n m a) = Diagram t n m a
+instance (Show a, ShowPoint a) => ShowPoint (Transformation t n m a)
+instance (Eq a, EqPoint a) => EqPoint (Transformation t n m a)
+instance Oriented a => ValidablePoint (Transformation t n m a)
+instance (Typeable a, Typeable t, Typeable n, Typeable m) => TypeablePoint (Transformation t n m a)
 instance ( Multiplicative a
          , Typeable t, Typeable n, Typeable m
          )
   => Oriented (Transformation t n m a) where
-  type Point (Transformation t n m a) = Diagram t n m a
   orientation (Transformation a b _) = a:>b
 
 instance ( Multiplicative a
@@ -303,12 +300,16 @@ instance ( Multiplicative a
   npower t _ | not (isEndo t)      = throw NotExponential
   npower (Transformation a _ ts) n = Transformation a a (amap1 (`npower` n) ts)
 
+type instance Root (Transformation t n m a) = Orientation (Diagram t n m a)
+instance (Show a, ShowPoint a) => ShowRoot (Transformation t n m a)
+instance (Eq a, EqPoint a) => EqRoot (Transformation t n m a)
+instance Oriented a => ValidableRoot (Transformation t n m a)
+instance (Typeable a, Typeable t, Typeable n, Typeable m) => TypeableRoot (Transformation t n m a)
 instance ( Distributive a
          , Typeable t, Typeable n, Typeable m
          )
   => Fibred (Transformation t n m a) where
-  type Root (Transformation t n m a) = Orientation (Diagram t n m a)
-  
+
 instance ( Distributive a
          , Typeable t, Typeable n, Typeable m
          )
@@ -351,4 +352,3 @@ instance ( Algebraic a
          )
   => Algebraic (Transformation t n m a)
 
--}

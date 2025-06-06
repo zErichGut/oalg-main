@@ -221,7 +221,6 @@ dgCenter :: Diagram (Star t) n m c -> Point c
 dgCenter (DiagramSink c _)   = c
 dgCenter (DiagramSource c _) = c
 
-
 --------------------------------------------------------------------------------
 -- dgMapCov -
 
@@ -743,6 +742,4 @@ dstSomeDiagram n xd = putDstr cnstr n xd where
 xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientation p))
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
-
-
 
