@@ -25,7 +25,7 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
 
-
+{-
     -- * Diagrammatic
     Diagrammatic(..), dgmTypeRefl
 
@@ -42,7 +42,7 @@ module OAlg.Entity.Diagram.Diagrammatic
   , prpApplicativeDiagrammatic
   , prpCoDiagrammatic
   , prpSDualityDiagrammatic
-
+-}
   
 {-
     -- ** Duality
@@ -65,20 +65,23 @@ import Data.Typeable
 
 import OAlg.Prelude
 
-import OAlg.Data.SDuality
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
 
 import OAlg.Hom.Oriented.Definition
 
 import OAlg.Structure.Oriented.Definition
 
 import OAlg.Entity.Diagram.Definition
+import OAlg.Entity.FinList
 
 --------------------------------------------------------------------------------
 -- Diagrammatic -
 
 -- | object @__d__@ having an underlying 'Diagram'.
 class Diagrammatic d where
-  diagram :: d t n m a -> Diagram t n m a
+  diagram :: d t n m x -> Diagram t n m x
 
 instance Diagrammatic Diagram where diagram = id
 
@@ -89,6 +92,44 @@ instance Diagrammatic Diagram where diagram = id
 dgmTypeRefl :: Diagrammatic d => d t n m a -> Dual (Dual t) :~: t
 dgmTypeRefl = dgTypeRefl . diagram
 
+--------------------------------------------------------------------------------
+--
+
+class ( Diagrammatic d, HomDisjunctiveOriented h
+      , ApplicativeS h (d t n m)
+      , Dual1 (d t n m) ~ d (Dual t) n m
+      , Dual (Dual t) ~ t
+      )
+  => ApplicativeDiagrammatic h d t n m
+      
+ff :: (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m)
+  => SDuality (d t n m) x -> SDuality (Diagram t n m) x
+ff (SDuality sd) = SDuality $ case sd of
+  Right1 d -> Right1 (diagram d)
+  Left1 d' -> Left1 (diagram d')
+
+rel :: (EqPoint y, Eq y, ApplicativeDiagrammatic h d t n m) => h x y -> SDuality (d t n m) x -> Bool
+rel h s = smap h (ff s) == ff (smap h s)
+
+gg :: Oriented x => SDuality (Diagram t n m) x -> FinList n (Point x)
+gg (SDuality sd) = case sd of
+  Right1 d -> dgPoints d
+  Left1 d' -> dgPoints d'
+
+hh :: SDuality (Diagram t n m) x -> FinList m x
+hh (SDuality sd) = case sd of
+  Right1 d -> dgArrows d
+  Left1 d' -> dgArrows d'
+  
+newtype FinListPnt n x = FinListPnt (FinList n (Point x))
+
+instance HomDisjunctiveOriented h => ApplicativeG (FinListPnt n) h (->) where
+  amapG h (FinListPnt ps) = FinListPnt $ amap1 (pmap h) ps
+
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- ApplicativeDiagrammatic -
 
@@ -252,3 +293,4 @@ dgmOpDualityOrt :: SDualityOpDiagrammatic Ort d t n m
   => Dual (Dual t) :~: t -> DiagrammaticOpDuality Ort (d t n m) (d (Dual t) n m)
 dgmOpDualityOrt = dgmOpDuality
 
+-}

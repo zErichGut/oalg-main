@@ -87,6 +87,7 @@ type FunctorialPoint h = FunctorialG Pnt h (->)
 --------------------------------------------------------------------------------
 -- FunctorialOriented -
 
+-- | helper class to avoid undecidable instances.
 class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
   => FunctorialOriented h 
 
@@ -228,14 +229,12 @@ instance (HomOriented h, TransformableGRefl o s) => CategoryDualisable o (HomOrt
 instance (HomOriented h, DualisableOriented s o) => ApplicativeG Id (HomOrt s o h) (->) where
   amapG (HomOrt h) = amapG h
 
-instance (HomOriented h, DualisableOriented s o) => ApplicativeGMorphism Id (HomOrt s o h) (->)
 instance (HomOriented h, DualisableOriented s o) => FunctorialG Id (HomOrt s o h) (->)
 
 
 instance (HomOriented h, DualisableOriented s o) => ApplicativeG Pnt (HomOrt s o h) (->) where
   amapG (HomOrt h) = amapG h
 
-instance (HomOriented h, DualisableOriented s o) => ApplicativeGMorphism Pnt (HomOrt s o h) (->)
 instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomOrt s o h) (->)
 
 instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)

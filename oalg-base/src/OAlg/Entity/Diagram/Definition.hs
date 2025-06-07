@@ -293,8 +293,6 @@ instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
 instance HomDisjunctiveOriented h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
   amapG = dgMapCov
 
-instance HomDisjunctiveOriented h => ApplicativeGMorphism (Diagram t n m) (Variant2 Covariant h) (->)
-
 instance (CategoryDisjunctive h, HomDisjunctiveOriented h)
   => FunctorialG (Diagram t n m) (Variant2 Covariant h) (->)
 
@@ -659,9 +657,6 @@ sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
 instance (HomOriented h, DualisableOriented s o)
   => ApplicativeG SomeDiagram (HomOrt s o h) (->) where
   amapG = sdgMap
-
-instance (HomOriented h, DualisableOriented s o)
-  => ApplicativeGMorphism SomeDiagram (HomOrt s o h) (->)
 
 instance (HomOriented h, DualisableOriented s o)
   => FunctorialG SomeDiagram (HomOrt s o h) (->)

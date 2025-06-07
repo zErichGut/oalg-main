@@ -123,9 +123,6 @@ instance HomDisjunctiveMultiplicative h
   => ApplicativeG (Transformation t n m) (Variant2 Covariant h) (->) where
   amapG = trfMapCov
 
-instance HomDisjunctiveMultiplicative h
-  => ApplicativeGMorphism (Transformation t n m) (Variant2 Covariant h) (->)
-
 instance (CategoryDisjunctive h, HomDisjunctiveMultiplicative h)
   => FunctorialG (Transformation t n m) (Variant2 Covariant h) (->)
   

@@ -300,11 +300,6 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
   amapG = amapG . form
 
 instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
-         , Transformable s r, TransformableGObjectClassRange d s c
-         )
-  => ApplicativeGMorphism d (SHom r s o h) c
-
-instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
          , Transformable s r
          , TransformableGObjectClassRange d s c
          )
@@ -363,7 +358,6 @@ class ( CategoryDisjunctive h, ApplicativeS h d
       , Functorial1 (Variant2 Covariant h) (Dual1 d)
       ) => FunctorialS h d
 
-instance FunctorialS h d => ApplicativeGMorphism (SDuality d) h (->)
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
 
 --------------------------------------------------------------------------------

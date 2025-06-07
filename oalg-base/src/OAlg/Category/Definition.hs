@@ -43,7 +43,6 @@ module OAlg.Category.Definition
 
     -- * Applicative
   , ApplicativeG(..)
-  , ApplicativeGMorphism
   , Applicative, amap, ($)
   , Applicative1, amap1
   
@@ -286,13 +285,6 @@ instance Category c => Category (Op2 c) where
   Op2 f . Op2 g = Op2 (g . f)
 
 --------------------------------------------------------------------------------
--- ApplicativeGMorphism -
-
--- | generalized application between morphisms respecting there object classes.
-class (Morphism a, Morphism b, ApplicativeG t a b, TransformableG t (ObjectClass a) (ObjectClass b))
-  => ApplicativeGMorphism t a b
-  
---------------------------------------------------------------------------------
 -- FunctorialG -
 
 -- | functorials from @'Category' __a__@ to @'Category' __b__@ according to the
@@ -305,7 +297,9 @@ class (Morphism a, Morphism b, ApplicativeG t a b, TransformableG t (ObjectClass
 --
 --   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
 --   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
-class (Category a, Category b, ApplicativeGMorphism t a b) => FunctorialG t a b
+class ( Category a, Category b, ApplicativeG t a b
+      , TransformableG t (ObjectClass a) (ObjectClass b)
+      ) => FunctorialG t a b
 
 --------------------------------------------------------------------------------
 -- FunctorG -
@@ -396,11 +390,6 @@ instance (Morphism a, ApplicativeG d a b, TransformableGObjectClassDomain d a t)
   => ApplicativeG d (Sub s a) (Sub t b) where
   amapG = subG
 
-instance ( Morphism a, ApplicativeG d a b, TransformableGObjectClassDomain d a t
-         , TransformableG d s t
-         )
-  => ApplicativeGMorphism d (Sub s a) (Sub t b)
-
 instance ( FunctorialG d a b, TransformableGObjectClassDomain d a t
          , TransformableG d s t
          , TransformableObjectClass s a
@@ -459,8 +448,6 @@ instance (Category c, Eq2 c) => Cayleyan2 (Inv2 c) where
 
 instance ApplicativeG t a b => ApplicativeG t (Inv2 a) b where
   amapG (Inv2 f _) = amapG f
-
-instance ApplicativeGMorphism t a b => ApplicativeGMorphism t (Inv2 a) b
 
 instance FunctorialG t a b => FunctorialG t (Inv2 a) b
 

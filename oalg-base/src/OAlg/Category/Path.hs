@@ -209,10 +209,6 @@ instance (Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
 
 instance TransformableGObjectClass t m c => TransformableGObjectClass t (Path m) c
 
-instance (Morphism m, Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
-  => ApplicativeGMorphism t (Path m) c
-
-
 instance ( Morphism m, Category c, ApplicativeG t m c
          , TransformableGObjectClass t m c
          )
