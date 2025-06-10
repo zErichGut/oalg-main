@@ -66,6 +66,7 @@ import Data.Typeable
 import OAlg.Prelude
 
 import OAlg.Category.SDuality
+import OAlg.Category.Unify
 
 import OAlg.Data.Either
 
@@ -101,13 +102,93 @@ class ( Diagrammatic d, HomDisjunctiveOriented h
       , Dual (Dual t) ~ t
       )
   => ApplicativeDiagrammatic h d t n m
-      
+
+--------------------------------------------------------------------------------
+-- Natural -
+
+class NN r s b f g where
+  nat :: r -> Struct s x  -> b (f x) (g x)
+
+class ( Morphism a, Category b, ApplicativeG f a b, ApplicativeG g a b
+      , NN r s b f g, Transformable (ObjectClass a) s
+      )
+  => Natural r s a b f g
+
+instance NN () s (->) (SDuality (Diagram t n m)) (SDuality (Diagram t n m)) where
+  nat _ _ = ff
+
+instance NN () s (->) SomeDiagram SomeDiagram where
+  nat _ _ = id
+{-
+instance NN () s EqualExtOrt SomeDiagram SomeDiagram where
+  nat _ s = cOne s
+-}
+
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+  => Natural () Ort h (->) (SDuality (Diagram t n m)) (SDuality (Diagram t n m))
+
+instance HomDisjunctiveOriented h
+  => Natural () Ort h (->) SomeDiagram SomeDiagram
+
+data NaturalTransformation r s a b f g where
+  NaturalTransformation :: Natural r s a b f g => NaturalTransformation r s a b f g
+
+nat' :: NaturalTransformation r s a b f g -> r -> Struct s x -> b (f x) (g x)
+nat' NaturalTransformation = nat
+
+natDomain :: NaturalTransformation r s a b f g -> r -> a x y -> b (f x) (g x)
+natDomain n@NaturalTransformation r a = nat' n r (tau (domain a))
+
+natRange :: NaturalTransformation r s a b f g -> r -> a x y -> b (f y) (g y)
+natRange n@NaturalTransformation r a = nat' n r (tau (range a))
+
+relNatural :: EqExt b => NaturalTransformation r s a b f g -> r -> a x y -> Statement
+relNatural n@NaturalTransformation r a
+  = (amapG a . natDomain n r a) .=. (natRange n r a . amapG a)
+
+prpNatural :: EqExt b => NaturalTransformation r s a b f g -> r -> X (SomeMorphism a) -> Statement
+prpNatural n r xa = Prp "Natural" :<=>: Forall xa
+  (\(SomeMorphism a) -> relNatural n r a)
+
+{-
+pp :: Statement
+pp = prpNatural n () xa where
+  n  =  NaturalTransformation
+     :: NaturalTransformation () Ort (HomOrtEmpty OrtX Op) (->) SomeDiagram SomeDiagram
+  xa = error "nyi"
+-}
+
 ff :: (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m)
   => SDuality (d t n m) x -> SDuality (Diagram t n m) x
 ff (SDuality sd) = SDuality $ case sd of
   Right1 d -> Right1 (diagram d)
   Left1 d' -> Left1 (diagram d')
 
+
+
+{-
+prpNatural :: Natural t a b f g => a x y -> Statement
+prpNatural a = error "nyi"
+-}
+{-
+class ( ApplicativeDiagrammatic h d t n m
+      , NN ObjCl h (->) (SDuality (d t n m)) (SDuality (Diagram t n m))
+      )
+  => NaturalDiagrammatic h d t n m
+
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+  => ApplicativeDiagrammatic h Diagram t n m
+
+instance ()
+  => NN ObjCl h (->) (SDuality (Diagram t n m)) (SDuality (Diagram t n m)) where
+
+
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+  => NaturalDiagrammatic h Diagram t n m
+
+
+-}
+{-
 rel :: (EqPoint y, Eq y, ApplicativeDiagrammatic h d t n m) => h x y -> SDuality (d t n m) x -> Bool
 rel h s = smap h (ff s) == ff (smap h s)
 
@@ -125,7 +206,7 @@ newtype FinListPnt n x = FinListPnt (FinList n (Point x))
 
 instance HomDisjunctiveOriented h => ApplicativeG (FinListPnt n) h (->) where
   amapG h (FinListPnt ps) = FinListPnt $ amap1 (pmap h) ps
-
+-}
 
 
 

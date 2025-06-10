@@ -654,12 +654,11 @@ sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
     SDuality (Right1 d') -> SomeDiagram d'
     SDuality (Left1  d') -> SomeDiagram d'
 
-instance (HomOriented h, DualisableOriented s o)
-  => ApplicativeG SomeDiagram (HomOrt s o h) (->) where
+instance HomDisjunctiveOriented h
+  => ApplicativeG SomeDiagram h (->) where
   amapG = sdgMap
 
-instance (HomOriented h, DualisableOriented s o)
-  => FunctorialG SomeDiagram (HomOrt s o h) (->)
+instance FunctorialOriented h => FunctorialG SomeDiagram h (->)
 
 --------------------------------------------------------------------------------
 -- xSomeDiagram -
