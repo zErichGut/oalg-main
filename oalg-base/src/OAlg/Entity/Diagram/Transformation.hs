@@ -20,9 +20,9 @@
 -- natural transformations between 'Diagram's.
 module OAlg.Entity.Diagram.Transformation
   (
-    -- * Transformation
-    Transformation(..), trfs, trfTypeRefl
-  , trfMapCov, trfMapCnt
+    -- * DiagramTrafo
+    DiagramTrafo(..), dgts, dgtTypeRefl
+  , dgtMapCov, dgtMapCnt
 
   ) where
 
@@ -54,12 +54,12 @@ import OAlg.Entity.Diagram.Quiver
 import OAlg.Entity.Diagram.Definition
 
 --------------------------------------------------------------------------------
--- Transformation -
+-- DiagramTrafo -
 
 -- | natural transformations between two 'Diagram's.
 --
--- __Property__ Let @'Transformation' a b t@ be in
--- @'Transformation' __t__ __n__ __m__ __a__@ for a 'Multiplicative' structure __@a@__,
+-- __Property__ Let @'DiagramTrafo' a b t@ be in
+-- @'DiagramTrafo' __t__ __n__ __m__ __a__@ for a 'Multiplicative' structure __@a@__,
 -- then holds
 --
 -- (1) @'dgQuiver' a '==' 'dgQuiver' b@.
@@ -81,61 +81,61 @@ import OAlg.Entity.Diagram.Definition
 --    e j     p (e j) --------> q (e j)
 --                    t (e j)
 -- @
-data Transformation t n m a
-  = Transformation (Diagram t n m a) (Diagram t n m a) (FinList n a)
+data DiagramTrafo t n m a
+  = DiagramTrafo (Diagram t n m a) (Diagram t n m a) (FinList n a)
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- trfs -
+-- dgts -
 
 -- | the underlying list of factors.
-trfs :: Transformation t n m a -> FinList n a
-trfs (Transformation _ _ fs) = fs
+dgts :: DiagramTrafo t n m a -> FinList n a
+dgts (DiagramTrafo _ _ fs) = fs
 
 --------------------------------------------------------------------------------
--- trfTypeRefl -
+-- dgtTypeRefl -
 
-trfTypeRefl :: Transformation t n m a -> Dual (Dual t) :~: t
-trfTypeRefl (Transformation a _ _) = dgTypeRefl a
-
---------------------------------------------------------------------------------
--- trfMap -
-
-trfMapCov :: HomDisjunctiveMultiplicative h
-  => Variant2 Covariant h a b -> Transformation t n m a -> Transformation t n m b
-trfMapCov h@(Covariant2 h') (Transformation a b ts)
-  = Transformation (dgMapCov h a) (dgMapCov h b) (amap1 (amap h') ts)
-
-trfMapCnt :: HomDisjunctiveMultiplicative h
-  => Variant2 Contravariant h a b -> Transformation t n m a -> Transformation (Dual t) n m b
-trfMapCnt h@(Contravariant2 h') (Transformation a b ts)
-  = Transformation (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h') ts)
+dgtTypeRefl :: DiagramTrafo t n m a -> Dual (Dual t) :~: t
+dgtTypeRefl (DiagramTrafo a _ _) = dgTypeRefl a
 
 --------------------------------------------------------------------------------
--- Transformation - Dual1 -
+-- dgtMap -
 
-type instance Dual1 (Transformation t n m) = Transformation (Dual t) n m
+dgtMapCov :: HomDisjunctiveMultiplicative h
+  => Variant2 Covariant h a b -> DiagramTrafo t n m a -> DiagramTrafo t n m b
+dgtMapCov h@(Covariant2 h') (DiagramTrafo a b ts)
+  = DiagramTrafo (dgMapCov h a) (dgMapCov h b) (amap1 (amap h') ts)
 
-instance (Show a, ShowPoint a) => ShowDual1 (Transformation t n m) a
-instance (Eq a, EqPoint a) => EqDual1 (Transformation t n m) a
+dgtMapCnt :: HomDisjunctiveMultiplicative h
+  => Variant2 Contravariant h a b -> DiagramTrafo t n m a -> DiagramTrafo (Dual t) n m b
+dgtMapCnt h@(Contravariant2 h') (DiagramTrafo a b ts)
+  = DiagramTrafo (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h') ts)
+
+--------------------------------------------------------------------------------
+-- DiagramTrafo - Dual1 -
+
+type instance Dual1 (DiagramTrafo t n m) = DiagramTrafo (Dual t) n m
+
+instance (Show a, ShowPoint a) => ShowDual1 (DiagramTrafo t n m) a
+instance (Eq a, EqPoint a) => EqDual1 (DiagramTrafo t n m) a
 
 instance HomDisjunctiveMultiplicative h
-  => ApplicativeG (Transformation t n m) (Variant2 Covariant h) (->) where
-  amapG = trfMapCov
+  => ApplicativeG (DiagramTrafo t n m) (Variant2 Covariant h) (->) where
+  amapG = dgtMapCov
 
 instance (CategoryDisjunctive h, HomDisjunctiveMultiplicative h)
-  => FunctorialG (Transformation t n m) (Variant2 Covariant h) (->)
+  => FunctorialG (DiagramTrafo t n m) (Variant2 Covariant h) (->)
   
 instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
-  => ApplicativeS h (Transformation t n m) where
-  vToDual   = trfMapCnt
-  vFromDual = trfMapCnt  
+  => ApplicativeS h (DiagramTrafo t n m) where
+  vToDual   = dgtMapCnt
+  vFromDual = dgtMapCnt  
 
 instance (FunctorialMultiplicative h, Dual (Dual t) ~ t)
-  => FunctorialS h (Transformation t n m)
+  => FunctorialS h (DiagramTrafo t n m)
 
 --------------------------------------------------------------------------------
--- Transformation - Entity -
+-- DiagramTrafo - Entity -
 
 l1, l2, l3 :: Label
 l1 = Label "1"
@@ -246,8 +246,8 @@ vldTrGen a b ts
           , vldCm (succ j) os fs gs t
           ]
 
-vldTr :: Multiplicative a => Transformation t n m a -> Statement
-vldTr t@(Transformation a b ts) = case (a,b) of
+vldTr :: Multiplicative a => DiagramTrafo t n m a -> Statement
+vldTr t@(DiagramTrafo a b ts) = case (a,b) of
   (DiagramEmpty, DiagramEmpty)              -> SValid
   (DiagramDiscrete ps,DiagramDiscrete qs)   -> vldTrDiscrete 0 ps qs ts
   (DiagramChainTo p fs,DiagramChainTo q gs) -> vldTrChainTo 0 (p,fs) (q,gs) ts
@@ -256,14 +256,14 @@ vldTr t@(Transformation a b ts) = case (a,b) of
   (DiagramSink p fs,DiagramSink q gs)       -> vldTrSink (p,fs) (q,gs) ts
   (DiagramGeneral _ _,DiagramGeneral _ _)   -> vldTrGen a b ts
 
-  _                                         -> case trfTypeRefl t of
+  _                                         -> case dgtTypeRefl t of
     Refl -> vldTr t' where
       SDuality (Left1 t') = amapG toOp (SDuality (Right1 t))
       Contravariant2 (Inv2 toOp _) = isoOpMlt
 
 
-instance Multiplicative a => Validable (Transformation t n m a) where
-  valid t@(Transformation a b _) = Label "Transformation" :<=>:
+instance Multiplicative a => Validable (DiagramTrafo t n m a) where
+  valid t@(DiagramTrafo a b _) = Label "DiagramTrafo" :<=>:
     And [ valid (a,b) 
         , vldTr t
         ]
@@ -271,81 +271,81 @@ instance Multiplicative a => Validable (Transformation t n m a) where
 --------------------------------------------------------------------------------
 -- Multiplicative -
 
-type instance Point (Transformation t n m a) = Diagram t n m a
-instance (Show a, ShowPoint a) => ShowPoint (Transformation t n m a)
-instance (Eq a, EqPoint a) => EqPoint (Transformation t n m a)
-instance Oriented a => ValidablePoint (Transformation t n m a)
-instance (Typeable a, Typeable t, Typeable n, Typeable m) => TypeablePoint (Transformation t n m a)
+type instance Point (DiagramTrafo t n m a) = Diagram t n m a
+instance (Show a, ShowPoint a) => ShowPoint (DiagramTrafo t n m a)
+instance (Eq a, EqPoint a) => EqPoint (DiagramTrafo t n m a)
+instance Oriented a => ValidablePoint (DiagramTrafo t n m a)
+instance (Typeable a, Typeable t, Typeable n, Typeable m) => TypeablePoint (DiagramTrafo t n m a)
 instance ( Multiplicative a
          , Typeable t, Typeable n, Typeable m
          )
-  => Oriented (Transformation t n m a) where
-  orientation (Transformation a b _) = a:>b
+  => Oriented (DiagramTrafo t n m a) where
+  orientation (DiagramTrafo a b _) = a:>b
 
 instance ( Multiplicative a
          , Typeable t, Typeable n, Typeable m
          )
-  => Multiplicative (Transformation t n m a) where
-  one d = Transformation d d ts where
+  => Multiplicative (DiagramTrafo t n m a) where
+  one d = DiagramTrafo d d ts where
     ts = amap1 one $ dgPoints d
     
-  Transformation a b fs * Transformation c d gs
-    | d == a    = Transformation c b (amap1 (uncurry (*)) (fs `zip` gs))
+  DiagramTrafo a b fs * DiagramTrafo c d gs
+    | d == a    = DiagramTrafo c b (amap1 (uncurry (*)) (fs `zip` gs))
     | otherwise = throw NotMultiplicable
 
   npower t 1                       = t
   npower t _ | not (isEndo t)      = throw NotExponential
-  npower (Transformation a _ ts) n = Transformation a a (amap1 (`npower` n) ts)
+  npower (DiagramTrafo a _ ts) n = DiagramTrafo a a (amap1 (`npower` n) ts)
 
-type instance Root (Transformation t n m a) = Orientation (Diagram t n m a)
-instance (Show a, ShowPoint a) => ShowRoot (Transformation t n m a)
-instance (Eq a, EqPoint a) => EqRoot (Transformation t n m a)
-instance Oriented a => ValidableRoot (Transformation t n m a)
-instance (Typeable a, Typeable t, Typeable n, Typeable m) => TypeableRoot (Transformation t n m a)
+type instance Root (DiagramTrafo t n m a) = Orientation (Diagram t n m a)
+instance (Show a, ShowPoint a) => ShowRoot (DiagramTrafo t n m a)
+instance (Eq a, EqPoint a) => EqRoot (DiagramTrafo t n m a)
+instance Oriented a => ValidableRoot (DiagramTrafo t n m a)
+instance (Typeable a, Typeable t, Typeable n, Typeable m) => TypeableRoot (DiagramTrafo t n m a)
 instance ( Distributive a
          , Typeable t, Typeable n, Typeable m
          )
-  => Fibred (Transformation t n m a) where
-
-instance ( Distributive a
-         , Typeable t, Typeable n, Typeable m
-         )
-  => FibredOriented (Transformation t n m a)
+  => Fibred (DiagramTrafo t n m a) where
 
 instance ( Distributive a
          , Typeable t, Typeable n, Typeable m
          )
-  => Additive (Transformation t n m a) where
-  zero (a:>b) = Transformation a b zs where
+  => FibredOriented (DiagramTrafo t n m a)
+
+instance ( Distributive a
+         , Typeable t, Typeable n, Typeable m
+         )
+  => Additive (DiagramTrafo t n m a) where
+  zero (a:>b) = DiagramTrafo a b zs where
     zs = amap1 (zero . uncurry (:>)) (dgPoints a `zip` dgPoints b)
     
-  Transformation a b fs + Transformation c d gs
-    | a:>b == c:>d = Transformation a b (amap1 (uncurry (+)) (fs `zip` gs))
+  DiagramTrafo a b fs + DiagramTrafo c d gs
+    | a:>b == c:>d = DiagramTrafo a b (amap1 (uncurry (+)) (fs `zip` gs))
     | otherwise    = throw NotAddable
 
-  ntimes n (Transformation a b ts) = Transformation a b (amap1 (ntimes n) ts)
+  ntimes n (DiagramTrafo a b ts) = DiagramTrafo a b (amap1 (ntimes n) ts)
 
 instance ( Distributive a
          , Typeable t, Typeable n, Typeable m
          )
-  => Distributive (Transformation t n m a)
+  => Distributive (DiagramTrafo t n m a)
 
 instance ( Distributive a, Abelian a
          , Typeable t, Typeable n, Typeable m
          )
-  => Abelian (Transformation t n m a) where
-  negate (Transformation a b ts) = Transformation a b (amap1 negate ts)
-  ztimes z (Transformation a b ts) = Transformation a b (amap1 (ztimes z) ts)
+  => Abelian (DiagramTrafo t n m a) where
+  negate (DiagramTrafo a b ts) = DiagramTrafo a b (amap1 negate ts)
+  ztimes z (DiagramTrafo a b ts) = DiagramTrafo a b (amap1 (ztimes z) ts)
 
 instance ( Algebraic a
          , Typeable t, Typeable n, Typeable m
          )
-  => Vectorial (Transformation t n m a) where
-  type Scalar (Transformation t n m a) = Scalar a
-  s ! (Transformation a b ts) = Transformation a b (amap1 (s V.!) ts)
+  => Vectorial (DiagramTrafo t n m a) where
+  type Scalar (DiagramTrafo t n m a) = Scalar a
+  s ! (DiagramTrafo a b ts) = DiagramTrafo a b (amap1 (s V.!) ts)
 
 instance ( Algebraic a
          , Typeable t, Typeable n, Typeable m
          )
-  => Algebraic (Transformation t n m a)
+  => Algebraic (DiagramTrafo t n m a)
 
