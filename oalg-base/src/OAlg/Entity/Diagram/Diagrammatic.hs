@@ -62,9 +62,11 @@ module OAlg.Entity.Diagram.Diagrammatic
   ) where
 
 import Data.Typeable
+import Data.Kind
 
 import OAlg.Prelude
 
+import OAlg.Category.NaturalTransformable
 import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
@@ -74,8 +76,8 @@ import OAlg.Hom.Oriented.Definition
 
 import OAlg.Structure.Oriented.Definition
 
+import OAlg.Entity.Natural
 import OAlg.Entity.Diagram.Definition
-import OAlg.Entity.FinList
 
 --------------------------------------------------------------------------------
 -- Diagrammatic -
@@ -87,103 +89,171 @@ class Diagrammatic d where
 instance Diagrammatic Diagram where diagram = id
 
 --------------------------------------------------------------------------------
+-- DiagramG -
+
+-- | wrapping a 'Diagrammatic'-object.
+newtype DiagramG d (t :: DiagramType) (n :: N') (m :: N') x = DiagramG (d t n m x)
+  deriving (Show,Eq)
+
+type instance Dual1 (DiagramG d t n m) = DiagramG d (Dual t) n m
+
+--------------------------------------------------------------------------------
 -- dgmTypeRefl -
 
 -- | the associated 'DiagramType' is bidual.
 dgmTypeRefl :: Diagrammatic d => d t n m x -> Dual (Dual t) :~: t
 dgmTypeRefl = dgTypeRefl . diagram
 
-
 --------------------------------------------------------------------------------
 -- ApplicativeDiagrammatic -
 
-class ( Diagrammatic d, HomDisjunctiveOriented h
-      , ApplicativeS h (d t n m)
-      , Dual1 (d t n m) ~ d (Dual t) n m
-      , Dual (Dual t) ~ t
-      )
-  => ApplicativeDiagrammatic h d t n m
+type ApplicativeDiagrammatic h d t n m
+  = (Diagrammatic d, HomDisjunctiveOriented h, ApplicativeS h (DiagramG d t n m))
 
-ff :: (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m)
-  => SDuality (d t n m) x -> SDuality (Diagram t n m) x
-ff (SDuality sd) = SDuality $ case sd of
-  Right1 d -> Right1 (diagram d)
-  Left1 d' -> Left1 (diagram d')
+instance HomDisjunctiveOriented h
+  => ApplicativeG (DiagramG Diagram t n m) (Variant2 Covariant h) (->) where
+  amapG h (DiagramG d) = DiagramG (amapG h d)
 
-ff' :: ( Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m
-       , ShowDual1 (d t n m) x, EqDual1 (d t n m) x
-       , Oriented x
-       , ShowPoint (SDuality (d t n m) x)
-       , ShowPoint (SDuality (Diagram t n m) x)
-       , Show (d t n m x)
-       , EqPoint (SDuality (d t n m) x)
-       , EqPoint (SDuality (Diagram t n m) x)
-       , Eq (d t n m x)
-       , XStandardPoint (SDuality (d t n m) x)
-       , XStandardPoint (SDuality (Diagram t n m) x)
-       , XStandard (SDuality (d t n m) x)
-       , XStandard (SDuality (Diagram t n m) x)
-       )
-  => Sub EqEOrt (->) (SDuality (d t n m) x) (SDuality (Diagram t n m) x)
-ff' = Sub ff
+instance ( HomDisjunctiveOriented h
+         , Dual (Dual t) ~ t
+         ) => ApplicativeS h (DiagramG Diagram t n m) where
+  vToDual h (DiagramG d)   = DiagramG (vToDual h d)
+  vFromDual h (DiagramG d) = DiagramG (vFromDual h d)
 
-instance (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m)
-  => AssociativeG s (->) r (SDuality (d t n m)) (SDuality (Diagram t n m)) where
-  rohG _ _ = ff
-{-
-instance (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m)
-  => AssociativeG s EqualExtOrt r (SDuality (d t n m)) (SDuality (Diagram t n m)) where
-  rohG _ _ = ff'
--}
+-- instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => ApplicativeDiagrammatic h Diagram t n m
+
+--------------------------------------------------------------------------------
+-- sDiagram -
+
+sDiagram :: Diagrammatic d => SDuality (DiagramG d t n m) x -> SDuality (Diagram t n m) x
+sDiagram (SDuality sd) = SDuality $ case sd of
+  Right1 (DiagramG d) -> Right1 (diagram d)
+  Left1 (DiagramG d') -> Left1 (diagram d')
+
+instance Diagrammatic d
+  => Natural s (->) () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
+  roh _ _ = sDiagram
+
+data EqEDiagrammatic (d :: DiagramType -> N' -> N' -> Type -> Type)
+                     (t :: DiagramType) (n :: N') (m :: N')
+
+type instance Structure (EqEDiagrammatic d t n m) x
+  = ( Diagrammatic d
+    , Oriented x
+    , ShowDual1 (DiagramG d t n m) x
+    , EqDual1 (DiagramG d t n m) x
+    , Show (d t n m x)
+    , Eq (d t n m x)
+    , XStandard (SDuality (Diagram t n m) x)
+    , XStandard (SDuality (DiagramG d t n m) x)
+    )
+
+sDiagram' :: Structure (EqEDiagrammatic d t n m) x
+  => Sub EqE (->) (SDuality (DiagramG d t n m) x) (SDuality (Diagram t n m) x)
+sDiagram' = Sub sDiagram
+
+
+instance Dual1 (d t n m) ~ d (Dual t) n m
+  => Natural (EqEDiagrammatic d t n m) (Sub EqE (->)) ()
+             (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
+  roh _ Struct = sDiagram'
+
 --------------------------------------------------------------------------------
 -- NatrualDiagrammatic -
 
-class ApplicativeDiagrammatic h d t n m => NaturalDiagrammatic h d t n m
+type NaturalDiagrammatic h b d t n m
+  = (NaturalTransformable h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)))
 
 
-gg :: NaturalDiagrammatic h d t n m
-    => NaturalTransformation h (->) () (SDuality (d t n m)) (SDuality (Diagram t n m))
-gg = NaturalTransformation ()
+instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+  => NaturalTransformable h (->) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
+{-
+ff :: ApplicativeS h d
+  => Homomorphous EqE (SDuality d x) (SDuality d y)
+  -> h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
+ff (Struct:>:Struct) = Sub . smap
+-}
 
-instance NaturalDiagrammatic h d t n m
-  => Natural h (->) r (SDuality (d t n m)) (SDuality (Diagram t n m))
-  
+class XStandard (Dual1 d x) => XStandardDual1 d x
+instance (XStandard (d x), XStandardDual1 d x) => XStandard (SDuality d x) where
+  xStandard = xOneOfX [ xRight xStandard
+                      , xLeft xStandard
+                      ]
+    where xRight :: X (d x) -> X (SDuality d x)
+          xRight = amap1 (SDuality . Right1)
+
+          xLeft :: X (Dual1 d x) -> X (SDuality d x)
+          xLeft = amap1 (SDuality . Left1)
+
+data EqESDuality (d :: Type -> Type)
+
+type instance Structure (EqESDuality d) x
+  = ( Show (d x)
+    , ShowDual1 d x
+    , Eq (d x)
+    , EqDual1 d x
+    , XStandard (d x)
+    , XStandardDual1 d x
+    )
+{-    
+smap' :: ( ApplicativeS h d         
+         , Show (d x)
+         , ShowDual1 d x
+         , Eq (d x)
+         , EqDual1 d x
+         , XStandard (d x)
+         , XStandardDual1 d x
+         
+         , Show (d y)
+         , ShowDual1 d y
+         , Eq (d y)
+         , EqDual1 d y
+         , XStandard (d y)
+         , XStandardDual1 d y
+         ) => h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
+smap' = Sub . smap
+-}
+
+smapEqEStruct :: ApplicativeS h d
+  => Struct (EqESDuality d) x -> Struct (EqESDuality d) y
+  -> h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
+smapEqEStruct Struct Struct = Sub . smap
+
+
+smapEqE :: (Morphism h, ApplicativeS h d, Transformable (ObjectClass h) (EqESDuality d))
+  => h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
+smapEqE h = smapEqEStruct (tau (domain h)) (tau (range h)) h
+
+class Transformable (ObjectClass h) s => TO h s
+-- instance ApplicativeG (SDuality (DiagramG Diagram t n m)) h (Sub EqE (->))
+
+instance (Morphism h, ApplicativeS h d, TO h (EqESDuality d))
+  => ApplicativeG (SDuality d) h (Sub EqE (->)) where
+  amapG = smapEqE
+
+
+instance ( HomDisjunctiveOriented h, ObjectClass h ~ (EqEDiagrammatic Diagram t n m)
+         , Dual (Dual t) ~ t
+         , TO h (EqESDuality (DiagramG Diagram t n m))
+         , TO h (EqESDuality (Diagram t n m))
+         )
+  => NaturalTransformable h (Sub EqE (->)) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
+
 --------------------------------------------------------------------------------
--- AssociativeG -
+-- dgmTrafo -
 
--- | generalized, @__s__@-structured associations between @__f__@ and @__g__@
--- within @__b__@ parameterized over @__r__@.
-class AssociativeG s b r f g where
-  rohG :: r -> Struct s x -> b (f x) (g x)
+-- | the induced natural transformation.
+dgmTrafo :: NaturalDiagrammatic h (->) d t n m
+    => NaturalTransformation h (->) () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+dgmTrafo = NaturalTransformation ()
 
---------------------------------------------------------------------------------
--- Natural -
+{-
+pp :: XStandard (SomeMorphism h)
+  => NaturalTransformation h EqualExtOrt () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+  -> Statement
+pp = valid
+-}
 
--- | natural generalized associations.
---
--- __Property__ Let @n@ be in @'NaturalTransformation' __a b r f g__@, then holds:
---
--- (1) For all @__x__@, @__y__@ and @a@ in @__a x y__@ holds:
--- @'amapG' a '.' 'roh' n ('domain' a) '.=.' 'roh' n ('range' a) '.' 'amapG' a@.
-class ( Morphism a, Category b, ApplicativeG f a b, ApplicativeG g a b
-      , AssociativeG (ObjectClass a) b r f g
-      )
-  => Natural a b r f g
-
--- | natural transformation between generalized applications @__f__@ and @__g__@.
-data NaturalTransformation a b r f g where
-  NaturalTransformation :: Natural a b r f g => r -> NaturalTransformation a b r f g
-
-roh :: NaturalTransformation a b r f g -> Struct (ObjectClass a) x -> b (f x) (g x)
-roh (NaturalTransformation r) = rohG r
-
-relNatural :: EqExt b => NaturalTransformation a b r f g -> a x y -> Statement
-relNatural n@(NaturalTransformation _) a
-  = amapG a . roh n (domain a) .=. roh n (range a) . amapG a
-
-prpNatural :: EqExt b => NaturalTransformation a b r f g -> X (SomeMorphism a) -> Statement
-prpNatural n xa = Prp "Natural" :<=>: Forall xa
-  (\(SomeMorphism a) -> relNatural n a)
 
 
 

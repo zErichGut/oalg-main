@@ -382,21 +382,19 @@ sub h = sub' (tauHom (homomorphous h)) h
 subG' :: ApplicativeG d a b => Homomorphous t (d x) (d y) -> a x y -> Sub t b (d x) (d y)
 subG' (Struct:>:Struct) h = Sub (amapG h)
 
-subG :: (Morphism a, ApplicativeG d a b, TransformableG d (ObjectClass a) t)
+subG :: (ApplicativeG d a b, TransformableG d s t)
   => Sub s a x y -> Sub t b (d x) (d y)
-subG (Sub a) = subG' (tauHomG (homomorphous a)) a 
+subG a'@(Sub a) = subG' (tauHomG (homomorphous a')) a 
 
-instance (Morphism a, ApplicativeG d a b, TransformableGObjectClassDomain d a t)
+instance (ApplicativeG d a b, TransformableG d s t)
   => ApplicativeG d (Sub s a) (Sub t b) where
   amapG = subG
 
-instance ( FunctorialG d a b, TransformableGObjectClassDomain d a t
-         , TransformableG d s t
+instance ( FunctorialG d a b, TransformableG d s t
          , TransformableObjectClass s a
          , TransformableObjectClass t b
          )
   => FunctorialG d (Sub s a) (Sub t b)
-
 
 --------------------------------------------------------------------------------
 -- Cayleyan2 -

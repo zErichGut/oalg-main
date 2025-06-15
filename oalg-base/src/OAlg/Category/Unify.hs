@@ -83,7 +83,6 @@ data SomeMorphism m where
 instance Show2 m => Show (SomeMorphism m) where
   show (SomeMorphism f) = "SomeMorphism[" ++ show2 f ++ "]"
 
-
 instance (Morphism m, TransformableObjectClassTyp m, Typeable m, Eq2 m)
   => Eq (SomeMorphism m) where
   SomeMorphism f == SomeMorphism g = case eqlMorphism tx tx' ty ty' f g of

@@ -256,7 +256,7 @@ instance Validable2 (Struct2 m)
 -- | type representing extensional equality.
 data EqE
 
-type instance Structure EqE x = (Show x, XStandard x, Eq x)
+type instance Structure EqE x = (Show x, Eq x, XStandard x)
 
 --------------------------------------------------------------------------------
 -- EqualExt -
