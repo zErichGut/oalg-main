@@ -51,6 +51,7 @@ library
       OAlg.Category.Definition
       OAlg.Category.Dualisable
       OAlg.Category.Map
+      OAlg.Category.NaturalTransformable
       OAlg.Category.Path
       OAlg.Category.Proposition
       OAlg.Category.SDuality

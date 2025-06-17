@@ -390,9 +390,8 @@ instance (ApplicativeG d a b, TransformableG d s t)
   => ApplicativeG d (Sub s a) (Sub t b) where
   amapG = subG
 
-instance ( FunctorialG d a b, TransformableG d s t
-         , TransformableObjectClass s a
-         , TransformableObjectClass t b
+instance ( FunctorialG d a b
+         , TransformableG d s t, TransformableObjectClass s a, TransformableObjectClass t b
          )
   => FunctorialG d (Sub s a) (Sub t b)
 

@@ -36,6 +36,7 @@ module OAlg.Structure.Definition
     -- * Some Structure Types
   , Typ, tauTyp
   , Ord', Bol
+  , SubStruct, tauGSubStruct, tauSubStruct
 
   ) where
 
@@ -207,3 +208,25 @@ instance Transformable s Typ => TestEquality (Struct s) where
   testEquality sa sb = te (tau sa) (tau sb) where
     te :: Struct Typ a -> Struct Typ b -> Maybe (a:~:b)
     te Struct Struct = eqT
+
+--------------------------------------------------------------------------------
+-- SubStruct -
+
+-- | parameterized sub structures.
+data SubStruct t s
+
+type instance Structure (SubStruct t s) x = Structure t x
+
+instance Transformable t (SubStruct t s) where tau Struct = Struct
+
+--------------------------------------------------------------------------------
+-- tauSubStruct -
+tauSubStruct :: Struct (SubStruct t s) x -> Struct t x
+tauSubStruct Struct = Struct
+
+--------------------------------------------------------------------------------
+-- tauGSubStruct -
+
+tauGSubStruct :: TransformableG t u v => Struct (SubStruct u s) x -> Struct v (t x)
+tauGSubStruct u = tauG (tauSubStruct u)
+
