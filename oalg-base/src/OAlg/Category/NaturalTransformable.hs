@@ -24,16 +24,16 @@
 -- Natural transformable applications.
 module OAlg.Category.NaturalTransformable
   (
-{-    
-    -- * Natural Transformation
+    -- * Transformable
     NaturalTransformable
-  , Natural(..), rohEqE
   , NaturalTransformation(..), roh'
+
+    -- * Natural
+  , Natural(..), rohSub
   
     -- * Proposition
   , prpNaturalTransformableEqExt
   , prpNaturalTransformable, SomeNaturalApplication(..)
--}
   ) where
 
 import OAlg.Prelude 
@@ -93,7 +93,7 @@ instance ( NaturalTransformable s a b i f g, TransformableObjectClass v b
 --------------------------------------------------------------------------------
 -- NaturalTransformation -
 
--- | natural transformation between @__f__@ and @__g__@.
+-- | witness for 'NaturalTransformable's.
 data NaturalTransformation s a b i f g where
   NaturalTransformation :: NaturalTransformable s a b i f g => i -> NaturalTransformation s a b i f g
 

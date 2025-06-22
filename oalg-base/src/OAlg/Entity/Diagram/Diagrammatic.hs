@@ -62,7 +62,6 @@ module OAlg.Entity.Diagram.Diagrammatic
   ) where
 
 import Data.Typeable
-import Data.Kind
 
 import OAlg.Prelude
 
@@ -133,120 +132,136 @@ sDiagram (SDuality sd) = SDuality $ case sd of
 instance Diagrammatic d
   => Natural s (->) () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
   roh _ _ = sDiagram
-
-data EqEDiagrammatic (d :: DiagramType -> N' -> N' -> Type -> Type)
-                     (t :: DiagramType) (n :: N') (m :: N')
-
-type instance Structure (EqEDiagrammatic d t n m) x
-  = ( Diagrammatic d
-    , Oriented x
-    , ShowDual1 (DiagramG d t n m) x
-    , EqDual1 (DiagramG d t n m) x
-    , Show (d t n m x)
-    , Eq (d t n m x)
-    , XStandard (SDuality (Diagram t n m) x)
-    , XStandard (SDuality (DiagramG d t n m) x)
-    )
-
-sDiagram' :: Structure (EqEDiagrammatic d t n m) x
-  => Sub EqE (->) (SDuality (DiagramG d t n m) x) (SDuality (Diagram t n m) x)
-sDiagram' = Sub sDiagram
-
-
-instance Dual1 (d t n m) ~ d (Dual t) n m
-  => Natural (EqEDiagrammatic d t n m) (Sub EqE (->)) ()
-             (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
-  roh _ Struct = sDiagram'
-
+  
 --------------------------------------------------------------------------------
 -- NatrualDiagrammatic -
 
-type NaturalDiagrammatic h b d t n m
-  = (NaturalTransformable h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)))
-
+type NaturalDiagrammatic s h b d t n m
+  = NaturalTransformable s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
 
 instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
-  => NaturalTransformable h (->) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
-{-
-ff :: ApplicativeS h d
-  => Homomorphous EqE (SDuality d x) (SDuality d y)
-  -> h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
-ff (Struct:>:Struct) = Sub . smap
--}
-
-class XStandard (Dual1 d x) => XStandardDual1 d x
-instance (XStandard (d x), XStandardDual1 d x) => XStandard (SDuality d x) where
-  xStandard = xOneOfX [ xRight xStandard
-                      , xLeft xStandard
-                      ]
-    where xRight :: X (d x) -> X (SDuality d x)
-          xRight = amap1 (SDuality . Right1)
-
-          xLeft :: X (Dual1 d x) -> X (SDuality d x)
-          xLeft = amap1 (SDuality . Left1)
-
-data EqESDuality (d :: Type -> Type)
-
-type instance Structure (EqESDuality d) x
-  = ( Show (d x)
-    , ShowDual1 d x
-    , Eq (d x)
-    , EqDual1 d x
-    , XStandard (d x)
-    , XStandardDual1 d x
-    )
-{-    
-smap' :: ( ApplicativeS h d         
-         , Show (d x)
-         , ShowDual1 d x
-         , Eq (d x)
-         , EqDual1 d x
-         , XStandard (d x)
-         , XStandardDual1 d x
-         
-         , Show (d y)
-         , ShowDual1 d y
-         , Eq (d y)
-         , EqDual1 d y
-         , XStandard (d y)
-         , XStandardDual1 d y
-         ) => h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
-smap' = Sub . smap
--}
-
-smapEqEStruct :: ApplicativeS h d
-  => Struct (EqESDuality d) x -> Struct (EqESDuality d) y
-  -> h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
-smapEqEStruct Struct Struct = Sub . smap
-
-
-smapEqE :: (Morphism h, ApplicativeS h d, Transformable (ObjectClass h) (EqESDuality d))
-  => h x y -> Sub EqE (->) (SDuality d x) (SDuality d y)
-smapEqE h = smapEqEStruct (tau (domain h)) (tau (range h)) h
-
-class Transformable (ObjectClass h) s => TO h s
--- instance ApplicativeG (SDuality (DiagramG Diagram t n m)) h (Sub EqE (->))
-
-instance (Morphism h, ApplicativeS h d, TO h (EqESDuality d))
-  => ApplicativeG (SDuality d) h (Sub EqE (->)) where
-  amapG = smapEqE
-
-
-instance ( HomDisjunctiveOriented h, ObjectClass h ~ (EqEDiagrammatic Diagram t n m)
-         , Dual (Dual t) ~ t
-         , TO h (EqESDuality (DiagramG Diagram t n m))
-         , TO h (EqESDuality (Diagram t n m))
-         )
-  => NaturalTransformable h (Sub EqE (->)) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
+  => NaturalTransformable Ort h (->) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
 
 --------------------------------------------------------------------------------
 -- dgmTrafo -
 
 -- | the induced natural transformation.
-dgmTrafo :: NaturalDiagrammatic h (->) d t n m
-    => NaturalTransformation h (->) () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+dgmTrafo :: NaturalDiagrammatic s h b d t n m
+    => NaturalTransformation s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
 dgmTrafo = NaturalTransformation ()
 
+data EqEDiagramChain (t :: Site) (m :: N')
+
+class (Oriented x, XStandardOrtSite From x, XStandardOrtSite To x, Attestable m)
+  => XStandardDiagramChain (t :: Site) m x
+
+instance Attestable m => XStandardDiagramChain To m OS
+
+-- instance XStandardDiagramChain To m N
+
+type instance Structure (EqEDiagramChain t m) x
+  = XStandardDiagramChain t m x
+
+instance Transformable (EqEDiagramChain To m) Typ where tau Struct = Struct
+
+instance Transformable (EqEDiagramChain t m) Ort where tau Struct = Struct
+instance TransformableOrt (EqEDiagramChain t m)
+
+instance XStandardOrtSite To x => XStandardOrtSite From (Op x) where
+  xStandardOrtSite
+    = coXOrtSite (xStandardOrtSite :: XStandardOrtSite To x => XOrtSite To x)
+  
+instance XStandardDiagramChain t m x => XStandardDiagramChain t m (Op x)
+instance TransformableG Op (EqEDiagramChain t m) (EqEDiagramChain t m) where tauG Struct = Struct
+instance TransformableOp (EqEDiagramChain t m)
+
+
+instance (Oriented x, XStandardOrtSite From x, Attestable m)
+  => XStandardDual1 (DiagramG Diagram (Chain To) (S m) m) x
+instance
+  TransformableG (SDuality (DiagramG Diagram (Chain To) (S m) m)) (EqEDiagramChain To m) EqE where
+  tauG Struct = Struct
+
+instance (Oriented x, XStandardOrtSite From x, Attestable m)
+  => XStandardDual1 (Diagram (Chain To) (S m) m) x
+
+instance
+  TransformableG (SDuality (Diagram (Chain To) (S m) m)) (EqEDiagramChain To m) EqE where
+  tauG Struct = Struct
+
+instance (Show x, ShowPoint x) => ShowDual1 (DiagramG Diagram t n m) x
+instance (Eq x, EqPoint x) => EqDual1 (DiagramG Diagram t n m) x
+
+ff :: ( HomDisjunctiveOriented h
+      , t ~ To
+      , s ~ EqEDiagramChain t m
+      , n ~ S m
+      , TransformableG (SDuality (DiagramG Diagram (Chain t) n m)) s EqE
+      , TransformableG (SDuality (Diagram (Chain t) n m)) s EqE
+      )
+  => NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
+       (SDuality (DiagramG Diagram (Chain t) n m)) (SDuality (Diagram (Chain t) n m))
+ff = dgmTrafo
+
+xSomeSub :: s ~ EqEDiagramChain To m
+  => Any m -> X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
+xSomeSub = xf where
+  xoSct :: s ~ EqEDiagramChain To m => Any m -> X (SomeObjectClass (SHom Ort s Op (HomEmpty s)))
+  xoSct m = xOneOf [ SomeObjectClass (xoOS m) 
+                   ]
+
+  xoOS :: s ~ EqEDiagramChain To m => Any m -> Struct s OS
+  xoOS m = case ats m of Ats -> Struct
+
+  xfg :: s ~ EqEDiagramChain To m => Any m -> X (SomeCmpb2 (HomOrtEmpty s Op))
+  xfg m = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g))
+        $ xSctSomeCmpb2 10 (xoSct m) XEmpty
+
+  xf :: s ~ EqEDiagramChain To m
+     => Any m
+     -> X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
+  xf m = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (sub (domain g) (range f) m (f.g))) (xfg m)
+
+  sub :: s ~ EqEDiagramChain To m
+     => Struct s x -> Struct s y -> Any m -> HomOrtEmpty s Op x y -> Sub s (HomOrtEmpty s Op) x y
+  sub Struct Struct _ = Sub
+
+
+pp :: NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
+        (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
+  -> X (SomeMorphism (Sub s h))
+  -> Statement
+pp n@(NaturalTransformation _) = prpNaturalTransformableEqExt n
+
+
+qq m = case someNatural m of
+  SomeNatural m' -> pp ff (xSomeSub m')
+
+--------------------------------------------------------------------------------
+-- xSDuality -
+
+xSDuality :: X (d x) -> X (Dual1 d x) -> X (SDuality d x)
+xSDuality xd xd'
+  = amap1 SDuality
+  $ xOneOfX [ amap1 Right1 xd
+            , amap1 Left1 xd'
+            ]
+
+class XStandard (Dual1 d x) => XStandardDual1 d x
+
+instance (XStandard (d x), XStandardDual1 d x)
+  => XStandard (SDuality d x) where
+  xStandard = xSDuality xStandard xStandard
+
+instance XStandard (d t n m x) => XStandard (DiagramG d t n m x) where
+  xStandard = amap1 DiagramG xStandard
+
+  
+
+
+
+
+{-
 {-
 pp :: XStandard (SomeMorphism h)
   => NaturalTransformation h EqualExtOrt () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
@@ -254,7 +269,7 @@ pp :: XStandard (SomeMorphism h)
 pp = valid
 -}
 
-
+-}
 
 
 
