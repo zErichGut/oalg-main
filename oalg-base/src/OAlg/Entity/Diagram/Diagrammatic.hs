@@ -11,6 +11,8 @@
   , TypeOperators
   , DataKinds
   , ConstraintKinds
+
+  , UndecidableInstances
 #-}
 
 
@@ -150,6 +152,43 @@ dgmTrafo :: NaturalDiagrammatic s h b d t n m
     => NaturalTransformation s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
 dgmTrafo = NaturalTransformation ()
 
+data OrtSiteX (t :: Site)
+
+type instance Structure (OrtSiteX t) x
+  = (Oriented x, XStandardOrtSite t x, XStandardOrtSite (Dual t) x)
+
+xDiagramChain :: (Oriented x) => XOrtSite t x -> X (Diagram (Chain t) n m x)
+xDiagramChain = error "nyi"
+
+instance Oriented x => ShowDual1 (DiagramG Diagram (Chain t) n m) x
+instance Oriented x => EqDual1 (DiagramG Diagram (Chain t) n m) x
+instance (Oriented x, XStandardOrtSite (Dual t) x)
+  => XStandardDual1 (DiagramG Diagram (Chain t) n m) x
+
+instance (Oriented x, XStandardOrtSite t x)
+  => XStandard (Diagram (Chain t) n m x) where
+  xStandard = xDiagramChain xStandardOrtSite
+
+instance TransformableG (SDuality (DiagramG Diagram (Chain t) n m)) (OrtSiteX t) EqE where
+  tauG Struct = Struct
+
+instance (Oriented x, XStandardOrtSite (Dual t) x)
+  => XStandardDual1 (Diagram (Chain t) n m) x
+
+instance TransformableG (SDuality (Diagram (Chain t) n m)) (OrtSiteX t) EqE where
+  tauG Struct = Struct
+
+ff :: ( d ~ Diagram, t ~ Chain t', n ~ S m, t' ~ Dual (Dual t')
+      , HomDisjunctiveOriented h
+      , Transformable s Ort
+      , TransformableG (SDuality (DiagramG d t n m)) s EqE
+      , TransformableG (SDuality (Diagram t n m)) s EqE
+      )
+  => NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
+       (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+ff = NaturalTransformation ()
+
+{-
 data EqEDiagramChain (t :: Site) (m :: N')
 
 class (Oriented x, XStandardOrtSite From x, XStandardOrtSite To x, Attestable m)
@@ -236,7 +275,7 @@ pp n@(NaturalTransformation _) = prpNaturalTransformableEqExt n
 
 qq m = case someNatural m of
   SomeNatural m' -> pp ff (xSomeSub m')
-
+-}
 --------------------------------------------------------------------------------
 -- xSDuality -
 

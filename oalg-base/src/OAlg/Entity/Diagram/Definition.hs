@@ -41,6 +41,7 @@ module OAlg.Entity.Diagram.Definition
   , xDiagram
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
+
   )
   where
 
@@ -83,10 +84,11 @@ data DiagramType
 ----------------------------------------
 -- DiagramType - Dual -
 
+
+
 type instance Dual 'Empty                   = 'Empty
 type instance Dual 'Discrete                = 'Discrete
-type instance Dual ('Chain 'From)           = 'Chain 'To
-type instance Dual ('Chain 'To)             = 'Chain 'From 
+type instance Dual ('Chain t)               = 'Chain (Dual t)
 type instance Dual ('Parallel 'LeftToRight) = 'Parallel 'RightToLeft
 type instance Dual ('Parallel 'RightToLeft) = 'Parallel 'LeftToRight
 type instance Dual ('Star 'To)              = 'Star 'From
@@ -736,4 +738,5 @@ dstSomeDiagram n xd = putDstr cnstr n xd where
 xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientation p))
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
+
 
