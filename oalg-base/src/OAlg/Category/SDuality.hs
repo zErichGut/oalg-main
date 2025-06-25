@@ -44,6 +44,7 @@ module OAlg.Category.SDuality
   , prpFunctorialS, SomeApplSDuality(..)
 
     -- * X
+  , xSDuality
   , xSctSomeMrph
   , xSctSomeCmpb2
 
@@ -359,6 +360,20 @@ class ( CategoryDisjunctive h, ApplicativeS h d
       ) => FunctorialS h d
 
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
+
+--------------------------------------------------------------------------------
+-- xSDuality -
+
+xSDuality :: X (d x) -> X (Dual1 d x) -> X (SDuality d x)
+xSDuality xd xd'
+  = amap1 SDuality
+  $ xOneOfX [ amap1 Right1 xd
+            , amap1 Left1 xd'
+            ]
+
+instance (XStandard (d x), XStandardDual1 d x)
+  => XStandard (SDuality d x) where
+  xStandard = xSDuality xStandard xStandard
 
 --------------------------------------------------------------------------------
 -- SomeApplSDuality -

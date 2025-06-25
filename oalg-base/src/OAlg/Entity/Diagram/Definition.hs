@@ -38,7 +38,7 @@ module OAlg.Entity.Diagram.Definition
 
     -- * X
   , XDiagram(..)
-  , xDiagram
+  , xDiagram, xDiagramChain
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
 
@@ -578,6 +578,12 @@ xDiagram rt@Refl xd = case xd of
                                              in d)
                              $ xDiagram (rt' rt) $ coXDiagram xd
 
+-- | random variable for 'Chain's.
+xDiagramChain :: (Oriented x, Attestable m, n ~ m + 1)
+  => XOrtSite t x -> X (Diagram (Chain t) n m x)
+xDiagramChain xo@(XStart _ _) = xDiagram Refl (XDiagramChainFrom m xo) where m = attest
+xDiagramChain xo@(XEnd _ _)   = xDiagram Refl (XDiagramChainTo m xo) where m = attest
+
 --------------------------------------------------------------------------------
 -- X (Diagram t n m OS) - Standard -
 
@@ -588,13 +594,12 @@ instance (Oriented a, m ~ N0, XStandardPoint a, Attestable n)
   => XStandard (Diagram Discrete n m a) where
   xStandard = xDiagram Refl (XDiagramDiscrete n xStandard) where n = attest
 
-instance (Oriented a, XStandardOrtSite To a, Attestable m)
-  => XStandard (Diagram (Chain To) (S m) m a) where
-  xStandard = xDiagram Refl (XDiagramChainTo m xStandardOrtSite) where m = attest
+instance (Oriented a, XStandardOrtSite t a, Attestable m, n ~ m + 1)
+  => XStandard (Diagram (Chain t) n m a) where
+  xStandard = xDiagramChain xStandardOrtSite
 
-instance (Oriented a, XStandardOrtSite From a, Attestable m)
-  => XStandard (Diagram (Chain From) (S m) m a) where
-  xStandard = xDiagram Refl (XDiagramChainFrom m xStandardOrtSite) where m = attest
+instance (Oriented x, XStandardOrtSiteDual t x, Attestable m, n ~ m+1)
+  => XStandardDual1 (Diagram (Chain t) n m) x 
 
 instance (Oriented a, n ~ N2, XStandardOrtOrientation a, Attestable m)
   => XStandard (Diagram (Parallel LeftToRight) n m a) where

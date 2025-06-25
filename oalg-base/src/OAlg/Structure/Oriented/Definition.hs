@@ -52,7 +52,7 @@ module OAlg.Structure.Oriented.Definition
   , OrtX
 
     -- ** Site
-  , XOrtSite(..), XStandardOrtSite(..)
+  , XOrtSite(..), XStandardOrtSite(..), XStandardOrtSiteDual
   , XStandardOrtSiteTo, XStandardOrtSiteFrom
   , coXOrtSite, coXOrtSiteInv, xosFromOpOp
   , xosStart, xosEnd
@@ -763,6 +763,11 @@ instance XStandardOrtSite From a => XStandardOrtSite To (Op a) where
     co :: XOrtSite From a -> XOrtSite To (Op a)
     co = coXOrtSite
 
+instance XStandardOrtSite To a => XStandardOrtSite From (Op a) where
+  xStandardOrtSite = co xStandardOrtSite where
+    co :: XOrtSite To a -> XOrtSite From (Op a)
+    co = coXOrtSite
+
 --------------------------------------------------------------------------------
 -- XStandardOrtSiteTo -
 
@@ -770,6 +775,7 @@ instance XStandardOrtSite From a => XStandardOrtSite To (Op a) where
 class XStandardOrtSite To a => XStandardOrtSiteTo a
 
 instance XStandard p => XStandardOrtSiteTo (Orientation p)
+instance XStandardOrtSiteFrom x => XStandardOrtSiteTo (Op x)
 
 --------------------------------------------------------------------------------
 -- XStandardOrtSiteFrom -
@@ -778,6 +784,16 @@ instance XStandard p => XStandardOrtSiteTo (Orientation p)
 class XStandardOrtSite From a => XStandardOrtSiteFrom a
 
 instance XStandard p => XStandardOrtSiteFrom (Orientation p)
+instance XStandardOrtSiteTo x => XStandardOrtSiteFrom (Op x)
+
+--------------------------------------------------------------------------------
+-- XStandardOrtSiteDual -
+
+-- | helper class to avoid undecidable instances.
+class XStandardOrtSite (Dual t) x => XStandardOrtSiteDual t x
+
+instance XStandardOrtSiteFrom x => XStandardOrtSiteDual To x
+instance XStandardOrtSiteTo x => XStandardOrtSiteDual From x
 
 --------------------------------------------------------------------------------
 -- XOrtOrientation -

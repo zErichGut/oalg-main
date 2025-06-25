@@ -26,6 +26,7 @@ module OAlg.Data.Validable
     -- * XStandard
   , XStandard(..), relXStandard
   , XStd, xStd, xStdStruct
+  , XStandardDual1
 
     -- * Extensional Equality
   , EqualExt, EqE
@@ -109,8 +110,14 @@ xStdStruct Struct = xStandard
 
 -- | the associated standard random variable for the 'domain'.
 xStd :: (Morphism m, Transformable (ObjectClass m) XStd) => m x y -> X x
-xStd m = xStdStruct (tau (domain m)) where
-  
+xStd m = xStdStruct (tau (domain m))
+
+--------------------------------------------------------------------------------
+-- XStandardDual1 -
+
+-- | helper class to avoid undecidable instances.
+class XStandard (Dual1 d x) => XStandardDual1 d x
+
 --------------------------------------------------------------------------------
 -- Validable -
 
