@@ -93,12 +93,13 @@ instance ( NaturalTransformable s a b i f g, TransformableObjectClass v b
 --------------------------------------------------------------------------------
 -- NaturalTransformation -
 
--- | witness for 'NaturalTransformable's.
+-- | witness for a 'NaturalTransformable'.
 data NaturalTransformation s a b i f g where
   NaturalTransformation :: NaturalTransformable s a b i f g => i -> NaturalTransformation s a b i f g
 
 --------------------------------------------------------------------------------
 -- roh' -
+
 rohStruct :: NaturalTransformation s a b i f g -> Struct s x -> b (f x) (g x)
 rohStruct (NaturalTransformation i) s = roh s i
 

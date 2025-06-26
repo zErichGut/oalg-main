@@ -594,13 +594,6 @@ instance (Oriented a, m ~ N0, XStandardPoint a, Attestable n)
   => XStandard (Diagram Discrete n m a) where
   xStandard = xDiagram Refl (XDiagramDiscrete n xStandard) where n = attest
 
-instance (Oriented a, XStandardOrtSite t a, Attestable m, n ~ m + 1)
-  => XStandard (Diagram (Chain t) n m a) where
-  xStandard = xDiagramChain xStandardOrtSite
-
-instance (Oriented x, XStandardOrtSiteDual t x, Attestable m, n ~ m+1)
-  => XStandardDual1 (Diagram (Chain t) n m) x 
-
 instance (Oriented a, n ~ N2, XStandardOrtOrientation a, Attestable m)
   => XStandard (Diagram (Parallel LeftToRight) n m a) where
   xStandard = xDiagram Refl (XDiagramParallelLR m xStandardOrtOrientation) where
@@ -618,6 +611,24 @@ instance (Oriented a, XStandardOrtSite To a, Attestable m)
 instance (Oriented a, XStandardOrtSite From a, Attestable m)
   => XStandard (Diagram (Star From) (S m) m a) where
   xStandard = xDiagram Refl (XDiagramSource m xStandardOrtSite) where m = attest
+
+--------------------------------------------------------------------------------
+-- X (Diagram (Chain t) (m+1) m -
+
+instance (Oriented a, XStandardOrtSite t a, Attestable m, n ~ m + 1)
+  => XStandard (Diagram (Chain t) n m a) where
+  xStandard = xDiagramChain xStandardOrtSite
+
+instance (Oriented x, XStandardOrtSiteDual t x, Attestable m, n ~ m+1)
+  => XStandardDual1 (Diagram (Chain t) n m) x 
+
+instance (Attestable m, n ~ m+1)
+  => TransformableG (SDuality (Diagram (Chain To) n m)) OrtSiteX EqE where
+  tauG Struct = Struct
+
+instance (Attestable m, n ~ m+1)
+  => TransformableG (SDuality (Diagram (Chain From) n m)) OrtSiteX EqE where
+  tauG Struct = Struct
 
 --------------------------------------------------------------------------------
 -- SomeDiagram -

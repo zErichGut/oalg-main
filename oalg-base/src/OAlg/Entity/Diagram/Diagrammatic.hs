@@ -25,42 +25,19 @@
 -- 
 -- Objects having an underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
-  (
-
-{-
-    -- * Diagrammatic
-    Diagrammatic(..), dgmTypeRefl
-
-    -- * Application
-  , ApplicativeDiagrammatic, FunctorialDiagrammatic
-
-    -- * Duality
-  , SDualityDiagrammatic, CoDiagrammatic(..)
-  , DiagrammaticDuality(..), dgmDuality
-  , DiagrammaticOpDuality, SDualityOpDiagrammatic
-  , dgmOpDuality, dgmOpDualityOrt
-
-    -- * Proposition
-  , prpApplicativeDiagrammatic
-  , prpCoDiagrammatic
-  , prpSDualityDiagrammatic
--}
-  
-{-
-    -- ** Duality
-  , DiagrammaticOpDualisable(..)
-  , DiagrammaticOpDuality(..)
-  , DiagrammaticOpDuality', dgmOpDuality
+  ( -- * Diagrammatic
+    Diagrammatic(..), DiagramG(..), dgmTypeRefl
+  , sDiagram
 
     -- * Applicative
-  , DiagrammaticApplicative(..), DiagrammaticApplicative1
-  , DiagrammaticFunctorial, DiagrammaticFunctorial1
+  , ApplicativeDiagrammatic
+
+    -- * Natural Transformation
+  , NaturalDiagrammatic, NaturalDiagrammaticTrafo, dgmTrafo
 
     -- * Proposition
-  , prpDiagrammaticApplicative
-  , prpDiagrammaticApplicative1
-  , prpDiagrammaticOpDualisable
--}
+  , prpNaturalDiagrammaticTrafoChain
+    
   ) where
 
 import Data.Typeable
@@ -107,6 +84,14 @@ instance Oriented x => EqDual1 (DiagramG Diagram t n m) x
 instance (Oriented x, XStandardOrtSiteDual t x, Attestable m, n ~ m + 1)
   => XStandardDual1 (DiagramG Diagram (Chain t) n m) x
 
+instance (Attestable m, n ~ m+1)
+  => TransformableG (SDuality (DiagramG Diagram (Chain To) n m)) OrtSiteX EqE where
+  tauG Struct = Struct
+
+instance (Attestable m, n ~ m+1)
+  => TransformableG (SDuality (DiagramG Diagram (Chain From) n m)) OrtSiteX EqE where
+  tauG Struct = Struct
+
 --------------------------------------------------------------------------------
 -- dgmTypeRefl -
 
@@ -130,11 +115,10 @@ instance ( HomDisjunctiveOriented h
   vToDual h (DiagramG d)   = DiagramG (vToDual h d)
   vFromDual h (DiagramG d) = DiagramG (vFromDual h d)
 
--- instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => ApplicativeDiagrammatic h Diagram t n m
-
 --------------------------------------------------------------------------------
 -- sDiagram -
 
+-- | the canonical transformation,
 sDiagram :: Diagrammatic d => SDuality (DiagramG d t n m) x -> SDuality (Diagram t n m) x
 sDiagram (SDuality sd) = SDuality $ case sd of
   Right1 (DiagramG d) -> Right1 (diagram d)
@@ -148,118 +132,74 @@ instance Diagrammatic d
 -- NatrualDiagrammatic -
 
 type NaturalDiagrammatic s h b d t n m
-  = NaturalTransformable s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+  = ( Diagrammatic d
+    , NaturalTransformable s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+    )
 
 instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
   => NaturalTransformable Ort h (->) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
 
 --------------------------------------------------------------------------------
+-- NatrualDiagrammaticTrafo -
+
+-- | witness of a 'NaturalDiagrammatic'.
+type NaturalDiagrammaticTrafo s h b d t n m
+  = NaturalTransformation s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+  
+--------------------------------------------------------------------------------
 -- dgmTrafo -
 
 -- | the induced natural transformation.
-dgmTrafo :: NaturalDiagrammatic s h b d t n m
-    => NaturalTransformation s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+dgmTrafo :: NaturalDiagrammatic s h b d t n m => NaturalDiagrammaticTrafo s h b d t n m
 dgmTrafo = NaturalTransformation ()
 
+--------------------------------------------------------------------------------
+-- prpNaturalDiagrammaticTrafoChain -
 
-ff :: ( d ~ Diagram, t ~ Chain t', t' ~ Dual (Dual t')
-      , HomDisjunctiveOriented h
-      , Transformable s Ort
-      , TransformableG (SDuality (DiagramG d t n m)) s EqE
-      , TransformableG (SDuality (Diagram t n m)) s EqE
-      )
-  => NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
-       (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
-ff = NaturalTransformation ()
+-- | 'NaturalDiagrammaticTrafo' to @'Sub' 'EqE' (->)@ for @'Diagram' ('Chain' 'To')@.
+dgmtDiagramChainTo :: (HomDisjunctiveOriented h, s ~ OrtSiteX, Attestable m)
+  => q m
+  -> NaturalDiagrammaticTrafo (SubStruct s Ort) (Sub s h) (Sub EqE (->)) Diagram (Chain To) (m+1) m
+dgmtDiagramChainTo _ = dgmTrafo
 
-data OrtSiteX (t :: Site)
+-- | 'NaturalDiagrammaticTrafo' to @'Sub' 'EqE' (->)@ for @'Diagram' ('Chain' 'From')@.
+dgmtDiagramChainFrom :: (HomDisjunctiveOriented h, s ~ OrtSiteX, Attestable m)
+  => q m
+  -> NaturalDiagrammaticTrafo (SubStruct s Ort) (Sub s h) (Sub EqE (->)) Diagram (Chain From) (m+1) m
+dgmtDiagramChainFrom _ = dgmTrafo
 
-type instance Structure (OrtSiteX t) x
-  = ( Oriented x
-    , XStandardOrtSiteTo x
-    , XStandardOrtSiteFrom x
-    )
+-- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomOrtEmpty' 'OrtSiteX' 'Op')@
+xsOrtSiteXOp :: s ~ OrtSiteX
+  => X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
+xsOrtSiteXOp = xf where
+  xoSct :: s ~ OrtSiteX => X (SomeObjectClass (SHom Ort s Op (HomEmpty s)))
+  xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
+                 , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
+                 , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
+                 ]
 
-instance Transformable (OrtSiteX t) Ort where tau Struct = Struct
-instance TransformableOrt (OrtSiteX t)
+  xfg :: s ~ OrtSiteX => X (SomeCmpb2 (HomOrtEmpty s Op))
+  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g))
+      $ xSctSomeCmpb2 10 xoSct XEmpty
 
-instance Transformable (OrtSiteX t) Typ where tau Struct = Struct
+  xf :: s ~ OrtSiteX
+     => X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
+  xf = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (sub (domain g) (range f) (f.g))) xfg
 
-instance (Attestable m, n ~ m+1)
-  => TransformableG (SDuality (DiagramG Diagram (Chain To) n m)) (OrtSiteX To) EqE where
-  tauG Struct = Struct
-
-instance (Attestable m, n ~ m+1)
-  => TransformableG (SDuality (DiagramG Diagram (Chain From) n m)) (OrtSiteX From) EqE where
-  tauG Struct = Struct
-
-instance (Attestable m, n ~ m+1)
-  => TransformableG (SDuality (Diagram (Chain To) n m)) (OrtSiteX To) EqE where
-  tauG Struct = Struct
-
-instance (Attestable m, n ~ m+1)
-  => TransformableG (SDuality (Diagram (Chain From) n m)) (OrtSiteX From) EqE where
-  tauG Struct = Struct
+  sub :: s ~ OrtSiteX
+     => Struct s x -> Struct s y -> HomOrtEmpty s Op x y -> Sub s (HomOrtEmpty s Op) x y
+  sub Struct Struct = Sub
 
 
-instance TransformableG Op (OrtSiteX t) (OrtSiteX t) where
-  tauG Struct = Struct
+-- | validity of
+-- @'NaturalDiagrammaticTrafo' 'Ort' ('HomOrtEmpty' 'Ort' 'Op') (->)
+-- 'Diagram' ('Chain' __t__) __m+1__ __m__@.
+prpNaturalDiagrammaticTrafoChain :: Statement
+prpNaturalDiagrammaticTrafoChain = Prp "NaturalDiagrammaticTrafoChain"
+  :<=>: Forall (xTupple2 xBool (xNB 0 10)) (uncurry rel)
   
-instance TransformableOp (OrtSiteX t)
-
-ggTo :: ( HomDisjunctiveOriented h
-        , s ~ OrtSiteX t
-        , t ~ To
-        , Attestable m
-        )
-  => Any m
-  -> NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
-       (SDuality (DiagramG Diagram (Chain t) (m+1) m)) (SDuality (Diagram (Chain t) (m+1) m))
-ggTo _ = dgmTrafo
-
-ggFrom :: ( HomDisjunctiveOriented h
-          , s ~ OrtSiteX t
-          , t ~ From
-          , Attestable m
-          )
-  => Any m
-  -> NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
-       (SDuality (DiagramG Diagram (Chain t) (m+1) m)) (SDuality (Diagram (Chain t) (m+1) m))
-ggFrom _ = dgmTrafo
-
-xSomeSub :: s ~ OrtSiteX t
-  => Any m -> X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
-xSomeSub = xf where
-  xoSct :: s ~ OrtSiteX t => Any m -> X (SomeObjectClass (SHom Ort s Op (HomEmpty s)))
-  xoSct m = xOneOf [ SomeObjectClass (xoOS m) 
-                   ]
-
-  xoOS :: s ~ OrtSiteX t => Any m -> Struct s OS
-  xoOS m = case ats m of Ats -> Struct
-
-  xfg :: s ~ OrtSiteX t => Any m -> X (SomeCmpb2 (HomOrtEmpty s Op))
-  xfg m = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g))
-        $ xSctSomeCmpb2 10 (xoSct m) XEmpty
-
-  xf :: s ~ OrtSiteX t
-     => Any m
-     -> X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
-  xf m = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (sub (domain g) (range f) m (f.g))) (xfg m)
-
-  sub :: s ~ OrtSiteX t
-     => Struct s x -> Struct s y -> Any m -> HomOrtEmpty s Op x y -> Sub s (HomOrtEmpty s Op) x y
-  sub Struct Struct _ = Sub
-
-
-pp :: NaturalTransformation (SubStruct s Ort) (Sub s h) (Sub EqE (->)) ()
-        (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
-  -> X (SomeMorphism (Sub s h))
-  -> Statement
-pp = prpNaturalTransformableEqExt
-
-qqTo m = case someNatural m of
-  SomeNatural m' -> pp (ggTo m') (xSomeSub m')
-
-
-qqFrom m = case someNatural m of
-  SomeNatural m' -> pp (ggFrom m') (xSomeSub m')
+  where
+    rel b m           = case someNatural m of
+      SomeNatural m' -> case b of
+        True  -> prpNaturalTransformableEqExt (dgmtDiagramChainTo m') xsOrtSiteXOp
+        False -> prpNaturalTransformableEqExt (dgmtDiagramChainFrom m') xsOrtSiteXOp

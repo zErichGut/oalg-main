@@ -24,6 +24,7 @@ module OAlg.Structure.Oriented.Definition
     -- * Oriented
     Oriented(..), isEndo, isEndoAt
   , OS, Ort, tauOrt, structOrtOp, TransformableOrt
+  , U(..)
 
     -- * Point
   , Point, ShowPoint, EqPoint, OrdPoint, SingletonPoint, Total, ValidablePoint, TypeablePoint
@@ -52,7 +53,7 @@ module OAlg.Structure.Oriented.Definition
   , OrtX
 
     -- ** Site
-  , XOrtSite(..), XStandardOrtSite(..), XStandardOrtSiteDual
+  , XOrtSite(..), OrtSiteX, XStandardOrtSite(..), XStandardOrtSiteDual
   , XStandardOrtSiteTo, XStandardOrtSiteFrom
   , coXOrtSite, coXOrtSiteInv, xosFromOpOp
   , xosStart, xosEnd
@@ -82,7 +83,7 @@ import OAlg.Prelude
 import OAlg.Data.Canonical
 import OAlg.Data.Singleton
 import OAlg.Data.Identity
-import OAlg.Data.Symbol
+import OAlg.Data.Symbol hiding (U)
 
 import OAlg.Category.Unify
 
@@ -397,6 +398,25 @@ instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Oriented (Som
   end (SomeMorphism f) = SomeObjectClass (range f)
 
 --------------------------------------------------------------------------------
+-- U -
+
+-- | accosiating @()@ as 'Point'
+newtype U x = U x deriving (Show,Eq)
+
+instance Validable x => Validable (U x) where
+  valid (U x) = valid x
+
+type instance Point (U x) = ()
+instance ShowPoint (U x)
+instance EqPoint (U x)
+instance ValidablePoint (U x)
+instance TypeablePoint (U x)
+instance SingletonPoint (U x)
+
+instance Entity x => Oriented (U x) where
+  orientation (U _) = () :> ()
+
+--------------------------------------------------------------------------------
 -- isEndo -
 
 -- | check for being an endo.
@@ -691,7 +711,6 @@ xosStart (XStart _ xs) = xs
 xosEnd :: XOrtSite To q -> Point q -> X q
 xosEnd (XEnd _ xe) = xe
 
-
 --------------------------------------------------------------------------------
 -- xosPathMaxAt -
 
@@ -746,6 +765,24 @@ xEndOrnt :: X p -> XOrtSite To (Orientation p)
 xEndOrnt xp = XEnd xp xq where xq e = xp >>= return . (:>e)
 
 --------------------------------------------------------------------------------
+-- XStandardOrtSite t U -
+
+xosUFrom :: X x -> XOrtSite From (U x)
+xosUFrom xx = XStart (return ()) (const (amap1 U xx))
+
+xosUTo :: X x -> XOrtSite To (U x)
+xosUTo xx = XEnd (return ()) (const (amap1 U xx))
+
+instance XStandard x => XStandardOrtSite To (U x) where
+  xStandardOrtSite = xosUTo xStandard
+
+instance XStandard x => XStandardOrtSite From (U x) where
+  xStandardOrtSite = xosUFrom xStandard
+  
+instance XStandard x => XStandardOrtSiteTo (U x)
+instance XStandard x => XStandardOrtSiteFrom (U x)
+
+--------------------------------------------------------------------------------
 -- XStandardOrtSite -
 
 -- | standard random variable for 'XOrtSite'.
@@ -787,6 +824,29 @@ instance XStandard p => XStandardOrtSiteFrom (Orientation p)
 instance XStandardOrtSiteTo x => XStandardOrtSiteFrom (Op x)
 
 --------------------------------------------------------------------------------
+-- OrtSiteX -
+
+-- | type for 'Oriented' structures admitting 'XStandardOrtSiteTo' and 'XStandardOrtSiteFrom'.
+--
+-- __Note__ The main point is that @'TransformableG' 'Op' 'OrtSiteX' 'OrtSiteX'@ holds!
+data OrtSiteX
+
+type instance Structure OrtSiteX x
+  = ( Oriented x
+    , XStandardOrtSiteTo x
+    , XStandardOrtSiteFrom x
+    )
+
+instance Transformable OrtSiteX Ort where tau Struct = Struct
+instance TransformableOrt OrtSiteX
+
+instance Transformable OrtSiteX Typ where tau Struct = Struct
+
+instance TransformableG Op OrtSiteX OrtSiteX where
+  tauG Struct = Struct
+instance TransformableOp OrtSiteX
+
+--------------------------------------------------------------------------------
 -- XStandardOrtSiteDual -
 
 -- | helper class to avoid undecidable instances.
@@ -794,6 +854,7 @@ class XStandardOrtSite (Dual t) x => XStandardOrtSiteDual t x
 
 instance XStandardOrtSiteFrom x => XStandardOrtSiteDual To x
 instance XStandardOrtSiteTo x => XStandardOrtSiteDual From x
+
 
 --------------------------------------------------------------------------------
 -- XOrtOrientation -
@@ -809,7 +870,6 @@ instance XStandardOrtSiteTo x => XStandardOrtSiteDual From x
 -- of @__q__@.
 data XOrtOrientation q
   = XOrtOrientation (X (Orientation (Point q))) (Orientation (Point q) -> X q)
-
 
 instance Oriented q => Validable (XOrtOrientation q) where
   valid x@(XOrtOrientation xo xq) = Label (show $ typeOf x) :<=>:
