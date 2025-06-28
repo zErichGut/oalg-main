@@ -53,7 +53,7 @@ module OAlg.Structure.Oriented.Definition
   , OrtX
 
     -- ** Site
-  , XOrtSite(..), OrtSiteX, XStandardOrtSite(..), XStandardOrtSiteDual
+  , XOrtSite(..), OrtSiteX, XStandardOrtSite(..)
   , XStandardOrtSiteTo, XStandardOrtSiteFrom
   , coXOrtSite, coXOrtSiteInv, xosFromOpOp
   , xosStart, xosEnd
@@ -845,16 +845,6 @@ instance Transformable OrtSiteX Typ where tau Struct = Struct
 instance TransformableG Op OrtSiteX OrtSiteX where
   tauG Struct = Struct
 instance TransformableOp OrtSiteX
-
---------------------------------------------------------------------------------
--- XStandardOrtSiteDual -
-
--- | helper class to avoid undecidable instances.
-class XStandardOrtSite (Dual t) x => XStandardOrtSiteDual t x
-
-instance XStandardOrtSiteFrom x => XStandardOrtSiteDual To x
-instance XStandardOrtSiteTo x => XStandardOrtSiteDual From x
-
 
 --------------------------------------------------------------------------------
 -- XOrtOrientation -

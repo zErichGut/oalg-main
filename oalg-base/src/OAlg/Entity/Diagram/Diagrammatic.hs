@@ -81,8 +81,11 @@ instance XStandard (d t n m x) => XStandard (DiagramG d t n m x) where
 instance Oriented x => ShowDual1 (DiagramG Diagram t n m) x
 instance Oriented x => EqDual1 (DiagramG Diagram t n m) x
 
-instance (Oriented x, XStandardOrtSiteDual t x, Attestable m, n ~ m + 1)
-  => XStandardDual1 (DiagramG Diagram (Chain t) n m) x
+instance (Oriented x, XStandardOrtSite From x, Attestable m)
+  => XStandardDual1 (DiagramG Diagram (Chain To) (S m) m) x
+  
+instance (Oriented x, XStandardOrtSite To x, Attestable m)
+  => XStandardDual1 (DiagramG Diagram (Chain From) (S m) m) x
 
 instance (Attestable m, n ~ m+1)
   => TransformableG (SDuality (DiagramG Diagram (Chain To) n m)) OrtSiteX EqE where
@@ -203,3 +206,4 @@ prpNaturalDiagrammaticTrafoChain = Prp "NaturalDiagrammaticTrafoChain"
       SomeNatural m' -> case b of
         True  -> prpNaturalTransformableEqExt (dgmtDiagramChainTo m') xsOrtSiteXOp
         False -> prpNaturalTransformableEqExt (dgmtDiagramChainFrom m') xsOrtSiteXOp
+

@@ -316,6 +316,8 @@ deriving instance (Show (d x), ShowDual1 d x) => Show (SDuality d x)
 deriving instance (Eq (d x), EqDual1 d x) => Eq (SDuality d x)
 deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDuality d x)
 
+type instance Dual1 (SDuality d) = SDuality (Dual1 d)
+
 --------------------------------------------------------------------------------
 -- ApplicativeS -
 

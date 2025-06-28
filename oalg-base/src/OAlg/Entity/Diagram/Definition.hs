@@ -619,13 +619,22 @@ instance (Oriented a, XStandardOrtSite t a, Attestable m, n ~ m + 1)
   => XStandard (Diagram (Chain t) n m a) where
   xStandard = xDiagramChain xStandardOrtSite
 
-instance (Oriented x, XStandardOrtSiteDual t x, Attestable m, n ~ m+1)
-  => XStandardDual1 (Diagram (Chain t) n m) x 
+instance (Oriented x, XStandardOrtSite To x, XStandardOrtSite From x, Attestable m, n ~ m+1)
+  => XStandardDual1 (SDuality (Diagram (Chain To) n m)) x
+
+instance (Oriented x, XStandardOrtSite From x, Attestable m, n ~ m+1)
+  => XStandardDual1 (Diagram (Chain To) n m) x
 
 instance (Attestable m, n ~ m+1)
   => TransformableG (SDuality (Diagram (Chain To) n m)) OrtSiteX EqE where
   tauG Struct = Struct
 
+instance (Oriented x, XStandardOrtSite To x, XStandardOrtSite From x, Attestable m, n ~ m+1)
+  => XStandardDual1 (SDuality (Diagram (Chain From) n m)) x
+
+instance (Oriented x, XStandardOrtSite To x, Attestable m, n ~ m+1)
+  => XStandardDual1 (Diagram (Chain From) n m) x
+  
 instance (Attestable m, n ~ m+1)
   => TransformableG (SDuality (Diagram (Chain From) n m)) OrtSiteX EqE where
   tauG Struct = Struct
