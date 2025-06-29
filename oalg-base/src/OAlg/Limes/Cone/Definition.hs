@@ -84,6 +84,7 @@ import OAlg.Limes.Perspective
 
 import OAlg.Limes.Cone.Structure
 
+{-
 --------------------------------------------------------------------------------
 -- Cone -
 
@@ -634,6 +635,11 @@ coConeZeroHead :: (TransformableTyp s, Transformable1 Op s)
   => ConeOpDuality' s p d t n m -> Struct s a
   -> ConeZeroHead s p d t n m a -> Dual (ConeZeroHead s p d t n m a)
 coConeZeroHead cOp s (ConeZeroHead c) = ConeZeroHead $ toDualFst cOp s c
+-}
+
+
+
+
 
 
 {-

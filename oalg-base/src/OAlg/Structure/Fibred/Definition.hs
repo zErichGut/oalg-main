@@ -7,7 +7,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
 
 -- |
@@ -27,6 +27,7 @@ module OAlg.Structure.Fibred.Definition
   
     -- * Root
   , Root, ShowRoot, EqRoot, OrdRoot, SingletonRoot, TotalRoot, ValidableRoot, TypeableRoot
+  , Rt(..), fromRtG
 
     -- * Fibred Oriented
   , FibredOriented, FbrOrt, TransformableFbrOrt, tauFbrOrt
@@ -115,6 +116,30 @@ instance EqRoot x => EqRoot (Op x)
 instance ValidableRoot x => ValidableRoot (Op x)
 instance SingletonRoot x => SingletonRoot (Op x)
 instance TypeableRoot x => TypeableRoot (Op x)
+
+--------------------------------------------------------------------------------
+-- Rt -
+
+newtype Rt x = Rt (Root x)
+
+type instance Root (Rt x) = Root x
+
+deriving instance ShowRoot x => Show (Rt x)
+deriving instance EqRoot x => Eq (Rt x)
+deriving instance ValidableRoot x => Validable (Rt x)
+
+--------------------------------------------------------------------------------
+-- idRoot -
+
+idRoot :: Root x ~ Root y => Rt x -> Rt y
+idRoot (Rt r) = Rt r
+
+--------------------------------------------------------------------------------
+-- fromRtG -
+
+-- | from 'Rt'.
+fromRtG :: (Rt x -> Rt y) -> Root x -> Root y
+fromRtG f r = r' where Rt r' = f (Rt r)
 
 --------------------------------------------------------------------------------
 -- Fibred -

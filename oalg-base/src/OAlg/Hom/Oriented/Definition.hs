@@ -38,8 +38,7 @@ module OAlg.Hom.Oriented.Definition
   , FunctorialOriented
 
     -- * Instances
-    -- ** HomOrt
-    
+    -- ** HomOrt    
   , HomOrt(..), homOrt
 
     -- ** HomOrtEmpty
@@ -58,6 +57,8 @@ import OAlg.Data.Identity
 import OAlg.Data.Variant as V
 
 import OAlg.Structure.Oriented hiding (Path(..))
+
+import OAlg.Hom.Definition
 
 --------------------------------------------------------------------------------
 -- ApplicativePoint -
@@ -107,6 +108,7 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       ) => HomOriented h where
 
 instance HomOriented h => HomOriented (Path h)
+instance TransformableOrt s => HomOriented (IdHom s)
 
 --------------------------------------------------------------------------------
 -- HomDisjunctiveOriented -
@@ -132,6 +134,8 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       , Disjunctive2 h
       )
   => HomDisjunctiveOriented h
+
+instance TransformableOrt s => HomDisjunctiveOriented (IdHom s)
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -

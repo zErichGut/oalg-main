@@ -20,6 +20,7 @@
 -- homomorphisms between 'Fibred' structures
 module OAlg.Hom.Fibred
   (
+{-    
     -- * Fibred
     HomFibred, FunctorialHomFibred
 
@@ -31,6 +32,8 @@ module OAlg.Hom.Fibred
 
     -- * Proposition
   , prpHomFbrOrt
+-}
+    
   )
   where
 
@@ -44,6 +47,25 @@ import OAlg.Structure.Oriented.Definition hiding (Path(..))
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
 
+
+--------------------------------------------------------------------------------
+-- ApplicativeRoot -
+
+type ApplicativeRoot h = ApplicativeG Rt h (->)
+
+--------------------------------------------------------------------------------
+-- rmap -
+
+rmap :: ApplicativeRoot h => h x y -> Root x -> Root y
+rmap h = fromRtG (amapG h)
+
+--------------------------------------------------------------------------------
+-- FunctorialRoot -
+
+type FunctorialRoot h = FunctorialG Rt h (->)
+
+
+{-
 --------------------------------------------------------------------------------
 -- ApplicativeRoot -
 
@@ -78,23 +100,25 @@ instance ApplicativeRoot h => ApplicativeRoot (Path h) where
 class (Category h, ApplicativeRoot h) => FunctorialRoot h
 
 instance (Morphism h, ApplicativeRoot h) => FunctorialRoot (Path h)
+-}
 
 --------------------------------------------------------------------------------
 -- HomFibred -
 
--- | type family of homomorphisms between 'Fibred' structures.
+-- | homomorphisms between 'Fibred' structures.
 --
--- __Property__ Let @h@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @f@ in
--- @__h__ __a__ __b__@ and @x@ in @__a__@ holds:
+-- __Property__ Let @__h__@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @h@ in
+-- @__h__ __a__ __b__@ holds:
 --
--- (1) @'root' '.' 'amap' f '.=.' 'rmap' f '.' 'root'@.
+-- (1) @'root' '.' 'amap' h '.=.' 'rmap' h '.' 'root'@.
 class ( Morphism h, Applicative h, ApplicativeRoot h
-      , Transformable (ObjectClass h) Fbr, Transformable (ObjectClass h) Typ
+      , Transformable (ObjectClass h) Fbr
       ) => HomFibred h where
 
-
 instance HomFibred h => HomFibred (Path h)
+instance TransformableFbr s => HomFibred (IdHom s)
 
+{-
 --------------------------------------------------------------------------------
 -- FunctorialHomFibred -
 
@@ -184,3 +208,4 @@ instance HomFibredOriented h => HomFibred (OpHom h)
 instance HomFibredOriented h => HomFibredOriented (OpHom h)
 
 
+-}
