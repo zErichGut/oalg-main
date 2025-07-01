@@ -53,6 +53,34 @@ import OAlg.Hom.Oriented.Definition
 
 type ApplicativeRoot h = ApplicativeG Rt h (->)
 
+
+ffStruct :: (HomOriented h, DualisableOriented s o)
+  => Struct Ort x -> HomOrt s o h x y -> Orientation (Point x) -> Orientation (Point y)
+ffStruct Struct h = case variant2 h of
+  Covariant     -> omap h
+  Contravariant -> opposite . omap h 
+
+ff :: (HomOriented h, DualisableOriented s o)
+  => HomOrt s o h x y -> Orientation (Point x) -> Orientation (Point y)
+ff h = ffStruct (tau (domain h)) h
+
+
+ff' :: (HomOriented h, DualisableOriented s o)
+  => Homomorphous FbrOrt x y -> HomOrt s o h x y -> Root x -> Root y
+ff' (Struct :>: Struct) = ff
+
+
+tt :: Transformable s FbrOrt => HomOrt s o h x y -> Homomorphous FbrOrt x y
+tt = error "nyi"
+
+toRtG :: (Root x -> Root y) -> Rt x -> Rt y
+toRtG = error "nyi"
+
+instance ( HomOriented h, DualisableOriented s o
+         , Transformable s FbrOrt
+         ) => ApplicativeG Rt (HomOrt s o h) (->) where
+  amapG h = toRtG (ff' (tt h) h)
+  
 --------------------------------------------------------------------------------
 -- rmap -
 
@@ -107,8 +135,8 @@ instance (Morphism h, ApplicativeRoot h) => FunctorialRoot (Path h)
 
 -- | homomorphisms between 'Fibred' structures.
 --
--- __Property__ Let @__h__@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @h@ in
--- @__h__ __a__ __b__@ holds:
+-- __Property__ Let @'HomFibred' __h__@, then for all @__x__@, @__y__@ and @h@ in
+-- @__h x y__@ holds:
 --
 -- (1) @'root' '.' 'amap' h '.=.' 'rmap' h '.' 'root'@.
 class ( Morphism h, Applicative h, ApplicativeRoot h
@@ -117,6 +145,7 @@ class ( Morphism h, Applicative h, ApplicativeRoot h
 
 instance HomFibred h => HomFibred (Path h)
 instance TransformableFbr s => HomFibred (IdHom s)
+
 
 {-
 --------------------------------------------------------------------------------
@@ -129,29 +158,36 @@ type FunctorialHomFibred h = (HomFibred h, Functorial h, FunctorialRoot h)
 -- Hom -
 
 type instance Hom Fbr h = HomFibred h
+-}
 
 --------------------------------------------------------------------------------
 -- HomFibredOriented -
 
 -- | type family of homomorphisms between 'FibredOriented' structures.
 --
--- __Property__ Let @'HomFibredOriented' __h__@, then holds:
+-- __Property__ Let @'HomFibredOriented' __h__@, then for all @__x__@, @__y__@ and
+-- @h@ in @__h x y__@ holds:
 --
--- (1) For all @__a__@, @__b__@ and @f@ in
--- @__h__ __a__ __b__@ holds: @'rmap' f '.=.' 'omap' f@.
-class (HomOriented h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
+-- (1) If @'variant2' h '==' 'Covariant'@, then holds: @'rmap' f '.=.' 'omap' f@.
+--
+-- (2) If @'variant2' h '==' 'Contravariant'@, then holds: @'rmap' f '.=.' 'opposite' '.' 'omap' f@.
+class (HomDisjunctiveOriented h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
   => HomFibredOriented h
 
-instance HomFibredOriented h => HomFibredOriented (Path h)
+-- instance HomFibredOriented h => HomFibredOriented (Path h)
+
 
 --------------------------------------------------------------------------------
 -- prpHomFbrOrt -
 
 relHomFbrOrtHomomorphous :: (HomFibredOriented h, Show2 h)
-  => Homomorphous FbrOrt a b -> h a b -> Root a -> Statement
-relHomFbrOrtHomomorphous (Struct :>: Struct) f r
-  = (rmap f r == omap f r) :?> Params ["f":=show2 f,"r":=show r]
+  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
+relHomFbrOrtHomomorphous (Struct :>: Struct) h r = case variant2 h of
+  Covariant     -> Label "Cov" :<=>: (rmap h r == omap h r) :?> Params ["h":=show2 h,"r":=show r]
+  Contravariant -> Label "Cnt" :<=>: (rmap h r == opposite (omap h r))
+                                       :?> Params ["h":=show2 h,"r":=show r]
 
+{-
 -- | validity according to 'HomFibredOriented'.
 prpHomFbrOrt :: (HomFibredOriented h, Show2 h) => h a b -> Root a -> Statement
 prpHomFbrOrt f r = Prp "HomFbrOrt"
