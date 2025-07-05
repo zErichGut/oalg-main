@@ -46,8 +46,6 @@ module OAlg.Hom.Multiplicative
 
 import OAlg.Prelude
 
-import OAlg.Data.Identity
-
 import OAlg.Category.SDuality
 import OAlg.Category.Unify
 import OAlg.Category.Path

@@ -1,4 +1,12 @@
 
+{-# LANGUAGE NoImplicitPrelude #-}
+
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
@@ -12,23 +20,29 @@
 -- 
 -- identical predicate.
 module OAlg.Data.Identity
-  ( Id(..)
+  (
+    Id(..)
   , fromId
   , trafoFromId
   , trafoToId
   , toIdG, fromIdG
+
+    -- * Applicative
+  , Applicative, amap, ($)
+  , Functorial, Functor
   )
   where
+
+import Prelude (Show,Read,Eq,Ord,Enum,Bounded,Foldable)
+
+import OAlg.Category.Definition
+import OAlg.Category.Applicative
 
 --------------------------------------------------------------------------------
 -- Id -
 
 -- | identical predicate.
-newtype Id x = Id x
-  deriving ( Show,Read,Eq,Ord,Enum,Bounded
-           , Functor
-           , Foldable
-           )
+newtype Id x = Id x deriving (Show,Read,Eq,Ord,Enum,Bounded,Foldable)
 
 --------------------------------------------------------------------------------
 -- formId -
@@ -55,10 +69,58 @@ trafoToId f = Id . f
 -- toIdG -
 
 toIdG :: (x -> y) -> Id x -> Id y
-toIdG = fmap
+toIdG f (Id x) = Id (f x)
 
 --------------------------------------------------------------------------------
 -- fromIdG -
 
 fromIdG :: (Id x -> Id y) -> x -> y
 fromIdG i = fromId . i . Id 
+
+--------------------------------------------------------------------------------
+-- apIdType-
+
+-- | application to @(->)@ based on 'Id',
+apIdType :: ApplicativeG Id h (->) => ApplicationG Id h (->)
+apIdType = ApplicationG
+
+--------------------------------------------------------------------------------
+-- Applicative -
+
+-- | representable @__h__@s according to 'Id'.
+type Applicative h = ApplicativeG Id h (->)
+
+--------------------------------------------------------------------------------
+-- amap -
+
+-- | representation of @__h__@ in @('->')@. 
+amap :: Applicative h => h x y -> x -> y
+amap h x = y where Id y = amapG h (Id x)
+
+--------------------------------------------------------------------------------
+-- ($)
+  
+infixr 0 $
+
+-- | right associative application on values.
+($) :: Applicative h => h x y -> x -> y
+($) = amap
+
+--------------------------------------------------------------------------------
+-- Functorial -
+
+instance ApplicativeG Id (->) (->) where amapG = toIdG
+
+-- | functorials form @__c__@ to @('->')@ according to 'Id'.
+type Functorial c = FunctorialG Id c (->)
+
+--------------------------------------------------------------------------------
+-- Functor -
+
+-- | attest of being 'Functorial' from the 'Category' __c__ to the 'Category' @('->')@.
+data Functor c where
+  Functor :: Functorial c => Functor c  
+
+
+
+

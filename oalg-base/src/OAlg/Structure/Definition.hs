@@ -27,7 +27,7 @@ module OAlg.Structure.Definition
 
     -- * Transformable
   , Transformable(..), tauType
-  , Transformable1, tau1, TransformableOp, tauOp
+  , Transformable1, tau1
   , TransformableTyp
   , TransformableG(..), tauG'
   , TransformableGRefl
@@ -50,7 +50,6 @@ import OAlg.Data.Equal
 import OAlg.Data.Ord
 import OAlg.Data.Singular
 import OAlg.Data.Maybe
-import OAlg.Data.Opposite
 
 --------------------------------------------------------------------------------
 -- Structure -
@@ -184,19 +183,6 @@ type Transformable1 f s = TransformableG f s s
 -- | transformation1. (needed for backward compatibility!).
 tau1 :: Transformable1 f s => Struct s x -> Struct s (f x)
 tau1 = tauG
-
---------------------------------------------------------------------------------
--- TransformableOp -
-
--- | helper class to avoid undecidable instances.
-class Transformable1 Op s => TransformableOp s
-
---------------------------------------------------------------------------------
--- tauOp -
-
--- | 'tau' for 'Op'.
-tauOp :: Transformable1 Op s => Struct s x -> Struct s (Op x)
-tauOp = tauG
 
 --------------------------------------------------------------------------------
 -- TransformableTyp -

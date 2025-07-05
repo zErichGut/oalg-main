@@ -41,9 +41,8 @@ module OAlg.Category.Dualisable
   ) where
 
 import OAlg.Category.Definition
-
 import OAlg.Data.Identity
-import OAlg.Data.Opposite
+
 import OAlg.Data.EqualExtensional
 import OAlg.Data.Statement.Definition
 
@@ -92,18 +91,6 @@ class (ReflexiveG r c o d, Transformable1 o r) => DualisableG r c o d where
 
 -- | helper class to avoid undecidable instances.
 class DualisableG r (->) o Id => DualisableGId r o
-
---------------------------------------------------------------------------------
--- Op - SDualisable -
-
-instance ReflexiveG r (->) Op Id where
-  reflG _ = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
-
-instance TransformableOp r => DualisableG r (->) Op Id where
-  toDualG _   = amap1 Op
-  fromDualG _ = amap1 fromOp
-
-instance TransformableOp r => DualisableGId r Op
 
 --------------------------------------------------------------------------------
 -- DualityG -

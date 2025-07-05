@@ -53,7 +53,6 @@ import OAlg.Control.Solver
 
 import OAlg.Prelude
 
-import OAlg.Data.Identity
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Exception

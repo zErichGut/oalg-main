@@ -33,13 +33,13 @@ import Control.Exception
 import OAlg.Prelude
 
 import OAlg.Structure.Exception
-import OAlg.Structure.Oriented.Definition(Orientation(..))
+import OAlg.Structure.Oriented.Orientation
+import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Ring.Definition
 import OAlg.Structure.Number.Definition
-
 
 --------------------------------------------------------------------------------
 -- Vectorial -

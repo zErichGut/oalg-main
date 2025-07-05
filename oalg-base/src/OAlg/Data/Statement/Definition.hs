@@ -1,6 +1,4 @@
 
-{-# LANGUAGE NoImplicitPrelude #-}
-
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -74,19 +72,13 @@ module OAlg.Data.Statement.Definition
   )
   where
 
-import Prelude (Num(..),Bounded(..))
+import Prelude hiding ((||),and,(&&),not) -- (Num(..),Bounded(..))
 
 import Control.Monad
 import Control.Exception
 import Control.DeepSeq
 
 import System.IO.Unsafe
-import System.IO
-
-import Data.List (map,(++),take,zip)
-import Data.Foldable hiding (and)
-
-import OAlg.Category.Definition
 
 import OAlg.Control.Exception
 import OAlg.Control.HNFData
@@ -94,13 +86,10 @@ import OAlg.Control.Verbose
 
 import OAlg.Data.Logical
 import OAlg.Data.Boolean.Definition
-import OAlg.Data.Ord
-import OAlg.Data.Equal
 import OAlg.Data.X
 import OAlg.Data.Show 
 import OAlg.Data.Maybe
 import OAlg.Data.Canonical
-import OAlg.Data.Number
 
 --------------------------------------------------------------------------------
 -- ValidateingException -

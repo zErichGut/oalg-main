@@ -17,7 +17,8 @@ module OAlg.Prelude
     module App
   , module Cat
   , module Prp
-
+  , module Id
+  
     -- * Validating
   , module Stm
   , module X
@@ -42,7 +43,6 @@ module OAlg.Prelude
     -- * Dual
   , module Dlb
   , module DlbG
-  , module Op
 
     -- * Ord
   , module Ord
@@ -88,6 +88,7 @@ import OAlg.Category.Proposition as Prp
 
 import OAlg.Control.Validate as Vld
 
+import OAlg.Data.Identity as Id
 import OAlg.Data.Logical as Lgc
 import OAlg.Data.Statement as Stm
 import OAlg.Data.X as X
@@ -95,12 +96,11 @@ import OAlg.Data.Validable as Vlb
 import OAlg.Data.Boolean as Bol
 import OAlg.Data.Equal as Eql
 import OAlg.Data.EqualExtensional as EqlExt
+import OAlg.Data.Ord as Ord
 import OAlg.Data.Maybe as Myb
 import OAlg.Data.Show as Shw
 import OAlg.Data.Number as Nmb
 import OAlg.Data.Dualisable as Dlb
-import OAlg.Data.Opposite as Op
-import OAlg.Data.Ord as Ord
 
 import OAlg.Entity.Definition as Ent
 import OAlg.Structure.Definition as Str

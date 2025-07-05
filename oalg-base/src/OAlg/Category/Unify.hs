@@ -48,9 +48,9 @@ import OAlg.Category.Definition
 import OAlg.Structure.Definition
 import OAlg.Category.Path
 
+import OAlg.Data.Identity
 import OAlg.Data.X
 import OAlg.Data.Dualisable
-import OAlg.Data.Opposite
 import OAlg.Data.Validable
 import OAlg.Data.Maybe
 import OAlg.Data.Equal

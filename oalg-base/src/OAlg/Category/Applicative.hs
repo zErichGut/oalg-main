@@ -19,12 +19,11 @@ module OAlg.Category.Applicative
   (
 
     -- * Applicative
-    Applicative, amap, ($)
-  , Applicative1, amap1
+    Applicative1, amap1
 
     -- * Generalized
   , ApplicativeG(..), amapG'
-  , ApplicationG(..), apType, apIdType
+  , ApplicationG(..), apType
 
   )
   where
@@ -33,7 +32,6 @@ import Control.Monad (fmap)
 
 import Data.List (map)
 
-import OAlg.Data.Identity
 import OAlg.Data.Either
 import OAlg.Data.X
 
@@ -48,7 +46,6 @@ class ApplicativeG t a b where
 --------------------------------------------------------------------------------
 -- ApplicativeG - Instances -
 
-instance ApplicativeG Id (->) (->) where amapG = toIdG
 instance ApplicativeG X (->) (->)  where amapG = fmap
 instance ApplicativeG [] (->) (->) where amapG = map
 
@@ -76,35 +73,6 @@ data ApplicationG t a b where
 -- | application to @(->)@ based on @__t__@,
 apType :: ApplicativeG t h (->) => ApplicationG t h (->)
 apType = ApplicationG
-
---------------------------------------------------------------------------------
--- apIdType-
-
--- | application to @(->)@ based on 'Id',
-apIdType :: ApplicativeG Id h (->) => ApplicationG Id h (->)
-apIdType = ApplicationG
-
---------------------------------------------------------------------------------
--- Applicative -
-
--- | representable @__h__@s according to 'Id'.
-type Applicative h = ApplicativeG Id h (->)
-
---------------------------------------------------------------------------------
--- amap -
-
--- | representation of @__h__@ in @('->')@. 
-amap :: Applicative h => h x y -> x -> y
-amap h x = y where Id y = amapG h (Id x)
-
---------------------------------------------------------------------------------
--- ($)
-  
-infixr 0 $
-
--- | right associative application on values.
-($) :: Applicative h => h x y -> x -> y
-($) = amap
 
 --------------------------------------------------------------------------------
 -- Applicative1 -

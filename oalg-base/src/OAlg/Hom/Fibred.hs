@@ -48,51 +48,6 @@ import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
 
 
---------------------------------------------------------------------------------
--- ApplicativeRoot -
-
-type ApplicativeRoot h = ApplicativeG Rt h (->)
-
-
-ffStruct :: (HomOriented h, DualisableOriented s o)
-  => Struct Ort x -> HomOrt s o h x y -> Orientation (Point x) -> Orientation (Point y)
-ffStruct Struct h = case variant2 h of
-  Covariant     -> omap h
-  Contravariant -> opposite . omap h 
-
-ff :: (HomOriented h, DualisableOriented s o)
-  => HomOrt s o h x y -> Orientation (Point x) -> Orientation (Point y)
-ff h = ffStruct (tau (domain h)) h
-
-
-ff' :: (HomOriented h, DualisableOriented s o)
-  => Homomorphous FbrOrt x y -> HomOrt s o h x y -> Root x -> Root y
-ff' (Struct :>: Struct) = ff
-
-
-tt :: Transformable s FbrOrt => HomOrt s o h x y -> Homomorphous FbrOrt x y
-tt = error "nyi"
-
-toRtG :: (Root x -> Root y) -> Rt x -> Rt y
-toRtG = error "nyi"
-
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s FbrOrt
-         ) => ApplicativeG Rt (HomOrt s o h) (->) where
-  amapG h = toRtG (ff' (tt h) h)
-  
---------------------------------------------------------------------------------
--- rmap -
-
-rmap :: ApplicativeRoot h => h x y -> Root x -> Root y
-rmap h = fromRtG (amapG h)
-
---------------------------------------------------------------------------------
--- FunctorialRoot -
-
-type FunctorialRoot h = FunctorialG Rt h (->)
-
-
 {-
 --------------------------------------------------------------------------------
 -- ApplicativeRoot -
@@ -145,6 +100,9 @@ class ( Morphism h, Applicative h, ApplicativeRoot h
 
 instance HomFibred h => HomFibred (Path h)
 instance TransformableFbr s => HomFibred (IdHom s)
+instance ( HomOriented h, DualisableOriented s o
+         , Transformable s Fbr, Transformable s FbrOrt
+         ) => HomFibred (HomOrt s o h)
 
 
 {-
@@ -175,6 +133,12 @@ class (HomDisjunctiveOriented h , HomFibred h, Transformable (ObjectClass h) Fbr
   => HomFibredOriented h
 
 -- instance HomFibredOriented h => HomFibredOriented (Path h)
+instance ( TransformableOrt s, TransformableFbr s
+         , TransformableFbrOrt s
+         ) => HomFibredOriented (IdHom s)
+instance ( HomOriented h, DualisableOriented s o
+         , Transformable s Fbr, Transformable s FbrOrt
+         ) => HomFibredOriented (HomOrt s o h)
 
 
 --------------------------------------------------------------------------------

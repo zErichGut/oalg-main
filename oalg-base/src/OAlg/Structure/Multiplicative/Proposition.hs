@@ -48,7 +48,6 @@ import Control.Applicative
 
 import OAlg.Prelude
 
-import OAlg.Data.Identity
 import OAlg.Data.Singleton
 import OAlg.Data.Symbol
 

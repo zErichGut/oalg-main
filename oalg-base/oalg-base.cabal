@@ -78,7 +78,6 @@ library
       OAlg.Data.Logical
       OAlg.Data.Maybe
       OAlg.Data.Number
-      OAlg.Data.Opposite
       OAlg.Data.Ord
       OAlg.Data.Ornt
       OAlg.Data.Proxy
@@ -194,6 +193,9 @@ library
       OAlg.Structure.Operational
       OAlg.Structure.Oriented
       OAlg.Structure.Oriented.Definition
+      OAlg.Structure.Oriented.Opposite
+      OAlg.Structure.Oriented.Orientation
+      OAlg.Structure.Oriented.Point
       OAlg.Structure.Oriented.Proposition
       OAlg.Structure.PartiallyOrdered
       OAlg.Structure.PartiallyOrdered.Definition

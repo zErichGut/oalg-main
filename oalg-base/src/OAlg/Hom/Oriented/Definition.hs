@@ -33,8 +33,6 @@ module OAlg.Hom.Oriented.Definition
   , toDualArw, toDualPnt
   
     -- * Applicative
-  , ApplicativePoint, pmap, omap
-  , FunctorialPoint
   , FunctorialOriented
 
     -- * Instances
@@ -53,37 +51,12 @@ import OAlg.Prelude
 import OAlg.Category.Path
 import OAlg.Category.SDuality
 
-import OAlg.Data.Identity
 import OAlg.Data.Variant as V
 
-import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Oriented.Definition hiding (Path(..))
+import OAlg.Structure.Fibred.Definition
 
 import OAlg.Hom.Definition
-
---------------------------------------------------------------------------------
--- ApplicativePoint -
-
--- | applications on 'Point's.
-type ApplicativePoint h = ApplicativeG Pnt h (->)
-
---------------------------------------------------------------------------------
--- pmap -
-
--- | the induced mapping of 'Point's given by 'amapG'. 
-pmap :: ApplicativePoint h => h x y -> Point x -> Point y
-pmap h = fromPntG (amapG h)
-
---------------------------------------------------------------------------------
--- omap -
-
--- | the induced mapping of 'Orientation'.
-omap :: ApplicativePoint h => h a b -> Orientation (Point a) -> Orientation (Point b)
-omap = amapG . pmap
-
---------------------------------------------------------------------------------
--- FunctorialPoint -
-
-type FunctorialPoint h = FunctorialG Pnt h (->)
 
 --------------------------------------------------------------------------------
 -- FunctorialOriented -
@@ -245,6 +218,28 @@ instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomO
 
 instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomOrt s o h)
 
+
+omapDisj :: (ApplicativePoint h, Disjunctive2 h)
+  => h x y -> Orientation (Point x) -> Orientation (Point y)
+omapDisj h = case variant2 h of
+  Covariant     -> omap h
+  Contravariant -> opposite . omap h
+
+rmapDisjFbrtOrtStruct :: (ApplicativePoint h, Disjunctive2 h)
+  => Homomorphous FbrOrt x y -> h x y -> Root x -> Root y
+rmapDisjFbrtOrtStruct (Struct :>: Struct) = omapDisj
+
+rmapDisjFbrOrt :: ( Morphism h, Transformable (ObjectClass h) FbrOrt
+                  , ApplicativePoint h, Disjunctive2 h
+                  )
+  => h x y -> Root x -> Root y
+rmapDisjFbrOrt h = rmapDisjFbrtOrtStruct (tauHom $ homomorphous h) h
+  
+instance ( HomOriented h, DualisableOriented s o
+         , Transformable s FbrOrt
+         ) => ApplicativeG Rt (HomOrt s o h) (->) where
+  amapG = amapRt . rmapDisjFbrOrt
+  
 --------------------------------------------------------------------------------
 -- homOrt -
 

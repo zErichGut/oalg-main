@@ -19,11 +19,12 @@
 module OAlg.Structure.PartiallyOrdered.Definition
   ( -- * Partial Ordering
     PartiallyOrdered(..), Empty(..), Full(..)
-
   )
   where
 
 import OAlg.Prelude
+
+import OAlg.Structure.Oriented.Opposite
 
 --------------------------------------------------------------------------------
 -- PartiallyOrdered -

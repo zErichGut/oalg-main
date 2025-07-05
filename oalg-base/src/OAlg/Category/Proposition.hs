@@ -64,14 +64,13 @@ import OAlg.Structure.Definition
 import OAlg.Category.Path
 import OAlg.Category.Unify
 
-
+import OAlg.Data.Identity
 import OAlg.Data.Proxy
 import OAlg.Data.EqualExtensional
 import OAlg.Data.Logical
 import OAlg.Data.X
 import OAlg.Data.Number
 import OAlg.Data.Dualisable
-import OAlg.Data.Opposite
 import OAlg.Data.Statement
 import OAlg.Data.Show
 import OAlg.Data.Equal

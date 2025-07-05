@@ -24,6 +24,7 @@ module OAlg.Category.Definition
     -- * Category
     Category(..), cOne'
   , Sub(..), cOneSub, sub, subG
+  , Op2(..)
 
     -- | __Some basic definitions in the category @('->')@__
   , id
@@ -43,11 +44,9 @@ module OAlg.Category.Definition
 
     -- * Applicative
   , ApplicativeG(..)
-  , Applicative, amap, ($)
   , Applicative1, amap1
   
     -- * Functorial
-  , Functorial, Functor(..)
   , Functorial1, Functor1(..)
   , FunctorialG, FunctorG(..)
 
@@ -75,9 +74,7 @@ import Data.List ((++))
 
 import OAlg.Data.Show
 import OAlg.Data.Equal
-import OAlg.Data.Identity
 
-import OAlg.Data.Opposite
 import OAlg.Data.Either
 
 import OAlg.Category.Applicative
@@ -218,17 +215,6 @@ class Morphism m where
   range  :: m x y -> Struct (ObjectClass m) y
   range m = r where _ :>: r = homomorphous m
 
---------------------------------------------------------------------------------
--- toOp2Struct -
-
--- | transforming a 'Struct' where __@p@__ serves only as a proxy for __@m@__ and will not
---   be evaluated.
-toOp2Struct :: p m -> Struct (ObjectClass m) x -> Struct (ObjectClass (Op2 m)) x
-toOp2Struct _ = id
-
---------------------------------------------------------------------------------
--- Morphism - Instance -
-
 instance Morphism (Homomorphous s) where
   type ObjectClass (Homomorphous s) = s
   homomorphous = id
@@ -237,11 +223,6 @@ instance Morphism (->) where
   type ObjectClass (->) = Type
   homomorphous _ = Struct :>: Struct
 
-instance Morphism h => Morphism (Op2 h) where
-  type ObjectClass (Op2 h) = ObjectClass h
-  domain (Op2 h) = range h
-  range (Op2 h) = domain h
-  
 --------------------------------------------------------------------------------
 -- Category -
 infixr 9 .
@@ -280,10 +261,6 @@ instance Category (->) where
   cOne Struct = \x -> x
   f . g = \x -> f (g x)
 
-instance Category c => Category (Op2 c) where
-  cOne s = Op2 (cOne s)
-  Op2 f . Op2 g = Op2 (g . f)
-
 --------------------------------------------------------------------------------
 -- FunctorialG -
 
@@ -302,24 +279,47 @@ class ( Category a, Category b, ApplicativeG t a b
       ) => FunctorialG t a b
 
 --------------------------------------------------------------------------------
+-- Op2 -
+
+-- | Predicat for the opposite of a two parametrized type @__h__@ where
+--   the two parameters @__x__@ and @__y__@ are switched
+newtype Op2 h x y = Op2 (h y x)
+
+instance Show2 h => Show2 (Op2 h) where
+  show2 (Op2 h) = "Op2[" ++ show2 h ++ "]"
+
+instance Eq2 h => Eq2 (Op2 h) where
+  eq2 (Op2 f) (Op2 g) = eq2 f g 
+
+--------------------------------------------------------------------------------
+-- toOp2Struct -
+
+-- | transforming a 'Struct' where __@p@__ serves only as a proxy for __@m@__ and will not
+--   be evaluated.
+toOp2Struct :: p m -> Struct (ObjectClass m) x -> Struct (ObjectClass (Op2 m)) x
+toOp2Struct _ = id
+
+--------------------------------------------------------------------------------
+-- Op2 - Instance -
+
+instance Morphism h => Morphism (Op2 h) where
+  type ObjectClass (Op2 h) = ObjectClass h
+  domain (Op2 h) = range h
+  range (Op2 h) = domain h
+  
+instance Category c => Category (Op2 c) where
+  cOne s = Op2 (cOne s)
+  Op2 f . Op2 g = Op2 (g . f)
+
+instance Cayleyan2 c => Cayleyan2 (Op2 c) where
+  invert2 (Op2 f) = Op2 (invert2 f)
+  
+--------------------------------------------------------------------------------
 -- FunctorG -
 
 -- | attest of being 'FunctorialG'.
 data FunctorG t a b where
   FunctorG :: FunctorialG t a b => FunctorG t a b
-  
---------------------------------------------------------------------------------
--- Functorial -
-
--- | functorials form @__c__@ to @('->')@ according to 'Id'.
-type Functorial c = FunctorialG Id c (->)
-
---------------------------------------------------------------------------------
--- Functor -
-
--- | attest of being 'Functorial' from the 'Category' __c__ to the 'Category' @('->')@.
-data Functor c where
-  Functor :: Functorial c => Functor c
   
 --------------------------------------------------------------------------------
 -- Functorial1 -
@@ -413,9 +413,6 @@ class (Category c, Eq2 c) => Cayleyan2 c where
 instance Cayleyan2 (Homomorphous m) where
   invert2 (d :>: r) = r :>: d  
 
-instance Cayleyan2 c => Cayleyan2 (Op2 c) where
-  invert2 (Op2 f) = Op2 (invert2 f)
-  
 --------------------------------------------------------------------------------
 -- Inv2 -
 

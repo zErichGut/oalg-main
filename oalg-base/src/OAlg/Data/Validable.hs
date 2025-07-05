@@ -41,12 +41,12 @@ import Data.Ratio
 
 import OAlg.Category.Applicative
 import OAlg.Category.Definition
+import OAlg.Data.Identity
 
 import OAlg.Data.Proxy
 import OAlg.Data.Boolean.Definition
-import OAlg.Data.Statement
+import OAlg.Data.Statement.Definition
 import OAlg.Data.Dualisable
-import OAlg.Data.Identity
 import OAlg.Data.Maybe
 import OAlg.Data.Either
 import OAlg.Data.Equal
@@ -54,7 +54,6 @@ import OAlg.Data.EqualExtensional
 import OAlg.Data.Show
 import OAlg.Data.Ord
 import OAlg.Data.Number
-import OAlg.Data.Opposite
 import OAlg.Data.X
 
 import OAlg.Structure.Definition
@@ -71,12 +70,12 @@ class XStandard x where
 instance XStandard () where xStandard = return ()
 instance XStandard Int where xStandard = xInt
 instance XStandard Integer where xStandard = xInteger
+instance XStandard x => XStandard (Id x) where xStandard = amap1 Id xStandard
+
 instance XStandard N where xStandard = xN
 instance XStandard Z where xStandard = xZ
 instance XStandard Q where xStandard = xQ
 
-instance XStandard x => XStandard (Op x) where xStandard = amap1 Op xStandard
-instance XStandard x => XStandard (Id x) where xStandard = amap1 Id xStandard
 
 --------------------------------------------------------------------------------
 -- xStandard' -
@@ -125,8 +124,6 @@ class XStandard (Dual1 d x) => XStandardDual1 d x
 class Validable a where
   valid :: a -> Statement
 
-deriving instance Validable x => Validable (Op x)
-
 instance Validable () where
   valid = rnfValid
 
@@ -148,6 +145,8 @@ instance Validable Integer where
 instance Validable (Ratio Integer) where
   valid = rnfValid
 
+instance Validable x => Validable (Id x) where valid (Id x) = valid x
+
 instance Validable N where
   valid = rnfValid
   
@@ -162,7 +161,6 @@ instance Validable x => Validable (Closure x) where
     It x -> valid x
     _    -> SValid
 
-instance Validable x => Validable (Id x) where valid (Id x) = valid x
 
 instance Validable (Proxy x) where
   valid Proxy = SValid
@@ -242,9 +240,6 @@ class Validable2 h where
   default valid2 :: Validable (h x y) => h x y -> Statement
   valid2 = valid
 
-instance Validable2 h => Validable2 (Op2 h) where
-  valid2 (Op2 h) = valid2 h
-
 instance (Validable2 f, Validable2 g) => Validable2 (Either2 f g) where
   valid2 (Left2 f)  = valid2 f
   valid2 (Right2 g) = valid2 g
@@ -256,6 +251,9 @@ instance Validable2 m => Validable (Forget t m x y) where
   valid = valid2
 
 instance Validable2 (Struct2 m)
+
+instance Validable2 h => Validable2 (Op2 h) where valid2 (Op2 h) = valid2 h
+
     
 --------------------------------------------------------------------------------
 -- EqE -
@@ -279,7 +277,7 @@ instance EqExt EqualExt where
 
 -- | embedding 'amapG' of a 'Applicative1' to 'EqualExt'.
 equalExtS :: Applicative1 c t => Homomorphous EqE (t x) (t y) -> c x y -> EqualExt (t x) (t y)
-equalExtS (Struct:>:Struct) f = Sub $ amapG f
+equalExtS (Struct:>:Struct) f = Sub (amapG f)
 
 -- | embedding 'amapG' of a 'Applicative1' to 'EqualExt'.
 equalExt :: (Morphism c, Applicative1 c t, TransformableG t (ObjectClass c) EqE)

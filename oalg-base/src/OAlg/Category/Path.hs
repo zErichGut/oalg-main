@@ -39,13 +39,13 @@ import qualified Data.List as L
 import OAlg.Category.Definition
 import OAlg.Structure.Definition
 
+import OAlg.Data.Identity
 import OAlg.Data.Logical
 import OAlg.Data.Equal
 import OAlg.Data.Validable
 import OAlg.Data.Maybe
 import OAlg.Data.Show
 import OAlg.Data.Dualisable
-import OAlg.Data.Opposite
 import OAlg.Data.Number
 import OAlg.Data.Boolean
 import OAlg.Data.Constructable

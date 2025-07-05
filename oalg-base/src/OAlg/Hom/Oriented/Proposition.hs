@@ -39,7 +39,6 @@ import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
 import OAlg.Data.Proxy
-import OAlg.Data.Identity
 import OAlg.Data.Either
 import OAlg.Data.Variant
 
