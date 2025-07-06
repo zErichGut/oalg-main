@@ -82,9 +82,6 @@ class (Entity f, EntityRoot f) => Fibred f where
 --  'OAlg.Structure.Distributive.Distributive' structures.
 class (Fibred d, Oriented d, Root d ~ Orientation (Point d)) => FibredOriented d
 
-data FOr
-type instance Structure FOr x = FibredOriented x
-
 --------------------------------------------------------------------------------
 -- Fibred - Instance -
 
@@ -216,6 +213,11 @@ instance Transformable FbrOrt Typ where tau Struct = Struct
 instance Transformable FbrOrt Ent where tau Struct = Struct
 instance Transformable FbrOrt Fbr where tau Struct = Struct
 instance Transformable FbrOrt Ort where tau Struct = Struct
+
+instance TransformableOp FbrOrt
+
+instance TransformableG Op FbrOrt FbrOrt where tauG Struct = Struct
+instance TransformableGRefl Op FbrOrt
 
 --------------------------------------------------------------------------------
 -- TransformableFbrOrt -

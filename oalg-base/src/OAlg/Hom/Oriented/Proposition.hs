@@ -45,6 +45,7 @@ import OAlg.Data.Variant
 import OAlg.Structure.Oriented as O
 
 import OAlg.Hom.Oriented.Definition
+import OAlg.Hom.Oriented.HomOrt
 
 --------------------------------------------------------------------------------
 -- prpDualisableOriented -

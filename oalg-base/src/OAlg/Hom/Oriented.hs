@@ -9,9 +9,11 @@
 -- homomorphism between 'OAlg.Structure.Oriented.Definition.Oriented' structures.
 module OAlg.Hom.Oriented
   ( module Ort
+  , module HOrt
   , module Prp
   )
   where
 
 import OAlg.Hom.Oriented.Definition as Ort
+import OAlg.Hom.Oriented.HomOrt as HOrt
 import OAlg.Hom.Oriented.Proposition as Prp

@@ -20,16 +20,14 @@
 -- homomorphisms between 'Fibred' structures
 module OAlg.Hom.Fibred
   (
-{-    
-    -- * Fibred
-    HomFibred, FunctorialHomFibred
 
-    -- * Applications
-  , ApplicativeRoot(..), FunctorialRoot
-  
+    -- * Fibred
+    HomFibred --, Functorialibred
+
     -- * Fibred Oriented
   , HomFibredOriented
 
+{-  
     -- * Proposition
   , prpHomFbrOrt
 -}
@@ -100,18 +98,15 @@ class ( Morphism h, Applicative h, ApplicativeRoot h
 
 instance HomFibred h => HomFibred (Path h)
 instance TransformableFbr s => HomFibred (IdHom s)
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s Fbr, Transformable s FbrOrt
-         ) => HomFibred (HomOrt s o h)
 
 
-{-
 --------------------------------------------------------------------------------
--- FunctorialHomFibred -
+-- Functorialibred -
 
 -- | functorial application of 'Fibred' homomorphisms.
-type FunctorialHomFibred h = (HomFibred h, Functorial h, FunctorialRoot h)
+type Functorialibred h = (HomFibred h, Functorial h, FunctorialRoot h)
 
+{-
 --------------------------------------------------------------------------------
 -- Hom -
 
@@ -136,9 +131,6 @@ class (HomDisjunctiveOriented h , HomFibred h, Transformable (ObjectClass h) Fbr
 instance ( TransformableOrt s, TransformableFbr s
          , TransformableFbrOrt s
          ) => HomFibredOriented (IdHom s)
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s Fbr, Transformable s FbrOrt
-         ) => HomFibredOriented (HomOrt s o h)
 
 
 --------------------------------------------------------------------------------

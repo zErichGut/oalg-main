@@ -22,6 +22,7 @@ module OAlg.Hom.Definition
 import OAlg.Prelude
 
 import OAlg.Data.Variant
+
 --------------------------------------------------------------------------------
 -- IdHom -
 

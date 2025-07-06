@@ -24,9 +24,10 @@ module OAlg.Hom.Oriented.Definition
   (
     -- * Disjunctive
     HomDisjunctiveOriented
+  , omapDisj
 
     -- * Covariant
-  , HomOriented, HomEmpty
+  , HomOriented
 
     -- * Dualisable
   , DualisableOriented
@@ -35,13 +36,6 @@ module OAlg.Hom.Oriented.Definition
     -- * Applicative
   , FunctorialOriented
 
-    -- * Instances
-    -- ** HomOrt    
-  , HomOrt(..), homOrt
-
-    -- ** HomOrtEmpty
-  , HomOrtEmpty, isoOpOrt
-
   , module V
   )
   where
@@ -49,21 +43,12 @@ module OAlg.Hom.Oriented.Definition
 import OAlg.Prelude
 
 import OAlg.Category.Path
-import OAlg.Category.SDuality
 
 import OAlg.Data.Variant as V
 
 import OAlg.Structure.Oriented.Definition hiding (Path(..))
-import OAlg.Structure.Fibred.Definition
 
 import OAlg.Hom.Definition
-
---------------------------------------------------------------------------------
--- FunctorialOriented -
-
--- | helper class to avoid undecidable instances.
-class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
-  => FunctorialOriented h 
 
 --------------------------------------------------------------------------------
 -- HomOriented -
@@ -111,6 +96,13 @@ class ( Morphism h, Applicative h, ApplicativePoint h
 instance TransformableOrt s => HomDisjunctiveOriented (IdHom s)
 
 --------------------------------------------------------------------------------
+-- FunctorialOriented -
+
+-- | helper class to avoid undecidable instances.
+class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
+  => FunctorialOriented h 
+
+--------------------------------------------------------------------------------
 -- DualisableOriented -
 
 -- | duality according to @__o__@ on @__s__@-structured 'Oriented' types,
@@ -153,116 +145,12 @@ toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
   d _ _ = DualityG
 
 --------------------------------------------------------------------------------
--- HomEmpty -
+-- omapDisj -
 
--- | the empty homomorphism.
-newtype HomEmpty s x y = HomEmpty (EntEmpty2 x y)
-  deriving (Show, Show2,Eq,Eq2,EqExt,Validable,Validable2)
-
---------------------------------------------------------------------------------
--- fromHomEmpty -
-
-fromHomEmpty :: HomEmpty s a b -> x
-fromHomEmpty (HomEmpty e) = fromEmpty2 e
-
---------------------------------------------------------------------------------
--- HomEmpty - Instances -
-
-instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
-
---------------------------------------------------------------------------------
--- HomEmpty - HomOriented -
-
-instance Morphism (HomEmpty s) where
-  type ObjectClass (HomEmpty s) = s
-  domain = fromHomEmpty
-  range  = fromHomEmpty
-
-instance TransformableOrt s => HomOriented (HomEmpty s)
-
---------------------------------------------------------------------------------
--- HomOrt -
-
-newtype HomOrt s o h x y = HomOrt (SHom Ort s o h x y)
-  deriving (Show,Show2,Validable,Validable2,Disjunctive,Disjunctive2)
-
-deriving instance (Morphism h, Eq2 h, Transformable s Typ) => Eq2 (HomOrt s o h)
-deriving instance (Morphism h, Eq2 h, Transformable s Typ) => Eq (HomOrt s o h x y)
-
-instance HomOriented h => Morphism (HomOrt s o h) where
-  type ObjectClass (HomOrt s o h) = s
-  homomorphous (HomOrt h) = homomorphous h
-
-instance HomOriented h => Category (HomOrt s o h) where
-  cOne = HomOrt . cOne 
-  HomOrt f . HomOrt g = HomOrt (f . g)
-
-instance HomOriented h => CategoryDisjunctive (HomOrt s o h)
-
-instance (HomOriented h, TransformableGRefl o s) => CategoryDualisable o (HomOrt s o h) where
-  cToDual s   = Contravariant2 (HomOrt t) where Contravariant2 t = cToDual s
-  cFromDual s = Contravariant2 (HomOrt f) where Contravariant2 f = cFromDual s
-
-instance (HomOriented h, DualisableOriented s o) => ApplicativeG Id (HomOrt s o h) (->) where
-  amapG (HomOrt h) = amapG h
-
-instance (HomOriented h, DualisableOriented s o) => FunctorialG Id (HomOrt s o h) (->)
-
-
-instance (HomOriented h, DualisableOriented s o) => ApplicativeG Pnt (HomOrt s o h) (->) where
-  amapG (HomOrt h) = amapG h
-
-instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomOrt s o h) (->)
-
-instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomOrt s o h)
-
-instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomOrt s o h)
-
-
+-- | induced application respecting the variant.
 omapDisj :: (ApplicativePoint h, Disjunctive2 h)
   => h x y -> Orientation (Point x) -> Orientation (Point y)
 omapDisj h = case variant2 h of
   Covariant     -> omap h
   Contravariant -> opposite . omap h
 
-rmapDisjFbrtOrtStruct :: (ApplicativePoint h, Disjunctive2 h)
-  => Homomorphous FbrOrt x y -> h x y -> Root x -> Root y
-rmapDisjFbrtOrtStruct (Struct :>: Struct) = omapDisj
-
-rmapDisjFbrOrt :: ( Morphism h, Transformable (ObjectClass h) FbrOrt
-                  , ApplicativePoint h, Disjunctive2 h
-                  )
-  => h x y -> Root x -> Root y
-rmapDisjFbrOrt h = rmapDisjFbrtOrtStruct (tauHom $ homomorphous h) h
-  
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s FbrOrt
-         ) => ApplicativeG Rt (HomOrt s o h) (->) where
-  amapG = amapRt . rmapDisjFbrOrt
-  
---------------------------------------------------------------------------------
--- homOrt -
-
--- | embedding of 'HomOriented' to 'HomOrt'.
-homOrt :: (HomOriented h, Transformable (ObjectClass h) s)
-  => h x y -> Variant2 Covariant (HomOrt s o h) x y
-homOrt h = Covariant2 (HomOrt h') where Covariant2 h' = sCov h
-
---------------------------------------------------------------------------------
--- HomOrtEmpty -
-
-type HomOrtEmpty s o = HomOrt s o (HomEmpty s)
-
-instance TransformableGObjectClassDomain Id (HomOrt OrtX Op (HomEmpty OrtX)) EqEOrt
-instance TransformableGObjectClassDomain Pnt (HomOrt OrtX Op (HomEmpty OrtX)) EqEOrt
-instance TransformableObjectClass OrtX (HomOrt OrtX Op (HomEmpty OrtX))
-instance Transformable s Typ => EqExt (HomOrtEmpty s Op)
-
---------------------------------------------------------------------------------
--- isoOpOrt -
-
--- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpOrt :: Oriented x => Variant2 Contravariant (Inv2 (HomOrtEmpty Ort Op)) x (Op x)
-isoOpOrt = Contravariant2 (Inv2 t f) where
-  Contravariant2 t = cToDual Struct
-  Contravariant2 f = cFromDual Struct
