@@ -32,6 +32,8 @@ module OAlg.Structure.Fibred.Definition
     -- * Sheaf
   , Sheaf(..)
 
+    -- * X
+  , FbrOrtX
   )
   where
 
@@ -238,6 +240,26 @@ instance TransformableFbrOrt FbrOrt
 -- | 'tau' for 'FbrOrt'.
 tauFbrOrt :: Transformable s FbrOrt => Struct s x -> Struct FbrOrt x
 tauFbrOrt = tau
+
+--------------------------------------------------------------------------------
+-- FbrOrtX -
+
+-- | type representing the class 'FibredOriented' equipped with standard random variables.
+data FbrOrtX
+
+type instance Structure FbrOrtX x = (FibredOriented x, XStandard x, XStandardPoint x)
+
+instance Transformable FbrOrtX Ort where tau Struct = Struct
+instance TransformableOrt FbrOrtX
+
+instance TransformableG Op FbrOrtX FbrOrtX where tauG Struct = Struct
+instance TransformableOp FbrOrtX
+
+instance Transformable FbrOrtX Fbr where tau Struct = Struct
+instance Transformable FbrOrtX FbrOrt where tau Struct = Struct
+
+instance Transformable FbrOrtX Typ where tau Struct = Struct
+
 
 
 

@@ -21,33 +21,16 @@ module OAlg.Entity.Diagram.Proposition
   (
     -- * Proposition
     prpDiagramOrntSymbol
-  , prpSomeDiagramDuality
   )
   where
 
 import OAlg.Prelude hiding (T)
 
-import OAlg.Data.SDuality
-
 import OAlg.Structure.Oriented
-
-import OAlg.Hom.Oriented.Definition
 
 import OAlg.Entity.Natural as N hiding ((++))
 
 import OAlg.Entity.Diagram.Definition
-
---------------------------------------------------------------------------------
--- prpSomeDiagramDuality -
-
--- | validity of 'SDuality1' for 'sdgOpDualityOrt'.
-prpSomeDiagramDuality :: Oriented a => X (SomeDiagram a) -> Statement
-prpSomeDiagramDuality xsd = Prp "SomeDiagramDuality" :<=>:
-  prpSDuality1 d s xsd xsd xsd'' where
-    d = sdgOpDualityOrt
-    s = Struct :: Oriented a => Struct Ort a
-
-    xsd'' = amap1 (amap1 isoToOpOpOrt) xsd
 
 --------------------------------------------------------------------------------
 -- prpDiagramOrntSymbol -
@@ -55,12 +38,9 @@ prpSomeDiagramDuality xsd = Prp "SomeDiagramDuality" :<=>:
 -- | validity of diagrams on 'OAlg.Data.Symbol.Symbol's.
 prpDiagramOrntSymbol :: Statement
 prpDiagramOrntSymbol = Prp "DiagramOrntSymbol"
-  :<=>: And [ Forall xd valid
-            , prpSomeDiagramDuality xd
-            ] where
-  xd :: X (SomeDiagram OS)
-  xd = xSomeDiagramOrnt xn xStandard
+  :<=>: Forall xd valid where
+    xd :: X (SomeDiagram OS)
+    xd = xSomeDiagramOrnt xn xStandard
 
-  xn = amap1 someNatural $ xNB 0 20
-
+    xn = amap1 someNatural $ xNB 0 20
 

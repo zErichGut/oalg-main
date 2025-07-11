@@ -144,9 +144,9 @@ library
       OAlg.Hom.Multiplicative
       OAlg.Hom.Oriented
       OAlg.Hom.Oriented.Definition
+      OAlg.Hom.Oriented.HomOrt
       OAlg.Hom.Oriented.Proposition
       OAlg.Hom.Proposition
-      OAlg.Hom.SDuality
       OAlg.Hom.Vectorial
       OAlg.Limes.Cone
       OAlg.Limes.Cone.Definition
@@ -182,6 +182,7 @@ library
       OAlg.Structure.Fibred
       OAlg.Structure.Fibred.Definition
       OAlg.Structure.Fibred.Proposition
+      OAlg.Structure.Fibred.Root
       OAlg.Structure.Lattice
       OAlg.Structure.Lattice.Definition
       OAlg.Structure.Lattice.Proposition

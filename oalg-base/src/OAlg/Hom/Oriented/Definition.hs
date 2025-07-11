@@ -29,10 +29,6 @@ module OAlg.Hom.Oriented.Definition
     -- * Covariant
   , HomOriented
 
-    -- * Dualisable
-  , DualisableOriented
-  , toDualArw, toDualPnt
-  
     -- * Applicative
   , FunctorialOriented
 
@@ -61,12 +57,25 @@ import OAlg.Hom.Definition
 -- (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
 --
 -- (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+-- __Note__ The above property is equivalent to
+-- @'amap' h '.' 'orientation' '.=.' 'orientation' '.' 'omap' h@. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort
       ) => HomOriented h where
 
 instance HomOriented h => HomOriented (Path h)
 instance TransformableOrt s => HomOriented (IdHom s)
+
+--------------------------------------------------------------------------------
+-- omapDisj -
+
+-- | induced application respecting the variant.
+omapDisj :: (ApplicativePoint h, Disjunctive2 h)
+  => h x y -> Orientation (Point x) -> Orientation (Point y)
+omapDisj h = case variant2 h of
+  Covariant     -> omap h
+  Contravariant -> opposite . omap h
 
 --------------------------------------------------------------------------------
 -- HomDisjunctiveOriented -
@@ -87,6 +96,9 @@ instance TransformableOrt s => HomOriented (IdHom s)
 --     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
 --
 --     (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+--
+-- __Note__ The above property is equivalent to
+-- @'amap' h '.' 'orientation' '.=.' 'orientation' '.' 'omapDisj' h@. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort
       , Disjunctive2 h
@@ -94,63 +106,13 @@ class ( Morphism h, Applicative h, ApplicativePoint h
   => HomDisjunctiveOriented h
 
 instance TransformableOrt s => HomDisjunctiveOriented (IdHom s)
+instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Path h)
 
 --------------------------------------------------------------------------------
 -- FunctorialOriented -
 
--- | helper class to avoid undecidable instances.
+-- | functorial homomorphisms between 'Oriented' structures. 
 class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
-  => FunctorialOriented h 
+  => FunctorialOriented h
 
---------------------------------------------------------------------------------
--- DualisableOriented -
-
--- | duality according to @__o__@ on @__s__@-structured 'Oriented' types,
---
--- __Properties__ Let @'DualisableOriented' __o s__@ then for all @__x__@
--- and @s@ in @'Struct' __s x__@ holds:
--- 
--- (1) @'start' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'end'@.
---
--- (2) @'end' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'start'@.
---
--- where @q@ is any proxy for @__o__@.
-class ( DualisableG Ort (->) o Id, DualisableG Ort (->) o Pnt
-      , TransformableG o s s, Transformable s Ort
-      )
-  => DualisableOriented s o
-
-instance (TransformableOrt s, TransformableOp s) => DualisableOriented s Op
-
---------------------------------------------------------------------------------
--- toDualArw -
-
--- | the dual arrow induced by @'DualisableG __s__ (->) __o__ 'Id'@.
---
--- __Note__ The induced mapping is independent of @__s__@!
-toDualArw :: DualisableOriented s o => q o -> Struct s x -> x -> o x
-toDualArw q s = fromIdG (toDualG' (d q s) (tauOrt s)) where
-  d :: DualisableOriented s o => q o -> Struct s x -> DualityG Ort (->) o Id
-  d _ _ = DualityG
-
---------------------------------------------------------------------------------
--- toDualPnt -
-
--- | the dual point induced by @'DualisableG' __s__ (->) __o__ 'Pnt'@.
---
--- __Note__ The induced mapping is independent of @__s__@!
-toDualPnt :: DualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
-toDualPnt q s = fromPntG (toDualG' (d q s) (tauOrt s)) where
-  d :: DualisableOriented s o => q o -> Struct s x -> DualityG Ort (->) o Pnt
-  d _ _ = DualityG
-
---------------------------------------------------------------------------------
--- omapDisj -
-
--- | induced application respecting the variant.
-omapDisj :: (ApplicativePoint h, Disjunctive2 h)
-  => h x y -> Orientation (Point x) -> Orientation (Point y)
-omapDisj h = case variant2 h of
-  Covariant     -> omap h
-  Contravariant -> opposite . omap h
 

@@ -19,6 +19,7 @@
 -- diagrams over 'OAlg.Structure.Oriented.Definition.Oriented' structures.
 module OAlg.Entity.Diagram
   ( module Def
+  , module Dgm
   , module Qvr
   , module Trf
   , module Prp
@@ -27,5 +28,6 @@ module OAlg.Entity.Diagram
 
 import OAlg.Entity.Diagram.Quiver as Qvr
 import OAlg.Entity.Diagram.Definition as Def
+import OAlg.Entity.Diagram.Diagrammatic as Dgm
 import OAlg.Entity.Diagram.Proposition as Prp
 import OAlg.Entity.Diagram.Transformation as Trf

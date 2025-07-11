@@ -22,7 +22,7 @@ module OAlg.Structure.Fibred.Root
   (
     -- * Root
     Root, ShowRoot, EqRoot, OrdRoot, SingletonRoot, TotalRoot, ValidableRoot, TypeableRoot
-  , EntityRoot
+  , EntityRoot, XStandardRoot
   , Rt(..), fromRtG
 
   -- * Applicative
@@ -66,6 +66,9 @@ class Typeable (Root x) => TypeableRoot x
 
 -- | helper class to avoid undecidable instances.
 class Singleton (Root f) => SingletonRoot f
+
+-- | helper class to avoid undecidable instances.
+class XStandard (Root f) => XStandardRoot f
 
 --------------------------------------------------------------------------------
 -- EntityRoot -
@@ -143,6 +146,7 @@ instance Eq p => EqRoot (Orientation p)
 instance Validable p => ValidableRoot (Orientation p)
 instance Singleton p => SingletonRoot (Orientation p)
 instance Typeable p => TypeableRoot (Orientation p)
+instance XStandard p => XStandardRoot (Orientation p)
 
 --------------------------------------------------------------------------------
 -- Rt -

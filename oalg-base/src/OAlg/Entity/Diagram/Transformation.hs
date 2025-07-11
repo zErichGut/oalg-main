@@ -44,7 +44,7 @@ import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial as V
 import OAlg.Structure.Algebraic
 
-import OAlg.Hom.Oriented.Definition
+import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
 import OAlg.Entity.Natural

@@ -50,7 +50,7 @@ import OAlg.Category.Unify
 
 import OAlg.Data.Either
 
-import OAlg.Hom.Oriented.Definition
+import OAlg.Hom.Oriented
 
 import OAlg.Structure.Oriented.Definition
 
@@ -171,31 +171,31 @@ dgmtDiagramChainFrom :: (HomDisjunctiveOriented h, s ~ OrtSiteX, Attestable m)
   -> NaturalDiagrammaticTrafo (SubStruct s Ort) (Sub s h) (Sub EqE (->)) Diagram (Chain From) (m+1) m
 dgmtDiagramChainFrom _ = dgmTrafo
 
--- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomOrtEmpty' 'OrtSiteX' 'Op')@
+-- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomDisjEmpty' 'OrtSiteX' 'Op')@
 xsOrtSiteXOp :: s ~ OrtSiteX
-  => X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
+  => X (SomeMorphism (Sub s (HomDisjEmpty s Op)))
 xsOrtSiteXOp = xf where
-  xoSct :: s ~ OrtSiteX => X (SomeObjectClass (SHom Ort s Op (HomEmpty s)))
+  xoSct :: s ~ OrtSiteX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
                  , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
                  , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
                  ]
 
-  xfg :: s ~ OrtSiteX => X (SomeCmpb2 (HomOrtEmpty s Op))
-  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g))
+  xfg :: s ~ OrtSiteX => X (SomeCmpb2 (HomDisjEmpty s Op))
+  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g))
       $ xSctSomeCmpb2 10 xoSct XEmpty
 
   xf :: s ~ OrtSiteX
-     => X (SomeMorphism (Sub s (HomOrtEmpty s Op)))
+     => X (SomeMorphism (Sub s (HomDisjEmpty s Op)))
   xf = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (sub (domain g) (range f) (f.g))) xfg
 
   sub :: s ~ OrtSiteX
-     => Struct s x -> Struct s y -> HomOrtEmpty s Op x y -> Sub s (HomOrtEmpty s Op) x y
+     => Struct s x -> Struct s y -> HomDisjEmpty s Op x y -> Sub s (HomDisjEmpty s Op) x y
   sub Struct Struct = Sub
 
 
 -- | validity of
--- @'NaturalDiagrammaticTrafo' 'Ort' ('HomOrtEmpty' 'Ort' 'Op') (->)
+-- @'NaturalDiagrammaticTrafo' 'Ort' ('HomDisjEmpty' 'Ort' 'Op') (->)
 -- 'Diagram' ('Chain' __t__) __m+1__ __m__@.
 prpNaturalDiagrammaticTrafoChain :: Statement
 prpNaturalDiagrammaticTrafoChain = Prp "NaturalDiagrammaticTrafoChain"

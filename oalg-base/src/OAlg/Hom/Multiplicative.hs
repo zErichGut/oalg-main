@@ -3,6 +3,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -36,11 +37,11 @@ module OAlg.Hom.Multiplicative
 
     -- * Proposition
   , prpHomDisjunctiveMultiplicative
-  , prpHomOrtMultiplicative, prpHomOrtOpEmptyMlt
+  , prpHomDisjMultiplicative, prpHomDisjOpEmptyMlt
   , prpDualisableMultiplicativeOne
   , prpDualisableMultiplicativeMlt
   , relMapMltOne, relMapMltCov, relMapMltCnt
-
+  
   )
   where
 
@@ -53,7 +54,7 @@ import OAlg.Category.Path
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
 
-import OAlg.Hom.Oriented.Definition
+import OAlg.Hom.Oriented
 
 --------------------------------------------------------------------------------
 -- HomMultiplicative -
@@ -117,7 +118,7 @@ class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjun
 class (DualisableOriented s o, Transformable s Mlt) => DualisableMultiplicative s o
 
 instance (HomMultiplicative h, DualisableMultiplicative s o)
-  => HomDisjunctiveMultiplicative (HomOrt s o h)
+  => HomDisjunctiveMultiplicative (HomDisj s o h)
 
 instance DualisableMultiplicative Mlt Op
 instance DualisableMultiplicative MltX Op
@@ -125,18 +126,14 @@ instance DualisableMultiplicative MltX Op
 --------------------------------------------------------------------------------
 -- FunctorialMultiplicative -
 
-class (FunctorialOriented h, HomDisjunctiveMultiplicative h) => FunctorialMultiplicative h
-
-instance (HomMultiplicative h, DualisableMultiplicative s o)
-  => FunctorialMultiplicative (HomOrt s o h)
+-- | functorial homomorphisms between 'Multiplicative' structures.
+type FunctorialMultiplicative h = (FunctorialOriented h, HomDisjunctiveMultiplicative h)
 
 --------------------------------------------------------------------------------
 -- isoOpMlt -
 
-isoOpMlt :: Multiplicative x => Variant2 Contravariant (Inv2 (HomOrtEmpty Mlt Op)) x (Op x)
-isoOpMlt = Contravariant2 (Inv2 t f) where
-  Contravariant2 t = cToDual Struct
-  Contravariant2 f = cFromDual Struct
+isoOpMlt :: Multiplicative x => Variant2 Contravariant (Inv2 (HomDisjEmpty Mlt Op)) x (Op x)
+isoOpMlt = isoOp Struct
 
 --------------------------------------------------------------------------------
 -- relMapMltOne -
@@ -201,24 +198,24 @@ prpHomDisjunctiveMultiplicative h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMul
     mPnt = pmap h
 
 --------------------------------------------------------------------------------
--- prpHomOrtMultiplicative -
+-- prpHomDisjMultiplicative -
 
-prpHomOrtMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
-  => Struct MltX x -> HomOrt s o h x y -> Statement
-prpHomOrtMultiplicative Struct h = prpHomDisjunctiveMultiplicative h xStandardMlt
+prpHomDisjMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
+  => Struct MltX x -> HomDisj s o h x y -> Statement
+prpHomDisjMultiplicative Struct h = prpHomDisjunctiveMultiplicative h xStandardMlt
   
 --------------------------------------------------------------------------------
--- prpHomOrtOpEmptyMlt -
+-- prpHomDisjOpEmptyMlt -
 
--- | validity for @'HomOrtEmpty' 'MltX' 'Op'@ beeing 'HomDisjunctiveMultiplicative'.
-prpHomOrtOpEmptyMlt :: Statement
-prpHomOrtOpEmptyMlt = Prp "prpHomOrtOpEmptyMlt" :<=>:
-  And [ Forall xm (\(SomeMorphism h) -> prpHomOrtMultiplicative (domain h) h)
+-- | validity for @'HomDisjEmpty' 'MltX' 'Op'@ beeing 'HomDisjunctiveMultiplicative'.
+prpHomDisjOpEmptyMlt :: Statement
+prpHomDisjOpEmptyMlt = Prp "prpHomDisjOpEmptyMlt" :<=>:
+  And [ Forall xm (\(SomeMorphism h) -> prpHomDisjMultiplicative (domain h) h)
       ]
 
   where
 
-    xo :: X (SomeObjectClass (SHom Ort MltX Op (HomEmpty MltX)))
+    xo :: s ~ MltX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
     xo = xOneOf [ SomeObjectClass (Struct :: Struct MltX OS)
                 , SomeObjectClass (Struct :: Struct MltX N)
                 , SomeObjectClass (Struct :: Struct MltX (Op OS))
@@ -226,6 +223,7 @@ prpHomOrtOpEmptyMlt = Prp "prpHomOrtOpEmptyMlt" :<=>:
                 ]
 
     
-    xm :: X (SomeMorphism (HomOrtEmpty MltX Op))
-    xm = amap1 (\(SomeMorphism h) -> SomeMorphism (HomOrt h)) $ xSctSomeMrph 10 xo
+    xm :: X (SomeMorphism (HomDisjEmpty MltX Op))
+    xm = amap1 (\(SomeMorphism h) -> SomeMorphism (HomDisj h)) $ xSctSomeMrph 10 xo
+
 

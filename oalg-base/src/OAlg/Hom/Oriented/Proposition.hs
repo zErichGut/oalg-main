@@ -26,8 +26,9 @@ module OAlg.Hom.Oriented.Proposition
     -- * Duality
   , prpDualisableOriented
 
-    -- * HomOrt
-  , prpHomOrtOpEmpty
+    -- * HomDisj
+  , prpHomDisjOpEmpty
+
   )
   where
 
@@ -43,9 +44,11 @@ import OAlg.Data.Either
 import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented as O
+import OAlg.Structure.Fibred
 
 import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Oriented.HomOrt
+import OAlg.Hom.Oriented.HomDisj
+import OAlg.Hom.Fibred
 
 --------------------------------------------------------------------------------
 -- prpDualisableOriented -
@@ -108,12 +111,14 @@ prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
   And [ prpHomDisjOrtVariant xa
       ]
 
---------------------------------------------------------------------------------
--- prpHomOrtOpEmpty -
 
--- | validity of @'HomOrtOpEmpty' 'Ort'´@.
-prpHomOrtOpEmpty :: Statement
-prpHomOrtOpEmpty
+--------------------------------------------------------------------------------
+-- prpHomDisjOpEmpty -
+
+-- | validity of @'HomDisjEmpty' 'Ort' 'Op'@ according to 'prpCategoryDisjunctive',
+-- 'prpCategoryDualisable', 'prpFunctorialG' and 'prpHomDisjunctiveOriented'.
+prpHomDisjOpEmpty :: Statement
+prpHomDisjOpEmpty
   = And [ prpCategoryDisjunctive xo xfg
         , prpCategoryDualisable q xo
         , prpFunctorialG qId' xo' xfg'
@@ -121,12 +126,12 @@ prpHomOrtOpEmpty
         , prpHomDisjunctiveOriented xsa
         ] where
 
-  q    = Proxy2 :: Proxy2 Op (HomOrtEmpty OrtX Op)
-  qId' = FunctorG :: FunctorG Id (Sub OrtX (HomOrtEmpty OrtX Op)) EqualExtOrt
-  qPt' = FunctorG :: FunctorG Pnt (Sub OrtX (HomOrtEmpty OrtX Op)) EqualExtOrt
+  q    = Proxy2 :: Proxy2 Op (HomDisjEmpty OrtX Op)
+  qId' = FunctorG :: FunctorG Id (Sub OrtX (HomDisjEmpty OrtX Op)) EqualExtOrt
+  qPt' = FunctorG :: FunctorG Pnt (Sub OrtX (HomDisjEmpty OrtX Op)) EqualExtOrt
 
   
-  xoSct :: X (SomeObjectClass (SHom Ort OrtX Op (HomEmpty OrtX)))
+  xoSct :: s ~ OrtX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
   xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
                  , SomeObjectClass (Struct :: Struct OrtX N)
                  , SomeObjectClass (Struct :: Struct OrtX (Op (OS)))
@@ -134,23 +139,72 @@ prpHomOrtOpEmpty
                  , SomeObjectClass (Struct :: Struct OrtX (Id Z))
                  ]
 
-  xo :: X (SomeObjectClass (HomOrtEmpty OrtX Op))
+  xo :: X (SomeObjectClass (HomDisjEmpty OrtX Op))
   xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
 
-  xo' :: X (SomeObjectClass (Sub OrtX (HomOrtEmpty OrtX Op)))
+  xo' :: X (SomeObjectClass (Sub OrtX (HomDisjEmpty OrtX Op)))
   xo' = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xo
 
-  xfg :: X (SomeCmpb2 (HomOrtEmpty OrtX Op))
-  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomOrt f) (HomOrt g)) $ xSctSomeCmpb2 10 xoSct XEmpty
+  xfg :: X (SomeCmpb2 (HomDisjEmpty OrtX Op))
+  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) $ xSctSomeCmpb2 10 xoSct XEmpty
 
-  xfg' :: X (SomeCmpb2 (Sub OrtX (HomOrtEmpty OrtX Op)))
+  xfg' :: X (SomeCmpb2 (Sub OrtX (HomDisjEmpty OrtX Op)))
   xfg' = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (sub f) (sub g)) xfg
 
-  xsa :: X (SomeApplication (HomOrtEmpty OrtX Op))
+  xsa :: X (SomeApplication (HomDisjEmpty OrtX Op))
   xsa = join
       $ amap1
           (  (\(SomeMorphism m) -> xSomeAppl m)
            . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
           )
       $ xfg
+{-
+--------------------------------------------------------------------------------
+-- prpHomDisjFbrOrt -
+
+relHomDisjFbrOrtStruct :: (HomDisjunctiveFibredOriented h, Show2 h)
+  => Homomorphous FbrOrtX x y -> h x y -> Statement
+relHomDisjFbrOrtStruct (Struct :>: Struct) h = Forall xStandard (prpHomDisjFbrOrt h)
+
+relHomFbrStructFbrOrtX :: (HomFibred h, Show2 h)
+  => Homomorphous FbrOrtX x y -> h x y -> Statement
+relHomFbrStructFbrOrtX (Struct :>: Struct) h = Forall xStandard (prpHomFbr h)
+
+
+relHomDisjFbrOrt :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op)) -> Statement
+relHomDisjFbrOrt xsa = Forall xsa
+  (\(SomeMorphism h)
+  -> And [ relHomDisjFbrOrtStruct (tauHom (homomorphous h)) h
+         , relHomFbrStructFbrOrtX (tauHom (homomorphous h)) h
+         ] 
+  ) 
+
+-- | validity of @'HomDisjEmpty' 'FbrOrt' 'Op'@ according to 'HomFibred' and
+-- 'HomDisjunctiveFibredOriented'.
+prpHomDisjOpFbrOrt :: Statement
+prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjFbrOrt xsa where
+  xsa :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))
+  xsa = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) xfg
+
+
+  xfg :: X (SomeCmpb2 (HomDisjEmpty FbrOrtX Op))
+  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) $ xSctSomeCmpb2 10 xoSct XEmpty
+
+  xoSct :: X (SomeObjectClass (SHom FbrOrtX FbrOrtX Op (HomEmpty FbrOrtX)))
+  xoSct = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
+                 , SomeObjectClass (Struct :: Struct FbrOrtX N)
+                 , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
+                 , SomeObjectClass (Struct :: Struct FbrOrtX (Id OS))
+                 , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
+                 ]
+-}
+--------------------------------------------------------------------------------
+-- prpHomDisj -
+
+-- | validity of 'HomDisj'.
+prpHomDisj :: Statement
+prpHomDisj = Prp "HomDisj" :<=>:
+  And [ prpHomDisjOpEmpty
+      -- , prpHomDisjOpFbrOrt
+      ]
 

@@ -15,11 +15,14 @@
 --
 -- homomorphisms between 'Distributive' structure.
 module OAlg.Hom.Distributive
-  ( -- * Distributive
+  (
+{-
+    -- * Distributive
     HomDistributive, IsoDistributive
 
     -- * Iso
   , isoToOpOpDst, isoFromOpOpDst
+-}
   )
   where
 
@@ -40,7 +43,7 @@ import OAlg.Hom.Oriented.Definition
 import OAlg.Hom.Multiplicative.Definition
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
-
+{-
 --------------------------------------------------------------------------------
 -- HomDistributive -
 
@@ -115,3 +118,4 @@ isoFromOpOpDst = make (FromOpOp :. IdPath Struct)
 
 instance HomDistributive h => HomDistributive (OpHom h)
 
+-}

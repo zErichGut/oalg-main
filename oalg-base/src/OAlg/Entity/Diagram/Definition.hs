@@ -765,3 +765,5 @@ xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
 
 
+xsd :: X (SomeDiagram OS)
+xsd = xSomeDiagramOrnt xn xStandard where xn = amap1 someNatural $ xNB 0 20
