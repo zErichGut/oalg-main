@@ -80,7 +80,7 @@ instance TransformableOrt s => HomOriented (HomEmpty s)
 --------------------------------------------------------------------------------
 -- DualisableOriented -
 
--- | duality according to @__o__@ on @__s__@-structured 'Oriented' types,
+-- | duality according to @__o__@ on 'Oriented'-structures
 --
 -- __Properties__ Let @'DualisableOriented' __o s__@ then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
@@ -90,9 +90,10 @@ instance TransformableOrt s => HomOriented (HomEmpty s)
 -- (2) @'end' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'start'@.
 --
 -- where @q@ is any proxy for @__o__@.
-class ( DualisableG s (->) o Id, DualisableG s (->) o Pnt
-      , TransformableG o s s, Transformable s Ort
-      )
+--
+-- __Note__ The above property is equivalent to
+-- @'orientation' '.' 'toDualArw' '.=.' 'toDualOrt' '.' 'orientation'@.
+class (DualisableG s (->) o Id, DualisableG s (->) o Pnt, Transformable s Ort)
   => DualisableOriented s o
 
 instance (TransformableOrt s, TransformableOp s) => DualisableOriented s Op
@@ -114,6 +115,14 @@ toDualPnt :: DualisableOriented s o => q o -> Struct s x -> Point x -> Point (o 
 toDualPnt q s = fromPntG (toDualG' (d q s) s) where
   d :: DualisableOriented s o => q o -> Struct s x -> DualityG s (->) o Pnt
   d _ _ = DualityG
+
+--------------------------------------------------------------------------------
+-- toDualOrt -
+
+-- | the induced dual orientation.
+toDualOrt :: DualisableOriented s o => q o -> Struct s x
+  -> Orientation (Point x) -> Orientation (Point (o x))
+toDualOrt q st (s :> e) = t e :> t s where t = toDualPnt q st
 
 --------------------------------------------------------------------------------
 -- HomDisj -
@@ -151,78 +160,54 @@ instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomDisj s o
 
 instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomDisj s o h)
 
-{-
+
 --------------------------------------------------------------------------------
 -- DualisableFibredOriented -
 
--- ff :: Struct Ort x -> Rt x -> Rt (o (o x))
-newtype OrtPnt x = OrtPnt (Orientation (Point x))
-
-data ReflectionG r c o d where
-  ReflectionG :: ReflexiveG r c o d => ReflectionG r c o d
-
-reflGTo :: ReflectionG r c o d -> Struct r x -> c (d x) (d (o (o x)))
-reflGTo r@ReflectionG s = t where Inv2 t _ = reflG' r s
-
-reflGFrom :: ReflectionG r c o d -> Struct r x -> c (d (o (o x))) (d x)
-reflGFrom r@ReflectionG s = f where Inv2 _ f = reflG' r s
-
-ff :: ReflectionG r (->) o Pnt -> Struct r x -> OrtPnt x -> OrtPnt (o (o x))
-ff r s (OrtPnt (p :> q)) = OrtPnt (t p :> t q) where
-  t = fromPntG (reflGTo r s)
-
-ff' :: (Root x ~ Orientation (Point x), Root (o (o x)) ~ Orientation (Point (o (o x))))
-  => ReflectionG Ort (->) o Pnt -> Struct Ort x -> Rt x -> Rt (o (o x))
-ff' r s (Rt rt) = Rt rt' where
-  OrtPnt rt' = ff r s (OrtPnt rt)
-
-gg :: ReflectionG Ort (->) o Pnt -> Struct Ort x -> OrtPnt (o (o x)) -> OrtPnt x
-gg r s (OrtPnt (p :> q)) = OrtPnt (f p :> f q) where f = fromPntG (reflGFrom r s)
-
-hh :: ReflexiveG Ort (->) o Pnt => Struct Ort x -> Inv2 (->) (OrtPnt x) (OrtPnt (o (o x)))
-hh s = Inv2 (ff r s) (gg r s) where
-  r = ReflectionG
-
-instance ReflexiveG Ort (->) o Pnt => ReflexiveG Ort (->) o OrtPnt where
-  reflG = hh
-
-{-
-ff s@Struct (OrtPnt (p :> q)) = OrtPnt (t p :> t q) where
-  Inv2 t f = reflG s
--}
-
-class ( DualisableOriented s o, DualisableG Ort (->) o Rt
+-- | duality according to @__o__@ on 'FibredOriented'-structures.
+--
+-- __Property__ Let @'DualisableFibredOriented' __s o__@ then for all @__x__@ and
+-- @s@ in @'Struct' __s x__@ holds:
+--
+-- (1) @'toDualRt' q s '.=.' 'toDualOrt' q s@.
+class ( DualisableOriented s o, DualisableG s (->) o Rt
       , Transformable s FbrOrt
       ) => DualisableFibredOriented s o
+
+--------------------------------------------------------------------------------
+-- prpDualisableFibredOriented -
+
+relDualisableFibredOriented :: DualisableFibredOriented s o
+  => q o -> Struct s x -> Struct FbrOrt x -> Struct FbrOrt (o x) -> Root x -> Statement
+relDualisableFibredOriented q s Struct Struct r
+  = (toDualRt q s r == toDualOrt q s r) :?> Params ["r":=show r]
+
+-- | validity according to 'DualisableFibredOrientd'.
+prpDualisableFibredOriented :: DualisableFibredOriented s o
+  => q o -> Struct s x -> X (Root x) -> Statement
+prpDualisableFibredOriented q s xr = Prp "DualisableFibredOriented" :<=>:
+  Forall xr (relDualisableFibredOriented q s (tau s) (tau (tauO s)))
+
+--------------------------------------------------------------------------------
+-- toDualRt -
+
+-- | the dual root induced by @'DualisableG' __s__ (->) __o__ 'Rt'@.
+toDualRt :: DualisableFibredOriented s o => q o -> Struct s x -> Root x -> Root (o x)
+toDualRt q s = fromRtG (toDualG' (d q s) s) where
+  d :: DualisableFibredOriented s o => q o -> Struct s x -> DualityG s (->) o Rt
+  d _ _ = DualityG
 
 instance (HomFibredOriented h, DualisableFibredOriented s o)
   => ApplicativeG Rt (HomDisj s o h) (->) where
   amapG (HomDisj h) = amapG h
 
-
-rmapDisjFbrtOrtStruct :: (ApplicativePoint h, Disjunctive2 h)
-  => Homomorphous FbrOrt x y -> h x y -> Root x -> Root y
-rmapDisjFbrtOrtStruct (Struct :>: Struct) = omapDisj
-
-rmapDisjFbrOrt :: ( Morphism h, Transformable (ObjectClass h) FbrOrt
-                  , ApplicativePoint h, Disjunctive2 h
-                  )
-  => h x y -> Root x -> Root y
-rmapDisjFbrOrt h = rmapDisjFbrtOrtStruct (tauHom $ homomorphous h) h
-  
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s FbrOrt
-         ) => ApplicativeG Rt (HomDisj s o h) (->) where
-  amapG = amapRt . rmapDisjFbrOrt
-
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s Fbr, Transformable s FbrOrt
+instance ( HomFibredOriented h, DualisableFibredOriented s o
+         , Transformable s Fbr
          ) => HomFibred (HomDisj s o h)
 
-instance ( HomOriented h, DualisableOriented s o
-         , Transformable s Fbr, Transformable s FbrOrt
+instance ( HomFibredOriented h, DualisableFibredOriented s o
+         , Transformable s Fbr
          ) => HomDisjunctiveFibredOriented (HomDisj s o h)
--}
 
 --------------------------------------------------------------------------------
 -- homDisj -

@@ -120,8 +120,7 @@ class (DualisableOriented s o, Transformable s Mlt) => DualisableMultiplicative 
 instance (HomMultiplicative h, DualisableMultiplicative s o)
   => HomDisjunctiveMultiplicative (HomDisj s o h)
 
-instance DualisableMultiplicative Mlt Op
-instance DualisableMultiplicative MltX Op
+instance (TransformableOrt s, TransformableMlt s, TransformableOp s) => DualisableMultiplicative s Op
 
 --------------------------------------------------------------------------------
 -- FunctorialMultiplicative -
