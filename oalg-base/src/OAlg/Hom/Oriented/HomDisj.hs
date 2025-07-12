@@ -76,6 +76,9 @@ instance Morphism (HomEmpty s) where
   range  = fromHomEmpty
 
 instance TransformableOrt s => HomOriented (HomEmpty s)
+instance TransformableFbr s => HomFibred (HomEmpty s)
+instance (TransformableOrt s, TransformableFbr s, TransformableFbrOrt s)
+  => HomFibredOriented (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -
@@ -160,7 +163,6 @@ instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomDisj s o
 
 instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomDisj s o h)
 
-
 --------------------------------------------------------------------------------
 -- DualisableFibredOriented -
 
@@ -173,6 +175,20 @@ instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomD
 class ( DualisableOriented s o, DualisableG s (->) o Rt
       , Transformable s FbrOrt
       ) => DualisableFibredOriented s o
+
+
+instance ReflexiveG s (->) Op Rt where
+  reflG _ = Inv2 idRt idRt
+
+ff :: Struct FbrOrt x -> Rt x -> Rt (Op x)
+ff Struct (Rt r) = Rt (opposite r)
+
+instance (TransformableOp s, Transformable s FbrOrt) => DualisableG s (->) Op Rt where
+  toDualG s = ff (tau s)
+
+instance ( TransformableOrt s, TransformableFbrOrt s, TransformableOp s
+         )
+  => DualisableFibredOriented s Op
 
 --------------------------------------------------------------------------------
 -- prpDualisableFibredOriented -

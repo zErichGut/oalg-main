@@ -23,7 +23,7 @@ module OAlg.Structure.Fibred.Root
     -- * Root
     Root, ShowRoot, EqRoot, OrdRoot, SingletonRoot, TotalRoot, ValidableRoot, TypeableRoot
   , EntityRoot, XStandardRoot
-  , Rt(..), fromRtG
+  , Rt(..), fromRtG, idRt
 
   -- * Applicative
   , ApplicativeRoot, rmap, amapRt
@@ -160,10 +160,10 @@ deriving instance EqRoot x => Eq (Rt x)
 deriving instance ValidableRoot x => Validable (Rt x)
 
 --------------------------------------------------------------------------------
--- idRoot -
+-- idRt -
 
-idRoot :: Root x ~ Root y => Rt x -> Rt y
-idRoot (Rt r) = Rt r
+idRt :: Root x ~ Root y => Rt x -> Rt y
+idRt (Rt r) = Rt r
 
 --------------------------------------------------------------------------------
 -- amapRt -
