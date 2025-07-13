@@ -43,7 +43,7 @@ import OAlg.Prelude
 
 import OAlg.Category.SDuality
 
-import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented
 import OAlg.Structure.Fibred.Definition
 
 import OAlg.Hom.Oriented.Definition
@@ -175,16 +175,6 @@ instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomD
 class ( DualisableOriented s o, DualisableG s (->) o Rt
       , Transformable s FbrOrt
       ) => DualisableFibredOriented s o
-
-
-instance ReflexiveG s (->) Op Rt where
-  reflG _ = Inv2 idRt idRt
-
-ff :: Struct FbrOrt x -> Rt x -> Rt (Op x)
-ff Struct (Rt r) = Rt (opposite r)
-
-instance (TransformableOp s, Transformable s FbrOrt) => DualisableG s (->) Op Rt where
-  toDualG s = ff (tau s)
 
 instance ( TransformableOrt s, TransformableFbrOrt s, TransformableOp s
          )

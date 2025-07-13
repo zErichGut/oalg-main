@@ -26,6 +26,7 @@ module OAlg.Structure.Distributive.Definition
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
 import OAlg.Structure.Additive.Definition

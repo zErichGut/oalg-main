@@ -24,12 +24,14 @@ module OAlg.Structure.Oriented.Opposite
 
     -- * Transformable
   , TransformableOp, tauOp
-
+  , structOrtOp
   ) where
+
+import Data.List (map,reverse,(++))
 
 import OAlg.Prelude
 
-import OAlg.Structure.Oriented.Point
+import OAlg.Structure.Oriented.Definition
 
 --------------------------------------------------------------------------------
 -- Op -
@@ -62,6 +64,39 @@ instance SingletonPoint x => SingletonPoint (Op x)
 instance ValidablePoint x => ValidablePoint (Op x)
 instance TypeablePoint x => TypeablePoint (Op x)
 instance XStandardPoint x => XStandardPoint (Op x)
+
+instance Oriented q => Oriented (Op q) where
+  orientation (Op a) = opposite (orientation a)
+
+instance TransformableG Op Ort Ort where tauG Struct = Struct
+instance TransformableGRefl Op Ort
+instance TransformableOp Ort
+
+instance TransformableG Op OrtX OrtX where tauG Struct = Struct
+instance TransformableOp OrtX
+
+-- instance TransformableGRefl Op OrtX
+
+instance TransformableG Op EqEOrt EqEOrt where tauG Struct = Struct
+
+instance ReflexiveG OrtX EqualExtOrt Op Id where
+  reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
+
+instance DualisableG OrtX EqualExtOrt Op Id where
+  toDualG r@Struct = Sub t where t = toDualG r
+
+instance ReflexiveG OrtX EqualExtOrt Op Pnt where
+  reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
+
+instance DualisableG OrtX EqualExtOrt Op Pnt where
+  toDualG r@Struct = Sub t where t = toDualG r 
+
+--------------------------------------------------------------------------------
+-- structOrtOp -
+
+-- | attest that if @__x__@ is 'Oriented' then also @'Op' __x__@ is 'Oriented'.
+structOrtOp :: Struct Ort x -> Struct Ort (Op x)
+structOrtOp Struct = Struct
 
 --------------------------------------------------------------------------------
 -- fromOp -
@@ -158,4 +193,3 @@ instance TransformableOp r => DualisableG r (->) Op Id where
   fromDualG _ = amap1 fromOp
 
 instance TransformableOp r => DualisableGId r Op
-

@@ -394,7 +394,7 @@ instance Transformable Mlt Ent where tau Struct = Struct
 instance Transformable Mlt Ort where tau Struct = Struct
 instance TransformableG Op Mlt Mlt where tauG Struct = Struct
 instance TransformableOp Mlt
-instance TransformableGRefl Op Mlt
+-- instance TransformableGRefl Op Mlt
 
 --------------------------------------------------------------------------------
 -- tauMlt -

@@ -39,7 +39,8 @@ import OAlg.Data.Canonical
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented.Definition
-import OAlg.Structure.Multiplicative.Definition
+import OAlg.Structure.Oriented.Opposite
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred.Definition
 
 --------------------------------------------------------------------------------
