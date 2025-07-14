@@ -28,7 +28,6 @@ module OAlg.Hom.Oriented.Proposition
 
     -- * HomDisj
   , prpHomDisjOpEmpty
-
   )
   where
 
@@ -45,11 +44,10 @@ import OAlg.Data.Either
 import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented as O
-import OAlg.Structure.Fibred
 
 import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Oriented.HomDisj
-import OAlg.Hom.Fibred
+import OAlg.Hom.Oriented.Disjunctive
+
 
 --------------------------------------------------------------------------------
 -- prpDualisableOriented -
@@ -198,7 +196,7 @@ prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjFbrOrt xsa where
                  , SomeObjectClass (Struct :: Struct FbrOrtX (Id OS))
                  , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
                  ]
--}
+
 --------------------------------------------------------------------------------
 -- prpHomDisj -
 
@@ -209,3 +207,4 @@ prpHomDisj = Prp "HomDisj" :<=>:
       -- , prpHomDisjOpFbrOrt
       ]
 
+-}

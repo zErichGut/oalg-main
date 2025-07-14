@@ -61,7 +61,8 @@ import OAlg.Data.Canonical
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
-import OAlg.Structure.Fibred
+import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.Fibred.Oriented
 
 import OAlg.Structure.Additive.Definition
 

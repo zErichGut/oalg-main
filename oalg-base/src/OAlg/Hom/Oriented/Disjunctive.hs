@@ -13,29 +13,33 @@
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
 -- |
--- Module      : OAlg.Hom.Oriented.HomDisj
--- Description : disjunctive homomorpisms.
+-- Module      : OAlg.Hom.Oriented.Disjunctive
+-- Description : definition of disjunctive homomorphisms between oriented structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- Disjunctive homomorpisms between 'Oriented' structure.
-module OAlg.Hom.Oriented.HomDisj
+-- definition of disjunctive homomorphisms between 'Oriented' structures.
+module OAlg.Hom.Oriented.Disjunctive
   (
-    -- * HomDisj
-    HomDisj(..), homDisj
+    -- * Disjunctive
+    HomDisjunctiveOriented, omapDisj
 
-    -- ** HomDisjEmpty
+    -- * Applicative
+  , FunctorialOriented
+
+  , module V
+  
+    -- * HomDisj
+  , HomDisj(..), homDisj
   , HomDisjEmpty
-  , HomEmpty
 
     -- * Dualisable
   , DualisableOriented
-  , toDualArw, toDualPnt
+  , toDualArw, toDualPnt, toDualOrt
   
     -- * Iso
-  , IsoOp, isoOp
-  , isoOpOrt, isoOpFbrOrt
+  , IsoOp, isoOp, isoOpOrt
   )
   where
 
@@ -43,43 +47,61 @@ import OAlg.Prelude
 
 import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
+import OAlg.Category.Path
 
-import OAlg.Structure.Oriented
-import OAlg.Structure.Fibred.Definition
+import OAlg.Data.Variant as V
+
+import OAlg.Structure.Oriented hiding (Path(..))
 
 import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Fibred
 
 --------------------------------------------------------------------------------
--- HomEmpty -
+-- omapDisj -
 
--- | the empty homomorphism.
-newtype HomEmpty s x y = HomEmpty (EntEmpty2 x y)
-  deriving (Show, Show2,Eq,Eq2,EqExt,Validable,Validable2)
-
---------------------------------------------------------------------------------
--- fromHomEmpty -
-
-fromHomEmpty :: HomEmpty s a b -> x
-fromHomEmpty (HomEmpty e) = fromEmpty2 e
+-- | induced application respecting the variant.
+omapDisj :: (ApplicativePoint h, Disjunctive2 h)
+  => h x y -> Orientation (Point x) -> Orientation (Point y)
+omapDisj h = case variant2 h of
+  Covariant     -> omap h
+  Contravariant -> opposite . omap h
 
 --------------------------------------------------------------------------------
--- HomEmpty - Instances -
+-- HomDisjunctiveOriented -
 
-instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
+-- | disjunctive homomorphism between 'Oriented' structures.
+--
+-- __Properties__ Let @'HomDisjunctiveOriented' __h__@, then
+-- for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
+--
+-- (1) If @'variant2' h '==' 'Covariant'@ then holds:
+--
+--     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+--
+--     (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+-- (2) If @'variant2' h '==' 'Contravariant'@ then holds:
+--
+--     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
+--
+--     (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
+--
+-- __Note__ The above property is equivalent to
+-- @'amap' h '.' 'orientation' '.=.' 'orientation' '.' 'omapDisj' h@. 
+class ( Morphism h, Applicative h, ApplicativePoint h
+      , Transformable (ObjectClass h) Ort
+      , Disjunctive2 h
+      )
+  => HomDisjunctiveOriented h
+
+instance TransformableOrt s => HomDisjunctiveOriented (IdHom s)
+instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Path h)
 
 --------------------------------------------------------------------------------
--- HomEmpty - HomOriented -
+-- FunctorialOriented -
 
-instance Morphism (HomEmpty s) where
-  type ObjectClass (HomEmpty s) = s
-  domain = fromHomEmpty
-  range  = fromHomEmpty
-
-instance TransformableOrt s => HomOriented (HomEmpty s)
-instance TransformableFbr s => HomFibred (HomEmpty s)
-instance (TransformableOrt s, TransformableFbr s, TransformableFbrOrt s)
-  => HomFibredOriented (HomEmpty s)
+-- | functorial homomorphisms between 'Oriented' structures. 
+class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
+  => FunctorialOriented h
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -
@@ -165,58 +187,6 @@ instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomDisj s o
 instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomDisj s o h)
 
 --------------------------------------------------------------------------------
--- DualisableFibredOriented -
-
--- | duality according to @__o__@ on 'FibredOriented'-structures.
---
--- __Property__ Let @'DualisableFibredOriented' __s o__@ then for all @__x__@ and
--- @s@ in @'Struct' __s x__@ holds:
---
--- (1) @'toDualRt' q s '.=.' 'toDualOrt' q s@.
-class ( DualisableOriented s o, DualisableG s (->) o Rt
-      , Transformable s FbrOrt
-      ) => DualisableFibredOriented s o
-
-instance ( TransformableOrt s, TransformableFbrOrt s, TransformableOp s
-         )
-  => DualisableFibredOriented s Op
-
---------------------------------------------------------------------------------
--- prpDualisableFibredOriented -
-
-relDualisableFibredOriented :: DualisableFibredOriented s o
-  => q o -> Struct s x -> Struct FbrOrt x -> Struct FbrOrt (o x) -> Root x -> Statement
-relDualisableFibredOriented q s Struct Struct r
-  = (toDualRt q s r == toDualOrt q s r) :?> Params ["r":=show r]
-
--- | validity according to 'DualisableFibredOrientd'.
-prpDualisableFibredOriented :: DualisableFibredOriented s o
-  => q o -> Struct s x -> X (Root x) -> Statement
-prpDualisableFibredOriented q s xr = Prp "DualisableFibredOriented" :<=>:
-  Forall xr (relDualisableFibredOriented q s (tau s) (tau (tauO s)))
-
---------------------------------------------------------------------------------
--- toDualRt -
-
--- | the dual root induced by @'DualisableG' __s__ (->) __o__ 'Rt'@.
-toDualRt :: DualisableFibredOriented s o => q o -> Struct s x -> Root x -> Root (o x)
-toDualRt q s = fromRtG (toDualG' (d q s) s) where
-  d :: DualisableFibredOriented s o => q o -> Struct s x -> DualityG s (->) o Rt
-  d _ _ = DualityG
-
-instance (HomFibredOriented h, DualisableFibredOriented s o)
-  => ApplicativeG Rt (HomDisj s o h) (->) where
-  amapG (HomDisj h) = amapG h
-
-instance ( HomFibredOriented h, DualisableFibredOriented s o
-         , Transformable s Fbr
-         ) => HomFibred (HomDisj s o h)
-
-instance ( HomFibredOriented h, DualisableFibredOriented s o
-         , Transformable s Fbr
-         ) => HomDisjunctiveFibredOriented (HomDisj s o h)
-
---------------------------------------------------------------------------------
 -- homDisj -
 
 -- | embedding of 'HomOriented' to 'HomDisj'.
@@ -256,11 +226,4 @@ isoOp s = Contravariant2 (Inv2 t f) where
 -- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
 isoOpOrt :: Oriented x => Variant2 Contravariant (Inv2 (HomDisjEmpty Ort Op)) x (Op x)
 isoOpOrt = isoOp Struct
-
---------------------------------------------------------------------------------
--- isoOpFbrOrt -
-
--- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpFbrOrt :: FibredOriented x => Variant2 Contravariant (Inv2 (HomDisjEmpty FbrOrt Op)) x (Op x)
-isoOpFbrOrt = isoOp Struct
 

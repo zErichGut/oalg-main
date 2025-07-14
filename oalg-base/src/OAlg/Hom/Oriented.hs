@@ -9,11 +9,11 @@
 -- homomorphism between 'OAlg.Structure.Oriented.Definition.Oriented' structures.
 module OAlg.Hom.Oriented
   ( module Ort
-  , module HDj
+  , module Disj
   , module Prp
   )
   where
 
 import OAlg.Hom.Oriented.Definition as Ort
-import OAlg.Hom.Oriented.HomDisj as HDj
+import OAlg.Hom.Oriented.Disjunctive as Disj
 import OAlg.Hom.Oriented.Proposition as Prp

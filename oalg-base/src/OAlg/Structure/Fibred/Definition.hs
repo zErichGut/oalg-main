@@ -26,20 +26,22 @@ module OAlg.Structure.Fibred.Definition
   , Fbr, TransformableFbr, tauFbr
   , module Rt
 
-  -- * Fibred Oriented
-  , FibredOriented, FbrOrt, TransformableFbrOrt, tauFbrOrt
-
     -- * Sheaf
   , Sheaf(..)
 
     -- * X
-  , FbrOrtX
+  , XFbr, xoFbr
+  , xFbrOrnt
+     -- ** Stalk
+  , XStalk(..), xRoot, xSheafRootMax, xSheafMax
+  , xStalkOrnt  
   )
   where
 
+import Control.Monad
 import Control.Exception
 
-import Data.List((++),map)
+import Data.List((++))
 import Data.Foldable
 
 import OAlg.Prelude
@@ -71,48 +73,16 @@ class (Entity f, EntityRoot f) => Fibred f where
   root = orientation
 
 --------------------------------------------------------------------------------
--- FibredOriented -
-
-
--- | 'Fibred' and 'Oriented' structure with matching 'root' and 'orientation'.
---
---   __Property__ Let __@d@__ be a 'FibredOriented' structure, then holds:
---
---   (1) @'root' '.=.' 'orientation'@.
---
---   __Note__ 'FibredOriented' structures are required for
---  'OAlg.Structure.Distributive.Distributive' structures.
-class (Fibred d, Oriented d, Root d ~ Orientation (Point d)) => FibredOriented d
-
---------------------------------------------------------------------------------
 -- Fibred - Instance -
 
 instance Fibred ()
-instance FibredOriented ()
-
 instance Fibred Int
-instance FibredOriented Int
-
 instance Fibred Integer
-instance FibredOriented Integer
-
 instance Fibred N
-instance FibredOriented N
-
 instance Fibred Z
-instance FibredOriented Z
-
 instance Fibred Q
-instance FibredOriented Q
-
 instance Entity p => Fibred (Orientation p)
-instance Entity p => FibredOriented (Orientation p)
-
 instance Fibred x => Fibred (Id x) where root (Id x) = root x
-instance FibredOriented x => FibredOriented (Id x)
-
-instance FibredOriented x => Fibred (Op x)
-instance FibredOriented x => FibredOriented (Op x)
 
 --------------------------------------------------------------------------------
 -- Sheaf -
@@ -169,10 +139,6 @@ instance Fibred f => Multiplicative (Sheaf f) where
 
 type instance Dual (Sheaf f) = Sheaf (Op f)
 
-instance FibredOriented f => Dualisable (Sheaf f) where
-  toDual (Sheaf r fs)     = Sheaf (transpose r) (map Op fs)
-  fromDual (Sheaf r' fs') = Sheaf (transpose r') (map fromOp fs')
-
 instance Fibred f => Embeddable f (Sheaf f) where
   inj a = Sheaf (root a) [a]
 
@@ -204,62 +170,67 @@ instance TransformableTyp Fbr
 instance TransformableFbr Fbr
 
 --------------------------------------------------------------------------------
--- FbrOrt -
-  
--- | type representing the class of 'FibredOriented' structures.
-data FbrOrt
+-- XFbr -
 
-type instance Structure FbrOrt x = FibredOriented x
-
-instance Transformable FbrOrt Typ where tau Struct = Struct
-instance Transformable FbrOrt Ent where tau Struct = Struct
-instance Transformable FbrOrt Fbr where tau Struct = Struct
-instance Transformable FbrOrt Ort where tau Struct = Struct
-
-instance TransformableOp FbrOrt
-
-instance TransformableG Op FbrOrt FbrOrt where tauG Struct = Struct
-instance TransformableGRefl Op FbrOrt
+-- | random variable for validating 'Fibred' structures.
+type XFbr = X
 
 --------------------------------------------------------------------------------
--- TransformableFbrOrt -
+-- XStalk -
 
--- | transformable to 'FibredOriented' structure.
-class ( Transformable s Fbr, Transformable s Ort
-      , Transformable s FbrOrt
-      ) => TransformableFbrOrt s
-
-instance TransformableTyp FbrOrt
-instance TransformableOrt FbrOrt
-instance TransformableFbr FbrOrt
-instance TransformableFbrOrt FbrOrt
+-- | random variable for stalks.
+data XStalk x = XStalk (X (Root x)) (Root x -> X x)
 
 --------------------------------------------------------------------------------
--- tauFbrOrt -
+-- xRoot -
 
--- | 'tau' for 'FbrOrt'.
-tauFbrOrt :: Transformable s FbrOrt => Struct s x -> Struct FbrOrt x
-tauFbrOrt = tau
+-- | the underlying random variable of 'root's.
+xRoot :: XStalk x -> X (Root x)
+xRoot (XStalk xr _) = xr
 
 --------------------------------------------------------------------------------
--- FbrOrtX -
+-- xSheafRootMax -
 
--- | type representing the class 'FibredOriented' equipped with standard random variables.
-data FbrOrtX
-
-type instance Structure FbrOrtX x = (FibredOriented x, XStandard x, XStandardPoint x)
-
-instance Transformable FbrOrtX Ort where tau Struct = Struct
-instance TransformableOrt FbrOrtX
-
-instance TransformableG Op FbrOrtX FbrOrtX where tauG Struct = Struct
-instance TransformableOp FbrOrtX
-
-instance Transformable FbrOrtX Fbr where tau Struct = Struct
-instance Transformable FbrOrtX FbrOrt where tau Struct = Struct
-
-instance Transformable FbrOrtX Typ where tau Struct = Struct
+-- | random variable of sheafs in a 'Fibred' structure all rooted in the given root and
+-- with a length of either 0 - for empty 'root's - or with the given length.
+xSheafRootMax :: Fibred f => XStalk f -> N -> Root f -> X (Sheaf f)
+xSheafRootMax (XStalk _ xrs) n r = case xrs r of
+  XEmpty -> return $ one r
+  xs     -> shf xs n (one r) where
+    shf _ 0 ss  = return ss
+    shf xs n ss = do
+      s <- xs
+      shf xs (pred n) (inj s * ss)
+      
+    inj s = Sheaf (root s) [s]
 
 
+--------------------------------------------------------------------------------
+-- xSheafMax -
 
+-- | random variable of sheafs, based on the underlying random variable of roots, with
+-- a length of either 0 - for empty 'root's - or with the given length.
+xSheafMax :: Fibred f => XStalk f -> N -> X (Sheaf f)
+xSheafMax xs@(XStalk xr _) n = xr >>= xSheafRootMax xs n 
+
+--------------------------------------------------------------------------------
+-- xFbrOrnt -
+
+-- | random variable for the 'Fibred' structure of @'Orientation' p@.
+xFbrOrnt :: X p -> XFbr (Orientation p)
+xFbrOrnt xp = fmap (uncurry (:>)) $ xTupple2 xp xp
+
+---------------------------------------------------------------------------------
+-- xStalkOrnt -
+
+-- | random variable of 'XStalk' on @'Orientation' __p__@.
+xStalkOrnt :: X p -> XStalk (Orientation p)
+xStalkOrnt xp = XStalk (xFbrOrnt xp) return
+
+--------------------------------------------------------------------------------
+-- xoFbr -
+
+-- | the associated random variable for validating 'Fibred' structures.
+xoFbr :: XOrtOrientation f -> XFbr f
+xoFbr = xoOrt
 

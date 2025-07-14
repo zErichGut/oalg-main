@@ -23,11 +23,15 @@ module OAlg.Structure.Additive.Definition
 
     -- * Abelian
   , Abelian(..), isZero, Abl, TransformableAbl
+
+  -- * X
+  , xSheaf, xSheafRoot
   )
   where
 
 import qualified Prelude as A
 
+import Control.Monad
 import Control.Exception
 
 import Data.List(repeat)
@@ -42,6 +46,7 @@ import OAlg.Structure.Oriented.Definition
 import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.Fibred.Oriented
 
 --------------------------------------------------------------------------------
 -- Additive -
@@ -281,4 +286,28 @@ instance TransformableTyp Abl
 instance TransformableFbr Abl
 instance TransformableAdd Abl
 instance TransformableAbl Abl
+
+--------------------------------------------------------------------------------
+-- adjZero -
+
+-- | adjoins a 'zero' stalk for empty 'root's.
+adjZero :: Additive a => XStalk a -> XStalk a
+adjZero (XStalk xr xrs) = XStalk xr xrs' where
+  xrs' r = case xrs r of
+    XEmpty -> return (zero r)
+    xs     -> xs
+
+--------------------------------------------------------------------------------
+-- xSheafRoot -
+
+-- | random variable of sheafs, all based on the given 'root' and with the given length.
+xSheafRoot :: Additive a => XStalk a -> N -> Root a -> X (Sheaf a)
+xSheafRoot xs = xSheafRootMax (adjZero xs)
+
+--------------------------------------------------------------------------------
+-- xSheaf -
+
+-- | random variable of sheafs with the given length.
+xSheaf :: Additive a => XStalk a -> N -> X (Sheaf a)
+xSheaf xs = xSheafMax (adjZero xs)
 

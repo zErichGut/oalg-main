@@ -27,8 +27,8 @@ module OAlg.Structure.Vectorial.Proposition
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
-import OAlg.Structure.Multiplicative.Definition
-import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Ring.Definition
 import OAlg.Structure.Vectorial.Definition

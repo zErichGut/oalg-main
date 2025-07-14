@@ -14,37 +14,29 @@
 
 -- |
 -- Module      : OAlg.Hom.Oriented.Definition
--- Description : definition of homomorphisms between oriented structures
+-- Description : definition of covariant homomorphisms between oriented structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- definition of homomorphisms between 'Oriented' structures.
+-- definition of covariant homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
-    -- * Disjunctive
-    HomDisjunctiveOriented
-  , omapDisj
-
     -- * Covariant
-  , HomOriented
+    HomOriented
 
-    -- * Applicative
-  , FunctorialOriented
-
-  , module V
+    -- * Instances
+  , IdHom(..), HomEmpty    
   )
   where
 
 import OAlg.Prelude
 
+import OAlg.Data.Variant
+
 import OAlg.Category.Path
 
-import OAlg.Data.Variant as V
-
 import OAlg.Structure.Oriented.Definition
-
-import OAlg.Hom.Definition
 
 --------------------------------------------------------------------------------
 -- HomOriented -
@@ -68,51 +60,73 @@ instance HomOriented h => HomOriented (Path h)
 instance TransformableOrt s => HomOriented (IdHom s)
 
 --------------------------------------------------------------------------------
--- omapDisj -
+-- IdHom - Disjunctive -
 
--- | induced application respecting the variant.
-omapDisj :: (ApplicativePoint h, Disjunctive2 h)
-  => h x y -> Orientation (Point x) -> Orientation (Point y)
-omapDisj h = case variant2 h of
-  Covariant     -> omap h
-  Contravariant -> opposite . omap h
+instance Disjunctive (IdHom s x y) where variant IdHom = Covariant
+instance Disjunctive2 (IdHom s)
 
 --------------------------------------------------------------------------------
--- HomDisjunctiveOriented -
+-- IdHom -
 
--- | disjunctive homomorphism between 'Oriented' structures.
---
--- __Properties__ Let @'HomDisjunctiveOriented' __h__@, then
--- for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
---
--- (1) If @'variant2' h '==' 'Covariant'@ then holds:
---
---     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'start'@.
---
---     (2) @'end' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
---
--- (2) If @'variant2' h '==' 'Contravariant'@ then holds:
---
---     (1) @'start' '.' 'amap' h '.=.' 'pmap' h '.' 'end'@.
---
---     (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
---
--- __Note__ The above property is equivalent to
--- @'amap' h '.' 'orientation' '.=.' 'orientation' '.' 'omapDisj' h@. 
-class ( Morphism h, Applicative h, ApplicativePoint h
-      , Transformable (ObjectClass h) Ort
-      , Disjunctive2 h
-      )
-  => HomDisjunctiveOriented h
+data IdHom s x y where
+  IdHom :: Structure s x => IdHom s x x
 
-instance TransformableOrt s => HomDisjunctiveOriented (IdHom s)
-instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Path h)
+deriving instance Show (IdHom s x y)
+instance Show2 (IdHom s)
+
+deriving instance Eq (IdHom s x y)
+instance Eq2 (IdHom s)
+
+instance Validable (IdHom s x y) where valid IdHom = SValid
+instance Validable2 (IdHom s)
 
 --------------------------------------------------------------------------------
--- FunctorialOriented -
+-- IdHom - Category -
 
--- | functorial homomorphisms between 'Oriented' structures. 
-class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
-  => FunctorialOriented h
+instance Morphism (IdHom s) where
+  type ObjectClass (IdHom s) = s
+  homomorphous IdHom = Struct :>: Struct
+
+instance Category (IdHom s) where
+  cOne Struct = IdHom
+  IdHom . IdHom = IdHom
+
+instance Cayleyan2 (IdHom s) where
+  invert2 IdHom = IdHom
+
+--------------------------------------------------------------------------------
+-- IdHom - Applicative -
+
+-- instance ApplicativeG f (IdHom s) (->) where amapG IdHom = id
+instance (Category b, TransformableGObjectClassRange f s b)
+  => ApplicativeG f (IdHom s) b where amapG i@IdHom = cOne (tauG (domain i))
+
+--------------------------------------------------------------------------------
+-- HomEmpty -
+
+-- | the empty homomorphism.
+newtype HomEmpty s x y = HomEmpty (EntEmpty2 x y)
+  deriving (Show, Show2,Eq,Eq2,EqExt,Validable,Validable2)
+
+--------------------------------------------------------------------------------
+-- fromHomEmpty -
+
+fromHomEmpty :: HomEmpty s a b -> x
+fromHomEmpty (HomEmpty e) = fromEmpty2 e
+
+--------------------------------------------------------------------------------
+-- HomEmpty - Instances -
+
+instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
+
+--------------------------------------------------------------------------------
+-- HomEmpty - HomOriented -
+
+instance Morphism (HomEmpty s) where
+  type ObjectClass (HomEmpty s) = s
+  domain = fromHomEmpty
+  range  = fromHomEmpty
+
+instance TransformableOrt s => HomOriented (HomEmpty s)
 
 
