@@ -36,6 +36,7 @@ import Control.Monad hiding (Functor(..))
 
 import OAlg.Prelude
 
+import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 import OAlg.Category.Unify
 

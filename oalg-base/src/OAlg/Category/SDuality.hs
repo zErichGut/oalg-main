@@ -57,6 +57,7 @@ import Data.List ((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Dualisable
 import OAlg.Category.Path
 import OAlg.Category.Unify
 

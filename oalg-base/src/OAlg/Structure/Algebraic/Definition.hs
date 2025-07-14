@@ -29,7 +29,7 @@ module OAlg.Structure.Algebraic.Definition
 
 import OAlg.Prelude
 
-import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
 import OAlg.Structure.Additive.Definition

@@ -41,6 +41,7 @@ module OAlg.Hom.Oriented.HomDisj
 
 import OAlg.Prelude
 
+import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Structure.Oriented

@@ -44,17 +44,11 @@ module OAlg.Structure.Oriented.X
 import Control.Monad as M
 import Control.Applicative ((<|>))
 import Data.Typeable
-import Data.Foldable
-import Data.List (map,reverse,(++))
 
 import OAlg.Prelude
 
-import OAlg.Data.Canonical
 import OAlg.Data.Singleton
 
-import OAlg.Category.Unify
-
-import OAlg.Structure.Exception
 import OAlg.Structure.Oriented.Definition
 import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Oriented.Path

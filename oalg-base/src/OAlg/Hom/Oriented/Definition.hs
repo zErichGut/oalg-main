@@ -42,7 +42,7 @@ import OAlg.Category.Path
 
 import OAlg.Data.Variant as V
 
-import OAlg.Structure.Oriented.Definition hiding (Path(..))
+import OAlg.Structure.Oriented.Definition
 
 import OAlg.Hom.Definition
 

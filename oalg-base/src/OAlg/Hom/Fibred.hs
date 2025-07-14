@@ -40,7 +40,7 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Structure.Fibred
-import OAlg.Structure.Oriented.Definition hiding (Path(..))
+import OAlg.Structure.Oriented.Definition
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition

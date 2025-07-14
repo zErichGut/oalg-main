@@ -52,7 +52,7 @@ import OAlg.Data.Either
 
 import OAlg.Hom.Oriented
 
-import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented
 
 import OAlg.Entity.Natural
 import OAlg.Entity.Diagram.Definition

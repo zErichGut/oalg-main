@@ -22,7 +22,6 @@ module OAlg.Structure.Oriented.Point
   (
     -- * Point
     Point, EntityPoint
-  , DualisableGPnt
   , U(..)
 
     -- * Applicative
@@ -80,9 +79,6 @@ class Singleton (Point x) => SingletonPoint x
 
 -- | helper class to avoid undecidable instances.
 class XStandard (Point a) => XStandardPoint a
-
--- | helper class to avoid undecidable instances.
-class DualisableG r (->) o Pnt => DualisableGPnt r o
 
 --------------------------------------------------------------------------------
 -- EntityPoint -

@@ -27,8 +27,6 @@ module OAlg.Structure.Oriented.Opposite
   , structOrtOp
   ) where
 
-import Data.List (map,reverse,(++))
-
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented.Definition
@@ -74,22 +72,9 @@ instance TransformableOp Ort
 
 instance TransformableG Op OrtX OrtX where tauG Struct = Struct
 instance TransformableOp OrtX
-
--- instance TransformableGRefl Op OrtX
+instance TransformableGRefl Op OrtX
 
 instance TransformableG Op EqEOrt EqEOrt where tauG Struct = Struct
-
-instance ReflexiveG OrtX EqualExtOrt Op Id where
-  reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
-
-instance DualisableG OrtX EqualExtOrt Op Id where
-  toDualG r@Struct = Sub t where t = toDualG r
-
-instance ReflexiveG OrtX EqualExtOrt Op Pnt where
-  reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
-
-instance DualisableG OrtX EqualExtOrt Op Pnt where
-  toDualG r@Struct = Sub t where t = toDualG r 
 
 --------------------------------------------------------------------------------
 -- structOrtOp -
@@ -170,26 +155,4 @@ instance Cayleyan2 c => Cayleyan2 (Op2 c) where
 instance Validable2 h => Validable2 (Op2 h) where
   valid2 (Op2 h) = valid2 h
 -}
---------------------------------------------------------------------------------
--- Op - DualisableG -
 
-instance ReflexiveG r (->) Op Pnt where
-  reflG _ = Inv2 idPnt idPnt where
-    
-instance TransformableOp r => DualisableG r (->) Op Pnt where
-  toDualG _   = idPnt
-  fromDualG _ = idPnt
-
-instance TransformableOp r => DualisableGPnt r Op
-
---------------------------------------------------------------------------------
--- Op - SDualisable -
-
-instance ReflexiveG r (->) Op Id where
-  reflG _ = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
-
-instance TransformableOp r => DualisableG r (->) Op Id where
-  toDualG _   = amap1 Op
-  fromDualG _ = amap1 fromOp
-
-instance TransformableOp r => DualisableGId r Op
