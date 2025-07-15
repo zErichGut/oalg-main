@@ -21,15 +21,10 @@
 -- homomorphisms between 'FibredOOriented' structures
 module OAlg.Hom.Fibred.Oriented
   (
-
     -- * Fibred Oriented
     HomFibredOriented
   , HomDisjunctiveFibredOriented
-
-    -- * Proposition
-  , prpHomFbr
-  , prpHomFbrOrt
-  , prpHomDisjFbrOrt
+  , DualisableFibredOriented, toDualRt
   )
   where
 
@@ -66,19 +61,6 @@ instance (TransformableOrt s, TransformableFbr s, TransformableFbrOrt s)
   => HomFibredOriented (HomEmpty s)
 
 --------------------------------------------------------------------------------
--- prpHomFbrOrt -
-
-relHomFbrOrtStruct :: (HomFibredOriented h, Show2 h)
-  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
-relHomFbrOrtStruct (Struct :>: Struct) h r
-  = (rmap h r == omap h r) :?> Params ["h":=show2 h,"r":=show r]
-
-prpHomFbrOrt :: (HomFibredOriented h, Show2 h)
-  => h x y -> Root x -> Statement
-prpHomFbrOrt h r = Prp "HomFbrOrt"
-  :<=>: relHomFbrOrtStruct (tauHom (homomorphous h)) h r
-
---------------------------------------------------------------------------------
 -- HomDisjunctiveFibredOriented -
 
 -- | type family of homomorphisms between 'FibredOriented' structures where 'rmap' is given by
@@ -98,20 +80,6 @@ instance ( TransformableOrt s, TransformableFbr s
 
 
 --------------------------------------------------------------------------------
--- prpHomDisjFbrOrt -
-
-relHomDisjFbrOrtHomomorphous :: (HomDisjunctiveFibredOriented h, Show2 h)
-  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
-relHomDisjFbrOrtHomomorphous (Struct :>: Struct) h r
-  = (rmap h r == omapDisj h r) :?> Params ["h":=show2 h,"r":=show r]
-
-
--- | validity according to 'HomFibredOriented'.
-prpHomDisjFbrOrt :: (HomDisjunctiveFibredOriented h, Show2 h) => h a b -> Root a -> Statement
-prpHomDisjFbrOrt f r = Prp "HomDisjFbrOrt"
-  :<=>: relHomDisjFbrOrtHomomorphous (tauHom (homomorphous f)) f r
-
---------------------------------------------------------------------------------
 -- DualisableFibredOriented -
 
 -- | duality according to @__o__@ on 'FibredOriented'-structures.
@@ -121,26 +89,13 @@ prpHomDisjFbrOrt f r = Prp "HomDisjFbrOrt"
 --
 -- (1) @'toDualRt' q s '.=.' 'toDualOrt' q s@.
 class ( DualisableOriented s o, DualisableG s (->) o Rt
+      , Transformable s Fbr
       , Transformable s FbrOrt
       ) => DualisableFibredOriented s o
 
 instance ( TransformableOrt s, TransformableFbrOrt s, TransformableOp s
          )
   => DualisableFibredOriented s Op
-
---------------------------------------------------------------------------------
--- prpDualisableFibredOriented -
-
-relDualisableFibredOriented :: DualisableFibredOriented s o
-  => q o -> Struct s x -> Struct FbrOrt x -> Struct FbrOrt (o x) -> Root x -> Statement
-relDualisableFibredOriented q s Struct Struct r
-  = (toDualRt q s r == toDualOrt q s r) :?> Params ["r":=show r]
-
--- | validity according to 'DualisableFibredOrientd'.
-prpDualisableFibredOriented :: DualisableFibredOriented s o
-  => q o -> Struct s x -> X (Root x) -> Statement
-prpDualisableFibredOriented q s xr = Prp "DualisableFibredOriented" :<=>:
-  Forall xr (relDualisableFibredOriented q s (tau s) (tau (tauO s)))
 
 --------------------------------------------------------------------------------
 -- toDualRt -
@@ -156,11 +111,9 @@ instance (HomFibredOriented h, DualisableFibredOriented s o)
   amapG (HomDisj h) = amapG h
 
 instance ( HomFibredOriented h, DualisableFibredOriented s o
-         , Transformable s Fbr
          ) => HomFibred (HomDisj s o h)
 
 instance ( HomFibredOriented h, DualisableFibredOriented s o
-         , Transformable s Fbr
          ) => HomDisjunctiveFibredOriented (HomDisj s o h)
 
 --------------------------------------------------------------------------------

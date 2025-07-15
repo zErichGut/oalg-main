@@ -32,10 +32,10 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
+import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Fibred
 
@@ -62,10 +62,28 @@ class (HomFibred h, Transformable (ObjectClass h) Add) => HomAdditive h
 instance HomAdditive h => HomAdditive (Path h)
 instance (TransformableFbr s, TransformableAdd s) => HomAdditive (IdHom s)
 
-instance ( HomOriented h, HomAdditive h, DualisableOriented s o
-         , Transformable s Fbr, Transformable s FbrOrt
-         , Transformable s Add
-         ) => HomAdditive (HomOrt s o h)
+--------------------------------------------------------------------------------
+-- DualisableAdditve -
+
+class (DualisableFibredOriented s o, Transformable s Add) => DualisableAdditve s o
+
+instance ( TransformableOrt s, TransformableAdd s, TransformableFbrOrt s
+         , TransformableOp s
+         ) => DualisableAdditve s Op
+
+instance ( HomFibredOriented h, HomAdditive h, DualisableAdditve s o
+         ) => HomAdditive (HomDisj s o h)
+
+
+relDualisableAdditiveAdd2 :: DualisableAdditve s o
+  => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Adbl2 x -> Statement
+relDualisableAdditiveAdd2 q s Struct Struct (Adbl2 a b)
+  = (toDualArw q s (a + b) == toDualArw q s a + toDualArw q s b) :?> Params []  
+
+relDualisableAdditveAdd1 :: DualisableAdditve s o
+  => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Root x -> Statement
+relDualisableAdditveAdd1 q s Struct Struct rx
+  = (toDualArw q s (zero rx) == zero (toDualRt q s rx)) :?> Params []
 
 --------------------------------------------------------------------------------
 -- prpHomAdd1 -

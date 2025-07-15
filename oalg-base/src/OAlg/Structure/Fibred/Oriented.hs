@@ -142,6 +142,8 @@ instance TransformableG Op FbrOrtX FbrOrtX where tauG Struct = Struct
 instance TransformableOp FbrOrtX
 
 instance Transformable FbrOrtX Fbr where tau Struct = Struct
+instance TransformableFbr FbrOrtX
 instance Transformable FbrOrtX FbrOrt where tau Struct = Struct
+instance TransformableFbrOrt FbrOrtX
 
 instance Transformable FbrOrtX Typ where tau Struct = Struct

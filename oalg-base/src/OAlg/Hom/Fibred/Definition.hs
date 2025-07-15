@@ -21,9 +21,6 @@
 module OAlg.Hom.Fibred.Definition
   ( -- * Fibred
     HomFibred, FunctorialFibred
-
-    -- * Proposition
-  , prpHomFbr
   )
   where
 
@@ -51,18 +48,6 @@ class ( Morphism h, Applicative h, ApplicativeRoot h
 instance HomFibred h => HomFibred (Path h)
 instance TransformableFbr s => HomFibred (IdHom s)
 instance TransformableFbr s => HomFibred (HomEmpty s)
-
---------------------------------------------------------------------------------
--- prpHomFbr -
-
-relHomFbrStruct :: (HomFibred h, Show2 h)
-  => Homomorphous Fbr x y -> h x y -> x -> Statement
-relHomFbrStruct (Struct :>: Struct) h x
-  = (root (amap h x) == rmap h (root x)) :?> Params ["h":=show2 h, "x":=show x]
-
--- | validity according to 'HomFibred'.
-prpHomFbr :: (HomFibred h, Show2 h) => h x y -> x -> Statement
-prpHomFbr h x = Prp "HomFbr" :<=>: relHomFbrStruct (tauHom (homomorphous h)) h x
 
 --------------------------------------------------------------------------------
 -- Functorialibred -

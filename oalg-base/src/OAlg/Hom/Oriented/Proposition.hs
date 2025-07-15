@@ -27,7 +27,7 @@ module OAlg.Hom.Oriented.Proposition
   , prpDualisableOriented
 
     -- * HomDisj
-  , prpHomDisjOpEmpty
+  , prpHomDisjOpOrt
   )
   where
 
@@ -112,12 +112,12 @@ prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
 
 
 --------------------------------------------------------------------------------
--- prpHomDisjOpEmpty -
+-- prpHomDisjOpOrt -
 
 -- | validity of @'HomDisjEmpty' 'Ort' 'Op'@ according to 'prpCategoryDisjunctive',
 -- 'prpCategoryDualisable', 'prpFunctorialG' and 'prpHomDisjunctiveOriented'.
-prpHomDisjOpEmpty :: Statement
-prpHomDisjOpEmpty
+prpHomDisjOpOrt :: Statement
+prpHomDisjOpOrt
   = And [ prpCategoryDisjunctive xo xfg
         , prpCategoryDualisable q xo
         , prpFunctorialG qId' xo' xfg'
@@ -157,54 +157,3 @@ prpHomDisjOpEmpty
            . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
           )
       $ xfg
-{-
---------------------------------------------------------------------------------
--- prpHomDisjFbrOrt -
-
-relHomDisjFbrOrtStruct :: (HomDisjunctiveFibredOriented h, Show2 h)
-  => Homomorphous FbrOrtX x y -> h x y -> Statement
-relHomDisjFbrOrtStruct (Struct :>: Struct) h = Forall xStandard (prpHomDisjFbrOrt h)
-
-relHomFbrStructFbrOrtX :: (HomFibred h, Show2 h)
-  => Homomorphous FbrOrtX x y -> h x y -> Statement
-relHomFbrStructFbrOrtX (Struct :>: Struct) h = Forall xStandard (prpHomFbr h)
-
-
-relHomDisjFbrOrt :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op)) -> Statement
-relHomDisjFbrOrt xsa = Forall xsa
-  (\(SomeMorphism h)
-  -> And [ relHomDisjFbrOrtStruct (tauHom (homomorphous h)) h
-         , relHomFbrStructFbrOrtX (tauHom (homomorphous h)) h
-         ] 
-  ) 
-
--- | validity of @'HomDisjEmpty' 'FbrOrt' 'Op'@ according to 'HomFibred' and
--- 'HomDisjunctiveFibredOriented'.
-prpHomDisjOpFbrOrt :: Statement
-prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjFbrOrt xsa where
-  xsa :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))
-  xsa = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) xfg
-
-
-  xfg :: X (SomeCmpb2 (HomDisjEmpty FbrOrtX Op))
-  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) $ xSctSomeCmpb2 10 xoSct XEmpty
-
-  xoSct :: X (SomeObjectClass (SHom FbrOrtX FbrOrtX Op (HomEmpty FbrOrtX)))
-  xoSct = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
-                 , SomeObjectClass (Struct :: Struct FbrOrtX N)
-                 , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
-                 , SomeObjectClass (Struct :: Struct FbrOrtX (Id OS))
-                 , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
-                 ]
-
---------------------------------------------------------------------------------
--- prpHomDisj -
-
--- | validity of 'HomDisj'.
-prpHomDisj :: Statement
-prpHomDisj = Prp "HomDisj" :<=>:
-  And [ prpHomDisjOpEmpty
-      -- , prpHomDisjOpFbrOrt
-      ]
-
--}
