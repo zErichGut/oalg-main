@@ -42,6 +42,8 @@ module OAlg.Category.Dualisable
 
   ) where
 
+import Data.Kind
+
 import OAlg.Category.Definition
 import OAlg.Data.Identity
 
@@ -157,14 +159,15 @@ class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
 --------------------------------------------------------------------------------
 -- Op - SDualisable - Id -
 
-instance ReflexiveG r (->) Op Id where
+instance Transformable r Type => ReflexiveG r (->) Op Id where
   reflG _ = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
 
-instance TransformableOp r => DualisableG r (->) Op Id where
+instance (Transformable r Type, TransformableOp r) => DualisableG r (->) Op Id where
   toDualG _   = amap1 Op
   fromDualG _ = amap1 fromOp
 
-instance TransformableOp r => DualisableGId r Op
+instance (TransformableType r, TransformableOp r) => DualisableGId r Op
+
 
 instance ReflexiveG OrtX EqualExtOrt Op Id where
   reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
@@ -175,14 +178,14 @@ instance DualisableG OrtX EqualExtOrt Op Id where
 --------------------------------------------------------------------------------
 -- Op - SDualisable - Pnt -
 
-instance ReflexiveG r (->) Op Pnt where
+instance Transformable r Type => ReflexiveG r (->) Op Pnt where
   reflG _ = Inv2 idPnt idPnt where
     
-instance TransformableOp r => DualisableG r (->) Op Pnt where
+instance (Transformable r Type, TransformableOp r) => DualisableG r (->) Op Pnt where
   toDualG _   = idPnt
   fromDualG _ = idPnt
 
-instance TransformableOp r => DualisableGPnt r Op
+instance (TransformableType r, TransformableOp r) => DualisableGPnt r Op
 
 instance ReflexiveG OrtX EqualExtOrt Op Pnt where
   reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
@@ -200,10 +203,11 @@ toDualRtOp Struct (Rt r) = Rt (opposite r)
 --------------------------------------------------------------------------------
 -- Op - SDualisable - Rt -
 
-instance ReflexiveG s (->) Op Rt where
+instance Transformable r Type => ReflexiveG r (->) Op Rt where
   reflG _ = Inv2 idRt idRt
 
-instance (TransformableOp s, Transformable s FbrOrt) => DualisableG s (->) Op Rt where
+instance (Transformable r Type, TransformableOp r, Transformable r FbrOrt)
+  => DualisableG r (->) Op Rt where
   toDualG s = toDualRtOp (tau s)
 
 

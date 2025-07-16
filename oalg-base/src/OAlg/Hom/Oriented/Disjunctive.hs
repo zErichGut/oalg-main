@@ -43,6 +43,8 @@ module OAlg.Hom.Oriented.Disjunctive
   )
   where
 
+import Data.Kind
+
 import OAlg.Prelude
 
 import OAlg.Category.Dualisable
@@ -118,11 +120,11 @@ class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, Functorial
 -- where @q@ is any proxy for @__o__@.
 --
 -- __Note__ The above property is equivalent to
--- @'orientation' '.' 'toDualArw' '.=.' 'toDualOrt' '.' 'orientation'@.
+-- @'orientation' '.' 'toDualArw' q s '.=.' 'toDualOrt' q s '.' 'orientation'@.
 class (DualisableG s (->) o Id, DualisableG s (->) o Pnt, Transformable s Ort)
   => DualisableOriented s o
 
-instance (TransformableOrt s, TransformableOp s) => DualisableOriented s Op
+instance (TransformableType s, TransformableOrt s, TransformableOp s) => DualisableOriented s Op
 
 --------------------------------------------------------------------------------
 -- toDualArw -
@@ -148,7 +150,7 @@ toDualPnt q s = fromPntG (toDualG' (d q s) s) where
 -- | the induced dual orientation.
 toDualOrt :: DualisableOriented s o => q o -> Struct s x
   -> Orientation (Point x) -> Orientation (Point (o x))
-toDualOrt q st (s :> e) = t e :> t s where t = toDualPnt q st
+toDualOrt q st (s :> e) = opposite (t s :> t e) where t = toDualPnt q st
 
 --------------------------------------------------------------------------------
 -- HomDisj -

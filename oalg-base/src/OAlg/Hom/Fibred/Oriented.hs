@@ -93,8 +93,7 @@ class ( DualisableOriented s o, DualisableG s (->) o Rt
       , Transformable s FbrOrt
       ) => DualisableFibredOriented s o
 
-instance ( TransformableOrt s, TransformableFbrOrt s, TransformableOp s
-         )
+instance (TransformableType s, TransformableOrt s, TransformableFbrOrt s, TransformableOp s)
   => DualisableFibredOriented s Op
 
 --------------------------------------------------------------------------------

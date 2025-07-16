@@ -40,6 +40,8 @@ module OAlg.Structure.Oriented.Definition
   )
   where
 
+import Data.Kind
+
 import OAlg.Prelude
 
 import OAlg.Category.Unify
@@ -198,7 +200,8 @@ instance Transformable OrtX Ort where tau Struct = Struct
 instance TransformableOrt OrtX 
 instance TransformableG Id OrtX EqE where tauG Struct = Struct
 instance TransformableG Pnt OrtX EqE where tauG Struct = Struct
-
+instance Transformable OrtX Type where tau _ = Struct
+instance TransformableType OrtX
 
 --------------------------------------------------------------------------------
 -- EqEOrt
@@ -227,3 +230,4 @@ instance TransformableGObjectClassRange Id OrtX EqualExtOrt
 instance TransformableG Pnt OrtX EqEOrt where tauG Struct = Struct
 instance TransformableGObjectClassRange Pnt OrtX EqualExtOrt
 
+instance Transformable EqEOrt Type where tau _ = Struct

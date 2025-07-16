@@ -341,7 +341,7 @@ data Functor1 c f where
 -- | helper class to avoid undecided instances.
 class Transformable s (ObjectClass c) => TransformableObjectClass s c
 
-instance TransformableObjectClass s (->)
+instance Transformable s Type => TransformableObjectClass s (->)
 
 --------------------------------------------------------------------------------
 -- Sub -

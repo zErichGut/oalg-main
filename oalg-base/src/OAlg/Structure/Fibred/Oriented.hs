@@ -28,6 +28,8 @@ module OAlg.Structure.Fibred.Oriented
   )
   where
 
+import Data.Kind
+
 import Data.List (map)
 
 import OAlg.Prelude
@@ -147,3 +149,6 @@ instance Transformable FbrOrtX FbrOrt where tau Struct = Struct
 instance TransformableFbrOrt FbrOrtX
 
 instance Transformable FbrOrtX Typ where tau Struct = Struct
+
+instance Transformable FbrOrtX Type where tau _ = Struct
+instance TransformableType FbrOrtX

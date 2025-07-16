@@ -111,6 +111,8 @@ prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
       ]
 
 
+
+
 --------------------------------------------------------------------------------
 -- prpHomDisjOpOrt -
 

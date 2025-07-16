@@ -28,7 +28,7 @@ module OAlg.Structure.Definition
     -- * Transformable
   , Transformable(..), tauType
   , Transformable1, tau1
-  , TransformableTyp
+  , TransformableTyp, TransformableType
   , TransformableG(..), tauG'
   , TransformableGRefl
   
@@ -145,9 +145,16 @@ class Transformable s t where
 instance Transformable s s where
   tau s = s
 
+--------------------------------------------------------------------------------
+-- TransformaleType -
+
+-- | helper class to avoid undecidable instances.
+class Transformable s Type => TransformableType s
+
+{-
 instance Transformable s Type where
   tau _ = Struct
-
+-}
 --------------------------------------------------------------------------------
 -- TransformableG -
 
