@@ -111,7 +111,17 @@ prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
       ]
 
 
+--------------------------------------------------------------------------------
+-- xsoOrtX -
 
+-- | random variable for some object classes for 'OrtX'.
+xsoOrtX :: s ~ OrtX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoOrtX = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
+               , SomeObjectClass (Struct :: Struct OrtX N)
+               , SomeObjectClass (Struct :: Struct OrtX (Op (OS)))
+               , SomeObjectClass (Struct :: Struct OrtX (Id (OS)))
+               , SomeObjectClass (Struct :: Struct OrtX (Id Z))
+               ]
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOpOrt -
@@ -132,22 +142,15 @@ prpHomDisjOpOrt
   qPt' = FunctorG :: FunctorG Pnt (Sub OrtX (HomDisjEmpty OrtX Op)) EqualExtOrt
 
   
-  xoSct :: s ~ OrtX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
-  xoSct = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
-                 , SomeObjectClass (Struct :: Struct OrtX N)
-                 , SomeObjectClass (Struct :: Struct OrtX (Op (OS)))
-                 , SomeObjectClass (Struct :: Struct OrtX (Id (OS)))
-                 , SomeObjectClass (Struct :: Struct OrtX (Id Z))
-                 ]
-
   xo :: X (SomeObjectClass (HomDisjEmpty OrtX Op))
-  xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xoSct
+  xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xsoOrtX
+  
 
   xo' :: X (SomeObjectClass (Sub OrtX (HomDisjEmpty OrtX Op)))
   xo' = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xo
 
   xfg :: X (SomeCmpb2 (HomDisjEmpty OrtX Op))
-  xfg = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) $ xSctSomeCmpb2 10 xoSct XEmpty
+  xfg = xscmHomDisj xsoOrtX XEmpty
 
   xfg' :: X (SomeCmpb2 (Sub OrtX (HomDisjEmpty OrtX Op)))
   xfg' = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (sub f) (sub g)) xfg

@@ -22,7 +22,7 @@ module OAlg.Category.Proposition
     -- * Category
     prpCategory, XCat(..)
   , prpCategory1
-  , prpCategory2, SomeCmpb3(..), SomeCmpb2(..)
+  , prpCategory2
 
     -- * Application
   , XAppl
@@ -108,20 +108,6 @@ prpCategory1 xsm = Prp "Category1"
                                , (f == (f . cOne (domain f))) :?> prm
                                ]
                    )
-
---------------------------------------------------------------------------------
--- SomeCmpb2 -
-
--- | some composable morphisms.
-data SomeCmpb2 c where
-  SomeCmpb2 :: c y z -> c x y -> SomeCmpb2 c
-  
---------------------------------------------------------------------------------
--- SomeCmpb3 -
-
--- | some composable morphisms.
-data SomeCmpb3 c where
-  SomeCmpb3 :: c x w -> c y x ->  c z y -> SomeCmpb3 c
 
 --------------------------------------------------------------------------------
 -- prpCategory2

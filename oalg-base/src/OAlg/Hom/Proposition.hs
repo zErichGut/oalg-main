@@ -15,60 +15,25 @@
 --
 -- propositions on homomorphisms between algerbaic structure.
 module OAlg.Hom.Proposition
-  (
-    prpIdHom, prpHomOp, prpIsoOpOrt
-  , prpHom
-
-
-  , module Ort
-  , module Mlt
+  ( prpHomDisjOpOrt
   )
   where
 
 import OAlg.Prelude
 
-import OAlg.Hom.Oriented as Ort
-import OAlg.Hom.Multiplicative as Mlt
+import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.Fibred
+import OAlg.Hom.Additive
 
 --------------------------------------------------------------------------------
--- prpIdHom -
+-- prpHomDisjOp -
 
--- | validity of @'IdHom' __s__@ according to 'Category' and 'HomOriented'.
-prpIdHom :: Statement
-prpIdHom = Prp "IdHom"
-  :<=>: And [ prpIdHomOrt
-            ]
-
---------------------------------------------------------------------------------
--- prpHomOp -
-
--- | validity of @'HomOp' __s__@ according to 'Category', 'HomOriented' and 'HomMultiplicative'. 
-prpHomOp :: Statement
-prpHomOp = Prp "HomOp"
-  :<=>: And [ prpHomOpOrt
-            , prpHomOpMlt
-            ]
-
---------------------------------------------------------------------------------
--- prpIsoOpOrt -
-
--- | validity of @'IsoOp' 'OAlg.Structure.Oriented.Definition.Ort'@ according to 'Category'
--- and 'Functorial'.
-prpIsoOpOrt :: Statement
-prpIsoOpOrt = Prp "IsoOpOrt"
-  :<=>: And [ prpIsoOpOrtCategory
-            , prpIsoOpOrtFunctorial
-            ]
-
---------------------------------------------------------------------------------
--- prpHom -
-
--- | validity of some propositions for homomorphisms,
-prpHom :: Statement
-prpHom = Prp "Hom" :<=>:
-  And [ prpIdHom
-      , prpHomOp
-      , prpIsoOpOrt
-      , prpOpDualityOrtOS
-      , prpOpDualityMltOS
+-- | validity of @'HomDisj' __s__ 'Op'@ as homomorphisms between @__s__@-structured types.
+prpHomDisjOp :: Statement
+prpHomDisjOp = Prp "HomDisjOp" :<=>:
+  And [ prpHomDisjOpOrt
+      , prpHomDisjOpFbrOrt
+      , prpHomDisjOpMlt
+      , prpHomDisjOpAdd
       ]

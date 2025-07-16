@@ -10,8 +10,10 @@
 module OAlg.Hom.Fibred
   ( module Def
   , module FbrOrt
+  , module Prp
   )
   where
 
 import OAlg.Hom.Fibred.Definition as Def
 import OAlg.Hom.Fibred.Oriented as FbrOrt
+import OAlg.Hom.Fibred.Proposition as Prp

@@ -46,6 +46,8 @@ module OAlg.Structure.Multiplicative.Proposition
 import Control.Monad
 import Control.Applicative
 
+import Data.Kind
+
 import OAlg.Prelude
 
 import OAlg.Data.Singleton
@@ -281,6 +283,9 @@ instance Transformable MltX Mlt where tau Struct = Struct
 instance TransformableMlt MltX
 
 instance Transformable MltX Typ where tau Struct = Struct
+
+instance Transformable MltX Type where tau _ = Struct
+instance TransformableType MltX
 
 instance XStandardMlt c => XStandardMlt (Id c) where
   xStandardMlt = XMlt xn xp x' xe' x2' x3' where

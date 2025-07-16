@@ -28,8 +28,11 @@ module OAlg.Hom.Additive
     -- * Proposition
   , prpHomAdd1, prpHomAdd2
   , prpDualisableAdditiveAdd1, prpDualisableAdditiveAdd2
+  , prpHomDisjOpAdd
   )
   where
+
+import Data.Kind
 
 import OAlg.Prelude
 
@@ -87,7 +90,7 @@ instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 class (DualisableFibredOriented s o, Transformable s Add) => DualisableAdditve s o
 
 instance ( TransformableOrt s, TransformableAdd s, TransformableFbrOrt s
-         , TransformableOp s
+         , TransformableOp s, TransformableType s
          ) => DualisableAdditve s Op
 
 instance ( HomFibredOriented h, HomAdditive h, DualisableAdditve s o
@@ -176,6 +179,21 @@ instance TransformableOp AddX
 
 instance Transformable AddX Typ where tau Struct = Struct
 
+instance Transformable AddX Type where tau _ = Struct
+instance TransformableType AddX
+
+--------------------------------------------------------------------------------
+-- xsoAddX
+
+xsoAddX :: X (SomeObjectClass (SHom AddX AddX Op (HomEmpty AddX)))
+xsoAddX = xOneOf [ SomeObjectClass (Struct :: Struct AddX OS)
+               , SomeObjectClass (Struct :: Struct AddX N)
+               -- , SomeObjectClass (Struct :: Struct AddX (Id OS))
+               ]
+        
+--------------------------------------------------------------------------------
+-- prpHomDisjOpAdd -
+
 relHomAddAddX :: (HomAdditive h, Show2 h)
   => Homomorphous AddX x y -> h x y -> Statement
 relHomAddAddX (Struct :>: Struct) h
@@ -191,15 +209,5 @@ relHomDisjOpAdd xsh = Forall xsh
 prpHomDisjOpAdd :: Statement
 prpHomDisjOpAdd = Prp "HomDisjOpAdd" :<=>: relHomDisjOpAdd xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty AddX Op))
-  xsh = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) xsfgAddX
-
-  xsfgAddX :: X (SomeCmpb2 (HomDisjEmpty AddX Op))
-  xsfgAddX = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g))
-           $ xSctSomeCmpb2 20 xoSct XEmpty
-
-  xoSct :: X (SomeObjectClass (SHom AddX AddX Op (HomEmpty AddX)))
-  xoSct = xOneOf [ SomeObjectClass (Struct :: Struct AddX OS)
-                 , SomeObjectClass (Struct :: Struct AddX N)
-                 -- , SomeObjectClass (Struct :: Struct AddX (Id OS))
-                 ]
+  xsh = amap1 smCmpb2 $ xscmHomDisj xsoAddX XEmpty
   

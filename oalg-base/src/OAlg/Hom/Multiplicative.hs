@@ -37,7 +37,7 @@ module OAlg.Hom.Multiplicative
 
     -- * Proposition
   , prpHomDisjunctiveMultiplicative
-  , prpHomDisjMultiplicative, prpHomDisjOpEmptyMlt
+  , prpHomDisjMultiplicative, prpHomDisjOpMlt
   , prpDualisableMultiplicativeOne
   , prpDualisableMultiplicativeMlt
   , relMapMltOne, relMapMltCov, relMapMltCnt
@@ -121,7 +121,9 @@ class (DualisableOriented s o, Transformable s Mlt) => DualisableMultiplicative 
 instance (HomMultiplicative h, DualisableMultiplicative s o)
   => HomDisjunctiveMultiplicative (HomDisj s o h)
 
-instance (TransformableOrt s, TransformableMlt s, TransformableOp s) => DualisableMultiplicative s Op
+instance ( TransformableOrt s, TransformableMlt s, TransformableOp s
+         , TransformableType s
+         ) => DualisableMultiplicative s Op
 
 --------------------------------------------------------------------------------
 -- FunctorialMultiplicative -
@@ -203,27 +205,28 @@ prpHomDisjunctiveMultiplicative h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMul
 prpHomDisjMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
   => Struct MltX x -> HomDisj s o h x y -> Statement
 prpHomDisjMultiplicative Struct h = prpHomDisjunctiveMultiplicative h xStandardMlt
-  
+
+
 --------------------------------------------------------------------------------
--- prpHomDisjOpEmptyMlt -
+-- xsoMltX -
+
+xsoMltX :: s ~ MltX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoMltX = xOneOf [ SomeObjectClass (Struct :: Struct MltX OS)
+                 , SomeObjectClass (Struct :: Struct MltX N)
+                 , SomeObjectClass (Struct :: Struct MltX (Op OS))
+                 , SomeObjectClass (Struct :: Struct MltX (Id OS))
+                 ]
+
+--------------------------------------------------------------------------------
+-- prpHomDisjOpMlt -
 
 -- | validity for @'HomDisjEmpty' 'MltX' 'Op'@ beeing 'HomDisjunctiveMultiplicative'.
-prpHomDisjOpEmptyMlt :: Statement
-prpHomDisjOpEmptyMlt = Prp "prpHomDisjOpEmptyMlt" :<=>:
+prpHomDisjOpMlt :: Statement
+prpHomDisjOpMlt = Prp "prpHomDisjOpMlt" :<=>:
   And [ Forall xm (\(SomeMorphism h) -> prpHomDisjMultiplicative (domain h) h)
       ]
-
   where
-
-    xo :: s ~ MltX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
-    xo = xOneOf [ SomeObjectClass (Struct :: Struct MltX OS)
-                , SomeObjectClass (Struct :: Struct MltX N)
-                , SomeObjectClass (Struct :: Struct MltX (Op OS))
-                , SomeObjectClass (Struct :: Struct MltX (Id OS))
-                ]
-
-    
     xm :: X (SomeMorphism (HomDisjEmpty MltX Op))
-    xm = amap1 (\(SomeMorphism h) -> SomeMorphism (HomDisj h)) $ xSctSomeMrph 10 xo
+    xm = amap1 smCmpb2 $ xscmHomDisj xsoMltX XEmpty
 
 

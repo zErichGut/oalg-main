@@ -24,6 +24,7 @@ module OAlg.Hom.Fibred.Proposition
     prpHomFbr    
   , prpHomFbrOrt
   , prpHomDisjFbrOrt
+  , prpHomDisjOpFbrOrt
   )
   where
 
@@ -94,29 +95,6 @@ prpDualisableFibredOriented q s xr = Prp "DualisableFibredOriented" :<=>:
   Forall xr (relDualisableFibredOriented q s (tau s) (tau (tauO s)))
 
 --------------------------------------------------------------------------------
--- smCmpb2 -
-
--- | composing the two composables.
-smCmpb2 :: Category h => SomeCmpb2 h -> SomeMorphism h
-smCmpb2 (SomeCmpb2 f g) = SomeMorphism (f . g)
-
---------------------------------------------------------------------------------
--- xsmHomDisj -
-
-xsmHomDisj :: (TransformableG o s s, TransformableOrt s)
-  => X (SomeObjectClass (SHom s s o (HomEmpty s)))
-  -> X (SomeMorphism (HomDisjEmpty s o))
-xsmHomDisj xso = amap1 smCmpb2 $ xfg xso where
-  xfg :: TransformableG o s s
-    => X (SomeObjectClass (SHom s s o (HomEmpty s)))
-    -> X (SomeCmpb2 (HomDisjEmpty s o))
-  xfg xso = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) $ xSctSomeCmpb2 10 xso XEmpty
-
-xscmHomDisj :: (TransformableG o s s, Morphism h, Transformable (ObjectClass h) s)
-  => X (SomeObjectClass (SHom s s o h)) -> X (SomeMorphism h) -> X (SomeCmpb2 (HomDisj s o h))
-xscmHomDisj xo = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) . xSctSomeCmpb2 10 xo
-
---------------------------------------------------------------------------------
 -- prpHomDisjFbrOrt -
 
 prpHomDisjFbrOrtFbrOrtX :: (HomDisjunctiveFibredOriented h, Show2 h)
@@ -140,28 +118,22 @@ relHomDisjFbrOrt xsa = Forall xsa
 prpHomDisjOpFbrOrt :: Statement
 prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjFbrOrt xsa where
   xsa :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))
-  xsa = amap1 smCmpb2 $ xscmHomDisj xoSct XEmpty where
-    
-    xoSct :: X (SomeObjectClass (SHom FbrOrtX FbrOrtX Op (HomEmpty FbrOrtX)))
-    xoSct = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
-                   , SomeObjectClass (Struct :: Struct FbrOrtX N)
-                   , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
-                   , SomeObjectClass (Struct :: Struct FbrOrtX (Id OS))
-                   , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
-                   ]
+  xsa = amap1 smCmpb2 $ xscmHomDisj xsoFbrOrtX XEmpty
+
+--------------------------------------------------------------------------------
+-- xsoFbrtOrtX -
+
+-- | some object classes for 'FbrOrtX'.
+xsoFbrOrtX :: X (SomeObjectClass (SHom FbrOrtX FbrOrtX Op (HomEmpty FbrOrtX)))
+xsoFbrOrtX = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
+               , SomeObjectClass (Struct :: Struct FbrOrtX N)
+               , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
+               , SomeObjectClass (Struct :: Struct FbrOrtX (Id OS))
+               , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
+               ]
 
 xfgFbrOrtX :: X (SomeCmpb2 (HomDisjEmpty FbrOrtX Op))
-xfgFbrOrtX
-  = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) $ xSctSomeCmpb2 10 xoSct XEmpty
-  where
-    xoSct :: X (SomeObjectClass (SHom FbrOrtX FbrOrtX Op (HomEmpty FbrOrtX)))
-    xoSct = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
-                   , SomeObjectClass (Struct :: Struct FbrOrtX N)
-                   , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
-                   , SomeObjectClass (Struct :: Struct FbrOrtX (Id OS))
-                   , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
-                   ]
-
+xfgFbrOrtX = xscmHomDisj xsoFbrOrtX XEmpty
 
 dstFbrOrtX :: Int -> IO ()
 dstFbrOrtX n = putDstr asp n xfgFbrOrtX where

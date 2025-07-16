@@ -24,6 +24,7 @@ module OAlg.Category.Unify
     SomeMorphism(..), SomeObjectClass(..)
   , SomeMorphismSite(..)
   , someOne
+  , SomeCmpb3(..), SomeCmpb2(..), smCmpb2
   
     -- * Path
   , SomePath(..), somePath
@@ -58,6 +59,7 @@ import OAlg.Data.Show
 import OAlg.Data.Boolean
 
 import OAlg.Entity.Definition
+
 --------------------------------------------------------------------------------
 -- SomeApplication -
 
@@ -97,6 +99,28 @@ instance (Morphism m, TransformableObjectClassTyp m, Typeable m, Eq2 m)
 
 instance Validable2 m => Validable (SomeMorphism m) where
   valid (SomeMorphism f) = valid2 f
+
+--------------------------------------------------------------------------------
+-- SomeCmpb2 -
+
+-- | some composable morphisms.
+data SomeCmpb2 c where
+  SomeCmpb2 :: c y z -> c x y -> SomeCmpb2 c
+  
+--------------------------------------------------------------------------------
+-- SomeCmpb3 -
+
+-- | some composable morphisms.
+data SomeCmpb3 c where
+  SomeCmpb3 :: c x w -> c y x ->  c z y -> SomeCmpb3 c
+
+--------------------------------------------------------------------------------
+-- smCmpb2 -
+
+-- | composing the two composables.
+smCmpb2 :: Category h => SomeCmpb2 h -> SomeMorphism h
+smCmpb2 (SomeCmpb2 f g) = SomeMorphism (f . g)
+
 
 --------------------------------------------------------------------------------
 -- SomeEntity -

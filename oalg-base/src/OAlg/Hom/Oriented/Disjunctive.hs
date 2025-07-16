@@ -40,16 +40,18 @@ module OAlg.Hom.Oriented.Disjunctive
   
     -- * Iso
   , IsoOp, isoOp, isoOpOrt
+
+    -- * X
+  , xscmHomDisj
   )
   where
-
-import Data.Kind
 
 import OAlg.Prelude
 
 import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 import OAlg.Category.Path
+import OAlg.Category.Unify
 
 import OAlg.Data.Variant as V
 
@@ -228,4 +230,12 @@ isoOp s = Contravariant2 (Inv2 t f) where
 -- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
 isoOpOrt :: Oriented x => Variant2 Contravariant (Inv2 (HomDisjEmpty Ort Op)) x (Op x)
 isoOpOrt = isoOp Struct
+
+--------------------------------------------------------------------------------
+-- xscmHomDisj -
+
+-- | random variable for some composable 'HomDisj'.
+xscmHomDisj :: (TransformableG o s s, Morphism h, Transformable (ObjectClass h) s)
+  => X (SomeObjectClass (SHom s s o h)) -> X (SomeMorphism h) -> X (SomeCmpb2 (HomDisj s o h))
+xscmHomDisj xo = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) . xSctSomeCmpb2 10 xo
 
