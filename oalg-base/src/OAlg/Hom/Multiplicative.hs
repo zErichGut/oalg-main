@@ -25,7 +25,7 @@
 module OAlg.Hom.Multiplicative
   (
     -- * Disjunctive
-    HomDisjunctiveMultiplicative
+    HomMultiplicativeDisjunctive
   , FunctorialMultiplicative
   , isoOpMlt
 
@@ -36,7 +36,7 @@ module OAlg.Hom.Multiplicative
   , DualisableMultiplicative
 
     -- * Proposition
-  , prpHomDisjunctiveMultiplicative
+  , prpHomMultiplicativeDisjunctive
   , prpHomDisjMultiplicative, prpHomDisjOpMlt
   , prpDualisableMultiplicativeOne
   , prpDualisableMultiplicativeMlt
@@ -74,14 +74,15 @@ class (HomOriented h, Transformable (ObjectClass h) Mlt) => HomMultiplicative h
 
 instance HomMultiplicative h => HomMultiplicative (Path h)
 
+instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (IdHom s)
 instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty s)
 
 --------------------------------------------------------------------------------
--- HomDisjunctiveMultiplicative -
+-- HomMultiplicativeDisjunctive -
 
 -- | disjunctive homomorphisms between 'Multiplicative' structures.
 --
--- __Propoerty__ Let @'HomDisjunctiveMultiplicative' __h__@, then
+-- __Propoerty__ Let @'HomMultiplicativeDisjunctive' __h__@, then
 -- for all __@a@__, __@b@__ and @h@ in __@h@__ __@a@__ __@b@__ holds:
 --
 -- (1) If @'variant2' h '==' 'Covariant'@ then holds:
@@ -99,7 +100,7 @@ instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty
 --
 --     (2) For all @x@, @y@ in __@a@__ with @'start' x '==' 'end' y@ holds:
 --     @'amap' h (x '*' y) '==' 'amap' h y '*' 'amap' h x@.
-class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjunctiveMultiplicative h
+class (HomOrientedDisjunctive h, Transformable (ObjectClass h) Mlt) => HomMultiplicativeDisjunctive h
 
 --------------------------------------------------------------------------------
 -- DualisableMultiplicative -
@@ -119,7 +120,7 @@ class (HomDisjunctiveOriented h, Transformable (ObjectClass h) Mlt) => HomDisjun
 class (DualisableOriented s o, Transformable s Mlt) => DualisableMultiplicative s o
 
 instance (HomMultiplicative h, DualisableMultiplicative s o)
-  => HomDisjunctiveMultiplicative (HomDisj s o h)
+  => HomMultiplicativeDisjunctive (HomDisj s o h)
 
 instance ( TransformableOrt s, TransformableMlt s, TransformableOp s
          , TransformableType s
@@ -129,7 +130,7 @@ instance ( TransformableOrt s, TransformableMlt s, TransformableOp s
 -- FunctorialMultiplicative -
 
 -- | functorial homomorphisms between 'Multiplicative' structures.
-type FunctorialMultiplicative h = (FunctorialOriented h, HomDisjunctiveMultiplicative h)
+type FunctorialMultiplicative h = (FunctorialOriented h, HomMultiplicativeDisjunctive h)
 
 --------------------------------------------------------------------------------
 -- isoOpMlt -
@@ -178,11 +179,11 @@ prpDualisableMultiplicativeMlt q s xmp = Prp "DualisableMultiplicativeMlt" :<=>:
     mArw = toDualArw q s
 
 --------------------------------------------------------------------------------
--- prpHomDisjunctiveMultiplicative -
+-- prpHomMultiplicativeDisjunctive -
 
-prpHomDisjunctiveMultiplicative :: HomDisjunctiveMultiplicative h
+prpHomMultiplicativeDisjunctive :: HomMultiplicativeDisjunctive h
   => h x y -> XMlt x -> Statement
-prpHomDisjunctiveMultiplicative h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMultipliative"
+prpHomMultiplicativeDisjunctive h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMultipliative"
   :<=>: case variant2 h of
     Covariant     -> Label "Cov" :<=>:
       And [ relMapMltOne sx sy mArw mPnt xp
@@ -204,7 +205,7 @@ prpHomDisjunctiveMultiplicative h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMul
 
 prpHomDisjMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
   => Struct MltX x -> HomDisj s o h x y -> Statement
-prpHomDisjMultiplicative Struct h = prpHomDisjunctiveMultiplicative h xStandardMlt
+prpHomDisjMultiplicative Struct h = prpHomMultiplicativeDisjunctive h xStandardMlt
 
 
 --------------------------------------------------------------------------------
@@ -220,7 +221,7 @@ xsoMltX = xOneOf [ SomeObjectClass (Struct :: Struct MltX OS)
 --------------------------------------------------------------------------------
 -- prpHomDisjOpMlt -
 
--- | validity for @'HomDisjEmpty' 'MltX' 'Op'@ beeing 'HomDisjunctiveMultiplicative'.
+-- | validity for @'HomDisjEmpty' 'MltX' 'Op'@ beeing 'HomMultiplicativeDisjunctive'.
 prpHomDisjOpMlt :: Statement
 prpHomDisjOpMlt = Prp "prpHomDisjOpMlt" :<=>:
   And [ Forall xm (\(SomeMorphism h) -> prpHomDisjMultiplicative (domain h) h)

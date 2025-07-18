@@ -101,12 +101,12 @@ dgtTypeRefl (DiagramTrafo a _ _) = dgTypeRefl a
 --------------------------------------------------------------------------------
 -- dgtMap -
 
-dgtMapCov :: HomDisjunctiveMultiplicative h
+dgtMapCov :: HomMultiplicativeDisjunctive h
   => Variant2 Covariant h a b -> DiagramTrafo t n m a -> DiagramTrafo t n m b
 dgtMapCov h@(Covariant2 h') (DiagramTrafo a b ts)
   = DiagramTrafo (dgMapCov h a) (dgMapCov h b) (amap1 (amap h') ts)
 
-dgtMapCnt :: HomDisjunctiveMultiplicative h
+dgtMapCnt :: HomMultiplicativeDisjunctive h
   => Variant2 Contravariant h a b -> DiagramTrafo t n m a -> DiagramTrafo (Dual t) n m b
 dgtMapCnt h@(Contravariant2 h') (DiagramTrafo a b ts)
   = DiagramTrafo (dgMapCnt h b) (dgMapCnt h a) (amap1 (amap h') ts)
@@ -119,14 +119,14 @@ type instance Dual1 (DiagramTrafo t n m) = DiagramTrafo (Dual t) n m
 instance (Show a, ShowPoint a) => ShowDual1 (DiagramTrafo t n m) a
 instance (Eq a, EqPoint a) => EqDual1 (DiagramTrafo t n m) a
 
-instance HomDisjunctiveMultiplicative h
+instance HomMultiplicativeDisjunctive h
   => ApplicativeG (DiagramTrafo t n m) (Variant2 Covariant h) (->) where
   amapG = dgtMapCov
 
-instance (CategoryDisjunctive h, HomDisjunctiveMultiplicative h)
+instance (CategoryDisjunctive h, HomMultiplicativeDisjunctive h)
   => FunctorialG (DiagramTrafo t n m) (Variant2 Covariant h) (->)
   
-instance (HomDisjunctiveMultiplicative h, Dual (Dual t) ~ t)
+instance (HomMultiplicativeDisjunctive h, Dual (Dual t) ~ t)
   => ApplicativeS h (DiagramTrafo t n m) where
   vToDual   = dgtMapCnt
   vFromDual = dgtMapCnt  

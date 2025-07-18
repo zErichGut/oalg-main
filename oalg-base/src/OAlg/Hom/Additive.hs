@@ -23,7 +23,7 @@ module OAlg.Hom.Additive
     HomAdditive
 
     -- * Duality
-  , DualisableAdditve
+  , DualisableAdditive
   
     -- * Proposition
   , prpHomAdd1, prpHomAdd2
@@ -73,7 +73,7 @@ instance (TransformableFbr s, TransformableAdd s) => HomAdditive (IdHom s)
 instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 
 --------------------------------------------------------------------------------
--- DualisableAdditve -
+-- DualisableAdditive -
 
 -- | duality according to @__o__@ on 'Additive'-structures
 --
@@ -87,31 +87,31 @@ instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 -- @'toDualArw' q s (a '+' b) '==' 'toDualArw' q s a '+' 'toDualArw' q s b@.
 --
 -- where @q@ is any proxy for @__o__@.
-class (DualisableFibredOriented s o, Transformable s Add) => DualisableAdditve s o
+class (DualisableFibredOriented s o, Transformable s Add) => DualisableAdditive s o
 
 instance ( TransformableOrt s, TransformableAdd s, TransformableFbrOrt s
          , TransformableOp s, TransformableType s
-         ) => DualisableAdditve s Op
+         ) => DualisableAdditive s Op
 
-instance ( HomFibredOriented h, HomAdditive h, DualisableAdditve s o
+instance ( HomFibredOriented h, HomAdditive h, DualisableAdditive s o
          ) => HomAdditive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
--- prpDualisableAdditveAdd1 -
-relDualisableAdditiveAdd1 :: DualisableAdditve s o
+-- prpDualisableAdditiveAdd1 -
+relDualisableAdditiveAdd1 :: DualisableAdditive s o
   => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Root x -> Statement
 relDualisableAdditiveAdd1 q s Struct Struct r
   = (toDualArw q s (zero r) == zero (toDualRt q s r)) :?> Params ["r":=show r]
 
--- | validity according to 'DualisableAdditve', property 1.
-prpDualisableAdditiveAdd1 :: DualisableAdditve s o
+-- | validity according to 'DualisableAdditive', property 1.
+prpDualisableAdditiveAdd1 :: DualisableAdditive s o
   => q o -> Struct s x -> Root x -> Statement
 prpDualisableAdditiveAdd1 q s r = Prp "DualisableAdditiveAdd1"
   :<=>: relDualisableAdditiveAdd1 q s (tau s) (tau (tauO s)) r
 
 --------------------------------------------------------------------------------
 -- prpDualisableAdditiveAdd2 -
-relDualisableAdditiveAdd2 :: DualisableAdditve s o
+relDualisableAdditiveAdd2 :: DualisableAdditive s o
   => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Adbl2 x -> Statement
 relDualisableAdditiveAdd2 q s Struct Struct ad@(Adbl2 a b)
   = (toDualArw q s (a + b) == toDualArw q s a + toDualArw q s b) :?> Params ["ad":=show ad]  
@@ -122,8 +122,8 @@ relDualisableAdditiveAdd2 q s Struct Struct ad@(Adbl2 a b)
 --
 -- this shows that the above equation is valid!
 
--- | validity according to 'DualisableAdditve', property 2.
-prpDualisableAdditiveAdd2 :: DualisableAdditve s o
+-- | validity according to 'DualisableAdditive', property 2.
+prpDualisableAdditiveAdd2 :: DualisableAdditive s o
   => q o -> Struct s x -> Adbl2 x -> Statement
 prpDualisableAdditiveAdd2 q s ad = Prp "DualisableAdditiveAdd2"
   :<=>: relDualisableAdditiveAdd2 q s (tau s) (tau (tauO s)) ad
@@ -187,9 +187,9 @@ instance TransformableType AddX
 
 xsoAddX :: X (SomeObjectClass (SHom AddX AddX Op (HomEmpty AddX)))
 xsoAddX = xOneOf [ SomeObjectClass (Struct :: Struct AddX OS)
-               , SomeObjectClass (Struct :: Struct AddX N)
-               -- , SomeObjectClass (Struct :: Struct AddX (Id OS))
-               ]
+                 , SomeObjectClass (Struct :: Struct AddX N)
+                 -- , SomeObjectClass (Struct :: Struct AddX (Id OS))
+                 ]
         
 --------------------------------------------------------------------------------
 -- prpHomDisjOpAdd -

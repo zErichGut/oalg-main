@@ -106,13 +106,13 @@ dgmTypeRefl = dgTypeRefl . diagram
 -- ApplicativeDiagrammatic -
 
 type ApplicativeDiagrammatic h d t n m
-  = (Diagrammatic d, HomDisjunctiveOriented h, ApplicativeS h (DiagramG d t n m))
+  = (Diagrammatic d, HomOrientedDisjunctive h, ApplicativeS h (DiagramG d t n m))
 
-instance HomDisjunctiveOriented h
+instance HomOrientedDisjunctive h
   => ApplicativeG (DiagramG Diagram t n m) (Variant2 Covariant h) (->) where
   amapG h (DiagramG d) = DiagramG (amapG h d)
 
-instance ( HomDisjunctiveOriented h
+instance ( HomOrientedDisjunctive h
          , Dual (Dual t) ~ t
          ) => ApplicativeS h (DiagramG Diagram t n m) where
   vToDual h (DiagramG d)   = DiagramG (vToDual h d)
@@ -139,7 +139,7 @@ type NaturalDiagrammatic s h b d t n m
     , NaturalTransformable s h b () (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
     )
 
-instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t)
+instance (HomOrientedDisjunctive h, Dual (Dual t) ~ t)
   => NaturalTransformable Ort h (->) () (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
 
 --------------------------------------------------------------------------------
@@ -160,13 +160,13 @@ dgmTrafo = NaturalTransformation ()
 -- prpNaturalDiagrammaticTrafoChain -
 
 -- | 'NaturalDiagrammaticTrafo' to @'Sub' 'EqE' (->)@ for @'Diagram' ('Chain' 'To')@.
-dgmtDiagramChainTo :: (HomDisjunctiveOriented h, s ~ OrtSiteX, Attestable m)
+dgmtDiagramChainTo :: (HomOrientedDisjunctive h, s ~ OrtSiteX, Attestable m)
   => q m
   -> NaturalDiagrammaticTrafo (SubStruct s Ort) (Sub s h) (Sub EqE (->)) Diagram (Chain To) (m+1) m
 dgmtDiagramChainTo _ = dgmTrafo
 
 -- | 'NaturalDiagrammaticTrafo' to @'Sub' 'EqE' (->)@ for @'Diagram' ('Chain' 'From')@.
-dgmtDiagramChainFrom :: (HomDisjunctiveOriented h, s ~ OrtSiteX, Attestable m)
+dgmtDiagramChainFrom :: (HomOrientedDisjunctive h, s ~ OrtSiteX, Attestable m)
   => q m
   -> NaturalDiagrammaticTrafo (SubStruct s Ort) (Sub s h) (Sub EqE (->)) Diagram (Chain From) (m+1) m
 dgmtDiagramChainFrom _ = dgmTrafo

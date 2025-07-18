@@ -165,6 +165,9 @@ type instance Structure Ort x = Oriented x
 instance Transformable Ort Typ where tau Struct = Struct
 instance Transformable Ort Ent where tau Struct = Struct
 
+instance Transformable Ort Type where tau _ = Struct
+instance TransformableType Ort
+
 --------------------------------------------------------------------------------
 -- TransformableOrt -
 

@@ -69,14 +69,14 @@ prpHomFbrOrt h r = Prp "HomFbrOrt"
 --------------------------------------------------------------------------------
 -- prpHomDisjFbrOrt -
 
-relHomDisjFbrOrtHomomorphous :: (HomDisjunctiveFibredOriented h, Show2 h)
+relHomDisjFbrOrtHomomorphous :: (HomFibredOrientedDisjunctive h, Show2 h)
   => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
 relHomDisjFbrOrtHomomorphous (Struct :>: Struct) h r
   = (rmap h r == omapDisj h r) :?> Params ["h":=show2 h,"r":=show r]
 
 
 -- | validity according to 'HomFibredOriented'.
-prpHomDisjFbrOrt :: (HomDisjunctiveFibredOriented h, Show2 h) => h a b -> Root a -> Statement
+prpHomDisjFbrOrt :: (HomFibredOrientedDisjunctive h, Show2 h) => h a b -> Root a -> Statement
 prpHomDisjFbrOrt f r = Prp "HomDisjFbrOrt"
   :<=>: relHomDisjFbrOrtHomomorphous (tauHom (homomorphous f)) f r
 
@@ -97,7 +97,7 @@ prpDualisableFibredOriented q s xr = Prp "DualisableFibredOriented" :<=>:
 --------------------------------------------------------------------------------
 -- prpHomDisjFbrOrt -
 
-prpHomDisjFbrOrtFbrOrtX :: (HomDisjunctiveFibredOriented h, Show2 h)
+prpHomDisjFbrOrtFbrOrtX :: (HomFibredOrientedDisjunctive h, Show2 h)
   => Homomorphous FbrOrtX x y -> h x y -> Statement
 prpHomDisjFbrOrtFbrOrtX (Struct :>: Struct) h = Forall xStandard (prpHomDisjFbrOrt h)
 
@@ -114,7 +114,7 @@ relHomDisjFbrOrt xsa = Forall xsa
   ) 
 
 -- | validity of @'HomDisjEmpty' 'FbrOrt' 'Op'@ according to 'HomFibred' and
--- 'HomDisjunctiveFibredOriented'.
+-- 'HomFibredOrientedDisjunctive'.
 prpHomDisjOpFbrOrt :: Statement
 prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjFbrOrt xsa where
   xsa :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))

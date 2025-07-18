@@ -23,7 +23,7 @@ module OAlg.Hom.Fibred.Oriented
   (
     -- * Fibred Oriented
     HomFibredOriented
-  , HomDisjunctiveFibredOriented
+  , HomFibredOrientedDisjunctive
   , DualisableFibredOriented, toDualRt
   )
   where
@@ -61,22 +61,22 @@ instance (TransformableOrt s, TransformableFbr s, TransformableFbrOrt s)
   => HomFibredOriented (HomEmpty s)
 
 --------------------------------------------------------------------------------
--- HomDisjunctiveFibredOriented -
+-- HomFibredOrientedDisjunctive -
 
 -- | type family of homomorphisms between 'FibredOriented' structures where 'rmap' is given by
 -- 'omapDisj'.
 --
--- __Property__ Let @'HomDisjunctiveFibredOriented' __h__@, then for all @__x__@, @__y__@ and
+-- __Property__ Let @'HomFibredOrientedDisjunctive' __h__@, then for all @__x__@, @__y__@ and
 -- @h@ in @__h x y__@ holds:
 --
 -- (1) @'rmap' h '.=.' 'omapDisj' h@.
-class (HomDisjunctiveOriented h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
-  => HomDisjunctiveFibredOriented h
+class (HomOrientedDisjunctive h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
+  => HomFibredOrientedDisjunctive h
 
-instance HomDisjunctiveFibredOriented h => HomDisjunctiveFibredOriented (Path h)
+instance HomFibredOrientedDisjunctive h => HomFibredOrientedDisjunctive (Path h)
 instance ( TransformableOrt s, TransformableFbr s
          , TransformableFbrOrt s
-         ) => HomDisjunctiveFibredOriented (IdHom s)
+         ) => HomFibredOrientedDisjunctive (IdHom s)
 
 
 --------------------------------------------------------------------------------
@@ -109,11 +109,11 @@ instance (HomFibredOriented h, DualisableFibredOriented s o)
   => ApplicativeG Rt (HomDisj s o h) (->) where
   amapG (HomDisj h) = amapG h
 
-instance ( HomFibredOriented h, DualisableFibredOriented s o
-         ) => HomFibred (HomDisj s o h)
+instance (HomFibredOriented h, DualisableFibredOriented s o)
+  => HomFibred (HomDisj s o h)
 
-instance ( HomFibredOriented h, DualisableFibredOriented s o
-         ) => HomDisjunctiveFibredOriented (HomDisj s o h)
+instance (HomFibredOriented h, DualisableFibredOriented s o)
+  => HomFibredOrientedDisjunctive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- isoOpFbrOrt -

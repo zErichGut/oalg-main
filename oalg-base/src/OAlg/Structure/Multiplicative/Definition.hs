@@ -46,6 +46,7 @@ import qualified Prelude as A
 import Control.Monad
 import Control.Exception
 
+import Data.Kind
 import Data.List(repeat)
 import Data.Foldable
 
@@ -395,6 +396,9 @@ instance Transformable Mlt Ort where tau Struct = Struct
 instance TransformableG Op Mlt Mlt where tauG Struct = Struct
 instance TransformableOp Mlt
 instance TransformableGRefl Op Mlt
+
+instance Transformable Mlt Type where tau _ = Struct
+instance TransformableType Mlt
 
 --------------------------------------------------------------------------------
 -- tauMlt -

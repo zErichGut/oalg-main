@@ -15,7 +15,7 @@
 --
 -- propositions on homomorphisms between algerbaic structure.
 module OAlg.Hom.Proposition
-  ( prpHomDisjOpOrt
+  ( prpHomDisjOp
   )
   where
 
@@ -25,6 +25,7 @@ import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
+import OAlg.Hom.Vectorial
 
 --------------------------------------------------------------------------------
 -- prpHomDisjOp -
@@ -36,4 +37,5 @@ prpHomDisjOp = Prp "HomDisjOp" :<=>:
       , prpHomDisjOpFbrOrt
       , prpHomDisjOpMlt
       , prpHomDisjOpAdd
+      , prpHomDisjOpVecZ
       ]

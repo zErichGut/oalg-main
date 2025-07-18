@@ -230,14 +230,14 @@ dgCenter (DiagramSource c _) = c
 --
 -- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
 -- @'Covariant2' h@ in @'SVariant' 'Covariant' __h a b__@ with
--- @'HomDisjunctiveOriented' __s o h__@, then holds:
+-- @'HomOrientedDisjunctive' __s o h__@, then holds:
 --
 -- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
 --
 -- (2) @'dgPoints' ('dgMapCov' q h d) '==' 'amap1' ('pmap' h) ('dgPoints' d)@.
 --
 -- where @q@ is any proxy in @__q s o__@.
-dgMapCov :: HomDisjunctiveOriented h
+dgMapCov :: HomOrientedDisjunctive h
   => Variant2 Covariant h a b -> Diagram t n m a -> Diagram t n m b
 dgMapCov (Covariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
@@ -260,14 +260,14 @@ dgMapCov (Covariant2 h) d = case d of
 --
 -- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
 -- @'Contravariant2' h@ in @'SVariant' 'Contravariant' __h a b__@ with
--- @'HomDisjunctiveOriented' __s o h__@, then holds:
+-- @'HomOrientedDisjunctive' __s o h__@, then holds:
 --
 -- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
 --
 -- (2) @'dgPoints' ('dgMapCov' q h d) '==' 'amap1' ('pmap' h) ('dgPoints' d)@.
 --
 -- where @q@ is any proxy in @__q s o__@.
-dgMapCnt :: HomDisjunctiveOriented h
+dgMapCnt :: HomOrientedDisjunctive h
   => Variant2 Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
 dgMapCnt (Contravariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
@@ -292,13 +292,13 @@ type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
 instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
 
-instance HomDisjunctiveOriented h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
+instance HomOrientedDisjunctive h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
   amapG = dgMapCov
 
-instance (CategoryDisjunctive h, HomDisjunctiveOriented h)
+instance (CategoryDisjunctive h, HomOrientedDisjunctive h)
   => FunctorialG (Diagram t n m) (Variant2 Covariant h) (->)
 
-instance (HomDisjunctiveOriented h, Dual (Dual t) ~ t) => ApplicativeS h (Diagram t n m) where
+instance (HomOrientedDisjunctive h, Dual (Dual t) ~ t) => ApplicativeS h (Diagram t n m) where
   vToDual   = dgMapCnt
   vFromDual = dgMapCnt
 
@@ -674,14 +674,14 @@ instance Oriented a => Validable (SomeDiagram a) where
 -- sdgMap -
 
 -- | mapping of some diagram via a homomorphismd on 'Oriented' structures.
-sdgMap :: HomDisjunctiveOriented h
+sdgMap :: HomOrientedDisjunctive h
   => h a b -> SomeDiagram a -> SomeDiagram b
 sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
   Refl                   -> case smap h (SDuality (Right1 d)) of
     SDuality (Right1 d') -> SomeDiagram d'
     SDuality (Left1  d') -> SomeDiagram d'
 
-instance HomDisjunctiveOriented h
+instance HomOrientedDisjunctive h
   => ApplicativeG SomeDiagram h (->) where
   amapG = sdgMap
 

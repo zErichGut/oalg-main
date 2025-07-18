@@ -21,7 +21,7 @@
 module OAlg.Hom.Oriented.Proposition
   (
     -- * Disjunctive Homomorphism
-    prpHomDisjunctiveOriented
+    prpHomOrientedDisjunctive
 
     -- * Duality
   , prpDualisableOriented
@@ -73,40 +73,40 @@ prpDualisableOriented q s xx = Prp "DualisableOriented" :<=>:
 --------------------------------------------------------------------------------
 -- prpHomDisjOrtVariant -
 
-relHomDisjOrtCov :: (HomDisjunctiveOriented h, Show2 h)
+relHomDisjOrtCov :: (HomOrientedDisjunctive h, Show2 h)
   => Homomorphous Ort x y -> Variant2 Covariant h x y  -> x -> Statement
 relHomDisjOrtCov (Struct:>:Struct) (Covariant2 h) x = Label "Covariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
-relHomDisjOrtCnt :: (HomDisjunctiveOriented h, Show2 h)
+relHomDisjOrtCnt :: (HomOrientedDisjunctive h, Show2 h)
   => Homomorphous Ort x y -> Variant2 Contravariant h x y  -> x -> Statement
 relHomDisjOrtCnt (Struct:>:Struct) (Contravariant2 h) x = Label "Contravariant" :<=>:
   And [ Label "1" :<=>: (start (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
       , Label "2" :<=>: (end (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
       ]
 
-relHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
+relHomDisjOrtVariant :: (HomOrientedDisjunctive h, Show2 h)
   => Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y -> x -> Statement
 relHomDisjOrtVariant h x = case h of
   Right2 hCov -> relHomDisjOrtCov (tauHom (homomorphous h)) hCov x
   Left2 hCnt  -> relHomDisjOrtCnt (tauHom (homomorphous h)) hCnt x
 
--- | validity according to property (2) of 'HomDisjunctiveOriented'.
-prpHomDisjOrtVariant :: (HomDisjunctiveOriented h, Show2 h)
+-- | validity according to property (2) of 'HomOrientedDisjunctive'.
+prpHomDisjOrtVariant :: (HomOrientedDisjunctive h, Show2 h)
   => X (SomeApplication h) -> Statement
 prpHomDisjOrtVariant xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
   (\(SomeApplication h x) -> relHomDisjOrtVariant (toVariant2 h) x
   )
 
 --------------------------------------------------------------------------------
--- prpHomDisjunctiveOriented -
+-- prpHomOrientedDisjunctive -
 
--- | validity according to 'HomDisjunctiveOriented'.
-prpHomDisjunctiveOriented :: (HomDisjunctiveOriented h, Show2 h)
+-- | validity according to 'HomOrientedDisjunctive'.
+prpHomOrientedDisjunctive :: (HomOrientedDisjunctive h, Show2 h)
   => X (SomeApplication h) -> Statement
-prpHomDisjunctiveOriented xa = Prp "HomDisjunctiveOriented" :<=>:
+prpHomOrientedDisjunctive xa = Prp "HomOrientedDisjunctive" :<=>:
   And [ prpHomDisjOrtVariant xa
       ]
 
@@ -127,14 +127,14 @@ xsoOrtX = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
 -- prpHomDisjOpOrt -
 
 -- | validity of @'HomDisjEmpty' 'Ort' 'Op'@ according to 'prpCategoryDisjunctive',
--- 'prpCategoryDualisable', 'prpFunctorialG' and 'prpHomDisjunctiveOriented'.
+-- 'prpCategoryDualisable', 'prpFunctorialG' and 'prpHomOrientedDisjunctive'.
 prpHomDisjOpOrt :: Statement
 prpHomDisjOpOrt
   = And [ prpCategoryDisjunctive xo xfg
         , prpCategoryDualisable q xo
         , prpFunctorialG qId' xo' xfg'
         , prpFunctorialG qPt' xo' xfg'
-        , prpHomDisjunctiveOriented xsa
+        , prpHomOrientedDisjunctive xsa
         ] where
 
   q    = Proxy2 :: Proxy2 Op (HomDisjEmpty OrtX Op)

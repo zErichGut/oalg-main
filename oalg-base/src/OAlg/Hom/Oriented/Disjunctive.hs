@@ -23,7 +23,7 @@
 module OAlg.Hom.Oriented.Disjunctive
   (
     -- * Disjunctive
-    HomDisjunctiveOriented, omapDisj
+    HomOrientedDisjunctive, omapDisj
 
     -- * Applicative
   , FunctorialOriented
@@ -70,11 +70,11 @@ omapDisj h = case variant2 h of
   Contravariant -> opposite . omap h
 
 --------------------------------------------------------------------------------
--- HomDisjunctiveOriented -
+-- HomOrientedDisjunctive -
 
 -- | disjunctive homomorphism between 'Oriented' structures.
 --
--- __Properties__ Let @'HomDisjunctiveOriented' __h__@, then
+-- __Properties__ Let @'HomOrientedDisjunctive' __h__@, then
 -- for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
 --
 -- (1) If @'variant2' h '==' 'Covariant'@ then holds:
@@ -95,16 +95,16 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort
       , Disjunctive2 h
       )
-  => HomDisjunctiveOriented h
+  => HomOrientedDisjunctive h
 
-instance TransformableOrt s => HomDisjunctiveOriented (IdHom s)
-instance HomDisjunctiveOriented h => HomDisjunctiveOriented (Path h)
+instance TransformableOrt s => HomOrientedDisjunctive (IdHom s)
+instance HomOrientedDisjunctive h => HomOrientedDisjunctive (Path h)
 
 --------------------------------------------------------------------------------
 -- FunctorialOriented -
 
 -- | functorial homomorphisms between 'Oriented' structures. 
-class (CategoryDisjunctive h, HomDisjunctiveOriented h, Functorial h, FunctorialPoint h)
+class (CategoryDisjunctive h, HomOrientedDisjunctive h, Functorial h, FunctorialPoint h)
   => FunctorialOriented h
 
 --------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ instance (HomOriented h, DualisableOriented s o) => ApplicativeG Pnt (HomDisj s 
 
 instance (HomOriented h, DualisableOriented s o) => FunctorialG Pnt (HomDisj s o h) (->)
 
-instance (HomOriented h, DualisableOriented s o) => HomDisjunctiveOriented (HomDisj s o h)
+instance (HomOriented h, DualisableOriented s o) => HomOrientedDisjunctive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- homDisj -

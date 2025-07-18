@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Hom.Distributive
@@ -16,13 +17,11 @@
 -- homomorphisms between 'Distributive' structure.
 module OAlg.Hom.Distributive
   (
-{-
     -- * Distributive
-    HomDistributive, IsoDistributive
+    HomDistributive, HomDistributiveDisjunctive
 
     -- * Iso
-  , isoToOpOpDst, isoFromOpOpDst
--}
+  , isoOpDst
   )
   where
 
@@ -30,31 +29,55 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
-import OAlg.Data.Constructable
+import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
+import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
 
-import OAlg.Structure.Oriented.Definition hiding (Path(..))
-import OAlg.Structure.Multiplicative.Definition
-import OAlg.Structure.Fibred.Definition
-import OAlg.Structure.Additive.Definition
-import OAlg.Structure.Distributive.Definition
-
-import OAlg.Hom.Definition
-import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Multiplicative.Definition
+import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
-{-
+
 --------------------------------------------------------------------------------
 -- HomDistributive -
 
--- | type family of homomorphisms between 'Distributive' structures.
-class ( HomMultiplicative h, HomAdditive h
-      , HomFibredOriented h, Transformable (ObjectClass h) Dst 
-      )
+-- | covariant homomorphisms between 'Distributive' structures.
+class (HomFibredOriented h, HomMultiplicative h, HomAdditive h, Transformable (ObjectClass h) Dst)
   => HomDistributive h
 
 instance HomDistributive h => HomDistributive (Path h)
+instance ( TransformableOrt s, TransformableFbr s, TransformableMlt s
+         , TransformableFbrOrt s, TransformableAdd s
+         , TransformableDst s
+         ) => HomDistributive (IdHom s)
 
+--------------------------------------------------------------------------------
+--  HomDistrubutiveDisjunctive -
+
+
+-- | disjunctive homomorphisms between 'Distributive' structures.
+class ( HomFibredOrientedDisjunctive h, HomMultiplicativeDisjunctive h, HomAdditive h
+      , Transformable (ObjectClass h) Dst
+      )
+  => HomDistributiveDisjunctive h
+
+instance ( HomDistributive h, DualisableMultiplicative s o, DualisableAdditve s o
+         , Transformable s Dst
+         ) => HomDistributiveDisjunctive (HomDisj s o h)
+
+
+--------------------------------------------------------------------------------
+-- isoOpDst -
+
+isoOpDstStruct :: Struct Dst x -> Variant2 Contravariant (Inv2 (HomDisjEmpty Dst Op)) x (Op x)
+isoOpDstStruct s@Struct = isoOp s
+
+isoOpDst :: Distributive x =>  Variant2 Contravariant (Inv2 (HomDisjEmpty Dst Op)) x (Op x)
+isoOpDst = isoOpDstStruct Struct
+
+{-
 --------------------------------------------------------------------------------
 -- Hom -
 

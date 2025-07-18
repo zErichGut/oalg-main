@@ -37,6 +37,7 @@ module OAlg.Data.Validable
 import Control.Monad (return)
 import Control.DeepSeq (NFData(..))
 
+import Data.Kind
 import Data.Ratio
 
 import OAlg.Category.Applicative
@@ -262,6 +263,9 @@ instance Validable2 h => Validable2 (Op2 h) where valid2 (Op2 h) = valid2 h
 data EqE
 
 type instance Structure EqE x = (Show x, Eq x, XStandard x)
+
+instance Transformable EqE Type where tau _ = Struct
+instance TransformableType EqE
 
 --------------------------------------------------------------------------------
 -- EqualExt -

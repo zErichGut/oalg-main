@@ -43,6 +43,8 @@ module OAlg.Structure.Oriented.X
 
 import Control.Monad as M
 import Control.Applicative ((<|>))
+
+import Data.Kind
 import Data.Typeable
 
 import OAlg.Prelude
@@ -265,6 +267,9 @@ instance Transformable OrtSiteX Typ where tau Struct = Struct
 instance TransformableG Op OrtSiteX OrtSiteX where
   tauG Struct = Struct
 instance TransformableOp OrtSiteX
+
+instance Transformable OrtSiteX Type where tau _ = Struct
+instance TransformableType OrtSiteX
 
 --------------------------------------------------------------------------------
 -- XOrtOrientation -
