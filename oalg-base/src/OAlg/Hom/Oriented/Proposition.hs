@@ -43,11 +43,11 @@ import OAlg.Data.Proxy
 import OAlg.Data.Either
 import OAlg.Data.Variant
 
-import OAlg.Structure.Oriented as O
+import OAlg.Structure.Oriented
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Oriented.Disjunctive
-
+import OAlg.Hom.Oriented.X
 
 --------------------------------------------------------------------------------
 -- prpDualisableOriented -

@@ -41,7 +41,6 @@ module OAlg.Hom.Multiplicative
   , prpDualisableMultiplicativeOne
   , prpDualisableMultiplicativeMlt
   , relMapMltOne, relMapMltCov, relMapMltCnt
-  
   )
   where
 
@@ -55,12 +54,13 @@ import OAlg.Category.Path
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 
 --------------------------------------------------------------------------------
 -- HomMultiplicative -
 
--- | covariant homomorphisms between 'Multiplicative' structures.
+-- | covariant family of homomorphisms between 'Multiplicative' structures.
 --
 -- __Propoerty__ Let @'HomMultiplicative' __h__@, then
 -- for all __@a@__, __@b@__ and @h@ in __@h@__ __@a@__ __@b@__ holds:
@@ -74,13 +74,12 @@ class (HomOriented h, Transformable (ObjectClass h) Mlt) => HomMultiplicative h
 
 instance HomMultiplicative h => HomMultiplicative (Path h)
 
-instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (IdHom s)
 instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- HomMultiplicativeDisjunctive -
 
--- | disjunctive homomorphisms between 'Multiplicative' structures.
+-- | disjunctive family of homomorphisms between 'Multiplicative' structures.
 --
 -- __Propoerty__ Let @'HomMultiplicativeDisjunctive' __h__@, then
 -- for all __@a@__, __@b@__ and @h@ in __@h@__ __@a@__ __@b@__ holds:
