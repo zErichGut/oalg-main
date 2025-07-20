@@ -19,6 +19,7 @@
 -- homomorphisms between 'Additive' structures
 module OAlg.Hom.Additive
   (
+{-    
     -- * Additive
     HomAdditive
 
@@ -29,6 +30,7 @@ module OAlg.Hom.Additive
   , prpHomAdd1, prpHomAdd2
   , prpDualisableAdditiveAdd1, prpDualisableAdditiveAdd2
   , prpHomDisjOpAdd
+-}
   )
   where
 
@@ -45,8 +47,8 @@ import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 
-import OAlg.Hom.Oriented
-import OAlg.Hom.Fibred
+import OAlg.Hom.Definition
+import OAlg.Hom.Fibred.Definition
 
 --------------------------------------------------------------------------------
 -- HomAdditive -
@@ -69,7 +71,6 @@ import OAlg.Hom.Fibred
 class (HomFibred h, Transformable (ObjectClass h) Add) => HomAdditive h
 
 instance HomAdditive h => HomAdditive (Path h)
-instance (TransformableFbr s, TransformableAdd s) => HomAdditive (IdHom s)
 instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 
 --------------------------------------------------------------------------------
@@ -81,21 +82,21 @@ instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 -- and @s@ in @'Struct' __s x__@ holds:
 --
 -- (1) For all @r@ in @'Root' __x__@ holds:
--- @'toDualArw' q s ('zero' r) '==' 'zero' ('toDualRt' q s r)@,
+-- @'toDualStk' q s ('zero' r) '==' 'zero' ('toDualRt' q s r)@,
 --
 -- (2) For all @a@, @b@ in @__x__@ with @'root' a '==' 'root' b@ holds:
--- @'toDualArw' q s (a '+' b) '==' 'toDualArw' q s a '+' 'toDualArw' q s b@.
+-- @'toDualStk' q s (a '+' b) '==' 'toDualStk' q s a '+' 'toDualStk' q s b@.
 --
 -- where @q@ is any proxy for @__o__@.
-class (DualisableFibredOriented s o, Transformable s Add) => DualisableAdditive s o
+class (DualisableFibred s o, Transformable s Add) => DualisableAdditive s o
 
-instance ( TransformableOrt s, TransformableAdd s, TransformableFbrOrt s
-         , TransformableOp s, TransformableType s
+instance ( TransformableType s, TransformableFbrOrt s, TransformableOp s
+         , TransformableAdd s
          ) => DualisableAdditive s Op
 
-instance ( HomFibredOriented h, HomAdditive h, DualisableAdditive s o
-         ) => HomAdditive (HomDisj s o h)
+instance (HomAdditive h, DualisableAdditive s o) => HomAdditive (HomDisj s o h)
 
+{-
 --------------------------------------------------------------------------------
 -- prpDualisableAdditiveAdd1 -
 relDualisableAdditiveAdd1 :: DualisableAdditive s o
@@ -211,3 +212,4 @@ prpHomDisjOpAdd = Prp "HomDisjOpAdd" :<=>: relHomDisjOpAdd xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty AddX Op))
   xsh = amap1 smCmpb2 $ xscmHomDisj xsoAddX XEmpty
   
+-}

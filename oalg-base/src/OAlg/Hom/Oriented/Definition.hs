@@ -14,12 +14,12 @@
 
 -- |
 -- Module      : OAlg.Hom.Oriented.Definition
--- Description : definition of covariant homomorphisms between oriented structures
+-- Description : definition of homomorphisms between oriented structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- definition of covariant homomorphisms between 'Oriented' structures.
+-- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
     -- * Covariant
@@ -72,13 +72,12 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       ) => HomOriented h where
 
 instance HomOriented h => HomOriented (Path h)
-
 instance TransformableOrt s => HomOriented (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- omapDisj -
 
--- | induced application respecting the variant.
+-- | induced application respecting the variant by applying 'opposite' for 'Contravariant' cases. 
 omapDisj :: (ApplicativePoint h, Disjunctive2 h)
   => h x y -> Orientation (Point x) -> Orientation (Point y)
 omapDisj h = case variant2 h of
@@ -106,7 +105,7 @@ omapDisj h = case variant2 h of
 --     (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
 --
 -- __Note__ The above property is equivalent to
--- @'amap' h '.' 'orientation' '.=.' 'orientation' '.' 'omapDisj' h@. 
+-- @'orienation' '.' 'amap' h '.=.' 'omapDisj' h '.' 'orientation'@. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort
       , Disjunctive2 h
@@ -118,9 +117,9 @@ instance HomOrientedDisjunctive h => HomOrientedDisjunctive (Path h)
 --------------------------------------------------------------------------------
 -- DualisableOriented -
 
--- | duality according to @__o__@ on 'Oriented'-structures
+-- | duality according to @__o__@ on 'Oriented' structures.
 --
--- __Properties__ Let @'DualisableOriented' __o s__@ then for all @__x__@
+-- __Properties__ Let @'DualisableOriented' __o s__@, then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
 -- 
 -- (1) @'start' '.' 'toDualArw' q s '.=.' 'toDualPnt' q s '.' 'end'@.
