@@ -42,59 +42,6 @@ import OAlg.Hom.Fibred.Definition
 import OAlg.Hom.Fibred.Oriented
 
 --------------------------------------------------------------------------------
--- prpHomFbr -
-
-relHomFbrStruct :: (HomFibred h, Show2 h)
-  => Homomorphous Fbr x y -> h x y -> x -> Statement
-relHomFbrStruct (Struct :>: Struct) h x
-  = (root (amap h x) == rmap h (root x)) :?> Params ["h":=show2 h, "x":=show x]
-
--- | validity according to 'HomFibred'.
-prpHomFbr :: (HomFibred h, Show2 h) => h x y -> x -> Statement
-prpHomFbr h x = Prp "HomFbr" :<=>: relHomFbrStruct (tauHom (homomorphous h)) h x
-
---------------------------------------------------------------------------------
--- prpHomFbrOrt -
-
-relHomFbrOrtStruct :: (HomFibredOriented h, Show2 h)
-  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
-relHomFbrOrtStruct (Struct :>: Struct) h r
-  = (rmap h r == omap h r) :?> Params ["h":=show2 h,"r":=show r]
-
-prpHomFbrOrt :: (HomFibredOriented h, Show2 h)
-  => h x y -> Root x -> Statement
-prpHomFbrOrt h r = Prp "HomFbrOrt"
-  :<=>: relHomFbrOrtStruct (tauHom (homomorphous h)) h r
-
---------------------------------------------------------------------------------
--- prpHomDisjFbrOrt -
-
-relHomDisjFbrOrtHomomorphous :: (HomFibredOrientedDisjunctive h, Show2 h)
-  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
-relHomDisjFbrOrtHomomorphous (Struct :>: Struct) h r
-  = (rmap h r == omapDisj h r) :?> Params ["h":=show2 h,"r":=show r]
-
-
--- | validity according to 'HomFibredOriented'.
-prpHomDisjFbrOrt :: (HomFibredOrientedDisjunctive h, Show2 h) => h a b -> Root a -> Statement
-prpHomDisjFbrOrt f r = Prp "HomDisjFbrOrt"
-  :<=>: relHomDisjFbrOrtHomomorphous (tauHom (homomorphous f)) f r
-
---------------------------------------------------------------------------------
--- prpDualisableFibredOriented -
-
-relDualisableFibredOriented :: DualisableFibredOriented s o
-  => q o -> Struct s x -> Struct FbrOrt x -> Struct FbrOrt (o x) -> Root x -> Statement
-relDualisableFibredOriented q s Struct Struct r
-  = (toDualRt q s r == toDualOrt q s r) :?> Params ["r":=show r]
-
--- | validity according to 'DualisableFibredOrientd'.
-prpDualisableFibredOriented :: DualisableFibredOriented s o
-  => q o -> Struct s x -> X (Root x) -> Statement
-prpDualisableFibredOriented q s xr = Prp "DualisableFibredOriented" :<=>:
-  Forall xr (relDualisableFibredOriented q s (tau s) (tau (tauO s)))
-
---------------------------------------------------------------------------------
 -- prpHomDisjFbrOrt -
 
 prpHomDisjFbrOrtFbrOrtX :: (HomFibredOrientedDisjunctive h, Show2 h)
@@ -132,12 +79,3 @@ xsoFbrOrtX = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
                , SomeObjectClass (Struct :: Struct FbrOrtX (Id Z))
                ]
 
-xfgFbrOrtX :: X (SomeCmpb2 (HomDisjEmpty FbrOrtX Op))
-xfgFbrOrtX = xscmHomDisj xsoFbrOrtX XEmpty
-
-dstFbrOrtX :: Int -> IO ()
-dstFbrOrtX n = putDstr asp n xfgFbrOrtX where
-  asp (SomeCmpb2 f g) = [ show $ variant2 (f . g)
-                        , show $ variant2 f
-                        , show $ variant2 g
-                        ]

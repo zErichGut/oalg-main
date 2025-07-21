@@ -24,6 +24,7 @@ import OAlg.Prelude
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
 
@@ -34,6 +35,7 @@ import OAlg.Hom.Vectorial
 prpHomDisjOp :: Statement
 prpHomDisjOp = Prp "HomDisjOp" :<=>:
   And [ prpHomDisjOpOrt
+      , prpHomDisjOpFbr
       , prpHomDisjOpFbrOrt
       , prpHomDisjOpMlt
       , prpHomDisjOpAdd

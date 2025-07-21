@@ -2,6 +2,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -26,6 +27,12 @@ module OAlg.Hom.Fibred
     -- * Duality
   , DualisableFibred
   , toDualStk, toDualRt
+
+    -- * X
+  , xsoFbrOrtX
+
+    -- * Proposition
+  , prpHomFbr, prpHomDisjOpFbr
   )
   where
 
@@ -33,6 +40,8 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 import OAlg.Category.Dualisable
+import OAlg.Category.SDuality
+import OAlg.Category.Unify
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Oriented hiding (Path(..))
@@ -75,7 +84,8 @@ instance (TransformableType s, TransformableFbrOrt s, TransformableOp s) => Dual
 --------------------------------------------------------------------------------
 -- toDualStk -
 
--- | the dual stalk ginven by @'DualisableFibred' __s o__@.
+-- | the dual stalk ginven by @'DualisableFibred' __s o__@ and induced by
+-- @'DualisableG' __s__ (->) __o__ 'Id'@.
 toDualStk :: DualisableFibred s o => q o -> Struct s x -> x -> o x
 toDualStk _ s = fromIdG (toDualG' (d s) s) where
   d :: DualisableFibred s o => Struct s x -> DualityG s (->) o Id
@@ -84,6 +94,8 @@ toDualStk _ s = fromIdG (toDualG' (d s) s) where
 --------------------------------------------------------------------------------
 -- toDualRt -
 
+-- | the dual root ginven by @'DualisableFibred' __s o__@ and induced by
+-- @'DualisableG' __s__ (->) __o__ 'Rt'@.
 toDualRt :: DualisableFibred s o => q o -> Struct s x -> Root x -> Root (o x)
 toDualRt q s = fromRtG (toDualG' (d q s) s) where
   d :: DualisableFibred s o => q o -> Struct s x -> DualityG s (->) o Rt
@@ -100,3 +112,41 @@ instance (HomFibred h, DualisableFibred s o) => HomFibred (HomDisj s o h)
 -- | functorial application of 'Fibred' homomorphisms.
 type FunctorialFibred h = (HomFibred h, Functorial h, FunctorialRoot h)
 
+--------------------------------------------------------------------------------
+-- prpHomFbr -
+
+relHomFbrStruct :: (HomFibred h, Show2 h)
+  => Homomorphous Fbr x y -> h x y -> x -> Statement
+relHomFbrStruct (Struct :>: Struct) h x
+  = (root (amap h x) == rmap h (root x)) :?> Params ["h":=show2 h, "x":=show x]
+
+-- | validity according to 'HomFibred'.
+prpHomFbr :: (HomFibred h, Show2 h) => h x y -> x -> Statement
+prpHomFbr h x = Prp "HomFbr" :<=>: relHomFbrStruct (tauHom (homomorphous h)) h x
+
+--------------------------------------------------------------------------------
+-- xsoFbrOrtX -
+
+xsoFbrOrtX :: s ~ FbrOrtX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoFbrOrtX = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
+                    , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
+                    , SomeObjectClass (Struct :: Struct FbrOrtX N)
+                    ]
+
+--------------------------------------------------------------------------------
+-- prpHomDisOpFbr -
+
+relHomFbrFbrOrtX :: (HomFibred h, Show2 h)
+  => Homomorphous FbrOrtX x y -> h x y -> Statement
+relHomFbrFbrOrtX (Struct :>: Struct) h
+  = Forall xStandard (prpHomFbr h)
+
+relHomDisjOpFbr :: (HomFibred h, Show2 h, Transformable s FbrOrtX, DualisableFibred s o)
+  => X (SomeMorphism (HomDisj s o h)) -> Statement
+relHomDisjOpFbr xsh = Forall xsh
+  (\(SomeMorphism h) -> relHomFbrFbrOrtX (tauHom (homomorphous h)) h)
+
+prpHomDisjOpFbr :: Statement
+prpHomDisjOpFbr = Prp "HomDisjOpFbr" :<=>: relHomDisjOpFbr xsh where
+  xsh :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))
+  xsh = amap1 smCmpb2 $ xscmHomDisj xsoFbrOrtX XEmpty

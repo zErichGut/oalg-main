@@ -97,6 +97,7 @@ instance (HomAdditive h, DualisableAdditive s o) => HomAdditive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- prpDualisableAdditiveAdd1 -
+
 relDualisableAdditiveAdd1 :: DualisableAdditive s o
   => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Root x -> Statement
 relDualisableAdditiveAdd1 q s Struct Struct r

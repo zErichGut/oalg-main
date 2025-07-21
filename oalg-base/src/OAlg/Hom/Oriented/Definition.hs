@@ -138,7 +138,8 @@ instance (TransformableType s, TransformableOrt s, TransformableOp s) => Dualisa
 --------------------------------------------------------------------------------
 -- toDualArw -
 
--- | the dual arrow induced by @'DualisableG __s__ (->) __o__ 'Id'@.
+-- | the dual arrow given by @'DualisableOriented' __s o__@ and induced by
+-- @'DualisableG __s__ (->) __o__ 'Id'@.
 toDualArw :: DualisableOriented s o => q o -> Struct s x -> x -> o x
 toDualArw _ s = fromIdG (toDualG' (d s) s) where
   d :: DualisableOriented s o => Struct s x -> DualityG s (->) o Id
@@ -147,7 +148,8 @@ toDualArw _ s = fromIdG (toDualG' (d s) s) where
 --------------------------------------------------------------------------------
 -- toDualPnt -
 
--- | the dual point induced by @'DualisableG' __s__ (->) __o__ 'Pnt'@.
+-- | the dual point given by @'DualisableOriented' __s o__@ and induced by
+-- @'DualisableG' __s__ (->) __o__ 'Pnt'@.
 toDualPnt :: DualisableOriented s o => q o -> Struct s x -> Point x -> Point (o x)
 toDualPnt q s = fromPntG (toDualG' (d q s) s) where
   d :: DualisableOriented s o => q o -> Struct s x -> DualityG s (->) o Pnt

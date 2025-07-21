@@ -23,14 +23,26 @@
 --
 -- definition of homomorphisms between 'FibreOriented' structures.
 module OAlg.Hom.FibredOriented
-  (
+  ( -- * Disjunctive
+    HomFibredOrientedDisjunctive, DualisableFibredOriented
+
+    -- * Covariant
+  , HomFibredOriented
+
+
+    -- * Iso
+  , isoOpFbrOrt
+
+    -- * Proposition
+  , prpHomFbrOrt, prpHomFbrOrtDisj
+  , prpDualisableFibredOrientedStk, prpDualisableFibredOrientedRt
+  , prpHomDisjOpFbrOrt
   )
   where
 
 import OAlg.Prelude
 
 import OAlg.Category.Dualisable
-import OAlg.Category.SDuality
 import OAlg.Category.Unify
 import OAlg.Category.Path
 
@@ -95,3 +107,93 @@ instance (TransformableType s, TransformableOrt s, TransformableFbrOrt s, Transf
 instance (HomFibredOriented h, DualisableFibredOriented s o)
   => HomFibredOrientedDisjunctive (HomDisj s o h)
 
+--------------------------------------------------------------------------------
+-- isoOpFbrOrt -
+
+-- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
+isoOpFbrOrt :: FibredOriented x => Variant2 Contravariant (Inv2 (HomDisjEmpty FbrOrt Op)) x (Op x)
+isoOpFbrOrt = isoOp Struct
+
+--------------------------------------------------------------------------------
+-- prpHomFbrOrt -
+
+relHomFbrOrtStruct :: (HomFibredOriented h, Show2 h)
+  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
+relHomFbrOrtStruct (Struct :>: Struct) h r
+  = (rmap h r == omap h r) :?> Params ["h":=show2 h,"r":=show r]
+
+prpHomFbrOrt :: (HomFibredOriented h, Show2 h)
+  => h x y -> Root x -> Statement
+prpHomFbrOrt h r = Prp "HomFbrOrt"
+  :<=>: relHomFbrOrtStruct (tauHom (homomorphous h)) h r
+
+--------------------------------------------------------------------------------
+-- prpHomFbrOrtDisj -
+
+relHomFbrOrtDisjHomomorphous :: (HomFibredOrientedDisjunctive h, Show2 h)
+  => Homomorphous FbrOrt x y -> h x y -> Root x -> Statement
+relHomFbrOrtDisjHomomorphous (Struct :>: Struct) h r
+  = (rmap h r == omapDisj h r) :?> Params ["h":=show2 h,"r":=show r]
+
+
+-- | validity according to 'HomFibredOrientedDisjunctive'.
+prpHomFbrOrtDisj :: (HomFibredOrientedDisjunctive h, Show2 h) => h a b -> Root a -> Statement
+prpHomFbrOrtDisj f r = Prp "HomFbrOrtDisj"
+  :<=>: relHomFbrOrtDisjHomomorphous (tauHom (homomorphous f)) f r
+
+--------------------------------------------------------------------------------
+-- prpDualisableFibredOrientedRt -
+
+relDualisableFibredOrientedRt :: DualisableFibredOriented s o
+  => q o -> Struct s x -> Struct FbrOrt x -> Struct FbrOrt (o x) -> Root x -> Statement
+relDualisableFibredOrientedRt q s Struct Struct r
+  = (toDualRt q s r == toDualOrt q s r) :?> Params ["r":=show r]
+
+-- | validity according to 'DualisableFibredOrientd'.
+prpDualisableFibredOrientedRt :: DualisableFibredOriented s o
+  => q o -> Struct s x -> Root x -> Statement
+prpDualisableFibredOrientedRt q s r = Prp "DualisableFibredOrientedRt" :<=>:
+  relDualisableFibredOrientedRt q s (tau s) (tau (tauO s)) r
+
+--------------------------------------------------------------------------------
+-- prpDualisableFibredOrientedStk -
+
+relDualisableFibredOrientedStk :: DualisableFibredOriented s o
+  => q o -> Struct s x -> Struct FbrOrt x -> Struct FbrOrt (o x) -> x -> Statement
+relDualisableFibredOrientedStk q s Struct Struct x
+  = (toDualStk q s x == toDualArw q s x) :?> Params ["x":=show x]
+
+prpDualisableFibredOrientedStk :: DualisableFibredOriented s o
+  => q o -> Struct s x -> x -> Statement
+prpDualisableFibredOrientedStk q s x = Prp "DualisableFibredOriented" :<=>:
+  relDualisableFibredOrientedStk q s (tau s) (tau (tauO s)) x
+
+--------------------------------------------------------------------------------
+-- prpHomDisjOpFbrOrt -
+
+relHomFbrOrtDisjFbrOrtX :: (HomFibredOrientedDisjunctive h, Show2 h)
+  => Homomorphous FbrOrtX x y -> h x y -> Statement
+relHomFbrOrtDisjFbrOrtX (Struct :>: Struct) h
+  = Forall xStandard (prpHomFbrOrtDisj h)
+
+relHomDisjOpFbrOrt :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op)) -> Statement
+relHomDisjOpFbrOrt xsh = Forall xsh
+  (\(SomeMorphism h) -> relHomFbrOrtDisjFbrOrtX (tauHom (homomorphous h)) h)
+
+prpHomDisjOpFbrOrt :: Statement
+prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjOpFbrOrt xsh where
+  xsh :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))
+  xsh = amap1 smCmpb2 $ xscmHomDisj xsoFbrOrtX XEmpty
+
+--------------------------------------------------------------------------------
+-- dstFbrOrtX -
+
+xfgFbrOrtX :: X (SomeCmpb2 (HomDisjEmpty FbrOrtX Op))
+xfgFbrOrtX = xscmHomDisj xsoFbrOrtX XEmpty
+
+dstFbrOrtX :: Int -> IO ()
+dstFbrOrtX n = putDstr asp n xfgFbrOrtX where
+  asp (SomeCmpb2 f g) = [ show $ variant2 (f . g)
+                        , show $ variant2 f
+                        , show $ variant2 g
+                        ]

@@ -77,21 +77,6 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG s c o d
          )
   => FunctorialG d (HomDisj s o h) c
 
-{-
-
-instance (Morphism h, Applicative h, DualisableG s (->) o Id)
-  => ApplicativeG Id (HomDisj s o h) (->) where
-  amapG (HomDisj h) = amapG h
-
-
-
-instance (Morphism h, ApplicativePoint h, DualisableG s (->) o Pnt)
-  => ApplicativeG Pnt (HomDisj s o h) (->) where
-  amapG (HomDisj h) = amapG h
-
-instance (Morphism h, ApplicativePoint h, DualisableG s (->) o Pnt)
-  => FunctorialG Pnt (HomDisj s o h) (->)
--}  
 --------------------------------------------------------------------------------
 -- HomEmpty -
 
