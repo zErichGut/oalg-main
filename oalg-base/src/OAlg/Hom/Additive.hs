@@ -19,7 +19,6 @@
 -- homomorphisms between 'Additive' structures
 module OAlg.Hom.Additive
   (
-{-    
     -- * Additive
     HomAdditive
 
@@ -30,7 +29,6 @@ module OAlg.Hom.Additive
   , prpHomAdd1, prpHomAdd2
   , prpDualisableAdditiveAdd1, prpDualisableAdditiveAdd2
   , prpHomDisjOpAdd
--}
   )
   where
 
@@ -48,7 +46,7 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Fibred.Definition
+import OAlg.Hom.Fibred
 
 --------------------------------------------------------------------------------
 -- HomAdditive -
@@ -96,13 +94,13 @@ instance ( TransformableType s, TransformableFbrOrt s, TransformableOp s
 
 instance (HomAdditive h, DualisableAdditive s o) => HomAdditive (HomDisj s o h)
 
-{-
+
 --------------------------------------------------------------------------------
 -- prpDualisableAdditiveAdd1 -
 relDualisableAdditiveAdd1 :: DualisableAdditive s o
   => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Root x -> Statement
 relDualisableAdditiveAdd1 q s Struct Struct r
-  = (toDualArw q s (zero r) == zero (toDualRt q s r)) :?> Params ["r":=show r]
+  = (toDualStk q s (zero r) == zero (toDualRt q s r)) :?> Params ["r":=show r]
 
 -- | validity according to 'DualisableAdditive', property 1.
 prpDualisableAdditiveAdd1 :: DualisableAdditive s o
@@ -115,13 +113,7 @@ prpDualisableAdditiveAdd1 q s r = Prp "DualisableAdditiveAdd1"
 relDualisableAdditiveAdd2 :: DualisableAdditive s o
   => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Adbl2 x -> Statement
 relDualisableAdditiveAdd2 q s Struct Struct ad@(Adbl2 a b)
-  = (toDualArw q s (a + b) == toDualArw q s a + toDualArw q s b) :?> Params ["ad":=show ad]  
--- root (toDualArrw q s x) == orientation (toDualArw q s x)       :: Transformable s FbrOrt
--- orientation (toDualArw q s x) == toDualOrt q s (orientation x) :: DualisableOriented s o
--- toDualOrt q s (orientation x) == toDualOrt q s (root x)        :: Transformable s FbrOrt
--- toDualOrt q s (root x) == toDualRt (root x)                    :: DualisableFibredOriented s o
---
--- this shows that the above equation is valid!
+  = (toDualStk q s (a + b) == toDualStk q s a + toDualStk q s b) :?> Params ["ad":=show ad]  
 
 -- | validity according to 'DualisableAdditive', property 2.
 prpDualisableAdditiveAdd2 :: DualisableAdditive s o
@@ -212,4 +204,4 @@ prpHomDisjOpAdd = Prp "HomDisjOpAdd" :<=>: relHomDisjOpAdd xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty AddX Op))
   xsh = amap1 smCmpb2 $ xscmHomDisj xsoAddX XEmpty
   
--}
+

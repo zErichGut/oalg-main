@@ -133,7 +133,7 @@ instance Entity p => Additive (Orientation p) where
 
 instance (Additive a, FibredOriented a) => Additive (Op a) where
   zero r = Op (zero $ transpose r)
-  Op a + Op b = Op (a + b)
+  Op a + Op b = Op (b + a)
   ntimes n (Op a) = Op (ntimes n a)
 
 --------------------------------------------------------------------------------

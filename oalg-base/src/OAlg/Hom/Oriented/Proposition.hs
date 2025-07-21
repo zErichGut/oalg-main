@@ -47,7 +47,6 @@ import OAlg.Structure.Oriented
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Oriented.X
 
 --------------------------------------------------------------------------------
 -- prpDualisableOriented -

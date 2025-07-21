@@ -16,10 +16,18 @@
 --
 -- basic definitions of homomorphisms.
 module OAlg.Hom.Definition
-  ( HomDisj(..), homDisj
+  (
+    -- * Disjunctive
+    HomDisj(..), homDisj
   , IsoOp, isoOp
+  , HomDisjEmpty
 
-  , HomEmpty, HomDisjEmpty
+
+    -- * Empty
+  , HomEmpty
+
+    -- * X
+  , xscmHomDisj
   )
   where
 
@@ -27,6 +35,7 @@ import OAlg.Prelude
 
 import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
+import OAlg.Category.Unify
 
 import OAlg.Data.Variant
 
@@ -140,6 +149,14 @@ isoOp s = Contravariant2 (Inv2 t f) where
   Contravariant2 t = cToDual s
   Contravariant2 f = cFromDual s
 
+
+--------------------------------------------------------------------------------
+-- xscmHomDisj -
+
+-- | random variable for some composable 'HomDisj'.
+xscmHomDisj :: (TransformableG o s s, Morphism h, Transformable (ObjectClass h) s)
+  => X (SomeObjectClass (SHom s s o h)) -> X (SomeMorphism h) -> X (SomeCmpb2 (HomDisj s o h))
+xscmHomDisj xo = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (HomDisj f) (HomDisj g)) . xSctSomeCmpb2 10 xo
 
 
 

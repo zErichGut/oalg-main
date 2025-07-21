@@ -43,7 +43,7 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 
-import OAlg.Hom.Oriented
+import OAlg.Hom.Definition
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
 
@@ -60,13 +60,6 @@ class (HomAdditive h, Transformable (ObjectClass h) (Vec k)) => HomVectorial k h
 
 instance HomVectorial k h => HomVectorial k (Path h)
 
-instance ( TransformableFbr (s k)
-         , TransformableAdd (s k)
-         , TransformableVec k s
-         )
-  => HomVectorial k (IdHom (s k))
-
-instance HomVectorial k (HomEmpty (VecX k))
 
 --------------------------------------------------------------------------------
 -- prpHomVectorial -
@@ -90,14 +83,12 @@ prpHomVectorial h k x = Prp "HomVectorial"
 -- __Propoerty__ Let @'DualisableVectorial' __k s o__@ then for all @__x__@, @s@ in @'Struct' __s x__@
 -- and @k@ in @__k__@ holds:
 --
--- (1) @'toDualArw' q s (k '!' x) '==' k '!' toDualArw q s x@.
+-- (1) @'toDualStk' q s (k '!' x) '==' k '!' toDualStk q s x@.
 --
 -- where @q@ is any proxy for @__o__@.
 class (DualisableAdditive s o, Transformable s (Vec k)) => DualisableVectorial k s o
 
-instance ( HomVectorial k h, HomFibredOriented h
-         , DualisableVectorial k s o
-         ) => HomVectorial k (HomDisj s o h)
+instance (HomVectorial k h, DualisableVectorial k s o) => HomVectorial k (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- relDualisableVectorial -
@@ -105,7 +96,7 @@ instance ( HomVectorial k h, HomFibredOriented h
 relDualisableVectorial :: DualisableVectorial k s o
   => q o -> Struct s x -> Struct (Vec k) x -> Struct (Vec k) (o x) -> k -> x -> Statement
 relDualisableVectorial q s Struct Struct k x
-  = (toDualArw q s (k ! x) == k ! toDualArw q s x) :?> Params ["k":=show k, "x":=show x]
+  = (toDualStk q s (k ! x) == k ! toDualStk q s x) :?> Params ["k":=show k, "x":=show x]
 
 prpDualisableVectorial :: DualisableVectorial k s o
   => q o -> Struct s x -> k -> x -> Statement
@@ -117,10 +108,10 @@ prpDualisableVectorial q s k x = Prp "DualisableVectorial"
 
 data VecX k
 
-type instance Structure (VecX k) x = ( Vectorial x, Scalar x ~ k
-                                     , FibredOriented x
-                                     , XStandard k, XStandard x
-                                     )
+type instance Structure (VecX k) x
+  = (Vectorial x, Scalar x ~ k, FibredOriented x, XStandard k, XStandard x)
+
+instance HomVectorial k (HomEmpty (VecX k))
 
 instance Transformable (VecX k) Fbr where tau Struct = Struct
 instance TransformableFbr (VecX k)
@@ -166,47 +157,48 @@ prpHomDisjOpVecZ = Prp "HomDisjOpVecZ" :<=>: relHomDisjOpVecZ xsh where
 -- xsoVecXZ -
 
 xsoVecXZ :: s ~ VecX Z => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
-xsoVecXZ = xOneOf [ SomeObjectClass (Struct :: Struct (VecX Z) (ZMod Z))
-                  , SomeObjectClass (Struct :: Struct (VecX Z) (ZMod Q))
-                  , SomeObjectClass (Struct :: Struct (VecX Z) (ZMod OS))
+xsoVecXZ = xOneOf [ SomeObjectClass (Struct :: Struct (VecX Z) (ZVec Z))
+                  , SomeObjectClass (Struct :: Struct (VecX Z) (ZVec Q))
+                  , SomeObjectClass (Struct :: Struct (VecX Z) (ZVec OS))
                   ]
 
 --------------------------------------------------------------------------------
--- ZMod -
+-- ZVec -
 
-newtype ZMod x = ZMod x deriving (Eq,Show,Validable)
+newtype ZVec x = ZVec x deriving (Eq,Show,Validable)
 
-instance XStandard x => XStandard (ZMod x) where xStandard = amap1 ZMod xStandard
+instance XStandard x => XStandard (ZVec x) where xStandard = amap1 ZVec xStandard
 
-type instance Point (ZMod x) = Point x
-instance ShowPoint x => ShowPoint (ZMod x)
-instance EqPoint x => EqPoint (ZMod x)
-instance ValidablePoint x => ValidablePoint (ZMod x)
-instance TypeablePoint x => TypeablePoint (ZMod x)
+type instance Point (ZVec x) = Point x
+instance ShowPoint x => ShowPoint (ZVec x)
+instance EqPoint x => EqPoint (ZVec x)
+instance ValidablePoint x => ValidablePoint (ZVec x)
+instance TypeablePoint x => TypeablePoint (ZVec x)
 
-instance Oriented x => Oriented (ZMod x) where
-  orientation (ZMod x) = orientation x
+instance Oriented x => Oriented (ZVec x) where
+  orientation (ZVec x) = orientation x
 
-type instance Root (ZMod x) = Root x
-instance ShowRoot x => ShowRoot (ZMod x)
-instance EqRoot x => EqRoot (ZMod x)
-instance ValidableRoot x => ValidableRoot (ZMod x)
-instance TypeableRoot x => TypeableRoot (ZMod x)
+type instance Root (ZVec x) = Root x
+instance ShowRoot x => ShowRoot (ZVec x)
+instance EqRoot x => EqRoot (ZVec x)
+instance ValidableRoot x => ValidableRoot (ZVec x)
+instance TypeableRoot x => TypeableRoot (ZVec x)
 
-instance FibredOriented x => Fibred (ZMod x)
-instance FibredOriented x => FibredOriented (ZMod x)
+instance FibredOriented x => Fibred (ZVec x)
+instance FibredOriented x => FibredOriented (ZVec x)
 
-instance (Additive x, FibredOriented x) => Additive (ZMod x) where
-  zero r = ZMod (zero r)
-  ZMod a + ZMod b = ZMod (a+b)
-  ntimes n (ZMod a) = ZMod (ntimes n a)
+instance (Additive x, FibredOriented x) => Additive (ZVec x) where
+  zero r = ZVec (zero r)
+  ZVec a + ZVec b = ZVec (a+b)
+  ntimes n (ZVec a) = ZVec (ntimes n a)
 
-instance (Abelian x, FibredOriented x) => Abelian (ZMod x) where
-  negate (ZMod x) = ZMod (negate x)
-  ZMod a - ZMod b = ZMod (a-b)
-  ztimes z (ZMod a) = ZMod (ztimes z a)
+instance (Abelian x, FibredOriented x) => Abelian (ZVec x) where
+  negate (ZVec x) = ZVec (negate x)
+  ZVec a - ZVec b = ZVec (a-b)
+  ztimes z (ZVec a) = ZVec (ztimes z a)
 
-instance (Abelian x, FibredOriented x) => Vectorial (ZMod x) where
-  type Scalar (ZMod x) = Z
+instance (Abelian x, FibredOriented x) => Vectorial (ZVec x) where
+  type Scalar (ZVec x) = Z
   (!) = ztimes
+
 
