@@ -19,6 +19,7 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
+{-    
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
@@ -41,18 +42,20 @@ module OAlg.Entity.Diagram.Definition
   , xDiagram, xDiagramChain
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
-
+-}
   )
   where
 
 import Control.Monad 
 
+import Data.Kind
 import Data.Typeable
 import Data.Array as A hiding (range)
 import Data.Foldable (toList)
 
 import OAlg.Prelude hiding (T)
 
+import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Either
@@ -61,6 +64,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 
 import OAlg.Entity.Natural as N hiding ((++))
@@ -83,8 +87,6 @@ data DiagramType
 
 ----------------------------------------
 -- DiagramType - Dual -
-
-
 
 type instance Dual 'Empty                   = 'Empty
 type instance Dual 'Discrete                = 'Discrete
@@ -224,6 +226,27 @@ dgCenter (DiagramSink c _)   = c
 dgCenter (DiagramSource c _) = c
 
 --------------------------------------------------------------------------------
+-- dgMap -
+
+dgMap :: HomOriented h => h x y -> Diagram t n m x -> Diagram t n m y
+dgMap h d                  =  case d of
+  DiagramEmpty             -> DiagramEmpty
+  DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
+  DiagramChainTo e as      -> DiagramChainTo (hPnt e) (amap1 hArw as)
+  DiagramChainFrom s as    -> DiagramChainFrom  (hPnt s) (amap1 hArw as)
+  DiagramParallelLR l r as -> DiagramParallelLR (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramParallelRL l r as -> DiagramParallelRL (hPnt l) (hPnt r) (amap1 hArw as)
+  DiagramSink e as         -> DiagramSink (hPnt e) (amap1 hArw as)
+  DiagramSource s as       -> DiagramSource (hPnt s) (amap1 hArw as)
+  DiagramGeneral ps aijs   -> DiagramGeneral (amap1 hPnt ps)
+                                (amap1 (\(a,o) -> (hArw a,o)) aijs)
+  where hPnt = pmap h
+        hArw = amap h
+
+instance (HomOriented h) => ApplicativeG (Diagram t n m) h (->) where
+  amapG = dgMap
+
+--------------------------------------------------------------------------------
 -- dgMapCov -
 
 -- | mapping of a diagram via a 'Covariant' homomorphism on 'Oriented' structures.
@@ -284,6 +307,7 @@ dgMapCnt (Contravariant2 h) d = case d of
   where hPnt = pmap h
         hArw = amap h
 
+
 --------------------------------------------------------------------------------
 -- Diagram - Dual1 -
 
@@ -292,6 +316,52 @@ type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
 instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
 
+instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
+  => ApplicativeG (SDuality (Diagram t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smap h
+
+isoO :: (TransformableGRefl o s)
+  => Struct s x -> Variant2 Contravariant (Inv2 (HomDisjEmpty s o)) x (o x)
+isoO s = Contravariant2 (Inv2 t f) where
+  Contravariant2 t = cToDual s
+  Contravariant2 f = cFromDual s
+
+dgToBidual :: ( DualisableOriented s o, TransformableOrt s
+              , TransformableGRefl o s
+              )
+  => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
+dgToBidual s = dgMap (Covariant2 (t' . t)) where
+  Contravariant2 (Inv2 t _)  = isoO s
+  Contravariant2 (Inv2 t' _) = isoO (tauO s) 
+
+dgFromBidual :: ( DualisableOriented s o, TransformableOrt s
+                , TransformableGRefl o s
+                )
+  => Struct s x -> Diagram t n m (o (o x)) -> Diagram t n m x
+dgFromBidual s = dgMap (Covariant2 (f . f')) where
+  Contravariant2 (Inv2 _ f)  = isoO s
+  Contravariant2 (Inv2 _ f') = isoO (tauO s) 
+
+
+instance ( Transformable s Type, DualisableOriented s o
+         , TransformableOrt s, TransformableGRefl o s
+         )
+  => ReflexiveG s (->) o (Diagram t n m) where
+  reflG s = Inv2 (dgToBidual s) (dgFromBidual s)
+
+
+instance ( DualisableOriented s o, t' ~ Dual t, Transformable s Type, TransformableGRefl o s
+         , TransformableOrt s
+         )
+  => DualisableGBi s (->) o (Diagram t n m) (Diagram t' n m)
+
+
+instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s
+         , TransformableOrt s
+         )
+  => DualisableGBiDual1 s (->) o (Diagram t n m)
+
+{-
 instance HomOrientedDisjunctive h => ApplicativeG (Diagram t n m) (Variant2 Covariant h) (->) where
   amapG = dgMapCov
 
@@ -767,3 +837,4 @@ xSomeDiagramOrnt xn xp
 
 xsd :: X (SomeDiagram OS)
 xsd = xSomeDiagramOrnt xn xStandard where xn = amap1 someNatural $ xNB 0 20
+-}

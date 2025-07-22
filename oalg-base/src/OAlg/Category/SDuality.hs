@@ -26,8 +26,12 @@ module OAlg.Category.SDuality
   (
     -- * Duality
     SDuality(..)
+  , smap, DualisableGBiDual1
+  
+{-    
   , ApplicativeS(..), smap
   , FunctorialS
+-}
   , ShowDual1, EqDual1, ValidableDual1
 
     -- * Category
@@ -40,11 +44,15 @@ module OAlg.Category.SDuality
   , SMorphism(..)
   , PathSMorphism, rdcPathSMorphism
 
+{-
     -- * Proposition
   , prpFunctorialS, SomeApplSDuality(..)
-
+-}
+  
     -- * X
+{-    
   , xSDuality
+-}
   , xSctSomeMrph
   , xSctSomeCmpb2
 
@@ -52,6 +60,8 @@ module OAlg.Category.SDuality
 
 import Control.Monad
 import Control.Applicative ((<|>))
+
+import Data.Kind
 
 import Data.List ((++))
 
@@ -320,6 +330,88 @@ deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDuality d
 type instance Dual1 (SDuality d) = SDuality (Dual1 d)
 
 --------------------------------------------------------------------------------
+-- DualisableGBiDual1 -
+
+class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
+
+
+--------------------------------------------------------------------------------
+-- SDuality - DualisableG -
+
+toBidualSDuality :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> SDuality d x -> SDuality d (o (o x))
+toBidualSDuality r (SDuality e) = SDuality $ case e of
+  Right1 d -> Right1 $ t d where Inv2 t _ = reflG r
+  Left1 d  -> Left1 $ t d where Inv2 t _ = reflG r
+
+fromBidualSDuality :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> SDuality d (o (o x)) -> SDuality d x 
+fromBidualSDuality r s@(SDuality e) = case e of
+  Right1 d -> SDuality $ Right1 $ f d where Inv2 _ f = reflG r
+  Left1 d -> SDuality $ Left1 $ f' s r d where
+    f' :: DualisableGBiDual1 r (->) o d
+      => q d y -> Struct r x -> Dual1 d (o (o x)) -> Dual1 d x
+    f' _ r = f where Inv2 _ f = reflG r 
+    
+reflSDuality :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> Inv2 (->) (SDuality d x) (SDuality d (o (o x)))
+reflSDuality r = Inv2 t f where
+  t = toBidualSDuality r
+  f = fromBidualSDuality r
+
+toDualSDuality :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> SDuality d x -> SDuality d (o x)
+toDualSDuality r (SDuality e) = SDuality $ case e of
+  Right1 d -> Left1 $ toDualGLft r d
+  Left1 d  -> Right1 $ toDualGRgt r d
+  
+instance (DualisableGBiDual1 r (->) o d, Transformable r Type) => ReflexiveG r (->) o (SDuality d) where
+  reflG = reflSDuality
+
+instance ( DualisableGBiDual1 r (->) o d
+         , Transformable r Type, TransformableGRefl o r
+         ) => DualisableG r (->) o (SDuality d) where
+  toDualG = toDualSDuality
+
+smpMapSDuality :: ( Morphism h
+                  , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+                  , DualisableGBi r (->) o d (Dual1 d)
+                  , Transformable s r
+                  )
+  => SMorphism r s o h x y -> SDuality d x -> SDuality d y
+smpMapSDuality sh (SDuality e)
+  =              case sh of
+  SCov h      -> SDuality $ case e of
+    Right1 d  -> Right1 $ amapG h d
+    Left1 d'  -> Left1 $ amapG h d'
+  t@SToDual   -> SDuality $ case e of
+    Right1 d  -> Left1 $ toDualGLft (smpBaseDomain t) d
+    Left1 d'  -> Right1 $ toDualGRgt (smpBaseDomain t) d'
+  f@SFromDual -> SDuality $ case e of
+    Right1 d  -> Left1 $ fromDualGRgt (smpBaseRange f) d
+    Left1 d'  -> Right1 $ fromDualGLft (smpBaseRange f) d'
+
+smpPathMapSDuality :: ( Morphism h
+                      , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+                      , DualisableGBiDual1 r (->) o d
+                      , Transformable s r
+                      )
+  => Path (SMorphism r s o h) x y -> SDuality d x -> SDuality d y
+smpPathMapSDuality h
+  =           case h of
+  IdPath _ -> id
+  m :. h'  -> smpMapSDuality m . smpPathMapSDuality h'
+
+smap :: ( Morphism h
+        , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+        , DualisableGBiDual1 r (->) o d
+        , Transformable s r
+        )
+  => SHom r s o h x y -> SDuality d x -> SDuality d y
+smap = smpPathMapSDuality . form
+
+{-
+--------------------------------------------------------------------------------
 -- ApplicativeS -
 
 -- | application on 'Disjunctive2' types.
@@ -364,6 +456,7 @@ class ( CategoryDisjunctive h, ApplicativeS h d
 
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
 
+
 --------------------------------------------------------------------------------
 -- xSDuality -
 
@@ -397,6 +490,7 @@ prpFunctorialS :: FunctorialS h d
   => X (SomeApplSDuality h d) -> Statement
 prpFunctorialS xsd = Prp "FunctorialS" :<=>:
   Forall xsd (\(SomeApplSDuality f g d) -> relFunctorialS f g d)
+-}
 
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -
@@ -472,4 +566,5 @@ xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
 xSctSomeMrph :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
   => N -> X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism (SHom r s o h))
 xSctSomeMrph n xo = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) $ xSctSomeCmpb2 n xo XEmpty
+
 

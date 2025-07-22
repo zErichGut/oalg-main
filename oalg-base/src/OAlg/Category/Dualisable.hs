@@ -157,7 +157,7 @@ class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
   fromDualGRgt r = v . toDualGLft (tau1 r) where Inv2 _ v = reflG r
 
 --------------------------------------------------------------------------------
--- Op - SDualisable - Id -
+-- Op - DualisableG - Id -
 
 instance Transformable r Type => ReflexiveG r (->) Op Id where
   reflG _ = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
@@ -176,7 +176,7 @@ instance DualisableG OrtX EqualExtOrt Op Id where
   toDualG r@Struct = Sub t where t = toDualG r
 
 --------------------------------------------------------------------------------
--- Op - SDualisable - Pnt -
+-- Op - DualisableG - Pnt -
 
 instance Transformable r Type => ReflexiveG r (->) Op Pnt where
   reflG _ = Inv2 idPnt idPnt where
@@ -201,7 +201,7 @@ toDualRtOp :: Struct FbrOrt x -> Rt x -> Rt (Op x)
 toDualRtOp Struct (Rt r) = Rt (opposite r)
 
 --------------------------------------------------------------------------------
--- Op - SDualisable - Rt -
+-- Op - DualisableG - Rt -
 
 instance Transformable r Type => ReflexiveG r (->) Op Rt where
   reflG _ = Inv2 idRt idRt

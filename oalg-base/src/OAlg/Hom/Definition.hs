@@ -66,6 +66,18 @@ instance (Morphism h, TransformableGRefl o s) => CategoryDualisable o (HomDisj s
   cToDual s   = Contravariant2 (HomDisj t) where Contravariant2 t = cToDual s
   cFromDual s = Contravariant2 (HomDisj f) where Contravariant2 f = cFromDual s
 
+instance ( Morphism h, ApplicativeG Id h c, DualisableG s c o Id
+         , TransformableGObjectClassRange Id s c
+         )
+  => ApplicativeG Id (HomDisj s o h) c where
+  amapG (HomDisj h) = amapG h
+
+instance ( Morphism h, ApplicativeG Id h c, DualisableG s c o Id
+         , TransformableGObjectClassRange Id s c
+         )
+  => FunctorialG Id (HomDisj s o h) c
+  
+{-
 instance ( Morphism h, ApplicativeG d h c, DualisableG s c o d
          , TransformableGObjectClassRange d s c
          )
@@ -76,7 +88,7 @@ instance ( Morphism h, ApplicativeG d h c, DualisableG s c o d
          , TransformableGObjectClassRange d s c
          )
   => FunctorialG d (HomDisj s o h) c
-
+-}
 --------------------------------------------------------------------------------
 -- HomEmpty -
 

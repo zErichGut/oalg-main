@@ -114,6 +114,11 @@ class ( Morphism h, Applicative h, ApplicativePoint h
 
 instance HomOrientedDisjunctive h => HomOrientedDisjunctive (Path h)
 
+instance ApplicativeG d h (->) => ApplicativeG d (Variant2 Covariant h) (->) where
+  amapG (Covariant2 h) = amapG h
+  
+instance HomOrientedDisjunctive h => HomOriented (Variant2 Covariant h)
+
 --------------------------------------------------------------------------------
 -- DualisableOriented -
 
@@ -166,6 +171,11 @@ toDualOrt q st (s :> e) = opposite (t s :> t e) where t = toDualPnt q st
 --------------------------------------------------------------------------------
 -- HomDisj - HomOrientedDisjunctive -
 
+instance (HomOriented h, DualisableG s (->) o Pnt) => ApplicativeG Pnt (HomDisj s o h) (->) where
+  amapG (HomDisj h) = amapG h
+
+instance (HomOriented h, DualisableG s (->) o Pnt) => FunctorialG Pnt (HomDisj s o h) (->)
+  
 instance (HomOriented h, DualisableOriented s o) => HomOrientedDisjunctive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
