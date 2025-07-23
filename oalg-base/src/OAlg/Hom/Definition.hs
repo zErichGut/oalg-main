@@ -19,7 +19,7 @@ module OAlg.Hom.Definition
   (
     -- * Disjunctive
     HomDisj(..), homDisj
-  , IsoOp, isoOp
+  , IsoO, isoO
   , HomDisjEmpty
 
 
@@ -77,18 +77,6 @@ instance ( Morphism h, ApplicativeG Id h c, DualisableG s c o Id
          )
   => FunctorialG Id (HomDisj s o h) c
   
-{-
-instance ( Morphism h, ApplicativeG d h c, DualisableG s c o d
-         , TransformableGObjectClassRange d s c
-         )
-  => ApplicativeG d (HomDisj s o h) c where
-  amapG (HomDisj h) = amapG h
-
-instance ( Morphism h, ApplicativeG d h c, DualisableG s c o d
-         , TransformableGObjectClassRange d s c
-         )
-  => FunctorialG d (HomDisj s o h) c
--}
 --------------------------------------------------------------------------------
 -- HomEmpty -
 
@@ -132,21 +120,19 @@ instance TransformableObjectClass OrtX (HomDisj OrtX Op (HomEmpty OrtX))
 instance Transformable s Typ => EqExt (HomDisjEmpty s Op)
 
 --------------------------------------------------------------------------------
--- IsoOp -
+-- IsoO -
 
-type IsoOp s x = Variant2 Contravariant (Inv2 (HomDisjEmpty s Op)) x (Op x)
+type IsoO s o x = Variant2 Contravariant (Inv2 (HomDisjEmpty s o)) x (o x)
 
 --------------------------------------------------------------------------------
--- isoOp -
+-- isoO -
 
--- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOp :: TransformableGRefl Op s
-  => Struct s x -> Variant2 Contravariant (Inv2 (HomDisjEmpty s Op)) x (Op x)
-isoOp s = Contravariant2 (Inv2 t f) where
+isoO :: TransformableGRefl o s
+  => Struct s x -> IsoO s o x
+isoO s = Contravariant2 (Inv2 t f) where
   Contravariant2 t = cToDual s
   Contravariant2 f = cFromDual s
-
-
+  
 --------------------------------------------------------------------------------
 -- xscmHomDisj -
 

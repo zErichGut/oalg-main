@@ -134,8 +134,8 @@ type FunctorialMultiplicative h = (FunctorialOriented h, HomMultiplicativeDisjun
 --------------------------------------------------------------------------------
 -- isoOpMlt -
 
-isoOpMlt :: Multiplicative x => Variant2 Contravariant (Inv2 (HomDisjEmpty Mlt Op)) x (Op x)
-isoOpMlt = isoOp Struct
+isoOpMlt :: Multiplicative x => IsoO Mlt Op x
+isoOpMlt = isoO Struct
 
 --------------------------------------------------------------------------------
 -- relMapMltOne -

@@ -111,8 +111,8 @@ instance (HomFibredOriented h, DualisableFibredOriented s o)
 -- isoOpFbrOrt -
 
 -- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpFbrOrt :: FibredOriented x => Variant2 Contravariant (Inv2 (HomDisjEmpty FbrOrt Op)) x (Op x)
-isoOpFbrOrt = isoOp Struct
+isoOpFbrOrt :: FibredOriented x => IsoO FbrOrt Op x
+isoOpFbrOrt = isoO Struct
 
 --------------------------------------------------------------------------------
 -- prpHomFbrOrt -

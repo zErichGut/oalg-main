@@ -246,6 +246,7 @@ dgMap h d                  =  case d of
 instance (HomOriented h) => ApplicativeG (Diagram t n m) h (->) where
   amapG = dgMap
 
+{-
 --------------------------------------------------------------------------------
 -- dgMapCov -
 
@@ -275,6 +276,7 @@ dgMapCov (Covariant2 h) d = case d of
                                 (amap1 (\(a,o) -> (hArw a,o)) aijs)
   where hPnt = pmap h
         hArw = amap h
+-}
 
 --------------------------------------------------------------------------------
 -- dgMapCnt -
@@ -320,44 +322,36 @@ instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
   => ApplicativeG (SDuality (Diagram t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smap h
 
-isoO :: (TransformableGRefl o s)
-  => Struct s x -> Variant2 Contravariant (Inv2 (HomDisjEmpty s o)) x (o x)
-isoO s = Contravariant2 (Inv2 t f) where
-  Contravariant2 t = cToDual s
-  Contravariant2 f = cFromDual s
-
-dgToBidual :: ( DualisableOriented s o, TransformableOrt s
-              , TransformableGRefl o s
-              )
+dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
 dgToBidual s = dgMap (Covariant2 (t' . t)) where
   Contravariant2 (Inv2 t _)  = isoO s
   Contravariant2 (Inv2 t' _) = isoO (tauO s) 
 
-dgFromBidual :: ( DualisableOriented s o, TransformableOrt s
-                , TransformableGRefl o s
-                )
+dgFromBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m (o (o x)) -> Diagram t n m x
 dgFromBidual s = dgMap (Covariant2 (f . f')) where
   Contravariant2 (Inv2 _ f)  = isoO s
   Contravariant2 (Inv2 _ f') = isoO (tauO s) 
 
 
-instance ( Transformable s Type, DualisableOriented s o
-         , TransformableOrt s, TransformableGRefl o s
-         )
+instance (Transformable s Type, DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => ReflexiveG s (->) o (Diagram t n m) where
   reflG s = Inv2 (dgToBidual s) (dgFromBidual s)
 
-
-instance ( DualisableOriented s o, t' ~ Dual t, Transformable s Type, TransformableGRefl o s
-         , TransformableOrt s
+instance (DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
+         , t' ~ Dual t, t ~ Dual t'
          )
-  => DualisableGBi s (->) o (Diagram t n m) (Diagram t' n m)
+  => DualisableGBi s (->) o (Diagram t n m) (Diagram t' n m) where
+  toDualGLft s = dgMapCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+  toDualGRgt s = dgMapCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
 
 
-instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s
-         , TransformableOrt s
+instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
+         , t ~ Dual (Dual t)
          )
   => DualisableGBiDual1 s (->) o (Diagram t n m)
 
@@ -373,6 +367,7 @@ instance (HomOrientedDisjunctive h, Dual (Dual t) ~ t) => ApplicativeS h (Diagra
   vFromDual = dgMapCnt
 
 instance (FunctorialOriented h, Dual (Dual t) ~ t) => FunctorialS h (Diagram t n m)
+-}
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -
@@ -450,7 +445,6 @@ instance (Oriented a, Typeable d, Typeable n, Typeable m)
   orientation (DiagramParallelLR l r _) = l:>r
   orientation (DiagramParallelRL l r _) = r:>l
 
-
 --------------------------------------------------------------------------------
 -- dgQuiver -
 
@@ -474,7 +468,6 @@ dgQuiver d = case dgTypeRefl d of
   Refl -> coQuiverInv $ dgQuiver d' where
     SDuality (Left1 d') = amapG toOp (SDuality (Right1 d))
     Contravariant2 (Inv2 toOp _) = isoOpOrt
-
 
 --------------------------------------------------------------------------------
 -- chnToStart -
@@ -689,6 +682,7 @@ instance (Oriented a, XStandardOrtSite t a, Attestable m, n ~ m + 1)
   => XStandard (Diagram (Chain t) n m a) where
   xStandard = xDiagramChain xStandardOrtSite
 
+{-
 instance (Oriented x, XStandardOrtSite To x, XStandardOrtSite From x, Attestable m, n ~ m+1)
   => XStandardDual1 (SDuality (Diagram (Chain To) n m)) x
 
@@ -708,7 +702,7 @@ instance (Oriented x, XStandardOrtSite To x, Attestable m, n ~ m+1)
 instance (Attestable m, n ~ m+1)
   => TransformableG (SDuality (Diagram (Chain From) n m)) OrtSiteX EqE where
   tauG Struct = Struct
-
+-}
 --------------------------------------------------------------------------------
 -- SomeDiagram -
 
@@ -742,7 +736,7 @@ instance Oriented a => Validable (SomeDiagram a) where
 
 --------------------------------------------------------------------------------
 -- sdgMap -
-
+{-
 -- | mapping of some diagram via a homomorphismd on 'Oriented' structures.
 sdgMap :: HomOrientedDisjunctive h
   => h a b -> SomeDiagram a -> SomeDiagram b
@@ -756,7 +750,8 @@ instance HomOrientedDisjunctive h
   amapG = sdgMap
 
 instance FunctorialOriented h => FunctorialG SomeDiagram h (->)
-
+-}
+{-
 --------------------------------------------------------------------------------
 -- xSomeDiagram -
 

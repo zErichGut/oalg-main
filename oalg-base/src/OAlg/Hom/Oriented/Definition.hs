@@ -191,6 +191,6 @@ instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomDisj 
 -- isoOpOrt -
 
 -- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpOrt :: Oriented x => Variant2 Contravariant (Inv2 (HomDisjEmpty Ort Op)) x (Op x)
-isoOpOrt = isoOp Struct
+isoOpOrt :: Oriented x => IsoO Ort Op x
+isoOpOrt = isoO Struct
 
