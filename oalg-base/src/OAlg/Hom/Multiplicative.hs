@@ -26,7 +26,6 @@ module OAlg.Hom.Multiplicative
   (
     -- * Disjunctive
     HomMultiplicativeDisjunctive
-  , FunctorialMultiplicative
   , isoOpMlt
 
     -- * Covariant
@@ -126,12 +125,6 @@ instance (HomMultiplicative h, DualisableMultiplicative s o)
 instance ( TransformableOrt s, TransformableMlt s, TransformableOp s
          , TransformableType s
          ) => DualisableMultiplicative s Op
-
---------------------------------------------------------------------------------
--- FunctorialMultiplicative -
-
--- | functorial homomorphisms between 'Multiplicative' structures.
-type FunctorialMultiplicative h = (FunctorialOriented h, HomMultiplicativeDisjunctive h)
 
 --------------------------------------------------------------------------------
 -- isoOpMlt -

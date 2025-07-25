@@ -286,7 +286,6 @@ dgMapCnt (Contravariant2 h) d = case d of
   where hPnt = pmap h
         hArw = amap h
 
-
 --------------------------------------------------------------------------------
 -- Diagram - Dual1 -
 
@@ -298,6 +297,12 @@ instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
 instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
   => ApplicativeG (SDuality (Diagram t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smap h
+
+instance ( HomOriented h, t ~ Dual (Dual t)
+         , DualisableOriented s o
+         , TransformableGRefl o s, TransformableOrt s
+         )
+  => FunctorialG (SDuality (Diagram t n m)) (HomDisj s o h) (->)
 
 dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
@@ -709,7 +714,10 @@ sdgMap h (SomeDiagram d)   = case dgTypeRefl d of
 instance (HomOriented h, DualisableOriented s o, TransformableGRefl o s, TransformableOrt s)
   => ApplicativeG SomeDiagram (HomDisj s o h) (->) where
   amapG = sdgMap
-  
+
+instance ( HomOriented h, DualisableOriented s o
+         , TransformableGRefl o s, TransformableOrt s
+         ) => FunctorialG SomeDiagram (HomDisj s o h) (->)
 {-
 -- | mapping of some diagram via a homomorphismd on 'Oriented' structures.
 sdgMap :: HomOrientedDisjunctive h

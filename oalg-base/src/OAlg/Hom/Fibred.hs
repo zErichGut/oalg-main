@@ -107,14 +107,20 @@ toDualRt q s = fromRtG (toDualG' (d q s) s) where
 
 instance (HomFibred h, DualisableG s (->) o Rt) => ApplicativeG Rt (HomDisj s o h) (->) where
   amapG (HomDisj h) = amapG h
-  
+
+instance (HomFibred h, DualisableG s (->) o Rt) => FunctorialG Rt (HomDisj s o h) (->)
+
 instance (HomFibred h, DualisableFibred s o) => HomFibred (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- Functorialibred -
 
--- | functorial application of 'Fibred' homomorphisms.
-type FunctorialFibred h = (HomFibred h, Functorial h, FunctorialRoot h)
+-- | functorial morphism, i.e. 'Functorial' and 'FunctorialRoot'.
+--
+-- __Note__ It's not mandatory being an homomorphism!
+class (Functorial h, FunctorialRoot h) => FunctorialFibred h
+
+instance (HomFibred h, DualisableFibred s o) => FunctorialFibred (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- prpHomFbr -

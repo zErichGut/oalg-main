@@ -181,9 +181,10 @@ instance (HomOriented h, DualisableOriented s o) => HomOrientedDisjunctive (HomD
 --------------------------------------------------------------------------------
 -- FunctorialOriented -
 
--- | functorial homomorphisms between 'Oriented' structures. 
-class (CategoryDisjunctive h, HomOrientedDisjunctive h, Functorial h, FunctorialPoint h)
-  => FunctorialOriented h
+-- | functorial morphismsm, i.e. 'Functorial' and 'FunctorialPoint'.
+--
+-- __Note__ It's not mandatory being an homomorphism!
+class (Functorial h, FunctorialPoint h) => FunctorialOriented h
 
 instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomDisj s o h)
 
