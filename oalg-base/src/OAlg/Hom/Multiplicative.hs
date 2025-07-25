@@ -101,6 +101,8 @@ instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty
 --     @'amap' h (x '*' y) '==' 'amap' h y '*' 'amap' h x@.
 class (HomOrientedDisjunctive h, Transformable (ObjectClass h) Mlt) => HomMultiplicativeDisjunctive h
 
+instance (HomMultiplicativeDisjunctive h) => HomMultiplicative (Variant2 Covariant h)
+
 --------------------------------------------------------------------------------
 -- DualisableMultiplicative -
 

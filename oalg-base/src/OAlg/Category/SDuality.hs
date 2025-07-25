@@ -332,8 +332,8 @@ type instance Dual1 (SDuality d) = SDuality (Dual1 d)
 --------------------------------------------------------------------------------
 -- DualisableGBiDual1 -
 
+-- | helper class to avoid undecidable instances.
 class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
-
 
 --------------------------------------------------------------------------------
 -- SDuality - DualisableG -
@@ -365,7 +365,8 @@ toDualSDuality r (SDuality e) = SDuality $ case e of
   Right1 d -> Left1 $ toDualGLft r d
   Left1 d  -> Right1 $ toDualGRgt r d
   
-instance (DualisableGBiDual1 r (->) o d, Transformable r Type) => ReflexiveG r (->) o (SDuality d) where
+instance (DualisableGBiDual1 r (->) o d, Transformable r Type)
+  => ReflexiveG r (->) o (SDuality d) where
   reflG = reflSDuality
 
 instance ( DualisableGBiDual1 r (->) o d
@@ -455,7 +456,7 @@ class ( CategoryDisjunctive h, ApplicativeS h d
       ) => FunctorialS h d
 
 instance FunctorialS h d => FunctorialG (SDuality d) h (->)
-
+-}
 
 --------------------------------------------------------------------------------
 -- xSDuality -
@@ -471,6 +472,7 @@ instance (XStandard (d x), XStandardDual1 d x)
   => XStandard (SDuality d x) where
   xStandard = xSDuality xStandard xStandard
 
+{-
 --------------------------------------------------------------------------------
 -- SomeApplSDuality -
 

@@ -271,6 +271,8 @@ instance TransformableOp OrtSiteX
 instance Transformable OrtSiteX Type where tau _ = Struct
 instance TransformableType OrtSiteX
 
+instance TransformableGRefl Op OrtSiteX
+
 --------------------------------------------------------------------------------
 -- XOrtOrientation -
 

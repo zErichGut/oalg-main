@@ -20,7 +20,7 @@
 module OAlg.Entity.Diagram.Proposition
   (
     -- * Proposition
-    prpDiagramOrntSymbol
+    prpDiagram, prpDiagramOrntSymbol
   )
   where
 
@@ -31,6 +31,7 @@ import OAlg.Structure.Oriented
 import OAlg.Entity.Natural as N hiding ((++))
 
 import OAlg.Entity.Diagram.Definition
+import OAlg.Entity.Diagram.Diagrammatic
 
 --------------------------------------------------------------------------------
 -- prpDiagramOrntSymbol -
@@ -44,3 +45,12 @@ prpDiagramOrntSymbol = Prp "DiagramOrntSymbol"
 
     xn = amap1 someNatural $ xNB 0 20
 
+--------------------------------------------------------------------------------
+-- prpDiagram -
+
+-- | validity for same statements of diagrams.
+prpDiagram :: Statement
+prpDiagram = Prp "Diagram" :<=>:
+  And [ prpDiagramOrntSymbol
+      , prpNaturalDiagrammaticTrafoChain
+      ]

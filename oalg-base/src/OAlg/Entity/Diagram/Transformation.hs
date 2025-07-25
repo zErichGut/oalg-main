@@ -22,15 +22,17 @@ module OAlg.Entity.Diagram.Transformation
   (
     -- * DiagramTrafo
     DiagramTrafo(..), dgts, dgtTypeRefl
-  , dgtMapCov, dgtMapCnt
+  , dgtMap, dgtMapCnt
 
   ) where
 
+import Data.Kind
 import Data.Typeable
 import Data.Array as A
 
 import OAlg.Prelude
 
+import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Either
@@ -44,6 +46,7 @@ import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial as V
 import OAlg.Structure.Algebraic
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
@@ -101,10 +104,17 @@ dgtTypeRefl (DiagramTrafo a _ _) = dgTypeRefl a
 --------------------------------------------------------------------------------
 -- dgtMap -
 
-dgtMapCov :: HomMultiplicativeDisjunctive h
-  => Variant2 Covariant h a b -> DiagramTrafo t n m a -> DiagramTrafo t n m b
-dgtMapCov h@(Covariant2 h') (DiagramTrafo a b ts)
-  = DiagramTrafo (dgMapCov h a) (dgMapCov h b) (amap1 (amap h') ts)
+dgtMap :: HomMultiplicative h
+  => h x y -> DiagramTrafo t n m x -> DiagramTrafo t n m y
+dgtMap h (DiagramTrafo a b ts)
+  = DiagramTrafo (dgMap h a) (dgMap h b) (amap1 (amap h) ts)
+
+instance (HomMultiplicative h)
+  => ApplicativeG (DiagramTrafo t n m) h (->) where
+  amapG = dgtMap
+
+--------------------------------------------------------------------------------
+-- dgtMapCnt -
 
 dgtMapCnt :: HomMultiplicativeDisjunctive h
   => Variant2 Contravariant h a b -> DiagramTrafo t n m a -> DiagramTrafo (Dual t) n m b
@@ -119,20 +129,47 @@ type instance Dual1 (DiagramTrafo t n m) = DiagramTrafo (Dual t) n m
 instance (Show a, ShowPoint a) => ShowDual1 (DiagramTrafo t n m) a
 instance (Eq a, EqPoint a) => EqDual1 (DiagramTrafo t n m) a
 
-instance HomMultiplicativeDisjunctive h
-  => ApplicativeG (DiagramTrafo t n m) (Variant2 Covariant h) (->) where
-  amapG = dgtMapCov
+dgtToBidual :: ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+               , TransformableGRefl o s
+               )
+  => Struct s x -> DiagramTrafo t n m x -> DiagramTrafo t n m (o (o x))
+dgtToBidual s = dgtMap (Covariant2 (t' . t)) where
+  Contravariant2 (Inv2 t _)  = isoO s
+  Contravariant2 (Inv2 t' _) = isoO (tauO s)
 
-instance (CategoryDisjunctive h, HomMultiplicativeDisjunctive h)
-  => FunctorialG (DiagramTrafo t n m) (Variant2 Covariant h) (->)
-  
-instance (HomMultiplicativeDisjunctive h, Dual (Dual t) ~ t)
-  => ApplicativeS h (DiagramTrafo t n m) where
-  vToDual   = dgtMapCnt
-  vFromDual = dgtMapCnt  
+dgtFromBidual :: ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+                 , TransformableGRefl o s
+                 )
+  => Struct s x -> DiagramTrafo t n m (o (o x)) -> DiagramTrafo t n m x
+dgtFromBidual s = dgtMap (Covariant2 (f . f')) where
+  Contravariant2 (Inv2 _ f)  = isoO s
+  Contravariant2 (Inv2 _ f') = isoO (tauO s)
 
-instance (FunctorialMultiplicative h, Dual (Dual t) ~ t)
-  => FunctorialS h (DiagramTrafo t n m)
+instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+         , TransformableGRefl o s, Transformable s Type
+         )
+  => ReflexiveG s (->) o (DiagramTrafo t n m) where
+  reflG s = Inv2 (dgtToBidual s) (dgtFromBidual s)
+
+instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+         , TransformableGRefl o s, Transformable s Type
+         , t' ~ Dual t, t ~ Dual t'
+         )
+  => DualisableGBi s (->) o (DiagramTrafo t n m) (DiagramTrafo t' n m) where
+  toDualGLft s = dgtMapCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+  toDualGRgt s = dgtMapCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+         , TransformableGRefl o s, Transformable s Type
+         , t ~ Dual (Dual t)
+         )
+  => DualisableGBiDual1 s (->) o (DiagramTrafo t n m)
+
+instance (HomMultiplicative h, DualisableGBiDual1 s (->) o (DiagramTrafo t n m))
+  => ApplicativeG (SDuality (DiagramTrafo t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smap h
 
 --------------------------------------------------------------------------------
 -- DiagramTrafo - Entity -
