@@ -32,7 +32,7 @@ import OAlg.Prelude
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
-import OAlg.Structure.Fibred.Oriented
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Distributive.Definition
 import OAlg.Structure.Vectorial.Definition

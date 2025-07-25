@@ -18,19 +18,12 @@ module OAlg.Structure.Fibred.Proposition
   (
     -- * Fibred
     prpFbr
-
-    -- * Fibre Oriented
-  , prpFbrOrt
-
   )
   where
 
 import OAlg.Prelude
 
-import OAlg.Structure.Oriented
-
 import OAlg.Structure.Fibred.Definition
-import OAlg.Structure.Fibred.Oriented
 
 --------------------------------------------------------------------------------
 -- prpFbr -
@@ -39,13 +32,5 @@ import OAlg.Structure.Fibred.Oriented
 prpFbr :: Fibred f => XFbr f -> Statement
 prpFbr xs = Prp "Fbr"
   :<=>: Forall xs (\s -> valid s ~> valid (root s))
-
---------------------------------------------------------------------------------
--- prpFbrOrt -
-
--- | validity for 'FibredOriented' structures.
-prpFbrOrt :: FibredOriented f => XFbrOrt f -> Statement
-prpFbrOrt xs = Prp "FbrOrt" :<=>:
-  Label "1" :<=>: root .=. orientation where (.=.) = prpEqualExt xs
 
 

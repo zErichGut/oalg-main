@@ -39,7 +39,9 @@ import OAlg.Structure.Vectorial.Definition
 import OAlg.Structure.Algebraic.Definition
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Oriented.Definition
+import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
 
@@ -51,8 +53,24 @@ import OAlg.Hom.Vectorial
 class (HomDistributive h, HomVectorial k h, Transformable (ObjectClass h) (Alg k))
   => HomAlgebraic k h
 
+
 instance HomAlgebraic k h => HomAlgebraic k (Path h)
 
+--------------------------------------------------------------------------------
+-- HomAlgebraicDisjunctive -
+
+-- | disjunctive homomorphisms between @__k__@-'Algebraic' structures.
+class ( HomDistributiveDisjunctive h, HomVectorial k h, Transformable (ObjectClass h) (Alg k)
+      ) => HomAlgebraicDisjunctive k h
+
+instance ( HomAlgebraic k h
+         , DualisableFibredOriented s o, DualisableMultiplicative s o
+         , DualisableVectorial k s o, DualisableFibredOriented s o
+         , Transformable s Dst, Transformable s (Alg k)
+         )
+  => HomAlgebraicDisjunctive k (HomDisj s o h)
+
+{-
 --------------------------------------------------------------------------------
 -- Hom -
 
@@ -71,6 +89,6 @@ instance ( TransformableOrt (s k), TransformableOp (s k), TransformableTyp (s k)
          )
 
   => HomAlgebraic k (IdHom (s k))
-  
+-}  
 
 

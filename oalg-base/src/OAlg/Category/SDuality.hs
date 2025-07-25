@@ -28,10 +28,6 @@ module OAlg.Category.SDuality
     SDuality(..)
   , smap, DualisableGBiDual1
   
-{-    
-  , ApplicativeS(..), smap
-  , FunctorialS
--}
   , ShowDual1, EqDual1, ValidableDual1
 
     -- * Category
@@ -44,15 +40,8 @@ module OAlg.Category.SDuality
   , SMorphism(..)
   , PathSMorphism, rdcPathSMorphism
 
-{-
-    -- * Proposition
-  , prpFunctorialS, SomeApplSDuality(..)
--}
-  
     -- * X
-{-    
   , xSDuality
--}
   , xSctSomeMrph
   , xSctSomeCmpb2
 
@@ -332,7 +321,7 @@ type instance Dual1 (SDuality d) = SDuality (Dual1 d)
 --------------------------------------------------------------------------------
 -- DualisableGBiDual1 -
 
--- | helper class to avoid undecidable instances.
+-- | helper class to avoid undecidible instances.
 class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
 
 --------------------------------------------------------------------------------
@@ -403,64 +392,37 @@ smpPathMapSDuality h
   IdPath _ -> id
   m :. h'  -> smpMapSDuality m . smpPathMapSDuality h'
 
-smap :: ( Morphism h
-        , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-        , DualisableGBiDual1 r (->) o d
-        , Transformable s r
+-- | application of 'SHom' on 'SDaulity'
+--
+-- __Properties__ Let @'Morphism' __h__@, @'ApplicativeG' __d h__ (->)@,
+-- @'ApplicativeG' ('Dual1' __d__) __h__ (->)@, @'DualisableGBiDual1' __r__ (->) __o d__@
+-- and @'Transformable' __s r__@, then holds:
+--
+-- (1) 'smap' is functorial.
+--
+-- (2) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
+--
+--     (1) If @'variante2' h '==' 'Covariant'@, then for all @d@ in @__d x__@ holds:
+--     @'smap' h ('SDuality' ('Right1' d)) '==' 'SDuality' ('Right1' d')@ where @d' = 'amapG' h d@.
+--
+--     (2) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
+--     @'smap' h ('SDuality' ('Left1' d')) '==' 'SDuality' ('Left1' d)@ where @d = 'amapG' h d'@.
+--
+--     (3) If @'variante2' h '==' 'Contravariant'@, then for all @d@ in @__d x__@ holds:
+--     @'smap' h ('SDuality' ('Right1' d)) '==' 'SDuality' ('Left1' d')@.
+--
+--     (4) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
+--     @'smap' h ('SDuality' ('Left1' d')) '==' 'SDuality' ('Right1' d)@.
+smap :: ( Morphism h, ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+        , DualisableGBiDual1 r (->) o d, Transformable s r
         )
   => SHom r s o h x y -> SDuality d x -> SDuality d y
 smap = smpPathMapSDuality . form
 
-{-
---------------------------------------------------------------------------------
--- ApplicativeS -
-
--- | application on 'Disjunctive2' types.
-class ( Disjunctive2 h
-      , Applicative1 (Variant2 Covariant h) d, Applicative1 (Variant2 Covariant h) (Dual1 d)
-      ) => ApplicativeS h d where
-  vToDual  :: Variant2 Contravariant h x y -> d x -> Dual1 d y
-  vFromDual :: Variant2 Contravariant h x y -> Dual1 d x -> d y
-
---------------------------------------------------------------------------------
--- smap -
-
--- | the induced mapping.
-smap :: ApplicativeS h d => h x y -> SDuality d x -> SDuality d y
-smap h (SDuality sd) = SDuality $ case toVariant2 h of
-  Right2 hCov -> case sd of
-    Left1 d   -> Left1  $ amapG hCov d 
-    Right1 d  -> Right1 $ amapG hCov d   
-  Left2 hCnt  -> case sd of
-    Left1 d   -> Right1 $ vFromDual hCnt d
-    Right1 d  -> Left1  $ vToDual hCnt d
-
-instance ApplicativeS h d => ApplicativeG (SDuality d) h (->) where
-  amapG = smap
-
---------------------------------------------------------------------------------
--- FunctorialS -
-
--- | 'smap' as a 'FunctorialG'-application.
---
--- __Properties__ Let @'FunctorialS' __h d__@ then holds:
---
--- (1) For all @__x__@, @__y__@, @__z__@, @f@ in @__h y z__@ and @g@ in @__h x y__@ holds:
--- @'smap' (f '.' g) '.=.' 'smap' f '.' 'smap' g@.
---
--- __Note__ From @'FunctorialS' __h d__@ follwos that @'FunctorialG' ('SDuality' __d__) __h__@
--- holds.
-class ( CategoryDisjunctive h, ApplicativeS h d
-      , Functorial1 (Variant2 Covariant h) d
-      , Functorial1 (Variant2 Covariant h) (Dual1 d)
-      ) => FunctorialS h d
-
-instance FunctorialS h d => FunctorialG (SDuality d) h (->)
--}
-
 --------------------------------------------------------------------------------
 -- xSDuality -
 
+-- | random variable for 'SDuality'.
 xSDuality :: X (d x) -> X (Dual1 d x) -> X (SDuality d x)
 xSDuality xd xd'
   = amap1 SDuality
@@ -471,28 +433,6 @@ xSDuality xd xd'
 instance (XStandard (d x), XStandardDual1 d x)
   => XStandard (SDuality d x) where
   xStandard = xSDuality xStandard xStandard
-
-{-
---------------------------------------------------------------------------------
--- SomeApplSDuality -
-
-data SomeApplSDuality h d where
-  SomeApplSDuality :: (Show2 h, Show (SDuality d x), Eq (SDuality d z))
-    => h y z -> h x y -> SDuality d x -> SomeApplSDuality h d
-
---------------------------------------------------------------------------------
--- relFunctorialS -
-
-relFunctorialS :: (FunctorialS h d, Show2 h, Show (SDuality d x), Eq (SDuality d z))
-  => h y z -> h x y -> SDuality d x -> Statement
-relFunctorialS f g d = (smap (f . g) d == (smap f . smap g) d)
-  :?> Params ["f":=show2 f, "g":=show2 g, "d":=show d]
-
-prpFunctorialS :: FunctorialS h d
-  => X (SomeApplSDuality h d) -> Statement
-prpFunctorialS xsd = Prp "FunctorialS" :<=>:
-  Forall xsd (\(SomeApplSDuality f g d) -> relFunctorialS f g d)
--}
 
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -

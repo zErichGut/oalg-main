@@ -48,6 +48,7 @@ import OAlg.Category.Path
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Fibred

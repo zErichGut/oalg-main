@@ -46,7 +46,7 @@ import OAlg.Structure.Oriented.Definition
 import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred.Definition
-import OAlg.Structure.Fibred.Oriented
+import OAlg.Structure.FibredOriented
 
 --------------------------------------------------------------------------------
 -- Additive -

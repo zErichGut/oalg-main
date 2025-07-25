@@ -44,6 +44,7 @@ import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Oriented hiding (Path(..))
 
 import OAlg.Hom.Definition

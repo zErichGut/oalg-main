@@ -11,20 +11,23 @@
 {-# LANGUAGE ConstraintKinds #-}
 
 -- |
--- Module      : OAlg.Structure.Fibred.Oriented
+-- Module      : OAlg.Structure.FibredOriented
 -- Description : definition of fibred oriented structures.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- definition of 'fibredOriented' structures.
-module OAlg.Structure.Fibred.Oriented
+-- definition of 'FibredOriented' structures.
+module OAlg.Structure.FibredOriented
   (
     -- * Fibred Oriented
     FibredOriented, FbrOrt, TransformableFbrOrt, tauFbrOrt
 
     -- * X
   , XFbrOrt, FbrOrtX
+
+    -- * Proposition
+  , prpFbrOrt
   )
   where
 
@@ -152,3 +155,12 @@ instance Transformable FbrOrtX Typ where tau Struct = Struct
 
 instance Transformable FbrOrtX Type where tau _ = Struct
 instance TransformableType FbrOrtX
+
+--------------------------------------------------------------------------------
+-- prpFbrOrt -
+
+-- | validity for 'FibredOriented' structures.
+prpFbrOrt :: FibredOriented f => XFbrOrt f -> Statement
+prpFbrOrt xs = Prp "FbrOrt" :<=>:
+  Label "1" :<=>: root .=. orientation where (.=.) = prpEqualExt xs
+

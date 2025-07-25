@@ -126,6 +126,7 @@ import OAlg.Prelude
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive hiding (prpAdd1,prpAdd2)
 import OAlg.Structure.Distributive
 

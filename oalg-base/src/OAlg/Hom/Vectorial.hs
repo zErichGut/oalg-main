@@ -40,6 +40,7 @@ import OAlg.Category.Unify
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 
