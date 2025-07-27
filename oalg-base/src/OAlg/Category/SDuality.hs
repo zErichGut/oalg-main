@@ -392,6 +392,9 @@ smpPathMapSDuality h
   IdPath _ -> id
   m :. h'  -> smpMapSDuality m . smpPathMapSDuality h'
 
+--------------------------------------------------------------------------------
+-- smap -
+
 -- | application of 'SHom' on 'SDaulity'
 --
 -- __Properties__ Let @'Morphism' __h__@, @'ApplicativeG' __d h__ (->)@,

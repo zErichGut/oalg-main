@@ -24,12 +24,13 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
     -- * Diagrammatic
-    Diagrammatic(..), DiagramG(..), mapDiagramG, dgmTypeRefl
+    Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
 
     -- * Applicative
   , ApplicativeDiagrammatic
+  , NaturalDiagrammaticS
 
-    -- * Natural Transformation
+    -- * Natural
   , rohDiagram
 
     -- * Proposition
@@ -95,11 +96,11 @@ instance (Attestable m, n ~ m+1)
   tauG Struct = Struct
 
 --------------------------------------------------------------------------------
--- mapDiagramG -
+-- dgmGMap -
 
 -- | the induced mapping.
-mapDiagramG :: (d t n m x -> d t n m y) -> DiagramG d t n m x -> DiagramG d t n m y
-mapDiagramG f (DiagramG d) = DiagramG (f d)
+dgmGMap :: (d t n m x -> d t n m y) -> DiagramG d t n m x -> DiagramG d t n m y
+dgmGMap f (DiagramG d) = DiagramG (f d)
 
 --------------------------------------------------------------------------------
 -- dgmTypeRefl -
@@ -127,7 +128,7 @@ instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , DualisableOriented s o
          )
   => ReflexiveG s (->) o (DiagramG Diagram t n m) where
-  reflG s = Inv2 (mapDiagramG t) (mapDiagramG f) where Inv2 t f = reflG s
+  reflG s = Inv2 (dgmGMap t) (dgmGMap f) where Inv2 t f = reflG s
 
 instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , DualisableOriented s o
@@ -143,9 +144,12 @@ instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          )
   => DualisableGBiDual1 s (->) o (DiagramG Diagram t n m)
 
+{-
 instance ( ApplicativeDiagrammatic h d t n m
          , DualisableGBiDual1 s (->) o (DiagramG d t n m)
          )
+-}
+instance NaturalDiagrammaticS s o h d t n m
   => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smap h
 
@@ -162,14 +166,42 @@ instance Diagrammatic d
   => Natural s (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
   roh _ = rohDiagram
 
+
+class ( Diagrammatic d
+      , ApplicativeDiagrammatic h d t n m
+      , DualisableGBiDual1 s (->) o (DiagramG d t n m)
+      , t ~ Dual (Dual t)
+      , TransformableGRefl o s, TransformableOrt s
+      )
+  => NaturalDiagrammaticS s o h d t n m
+
+
+instance ( HomOriented h, DualisableOriented s o
+         , NaturalDiagrammaticS s o h d t n m
+         )
+  => NaturalTransformable s (HomDisj s o h) (->)
+      (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+
+instance t ~ Dual (Dual t) => NaturalDiagrammaticS OrtSiteX Op (HomEmpty OrtSiteX) Diagram t n m
+
+
+
+{-
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic -
+
+-- | diagrammatic objects admitting a natural transformability.
+class ( Diagrammatic d
+      , NaturalTransformable s (HomDisj s o h) (->)
+        (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+      ) => NaturalDiagrammatic s o h d t n m
+
 instance ( HomOriented h
          , TransformableOrt s, Transformable s Type, TransformableGRefl o s
          , DualisableOriented s o, t ~ Dual (Dual t)
          )
-  => NaturalTransformable s (HomDisj s o h) (->)
-                            (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
-
-
+  => NaturalDiagrammatic s o h Diagram t n m
+-}
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammaticTrafoChain -
 

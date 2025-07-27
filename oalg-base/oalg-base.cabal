@@ -141,13 +141,10 @@ library
       OAlg.Hom.Definition
       OAlg.Hom.Distributive
       OAlg.Hom.Fibred
-      OAlg.Hom.Fibred.Definition
-      OAlg.Hom.Fibred.Oriented
-      OAlg.Hom.Fibred.Proposition
+      OAlg.Hom.FibredOriented
       OAlg.Hom.Multiplicative
       OAlg.Hom.Oriented
       OAlg.Hom.Oriented.Definition
-      OAlg.Hom.Oriented.Disjunctive
       OAlg.Hom.Oriented.Proposition
       OAlg.Hom.Proposition
       OAlg.Hom.Vectorial
@@ -184,9 +181,9 @@ library
       OAlg.Structure.Exponential
       OAlg.Structure.Fibred
       OAlg.Structure.Fibred.Definition
-      OAlg.Structure.Fibred.Oriented
       OAlg.Structure.Fibred.Proposition
       OAlg.Structure.Fibred.Root
+      OAlg.Structure.FibredOriented
       OAlg.Structure.Lattice
       OAlg.Structure.Lattice.Definition
       OAlg.Structure.Lattice.Proposition

@@ -22,13 +22,16 @@
 module OAlg.Limes.Cone.Structure
   (
     -- * Cone Struct
-    ConeStruct(..), cnStructOp, cnStructMlt, cnStruct
+    ConeStruct(..), cnStructO, cnStructMlt, cnStruct
   , cnStructMltOrDst
+
   ) where
 
 import Data.Typeable
 
 import OAlg.Prelude
+
+import OAlg.Category.Dualisable
 
 import OAlg.Data.Either
 
@@ -47,13 +50,25 @@ deriving instance Show (ConeStruct s a)
 deriving instance Eq (ConeStruct s a)
 
 --------------------------------------------------------------------------------
--- cnStructOp -
+-- cnStruct -
+
+-- | the associated structure of a cone structure.
+cnStruct :: ConeStruct s a -> Struct s a
+cnStruct cs = case cs of
+  ConeStructMlt -> Struct
+  ConeStructDst -> Struct
+
+--------------------------------------------------------------------------------
+-- cnStructO -
+
+cnStructOStruct :: ConeStruct s x -> Struct s (o x) -> ConeStruct s (o x)
+cnStructOStruct ConeStructMlt Struct = ConeStructMlt
+cnStructOStruct ConeStructDst Struct = ConeStructDst
+
 
 -- | the opposite cone structure.
-cnStructOp :: ConeStruct s a -> ConeStruct s (Op a)
-cnStructOp cs = case cs of
-  ConeStructMlt -> ConeStructMlt
-  ConeStructDst -> ConeStructDst
+cnStructO :: TransformableG o s s => ConeStruct s a -> ConeStruct s (o a)
+cnStructO cs = cnStructOStruct cs (tauO (cnStruct cs))
 
 --------------------------------------------------------------------------------
 -- cnStructMlt -
@@ -61,15 +76,6 @@ cnStructOp cs = case cs of
 -- | the 'Multiplicative' structure of a cone structure.
 cnStructMlt :: ConeStruct s a -> Struct Mlt a
 cnStructMlt cs = case cs of
-  ConeStructMlt -> Struct
-  ConeStructDst -> Struct
-
---------------------------------------------------------------------------------
--- cnStruct -
-
--- | the associated structure of a cone structure.
-cnStruct :: ConeStruct s a -> Struct s a
-cnStruct cs = case cs of
   ConeStructMlt -> Struct
   ConeStructDst -> Struct
 
