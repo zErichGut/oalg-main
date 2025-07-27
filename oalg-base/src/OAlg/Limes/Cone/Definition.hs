@@ -202,47 +202,8 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 --------------------------------------------------------------------------------
 -- cnMap -
 
-instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) where
-  roh _ (DiagramG d) = diagram d
-  
-dmap :: ApplicativeG (DiagramG d t n m) h (->)
-  => h x y -> d t n m x -> d t n m y
-dmap h d = d' where DiagramG d' = amapG h (DiagramG d)
-
-{-
-class (Diagrammatic d, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m)
-      ) => NaturalDiagrammatic s h d t n m
-
-class Transformable (ObjectClass h) s => TransformableHom s h
-
-instance (HomOriented h, TransformableHom s h)
-  => NaturalTransformable s h (->) (DiagramG Diagram t n m) (Diagram t n m)
-instance (HomOriented h, TransformableHom s h) => NaturalDiagrammatic s h Diagram t n m
--}
-
-class ( Diagrammatic d, ApplicativeG (DiagramG d t n m) h (->)
-      , Transformable (ObjectClass h) s
-      ) => NaturalDiagrammatic s h d t n m
-      
-instance ( HomOriented h
-         , NaturalDiagrammatic s h d t n m
-         )
-  => NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m)
-
-  
-
-{-
-cnMapMlt :: (HomMultiplicative h, NaturalDiagrammatic Mlt h d t n m)
--}
-{-
-cnMapMlt :: ( HomMultiplicative h
-            , ApplicativeG (DiagramG d t n m) h (->)
-            )
--}
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
-cnMapMlt :: ( HomMultiplicative h
-            , NaturalDiagrammatic Mlt h d t n m
-            )
+cnMapMlt :: (HomMultiplicative h, NaturalDiagrammatic h d t n m)
   => h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMlt h c               = case tauMlt (range h) of
   Struct                  -> case c of
@@ -282,27 +243,7 @@ instance (HomMultiplicative h, NaturalDiagrammatic Mlt h d t n m)
   => ApplicativeG (Cone Mlt p d t n m) h (->) where amapG = cnMapMlt
 -}
 
-dmapCnt :: Diagrammatic d => Variant2 Contravariant h x y -> d t n m x -> d (Dual t) n m y
-dmapCnt = error "nyi"
-
-{-
-cnMapCntMlt :: ( HomMultiplicative h, DualisableMultiplicative s o
-               , NatDiagrammatic s o h d t n m
-               )
--}
-{-
-cnMapCntMlt :: ( HomOriented h, Transformable s Mlt
-               , DualisableG s (->) o Pnt, DualisableG s (->) o Id
-               , ApplicativeDiagrammatic h d t n m
-               , DualisableGBiDual1 s (->) o (DiagramG d t n m)
-               )
--}
-{-
-cnMapCntMlt :: ( HomMultiplicative h, DualisableMultiplicative s o
-               , ApplicativeDiagrammatic h d t n m
-               , DualisableGBiDual1 s (->) o (DiagramG d t n m)
-               )
--}
+                                                  
 cnMapCntMlt :: ( HomMultiplicative h, DualisableMultiplicative s o
                , NaturalDiagrammaticS s o h d t n m
                )
@@ -311,7 +252,7 @@ cnMapCntMlt :: ( HomMultiplicative h, DualisableMultiplicative s o
 cnMapCntMlt (Contravariant2 h) c = case tauMlt (range h) of
   Struct                        -> case c of
     ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
-      SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
+      SDuality (Left1 d') = dmapS h (SDuality (Right1 d))
 {-
 instance (Category h, HomMultiplicative h, DiagrammaticFunctorial h d)
   => Functorial1 h (Cone Mlt p d t n m)
