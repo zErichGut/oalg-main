@@ -287,7 +287,7 @@ dgMapCnt (Contravariant2 h) d = case d of
         hArw = amap h
 
 --------------------------------------------------------------------------------
--- Diagram - Dual1 -
+-- Diagram - Duality -
 
 type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
 

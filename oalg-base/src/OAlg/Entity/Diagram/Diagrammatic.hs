@@ -28,12 +28,16 @@ module OAlg.Entity.Diagram.Diagrammatic
 
     -- * Natural
   , NaturalDiagrammatic, dmap
-  , NaturalDiagrammaticS, dmapS
+  , NaturalDiagrammaticS, toDualDgmLft, toDualDgmRgt
+  , dmapS, drohS
+  , NaturalDgmS(..)
 
-    -- * Natural
-  , rohDiagram
+    -- * Duality
+  , NaturalDiagrammaticDual1
 
     -- * Proposition
+  , prpNaturalDiagrammatic
+  , prpNaturalDiagrammaticS
   , prpNaturalDiagrammaticTrafoChain
   ) where
 
@@ -153,7 +157,7 @@ instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) whe
 -- __Property__ Let @'NaturalDiagrammatic' __d t n m__@ then
 -- for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds: 
 --
--- (1) @'dgMap' h '.' 'diagram' '.=.' 'diagram' '.' 'dmap' h@.
+-- (1) @'diagram' '.' 'dmap' h '.=.' 'dgMap' h '.' 'diagram'@.
 --
 -- __Note__ The property above together with @'ApplicativeG' ('Diagram __t n m__) __h__ (->)@
 -- and @'Transformable' ('ObjectClass' __h__)__ s__@ establish a
@@ -189,27 +193,55 @@ prpNaturalDiagrammatic h d = Prp "NaturalDiagrammatic"
   :<=>: relNaturalDiagrammatic (tauHom (homomorphous h)) h d
 
 --------------------------------------------------------------------------------
--- rohDiagram -
+-- drohS -
 
 -- | the canonical transformation,
-rohDiagram :: Diagrammatic d => SDuality (DiagramG d t n m) x -> SDuality (Diagram t n m) x
-rohDiagram (SDuality sd) = SDuality $ case sd of
+drohS :: Diagrammatic d => SDuality (DiagramG d t n m) x -> SDuality (Diagram t n m) x
+drohS (SDuality sd) = SDuality $ case sd of
   Right1 (DiagramG d) -> Right1 (diagram d)
   Left1 (DiagramG d') -> Left1 (diagram d')
 
 instance Diagrammatic d
   => Natural s (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
-  roh _ = rohDiagram
+  roh _ = drohS
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticDual1 -
+
+-- | duality for 'NaturalDiagrammatic'.
+class ( NaturalDiagrammatic h d t n m
+      , NaturalDiagrammatic h d (Dual t) n m
+      , Dual1 (d t n m) ~ d (Dual t) n m
+      )
+  => NaturalDiagrammaticDual1 h d t n m
+
+instance HomOriented h => NaturalDiagrammaticDual1 h Diagram t n m
 
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticS -
 
 -- | diagrammatic objects admitting a natural transformation from
--- @'SDuality' ('DiagramG' __d t n m__)@ to @'SDuality' ('Diagram' __t n m__)@:
-class ( NaturalDiagrammatic h d t n m
+-- @'SDuality' ('DiagramG' __d t n m__)@ to @'SDuality' ('Diagram' __t n m__)@.
+--
+--  __Properties__ Let @'NaturalDiagrammaticS' __s o h d t n m__@,
+-- @n@ be in @'NaturalDgmS' __s o h d t n m__@, then
+-- for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+--
+-- (1) @'diagram' '.' 'toDualDgmLft' n s '.=.' 'toDualGLft' s '.' 'diagram'@.
+--
+-- (2) @'diagram' '.' 'toDualDgmRgt' n s '.=.' 'toDualGRgt' s '.' 'diagram'@.
+--
+-- __Note__ The above properties give rise to a 'NaturalTransformation' from
+-- @'SDuality' ('DiagramG' __d t n m__)@ to @'SDuality' ('Diagram' __t n m__)@.
+class ( NaturalDiagrammaticDual1 h d t n m
+{-
+        NaturalDiagrammatic h d t n m
       , NaturalDiagrammatic h d (Dual t) n m
+      , Dual1 (d t n m) ~ d (Dual t) n m
+-}
+      
       , DualisableGBiDual1 s (->) o (DiagramG d t n m)
-      , t ~ Dual (Dual t), Dual1 (d t n m) ~ d (Dual t) n m
+      , t ~ Dual (Dual t)
       , TransformableGRefl o s, TransformableOrt s
       , DualisableOriented s o
       )
@@ -232,6 +264,7 @@ instance ( HomOriented h, DualisableOriented s o
 --------------------------------------------------------------------------------
 -- dmapS -
 
+-- | the induced application.
 dmapS :: ( ApplicativeG (SDuality (DiagramG d t n m)) h (->)
          , Dual1 (d t n m) ~ d (Dual t) n m
          )
@@ -273,7 +306,7 @@ toDualDgmRgt :: NaturalDgmS s o h d t n m -> Struct s x -> d (Dual t) n m x -> d
 toDualDgmRgt NaturalDgmS s d = d' where DiagramG d' = toDualGRgt s (DiagramG d)
 
 --------------------------------------------------------------------------------
--- -
+-- prpNaturalDiagrammaticS -
 
 relNaturalDiagrammaticSLft :: NaturalDgmS s o h d t n m
   -> Struct Ort (o x) -> Struct s x -> d t n m x -> Statement

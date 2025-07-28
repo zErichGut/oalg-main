@@ -7,9 +7,7 @@
 {-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
-
 {-# LANGUAGE FlexibleContexts, RankNTypes #-}
-
 
 -- |
 -- Module      : OAlg.Limes.Cone.Definition
@@ -209,15 +207,16 @@ cnMapMlt h c               = case tauMlt (range h) of
   Struct                  -> case c of
     ConeProjective d t as -> ConeProjective (dmap h d) (pmap h t) (amap1 (amap h) as)
     ConeInjective d t as  -> ConeInjective (dmap h d) (pmap h t) (amap1 (amap h) as)
-{-
+
 -- | mapping of a cone under a 'Distributive' homomorphism.
-cnMapDst :: (HomDistributive h, NaturalDiagrammatic Dst h d t n m)
+cnMapDst :: (HomDistributive h, NaturalDiagrammatic h d t n m)
   => h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
 cnMapDst h c          = case tauDst (range h) of
   Struct             -> case c of
     ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
     ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
 
+{-
 type family Hom s (h :: Type -> Type -> Type) :: Constraint
 type instance Hom Mlt h = HomMultiplicative h
 type instance Hom Dst h = HomDistributive h
@@ -244,15 +243,48 @@ instance (HomMultiplicative h, NaturalDiagrammatic Mlt h d t n m)
 -}
 
                                                   
-cnMapCntMlt :: ( HomMultiplicative h, DualisableMultiplicative s o
+cnMapMltCnt :: ( HomMultiplicative h, DualisableMultiplicative s o
                , NaturalDiagrammaticS s o h d t n m
                )
   => Variant2 Contravariant (HomDisj s o h) x y
   -> Cone Mlt p d t n m x -> Cone Mlt (Dual p) d (Dual t) n m y
-cnMapCntMlt (Contravariant2 h) c = case tauMlt (range h) of
+cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
   Struct                        -> case c of
     ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
       SDuality (Left1 d') = dmapS h (SDuality (Right1 d))
+    ConeInjective d t as        -> ConeProjective d' (pmap h t) (amap1 (amap h) as) where
+      SDuality (Left1 d') = dmapS h (SDuality (Right1 d))
+
+cnMapDstCnt :: ( HomDistributive h, DualisableDistributive s o
+               , NaturalDiagrammaticS s o h d t n m
+               )
+  => Variant2 Contravariant (HomDisj s o h) x y
+  -> Cone Dst p d t n m x -> Cone Dst (Dual p) d (Dual t) n m y
+cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
+  Struct                        -> case c of
+    ConeKernel d a              -> ConeCokernel d' (amap h a) where
+      SDuality (Left1 d') = dmapS h (SDuality (Right1 d))
+    ConeCokernel d a            -> ConeKernel  d' (amap h a) where
+      SDuality (Left1 d') = dmapS h (SDuality (Right1 d))
+
+--------------------------------------------------------------------------------
+-- Cone - Duality -
+
+type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
+
+instance (HomMultiplicative h, NaturalDiagrammatic h d t n m)
+  => ApplicativeG (Cone Mlt p d t n m) h (->) where
+  amapG = cnMapMlt
+
+
+instance ( HomMultiplicative h
+         , NaturalDiagrammaticDual1 h d t n m
+         , DualisableGBiDual1 Mlt (->) o (Cone Mlt p d t n m)
+         )
+  => ApplicativeG (SDuality (Cone Mlt p d t n m)) (HomDisj Mlt o h) (->) where
+  amapG (HomDisj h) = smap h
+
+
 {-
 instance (Category h, HomMultiplicative h, DiagrammaticFunctorial h d)
   => Functorial1 h (Cone Mlt p d t n m)
