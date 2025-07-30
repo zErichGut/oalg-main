@@ -23,12 +23,14 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
+
     -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
-  , droh
+  , droh, dmap
 
+{-  
     -- * Natural
-  , NaturalDiagrammatic, dmap
+  , NaturalDiagrammatic
   , NaturalDiagrammaticDualisable, dmapS
 
     -- * Duality
@@ -39,6 +41,7 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Proposition
   , prpNaturalDiagrammatic
   , prpDualisableDiagrammatic
+-}
   , prpNaturalDiagrammaticTrafoChain
 
   ) where
@@ -63,6 +66,8 @@ import OAlg.Structure.Oriented
 import OAlg.Entity.Natural
 import OAlg.Entity.Diagram.Definition
 
+prpNaturalDiagrammaticTrafoChain :: Statement
+prpNaturalDiagrammaticTrafoChain = error "nyi"
 --------------------------------------------------------------------------------
 -- Diagrammatic -
 
@@ -148,6 +153,14 @@ instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
   => DualisableGBiDual1 s (->) o (DiagramG Diagram t n m)
 
 --------------------------------------------------------------------------------
+-- dmap -
+
+-- | the induced mapping between the 'Diagrammatic' objects.
+dmap :: ApplicativeG (DiagramG d t n m) h (->)
+  => h x y -> d t n m x -> d t n m y
+dmap h d = d' where DiagramG d' = amapG h (DiagramG d)
+
+--------------------------------------------------------------------------------
 -- droh -
 
 -- | the underlying diagram.
@@ -160,6 +173,7 @@ droh (DiagramG d) = diagram d
 instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) where
   roh _ = droh
 
+{-
 -- | diagrammatic objects admitting a natural transformation from
 -- @'DiagramG' __d t n m__@ to @'Diagram' __t n m__@.
 --
@@ -178,14 +192,6 @@ instance (NaturalDiagrammatic h d t n m, TransformableHom h s)
   => NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m)
 
 instance (Diagrammatic d, TransformableOrt s) => NaturalDiagrammatic (HomEmpty s) d t n m
-
---------------------------------------------------------------------------------
--- dmap -
-
--- | the induced mapping between the 'Diagrammatic' objects.
-dmap :: ApplicativeG (DiagramG d t n m) h (->)
-  => h x y -> d t n m x -> d t n m y
-dmap h d = d' where DiagramG d' = amapG h (DiagramG d)
 
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammatic -
@@ -469,3 +475,5 @@ prpNaturalDiagrammaticTrafoChain = Prp "NaturalDiagrammaticTrafoChain"
         False -> prpNaturalTransformableEqExt (dgmtDiagramChainFrom m') xsOrtSiteXOp
 
 
+
+-}
