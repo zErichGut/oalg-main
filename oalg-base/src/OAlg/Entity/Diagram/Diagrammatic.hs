@@ -222,6 +222,9 @@ class ( Diagrammatic d
 
 instance DualisableDiagrammatic s o d t n m => DualisableGBiDual1 s (->) o (DiagramG d t n m)
 
+instance (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s, t ~ Dual (Dual t))
+  => DualisableDiagrammatic s o Diagram t n m
+
 --------------------------------------------------------------------------------
 -- DualityDiagrammatic -
 
@@ -283,6 +286,9 @@ class ( NaturalDiagrammatic h d t n m, NaturalDiagrammatic h d (Dual t) n m
       , DualisableDiagrammatic s o d t n m
       )
   => NaturalDiagrammaticDualisable s o h d t n m
+
+instance (Diagrammatic d, DualisableDiagrammatic s o d t n m)
+  => NaturalDiagrammaticDualisable s o (HomEmpty s) d t n m
 
 --------------------------------------------------------------------------------
 -- Diagrammatic - NaturalTransformable -
@@ -405,20 +411,10 @@ dmapS h (SDuality d) = SDuality (f d') where
   f (Right1 (DiagramG d)) = Right1 d
   f (Left1 (DiagramG d')) = Left1 d'
 
+
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammaticTrafoChain -
 
-instance ( TransformableOrt s, TransformableType s, TransformableGRefl Op s
-         , TransformableOp s
-         , t ~ Dual (Dual t)
-         )
-  => DualisableDiagrammatic s Op Diagram t n m
-
-instance (TransformableOrt s, TransformableType s, TransformableGRefl Op s
-         , TransformableOp s
-         , t ~ Dual (Dual t)
-         )
-  => NaturalDiagrammaticDualisable s Op (HomEmpty s) Diagram t n m
 
 dgmtDiagram :: ( t ~ Dual (Dual t)
                , TransformableG (SDuality (DiagramG Diagram t n m)) s EqE
@@ -471,4 +467,5 @@ prpNaturalDiagrammaticTrafoChain = Prp "NaturalDiagrammaticTrafoChain"
       SomeNatural m' -> case b of
         True  -> prpNaturalTransformableEqExt (dgmtDiagramChainTo m') xsOrtSiteXOp
         False -> prpNaturalTransformableEqExt (dgmtDiagramChainFrom m') xsOrtSiteXOp
+
 

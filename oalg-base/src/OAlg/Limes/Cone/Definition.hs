@@ -9,6 +9,7 @@
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts, RankNTypes #-}
 
+{-# LANGUAGE UndecidableInstances #-}
 -- |
 -- Module      : OAlg.Limes.Cone.Definition
 -- Description : definition of cones over diagrams
@@ -276,24 +277,67 @@ instance (HomMultiplicative h, NaturalDiagrammatic h d t n m)
   => ApplicativeG (Cone Mlt p d t n m) h (->) where
   amapG = cnMapMlt
 
+cnToBidualMlt :: ( DualisableMultiplicative s o, DualisableDiagrammatic s o d t n m
+                 , TransformableMlt s
+                 )
+  => Struct s x -> Cone Mlt p d t n m x -> Cone Mlt p d t n m (o (o x))
+cnToBidualMlt s = cnMapMlt (Covariant2 (t' . t)) where
+  Contravariant2 (Inv2 t _)  = isoO s
+  Contravariant2 (Inv2 t' _) = isoO (tauO s) 
+
+cnFromBidualMlt :: ( DualisableMultiplicative s o, DualisableDiagrammatic s o d t n m
+                   , TransformableMlt s
+                   )
+  => Struct s x -> Cone Mlt p d t n m (o (o x))  -> Cone Mlt p d t n m x
+cnFromBidualMlt s = cnMapMlt (Covariant2 (f . f')) where
+  Contravariant2 (Inv2 _ f)  = isoO s
+  Contravariant2 (Inv2 _ f') = isoO (tauO s)
+
+instance ( DualisableMultiplicative s o, DualisableDiagrammatic s o d t n m
+         , TransformableMlt s, Transformable s Type
+         )
+  => ReflexiveG s (->) o (Cone Mlt p d t n m) where
+  reflG s = Inv2 (cnToBidualMlt s) (cnFromBidualMlt s)
+
+
+instance ( DualisableMultiplicative s o
+         , DualisableDiagrammatic s o d t n m
+         , DualisableDiagrammatic s o d t' n m
+         , TransformableMlt s, Transformable s Type
+         , t' ~ Dual t, t ~ Dual t'
+         , p' ~ Dual p, p ~ Dual p'
+         )
+  => DualisableGBi s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
+
+  toDualGLft s = cnMapMltCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+  toDualGRgt s = cnMapMltCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+
+instance ( DualisableMultiplicative s o
+         , DualisableDiagrammatic s o d t n m
+         , DualisableDiagrammatic s o d (Dual t) n m
+         , TransformableMlt s, Transformable s Type
+         , p ~ Dual (Dual p)
+         )
+  => DualisableGBiDual1 s (->) o (Cone Mlt p d t n m)
+
+
 instance ( HomMultiplicative h, DualisableMultiplicative s o
          , NaturalDiagrammaticDualisable s o h d t n m
+         , DualisableDiagrammatic s o d (Dual t) n m
+         -- , NaturalDiagrammaticDualisable s o h d (Dual t) n m
+         , TransformableMlt s
+         -- , t ~ Dual (Dual t) -- , Dual1 (d (Dual t) n m) ~ d t n m
+         , p ~ Dual (Dual p)
          )
   => ApplicativeG (SDuality (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smap h
 
 
-instance (Transformable s Type)
-  => ReflexiveG s (->) o (Cone Mlt p d t n m)
 
-instance ( Transformable s Type, TransformableGRefl o s
-         , p' ~ Dual p, t' ~ Dual t
-         )
-  => DualisableGBi s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m)
-instance ( Transformable s Type, TransformableGRefl o s
-         , p' ~ Dual p, t' ~ Dual t
-         )
-  => DualisableGBiDual1 s (->) o (Cone Mlt p d t n m)
 
 {-
 cnToBidualMlt :: ( TransformableOrt s, TransformableMlt s, TransformableGRefl o s
