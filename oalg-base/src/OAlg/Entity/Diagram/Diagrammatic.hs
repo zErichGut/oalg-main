@@ -135,12 +135,6 @@ dgmTypeRefl :: Diagrammatic d => d t n m x -> Dual (Dual t) :~: t
 dgmTypeRefl = dgTypeRefl . diagram
 
 --------------------------------------------------------------------------------
--- TransformableHom -
-
--- | helper class to avoid undecidible instances.
-class Transformable (ObjectClass h) s => TransformableHom h s
-
---------------------------------------------------------------------------------
 -- Diagram - DualisableGBiDual1 -
 
 instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
@@ -180,6 +174,30 @@ droh (DiagramG d) = diagram d
 
 instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) where
   roh _ = droh
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic -
+
+-- | natural transformation on 'Diagrammatic' objects from @'DiagramG' __d t n m__@ to
+-- @'Diagram' __t n m__@, respecting the canonical application of @__h__@ on
+-- @'Diagram' __t n m__@.
+--
+-- __Property__ Let @'NaturalDiagrammatic' __s h d t n m__@, then for all @__x__@,
+-- @__y__@ and @h@ in @__h x y__@ holds:
+--
+-- (1) @'amapG' h '.=.' 'dgMap' h@.
+class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
+  => NaturalDiagrammatic s h d t n m
+
+relNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
+  => q s h d t n m -> Homomorphous Ort x y -> h x y -> Diagram t n m x -> Statement
+relNaturalDiagrammatic _ (Struct :>: Struct) h d
+  = (amapG h d == dgMap h d) :?> Params ["h":=show2 h, "d":=show d]
+
+prpNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
+  => q s h d t n m -> h x y -> Diagram t n m x -> Statement
+prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
+  :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
 
 --------------------------------------------------------------------------------
 -- DualisableDiagrammatic -
@@ -272,13 +290,6 @@ instance Diagrammatic d
   => Natural s (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
   roh _ = drohS
 
---------------------------------------------------------------------------------
--- NaturalDiagrammatic -
-
--- | helper class to avoid undecidible instances.
-class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
-  => NaturalDiagrammatic s h d t n m
-  
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticDualisable -
 
