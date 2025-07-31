@@ -204,7 +204,7 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
 cnMapMlt :: ( HomMultiplicative h
-            , NaturalTransformable Mlt h (->) (DiagramG d t n m) (Diagram t n m)
+            , NaturalDiagrammatic Mlt h d t n m
             )
   => h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMlt h c               = case tauMlt (range h) of
@@ -214,7 +214,7 @@ cnMapMlt h c               = case tauMlt (range h) of
 
 -- | mapping of a cone under a 'Distributive' homomorphism.
 cnMapDst :: ( HomDistributive h
-            , NaturalTransformable Dst h (->) (DiagramG d t n m) (Diagram t n m)
+            , NaturalDiagrammatic Dst h d t n m
             )
   => h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
 cnMapDst h c          = case tauDst (range h) of
@@ -254,8 +254,11 @@ cnMapMltCnt :: ( HomMultiplicative h, DualisableMultiplicative s o
                )
 -}
 cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
+               , NaturalDiagrammaticS Mlt h d t n m
+{-               
                , NaturalTransformable Mlt h (->)
                    (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+-}
                )
   => Variant2 Contravariant h x y
   -> Cone Mlt p d t n m x -> Cone Mlt (Dual p) d (Dual t) n m y
@@ -267,8 +270,11 @@ cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
       SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
 
 cnMapDstCnt :: ( HomDistributiveDisjunctive h
+               , NaturalDiagrammaticS Dst h d t n m
+{-               
                , NaturalTransformable Dst h (->)
                    (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+-}
                )
   => Variant2 Contravariant h x y
   -> Cone Dst p d t n m x -> Cone Dst (Dual p) d (Dual t) n m y
@@ -300,14 +306,27 @@ instance
     SDuality (Right1 d') = smap h (SDuality (Right1 d))
 
 
-instance (NaturalDiagrammaticDualisable s h d t n m, DualisableDiagrammatic s o d t n m, Transformable s r)
+instance
+  ( NaturalDiagrammaticDualisable s h d t n m
+  , DualisableDiagrammatic s o d t n m
+  , Transformable s r
+  )
   => NaturalTransformable r (Variant2 Covariant (HomDisj s o h)) (->)
          (DiagramG d t n m) (Diagram t n m)
 
+instance
+  ( NaturalDiagrammaticDualisable s h d t n m
+  , DualisableDiagrammatic s o d t n m
+  , Transformable s r
+  )
+  => NaturalDiagrammatic r (Variant2 Covariant (HomDisj s o h)) d t n m
 
 instance (Diagrammatic d, TransformableOrt s, Transformable s r)
   => NaturalTransformable r (HomEmpty s) (->) (DiagramG d t n m) (Diagram t n m)
 
+instance (Diagrammatic d, TransformableOrt s, Transformable s r)
+  => NaturalDiagrammatic r (HomEmpty s) d t n m
+  
 instance (Diagrammatic d, TransformableOrt s, Transformable s r, t ~ Dual (Dual t))
   => NaturalDiagrammaticDualisable r (HomEmpty s) d t n m
 
@@ -344,11 +363,6 @@ instance
   , DualisableMultiplicative s o
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammatic s o d t' n m
-  
-  , NaturalTransformable Mlt (HomDisjEmpty s o) (->)
-      (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
-  , NaturalTransformable Mlt (HomDisjEmpty s o) (->)
-      (SDuality (DiagramG d t' n m)) (SDuality (Diagram t' n m))
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
 
@@ -375,9 +389,17 @@ instance
   toDualGRgt s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
-{-
+
 instance 
-  ( TransformableOrt s, TransformableMlt s, TransformableGRefl o s
+  ( TransformableMlt s
+  , DualisableMultiplicative s o
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammatic s o d t' n m
+  , p' ~ Dual p, p ~ Dual p'
+  , t' ~ Dual t, t ~ Dual t'
+  )
+{-
+    TransformableOrt s, TransformableMlt s, TransformableGRefl o s
   , DualisableMultiplicative s o
   , NaturalTransformable Mlt (Variant2 Covariant (HomDisjEmpty s o)) (->)
       (DiagramG d t n m) (Diagram t n m)
@@ -389,10 +411,10 @@ instance
       (SDuality (DiagramG d t' n m)) (SDuality (Diagram t' n m))
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
-  )
+-}
   => DualisableGBiDual1 s (->) o (Cone Mlt p d t n m)
 
-
+{-
 instance 
   ( TransformableOrt s, TransformableMlt s, TransformableGRefl o s
   , DualisableMultiplicative s o

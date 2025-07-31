@@ -22,7 +22,7 @@ module OAlg.Entity.Diagram.Definition
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
-  , dgMap, dgMapCnt
+  , dgMap, dgMapCnt, dgMapS
   , dgQuiver
 
      -- ** Chain
@@ -285,6 +285,20 @@ dgMapCnt (Contravariant2 h) d = case d of
                                 (amap1 (\(a,o) -> (hArw a,opposite o)) aijs)
   where hPnt = pmap h
         hArw = amap h
+
+--------------------------------------------------------------------------------
+-- dgMapS -
+
+-- | the canonically induced application given by 'dgMap' and 'dgMapCnt'.
+dgMapS :: (HomOrientedDisjunctive h, t ~ Dual (Dual t))
+  => h x y -> SDuality (Diagram t n m) x -> SDuality (Diagram t n m) y
+dgMapS h (SDuality s) = SDuality $ case toVariant2 h of
+  Right2 hCov        -> case s of
+    Right1 d         -> Right1 (dgMap hCov d)
+    Left1 d'         -> Left1 (dgMap hCov d')
+  Left2 hCnt         -> case s of
+    Right1 d         -> Left1 (dgMapCnt hCnt d)
+    Left1 d'         -> Right1 (dgMapCnt hCnt d')
 
 --------------------------------------------------------------------------------
 -- Diagram - Duality -

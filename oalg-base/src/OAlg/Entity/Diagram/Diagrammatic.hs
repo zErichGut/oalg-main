@@ -30,6 +30,7 @@ module OAlg.Entity.Diagram.Diagrammatic
 
     -- * Natural
   , NaturalDiagrammatic
+  , NaturalDiagrammaticS
   , NaturalDiagrammaticDualisable, drohS
   
     -- * Duality
@@ -200,6 +201,34 @@ prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
   :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
 
 --------------------------------------------------------------------------------
+-- NaturalDiagrammaticS -
+
+-- | natural transformation on 'Diagrammatic' objects from @'SDuality' ('DiagramG' __d t n m__)@ to
+-- @'SDuality' ('Diagram' __t n m__)@, respecting the canonical application of @__h__@ on
+-- @'SDuality' ('Diagram' __t n m__)@.
+--
+-- __Property__ Let @'NaturalDiagrammaticS' __s h d t n m__@, then for all @__x__@,
+-- @__y__@ and @h@ in @__h x y__@ holds:
+--
+-- (1) @'amapG' h '.=.' dgMapS h@.
+class
+  ( HomOrientedDisjunctive h
+  , NaturalTransformable s h (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticS s h d t n m
+
+relNaturalDiagrammaticS :: (NaturalDiagrammaticS s h d t n m, Show2 h)
+  => q s h d t n m -> Homomorphous Ort x y -> h x y -> SDuality (Diagram t n m) x -> Statement
+relNaturalDiagrammaticS _ (Struct :>: Struct) h d
+  = (amapG h d == dgMapS h d) :?> Params ["h":=show2 h, "d":=show d]
+
+prpNaturalDiagrammaticS :: (NaturalDiagrammaticS s h d t n m, Show2 h)
+  => q s h d t n m -> h x y -> SDuality (Diagram t n m) x -> Statement
+prpNaturalDiagrammaticS q h d = Prp "NaturalDiagrammaticS"
+  :<=>: relNaturalDiagrammaticS q (tauHom (homomorphous h)) h d
+
+--------------------------------------------------------------------------------
 -- DualisableDiagrammatic -
 
 -- | duality for 'Diagrammatic' objects.
@@ -293,11 +322,11 @@ instance Diagrammatic d
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticDualisable -
 
--- | helper class to avoid undecidible instances.
+-- | natural diagrammatic transformation on @__t__@ and also @'Dual' __t___@ admitting
+-- @__t__ ~ 'Dual' ('Dual' __t__)@.
 class
-  ( HomOriented h
-  , NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m)
-  , NaturalTransformable s h (->) (DiagramG d (Dual t) n m) (Diagram (Dual t) n m)
+  ( NaturalDiagrammatic s h d t n m
+  , NaturalDiagrammatic s h d (Dual t) n m
   , t ~ Dual (Dual t)
   )
   => NaturalDiagrammaticDualisable s h d t n m
@@ -306,10 +335,20 @@ instance (NaturalDiagrammaticDualisable s h d t n m, DualisableDiagrammatic s o 
   => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smap h
 
-instance (NaturalDiagrammaticDualisable s h d t n m, DualisableDiagrammatic s o d t n m, Transformable s r)
+instance
+  ( NaturalDiagrammaticDualisable s h d t n m
+  , DualisableDiagrammatic s o d t n m
+  , Transformable s r
+  )
   => NaturalTransformable r (HomDisj s o h) (->)
        (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
 
+instance
+  ( NaturalDiagrammaticDualisable s h d t n m
+  , DualisableDiagrammatic s o d t n m
+  , Transformable s r
+  )
+  => NaturalDiagrammaticS r (HomDisj s o h) d t n m
 
 
 
