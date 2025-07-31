@@ -30,6 +30,9 @@ module OAlg.Category.NaturalTransformable
 
     -- * Natural
   , Natural(..), rohSub
+
+    -- * Duality
+  , NaturalTransformableDual1
   
     -- * Proposition
   , prpNaturalTransformableEqExt
@@ -95,6 +98,13 @@ instance ( NaturalTransformable s a b f g, TransformableObjectClass v b
 data NaturalTransformation s a b f g where
   NaturalTransformation :: NaturalTransformable s a b f g => NaturalTransformation s a b f g
 
+--------------------------------------------------------------------------------
+-- NaturalTransformableDual1 -
+
+-- | helper class to avoid undecidable instances.
+class NaturalTransformable s h b (Dual1 f) (Dual1 g)
+  => NaturalTransformableDual1 s h b f g
+  
 --------------------------------------------------------------------------------
 -- roh' -
 
