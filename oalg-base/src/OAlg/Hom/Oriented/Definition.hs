@@ -72,6 +72,7 @@ class ( Morphism h, Applicative h, ApplicativePoint h
       ) => HomOriented h where
 
 instance HomOriented h => HomOriented (Path h)
+
 instance TransformableOrt s => HomOriented (HomEmpty s)
 
 --------------------------------------------------------------------------------

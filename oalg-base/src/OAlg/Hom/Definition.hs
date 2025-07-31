@@ -24,7 +24,7 @@ module OAlg.Hom.Definition
 
 
     -- * Empty
-  , HomEmpty
+  , HomEmpty, fromHomEmpty
 
     -- * X
   , xscmHomDisj
@@ -40,6 +40,7 @@ import OAlg.Category.Unify
 import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Fibred
 
 --------------------------------------------------------------------------------
 -- HomDisj -
@@ -94,12 +95,14 @@ fromHomEmpty (HomEmpty e) = fromEmpty2 e
 --------------------------------------------------------------------------------
 -- HomEmpty - Instances -
 
-instance ApplicativeG t (HomEmpty s) c where amapG = fromHomEmpty
-
 instance Morphism (HomEmpty s) where
   type ObjectClass (HomEmpty s) = s
   domain = fromHomEmpty
   range  = fromHomEmpty
+
+instance ApplicativeG Id (HomEmpty s) c where amapG = fromHomEmpty
+instance ApplicativeG Pnt (HomEmpty s) c where amapG = fromHomEmpty
+instance ApplicativeG Rt (HomEmpty s) c where amapG = fromHomEmpty
 
 --------------------------------------------------------------------------------
 -- homDisj -
