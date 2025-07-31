@@ -28,6 +28,10 @@ module OAlg.Entity.Diagram.Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
 
+    -- * Natural
+  , NaturalDiagrammatic
+  , NaturalDiagrammaticDualisable, drohS
+  
     -- * Duality
   , DualisableDiagrammatic
   , DualityDiagrammatic
@@ -254,6 +258,46 @@ prpDualisableDiagrammatic n@DualityDiagrammatic s d d' = Prp "DualisableDiagramm
             , relDualisableDiagrammaticRgt n (tau (tauO s)) s d'
             ]
 
+--------------------------------------------------------------------------------
+-- drohS -
+
+-- | natural assocition betewwn @'SDuality' ('DiagramG' __d t n m)@ and
+-- @'SDuality' ('Diagram' t n m)@
+drohS :: Diagrammatic d => SDuality (DiagramG d t n m) x -> SDuality (Diagram t n m) x
+drohS (SDuality (Right1 d)) = SDuality (Right1 (droh d))
+drohS (SDuality (Left1 d')) = SDuality (Left1 (droh d'))
+
+
+instance Diagrammatic d
+  => Natural s (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
+  roh _ = drohS
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic -
+
+-- | helper class to avoid undecidible instances.
+class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
+  => NaturalDiagrammatic s h d t n m
+  
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticDualisable -
+
+-- | helper class to avoid undecidible instances.
+class
+  ( HomOriented h
+  , NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m)
+  , NaturalTransformable s h (->) (DiagramG d (Dual t) n m) (Diagram (Dual t) n m)
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticDualisable s h d t n m
+  
+instance (NaturalDiagrammaticDualisable s h d t n m, DualisableDiagrammatic s o d t n m)
+  => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smap h
+
+instance (NaturalDiagrammaticDualisable s h d t n m, DualisableDiagrammatic s o d t n m, Transformable s r)
+  => NaturalTransformable r (HomDisj s o h) (->)
+       (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
 
 
 
@@ -351,11 +395,6 @@ instance (Diagrammatic d, DualisableDiagrammatic s o d t n m)
 
 --------------------------------------------------------------------------------
 -- Diagrammatic - NaturalTransformable -
-
-instance Diagrammatic d
-  => Natural s (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
-  roh _ (SDuality (Right1 d)) = SDuality (Right1 (droh d))
-  roh _ (SDuality (Left1 d')) = SDuality (Left1 (droh d'))
 
 instance NaturalDiagrammaticDualisable s o h d t n m
   => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
