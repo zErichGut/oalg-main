@@ -445,8 +445,14 @@ xdChainToStruct :: (n ~ m+1, t ~ Chain To, Show2 h)
   -> h x y
   -> X (SomeNaturalApplication h (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
 xdChainToStruct m (Struct :>: Struct) h = do
-  d <- xDiagram Refl (XDiagramChainTo m xStandardOrtSite)
-  return (SomeNaturalApplication h (SDuality (Right1 (DiagramG d))))
+  b <- xBool
+  case b of
+    True  -> do
+      d <- xDiagram Refl (XDiagramChainTo m xStandardOrtSite)
+      return (SomeNaturalApplication h (SDuality (Right1 (DiagramG d))))
+    False -> do
+      d <- xDiagram Refl (XDiagramChainFrom m xStandardOrtSite)
+      return (SomeNaturalApplication h (SDuality (Left1 (DiagramG d))))
 
 xdChainTo ::
   ( Morphism h
@@ -472,46 +478,33 @@ xsaChainTo m = do
 --------------------------------------------------------------------------------
 -- xsaChainFrom -
 
-xdChainFrom :: 
-  ( HomOriented h
-  , s ~ OrtSiteX, n ~ m+1, t ~ Chain From, Show2 h
+xsaChainFrom ::
+  ( s ~ OrtSiteX, n ~ m+1, t ~ Chain From
   )
   => Any m
-  -> HomDisj s Op h x y
-  -> X (SomeNaturalApplication (HomDisj s Op h)
+  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
          (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
-xdChainFrom m h = amap1 ff $ xdChainTo m (h . f) where
-  fromOp ::
-    (Morphism h, s ~ OrtSiteX, o ~ Op)
-    => HomDisj s o h x y -> Variant2 Contravariant (HomDisj s o h) (o x) x
-  fromOp h = cFromDual (domain h)
+xsaChainFrom m = amap1 snaFrom $ xsaChainTo m  where
 
-  Contravariant2 f = fromOp h
-
-ff ::
-  (HomOriented h, s ~ OrtSiteX)
-  => SomeNaturalApplication (HomDisj s Op h)
-        (SDuality (DiagramG Diagram (Chain To) n m)) (SDuality (Diagram (Chain To) n m))
-  
-  -> SomeNaturalApplication (HomDisj s Op h)
-        (SDuality (DiagramG Diagram (Chain From) n m)) (SDuality (Diagram (Chain From) n m))
-ff (SomeNaturalApplication h (DiagramG d)) = case (tauOrt (domain h), tauOrt (range h)) of
-  (Struct,Struct) -> SomeNaturalApplication h' (DiagramG d') where
-    fromOp ::
-      (Morphism h, s ~ OrtSiteX, o ~ Op)
-      => HomDisj s o h x y -> Variant2 Contravariant (HomDisj s o h) (o x) x
-    fromOp h = cFromDual (domain h)
-
-    toOp :: (Morphism h, s ~ OrtSiteX, o ~ Op)
-      => HomDisj s o h x y -> Variant2 Contravariant (HomDisj s o h) x (o x)
-    toOp h = cToDual (domain h)
-  
-    Contravariant2 f = fromOp h
-    Contravariant2 t = toOp h
+  snaFrom :: 
+    (s ~ OrtSiteX)
+    => SomeNaturalApplication (HomDisjEmpty s Op)
+          (SDuality (DiagramG Diagram (Chain To) n m)) (SDuality (Diagram (Chain To) n m))
     
-    h' = h . f
-    SDuality (Left1 d') = amapG t (SDuality (Right1 d))
-  
+    -> SomeNaturalApplication (HomDisjEmpty s Op)
+          (SDuality (DiagramG Diagram (Chain From) n m)) (SDuality (Diagram (Chain From) n m))
+  snaFrom (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h)) of
+    (Struct,Struct) -> SomeNaturalApplication (h . f) sd' where
+      iso :: (s ~ OrtSiteX, o ~ Op)
+        => HomDisjEmpty s o x y -> IsoO s o x
+      iso h = isoO (domain h)
+
+      Contravariant2 (Inv2 t f) = iso h
+
+      sd' = case amapG t sd of
+        SDuality (Right1 d) -> SDuality (Left1 d)
+        SDuality (Left1 d') -> SDuality (Right1 d') 
+
 --------------------------------------------------------------------------------
 -- prpDiagrammtic -
 
@@ -521,9 +514,15 @@ prpDiagrammatic :: N -> Statement
 prpDiagrammatic nMax = Prp "Diagrammatic"
   :<=>: And [ Forall (xNB 0 nMax)
                 (\m -> case someNatural m of
-                         SomeNatural m' -> prpNaturalDiagrammaticSDualisable (n m') (xsaChainTo m')
+                  SomeNatural m' -> And [ prpNaturalDiagrammaticSDualisable (nT m') (xsaChainTo m')
+                                        , prpNaturalDiagrammaticSDualisable (nF m') (xsaChainFrom m')
+                                        ]
                 )
             ]
-  where n :: s ~ OrtSiteX
+  where nT :: s ~ OrtSiteX
           => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Chain To) (m+1) m
-        n _ = NaturalDiagrammaticSDuality
+        nT _ = NaturalDiagrammaticSDuality
+
+        nF :: s ~ OrtSiteX
+          => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Chain From) (m+1) m
+        nF _ = NaturalDiagrammaticSDuality
