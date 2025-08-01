@@ -52,5 +52,5 @@ prpDiagramOrntSymbol = Prp "DiagramOrntSymbol"
 prpDiagram :: Statement
 prpDiagram = Prp "Diagram" :<=>:
   And [ prpDiagramOrntSymbol
-      , prpNaturalDiagrammaticTrafoChain
+      , prpDiagrammatic 10
       ]

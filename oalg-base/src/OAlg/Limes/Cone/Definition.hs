@@ -254,7 +254,7 @@ cnMapMltCnt :: ( HomMultiplicative h, DualisableMultiplicative s o
                )
 -}
 cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
-               , NaturalDiagrammaticS Mlt h d t n m
+               , NaturalDiagrammaticSDualisable Mlt h d t n m
                )
   => Variant2 Contravariant h x y
   -> Cone Mlt p d t n m x -> Cone Mlt (Dual p) d (Dual t) n m y
@@ -266,7 +266,7 @@ cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
       SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
 
 cnMapDstCnt :: ( HomDistributiveDisjunctive h
-               , NaturalDiagrammaticS Dst h d t n m
+               , NaturalDiagrammaticSDualisable Dst h d t n m
                )
   => Variant2 Contravariant h x y
   -> Cone Dst p d t n m x -> Cone Dst (Dual p) d (Dual t) n m y

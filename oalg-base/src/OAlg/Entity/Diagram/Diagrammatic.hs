@@ -22,38 +22,24 @@
 -- 
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
-  (
-
-    -- * Diagrammatic
+  ( -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
 
     -- * Natural
   , NaturalDiagrammatic, NaturalDiagrammaticDual1
-  , NaturalDiagrammaticS, drohS
+  , NaturalDiagrammaticSDualisable, drohS
+  , NaturalDiagrammaticSDuality
   
     -- * Duality
   , DualisableDiagrammatic, DualisableDiagrammaticDual1
   , DualityDiagrammatic
 
-  
-{-  
-    -- * Natural
-  , NaturalDiagrammatic
-  , NaturalDiagrammaticDualisable, dmapS
-
-    -- * Duality
-  , DualisableDiagrammatic, DualityDiagrammatic(..)
-  , toDualLftDgm, toDualLftDgm'
-  , toDualRgtDgm, toDualRgtDgm'
-
-    -- * Proposition
-  , prpNaturalDiagrammatic
-  , prpDualisableDiagrammatic
--}
-  , prpNaturalDiagrammaticTrafoChain
-
+  -- * Proposition
+  , prpDiagrammatic
   ) where
+
+import Control.Monad
 
 import Data.Kind
 import Data.Typeable
@@ -75,8 +61,6 @@ import OAlg.Structure.Oriented
 import OAlg.Entity.Natural
 import OAlg.Entity.Diagram.Definition
 
-prpNaturalDiagrammaticTrafoChain :: Statement
-prpNaturalDiagrammaticTrafoChain = error "nyi"
 --------------------------------------------------------------------------------
 -- Diagrammatic -
 
@@ -338,22 +322,23 @@ instance Diagrammatic d
   roh _ = drohS
 
 --------------------------------------------------------------------------------
--- NaturalDiagrammaticS -
+-- NaturalDiagrammaticSDualisable -
 
 -- | natural transformation on 'Diagrammatic' objects from @'SDuality' ('DiagramG' __d t n m__)@ to
 -- @'SDuality' ('Diagram' __t n m__)@, respecting the canonical application of @__h__@ on
 -- @'SDuality' ('Diagram' __t n m__)@.
 --
--- __Property__ Let @'NaturalDiagrammaticS' __s h d t n m__@, then for all @__x__@,
+-- __Property__ Let @'NaturalDiagrammaticSDualisable' __s h d t n m__@, then for all @__x__@,
 -- @__y__@ and @h@ in @__h x y__@ holds:
 --
 -- (1) @'amapG' h '.=.' dgMapS h@.
 class
-  ( HomOrientedDisjunctive h
+  ( Diagrammatic d
+  , HomOrientedDisjunctive h
   , NaturalTransformable s h (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
   , t ~ Dual (Dual t)
   )
-  => NaturalDiagrammaticS s h d t n m
+  => NaturalDiagrammaticSDualisable s h d t n m
 
 instance
   ( NaturalDiagrammatic s h d t n m
@@ -378,292 +363,167 @@ instance
   , DualisableDiagrammatic s o d t n m
   , Transformable s r
   )
-  => NaturalDiagrammaticS r (HomDisj s o h) d t n m
+  => NaturalDiagrammaticSDualisable r (HomDisj s o h) d t n m
 
-relNaturalDiagrammaticS :: (NaturalDiagrammaticS s h d t n m, Show2 h)
-  => q s h d t n m -> Homomorphous Ort x y -> h x y -> SDuality (Diagram t n m) x -> Statement
-relNaturalDiagrammaticS _ (Struct :>: Struct) h d
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticSDuality -
+
+-- | whiteness of a 'NaturalDiagrammaticSDualisable'.
+data NaturalDiagrammaticSDuality s h d t n m where
+  NaturalDiagrammaticSDuality :: NaturalDiagrammaticSDualisable s h d t n m
+    => NaturalDiagrammaticSDuality s h d t n m
+
+--------------------------------------------------------------------------------
+-- prpHomOrientedDisjunctiveS -
+
+relHomOrientedDisjunctiveS ::
+  ( HomOrientedDisjunctive h
+  , ApplicativeG (SDuality (Diagram t n m)) h (->)
+  , t ~ Dual (Dual t)
+  , Show2 h)
+  => Homomorphous Ort x y -> h x y -> SDuality (Diagram t n m) x -> Statement
+relHomOrientedDisjunctiveS (Struct :>: Struct) h d
   = (amapG h d == dgMapS h d) :?> Params ["h":=show2 h, "d":=show d]
 
-prpNaturalDiagrammaticS :: (NaturalDiagrammaticS s h d t n m, Show2 h)
+-- | validity of a disjunctive homomorphism on oriented structures acting
+-- soundly on @'SDualit' ('Diagram' __t n m__)@ according to 'dgMapS'.
+prpHomOrientedDisjunctiveS ::
+  ( HomOrientedDisjunctive h
+  , ApplicativeG (SDuality (Diagram t n m)) h (->)
+  , t ~ Dual (Dual t)
+  , Show2 h)
+  => h x y -> SDuality (Diagram t n m) x -> Statement
+prpHomOrientedDisjunctiveS h d = Prp "HomOrientedDisjunctiveS"
+  :<=>: relHomOrientedDisjunctiveS (tauHom (homomorphous h)) h d
+
+relNaturalDiagrammaticSDualisable :: (NaturalDiagrammaticSDualisable s h d t n m, Show2 h)
   => q s h d t n m -> h x y -> SDuality (Diagram t n m) x -> Statement
-prpNaturalDiagrammaticS q h d = Prp "NaturalDiagrammaticS"
-  :<=>: relNaturalDiagrammaticS q (tauHom (homomorphous h)) h d
+relNaturalDiagrammaticSDualisable _ = prpHomOrientedDisjunctiveS
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{-
--- | diagrammatic objects admitting a natural transformation from
--- @'DiagramG' __d t n m__@ to @'Diagram' __t n m__@.
---
--- __Property__ Let @'NaturalDiagrammatic' __d t n m__@ then
--- for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds: 
---
--- (1) @'diagram' '.' 'dmap' h '.=.' 'dgMap' h '.' 'diagram'@.
---
--- __Note__ The property above together with @'ApplicativeG' ('Diagram __t n m__) __h__ (->)@
--- and @'Transformable' ('ObjectClass' __h__)__ s__@ establish a
--- @'NaturalTransformable' __s h__ (->) ('DiagramG' __d t n m__) ('Diagram' __t n m__)@.
-class (Diagrammatic d, HomOriented h, ApplicativeG (DiagramG d t n m) h (->))
-  => NaturalDiagrammatic h d t n m
-
-instance (NaturalDiagrammatic h d t n m, TransformableHom h s)
-  => NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m)
-
-instance (Diagrammatic d, TransformableOrt s) => NaturalDiagrammatic (HomEmpty s) d t n m
-
---------------------------------------------------------------------------------
--- prpNaturalDiagrammatic -
-
-relNaturalDiagrammatic :: (NaturalDiagrammatic h d t n m, Show (h x y), Show (d t n m x))
-  => Homomorphous Ort x y -> h x y -> d t n m x -> Statement
-relNaturalDiagrammatic (Struct :>: Struct) h d
-  = (dgMap h (diagram d) == diagram (dmap h d)) :?> Params ["h":=show h,"d":=show d] 
-
--- | validity according to 'NaturalDiagrammatic'.
-prpNaturalDiagrammatic :: (NaturalDiagrammatic h d t n m, Show (h x y), Show (d t n m x))
-  => h x y -> d t n m x -> Statement
-prpNaturalDiagrammatic h d = Prp "NaturalDiagrammatic"
-  :<=>: relNaturalDiagrammatic (tauHom (homomorphous h)) h d
-
---------------------------------------------------------------------------------
--- DualisableDiagrammatic -
-
--- | duality for 'Diagrammatic' objects.
---
---  __Property__ Let @'DualisableDiagrammatic' __s o d t n m__@ then
--- for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
---
--- (1) @'diagram' '.' 'toDualLftDgm'' n s '.=.' 'toDualGLft' s '.' 'diagram'@.
---
--- (2) @'diagram' '.' 'toDualRgtDgm'' n s '.=.' 'toDualGRgt' s '.' 'diagram'@.
---
--- where @n@ is a whiteness in @'DualityDiagrammatic' __s o d t n m__@.
-class ( Diagrammatic d
-      , DualisableGBi s (->) o (DiagramG d t n m) (DiagramG d (Dual t) n m)
-      , DualisableOriented s o, TransformableGRefl o s, TransformableOrt s
-      , Dual1 (d t n m) ~ d (Dual t) n m, t ~ Dual (Dual t)
-      ) => DualisableDiagrammatic s o d t n m
-
-instance DualisableDiagrammatic s o d t n m => DualisableGBiDual1 s (->) o (DiagramG d t n m)
-
-instance (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s, t ~ Dual (Dual t))
-  => DualisableDiagrammatic s o Diagram t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticDualisable -
-
--- | natural dualsiable 'Diagrammatic' objects.
-class ( NaturalDiagrammatic h d t n m, NaturalDiagrammatic h d (Dual t) n m
-      , Dual1 (d t n m) ~ d (Dual t) n m
-      , DualisableDiagrammatic s o d t n m
-      )
-  => NaturalDiagrammaticDualisable s o h d t n m
-
-instance (Diagrammatic d, DualisableDiagrammatic s o d t n m)
-  => NaturalDiagrammaticDualisable s o (HomEmpty s) d t n m
-
---------------------------------------------------------------------------------
--- Diagrammatic - NaturalTransformable -
-
-instance NaturalDiagrammaticDualisable s o h d t n m
-  => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+prpNaturalDiagrammaticSDualisable ::
+  NaturalDiagrammaticSDualisable s h d t n m
+  => q s h d t n m
+  -> X (SomeNaturalApplication h (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)))
+  -> Statement
+prpNaturalDiagrammaticSDualisable q xsa = Prp "NaturalDiagrammaticSDualisable"
+  :<=>: Forall xsa (\(SomeNaturalApplication h d)
+                    -> And [ prpHomOrientedDisjunctiveS h (drohS d)
+                           , relNaturalTransformable (n q) h d
+                           ]
+                   )
+  where n :: NaturalDiagrammaticSDualisable s h d t n m
+          => q s h d t n m
+          -> NaturalTransformation s h (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
+        n _ = NaturalTransformation
   
-instance NaturalDiagrammaticDualisable s o h d t n m
-  => NaturalTransformable s (HomDisj s o h) (->)
-     (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
-
-instance NaturalDiagrammaticDualisable s o h d t n m
-  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
-  amapG (Covariant2 h) d = d' where SDuality (Right1 d') = amapG h (SDuality (Right1 d))
-
-instance NaturalDiagrammaticDualisable s o h d t n m
-  => NaturalDiagrammatic (Variant2 Covariant (HomDisj s o h)) d t n m
-
-{-
---------------------------------------------------------------------------------
--- drohS -
-
--- | the canonical transformation,
-drohS :: Diagrammatic d => SDuality (DiagramG d t n m) x -> SDuality (Diagram t n m) x
-drohS (SDuality sd) = SDuality $ case sd of
-  Right1 (DiagramG d) -> Right1 (diagram d)
-  Left1 (DiagramG d') -> Left1 (diagram d')
-
-instance Diagrammatic d
-  => Natural s (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m)) where
-  roh _ = drohS
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticDual1 -
-
--- | duality for 'NaturalDiagrammatic'.
-class ( NaturalDiagrammatic h d t n m
-      , NaturalDiagrammatic h d (Dual t) n m
-      , Dual1 (d t n m) ~ d (Dual t) n m
-      )
-  => NaturalDiagrammaticDual1 h d t n m
-
-instance (Diagrammatic d, TransformableOrt s, Dual1 (d t n m) ~ d (Dual t) n m)
-  => NaturalDiagrammaticDual1 (HomEmpty s) d t n m
-
-instance (NaturalDiagrammaticDual1 h d t n m, DualisableDiagrammatic s o d t n m)
-  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
-  amapG (Covariant2 (HomDisj h)) d = d' where SDuality (Right1 d') = smap h (SDuality (Right1 d))
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticS -
-
--- | diagrammatic objects admitting a natural transformation from
--- @'SDuality' ('DiagramG' __d t n m__)@ to @'SDuality' ('Diagram' __t n m__)@.
---
---  __Properties__ Let @'NaturalDiagrammaticS' __s o h d t n m__@,
--- @n@ be in @'NaturalDgmS' __s o h d t n m__@, then
--- for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
---
--- (1) @'diagram' '.' 'toDualLftDgm' n s '.=.' 'toDualGLft' s '.' 'diagram'@.
---
--- (2) @'diagram' '.' 'toDualRgtDgm' n s '.=.' 'toDualGRgt' s '.' 'diagram'@.
---
--- __Note__ The above properties give rise to a 'NaturalTransformation' from
--- @'SDuality' ('DiagramG' __d t n m__)@ to @'SDuality' ('Diagram' __t n m__)@.
-class ( NaturalDiagrammaticDual1 h d t n m
-      , DualisableDiagrammatic s o d t n m
-      , t ~ Dual (Dual t)
-      , TransformableGRefl o s, TransformableOrt s
-      , DualisableOriented s o
-      )
-  => NaturalDiagrammaticS s o h d t n m
-
-instance NaturalDiagrammaticS s o h d t n m
-  => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
-
-instance NaturalDiagrammaticS s o h d t n m
-  => NaturalTransformable s (HomDisj s o h) (->)
-      (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
-
-instance ( Diagrammatic d
-         , TransformableOrt s, TransformableGRefl o s
-         , DualisableOriented s o
-         , DualisableDiagrammatic s o d t n m
-         , Dual1 (d t n m) ~ d (Dual t) n m
-         , t ~ Dual (Dual t)
-         )
-  => NaturalDiagrammaticS s o (HomEmpty s) d t n m
-
-instance NaturalDiagrammaticS s o h d t n m
-  => NaturalDiagrammatic (Variant2 Covariant (HomDisj s o h)) d t n m 
--}
---------------------------------------------------------------------------------
--- dmapS -
-
--- | the induced application.
-dmapS :: ( ApplicativeG (SDuality (DiagramG d t n m)) h (->)
-         , Dual1 (d t n m) ~ d (Dual t) n m
-         )
-  => h x y -> SDuality (d t n m) x -> SDuality (d t n m) y
-dmapS h (SDuality d) = SDuality (f d') where
-  SDuality d' = amapG h (SDuality (t d))
-                        
-  t :: Dual1 (d t n m) ~ d (Dual t) n m
-    => Either1 (Dual1 (d t n m)) (d t n m) x
-    -> Either1 (Dual1 (DiagramG d t n m)) (DiagramG d t n m) x
-  t (Right1 d) = Right1 (DiagramG d)
-  t (Left1 d') = Left1 (DiagramG d')
-
-  f :: Dual1 (d t n m) ~ d (Dual t) n m
-    => Either1 (Dual1 (DiagramG d t n m)) (DiagramG d t n m) x
-    -> Either1 (Dual1 (d t n m)) (d t n m) x
-  f (Right1 (DiagramG d)) = Right1 d
-  f (Left1 (DiagramG d')) = Left1 d'
-
-
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammaticTrafoChain -
 
+instance t ~ Dual (Dual t) => DualisableDiagrammatic OrtSiteX Op Diagram t n m
 
-dgmtDiagram :: ( t ~ Dual (Dual t)
-               , TransformableG (SDuality (DiagramG Diagram t n m)) s EqE
-               , TransformableG (SDuality (Diagram t n m)) s EqE
-               , s ~ OrtSiteX
-               )
-  => NaturalTransformation (SubStruct s s) (Sub s (HomDisjEmpty s Op)) (Sub EqE (->))
-       (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
-dgmtDiagram = NaturalTransformation
+--------------------------------------------------------------------------------
+-- xsoOrt -
 
-dgmtDiagramChainTo :: (s ~ OrtSiteX, t ~ Chain To, n ~ m + 1, Attestable m)
-  => q m
-  -> NaturalTransformation (SubStruct s s) (Sub s (HomDisjEmpty s Op)) (Sub EqE (->))
-       (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
-dgmtDiagramChainTo _ = dgmtDiagram
-
-dgmtDiagramChainFrom :: (s ~ OrtSiteX, t ~ Chain From, n ~ m + 1, Attestable m)
-  => q m
-  -> NaturalTransformation (SubStruct s s) (Sub s (HomDisjEmpty s Op)) (Sub EqE (->))
-       (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))
-dgmtDiagramChainFrom _ = dgmtDiagram
-
-
+-- | random variable for some object classees of @'SHom' __s s__ ('HomEmpty' __s__)@.
 xsoOrt :: s ~ OrtSiteX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
 xsoOrt = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
-                 , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
-                 , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
-                 ]
+                , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
+                , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
+                ]
 
 
 -- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomDisjEmpty' 'OrtSiteX' 'Op')@
-xsOrtSiteXOp :: s ~ OrtSiteX => X (SomeMorphism (Sub s (HomDisjEmpty s Op)))
-xsOrtSiteXOp = amap1 (sub . smCmpb2) $ xscmHomDisj xsoOrt XEmpty where
-  subStruct :: Homomorphous s x y -> h x y -> Sub s h x y
-  subStruct (Struct :>: Struct) = Sub
+xsOrtSiteXOp :: s ~ OrtSiteX => X (SomeMorphism (HomDisjEmpty s Op))
+xsOrtSiteXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrt XEmpty where
+
+--------------------------------------------------------------------------------
+-- xsaChainTo -
+
+xdChainToStruct :: (n ~ m+1, t ~ Chain To, Show2 h)
+  => Any m
+  -> Homomorphous OrtSiteX x y 
+  -> h x y
+  -> X (SomeNaturalApplication h (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdChainToStruct m (Struct :>: Struct) h = do
+  d <- xDiagram Refl (XDiagramChainTo m xStandardOrtSite)
+  return (SomeNaturalApplication h (SDuality (Right1 (DiagramG d))))
+
+xdChainTo ::
+  ( Morphism h
+  , s ~ OrtSiteX, n ~ m+1, t ~ Chain To, Show2 h
+  )
+  => Any m
+  -> HomDisj s Op h x y
+  -> X (SomeNaturalApplication (HomDisj s Op h)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdChainTo m h = xdChainToStruct m (homomorphous h) h
+
+
+xsaChainTo ::
+  ( s ~ OrtSiteX, n ~ m+1, t ~ Chain To
+  )
+  => Any m
+  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xsaChainTo m = do
+  SomeMorphism h <- xsOrtSiteXOp
+  xdChainTo m h
+
+--------------------------------------------------------------------------------
+-- xsaChainFrom -
+
+xdChainFrom :: 
+  ( HomOriented h
+  , s ~ OrtSiteX, n ~ m+1, t ~ Chain From, Show2 h
+  )
+  => Any m
+  -> HomDisj s Op h x y
+  -> X (SomeNaturalApplication (HomDisj s Op h)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdChainFrom m h = amap1 ff $ xdChainTo m (h . f) where
+  fromOp ::
+    (Morphism h, s ~ OrtSiteX, o ~ Op)
+    => HomDisj s o h x y -> Variant2 Contravariant (HomDisj s o h) (o x) x
+  fromOp h = cFromDual (domain h)
+
+  Contravariant2 f = fromOp h
+
+ff ::
+  (HomOriented h, s ~ OrtSiteX)
+  => SomeNaturalApplication (HomDisj s Op h)
+        (SDuality (DiagramG Diagram (Chain To) n m)) (SDuality (Diagram (Chain To) n m))
   
-  sub :: s ~ OrtSiteX => SomeMorphism (HomDisjEmpty s Op) -> SomeMorphism (Sub s (HomDisjEmpty s Op))
-  sub (SomeMorphism h) = SomeMorphism (subStruct (homomorphous h) h)
+  -> SomeNaturalApplication (HomDisj s Op h)
+        (SDuality (DiagramG Diagram (Chain From) n m)) (SDuality (Diagram (Chain From) n m))
+ff (SomeNaturalApplication h (DiagramG d)) = case (tauOrt (domain h), tauOrt (range h)) of
+  (Struct,Struct) -> SomeNaturalApplication h' (DiagramG d') where
+    fromOp ::
+      (Morphism h, s ~ OrtSiteX, o ~ Op)
+      => HomDisj s o h x y -> Variant2 Contravariant (HomDisj s o h) (o x) x
+    fromOp h = cFromDual (domain h)
 
-
--- | validity of
--- @'NaturalDiagrammaticTrafo' 'Ort' ('HomDisjEmpty' 'Ort' 'Op') (->)
--- 'Diagram' ('Chain' __t__) __m+1__ __m__@.
-prpNaturalDiagrammaticTrafoChain :: Statement
-prpNaturalDiagrammaticTrafoChain = Prp "NaturalDiagrammaticTrafoChain"
-  :<=>: Forall (xTupple2 xBool (xNB 0 10)) (uncurry rel)
+    toOp :: (Morphism h, s ~ OrtSiteX, o ~ Op)
+      => HomDisj s o h x y -> Variant2 Contravariant (HomDisj s o h) x (o x)
+    toOp h = cToDual (domain h)
   
-  where
-    rel b m           = case someNatural m of
-      SomeNatural m' -> case b of
-        True  -> prpNaturalTransformableEqExt (dgmtDiagramChainTo m') xsOrtSiteXOp
-        False -> prpNaturalTransformableEqExt (dgmtDiagramChainFrom m') xsOrtSiteXOp
+    Contravariant2 f = fromOp h
+    Contravariant2 t = toOp h
+    
+    h' = h . f
+    SDuality (Left1 d') = amapG t (SDuality (Right1 d))
+  
+--------------------------------------------------------------------------------
+-- prpDiagrammtic -
 
-
-
--}
+-- | validity according to 'NaturalDiagrmmaticS' for some @'HomDisjEmpty' 'OrtSiteX' 'Op'@
+-- acting on some 'Diagram's.
+prpDiagrammatic :: N -> Statement
+prpDiagrammatic nMax = Prp "Diagrammatic"
+  :<=>: And [ Forall (xNB 0 nMax)
+                (\m -> case someNatural m of
+                         SomeNatural m' -> prpNaturalDiagrammaticSDualisable (n m') (xsaChainTo m')
+                )
+            ]
+  where n :: s ~ OrtSiteX
+          => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Chain To) (m+1) m
+        n _ = NaturalDiagrammaticSDuality

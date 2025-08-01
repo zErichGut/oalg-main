@@ -37,6 +37,7 @@ module OAlg.Category.NaturalTransformable
     -- * Proposition
   , prpNaturalTransformableEqExt
   , prpNaturalTransformable, SomeNaturalApplication(..)
+  , relNaturalTransformable
   ) where
 
 import OAlg.Prelude 

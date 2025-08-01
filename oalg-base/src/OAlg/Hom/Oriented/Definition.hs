@@ -115,14 +115,6 @@ class ( Morphism h, Applicative h, ApplicativePoint h
 
 instance HomOrientedDisjunctive h => HomOrientedDisjunctive (Path h)
 
-instance ApplicativeG Id h c => ApplicativeG Id (Variant2 v h) c where
-  amapG (Covariant2 h)     = amapG h
-  amapG (Contravariant2 h) = amapG h
-  
-instance ApplicativeG Pnt h c => ApplicativeG Pnt (Variant2 v h) c where
-  amapG (Covariant2 h)     = amapG h
-  amapG (Contravariant2 h) = amapG h
-  
 instance HomOrientedDisjunctive h => HomOriented (Variant2 Covariant h)
 
 --------------------------------------------------------------------------------

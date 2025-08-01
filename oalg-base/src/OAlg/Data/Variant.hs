@@ -130,6 +130,14 @@ instance (Disjunctive2 h, Validable (h x y)) => Validable (Variant2 v h x y) whe
     Covariant2 hCov     -> valid hCov && (variant2 hCov == Covariant) :?> Params []
     Contravariant2 hCnt -> valid hCnt && (variant2 hCnt == Contravariant) :?> Params []
 
+instance ApplicativeG Id h c => ApplicativeG Id (Variant2 v h) c where
+  amapG (Covariant2 h)     = amapG h
+  amapG (Contravariant2 h) = amapG h
+  
+instance ApplicativeG Pnt h c => ApplicativeG Pnt (Variant2 v h) c where
+  amapG (Covariant2 h)     = amapG h
+  amapG (Contravariant2 h) = amapG h
+  
 --------------------------------------------------------------------------------
 -- toVariant2 -
 
