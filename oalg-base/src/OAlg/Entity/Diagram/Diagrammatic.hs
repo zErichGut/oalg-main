@@ -420,21 +420,22 @@ prpNaturalDiagrammaticSDualisable q xsa = Prp "NaturalDiagrammaticSDualisable"
 -- prpNaturalDiagrammaticTrafoChain -
 
 instance t ~ Dual (Dual t) => DualisableDiagrammatic OrtSiteX Op Diagram t n m
+instance t ~ Dual (Dual t) => DualisableDiagrammatic OrtOrientationX Op Diagram t n m
 
 --------------------------------------------------------------------------------
--- xsoOrt -
+-- xsoOrtSite -
 
 -- | random variable for some object classees of @'SHom' __s s__ ('HomEmpty' __s__)@.
-xsoOrt :: s ~ OrtSiteX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
-xsoOrt = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
-                , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
-                , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
-                ]
+xsoOrtSite :: s ~ OrtSiteX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoOrtSite = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
+                    , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
+                    , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
+                    ]
 
 
 -- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomDisjEmpty' 'OrtSiteX' 'Op')@
 xsOrtSiteXOp :: s ~ OrtSiteX => X (SomeMorphism (HomDisjEmpty s Op))
-xsOrtSiteXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrt XEmpty where
+xsOrtSiteXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrtSite XEmpty
 
 --------------------------------------------------------------------------------
 -- xsaChainTo -
@@ -476,26 +477,58 @@ xsaChainTo m = do
   xdChainTo m h
 
 --------------------------------------------------------------------------------
--- xsaChainFrom -
+-- xsaSink -
 
-xsaChainFrom ::
-  ( s ~ OrtSiteX, n ~ m+1, t ~ Chain From
+xdSinkStruct :: (n ~ m+1, t ~ Star To, Show2 h)
+  => Any m
+  -> Homomorphous OrtSiteX x y 
+  -> h x y
+  -> X (SomeNaturalApplication h (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdSinkStruct m (Struct :>: Struct) h = do
+  b <- xBool
+  case b of
+    True  -> do
+      d <- xDiagram Refl (XDiagramSink m xStandardOrtSite)
+      return (SomeNaturalApplication h (SDuality (Right1 (DiagramG d))))
+    False -> do
+      d <- xDiagram Refl (XDiagramSource m xStandardOrtSite)
+      return (SomeNaturalApplication h (SDuality (Left1 (DiagramG d))))
+
+xdSink ::
+  ( Morphism h
+  , s ~ OrtSiteX, n ~ m+1, t ~ Star To, Show2 h
+  )
+  => Any m
+  -> HomDisj s Op h x y
+  -> X (SomeNaturalApplication (HomDisj s Op h)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdSink m h = xdSinkStruct m (homomorphous h) h
+
+xsaSink ::
+  ( s ~ OrtSiteX, n ~ m+1, t ~ Star To
   )
   => Any m
   -> X (SomeNaturalApplication (HomDisjEmpty s Op)
          (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
-xsaChainFrom m = amap1 snaFrom $ xsaChainTo m  where
+xsaSink m = do
+  SomeMorphism h <- xsOrtSiteXOp
+  xdSink m h
 
-  snaFrom :: 
-    (s ~ OrtSiteX)
-    => SomeNaturalApplication (HomDisjEmpty s Op)
-          (SDuality (DiagramG Diagram (Chain To) n m)) (SDuality (Diagram (Chain To) n m))
-    
-    -> SomeNaturalApplication (HomDisjEmpty s Op)
-          (SDuality (DiagramG Diagram (Chain From) n m)) (SDuality (Diagram (Chain From) n m))
-  snaFrom (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h)) of
+--------------------------------------------------------------------------------
+-- snaDual -
+
+snaDual :: 
+  ( Transformable s Ort, TransformableGRefl Op s
+  , DualisableDiagrammatic s Op Diagram t n m
+  , t ~ Dual (Dual t)
+  )
+  => SomeNaturalApplication (HomDisjEmpty s Op)
+        (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m))    
+  -> SomeNaturalApplication (HomDisjEmpty s Op)
+        (SDuality (DiagramG Diagram (Dual t) n m)) (SDuality (Diagram (Dual t) n m))
+snaDual (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h)) of
     (Struct,Struct) -> SomeNaturalApplication (h . f) sd' where
-      iso :: (s ~ OrtSiteX, o ~ Op)
+      iso :: (o ~ Op, TransformableGRefl Op s)
         => HomDisjEmpty s o x y -> IsoO s o x
       iso h = isoO (domain h)
 
@@ -506,6 +539,122 @@ xsaChainFrom m = amap1 snaFrom $ xsaChainTo m  where
         SDuality (Left1 d') -> SDuality (Right1 d') 
 
 --------------------------------------------------------------------------------
+-- xsaChainFrom -
+
+xsaChainFrom ::
+  ( s ~ OrtSiteX, n ~ m+1, t ~ Chain From
+  )
+  => Any m
+  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xsaChainFrom m = amap1 snaDual $ xsaChainTo m
+
+--------------------------------------------------------------------------------
+-- xsaSource -
+
+xsaSource ::
+  ( s ~ OrtSiteX, n ~ m+1, t ~ Star From
+  )
+  => Any m
+  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xsaSource m = amap1 snaDual $ xsaSink m
+
+--------------------------------------------------------------------------------
+-- some new definitions -
+
+instance XStandardOrtOrientation x => XStandardOrtOrientation (Op x) where
+  xStandardOrtOrientation = XOrtOrientation xo' xq' where
+    XOrtOrientation xo xq = xStandardOrtOrientation
+    xo'   = amap1 opposite xo
+    xq' o = xq (opposite o) >>= return . Op
+
+instance XStandard x => XStandardOrtOrientation (U x) where
+  xStandardOrtOrientation = XOrtOrientation xo xq where
+    xo = return (():>())
+    xq _ = amap1 U xStandard
+    
+--------------------------------------------------------------------------------
+-- OrtOrientationX -
+
+data OrtOrientationX
+
+type instance Structure OrtOrientationX x = (Oriented x, XStandardOrtOrientation x)
+
+instance Transformable OrtOrientationX Typ where tau Struct = Struct
+
+instance Transformable OrtOrientationX Ort where tau Struct = Struct
+instance TransformableOrt OrtOrientationX
+
+instance TransformableG Op OrtOrientationX OrtOrientationX where tauG Struct = Struct
+instance TransformableGRefl Op OrtOrientationX
+instance TransformableOp OrtOrientationX
+
+instance Transformable OrtOrientationX Type where tau Struct = Struct
+instance TransformableType OrtOrientationX
+
+--------------------------------------------------------------------------------
+-- xsoOrtOrientation -
+xsoOrtOrientation :: s ~ OrtOrientationX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoOrtOrientation
+  = xOneOf [ SomeObjectClass (Struct :: Struct OrtOrientationX OS)
+           , SomeObjectClass (Struct :: Struct OrtOrientationX (Op OS))
+           , SomeObjectClass (Struct :: Struct OrtOrientationX (U Z))
+           ]
+
+xsOrtOrientationXOp ::  s ~ OrtOrientationX => X (SomeMorphism (HomDisjEmpty s Op))
+xsOrtOrientationXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrtOrientation XEmpty
+
+--------------------------------------------------------------------------------
+-- xsaParallelLR -
+
+xdParallelLRStruct :: (n ~ N2, t ~ Parallel LeftToRight, Show2 h)
+  => Any m
+  -> Homomorphous OrtOrientationX x y 
+  -> h x y
+  -> X (SomeNaturalApplication h (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdParallelLRStruct m (Struct :>: Struct) h = do
+  b <- xBool
+  case b of
+    True  -> do
+      d <- xDiagram Refl (XDiagramParallelLR m xStandardOrtOrientation)
+      return (SomeNaturalApplication h (SDuality (Right1 (DiagramG d))))
+    False -> do
+      d <- xDiagram Refl (XDiagramParallelRL m xStandardOrtOrientation)
+      return (SomeNaturalApplication h (SDuality (Left1 (DiagramG d))))
+
+xdParallelLR ::
+  ( Morphism h
+  , s ~ OrtOrientationX, n ~ N2, t ~ Parallel LeftToRight, Show2 h
+  )
+  => Any m
+  -> HomDisj s Op h x y
+  -> X (SomeNaturalApplication (HomDisj s Op h)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xdParallelLR m h = xdParallelLRStruct m (homomorphous h) h
+
+xsaParallelLR ::
+  ( s ~ OrtOrientationX, n ~ N2, t ~ Parallel LeftToRight
+  )
+  => Any m
+  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xsaParallelLR m = do
+  SomeMorphism h <- xsOrtOrientationXOp
+  xdParallelLR m h
+
+--------------------------------------------------------------------------------
+-- xsaParallelRL -
+
+xsaParallelRL ::
+  ( s ~ OrtOrientationX, n ~ N2, t ~ Parallel RightToLeft
+  )
+  => Any m
+  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+         (SDuality (DiagramG Diagram t n m)) (SDuality (Diagram t n m)))
+xsaParallelRL m = amap1 snaDual $ xsaParallelLR m
+
+--------------------------------------------------------------------------------
 -- prpDiagrammtic -
 
 -- | validity according to 'NaturalDiagrmmaticS' for some @'HomDisjEmpty' 'OrtSiteX' 'Op'@
@@ -514,15 +663,37 @@ prpDiagrammatic :: N -> Statement
 prpDiagrammatic nMax = Prp "Diagrammatic"
   :<=>: And [ Forall (xNB 0 nMax)
                 (\m -> case someNatural m of
-                  SomeNatural m' -> And [ prpNaturalDiagrammaticSDualisable (nT m') (xsaChainTo m')
-                                        , prpNaturalDiagrammaticSDualisable (nF m') (xsaChainFrom m')
+                  SomeNatural m' -> And [ prpNaturalDiagrammaticSDualisable (chT m') (xsaChainTo m')
+                                        , prpNaturalDiagrammaticSDualisable (chF m') (xsaChainFrom m')
+                                        , prpNaturalDiagrammaticSDualisable (skT m') (xsaSink m')
+                                        , prpNaturalDiagrammaticSDualisable (skF m') (xsaSource m')
+                                        , prpNaturalDiagrammaticSDualisable (lrT m') (xsaParallelLR m')
+                                        , prpNaturalDiagrammaticSDualisable (lrF m') (xsaParallelRL m')
                                         ]
                 )
             ]
-  where nT :: s ~ OrtSiteX
+  where chT :: s ~ OrtSiteX
           => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Chain To) (m+1) m
-        nT _ = NaturalDiagrammaticSDuality
+        chT _ = NaturalDiagrammaticSDuality
 
-        nF :: s ~ OrtSiteX
+        chF :: s ~ OrtSiteX
           => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Chain From) (m+1) m
-        nF _ = NaturalDiagrammaticSDuality
+        chF _ = NaturalDiagrammaticSDuality
+
+        skT :: s ~ OrtSiteX
+          => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Star To) (m+1) m
+        skT _ = NaturalDiagrammaticSDuality
+
+        skF :: s ~ OrtSiteX
+          => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram (Star From) (m+1) m
+        skF _ = NaturalDiagrammaticSDuality
+
+        lrT :: s ~ OrtOrientationX
+          => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram
+               (Parallel LeftToRight) N2 m
+        lrT _ = NaturalDiagrammaticSDuality
+
+        lrF :: s ~ OrtOrientationX
+          => Any m -> NaturalDiagrammaticSDuality s (HomDisjEmpty s Op) Diagram
+               (Parallel RightToLeft) N2 m
+        lrF _ = NaturalDiagrammaticSDuality
