@@ -66,7 +66,6 @@ instance FibredOriented Z
 instance FibredOriented Q
 instance Entity p => FibredOriented (Orientation p)
 instance FibredOriented x => FibredOriented (Id x)
-
 instance FibredOriented x => Fibred (Op x)
 instance FibredOriented x => FibredOriented (Op x)
 
@@ -86,6 +85,7 @@ instance Transformable FbrOrt Typ where tau Struct = Struct
 instance Transformable FbrOrt Ent where tau Struct = Struct
 instance Transformable FbrOrt Fbr where tau Struct = Struct
 instance Transformable FbrOrt Ort where tau Struct = Struct
+instance Transformable FbrOrt Type where tau _ = Struct
 
 instance TransformableOp FbrOrt
 

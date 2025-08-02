@@ -3,7 +3,7 @@
 
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 
@@ -30,7 +30,13 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
+import OAlg.Data.Variant
+
 import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
@@ -46,6 +52,11 @@ class (HomFibredOriented h, HomMultiplicative h, HomAdditive h, Transformable (O
   => HomDistributive h
 
 instance HomDistributive h => HomDistributive (Path h)
+instance
+  ( TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
+  , TransformableMlt s, TransformableAdd s, TransformableDst s
+  )
+  => HomDistributive (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- DualisableDistributive -
@@ -68,6 +79,7 @@ class ( HomFibredOrientedDisjunctive h, HomMultiplicativeDisjunctive h, HomAddit
 instance (HomDistributive h, DualisableDistributive s o)
   => HomDistributiveDisjunctive (HomDisj s o h)
 
+instance HomDistributiveDisjunctive h => HomDistributive (Variant2 Covariant h)
 
 --------------------------------------------------------------------------------
 -- isoOpDst -

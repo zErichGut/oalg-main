@@ -43,6 +43,8 @@ import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
+import OAlg.Data.Variant
+
 import OAlg.Structure.Fibred
 import OAlg.Structure.FibredOriented
 import OAlg.Structure.Oriented hiding (Path(..))
@@ -66,6 +68,8 @@ class ( Morphism h, Applicative h, ApplicativeRoot h
 instance HomFibred h => HomFibred (Path h)
 instance TransformableFbr s => HomFibred (HomEmpty s)
 
+instance (HomFibred h, Disjunctive2 h)  => HomFibred (Variant2 v h)
+         
 --------------------------------------------------------------------------------
 -- DualisableFibred -
 

@@ -41,6 +41,8 @@ import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
+import OAlg.Data.Variant
+
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
 import OAlg.Structure.FibredOriented
@@ -71,6 +73,7 @@ class (HomFibred h, Transformable (ObjectClass h) Add) => HomAdditive h
 
 instance HomAdditive h => HomAdditive (Path h)
 instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
+instance (HomAdditive h, Disjunctive2 h) => HomAdditive (Variant2 v h)
 
 --------------------------------------------------------------------------------
 -- DualisableAdditive -
@@ -87,6 +90,8 @@ instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 -- @'toDualStk' q s (a '+' b) '==' 'toDualStk' q s a '+' 'toDualStk' q s b@.
 --
 -- where @q@ is any proxy for @__o__@.
+--
+-- __Note__ @'Dualisable' __s__ 'Op'@ holds, because '+' is commutative.
 class (DualisableFibred s o, Transformable s Add) => DualisableAdditive s o
 
 instance ( TransformableType s, TransformableFbrOrt s, TransformableOp s

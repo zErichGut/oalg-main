@@ -47,7 +47,8 @@ import OAlg.Category.Unify
 import OAlg.Data.Either
 import OAlg.Data.Proxy
 
-import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Oriented  hiding (Path(..))
+import OAlg.Structure.Fibred.Root
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Number
 
@@ -130,6 +131,7 @@ instance (Disjunctive2 h, Validable (h x y)) => Validable (Variant2 v h x y) whe
     Covariant2 hCov     -> valid hCov && (variant2 hCov == Covariant) :?> Params []
     Contravariant2 hCnt -> valid hCnt && (variant2 hCnt == Contravariant) :?> Params []
 
+
 instance ApplicativeG Id h c => ApplicativeG Id (Variant2 v h) c where
   amapG (Covariant2 h)     = amapG h
   amapG (Contravariant2 h) = amapG h
@@ -137,7 +139,11 @@ instance ApplicativeG Id h c => ApplicativeG Id (Variant2 v h) c where
 instance ApplicativeG Pnt h c => ApplicativeG Pnt (Variant2 v h) c where
   amapG (Covariant2 h)     = amapG h
   amapG (Contravariant2 h) = amapG h
-  
+
+instance ApplicativeG Rt h c => ApplicativeG Rt (Variant2 v h) c where
+  amapG (Covariant2 h)     = amapG h
+  amapG (Contravariant2 h) = amapG h
+
 --------------------------------------------------------------------------------
 -- toVariant2 -
 

@@ -75,6 +75,7 @@ import OAlg.Entity.Diagram.Diagrammatic
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Multiplicative as Mlt
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
@@ -283,6 +284,9 @@ cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
 
 type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
 
+--------------------------------------------------------------------------------
+-- Cone - Applicative - Mlt -
+
 instance ( HomMultiplicative h
          , NaturalDiagrammatic Mlt h d t n m
          )
@@ -365,97 +369,35 @@ instance (DiagrammaticApplicative h d, HomDistributive h)
 
 instance (Category h, HomDistributive h, DiagrammaticFunctorial h d)
   => Functorial1 h (Cone Dst p d t n m)
+-}
 
 --------------------------------------------------------------------------------
--- Cone - Dual -
+-- Cone - Applicative - Dst -
 
-type instance Dual1 (Cone s p d t n m)  = Cone s (Dual p) d (Dual t) n m 
-type instance Dual (Cone s p d t n m a) = Dual1 (Cone s p d t n m) (Op a)
+instance ( HomDistributive h
+         , NaturalDiagrammatic Dst h d t n m
+         )
+  => ApplicativeG (Cone Dst p d t n m) h (->) where
+  amapG = cnMapDst
 
---------------------------------------------------------------------------------
--- coCone -
 
--- | to the dual cone, with its inverse 'coConeInv'.
-coCone :: DiagrammaticOpDuality' s d t n m
-  -> Struct s a -> Cone s p d t n m a -> Dual (Cone s p d t n m a)
-coCone dOp s c          = case c of
-  ConeProjective d t as -> ConeInjective (toDualFst dOp s d) t (amap1 Op as)
-  ConeInjective d t as  -> ConeProjective (toDualFst dOp s d) t (amap1 Op as)
-  ConeKernel d a        -> ConeCokernel (toDualFst dOp s d) (Op a)
-  ConeCokernel d a      -> ConeKernel (toDualFst dOp s d) (Op a)
+cnToBidualDst ::
+  ( TransformableDst s, TransformableFbr s, TransformableFbrOrt s
+  , TransformableMlt s, TransformableAdd s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  )
+  => Struct s x -> Cone Dst p d t n m x -> Cone Dst p d t n m (o (o x))
+cnToBidualDst s = cnMapDst (Covariant2 (t' . t)) where
+  Contravariant2 (Inv2 t _)  = isoO s
+  Contravariant2 (Inv2 t' _) = isoO (tauO s) 
 
---------------------------------------------------------------------------------
--- ConeOpDuality -
 
-data ConeOpDuality s d i o a b where
-  ConeOpDuality
-    :: ( DiagrammaticOpDualisable s d
-       , DiagrammaticFunctorial1 (IsoOp s) d t n m
-       , DiagrammaticFunctorial1 (IsoOp s) d (Dual t) n m
-       )
-    => Either (s :~: Mlt) (s :~: Dst)
-    -> Dual (Dual p) :~: p
-    -> Dual (Dual t) :~: t
-    -> ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
 
---------------------------------------------------------------------------------
--- ConeOpDuality' -
 
-type ConeOpDuality' s p d t n m
-  = ConeOpDuality s d (IsoOp s) Op (Cone s p d t n m) (Cone s (Dual p) d (Dual t) n m)
-  
---------------------------------------------------------------------------------
--- cnDgmOpDuality -
-
--- | the underlying 'Diagrammatic'-'Op'-duality.
-cnDgmOpDuality
-  :: ConeOpDuality' s p d t n m
-  -> DiagrammaticOpDuality' s d t n m
-cnDgmOpDuality (ConeOpDuality _ _ rt) = DiagrammaticOpDuality rt
-
---------------------------------------------------------------------------------
--- ConeOpDuality - Duality1 -
-
-instance Symmetric (ConeOpDuality s d i o) where
-  swap (ConeOpDuality s Refl Refl) = ConeOpDuality s Refl Refl
-
-instance (TransformableTyp s, Transformable1 Op s) => Duality1 s (ConeOpDuality s d) (IsoOp s) Op where
-  toDualFst cOp@(ConeOpDuality _ _ _) = coCone (cnDgmOpDuality cOp)
-
-  isoBidualFst (ConeOpDuality s _ _)  = case s of
-    Left Refl  -> Functor1 . isoToOpOpStruct
-    Right Refl -> Functor1 . isoToOpOpStruct
-
---------------------------------------------------------------------------------
--- cnOpDualityDiagram -
-
-cnOpDualityDiagram' :: Either (s :~: Mlt) (s :~: Dst) -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> ConeOpDuality' s p Diagram t n m
-cnOpDualityDiagram' s = case s of
-  Left Refl  -> ConeOpDuality s
-  Right Refl -> ConeOpDuality s
-
-cnOpDualityDiagram :: Diagrammatic d => Cone s p d t n m a -> ConeOpDuality' s p Diagram t n m
-cnOpDualityDiagram c = cnOpDualityDiagram' (cnMltOrDst c) (cnTypeRefl c) (dgmTypeRefl c)
-
---------------------------------------------------------------------------------
--- tauConeOpDualityDiagramMlt -
-
--- | transforming a @'ConeOpDuality' __s__@ to @'ConeOpDuality' 'Mlt'@.
-tauConeOpDualityDiagramMlt :: ConeOpDuality' s p Diagram t n m -> ConeOpDuality' Mlt p Diagram t n' m'
-tauConeOpDualityDiagramMlt (ConeOpDuality s@(Left Refl) p t) = ConeOpDuality s p t
-tauConeOpDualityDiagramMlt (ConeOpDuality (Right Refl) p t)  = ConeOpDuality (Left Refl) p t
 
 
 {-
---------------------------------------------------------------------------------
--- cnOpDualityDst -
-
-cnOpDualityDst :: Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> ConeOpDuality' Dst p Diagram t n m
-cnOpDualityDst = ConeOpDuality
--}
-
 --------------------------------------------------------------------------------
 -- tip -
 

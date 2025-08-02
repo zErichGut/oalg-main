@@ -87,6 +87,8 @@ class (HomFibred h, HomOrientedDisjunctive h, Transformable (ObjectClass h) FbrO
 
 instance HomFibredOrientedDisjunctive h => HomFibredOrientedDisjunctive (Path h)
 
+instance HomFibredOrientedDisjunctive h => HomFibredOriented (Variant2 Covariant h)
+
 --------------------------------------------------------------------------------
 -- DualisableFibredOriented -
 
