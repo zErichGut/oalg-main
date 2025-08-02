@@ -51,6 +51,7 @@ import OAlg.Data.Singleton
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive.Definition
 
@@ -178,6 +179,38 @@ data XDst d = XDst (X (DstRootSide LeftSide d))  (X (DstSide LeftSide d))
 -- | standard random variable for 'Distributive' structures.
 class XStandardDst d where
   xStandardDst :: XDst d
+
+instance (FibredOriented x, XStandardDst x) => XStandardDst (Op x) where
+  xStandardDst = XDst xdrl' xdl' xdrr' xdr' where
+    XDst xdrl xdl xdrr xdr = xStandardDst
+    xdrl' = do
+      RDstRoot f r <- xdrr
+      return (LDstRoot (opposite r) (Op f))
+    xdl'  = do
+      RDst f (a,b) <- xdr
+      return (LDst (Op a,Op b) (Op f))
+    xdrr' = do
+      LDstRoot r f <- xdrl
+      return (RDstRoot (Op f) (opposite r))
+    xdr'   = do
+      LDst (a,b) f <- xdl
+      return (RDst (Op f) (Op a,Op b))
+
+instance XStandardDst x => XStandardDst (Id x) where
+  xStandardDst = XDst xdrl' xdl' xdrr' xdr' where
+    XDst xdrl xdl xdrr xdr = xStandardDst
+    xdrl' = do
+      LDstRoot r f <- xdrl
+      return (LDstRoot r (Id f))
+    xdl'  = do
+      LDst (a,b) f <- xdl
+      return (LDst (Id a,Id b) (Id f))
+    xdrr' = do
+      RDstRoot f r <- xdrr
+      return (RDstRoot (Id f) r)
+    xdr'  = do
+      RDst f (a,b) <- xdr
+      return (RDst (Id f) (Id a, Id b))
   
 --------------------------------------------------------------------------------
 -- prpDst -

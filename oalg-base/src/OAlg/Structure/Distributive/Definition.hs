@@ -67,6 +67,7 @@ instance Distributive Z
 instance Distributive Q
 instance Entity p => Distributive (Orientation p)
 instance Distributive d => Distributive (Op d)
+instance Distributive d => Distributive (Id d)
 
 --------------------------------------------------------------------------------
 -- Transposable -

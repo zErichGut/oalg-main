@@ -131,6 +131,11 @@ instance Entity p => Additive (Orientation p) where
         | otherwise = throw NotAddable
   ntimes _ a = a
 
+instance Additive a => Additive (Id a) where
+  zero r = Id (zero r)
+  Id a + Id b = Id (a+b)
+  ntimes n (Id a) = Id (ntimes n a)
+  
 instance (Additive a, FibredOriented a) => Additive (Op a) where
   zero r = Op (zero $ transpose r)
   Op a + Op b = Op (b + a)
