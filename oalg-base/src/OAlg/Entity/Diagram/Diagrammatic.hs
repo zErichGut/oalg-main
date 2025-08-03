@@ -172,11 +172,25 @@ class ( Diagrammatic d
       )
   => DualisableDiagrammatic s o d t n m
 
+instance
+  ( TransformableOrt s, TransformableType s, TransformableGRefl Op s
+  , TransformableOp s
+  , t ~ Dual (Dual t)
+  )
+  => DualisableDiagrammatic s Op Diagram t n m
+
 --------------------------------------------------------------------------------
 -- DualisableDiagrammaticDual1 -
 
 -- | helper class to avoid undecidable instances.
 class DualisableDiagrammatic s o d (Dual t) n m => DualisableDiagrammaticDual1 s o d t n m
+
+instance
+  ( TransformableOrt s, TransformableType s, TransformableGRefl Op s
+  , TransformableOp s
+  , t ~ Dual (Dual t)
+  )
+  => DualisableDiagrammaticDual1 s Op Diagram t n m
 
 --------------------------------------------------------------------------------
 -- DualityDiagrammatic -
@@ -416,12 +430,6 @@ prpNaturalDiagrammaticSDualisable q xsa = Prp "NaturalDiagrammaticSDualisable"
           -> NaturalTransformation s h (->) (SDuality (DiagramG d t n m)) (SDuality (Diagram t n m))
         n _ = NaturalTransformation
   
---------------------------------------------------------------------------------
--- prpNaturalDiagrammaticTrafoChain -
-
-instance t ~ Dual (Dual t) => DualisableDiagrammatic OrtSiteX Op Diagram t n m
-instance t ~ Dual (Dual t) => DualisableDiagrammatic OrtOrientationX Op Diagram t n m
-
 --------------------------------------------------------------------------------
 -- xsoOrtSite -
 

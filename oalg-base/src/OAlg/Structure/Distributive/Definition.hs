@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Distributive.Definition
@@ -16,12 +17,15 @@
 -- distributive structures, i.e. multiplicative structures with a suitable additive structure.
 module OAlg.Structure.Distributive.Definition
   ( -- * Distributive
-    Distributive, Dst, TransformableDst, tauDst
+    Distributive, Dst, TransformableDst, TransformableCumDst
+  , tauDst
 
     -- * Transposable
   , TransposableDistributive
   )
   where
+
+import Data.Kind
 
 import OAlg.Prelude
 
@@ -96,6 +100,9 @@ data Dst
 
 type instance Structure Dst x = Distributive x
 
+instance Transformable Dst Type where tau _ = Struct
+instance TransformableType Dst
+
 instance Transformable Dst Typ where tau Struct = Struct
 instance Transformable Dst Ent where tau Struct = Struct
 instance Transformable Dst Ort where tau Struct = Struct
@@ -131,4 +138,19 @@ instance TransformableFbr Dst
 instance TransformableFbrOrt Dst
 instance TransformableAdd Dst
 instance TransformableDst Dst
+
+--------------------------------------------------------------------------------
+-- TransformableCumDst -
+
+-- | cummulative constraint for 'Transformable' @__s__@-structures for all supper
+-- 'Distributive'-structures.
+type TransformableCumDst s =
+  ( TransformableOrt s
+  , TransformableMlt s
+  , TransformableFbr s
+  , TransformableFbrOrt s
+  , TransformableAdd s
+  , TransformableDst s
+  )
+
 

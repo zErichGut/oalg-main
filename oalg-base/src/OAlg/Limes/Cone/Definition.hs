@@ -9,7 +9,7 @@
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts, RankNTypes #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- |
 -- Module      : OAlg.Limes.Cone.Definition
@@ -142,6 +142,8 @@ data Cone s (p :: Perspective) d (t :: DiagramType) (n :: N') (m :: N') a where
     => d (Parallel RightToLeft) N2 m a -> a
     -> Cone Dst Injective d (Parallel RightToLeft) N2 m a
 
+deriving instance Show (d t n m a) => Show (Cone s p d t n m a)
+deriving instance Eq (d t n m a) => Eq (Cone s p d t n m a)
 
 --------------------------------------------------------------------------------
 -- coneStruct -
@@ -170,16 +172,13 @@ diagrammaticObject (ConeInjective d _ _)  = d
 diagrammaticObject (ConeKernel d _)       = d
 diagrammaticObject (ConeCokernel d _)     = d
 
-instance Diagrammatic d => Diagrammatic (Cone s p d) where diagram = diagram . diagrammaticObject
 
-{-
 --------------------------------------------------------------------------------
 -- cnDiagramTypeRefl -
 
 -- | reflexivity of the underlying diagram type.
 cnDiagramTypeRefl :: Diagrammatic d => Cone s p d t n m a -> Dual (Dual t) :~: t
-cnDiagramTypeRefl c = dgTypeRefl (diagram c)
--}
+cnDiagramTypeRefl = dgTypeRefl . diagram . diagrammaticObject
 
 --------------------------------------------------------------------------------
 -- cnTypeRefl -
@@ -223,37 +222,6 @@ cnMapDst h c          = case tauDst (range h) of
     ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
     ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
 
-{-
-type family Hom s (h :: Type -> Type -> Type) :: Constraint
-type instance Hom Mlt h = HomMultiplicative h
-type instance Hom Dst h = HomDistributive h
-
-type family NatDgm s (h :: Type -> Type -> Type)
-  (d :: DiagramType -> N' -> N' -> Type -> Type)
-  (t :: DiagramType) (n :: N') (m :: N')
-  :: Constraint
-
-type instance NatDgm Mlt h d t n m = NaturalDiagrammatic Mlt h d t n m
-type instance NatDgm Dst h d t n m = NaturalDiagrammatic Dst h d t n m
-
--- | mapping of a cone.
-cnMap :: (Hom s h, NatDgm s h d t n m) => h a b -> Cone s p d t n m a -> Cone s p d t n m b
-cnMap h c = case c of
-  ConeProjective _ _ _ -> cnMapMlt h c
-  ConeInjective _ _ _  -> cnMapMlt h c
-  ConeKernel _ _       -> cnMapDst h c
-  ConeCokernel _ _     -> cnMapDst h c
-
-
-instance (HomMultiplicative h, NaturalDiagrammatic Mlt h d t n m)
-  => ApplicativeG (Cone Mlt p d t n m) h (->) where amapG = cnMapMlt
--}
-
-{-                                                  
-cnMapMltCnt :: ( HomMultiplicative h, DualisableMultiplicative s o
-               , NaturalDiagrammaticDualisable s o h d t n m
-               )
--}
 cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
                , NaturalDiagrammaticSDualisable Mlt h d t n m
                )
@@ -278,11 +246,13 @@ cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
     ConeCokernel d a            -> ConeKernel  d' (amap h a) where
       SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
 
-
 --------------------------------------------------------------------------------
 -- Cone - Duality -
 
 type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
+
+instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
+instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
 
 --------------------------------------------------------------------------------
 -- Cone - Applicative - Mlt -
@@ -380,10 +350,8 @@ instance ( HomDistributive h
   => ApplicativeG (Cone Dst p d t n m) h (->) where
   amapG = cnMapDst
 
-
 cnToBidualDst ::
-  ( TransformableDst s, TransformableFbr s, TransformableFbrOrt s
-  , TransformableMlt s, TransformableAdd s
+  ( TransformableCumDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   )
@@ -392,12 +360,63 @@ cnToBidualDst s = cnMapDst (Covariant2 (t' . t)) where
   Contravariant2 (Inv2 t _)  = isoO s
   Contravariant2 (Inv2 t' _) = isoO (tauO s) 
 
+cnFromBidualDst ::
+  ( TransformableCumDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  )
+  => Struct s x -> Cone Dst p d t n m (o (o x))  -> Cone Dst p d t n m x
+cnFromBidualDst s = cnMapDst (Covariant2 (f . f')) where
+  Contravariant2 (Inv2 _ f)  = isoO s
+  Contravariant2 (Inv2 _ f') = isoO (tauO s)
+
+instance 
+  ( TransformableCumDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  )
+  => ReflexiveG s (->) o (Cone Dst p d t n m) where
+  reflG s = Inv2 (cnToBidualDst s) (cnFromBidualDst s)
+
+instance
+  ( TransformableCumDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammatic s o d t' n m
+  , p' ~ Dual p, p ~ Dual p'
+  , t' ~ Dual t, t ~ Dual t'
+  )
+  => DualisableGBi s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
+
+  toDualGLft s = cnMapDstCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+  toDualGRgt s = cnMapDstCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+instance 
+  ( TransformableCumDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammaticDual1 s o d t n m
+  , p ~ Dual (Dual p)
+  )
+  => DualisableGBiDual1 s (->) o (Cone Dst p d t n m)
+
+instance 
+  ( HomDistributive h
+  , DualisableDistributive s o
+  , NaturalDiagrammatic Dst h d t n m 
+  , NaturalDiagrammaticDual1 Dst h d t n m
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammaticDual1 s o d t n m
+  , TransformableCumDst s
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDuality (Cone Dst p d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smap h
 
 
-
-
-
-{-
 --------------------------------------------------------------------------------
 -- tip -
 
@@ -442,15 +461,14 @@ shell (ConeCokernel d k)      = k:|zero (q :> end k):|Nil where DiagramParallelR
 
 -- | the points of the underlying diagram, i.e. @'dgPoints' '.' 'cnDiagram'@. 
 cnPoints :: (Diagrammatic d, Oriented a) => Cone s p d t n m a -> FinList n (Point a)
-cnPoints = dgPoints . diagram
+cnPoints = dgPoints . diagrammaticObject . coneDiagram
 
 --------------------------------------------------------------------------------
 -- cnArrows -
 
 -- | the arrows of the underlying diagram, i.e. @'dgArrows' '.' 'cnDiagram'@.
 cnArrows :: Diagrammatic d => Cone s p d t n m a -> FinList m a
-cnArrows = dgArrows . diagram
-
+cnArrows = dgArrows . diagrammaticObject . coneDiagram
 
 --------------------------------------------------------------------------------
 -- cnDstAdjZero -
@@ -459,17 +477,13 @@ cnArrows = dgArrows . diagram
 cnDstAdjZero :: Cone Dst p Diagram t n m a -> Cone Mlt p Diagram t n (m+1) a
 cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
   = ConeProjective (dgPrlAdjZero d) t (k:|zero (t:>r):|Nil) where t = start k
-cnDstAdjZero c@(ConeCokernel _ _)
-  = fromDualFst (tau cOpDst) (tauMlt sDst)
-  $ cnDstAdjZero
-  $ toDualFst cOpDst sDst
-  $ c
-  where cOpDst = cnOpDualityDiagram c
-        sDst   = cnStruct $ coneStruct c
-
-        tau = tauConeOpDualityDiagramMlt
+cnDstAdjZero c@(ConeCokernel _ _) = cMlt where
+  Contravariant2 (Inv2 t f) = isoOpDst
+  
+  SDuality (Left1 c')    = amapG t (SDuality (Right1 c))
+  cMlt'                  = cnDstAdjZero c'
+  SDuality (Right1 cMlt) = amapG f (SDuality (Left1 cMlt'))
         
-
 --------------------------------------------------------------------------------
 -- relConePrjMlt -
 
@@ -631,20 +645,21 @@ relConePrjMlt (DiagramGeneral ps aijs) t cs
           ] where ci = cs ! i
                   cj = cs ! j
 
-
 --------------------------------------------------------------------------------
 -- relConeDiagram -
 
 -- | validity of a 'Diagram'-'Cone'.
 relConeDiagram :: Cone s p Diagram t n m a -> Statement
 relConeDiagram (ConeProjective d t cs) = relConePrjMlt d t cs
-relConeDiagram c@(ConeInjective _ _ _) = relConeDiagram $ toDualFst cOp s c where
-    cOp = cnOpDualityDiagram c
-    s   = cnStruct $ coneStruct c
+relConeDiagram c@(ConeInjective _ _ _) = case cnDiagramTypeRefl c of
+  Refl -> relConeDiagram c' where
+    SDuality (Left1 c') = amapG t (SDuality (Right1 c))
+    Contravariant2 (Inv2 t _) = isoOpMlt
 relConeDiagram c@(ConeKernel _ _)      = relConeDiagram (cnDstAdjZero c)
-relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram $ toDualFst cOp s c where
-    cOp = cnOpDualityDiagram c
-    s   = cnStruct $ coneStruct c
+relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram c' where
+  SDuality (Left1 c') = amapG t (SDuality (Right1 c))
+  Contravariant2 (Inv2 t _) = isoOpDst
+
 
 --------------------------------------------------------------------------------
 -- relCone -
@@ -661,12 +676,9 @@ instance (Diagrammatic d, Validable (d t n m a)) => Validable (Cone s p d t n m 
     And [ valid (diagrammaticObject c)
         , relCone c
         ]
-
+{-
 --------------------------------------------------------------------------------
 -- Cone - Entity -
-
-deriving instance Show (d t n m a) => Show (Cone s p d t n m a)
-deriving instance Eq (d t n m a) => Eq (Cone s p d t n m a)
 
 instance ( Diagrammatic d
          , Entity (d t n m a)
