@@ -130,7 +130,7 @@ type instance Dual1 (DiagramTrafo t n m) = DiagramTrafo (Dual t) n m
 instance (Show a, ShowPoint a) => ShowDual1 (DiagramTrafo t n m) a
 instance (Eq a, EqPoint a) => EqDual1 (DiagramTrafo t n m) a
 
-dgtToBidual :: ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+dgtToBidual :: ( DualisableMultiplicative s o, TransformableMlt s
                , TransformableGRefl o s
                )
   => Struct s x -> DiagramTrafo t n m x -> DiagramTrafo t n m (o (o x))
@@ -138,7 +138,7 @@ dgtToBidual s = dgtMap (Covariant2 (t' . t)) where
   Contravariant2 (Inv2 t _)  = isoO s
   Contravariant2 (Inv2 t' _) = isoO (tauO s)
 
-dgtFromBidual :: ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+dgtFromBidual :: ( DualisableMultiplicative s o, TransformableMlt s
                  , TransformableGRefl o s
                  )
   => Struct s x -> DiagramTrafo t n m (o (o x)) -> DiagramTrafo t n m x
@@ -146,13 +146,13 @@ dgtFromBidual s = dgtMap (Covariant2 (f . f')) where
   Contravariant2 (Inv2 _ f)  = isoO s
   Contravariant2 (Inv2 _ f') = isoO (tauO s)
 
-instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
          )
   => ReflexiveG s (->) o (DiagramTrafo t n m) where
   reflG s = Inv2 (dgtToBidual s) (dgtFromBidual s)
 
-instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
          , t' ~ Dual t, t ~ Dual t'
          )
@@ -162,7 +162,7 @@ instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
   toDualGRgt s = dgtMapCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
-instance ( DualisableMultiplicative s o, TransformableOrt s, TransformableMlt s
+instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
          , t ~ Dual (Dual t)
          )

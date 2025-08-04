@@ -95,8 +95,8 @@ instance TransformableGRefl Op FbrOrt
 --------------------------------------------------------------------------------
 -- TransformableFbrOrt -
 
--- | transformable to 'FibredOriented' structure.
-class ( Transformable s Fbr, Transformable s Ort
+-- | helper class to avoid undecidable instances.
+class ( TransformableFbr s, TransformableOrt s
       , Transformable s FbrOrt
       ) => TransformableFbrOrt s
 

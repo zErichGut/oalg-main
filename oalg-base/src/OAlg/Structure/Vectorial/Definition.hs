@@ -190,8 +190,8 @@ instance Transformable (Vec k) Add where tau Struct = Struct
 --------------------------------------------------------------------------------
 -- TransformableVec -
 
--- | transformable to @__k__-'Vectorial'@ structure.
-class ( Transformable (s k) Fbr, Transformable (s k) Add 
+-- | helper class to avoid undecidable instances.
+class ( TransformableAdd (s k)
       , Transformable (s k) (Vec k)
       ) => TransformableVec k s
 

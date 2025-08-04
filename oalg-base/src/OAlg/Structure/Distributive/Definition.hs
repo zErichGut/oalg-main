@@ -17,8 +17,7 @@
 -- distributive structures, i.e. multiplicative structures with a suitable additive structure.
 module OAlg.Structure.Distributive.Definition
   ( -- * Distributive
-    Distributive, Dst, TransformableDst, TransformableCumDst
-  , tauDst
+    Distributive, Dst, TransformableDst, tauDst
 
     -- * Transposable
   , TransposableDistributive
@@ -124,10 +123,10 @@ tauDst = tau
 --------------------------------------------------------------------------------
 -- TransformableDst -
 
--- | transformable to 'Distributive' structure.
-class ( Transformable s Ort, Transformable s Mlt
-      , Transformable s Fbr, Transformable s Add
-      , Transformable s FbrOrt
+-- | helper class to avoid undecidable instances.
+class ( TransformableFbrOrt s
+      , TransformableMlt s
+      , TransformableAdd s
       , Transformable s Dst
       ) => TransformableDst s
 
@@ -138,19 +137,4 @@ instance TransformableFbr Dst
 instance TransformableFbrOrt Dst
 instance TransformableAdd Dst
 instance TransformableDst Dst
-
---------------------------------------------------------------------------------
--- TransformableCumDst -
-
--- | cummulative constraint for 'Transformable' @__s__@-structures for all supper
--- 'Distributive'-structures.
-type TransformableCumDst s =
-  ( TransformableOrt s
-  , TransformableMlt s
-  , TransformableFbr s
-  , TransformableFbrOrt s
-  , TransformableAdd s
-  , TransformableDst s
-  )
-
 

@@ -255,13 +255,7 @@ instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
 instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
 
 --------------------------------------------------------------------------------
--- Cone - Applicative - Mlt -
-
-instance ( HomMultiplicative h
-         , NaturalDiagrammaticObjectClass h d t n m
-         )
-  => ApplicativeG (Cone Mlt p d t n m) h (->) where
-  amapG = cnMapMlt
+-- Cone - Mlt - DualisableGBiDual1
 
 cnToBidualMlt ::
   ( TransformableMlt s
@@ -307,6 +301,88 @@ instance
   toDualGRgt s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
+{-
+instance (Category h, HomMultiplicative h, DiagrammaticFunctorial h d)
+  => Functorial1 h (Cone Mlt p d t n m)
+
+instance (DiagrammaticApplicative h d, HomDistributive h)
+  => Applicative1 h (Cone Dst p d t n m) where amap1 = cnMapDst
+
+instance (Category h, HomDistributive h, DiagrammaticFunctorial h d)
+  => Functorial1 h (Cone Dst p d t n m)
+-}
+
+--------------------------------------------------------------------------------
+-- Cone - Dst - DualisableGBiDual1
+
+cnToBidualDst ::
+  ( TransformableDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  )
+  => Struct s x -> Cone Dst p d t n m x -> Cone Dst p d t n m (o (o x))
+cnToBidualDst s = cnMapDst (Covariant2 (t' . t)) where
+  Contravariant2 (Inv2 t _)  = isoO s
+  Contravariant2 (Inv2 t' _) = isoO (tauO s)
+  
+cnFromBidualDst ::
+  ( TransformableDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  )
+  => Struct s x -> Cone Dst p d t n m (o (o x))  -> Cone Dst p d t n m x
+cnFromBidualDst s = cnMapDst (Covariant2 (f . f')) where
+  Contravariant2 (Inv2 _ f)  = isoO s
+  Contravariant2 (Inv2 _ f') = isoO (tauO s)
+
+instance 
+  ( TransformableDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  )
+  => ReflexiveG s (->) o (Cone Dst p d t n m) where
+  reflG s = Inv2 (cnToBidualDst s) (cnFromBidualDst s)
+
+instance
+  ( TransformableDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammatic s o d t' n m
+  , p' ~ Dual p, p ~ Dual p'
+  , t' ~ Dual t, t ~ Dual t'
+  )
+  => DualisableGBi s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
+
+  toDualGLft s = cnMapDstCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+  toDualGRgt s = cnMapDstCnt (Contravariant2 t) where
+    Contravariant2 (Inv2 t _) = isoO s
+
+instance 
+  ( TransformableDst s
+  , DualisableDistributive s o
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammaticDual1 s o d t n m
+  , p ~ Dual (Dual p)
+  )
+  => DualisableGBiDual1 s (->) o (Cone Dst p d t n m)
+
+--------------------------------------------------------------------------------
+-- Cone - ApplicativeG - 
+
+instance ( HomMultiplicative h
+         , NaturalDiagrammaticObjectClass h d t n m
+         )
+  => ApplicativeG (Cone Mlt p d t n m) h (->) where
+  amapG = cnMapMlt
+
+instance ( HomDistributive h
+         , NaturalDiagrammaticObjectClass h d t n m
+         )
+  => ApplicativeG (Cone Dst p d t n m) h (->) where
+  amapG = cnMapDst
+
 instance 
   ( TransformableMlt s
   , DualisableMultiplicative s o
@@ -329,80 +405,6 @@ instance
   => ApplicativeG (SDuality (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smap h
 
-
-{-
-instance (Category h, HomMultiplicative h, DiagrammaticFunctorial h d)
-  => Functorial1 h (Cone Mlt p d t n m)
-
-instance (DiagrammaticApplicative h d, HomDistributive h)
-  => Applicative1 h (Cone Dst p d t n m) where amap1 = cnMapDst
-
-instance (Category h, HomDistributive h, DiagrammaticFunctorial h d)
-  => Functorial1 h (Cone Dst p d t n m)
--}
-
---------------------------------------------------------------------------------
--- Cone - Applicative - Dst -
-
-instance ( HomDistributive h
-         , NaturalDiagrammaticObjectClass h d t n m
-         )
-  => ApplicativeG (Cone Dst p d t n m) h (->) where
-  amapG = cnMapDst
-
-cnToBidualDst ::
-  ( TransformableCumDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  )
-  => Struct s x -> Cone Dst p d t n m x -> Cone Dst p d t n m (o (o x))
-cnToBidualDst s = cnMapDst (Covariant2 (t' . t)) where
-  Contravariant2 (Inv2 t _)  = isoO s
-  Contravariant2 (Inv2 t' _) = isoO (tauO s) 
-
-cnFromBidualDst ::
-  ( TransformableCumDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  )
-  => Struct s x -> Cone Dst p d t n m (o (o x))  -> Cone Dst p d t n m x
-cnFromBidualDst s = cnMapDst (Covariant2 (f . f')) where
-  Contravariant2 (Inv2 _ f)  = isoO s
-  Contravariant2 (Inv2 _ f') = isoO (tauO s)
-
-instance 
-  ( TransformableCumDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  )
-  => ReflexiveG s (->) o (Cone Dst p d t n m) where
-  reflG s = Inv2 (cnToBidualDst s) (cnFromBidualDst s)
-
-instance
-  ( TransformableCumDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammatic s o d t' n m
-  , p' ~ Dual p, p ~ Dual p'
-  , t' ~ Dual t, t ~ Dual t'
-  )
-  => DualisableGBi s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
-
-  toDualGLft s = cnMapDstCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
-
-  toDualGRgt s = cnMapDstCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
-
-instance 
-  ( TransformableCumDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammaticDual1 s o d t n m
-  , p ~ Dual (Dual p)
-  )
-  => DualisableGBiDual1 s (->) o (Cone Dst p d t n m)
-
 instance 
   ( HomDistributive h
   , DualisableDistributive s o
@@ -410,7 +412,7 @@ instance
   , NaturalDiagrammaticObjectClassDual1 h d t n m
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammaticDual1 s o d t n m
-  , TransformableCumDst s
+  , TransformableDst s
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (Cone Dst p d t n m)) (HomDisj s o h) (->) where
@@ -728,7 +730,7 @@ type instance Dual1 (ConeZeroHead s p d t n m)  = ConeZeroHead s (Dual p) d (Dua
 -- ConeZeroHead - Mlt - DualisableGBiDual1 -
 
 instance
-  ( TransformableCumDst s
+  ( TransformableDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   )
@@ -738,7 +740,7 @@ instance
     Contravariant2 (Inv2 t' f') = isoO (tauO s)
 
 instance
-  ( TransformableCumDst s
+  ( TransformableDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammatic s o d t' n m
@@ -754,7 +756,7 @@ instance
     Contravariant2 (Inv2 t _) = isoO s
 
 instance 
-  ( TransformableCumDst s
+  ( TransformableDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammaticDual1 s o d t n m
@@ -766,7 +768,7 @@ instance
 -- ConeZeroHead - Dst - DualisableGBiDual1 -
 
 instance
-  ( TransformableCumDst s
+  ( TransformableDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   )
@@ -776,7 +778,7 @@ instance
     Contravariant2 (Inv2 t' f') = isoO (tauO s)
 
 instance
-  ( TransformableCumDst s
+  ( TransformableDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammatic s o d t' n m
@@ -792,7 +794,7 @@ instance
     Contravariant2 (Inv2 t _) = isoO s
 
 instance 
-  ( TransformableCumDst s
+  ( TransformableDst s
   , DualisableDistributive s o
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammaticDual1 s o d t n m
@@ -801,7 +803,7 @@ instance
   => DualisableGBiDual1 s (->) o (ConeZeroHead Dst p d t n m)
 
 --------------------------------------------------------------------------------
--- ConeZeroHead - Dst - ApplicativeG -
+-- ConeZeroHead - ApplicativeG -
 
 instance (HomDistributive h, NaturalDiagrammaticObjectClass h d t n m)
   => ApplicativeG (ConeZeroHead Mlt p d t n m) h (->) where
@@ -818,7 +820,7 @@ instance
   , NaturalDiagrammaticObjectClassDual1 h d t n m
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammaticDual1 s o d t n m
-  , TransformableCumDst s
+  , TransformableDst s
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
@@ -831,7 +833,7 @@ instance
   , NaturalDiagrammaticObjectClassDual1 h d t n m
   , DualisableDiagrammatic s o d t n m
   , DualisableDiagrammaticDual1 s o d t n m
-  , TransformableCumDst s
+  , TransformableDst s
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (ConeZeroHead Dst p d t n m)) (HomDisj s o h) (->) where
@@ -888,7 +890,6 @@ cnCokernel cz = c where
   c'                   = cnKernel cz'
   SDuality (Right1 c)  = amapG f (SDuality (Left1 c'))
 
-  -- = coConeInv ConeStructDst Refl Refl . cnKernel . coConeZeroHead Struct
 
 {-
 --------------------------------------------------------------------------------

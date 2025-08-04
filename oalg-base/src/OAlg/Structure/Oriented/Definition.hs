@@ -171,7 +171,7 @@ instance TransformableType Ort
 --------------------------------------------------------------------------------
 -- TransformableOrt -
 
--- | transformable to 'Oriented' structure.
+-- | helper class to avoid undecidable instances.
 class Transformable s Ort => TransformableOrt s
 
 instance TransformableTyp Ort
