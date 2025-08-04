@@ -410,8 +410,8 @@ tauMlt = tau
 --------------------------------------------------------------------------------
 -- TransformableMlt -
 
--- | transformable to 'Multiplicative' structure.
-class (Transformable s Ort, Transformable s Mlt) => TransformableMlt s
+-- | helper class to avoid undecidable instances.
+class (TransformableOrt s, Transformable s Mlt) => TransformableMlt s
 
 instance TransformableTyp Mlt
 instance TransformableOrt Mlt

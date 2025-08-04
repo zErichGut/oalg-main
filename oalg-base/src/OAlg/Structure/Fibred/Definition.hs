@@ -163,7 +163,7 @@ tauFbr = tau
 --------------------------------------------------------------------------------
 -- TransformableFbr -
 
--- | transformable to 'Fibred' structure.
+-- | helper class to avoid undecidable instances.
 class Transformable s Fbr => TransformableFbr s
 
 instance TransformableTyp Fbr

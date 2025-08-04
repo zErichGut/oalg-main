@@ -261,8 +261,8 @@ tauAdd = tau
 --------------------------------------------------------------------------------
 -- TransformableAdd -
 
--- | transformable to 'Additive' structure.
-class (Transformable s Fbr, Transformable s Add) => TransformableAdd s
+-- | helper class to avoid undecidable instances.
+class (TransformableFbr s, Transformable s Add) => TransformableAdd s
 
 instance TransformableTyp Add
 instance TransformableFbr Add

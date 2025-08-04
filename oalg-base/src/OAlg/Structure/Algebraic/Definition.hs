@@ -117,11 +117,9 @@ instance TransformableG Op (Alg k) (Alg k) where tauG Struct = Struct
 --------------------------------------------------------------------------------
 -- TransformableAlg -
 
--- | transformable to @__k__-'Algebraic'@ structure.
-class ( Transformable (s k) Ort, Transformable (s k) Mlt
-      , Transformable (s k) Fbr, Transformable (s k) FbrOrt
-      , Transformable (s k) Add, Transformable (s k) Dst
-      , Transformable (s k) (Vec k)
+-- | helper class to avoid undecidable instances.
+class ( TransformableDst (s k)
+      , TransformableVec k s
       , Transformable (s k) (Alg k)
       ) => TransformableAlg k s
 
