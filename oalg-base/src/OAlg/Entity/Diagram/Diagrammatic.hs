@@ -30,6 +30,8 @@ module OAlg.Entity.Diagram.Diagrammatic
   , NaturalDiagrammatic, NaturalDiagrammaticDual1
   , NaturalDiagrammaticSDualisable, drohS
   , NaturalDiagrammaticSDuality
+
+  , NaturalDiagrammaticObjectClass, NaturalDiagrammaticObjectClassDual1
   
     -- * Duality
   , DualisableDiagrammatic, DualisableDiagrammaticDual1
@@ -320,6 +322,27 @@ prpNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
   => q s h d t n m -> h x y -> Diagram t n m x -> Statement
 prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
   :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticObjectClass -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammatic (ObjectClass h) h d t n m
+  => NaturalDiagrammaticObjectClass h d t n m
+
+instance (Diagrammatic d, TransformableOrt s)
+  => NaturalDiagrammaticObjectClass (HomEmpty s) d t n m
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticObjectClassDual1 -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammaticObjectClass h d (Dual t) n m
+  => NaturalDiagrammaticObjectClassDual1 h d t n m
+
+instance (Diagrammatic d, TransformableOrt s)
+  => NaturalDiagrammaticObjectClassDual1 (HomEmpty s) d t n m
+
 
 --------------------------------------------------------------------------------
 -- drohS -
