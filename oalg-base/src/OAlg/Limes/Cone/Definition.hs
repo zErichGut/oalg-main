@@ -403,7 +403,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 instance 
   ( HomDistributive h
@@ -416,7 +416,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (Cone Dst p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 
 --------------------------------------------------------------------------------
@@ -824,7 +824,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 instance 
   ( HomDistributive h
@@ -837,7 +837,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDuality (ConeZeroHead Dst p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 --------------------------------------------------------------------------------
 -- cnDiffHead -

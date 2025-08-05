@@ -294,7 +294,7 @@ instance
   )
   => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
   amapG (Covariant2 (HomDisj h)) d = d' where
-    SDuality (Right1 d') = smap h (SDuality (Right1 d))
+    SDuality (Right1 d') = smapBi h (SDuality (Right1 d))
 
 instance
   ( NaturalDiagrammatic s h d t n m
@@ -383,7 +383,7 @@ instance
   , DualisableDiagrammatic s o d t n m
   )
   => ApplicativeG (SDuality (DiagramG d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 instance
   ( NaturalDiagrammatic s h d t n m

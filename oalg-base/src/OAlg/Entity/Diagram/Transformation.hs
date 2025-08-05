@@ -170,7 +170,7 @@ instance ( DualisableMultiplicative s o, TransformableMlt s
 
 instance (HomMultiplicative h, DualisableGBiDual1 s (->) o (DiagramTrafo t n m))
   => ApplicativeG (SDuality (DiagramTrafo t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 --------------------------------------------------------------------------------
 -- DiagramTrafo - Entity -

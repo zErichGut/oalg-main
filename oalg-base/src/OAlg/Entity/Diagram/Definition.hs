@@ -351,7 +351,7 @@ instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where
 
 instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
   => ApplicativeG (SDuality (Diagram t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  amapG (HomDisj h) = smapBi h
 
 instance ( HomOriented h, t ~ Dual (Dual t)
          , DualisableOriented s o
@@ -746,7 +746,7 @@ instance ( HomOriented h, DualisableOriented s o
 sdgMap :: HomOrientedDisjunctive h
   => h a b -> SomeDiagram a -> SomeDiagram b
 sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
-  Refl                   -> case smap h (SDuality (Right1 d)) of
+  Refl                   -> case smapBi h (SDuality (Right1 d)) of
     SDuality (Right1 d') -> SomeDiagram d'
     SDuality (Left1  d') -> SomeDiagram d'
 
