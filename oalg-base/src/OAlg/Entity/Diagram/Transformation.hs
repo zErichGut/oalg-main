@@ -169,8 +169,8 @@ instance ( DualisableMultiplicative s o, TransformableMlt s
   => DualisableGBiDual1 s (->) o (DiagramTrafo t n m)
 
 instance (HomMultiplicative h, DualisableGBiDual1 s (->) o (DiagramTrafo t n m))
-  => ApplicativeG (SDuality (DiagramTrafo t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  => ApplicativeG (SDualBi (DiagramTrafo t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smapBi h
 
 --------------------------------------------------------------------------------
 -- DiagramTrafo - Entity -
@@ -296,7 +296,7 @@ vldTr t@(DiagramTrafo a b ts) = case (a,b) of
 
   _                                         -> case dgtTypeRefl t of
     Refl -> vldTr t' where
-      SDuality (Left1 t') = amapG toOp (SDuality (Right1 t))
+      SDualBi (Left1 t') = amapG toOp (SDualBi (Right1 t))
       Contravariant2 (Inv2 toOp _) = isoOpMlt
 
 

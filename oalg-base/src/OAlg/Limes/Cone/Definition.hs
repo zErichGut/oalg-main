@@ -230,9 +230,9 @@ cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
 cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
   Struct                        -> case c of
     ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
-      SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
     ConeInjective d t as        -> ConeProjective d' (pmap h t) (amap1 (amap h) as) where
-      SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 cnMapDstCnt :: ( HomDistributiveDisjunctive h
                , NaturalDiagrammaticSDualisable (ObjectClass h) h d t n m
@@ -242,9 +242,9 @@ cnMapDstCnt :: ( HomDistributiveDisjunctive h
 cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
   Struct                        -> case c of
     ConeKernel d a              -> ConeCokernel d' (amap h a) where
-      SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
     ConeCokernel d a            -> ConeKernel  d' (amap h a) where
-      SDuality (Left1 (DiagramG d')) = amapG h (SDuality (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 --------------------------------------------------------------------------------
 -- Cone - Duality -
@@ -402,8 +402,8 @@ instance
   , TransformableMlt s
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDuality (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  => ApplicativeG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smapBi h
 
 instance 
   ( HomDistributive h
@@ -415,8 +415,8 @@ instance
   , TransformableDst s
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDuality (Cone Dst p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  => ApplicativeG (SDualBi (Cone Dst p d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smapBi h
 
 
 --------------------------------------------------------------------------------
@@ -482,9 +482,9 @@ cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
 cnDstAdjZero c@(ConeCokernel _ _) = cMlt where
   Contravariant2 (Inv2 t f) = isoOpDst
   
-  SDuality (Left1 c')    = amapG t (SDuality (Right1 c))
+  SDualBi (Left1 c')    = amapG t (SDualBi (Right1 c))
   cMlt'                  = cnDstAdjZero c'
-  SDuality (Right1 cMlt) = amapG f (SDuality (Left1 cMlt'))
+  SDualBi (Right1 cMlt) = amapG f (SDualBi (Left1 cMlt'))
 
 --------------------------------------------------------------------------------
 -- relConePrjMlt -
@@ -655,11 +655,11 @@ relConeDiagram :: Cone s p Diagram t n m a -> Statement
 relConeDiagram (ConeProjective d t cs) = relConePrjMlt d t cs
 relConeDiagram c@(ConeInjective _ _ _) = case cnDiagramTypeRefl c of
   Refl -> relConeDiagram c' where
-    SDuality (Left1 c') = amapG t (SDuality (Right1 c))
+    SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
     Contravariant2 (Inv2 t _) = isoOpMlt
 relConeDiagram c@(ConeKernel _ _)      = relConeDiagram (cnDstAdjZero c)
 relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram c' where
-  SDuality (Left1 c') = amapG t (SDuality (Right1 c))
+  SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
   Contravariant2 (Inv2 t _) = isoOpDst
 
 --------------------------------------------------------------------------------
@@ -823,8 +823,8 @@ instance
   , TransformableDst s
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDuality (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  => ApplicativeG (SDualBi (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smapBi h
 
 instance 
   ( HomDistributive h
@@ -836,8 +836,8 @@ instance
   , TransformableDst s
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDuality (ConeZeroHead Dst p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
+  => ApplicativeG (SDualBi (ConeZeroHead Dst p d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smapBi h
 
 --------------------------------------------------------------------------------
 -- cnDiffHead -
@@ -852,14 +852,14 @@ cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
   where toZero a = zero (root a)
 cnDiffHead c@(ConeInjective (DiagramParallelLR _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = isoOpDst
-  SDuality (Left1 c')  = amapG t (SDuality (Right1 c))
+  SDualBi (Left1 c')  = amapG t (SDualBi (Right1 c))
   cz'                  = cnDiffHead c'
-  SDuality (Right1 cz) = amapG f (SDuality (Left1 cz'))
+  SDualBi (Right1 cz) = amapG f (SDualBi (Left1 cz'))
 cnDiffHead c@(ConeInjective (DiagramParallelRL _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = isoOpDst
-  SDuality (Left1 c')  = amapG t (SDuality (Right1 c))
+  SDualBi (Left1 c')  = amapG t (SDualBi (Right1 c))
   cz'                  = cnDiffHead c'
-  SDuality (Right1 cz) = amapG f (SDuality (Left1 cz'))
+  SDualBi (Right1 cz) = amapG f (SDualBi (Left1 cz'))
 
 --------------------------------------------------------------------------------
 -- cnZeroHead -
@@ -886,9 +886,9 @@ cnCokernel :: (Distributive a, p ~ Injective, t ~ Parallel RightToLeft)
 cnCokernel cz = c where
   Contravariant2 (Inv2 t f) = isoOpDst
 
-  SDuality (Left1 cz') = amapG t (SDuality (Right1 cz))
+  SDualBi (Left1 cz') = amapG t (SDualBi (Right1 cz))
   c'                   = cnKernel cz'
-  SDuality (Right1 c)  = amapG f (SDuality (Left1 c'))
+  SDualBi (Right1 c)  = amapG f (SDualBi (Left1 c'))
 
 
 {-

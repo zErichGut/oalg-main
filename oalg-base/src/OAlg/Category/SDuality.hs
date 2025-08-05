@@ -25,14 +25,18 @@
 module OAlg.Category.SDuality
   (
 
-    -- * Duality
-    SDuality(..), smap
+    -- * Dual
+    -- ** Dualisable
+    SDual, smap
+    
+    -- ** Bi-Dualisable
+  , SDualBi(..), smapBi
   , DualisableGBiDual1
   , ApplicativeGDual1
   
   , ShowDual1, EqDual1, ValidableDual1
 
-    -- * Category
+    -- * Duality Operator
   , SHom()
   , sCov
   , sForget
@@ -43,7 +47,7 @@ module OAlg.Category.SDuality
   , PathSMorphism, rdcPathSMorphism
 
     -- * X
-  , xSDuality
+  , xSDualBi
   , xSctSomeMrph
   , xSctSomeCmpb2
 
@@ -121,12 +125,9 @@ instance Validable2 h => Validable2 (SMorphism r s o h) where
 instance Morphism h => Morphism (SMorphism r s o h) where
   type ObjectClass (SMorphism r s o h) = s
 
-  homomorphous (SCov h) = tauHom (homomorphous h)
-  homomorphous SToDual       = Struct :>: Struct
-  homomorphous SFromDual     = Struct :>: Struct
-
-instance TransformableGObjectClassRange d s c
-  => TransformableGObjectClass d (SMorphism r s o h) c
+  homomorphous (SCov h)  = tauHom (homomorphous h)
+  homomorphous SToDual   = Struct :>: Struct
+  homomorphous SFromDual = Struct :>: Struct
 
 instance Transformable s Typ => TransformableObjectClassTyp (SMorphism r s o h)
 
@@ -288,37 +289,46 @@ instance (Morphism h, TransformableGRefl o s) => CategoryDualisable o (SHom r s 
   cFromDual = sFromDual
 
 --------------------------------------------------------------------------------
--- SHom - FunctorialG -
+-- SDual -
 
-instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r)
-  => ApplicativeG d (SMorphism r s o h) c where
-  amapG (SCov h)    = amapG h
-  amapG t@SToDual   = toDualG (smpBaseDomain t)
-  amapG f@SFromDual = fromDualG (smpBaseRange f)
-
-instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
-         , Transformable s r, TransformableGObjectClassRange d s c
-         )
-  => ApplicativeG d (SHom r s o h) c where
-  amapG = amapG . form
-
-instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d
-         , Transformable s r
-         , TransformableGObjectClassRange d s c
-         )
-  => FunctorialG d (SHom r s o h) c
+-- | duality for 'DualisableG' types.
+newtype SDual d x = SDual (d x)
 
 --------------------------------------------------------------------------------
--- SDuality -
+-- SHom - FunctorialG -
 
--- | duality for 'Dual1'-dualisable types.
-newtype SDuality d x = SDuality (Either1 (Dual1 d) d x)
+instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r, c ~ (->))
+  => ApplicativeG (SDual d) (SMorphism r s o h) c where
+  amapG (SCov h) (SDual d)    = SDual (amapG h d)
+  amapG t@SToDual (SDual d)   = SDual (toDualG (smpBaseDomain t) d)
+  amapG f@SFromDual (SDual d) = SDual (fromDualG (smpBaseRange f) d)
 
-deriving instance (Show (d x), ShowDual1 d x) => Show (SDuality d x)
-deriving instance (Eq (d x), EqDual1 d x) => Eq (SDuality d x)
-deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDuality d x)
+instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r, c ~ (->))
+  => ApplicativeG (SDual d) (SHom r s o h) c where
+  amapG = amapG . form
 
-type instance Dual1 (SDuality d) = SDuality (Dual1 d)
+instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r, c ~ (->)
+         )
+  => FunctorialG (SDual d) (SHom r s o h) c
+
+--------------------------------------------------------------------------------
+-- smap -
+
+-- | the induced mapping.
+smap :: ApplicativeG (SDual d) (SHom r s o h) (->) => SHom r s o h x y -> d x -> d y
+smap h d = d' where SDual d' = amapG h (SDual d)
+
+--------------------------------------------------------------------------------
+-- SDualBi -
+
+-- | duality for 'DualisableGBi' types @__d__@.
+newtype SDualBi d x = SDualBi (Either1 (Dual1 d) d x)
+
+deriving instance (Show (d x), ShowDual1 d x) => Show (SDualBi d x)
+deriving instance (Eq (d x), EqDual1 d x) => Eq (SDualBi d x)
+deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDualBi d x)
+
+type instance Dual1 (SDualBi d) = SDualBi (Dual1 d)
 
 --------------------------------------------------------------------------------
 -- DualisableGBiDual1 -
@@ -332,76 +342,76 @@ class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
 class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
 
 --------------------------------------------------------------------------------
--- SDuality - DualisableG -
+-- SDualBi - DualisableG -
 
-toBidualSDuality :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> SDuality d x -> SDuality d (o (o x))
-toBidualSDuality r (SDuality e) = SDuality $ case e of
+toBidualSDualBi :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> SDualBi d x -> SDualBi d (o (o x))
+toBidualSDualBi r (SDualBi e) = SDualBi $ case e of
   Right1 d -> Right1 $ t d where Inv2 t _ = reflG r
   Left1 d  -> Left1 $ t d where Inv2 t _ = reflG r
 
-fromBidualSDuality :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> SDuality d (o (o x)) -> SDuality d x 
-fromBidualSDuality r s@(SDuality e) = case e of
-  Right1 d -> SDuality $ Right1 $ f d where Inv2 _ f = reflG r
-  Left1 d -> SDuality $ Left1 $ f' s r d where
+fromBidualSDualBi :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> SDualBi d (o (o x)) -> SDualBi d x 
+fromBidualSDualBi r s@(SDualBi e) = case e of
+  Right1 d -> SDualBi $ Right1 $ f d where Inv2 _ f = reflG r
+  Left1 d -> SDualBi $ Left1 $ f' s r d where
     f' :: DualisableGBiDual1 r (->) o d
       => q d y -> Struct r x -> Dual1 d (o (o x)) -> Dual1 d x
     f' _ r = f where Inv2 _ f = reflG r 
     
-reflSDuality :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> Inv2 (->) (SDuality d x) (SDuality d (o (o x)))
-reflSDuality r = Inv2 t f where
-  t = toBidualSDuality r
-  f = fromBidualSDuality r
+reflSDualBi :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> Inv2 (->) (SDualBi d x) (SDualBi d (o (o x)))
+reflSDualBi r = Inv2 t f where
+  t = toBidualSDualBi r
+  f = fromBidualSDualBi r
 
-toDualSDuality :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> SDuality d x -> SDuality d (o x)
-toDualSDuality r (SDuality e) = SDuality $ case e of
+toDualSDualBi :: DualisableGBiDual1 r (->) o d
+  => Struct r x -> SDualBi d x -> SDualBi d (o x)
+toDualSDualBi r (SDualBi e) = SDualBi $ case e of
   Right1 d -> Left1 $ toDualGLft r d
   Left1 d  -> Right1 $ toDualGRgt r d
   
 instance (DualisableGBiDual1 r (->) o d, Transformable r Type)
-  => ReflexiveG r (->) o (SDuality d) where
-  reflG = reflSDuality
+  => ReflexiveG r (->) o (SDualBi d) where
+  reflG = reflSDualBi
 
 instance ( DualisableGBiDual1 r (->) o d
          , Transformable r Type, TransformableGRefl o r
-         ) => DualisableG r (->) o (SDuality d) where
-  toDualG = toDualSDuality
+         ) => DualisableG r (->) o (SDualBi d) where
+  toDualG = toDualSDualBi
 
 
-smpMapSDuality :: ( Morphism h
+smpMapSDualBi :: ( Morphism h
                   , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
                   , DualisableGBi r (->) o d (Dual1 d)
                   , Transformable s r
                   )
-  => SMorphism r s o h x y -> SDuality d x -> SDuality d y
-smpMapSDuality sh (SDuality e)
+  => SMorphism r s o h x y -> SDualBi d x -> SDualBi d y
+smpMapSDualBi sh (SDualBi e)
   =              case sh of
-  SCov h      -> SDuality $ case e of
+  SCov h      -> SDualBi $ case e of
     Right1 d  -> Right1 $ amapG h d
     Left1 d'  -> Left1 $ amapG h d'
-  t@SToDual   -> SDuality $ case e of
+  t@SToDual   -> SDualBi $ case e of
     Right1 d  -> Left1 $ toDualGLft (smpBaseDomain t) d
     Left1 d'  -> Right1 $ toDualGRgt (smpBaseDomain t) d'
-  f@SFromDual -> SDuality $ case e of
+  f@SFromDual -> SDualBi $ case e of
     Right1 d  -> Left1 $ fromDualGRgt (smpBaseRange f) d
     Left1 d'  -> Right1 $ fromDualGLft (smpBaseRange f) d'
 
-smpPathMapSDuality :: ( Morphism h
+smpPathMapSDualBi :: ( Morphism h
                       , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
                       , DualisableGBiDual1 r (->) o d
                       , Transformable s r
                       )
-  => Path (SMorphism r s o h) x y -> SDuality d x -> SDuality d y
-smpPathMapSDuality h
+  => Path (SMorphism r s o h) x y -> SDualBi d x -> SDualBi d y
+smpPathMapSDualBi h
   =           case h of
   IdPath _ -> id
-  m :. h'  -> smpMapSDuality m . smpPathMapSDuality h'
+  m :. h'  -> smpMapSDualBi m . smpPathMapSDualBi h'
 
 --------------------------------------------------------------------------------
--- smap -
+-- smapBi -
 
 -- | application of 'SHom' on 'SDaulity'
 --
@@ -409,49 +419,51 @@ smpPathMapSDuality h
 -- @'ApplicativeG' ('Dual1' __d__) __h__ (->)@, @'DualisableGBiDual1' __r__ (->) __o d__@
 -- and @'Transformable' __s r__@, then holds:
 --
--- (1) 'smap' is functorial.
+-- (1) 'smapBi' is functorial.
 --
 -- (2) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
 --
 --     (1) If @'variante2' h '==' 'Covariant'@, then for all @d@ in @__d x__@ holds:
---     @'smap' h ('SDuality' ('Right1' d)) '==' 'SDuality' ('Right1' d')@ where @d' = 'amapG' h d@.
+--     @'smapBi' h ('SDualBi' ('Right1' d)) '==' 'SDualBi' ('Right1' d')@ where @d' = 'amapG' h d@.
 --
 --     (2) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
---     @'smap' h ('SDuality' ('Left1' d')) '==' 'SDuality' ('Left1' d)@ where @d = 'amapG' h d'@.
+--     @'smapBi' h ('SDualBi' ('Left1' d')) '==' 'SDualBi' ('Left1' d)@ where @d = 'amapG' h d'@.
 --
 --     (3) If @'variante2' h '==' 'Contravariant'@, then for all @d@ in @__d x__@ holds:
---     @'smap' h ('SDuality' ('Right1' d)) '==' 'SDuality' ('Left1' d')@.
+--     @'smapBi' h ('SDualBi' ('Right1' d)) '==' 'SDualBi' ('Left1' d')@.
 --
 --     (4) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
---     @'smap' h ('SDuality' ('Left1' d')) '==' 'SDuality' ('Right1' d)@.
-smap :: ( Morphism h, ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+--     @'smapBi' h ('SDualBi' ('Left1' d')) '==' 'SDualBi' ('Right1' d)@.
+smapBi :: ( Morphism h, ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
         , DualisableGBiDual1 r (->) o d, Transformable s r
         )
-  => SHom r s o h x y -> SDuality d x -> SDuality d y
-smap = smpPathMapSDuality . form
+  => SHom r s o h x y -> SDualBi d x -> SDualBi d y
+smapBi = smpPathMapSDualBi . form
 
 {-
 instance
   ( Morphism h, ApplicativeG d h (->), ApplicativeGDual1 d h (->)
   , DualisableGBiDual1 r (->) o d, Transformable s r
   )
-  => ApplicativeG (SDuality d) (SHom r s o h) (->) where
-  amapG = smap
+  => ApplicativeG (SDualBi d) (SHom r s o h) (->) where
+  amapG = smapBi
 -}
---------------------------------------------------------------------------------
--- xSDuality -
 
--- | random variable for 'SDuality'.
-xSDuality :: X (d x) -> X (Dual1 d x) -> X (SDuality d x)
-xSDuality xd xd'
-  = amap1 SDuality
+
+--------------------------------------------------------------------------------
+-- xSDualBi -
+
+-- | random variable for 'SDualBi'.
+xSDualBi :: X (d x) -> X (Dual1 d x) -> X (SDualBi d x)
+xSDualBi xd xd'
+  = amap1 SDualBi
   $ xOneOfX [ amap1 Right1 xd
             , amap1 Left1 xd'
             ]
 
 instance (XStandard (d x), XStandardDual1 d x)
-  => XStandard (SDuality d x) where
-  xStandard = xSDuality xStandard xStandard
+  => XStandard (SDualBi d x) where
+  xStandard = xSDualBi xStandard xStandard
 
 --------------------------------------------------------------------------------
 -- xSomeMrphSHom -
@@ -527,5 +539,4 @@ xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
 xSctSomeMrph :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
   => N -> X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism (SHom r s o h))
 xSctSomeMrph n xo = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) $ xSctSomeCmpb2 n xo XEmpty
-
 
