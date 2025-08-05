@@ -63,7 +63,6 @@ import OAlg.Data.Either
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
-
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 
@@ -343,20 +342,29 @@ instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s,
   => DualisableGBiDual1 s (->) o (Diagram t n m)
 
 --------------------------------------------------------------------------------
--- Diagram - ApplicativeG -
+-- Diagram - FunctorialG -
 
-instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where
-  amapG = dgMap
+instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where amapG = dgMap
 
+instance HomOriented h => ApplicativeGDual1 (Diagram t n m) h (->)
 
-instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
+instance (HomOriented h, FunctorialOriented h) => FunctorialG (Diagram t n m) h (->)
+
+instance
+  ( HomOriented h
+  , DualisableOriented s o
+  , TransformableOrt s, TransformableGRefl o s
+  , t ~ Dual (Dual t)
+  )
   => ApplicativeG (SDualBi (Diagram t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smapBi h
+  amapG (HomDisj h) = amapG h
 
-instance ( HomOriented h, t ~ Dual (Dual t)
-         , DualisableOriented s o
-         , TransformableGRefl o s, TransformableOrt s
-         )
+instance
+  ( HomOriented h
+  , DualisableOriented s o
+  , TransformableOrt s, TransformableGRefl o s
+  , t ~ Dual (Dual t)
+  )  
   => FunctorialG (SDualBi (Diagram t n m)) (HomDisj s o h) (->)
 
 --------------------------------------------------------------------------------
@@ -741,21 +749,6 @@ instance (HomOriented h, DualisableOriented s o, TransformableGRefl o s, Transfo
 instance ( HomOriented h, DualisableOriented s o
          , TransformableGRefl o s, TransformableOrt s
          ) => FunctorialG SomeDiagram (HomDisj s o h) (->)
-{-
--- | mapping of some diagram via a homomorphismd on 'Oriented' structures.
-sdgMap :: HomOrientedDisjunctive h
-  => h a b -> SomeDiagram a -> SomeDiagram b
-sdgMap h (SomeDiagram d)  = case dgTypeRefl d of
-  Refl                   -> case smapBi h (SDualBi (Right1 d)) of
-    SDualBi (Right1 d') -> SomeDiagram d'
-    SDualBi (Left1  d') -> SomeDiagram d'
-
-instance HomOrientedDisjunctive h
-  => ApplicativeG SomeDiagram h (->) where
-  amapG = sdgMap
-
-instance FunctorialOriented h => FunctorialG SomeDiagram h (->)
--}
 
 --------------------------------------------------------------------------------
 -- xSomeDiagram -

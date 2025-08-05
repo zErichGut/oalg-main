@@ -853,12 +853,12 @@ cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
 cnDiffHead c@(ConeInjective (DiagramParallelLR _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = isoOpDst
   SDualBi (Left1 c')  = amapG t (SDualBi (Right1 c))
-  cz'                  = cnDiffHead c'
+  cz'                 = cnDiffHead c'
   SDualBi (Right1 cz) = amapG f (SDualBi (Left1 cz'))
 cnDiffHead c@(ConeInjective (DiagramParallelRL _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = isoOpDst
   SDualBi (Left1 c')  = amapG t (SDualBi (Right1 c))
-  cz'                  = cnDiffHead c'
+  cz'                 = cnDiffHead c'
   SDualBi (Right1 cz) = amapG f (SDualBi (Left1 cz'))
 
 --------------------------------------------------------------------------------
@@ -887,7 +887,7 @@ cnCokernel cz = c where
   Contravariant2 (Inv2 t f) = isoOpDst
 
   SDualBi (Left1 cz') = amapG t (SDualBi (Right1 cz))
-  c'                   = cnKernel cz'
+  c'                  = cnKernel cz'
   SDualBi (Right1 c)  = amapG f (SDualBi (Left1 c'))
 
 

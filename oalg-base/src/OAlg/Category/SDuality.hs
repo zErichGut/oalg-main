@@ -24,7 +24,6 @@
 -- functor for dualisable parameterized types over structured types.
 module OAlg.Category.SDuality
   (
-
     -- * Dual
     -- ** Dualisable
     SDual, smap
@@ -55,8 +54,6 @@ module OAlg.Category.SDuality
 
 import Control.Monad
 import Control.Applicative ((<|>))
-
-import Data.Kind
 
 import Data.List ((++))
 
@@ -341,51 +338,12 @@ class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
 
 class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
 
---------------------------------------------------------------------------------
--- SDualBi - DualisableG -
-
-toBidualSDualBi :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> SDualBi d x -> SDualBi d (o (o x))
-toBidualSDualBi r (SDualBi e) = SDualBi $ case e of
-  Right1 d -> Right1 $ t d where Inv2 t _ = reflG r
-  Left1 d  -> Left1 $ t d where Inv2 t _ = reflG r
-
-fromBidualSDualBi :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> SDualBi d (o (o x)) -> SDualBi d x 
-fromBidualSDualBi r s@(SDualBi e) = case e of
-  Right1 d -> SDualBi $ Right1 $ f d where Inv2 _ f = reflG r
-  Left1 d -> SDualBi $ Left1 $ f' s r d where
-    f' :: DualisableGBiDual1 r (->) o d
-      => q d y -> Struct r x -> Dual1 d (o (o x)) -> Dual1 d x
-    f' _ r = f where Inv2 _ f = reflG r 
-    
-reflSDualBi :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> Inv2 (->) (SDualBi d x) (SDualBi d (o (o x)))
-reflSDualBi r = Inv2 t f where
-  t = toBidualSDualBi r
-  f = fromBidualSDualBi r
-
-toDualSDualBi :: DualisableGBiDual1 r (->) o d
-  => Struct r x -> SDualBi d x -> SDualBi d (o x)
-toDualSDualBi r (SDualBi e) = SDualBi $ case e of
-  Right1 d -> Left1 $ toDualGLft r d
-  Left1 d  -> Right1 $ toDualGRgt r d
-  
-instance (DualisableGBiDual1 r (->) o d, Transformable r Type)
-  => ReflexiveG r (->) o (SDualBi d) where
-  reflG = reflSDualBi
-
-instance ( DualisableGBiDual1 r (->) o d
-         , Transformable r Type, TransformableGRefl o r
-         ) => DualisableG r (->) o (SDualBi d) where
-  toDualG = toDualSDualBi
-
-
-smpMapSDualBi :: ( Morphism h
-                  , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-                  , DualisableGBi r (->) o d (Dual1 d)
-                  , Transformable s r
-                  )
+smpMapSDualBi ::
+  ( Morphism h
+  , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+  , DualisableGBi r (->) o d (Dual1 d)
+  , Transformable s r
+  )
   => SMorphism r s o h x y -> SDualBi d x -> SDualBi d y
 smpMapSDualBi sh (SDualBi e)
   =              case sh of
@@ -399,11 +357,12 @@ smpMapSDualBi sh (SDualBi e)
     Right1 d  -> Left1 $ fromDualGRgt (smpBaseRange f) d
     Left1 d'  -> Right1 $ fromDualGLft (smpBaseRange f) d'
 
-smpPathMapSDualBi :: ( Morphism h
-                      , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-                      , DualisableGBiDual1 r (->) o d
-                      , Transformable s r
-                      )
+smpPathMapSDualBi ::
+  ( Morphism h
+  , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+  , DualisableGBiDual1 r (->) o d
+  , Transformable s r
+  )
   => Path (SMorphism r s o h) x y -> SDualBi d x -> SDualBi d y
 smpPathMapSDualBi h
   =           case h of
@@ -434,21 +393,31 @@ smpPathMapSDualBi h
 --
 --     (4) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
 --     @'smapBi' h ('SDualBi' ('Left1' d')) '==' 'SDualBi' ('Right1' d)@.
-smapBi :: ( Morphism h, ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-        , DualisableGBiDual1 r (->) o d, Transformable s r
-        )
+smapBi ::
+  ( Morphism h
+  , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
+  , DualisableGBiDual1 r (->) o d
+  , Transformable s r
+  )
   => SHom r s o h x y -> SDualBi d x -> SDualBi d y
 smapBi = smpPathMapSDualBi . form
 
-{-
 instance
-  ( Morphism h, ApplicativeG d h (->), ApplicativeGDual1 d h (->)
-  , DualisableGBiDual1 r (->) o d, Transformable s r
+  ( Morphism h
+  , ApplicativeG d h (->), ApplicativeGDual1 d h (->)
+  , DualisableGBiDual1 r (->) o d
+  , Transformable s r
   )
   => ApplicativeG (SDualBi d) (SHom r s o h) (->) where
   amapG = smapBi
--}
 
+instance
+  ( Morphism h
+  , ApplicativeG d h (->), ApplicativeGDual1 d h (->)
+  , DualisableGBiDual1 r (->) o d
+  , Transformable s r
+  )
+  => FunctorialG (SDualBi d) (SHom r s o h) (->) where
 
 --------------------------------------------------------------------------------
 -- xSDualBi -
