@@ -24,9 +24,11 @@
 -- functor for dualisable parameterized types over structured types.
 module OAlg.Category.SDuality
   (
+
     -- * Duality
-    SDuality(..)
-  , smap, DualisableGBiDual1
+    SDuality(..), smap
+  , DualisableGBiDual1
+  , ApplicativeGDual1
   
   , ShowDual1, EqDual1, ValidableDual1
 
@@ -325,6 +327,11 @@ type instance Dual1 (SDuality d) = SDuality (Dual1 d)
 class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
 
 --------------------------------------------------------------------------------
+-- ApplicativeGDual1 -
+
+class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
+
+--------------------------------------------------------------------------------
 -- SDuality - DualisableG -
 
 toBidualSDuality :: DualisableGBiDual1 r (->) o d
@@ -362,6 +369,7 @@ instance ( DualisableGBiDual1 r (->) o d
          , Transformable r Type, TransformableGRefl o r
          ) => DualisableG r (->) o (SDuality d) where
   toDualG = toDualSDuality
+
 
 smpMapSDuality :: ( Morphism h
                   , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
@@ -422,6 +430,14 @@ smap :: ( Morphism h, ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
   => SHom r s o h x y -> SDuality d x -> SDuality d y
 smap = smpPathMapSDuality . form
 
+{-
+instance
+  ( Morphism h, ApplicativeG d h (->), ApplicativeGDual1 d h (->)
+  , DualisableGBiDual1 r (->) o d, Transformable s r
+  )
+  => ApplicativeG (SDuality d) (SHom r s o h) (->) where
+  amapG = smap
+-}
 --------------------------------------------------------------------------------
 -- xSDuality -
 

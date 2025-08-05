@@ -19,6 +19,7 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
+
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
@@ -41,6 +42,7 @@ module OAlg.Entity.Diagram.Definition
   , xDiagram, xDiagramChain
   , xSomeDiagram, dstSomeDiagram
   , xSomeDiagramOrnt
+
   )
   where
 
@@ -252,9 +254,6 @@ dgMap h d                  =  case d of
   where hPnt = pmap h
         hArw = amap h
 
-instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where
-  amapG = dgMap
-
 --------------------------------------------------------------------------------
 -- dgMapCnt -
 
@@ -287,6 +286,14 @@ dgMapCnt (Contravariant2 h) d = case d of
         hArw = amap h
 
 --------------------------------------------------------------------------------
+-- Diagram - Duality -
+
+type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
+
+instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
+instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
+
+--------------------------------------------------------------------------------
 -- dgMapS -
 
 -- | the canonically induced application given by 'dgMap' and 'dgMapCnt'.
@@ -301,22 +308,7 @@ dgMapS h (SDuality s) = SDuality $ case toVariant2 h of
     Left1 d'         -> Right1 (dgMapCnt hCnt d')
 
 --------------------------------------------------------------------------------
--- Diagram - Duality -
-
-type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
-
-instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
-instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
-
-instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
-  => ApplicativeG (SDuality (Diagram t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
-
-instance ( HomOriented h, t ~ Dual (Dual t)
-         , DualisableOriented s o
-         , TransformableGRefl o s, TransformableOrt s
-         )
-  => FunctorialG (SDuality (Diagram t n m)) (HomDisj s o h) (->)
+-- Diagram - DualisableGBiDual1 -
 
 dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
@@ -349,6 +341,23 @@ instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s,
          , t ~ Dual (Dual t)
          )
   => DualisableGBiDual1 s (->) o (Diagram t n m)
+
+--------------------------------------------------------------------------------
+-- Diagram - ApplicativeG -
+
+instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where
+  amapG = dgMap
+
+
+instance (HomOriented h, DualisableGBiDual1 s (->) o (Diagram t n m))
+  => ApplicativeG (SDuality (Diagram t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smap h
+
+instance ( HomOriented h, t ~ Dual (Dual t)
+         , DualisableOriented s o
+         , TransformableGRefl o s, TransformableOrt s
+         )
+  => FunctorialG (SDuality (Diagram t n m)) (HomDisj s o h) (->)
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -
