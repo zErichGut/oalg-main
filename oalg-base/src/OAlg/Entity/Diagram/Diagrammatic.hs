@@ -81,6 +81,9 @@ newtype DiagramG d (t :: DiagramType) (n :: N') (m :: N') x = DiagramG (d t n m 
 
 type instance Dual1 (DiagramG d t n m) = DiagramG d (Dual t) n m
 
+instance Validable (d t n m x) => Validable (DiagramG d t n m x) where
+  valid (DiagramG d) = valid d
+  
 instance XStandard (d t n m x) => XStandard (DiagramG d t n m x) where
   xStandard = amap1 DiagramG xStandard
 
@@ -101,8 +104,8 @@ instance (Attestable m, n ~ m+1)
   => TransformableG (SDualBi (DiagramG Diagram (Chain From) n m)) OrtSiteX EqE where
   tauG Struct = Struct
 
-instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) h (->) where
-  amapG h (DiagramG d) = DiagramG (amapG h d)
+instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) (Id2 h) (->) where
+  amapG (Id2 h) (DiagramG d) = DiagramG (amapG h d)
 
 instance ApplicativeG (DiagramG d t n m) (HomEmpty s) c where amapG = fromHomEmpty
 
@@ -275,11 +278,23 @@ instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) whe
 class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
   => NaturalDiagrammatic s h d t n m
 
+class Transformable (ObjectClass h) s => TransformableHom h s
+instance Transformable r s => TransformableHom (HomId r) s
+
+instance (HomOriented h, TransformableHom h s)
+  => NaturalTransformable s (Id2 h) (->) (DiagramG Diagram t n m) (Diagram t n m)
+
+instance (HomOriented h, TransformableHom h s)
+  => NaturalDiagrammatic s (Id2 h) Diagram t n m
+
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticDual1 -
 
 -- | helper class to avoid undecidable instances.
 class NaturalDiagrammatic s h d (Dual t) n m => NaturalDiagrammaticDual1 s h d t n m
+
+instance (HomOriented h, TransformableHom h s)
+  => NaturalDiagrammaticDual1 s (Id2 h) Diagram t n m
 
 instance (Diagrammatic d, TransformableOrt s, Transformable s r)
   => NaturalDiagrammatic r (HomEmpty s) d t n m
@@ -295,6 +310,7 @@ instance
   => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
   amapG (Covariant2 (HomDisj h)) d = d' where
     SDualBi (Right1 d') = smapBi h (SDualBi (Right1 d))
+
 
 instance
   ( NaturalDiagrammatic s h d t n m
@@ -594,17 +610,6 @@ xsaSource m = amap1 snaDual $ xsaSink m
 --------------------------------------------------------------------------------
 -- some new definitions -
 
-instance XStandardOrtOrientation x => XStandardOrtOrientation (Op x) where
-  xStandardOrtOrientation = XOrtOrientation xo' xq' where
-    XOrtOrientation xo xq = xStandardOrtOrientation
-    xo'   = amap1 opposite xo
-    xq' o = xq (opposite o) >>= return . Op
-
-instance XStandard x => XStandardOrtOrientation (U x) where
-  xStandardOrtOrientation = XOrtOrientation xo xq where
-    xo = return (():>())
-    xq _ = amap1 U xStandard
-    
 --------------------------------------------------------------------------------
 -- OrtOrientationX -
 

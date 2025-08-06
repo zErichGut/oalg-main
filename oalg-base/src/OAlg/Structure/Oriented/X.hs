@@ -380,4 +380,16 @@ instance XStandard p => XStandardOrtOrientation (Orientation p) where
 instance XStandardOrtOrientation Z where
   xStandardOrtOrientation = XOrtOrientation (return (():>())) (const xStandard)
 
+instance XStandardOrtOrientation x => XStandardOrtOrientation (Op x) where
+  xStandardOrtOrientation = XOrtOrientation xo' xq' where
+    XOrtOrientation xo xq = xStandardOrtOrientation
+    xo'   = amap1 opposite xo
+    xq' o = xq (opposite o) >>= return . Op
+
+instance XStandard x => XStandardOrtOrientation (U x) where
+  xStandardOrtOrientation = XOrtOrientation xo xq where
+    xo = return (():>())
+    xq _ = amap1 U xStandard
+    
+
 

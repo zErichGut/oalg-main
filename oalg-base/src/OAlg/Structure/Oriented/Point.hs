@@ -3,7 +3,7 @@
 
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -236,6 +236,12 @@ pmap h = fromPntG (amapG h)
 -- FunctorialPoint -
 
 type FunctorialPoint h = FunctorialG Pnt h (->)
+
+--------------------------------------------------------------------------------
+-- ApplicativG - Pnt - Id2 -
+
+instance ApplicativeG Pnt h c => ApplicativeG Pnt (Id2 h) c where
+  amapG (Id2 h) = amapG h
 
 
 

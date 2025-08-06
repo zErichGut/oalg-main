@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -21,6 +21,7 @@
 -- identical predicate.
 module OAlg.Data.Identity
   (
+    -- * Id
     Id(..)
   , fromId
   , trafoFromId
@@ -30,6 +31,9 @@ module OAlg.Data.Identity
     -- * Applicative
   , Applicative, amap, ($)
   , Functorial, Functor
+
+    -- * Id2
+  , Id2(..)
   )
   where
 
@@ -121,6 +125,18 @@ type Functorial c = FunctorialG Id c (->)
 data Functor c where
   Functor :: Functorial c => Functor c  
 
+--------------------------------------------------------------------------------
+-- Id2 -
+
+-- | identical predicat.
+newtype Id2 h x y = Id2 (h x y)
+
+instance Morphism h => Morphism (Id2 h) where
+  type ObjectClass (Id2 h) = ObjectClass h
+  homomorphous (Id2 h) = homomorphous h
+
+instance ApplicativeG Id h c => ApplicativeG Id (Id2 h) c where
+  amapG (Id2 h) = amapG h
 
 
 

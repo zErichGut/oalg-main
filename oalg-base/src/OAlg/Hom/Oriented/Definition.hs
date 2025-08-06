@@ -76,6 +76,10 @@ instance HomOriented h => HomOriented (Path h)
 
 instance TransformableOrt s => HomOriented (HomEmpty s)
 
+instance HomOriented h => HomOriented (Id2 h)
+
+instance TransformableOrt s => HomOriented (HomId s)
+
 --------------------------------------------------------------------------------
 -- omapDisj -
 

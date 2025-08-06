@@ -27,6 +27,9 @@ module OAlg.Hom.Definition
     -- * Empty
   , HomEmpty, fromHomEmpty
 
+    -- * Id
+  , HomId(..)
+  
     -- * X
   , xscmHomDisj
   )
@@ -132,7 +135,29 @@ isoO :: TransformableGRefl o s
 isoO s = Contravariant2 (Inv2 t f) where
   Contravariant2 t = cToDual s
   Contravariant2 f = cFromDual s
+
+--------------------------------------------------------------------------------
+-- HomId -
+
+-- | isomorphisms for mappings between @__x__@ and @'Id' __x__@ and vice versa.
+data HomId s x y where
+  ToId   :: (Structure s x, Structure s (Id x)) => HomId s x (Id x)
+  FromId :: (Structure s x, Structure s (Id x)) => HomId s (Id x) x
+
+instance Morphism (HomId s) where
+  type ObjectClass (HomId s) = s
+  homomorphous ToId = Struct :>: Struct
+  homomorphous FromId = Struct :>: Struct
+
+instance ApplicativeG Id (HomId s) (->) where
+  amapG ToId x = Id x
+  amapG FromId (Id x) = x
+
+instance ApplicativeG Pnt (HomId s) (->) where
+  amapG ToId (Pnt p)   = Pnt p
+  amapG FromId (Pnt p) = Pnt p
   
+
 --------------------------------------------------------------------------------
 -- xscmHomDisj -
 

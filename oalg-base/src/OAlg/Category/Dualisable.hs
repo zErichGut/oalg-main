@@ -160,7 +160,6 @@ class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
 --------------------------------------------------------------------------------
 -- Op - DualisableG - Id -
 
-
 instance Transformable r Type => ReflexiveG r (->) Op Id where
   reflG _ = Inv2 (amap1 (Op . Op)) (amap1 (fromOp . fromOp))
 
