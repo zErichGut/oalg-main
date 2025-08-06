@@ -89,7 +89,6 @@ import OAlg.Limes.Perspective
 
 import OAlg.Limes.Cone.Structure
 
-
 --------------------------------------------------------------------------------
 -- Cone -
 

@@ -27,6 +27,7 @@ module OAlg.Category.NaturalTransformable
     -- * Transformable
     NaturalTransformable
   , NaturalTransformation(..), roh'
+  , NaturalFunctorial
 
     -- * Natural
   , Natural(..), rohSub
@@ -98,6 +99,15 @@ instance ( NaturalTransformable s a b f g, TransformableObjectClass v b
 -- | witness for a 'NaturalTransformable'.
 data NaturalTransformation s a b f g where
   NaturalTransformation :: NaturalTransformable s a b f g => NaturalTransformation s a b f g
+
+--------------------------------------------------------------------------------
+-- NaturalFunctorial -
+
+-- | natural transformables admitting the functorial propperty.
+type NaturalFunctorial s a b f g
+  = ( NaturalTransformable s a b f g
+    , FunctorialG f a b, FunctorialG g a b
+    )
 
 --------------------------------------------------------------------------------
 -- NaturalTransformableDual1 -
