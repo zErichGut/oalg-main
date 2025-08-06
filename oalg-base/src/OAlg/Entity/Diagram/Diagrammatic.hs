@@ -608,9 +608,6 @@ xsaSource ::
 xsaSource m = amap1 snaDual $ xsaSink m
 
 --------------------------------------------------------------------------------
--- some new definitions -
-
---------------------------------------------------------------------------------
 -- OrtOrientationX -
 
 data OrtOrientationX
