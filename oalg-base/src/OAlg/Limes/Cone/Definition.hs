@@ -418,6 +418,19 @@ instance
   amapG (HomDisj h) = smapBi h
 
 
+instance
+  ( DualisableDiagrammatic s o d t n m
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticObjectClass (Variant2 Covariant (HomDisjEmpty s o)) d t n m
+
+s = Struct :: Struct Mlt OS
+Contravariant2 (Inv2 t _)  = isoO s :: IsoO Mlt Op OS
+Contravariant2 (Inv2 t' _) = isoO (tauO s) :: IsoO Mlt Op (Op OS)
+h = Covariant2 (t' . t)
+
+
+
 --------------------------------------------------------------------------------
 -- tip -
 
@@ -888,6 +901,9 @@ cnCokernel cz = c where
   SDualBi (Left1 cz') = amapG t (SDualBi (Right1 cz))
   c'                  = cnKernel cz'
   SDualBi (Right1 c)  = amapG f (SDualBi (Left1 c'))
+
+
+
 
 
 {-
