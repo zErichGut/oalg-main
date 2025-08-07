@@ -357,10 +357,10 @@ instance
   => DualisableGBiDual1 s (->) o (Cone Dst p d t n m)
 
 --------------------------------------------------------------------------------
--- DualisableNaturalDiagrammaticObjectClass -
+-- NaturalDiagrammaticObjectClassBiDual1 -
 
 -- | constrains for dualisable natural diagrammatic objects according to @__h__@.
-type DualisableNaturalDiagrammaticObjectClass h d t n m =
+type NaturalDiagrammaticObjectClassBiDual1 h d t n m =
   ( NaturalDiagrammaticObjectClass h d t n m 
   , NaturalDiagrammaticObjectClassDual1 h d t n m
   )
@@ -434,7 +434,7 @@ instance
   
 instance 
   ( HomMultiplicative h, TransformableMlt s
-  , DualisableNaturalDiagrammaticObjectClass h d t n m
+  , NaturalDiagrammaticObjectClassBiDual1 h d t n m
   , DualisableConeMlt s o p d t n m
   )
   => ApplicativeG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
@@ -442,7 +442,7 @@ instance
 
 instance 
   ( HomMultiplicative h, TransformableMlt s
-  , DualisableNaturalDiagrammaticObjectClass h d t n m
+  , NaturalDiagrammaticObjectClassBiDual1 h d t n m
   , DualisableConeMlt s o p d t n m
   )
   => FunctorialG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->)
@@ -455,7 +455,7 @@ instance
   
 instance 
   ( HomDistributive h, TransformableDst s
-  , DualisableNaturalDiagrammaticObjectClass h d t n m
+  , NaturalDiagrammaticObjectClassBiDual1 h d t n m
   , DualisableConeDst s o p d t n m
   )
   => ApplicativeG (SDualBi (Cone Dst p d t n m)) (HomDisj s o h) (->) where
@@ -463,7 +463,7 @@ instance
 
 instance 
   ( HomDistributive h, TransformableDst s
-  , DualisableNaturalDiagrammaticObjectClass h d t n m 
+  , NaturalDiagrammaticObjectClassBiDual1 h d t n m 
   , DualisableConeDst s o p d t n m
   )
   => FunctorialG (SDualBi (Cone Dst p d t n m)) (HomDisj s o h) (->)
@@ -738,13 +738,17 @@ instance (Diagrammatic d, Validable (d t n m a)) => Validable (Cone s p d t n m 
 -- ConeZeroHead -
 
 -- | predicate for cones where the first arrow of its underlying diagram is equal to 'zero'.
-newtype ConeZeroHead s p d t n m a = ConeZeroHead (Cone s p d t n m a) deriving (Show,Eq)
+data ConeZeroHead s p d t n m x where
+  ConeZeroHead :: Distributive x => Cone s p d t n (m+1) x -> ConeZeroHead s p d t n (m+1) x
+
+deriving instance Show (d t n (S m) x) => Show (ConeZeroHead s p d t n (S m) x)
+deriving instance Eq (d t n (S m) x) => Eq (ConeZeroHead s p d t n (S m) x)
 
 --------------------------------------------------------------------------------
 -- ConeZeroHead - Validable -
 
-instance (Distributive a, Diagrammatic d, Validable (d t n (S m) a))
-  => Validable (ConeZeroHead s p d t n (S m) a) where
+instance (Diagrammatic d, Validable (d t n (S m) x))
+  => Validable (ConeZeroHead s p d t n (S m) x) where
   valid (ConeZeroHead c)
     = And [ valid c
           , relIsZero $ head $ dgArrows $ diagram $ diagrammaticObject c
@@ -753,13 +757,30 @@ instance (Distributive a, Diagrammatic d, Validable (d t n (S m) a))
 --------------------------------------------------------------------------------
 -- czMapDstCnt -
 
+czMapMltStruct :: (HomDistributive h, NaturalDiagrammatic (ObjectClass h) h d t n m)
+  => Struct Dst y -> h x y -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt p d t n m y
+czMapMltStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapMlt h c)
+
 czMapMlt :: (HomDistributive h, NaturalDiagrammatic (ObjectClass h) h d t n m)
   => h x y -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt p d t n m y
-czMapMlt h (ConeZeroHead c) = ConeZeroHead (cnMapMlt h c)
-  
+czMapMlt h = czMapMltStruct (tau (range h)) h
+
+czMapDstStruct :: (HomDistributive h, NaturalDiagrammatic (ObjectClass h) h d t n m)
+  => Struct Dst y -> h x y -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst p d t n m y
+czMapDstStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapDst h c)
+
 czMapDst :: (HomDistributive h, NaturalDiagrammatic (ObjectClass h) h d t n m)
   => h x y -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst p d t n m y
-czMapDst h (ConeZeroHead c) = ConeZeroHead (cnMapDst h c)
+czMapDst h = czMapDstStruct (tau (range h)) h
+
+czMapMltCntStruct ::
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticSDualisable (ObjectClass h) h d t n m
+  )
+  => Struct Dst y
+  -> Variant2 Contravariant h x y
+  -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt (Dual p) d (Dual t) n m y
+czMapMltCntStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapMltCnt h c)
 
 czMapMltCnt ::
   ( HomDistributiveDisjunctive h
@@ -767,7 +788,16 @@ czMapMltCnt ::
   )
   => Variant2 Contravariant h x y
   -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt (Dual p) d (Dual t) n m y
-czMapMltCnt h (ConeZeroHead c) = ConeZeroHead (cnMapMltCnt h c)
+czMapMltCnt h = czMapMltCntStruct (tau (range h)) h
+
+czMapDstCntStruct ::
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticSDualisable (ObjectClass h) h d t n m
+  )
+  => Struct Dst y
+  -> Variant2 Contravariant h x y
+  -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst (Dual p) d (Dual t) n m y
+czMapDstCntStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapDstCnt h c)
 
 czMapDstCnt ::
   ( HomDistributiveDisjunctive h
@@ -775,7 +805,8 @@ czMapDstCnt ::
   )
   => Variant2 Contravariant h x y
   -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst (Dual p) d (Dual t) n m y
-czMapDstCnt h (ConeZeroHead c) = ConeZeroHead (cnMapDstCnt h c)
+czMapDstCnt h = czMapDstCntStruct (tau (range h)) h
+
 
 --------------------------------------------------------------------------------
 -- ConeZeroHead - Dual -
@@ -869,31 +900,34 @@ instance (HomDistributive h, NaturalDiagrammaticObjectClass h d t n m)
   => ApplicativeG (ConeZeroHead Dst p d t n m) h (->) where
   amapG = czMapDst
 
-instance 
+
+instance
   ( HomDistributive h
-  , DualisableDistributive s o
-  , NaturalDiagrammaticObjectClass h d t n m 
   , NaturalDiagrammaticObjectClassDual1 h d t n m
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammaticDual1 s o d t n m
-  , TransformableDst s
-  , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDualBi (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smapBi h
+  => ApplicativeGDual1 (ConeZeroHead Mlt p d t n m) h (->)
 
 instance 
+  ( HomDistributive h, TransformableDst s
+  , NaturalDiagrammaticObjectClassBiDual1 h d t n m 
+  , DualisableConeDst s o p d t n m
+  )
+  => ApplicativeG (SDualBi (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
+  amapG (HomDisj h) = amapG h
+
+instance
   ( HomDistributive h
-  , DualisableDistributive s o
-  , NaturalDiagrammaticObjectClass h d t n m 
   , NaturalDiagrammaticObjectClassDual1 h d t n m
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammaticDual1 s o d t n m
-  , TransformableDst s
-  , p ~ Dual (Dual p)
+  )
+  => ApplicativeGDual1 (ConeZeroHead Dst p d t n m) h (->)
+
+instance 
+  ( HomDistributive h, TransformableDst s
+  , NaturalDiagrammaticObjectClassBiDual1 h d t n m 
+  , DualisableConeDst s o p d t n m
   )
   => ApplicativeG (SDualBi (ConeZeroHead Dst p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smapBi h
+  amapG (HomDisj h) = amapG h
 
 --------------------------------------------------------------------------------
 -- cnDiffHead -
@@ -922,13 +956,14 @@ cnDiffHead c@(ConeInjective (DiagramParallelRL _ _ _) _ _) = cz where
 
 -- | embedding of a cone in a distributive structure to its multiplicative cone.
 cnZeroHead :: Cone Dst p Diagram t n m a -> ConeZeroHead Mlt p Diagram t n (m+1) a
-cnZeroHead = ConeZeroHead . cnDstAdjZero 
+cnZeroHead c@(ConeKernel _ _)   = ConeZeroHead (cnDstAdjZero c)
+cnZeroHead c@(ConeCokernel _ _) = ConeZeroHead (cnDstAdjZero c)
 
 --------------------------------------------------------------------------------
 -- cnKernel -
 
 -- | the kernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
-cnKernel :: (Distributive a, p ~ Projective, t ~ Parallel LeftToRight)
+cnKernel :: (p ~ Projective, t ~ Parallel LeftToRight)
   => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
 cnKernel (ConeZeroHead (ConeProjective d _ cs)) = case d of
   DiagramParallelLR l r as -> ConeKernel (DiagramParallelLR l r (tail as)) (head cs)
@@ -937,17 +972,14 @@ cnKernel (ConeZeroHead (ConeProjective d _ cs)) = case d of
 -- cnCokernel
 
 -- | the cokernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
-cnCokernel :: (Distributive a, p ~ Injective, t ~ Parallel RightToLeft)
+cnCokernel :: (p ~ Injective, t ~ Parallel RightToLeft)
   => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
-cnCokernel cz = c where
+cnCokernel cz@(ConeZeroHead _) = c where
   Contravariant2 (Inv2 t f) = isoOpDst
 
   SDualBi (Left1 cz') = amapG t (SDualBi (Right1 cz))
   c'                  = cnKernel cz'
   SDualBi (Right1 c)  = amapG f (SDualBi (Left1 c'))
-
-
-
 
 
 {-

@@ -22,7 +22,8 @@
 -- 
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
-  ( -- * Diagrammatic
+  (
+    -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
 
@@ -39,6 +40,7 @@ module OAlg.Entity.Diagram.Diagrammatic
 
   -- * Proposition
   , prpDiagrammatic
+
   ) where
 
 import Control.Monad
@@ -279,6 +281,8 @@ instance Transformable r s => TransformableHom (HomId r) s
 -- @__y__@ and @h@ in @__h x y__@ holds:
 --
 -- (1) @'amapG' h '.=.' 'dgMap' h@.
+--
+-- __Note__ This property is required if incoherent instances are permitted.
 class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
   => NaturalDiagrammatic s h d t n m
 
@@ -393,6 +397,8 @@ instance Diagrammatic d
 -- @__y__@ and @h@ in @__h x y__@ holds:
 --
 -- (1) @'amapG' h '.=.' dgMapS h@.
+--
+-- __Note__ This property is required if incoherent instances are permitted.
 class
   ( Diagrammatic d
   , HomOrientedDisjunctive h
@@ -481,7 +487,8 @@ prpNaturalDiagrammaticSDualisable q xsa = Prp "NaturalDiagrammaticSDualisable"
 -- xsoOrtSite -
 
 -- | random variable for some object classees of @'SHom' __s s__ ('HomEmpty' __s__)@.
-xsoOrtSite :: s ~ OrtSiteX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoOrtSite :: (s ~ OrtSiteX)
+  => X (SomeObjectClass (SHom s s Op h))
 xsoOrtSite = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
                     , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
                     , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
@@ -489,7 +496,8 @@ xsoOrtSite = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
 
 
 -- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomDisjEmpty' 'OrtSiteX' 'Op')@
-xsOrtSiteXOp :: s ~ OrtSiteX => X (SomeMorphism (HomDisjEmpty s Op))
+xsOrtSiteXOp :: (s ~ OrtSiteX, h ~ HomEmpty s)
+  => X (SomeMorphism (HomDisj s Op h))
 xsOrtSiteXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrtSite XEmpty
 
 --------------------------------------------------------------------------------
@@ -575,11 +583,12 @@ xsaSink m = do
 snaDual :: 
   ( Transformable s Ort, TransformableGRefl Op s
   , DualisableDiagrammatic s Op Diagram t n m
+  , h ~ HomEmpty s
   , t ~ Dual (Dual t)
   )
-  => SomeNaturalApplication (HomDisjEmpty s Op)
+  => SomeNaturalApplication (HomDisj s Op h)
         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m))    
-  -> SomeNaturalApplication (HomDisjEmpty s Op)
+  -> SomeNaturalApplication (HomDisj s Op h)
         (SDualBi (DiagramG Diagram (Dual t) n m)) (SDualBi (Diagram (Dual t) n m))
 snaDual (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h)) of
     (Struct,Struct) -> SomeNaturalApplication (h . f) sd' where
@@ -598,9 +607,10 @@ snaDual (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h
 
 xsaChainFrom ::
   ( s ~ OrtSiteX, n ~ m+1, t ~ Chain From
+  , h ~ HomEmpty s
   )
   => Any m
-  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+  -> X (SomeNaturalApplication (HomDisj s Op h)
          (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
 xsaChainFrom m = amap1 snaDual $ xsaChainTo m
 
@@ -609,9 +619,10 @@ xsaChainFrom m = amap1 snaDual $ xsaChainTo m
 
 xsaSource ::
   ( s ~ OrtSiteX, n ~ m+1, t ~ Star From
+  , h ~ HomEmpty s
   )
   => Any m
-  -> X (SomeNaturalApplication (HomDisjEmpty s Op)
+  -> X (SomeNaturalApplication (HomDisj s Op h)
          (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
 xsaSource m = amap1 snaDual $ xsaSink m
 
@@ -636,6 +647,7 @@ instance TransformableType OrtOrientationX
 
 --------------------------------------------------------------------------------
 -- xsoOrtOrientation -
+
 xsoOrtOrientation :: s ~ OrtOrientationX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
 xsoOrtOrientation
   = xOneOf [ SomeObjectClass (Struct :: Struct OrtOrientationX OS)
@@ -645,6 +657,7 @@ xsoOrtOrientation
 
 xsOrtOrientationXOp ::  s ~ OrtOrientationX => X (SomeMorphism (HomDisjEmpty s Op))
 xsOrtOrientationXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrtOrientation XEmpty
+
 
 --------------------------------------------------------------------------------
 -- xsaParallelLR -
