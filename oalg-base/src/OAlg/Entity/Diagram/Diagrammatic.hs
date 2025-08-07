@@ -131,7 +131,7 @@ dmap :: ApplicativeG (DiagramG d t n m) h (->)
 dmap h d = d' where DiagramG d' = amapG h (DiagramG d)
 
 --------------------------------------------------------------------------------
--- Diagram - DualisableGBiDual1 -
+-- DiagramG - Diagram - DualisableGBiDual1 -
 
 instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , DualisableOriented s o
@@ -351,6 +351,12 @@ class NaturalDiagrammatic (ObjectClass h) h d t n m
 
 instance (Diagrammatic d, TransformableOrt s)
   => NaturalDiagrammaticObjectClass (HomEmpty s) d t n m
+
+instance
+  ( DualisableDiagrammatic s o d t n m
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticObjectClass (Variant2 Covariant (HomDisjEmpty s o)) d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticObjectClassDual1 -
