@@ -23,26 +23,27 @@
 -- 
 -- Natural transformable applications.
 module OAlg.Category.NaturalTransformable
-  ( -- * Transformable
+  (
+
+    -- * Transformable
     NaturalTransformable
   , NaturalTransformation(..), roh'
   , NaturalFunctorial
 
     -- * Natural
-  , Natural(..), rohSub
+  , Natural(..) -- , rohSub
 
     -- * Duality
   , NaturalTransformableDual1
   
     -- * Proposition
-  , prpNaturalTransformableEqExt
   , prpNaturalTransformable, SomeNaturalApplication(..)
   , relNaturalTransformable
+  -- , prpNaturalTransformableEqExt
+
   ) where
 
 import OAlg.Prelude 
-
-import OAlg.Category.Unify
 
 --------------------------------------------------------------------------------
 -- Natural -
@@ -51,7 +52,7 @@ import OAlg.Category.Unify
 -- between @__f__@ and @__g__@ within @__b__@.
 class Natural s b f g where
   roh :: Struct s x -> b (f x) (g x)
-
+{-
 --------------------------------------------------------------------------------
 -- rohSub -
 
@@ -71,7 +72,7 @@ instance ( Natural s b f g, Transformable t s
          )
   => Natural (SubStruct t s) (Sub v b) f g where
   roh = rohSub
-
+-}
 
 --------------------------------------------------------------------------------
 -- NaturalTransformable -
@@ -84,34 +85,33 @@ instance ( Natural s b f g, Transformable t s
 -- (1) For all @__x__@, @__y__@ and @a@ in @__a x y__@ holds:
 -- @'amapG' a '.' 'roh'' n ('domain' a) '.=.' 'roh'' n ('range' a) '.' 'amapG' a@.
 class
-  ( Natural s b f g
-  , Transformable (ObjectClass a) s
+  ( Natural (ObjectClass a) b f g
   , Morphism a, Category b
   , ApplicativeG f a b, ApplicativeG g a b
   )
-  => NaturalTransformable s a b f g
+  => NaturalTransformable a b f g
 
-
+{-
 instance ( NaturalTransformable s a b f g
          , TransformableObjectClass v b
          , TransformableG f t v, TransformableG g t v
          , Transformable t s
          )
   => NaturalTransformable (SubStruct t s) (Sub t a) (Sub v b) f g 
-
+-}
 --------------------------------------------------------------------------------
 -- NaturalTransformation -
 
 -- | witness for a 'NaturalTransformable'.
-data NaturalTransformation s a b f g where
-  NaturalTransformation :: NaturalTransformable s a b f g => NaturalTransformation s a b f g
+data NaturalTransformation a b f g where
+  NaturalTransformation :: NaturalTransformable a b f g => NaturalTransformation a b f g
 
 --------------------------------------------------------------------------------
 -- NaturalFunctorial -
 
 -- | natural transformables admitting the functorial propperty.
-type NaturalFunctorial s a b f g
-  = ( NaturalTransformable s a b f g
+type NaturalFunctorial a b f g
+  = ( NaturalTransformable a b f g
     , FunctorialG f a b, FunctorialG g a b
     )
 
@@ -119,22 +119,21 @@ type NaturalFunctorial s a b f g
 -- NaturalTransformableDual1 -
 
 -- | helper class to avoid undecidable instances.
-class NaturalTransformable s h b (Dual1 f) (Dual1 g)
-  => NaturalTransformableDual1 s h b f g
+class NaturalTransformable h b (Dual1 f) (Dual1 g)
+  => NaturalTransformableDual1 h b f g
   
 --------------------------------------------------------------------------------
 -- roh' -
 
-rohStruct :: NaturalTransformation s a b f g -> Struct s x -> b (f x) (g x)
-rohStruct NaturalTransformation = roh
+-- | the induced 'roh'.
+roh' :: NaturalTransformation a b f g -> Struct (ObjectClass a) x -> b (f x) (g x)
+roh' NaturalTransformation = roh
 
-roh' :: NaturalTransformation s a b f g -> Struct (ObjectClass a) x -> b (f x) (g x)
-roh' n@NaturalTransformation s = rohStruct n (tau s)
-
+{-
 --------------------------------------------------------------------------------
 -- prpNaturalTransformableEqExt -
 
-relNaturalTransformableEqExt :: EqExt b => NaturalTransformation s a b f g -> a x y -> Statement
+relNaturalTransformableEqExt :: EqExt b => NaturalTransformation a b f g -> a x y -> Statement
 relNaturalTransformableEqExt n@NaturalTransformation a
   = amapG a . roh' n (domain a) .=. roh' n (range a) . amapG a
 
@@ -146,7 +145,7 @@ prpNaturalTransformableEqExt n xa = Prp "NaturalTransformableEqExt" :<=>:
 
 instance (EqExt b, XStandard (SomeMorphism a)) => Validable (NaturalTransformation s a b f g) where
   valid n = prpNaturalTransformableEqExt n xStandard
-
+-}
 --------------------------------------------------------------------------------
 -- SomeNaturalApplication -
 
@@ -160,16 +159,19 @@ data SomeNaturalApplication a f g where
 -- prpNaturalTransformable -
 
 relNaturalTransformable :: (Show2 a, Eq (g y), Show (f x))
-  => NaturalTransformation s a (->) f g -> a x y -> f x -> Statement
+  => NaturalTransformation a (->) f g -> a x y -> f x -> Statement
 relNaturalTransformable n@NaturalTransformation a f
   = ((amap1 a $ roh' n (domain a) f) == (roh' n (range a) $ amap1 a f))
     :?> Params ["a":=show2 a,"f x":=show f]
 
 -- | validity according to 'NaturalTransformable' for some applications.
-prpNaturalTransformable :: NaturalTransformation s a (->) f g
+prpNaturalTransformable :: NaturalTransformation a (->) f g
   -> X (SomeNaturalApplication a f g) -> Statement
 prpNaturalTransformable n xsa = Prp "NaturalTransformable" :<=>:
   Forall xsa (\(SomeNaturalApplication a f) -> relNaturalTransformable n a f)
+
+--------------------------------------------------------------------------------
+-- NaturalTransformation - Validable -
 
 
 

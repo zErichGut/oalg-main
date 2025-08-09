@@ -73,7 +73,7 @@ class (HomOriented h, Transformable (ObjectClass h) Mlt) => HomMultiplicative h
 
 instance HomMultiplicative h => HomMultiplicative (Path h)
 
-instance (TransformableOrt s, TransformableMlt s) => HomMultiplicative (HomEmpty s)
+instance TransformableMlt s => HomMultiplicative (HomEmpty s)
 
 --------------------------------------------------------------------------------
 -- HomMultiplicativeDisjunctive -
