@@ -18,7 +18,9 @@
 -- 
 -- definition of 'Cone's over 'Diagrammatic' objects.
 module OAlg.Limes.Cone.Definition
-  ( -- * Cone
+  (
+{-
+    -- * Cone
     Cone(..), diagrammaticObject
   , Perspective(..), cnMltOrDst, coneStruct
   , cnDiagramTypeRefl
@@ -34,6 +36,7 @@ module OAlg.Limes.Cone.Definition
     -- * X
   , xCnPrjOrnt, xCnPrjDstOrnt
   , xCnInjOrnt, xCnInjDstOrnt
+-}
   ) where
 
 import Control.Monad
@@ -180,7 +183,7 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
 cnMapMlt :: ( HomMultiplicative h
-            , NaturalDiagrammatic (ObjectClass h) h d t n m
+            , NaturalDiagrammatic h d t n m
             )
   => h a b -> Cone Mlt p d t n m a -> Cone Mlt p d t n m b
 cnMapMlt h c               = case tauMlt (range h) of
@@ -190,7 +193,7 @@ cnMapMlt h c               = case tauMlt (range h) of
 
 -- | mapping of a cone under a 'Distributive' homomorphism.
 cnMapDst :: ( HomDistributive h
-            , NaturalDiagrammatic (ObjectClass h) h d t n m
+            , NaturalDiagrammatic h d t n m
             )
   => h a b -> Cone Dst p d t n m a -> Cone Dst p d t n m b
 cnMapDst h c          = case tauDst (range h) of
@@ -199,7 +202,7 @@ cnMapDst h c          = case tauDst (range h) of
     ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
 
 cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
-               , NaturalDiagrammaticSDualisable (ObjectClass h) h d t n m
+               , NaturalDiagrammaticSDualisable h d t n m
                )
   => Variant2 Contravariant h x y
   -> Cone Mlt p d t n m x -> Cone Mlt (Dual p) d (Dual t) n m y
@@ -211,7 +214,7 @@ cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
       SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 cnMapDstCnt :: ( HomDistributiveDisjunctive h
-               , NaturalDiagrammaticSDualisable (ObjectClass h) h d t n m
+               , NaturalDiagrammaticSDualisable h d t n m
                )
   => Variant2 Contravariant h x y
   -> Cone Dst p d t n m x -> Cone Dst (Dual p) d (Dual t) n m y
@@ -238,7 +241,7 @@ cnToBidualMlt ::
   , DualisableMultiplicative s o
   , DualisableDiagrammatic s o d t n m
   )
-  => Struct s x -> Cone Mlt p d t n m x -> Cone Mlt p d t n m (o (o x))
+  =>  Struct s x -> Cone Mlt p d t n m x -> Cone Mlt p d t n m (o (o x))
 cnToBidualMlt s = cnMapMlt (Covariant2 (t' . t)) where
   Contravariant2 (Inv2 t _)  = isoO s
   Contravariant2 (Inv2 t' _) = isoO (tauO s) 
@@ -332,7 +335,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => DualisableGBiDual1 s (->) o (Cone Dst p d t n m)
-
+{-
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticObjectClassBiDual1 -
 
@@ -827,3 +830,4 @@ instance ( Entity p, t ~ Parallel RightToLeft, n ~ N2
          , XStandard p, XStandard (d t n m (Orientation p))
          ) => XStandard (Cone Dst Injective d t n m (Orientation p)) where
   xStandard = xCnInjDstOrnt xStandard xStandard
+-}

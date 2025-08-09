@@ -23,6 +23,7 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
+
     -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
@@ -38,6 +39,7 @@ module OAlg.Entity.Diagram.Diagrammatic
 
   -- * Proposition
   , prpDiagrammatic
+
   ) where
 
 import Control.Monad
@@ -103,8 +105,8 @@ instance (Attestable m, n ~ m+1)
   => TransformableG (SDualBi (DiagramG Diagram (Chain From) n m)) OrtSiteX EqE where
   tauG Struct = Struct
 
-instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) h (->) where
-  amapG h (DiagramG d) = DiagramG (amapG h d)
+instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) (Id2 h) (->) where
+  amapG (Id2 h) (DiagramG d) = DiagramG (amapG h d)
 
 --------------------------------------------------------------------------------
 -- dgmGMap -
@@ -177,9 +179,23 @@ instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) whe
 class (HomOriented h, NaturalTransformable h (->) (DiagramG d t n m) (Diagram t n m))
   => NaturalDiagrammatic h d t n m
 
-instance HomOriented h => NaturalTransformable h (->) (DiagramG Diagram t n m) (Diagram t n m)
+instance ApplicativeG (DiagramG d t n m) (HomEmpty s) (->) where
+  amapG = fromHomEmpty
 
-instance HomOriented h => NaturalDiagrammatic h Diagram t n m
+instance
+  ( Diagrammatic d
+  , TransformableOrt s
+  )
+  => NaturalTransformable (HomEmpty s) (->) (DiagramG d t n m) (Diagram t n m)
+
+instance
+  ( Diagrammatic d
+  , TransformableOrt s
+  )
+  => NaturalDiagrammatic (HomEmpty s) d t n m
+
+instance HomOriented h => NaturalTransformable (Id2 h) (->) (DiagramG Diagram t n m) (Diagram t n m)
+instance HomOriented h => NaturalDiagrammatic (Id2 h) Diagram t n m
 
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammatic -
@@ -194,14 +210,19 @@ prpNaturalDiagrammatic :: (NaturalDiagrammatic h d t n m, Show2 h)
 prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
   :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
 
-
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticDual1 -
 
 -- | helper class to avoid undecidable instances.
 class NaturalDiagrammatic h d (Dual t) n m => NaturalDiagrammaticDual1 h d t n m
 
-instance HomOriented h => NaturalDiagrammaticDual1 h Diagram t n m
+instance
+  ( Diagrammatic d
+  , TransformableOrt s
+  )
+  => NaturalDiagrammaticDual1 (HomEmpty s) d t n m
+
+instance HomOriented h => NaturalDiagrammaticDual1 (Id2 h) Diagram t n m
 
 --------------------------------------------------------------------------------
 -- DualisableDiagrammatic -
@@ -365,6 +386,29 @@ instance
   , DualisableDiagrammatic s o d t n m
   )
   => NaturalDiagrammaticSDualisable (HomDisj s o h) d t n m
+
+instance
+  ( NaturalDiagrammatic h d t n m
+  , NaturalDiagrammaticDual1 h d t n m
+  , DualisableDiagrammatic s o d t n m
+  )  
+  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
+  amapG (Covariant2 h) d = d' where
+    SDualBi (Right1 d') = amapG h (SDualBi (Right1 d))
+
+instance
+  ( NaturalDiagrammatic h d t n m
+  , NaturalDiagrammaticDual1 h d t n m
+  , DualisableDiagrammatic s o d t n m
+  )  
+  => NaturalTransformable (Variant2 Covariant (HomDisj s o h)) (->) (DiagramG d t n m) (Diagram t n m)
+
+instance
+  ( NaturalDiagrammatic h d t n m
+  , NaturalDiagrammaticDual1 h d t n m
+  , DualisableDiagrammatic s o d t n m
+  )  
+  => NaturalDiagrammatic (Variant2 Covariant (HomDisj s o h)) d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticSDualBi -
@@ -642,6 +686,7 @@ xsaParallelRL ::
          (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
 xsaParallelRL m = amap1 snaDual $ xsaParallelLR m
 
+
 --------------------------------------------------------------------------------
 -- prpDiagrammtic -
 
@@ -685,6 +730,7 @@ prpDiagrammatic nMax = Prp "Diagrammatic"
           => Any m -> NaturalDiagrammaticSDualBi (HomDisjEmpty s Op) Diagram
                (Parallel RightToLeft) N2 m
         lrF _ = NaturalDiagrammaticSDualBi
+
 
 
 
