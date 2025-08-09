@@ -23,6 +23,7 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
+{-    
     -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
@@ -40,7 +41,7 @@ module OAlg.Entity.Diagram.Diagrammatic
 
   -- * Proposition
   , prpDiagrammatic
-
+-}
   ) where
 
 import Control.Monad
@@ -106,9 +107,8 @@ instance (Attestable m, n ~ m+1)
   => TransformableG (SDualBi (DiagramG Diagram (Chain From) n m)) OrtSiteX EqE where
   tauG Struct = Struct
 
-instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) (Id2 h) (->) where
-  amapG (Id2 h) (DiagramG d) = DiagramG (amapG h d)
-
+instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) h (->) where
+  amapG h (DiagramG d) = DiagramG (amapG h d)
 
 --------------------------------------------------------------------------------
 -- dgmGMap -
@@ -154,6 +154,130 @@ instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , t ~ Dual (Dual t)
          )
   => DualisableGBiDual1 s (->) o (DiagramG Diagram t n m)
+
+--------------------------------------------------------------------------------
+-- droh -
+
+-- | the underlying diagram.
+droh :: Diagrammatic d => DiagramG d t n m x -> Diagram t n m x
+droh (DiagramG d) = diagram d
+
+instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) where
+  roh _ = droh
+
+
+{-
+-}
+
+--------------------------------------------------------------------------------
+-- TransformableHom -
+
+-- | helper class to avoid undecidable instances.
+class Transformable (ObjectClass h) s => TransformableHom h s
+
+instance Transformable r s => TransformableHom (HomId r) s
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic -
+
+-- | natural transformation on 'Diagrammatic' objects from @'DiagramG' __d t n m__@ to
+-- @'Diagram' __t n m__@, respecting the canonical application of @__h__@ on
+-- @'Diagram' __t n m__@.
+--
+-- __Property__ Let @'NaturalDiagrammatic' __s h d t n m__@, then for all @__x__@,
+-- @__y__@ and @h@ in @__h x y__@ holds:
+--
+-- (1) @'amapG' h '.=.' 'dgMap' h@.
+--
+-- __Note__ This property is required if incoherent instances are permitted.
+class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
+  => NaturalDiagrammatic s h d t n m
+
+instance (HomOriented h, TransformableHom h s)
+  => NaturalTransformable s h (->) (DiagramG Diagram t n m) (Diagram t n m)
+
+instance (HomOriented h, TransformableHom h s)
+  => NaturalDiagrammatic s h Diagram t n m
+
+--------------------------------------------------------------------------------
+-- prpNaturalDiagrammatic -
+
+relNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
+  => q s h d t n m -> Homomorphous Ort x y -> h x y -> Diagram t n m x -> Statement
+relNaturalDiagrammatic _ (Struct :>: Struct) h d
+  = (amapG h d == dgMap h d) :?> Params ["h":=show2 h, "d":=show d]
+
+prpNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
+  => q s h d t n m -> h x y -> Diagram t n m x -> Statement
+prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
+  :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
+
+{-
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic - HomEmpty - 
+
+instance ApplicativeG (DiagramG d t n m) (HomEmpty s) c where amapG = fromHomEmpty
+
+instance (Diagrammatic d, TransformableOrt s, Transformable s r)
+  => NaturalTransformable r (HomEmpty s) (->) (DiagramG d t n m) (Diagram t n m)
+
+instance (Diagrammatic d, TransformableOrt s, Transformable s r)
+  => NaturalDiagrammatic r (HomEmpty s) d t n m
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic - HomDisjEmpty - 
+
+instance DualisableDiagrammatic s o d t n m
+  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisjEmpty s o)) (->) where
+  amapG (Covariant2 (HomDisj h)) d = d' where
+    SDualBi (Right1 d') = smapBi h (SDualBi (Right1 d))
+
+instance (DualisableDiagrammatic s o d t n m, Transformable s r)
+  => NaturalTransformable r (Variant2 Covariant (HomDisjEmpty s o)) (->)
+         (DiagramG d t n m) (Diagram t n m)
+         
+instance (DualisableDiagrammatic s o d t n m, Transformable s r)
+  => NaturalDiagrammatic r (Variant2 Covariant (HomDisjEmpty s o)) d t n m
+-}
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticDual1 -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammatic s h d (Dual t) n m => NaturalDiagrammaticDual1 s h d t n m
+
+instance (HomOriented h, TransformableHom h s)
+  => NaturalDiagrammaticDual1 s h Diagram t n m
+
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticObjectClass -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammatic (ObjectClass h) h d t n m
+  => NaturalDiagrammaticObjectClass h d t n m
+
+{-
+instance (Diagrammatic d, TransformableOrt s)
+  => NaturalDiagrammaticObjectClass (HomEmpty s) d t n m
+
+instance
+  ( DualisableDiagrammatic s o d t n m
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticObjectClass (Variant2 Covariant (HomDisjEmpty s o)) d t n m
+-}
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticObjectClassDual1 -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammaticObjectClass h d (Dual t) n m
+  => NaturalDiagrammaticObjectClassDual1 h d t n m
+
+{-
+instance (Diagrammatic d, TransformableOrt s)
+  => NaturalDiagrammaticObjectClassDual1 (HomEmpty s) d t n m
+-}
 
 --------------------------------------------------------------------------------
 -- DualisableDiagrammatic -
@@ -253,126 +377,6 @@ prpDualisableDiagrammatic n@DualityDiagrammatic s d d' = Prp "DualisableDiagramm
             ]
 
 --------------------------------------------------------------------------------
--- droh -
-
--- | the underlying diagram.
-droh :: Diagrammatic d => DiagramG d t n m x -> Diagram t n m x
-droh (DiagramG d) = diagram d
-
-instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) where
-  roh _ = droh
-
---------------------------------------------------------------------------------
--- TransformableHom -
-
--- | helper class to avoid undecidable instances.
-class Transformable (ObjectClass h) s => TransformableHom h s
-
-instance Transformable r s => TransformableHom (HomId r) s
-
---------------------------------------------------------------------------------
--- NaturalDiagrammatic -
-
--- | natural transformation on 'Diagrammatic' objects from @'DiagramG' __d t n m__@ to
--- @'Diagram' __t n m__@, respecting the canonical application of @__h__@ on
--- @'Diagram' __t n m__@.
---
--- __Property__ Let @'NaturalDiagrammatic' __s h d t n m__@, then for all @__x__@,
--- @__y__@ and @h@ in @__h x y__@ holds:
---
--- (1) @'amapG' h '.=.' 'dgMap' h@.
---
--- __Note__ This property is required if incoherent instances are permitted.
-class (HomOriented h, NaturalTransformable s h (->) (DiagramG d t n m) (Diagram t n m))
-  => NaturalDiagrammatic s h d t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammatic - Diagram - 
-
-instance (HomOriented h, TransformableHom h s)
-  => NaturalTransformable s (Id2 h) (->) (DiagramG Diagram t n m) (Diagram t n m)
-
-instance (HomOriented h, TransformableHom h s)
-  => NaturalDiagrammatic s (Id2 h) Diagram t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammatic - HomEmpty - 
-
-instance ApplicativeG (DiagramG d t n m) (HomEmpty s) c where amapG = fromHomEmpty
-
-instance (Diagrammatic d, TransformableOrt s, Transformable s r)
-  => NaturalTransformable r (HomEmpty s) (->) (DiagramG d t n m) (Diagram t n m)
-
-instance (Diagrammatic d, TransformableOrt s, Transformable s r)
-  => NaturalDiagrammatic r (HomEmpty s) d t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammatic - HomDisjEmpty - 
-
-instance DualisableDiagrammatic s o d t n m
-  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisjEmpty s o)) (->) where
-  amapG (Covariant2 (HomDisj h)) d = d' where
-    SDualBi (Right1 d') = smapBi h (SDualBi (Right1 d))
-
-instance (DualisableDiagrammatic s o d t n m, Transformable s r)
-  => NaturalTransformable r (Variant2 Covariant (HomDisjEmpty s o)) (->)
-         (DiagramG d t n m) (Diagram t n m)
-         
-instance (DualisableDiagrammatic s o d t n m, Transformable s r)
-  => NaturalDiagrammatic r (Variant2 Covariant (HomDisjEmpty s o)) d t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticDual1 -
-
--- | helper class to avoid undecidable instances.
-class NaturalDiagrammatic s h d (Dual t) n m => NaturalDiagrammaticDual1 s h d t n m
-
-instance (HomOriented h, TransformableHom h s)
-  => NaturalDiagrammaticDual1 s (Id2 h) Diagram t n m
-
-instance (Diagrammatic d, TransformableOrt s, Transformable s r)
-  => NaturalDiagrammaticDual1 r (HomEmpty s) d t n m
-
---------------------------------------------------------------------------------
--- prpNaturalDiagrammatic -
-
-relNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
-  => q s h d t n m -> Homomorphous Ort x y -> h x y -> Diagram t n m x -> Statement
-relNaturalDiagrammatic _ (Struct :>: Struct) h d
-  = (amapG h d == dgMap h d) :?> Params ["h":=show2 h, "d":=show d]
-
-prpNaturalDiagrammatic :: (NaturalDiagrammatic s h d t n m, Show2 h)
-  => q s h d t n m -> h x y -> Diagram t n m x -> Statement
-prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
-  :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticObjectClass -
-
--- | helper class to avoid undecidable instances.
-class NaturalDiagrammatic (ObjectClass h) h d t n m
-  => NaturalDiagrammaticObjectClass h d t n m
-
-instance (Diagrammatic d, TransformableOrt s)
-  => NaturalDiagrammaticObjectClass (HomEmpty s) d t n m
-
-instance
-  ( DualisableDiagrammatic s o d t n m
-  , t ~ Dual (Dual t)
-  )
-  => NaturalDiagrammaticObjectClass (Variant2 Covariant (HomDisjEmpty s o)) d t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticObjectClassDual1 -
-
--- | helper class to avoid undecidable instances.
-class NaturalDiagrammaticObjectClass h d (Dual t) n m
-  => NaturalDiagrammaticObjectClassDual1 h d t n m
-
-instance (Diagrammatic d, TransformableOrt s)
-  => NaturalDiagrammaticObjectClassDual1 (HomEmpty s) d t n m
-
---------------------------------------------------------------------------------
 -- drohS -
 
 -- | natural assocition betewwn @'SDualBi' ('DiagramG' __d t n m)@ and
@@ -380,7 +384,6 @@ instance (Diagrammatic d, TransformableOrt s)
 drohS :: Diagrammatic d => SDualBi (DiagramG d t n m) x -> SDualBi (Diagram t n m) x
 drohS (SDualBi (Right1 d)) = SDualBi (Right1 (droh d))
 drohS (SDualBi (Left1 d')) = SDualBi (Left1 (droh d'))
-
 
 instance Diagrammatic d
   => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)) where
@@ -407,6 +410,12 @@ class
   )
   => NaturalDiagrammaticSDualisable s h d t n m
 
+{-
+instance NaturalDiagrammaticDual1 h d t n m
+  => ApplicativeGDual1 (DiagramG d t n m) h (->)
+-}
+
+
 instance
   ( NaturalDiagrammatic s h d t n m
   , NaturalDiagrammaticDual1 s h d t n m
@@ -414,7 +423,7 @@ instance
   )
   => ApplicativeG (SDualBi (DiagramG d t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smapBi h
-
+{-
 instance
   ( NaturalDiagrammatic s h d t n m
   , NaturalDiagrammaticDual1 s h d t n m
@@ -752,3 +761,4 @@ prpDiagrammatic nMax = Prp "Diagrammatic"
                (Parallel RightToLeft) N2 m
         lrF _ = NaturalDiagrammaticSDualBi
 
+-}

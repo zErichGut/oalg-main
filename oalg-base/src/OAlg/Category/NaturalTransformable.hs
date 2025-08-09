@@ -23,8 +23,7 @@
 -- 
 -- Natural transformable applications.
 module OAlg.Category.NaturalTransformable
-  (
-    -- * Transformable
+  ( -- * Transformable
     NaturalTransformable
   , NaturalTransformation(..), roh'
   , NaturalFunctorial
@@ -73,6 +72,7 @@ instance ( Natural s b f g, Transformable t s
   => Natural (SubStruct t s) (Sub v b) f g where
   roh = rohSub
 
+
 --------------------------------------------------------------------------------
 -- NaturalTransformable -
 
@@ -83,13 +83,19 @@ instance ( Natural s b f g, Transformable t s
 --
 -- (1) For all @__x__@, @__y__@ and @a@ in @__a x y__@ holds:
 -- @'amapG' a '.' 'roh'' n ('domain' a) '.=.' 'roh'' n ('range' a) '.' 'amapG' a@.
-class ( Morphism a, Category b, ApplicativeG f a b, ApplicativeG g a b
-      , Natural s b f g, Transformable (ObjectClass a) s
-      )
+class
+  ( Natural s b f g
+  , Transformable (ObjectClass a) s
+  , Morphism a, Category b
+  , ApplicativeG f a b, ApplicativeG g a b
+  )
   => NaturalTransformable s a b f g
 
-instance ( NaturalTransformable s a b f g, TransformableObjectClass v b
-         , Transformable t s, TransformableG f t v, TransformableG g t v
+
+instance ( NaturalTransformable s a b f g
+         , TransformableObjectClass v b
+         , TransformableG f t v, TransformableG g t v
+         , Transformable t s
          )
   => NaturalTransformable (SubStruct t s) (Sub t a) (Sub v b) f g 
 
@@ -164,5 +170,6 @@ prpNaturalTransformable :: NaturalTransformation s a (->) f g
   -> X (SomeNaturalApplication a f g) -> Statement
 prpNaturalTransformable n xsa = Prp "NaturalTransformable" :<=>:
   Forall xsa (\(SomeNaturalApplication a f) -> relNaturalTransformable n a f)
+
 
 

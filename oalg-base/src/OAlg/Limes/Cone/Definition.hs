@@ -445,12 +445,12 @@ instance
   )
   => FunctorialG (SDualBi (Cone Dst p d t n m)) (HomDisj s o h) (->)
 
-{-
+
 s = Struct :: Struct Mlt OS
 Contravariant2 (Inv2 t _)  = isoO s :: IsoO Mlt Op OS
 Contravariant2 (Inv2 t' _) = isoO (tauO s) :: IsoO Mlt Op (Op OS)
 h = Covariant2 (t' . t)
--}
+
 
 --------------------------------------------------------------------------------
 -- tip -
