@@ -29,12 +29,17 @@ module OAlg.Entity.Diagram.Diagrammatic
   , droh, dmap
 
     -- * Natural
-  , NaturalDiagrammatic, NaturalDiagrammaticDual1
+  , NaturalDiagrammatic
+  , NaturalDiagrammaticDual1
+  , NaturalDiagrammaticSelfDual1
+  
   , NaturalDiagrammaticSDualisable, drohS
   , NaturalDiagrammaticSDualBi
 
     -- * Duality
-  , DualisableDiagrammatic, DualisableDiagrammaticDual1
+  , DualisableDiagrammatic
+  , DualisableDiagrammaticDual1
+  , DualisableDiagrammaticSelfDual1
   , DualityDiagrammatic
 
   -- * Proposition
@@ -131,29 +136,6 @@ dmap :: ApplicativeG (DiagramG d t n m) h (->)
 dmap h d = d' where DiagramG d' = amapG h (DiagramG d)
 
 --------------------------------------------------------------------------------
--- DiagramG - Diagram - DualisableGBiDual1 -
-
-instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
-         , DualisableOriented s o
-         )
-  => ReflexiveG s (->) o (DiagramG Diagram t n m) where
-  reflG s = Inv2 (dgmGMap t) (dgmGMap f) where Inv2 t f = reflG s
-
-instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
-         , DualisableOriented s o
-         , t' ~ Dual t, t ~ Dual t'
-         )
-  => DualisableGBi s (->) o (DiagramG Diagram t n m) (DiagramG Diagram t' n m) where
-  toDualGLft s (DiagramG d) = DiagramG (toDualGLft s d)
-  toDualGRgt s (DiagramG d) = DiagramG (toDualGRgt s d)
-
-instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
-         , DualisableOriented s o
-         , t ~ Dual (Dual t)
-         )
-  => DualisableGBiDual1 s (->) o (DiagramG Diagram t n m)
-
---------------------------------------------------------------------------------
 -- droh -
 
 -- | the underlying diagram.
@@ -225,6 +207,16 @@ instance
 instance HomOriented h => NaturalDiagrammaticDual1 (Id2 h) Diagram t n m
 
 --------------------------------------------------------------------------------
+-- NaturalDiagrammaticSelfDual1 -
+
+-- | constrains for diagrammatic objects @__d__@ which are natural diagrammatic according to
+-- @h@ and alos for its dual.
+type NaturalDiagrammaticSelfDual1 h d t n m =
+  ( NaturalDiagrammatic h d t n m 
+  , NaturalDiagrammaticDual1 h d t n m
+  )
+
+--------------------------------------------------------------------------------
 -- DualisableDiagrammatic -
 
 -- | duality for 'Diagrammatic' objects.
@@ -243,6 +235,29 @@ class ( Diagrammatic d
       , t ~ Dual (Dual t)
       )
   => DualisableDiagrammatic s o d t n m
+
+--------------------------------------------------------------------------------
+-- DiagramG - Diagram - DualisableGBiDual1 -
+
+instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
+         , DualisableOriented s o
+         )
+  => ReflexiveG s (->) o (DiagramG Diagram t n m) where
+  reflG s = Inv2 (dgmGMap t) (dgmGMap f) where Inv2 t f = reflG s
+
+instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
+         , DualisableOriented s o
+         , t' ~ Dual t, t ~ Dual t'
+         )
+  => DualisableGBi s (->) o (DiagramG Diagram t n m) (DiagramG Diagram t' n m) where
+  toDualGLft s (DiagramG d) = DiagramG (toDualGLft s d)
+  toDualGRgt s (DiagramG d) = DiagramG (toDualGRgt s d)
+
+instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
+         , DualisableOriented s o
+         , t ~ Dual (Dual t)
+         )
+  => DualisableGBiDual1 s (->) o (DiagramG Diagram t n m)
 
 instance
   ( TransformableOrt s, TransformableType s, TransformableGRefl Op s
@@ -263,6 +278,16 @@ instance
   , t ~ Dual (Dual t)
   )
   => DualisableDiagrammaticDual1 s Op Diagram t n m
+
+--------------------------------------------------------------------------------
+-- DualisableDiagrammaticSelfDual1 -
+
+-- | constrains for dualisable diagrammatic objects @__d__@ which are dualisable diagrammatic
+-- according to @__s o__@ and alos for its dual.
+type DualisableDiagrammaticSelfDual1 s o d t n m =
+  ( DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammaticDual1 s o d t n m
+  )
 
 --------------------------------------------------------------------------------
 -- DualityDiagrammatic -
