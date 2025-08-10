@@ -225,6 +225,14 @@ dgCenter (DiagramSink c _)   = c
 dgCenter (DiagramSource c _) = c
 
 --------------------------------------------------------------------------------
+-- Diagram - Duality -
+
+type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
+
+instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
+instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
+
+--------------------------------------------------------------------------------
 -- dgMap -
 
 -- | mapping of a diagram via a 'Covariant' homomorphism on 'Oriented' structures.
@@ -268,7 +276,7 @@ dgMap h d                  =  case d of
 --
 -- where @q@ is any proxy in @__q s o__@.
 dgMapCnt :: HomOrientedDisjunctive h
-  => Variant2 Contravariant h a b -> Diagram t n m a -> Diagram (Dual t) n m b
+  => Variant2 Contravariant h x y -> Diagram t n m x -> Dual1 (Diagram t n m) y
 dgMapCnt (Contravariant2 h) d = case d of
   DiagramEmpty             -> DiagramEmpty
   DiagramDiscrete ps       -> DiagramDiscrete (amap1 hPnt ps)
@@ -283,14 +291,6 @@ dgMapCnt (Contravariant2 h) d = case d of
                                 (amap1 (\(a,o) -> (hArw a,opposite o)) aijs)
   where hPnt = pmap h
         hArw = amap h
-
---------------------------------------------------------------------------------
--- Diagram - Duality -
-
-type instance Dual1 (Diagram t n m)  = Diagram (Dual t) n m
-
-instance (Show a, ShowPoint a) => ShowDual1 (Diagram t n m) a
-instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
 
 --------------------------------------------------------------------------------
 -- dgMapS -

@@ -174,6 +174,14 @@ coneDiagram (ConeKernel d k)       = ConeKernel (diagram d) k
 coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 
 --------------------------------------------------------------------------------
+-- Cone - Duality -
+
+type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
+
+instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
+instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
+
+--------------------------------------------------------------------------------
 -- cnMap -
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
@@ -200,7 +208,7 @@ cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
                , NaturalDiagrammaticSDualisable h d t n m
                )
   => Variant2 Contravariant h x y
-  -> Cone Mlt p d t n m x -> Cone Mlt (Dual p) d (Dual t) n m y
+  -> Cone Mlt p d t n m x -> Dual1 (Cone Mlt p d t n m) y
 cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
   Struct                        -> case c of
     ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
@@ -212,21 +220,13 @@ cnMapDstCnt :: ( HomDistributiveDisjunctive h
                , NaturalDiagrammaticSDualisable h d t n m
                )
   => Variant2 Contravariant h x y
-  -> Cone Dst p d t n m x -> Cone Dst (Dual p) d (Dual t) n m y
+  -> Cone Dst p d t n m x -> Dual1 (Cone Dst p d t n m) y
 cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
   Struct                        -> case c of
     ConeKernel d a              -> ConeCokernel d' (amap h a) where
       SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
     ConeCokernel d a            -> ConeKernel  d' (amap h a) where
       SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
-
---------------------------------------------------------------------------------
--- Cone - Duality -
-
-type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
-
-instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
-instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
 
 --------------------------------------------------------------------------------
 -- Cone - Mlt - DualisableGBiDual1
@@ -268,7 +268,6 @@ instance
   , t' ~ Dual t, t ~ Dual t'
   )
   => DualisableGBi s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
-
   toDualGLft s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
@@ -315,7 +314,6 @@ instance
   , t' ~ Dual t, t ~ Dual t'
   )
   => DualisableGBi s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
-
   toDualGLft s = cnMapDstCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 

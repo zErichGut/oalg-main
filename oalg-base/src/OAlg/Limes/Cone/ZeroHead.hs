@@ -69,6 +69,11 @@ instance (Diagrammatic d, Validable (d t n (S m) x))
           ]
 
 --------------------------------------------------------------------------------
+-- ConeZeroHead - Dual -
+
+type instance Dual1 (ConeZeroHead s p d t n m)  = ConeZeroHead s (Dual p) d (Dual t) n m 
+
+--------------------------------------------------------------------------------
 -- czMapDstCnt -
 
 czMapMltStruct :: (HomDistributive h, NaturalDiagrammatic h d t n m)
@@ -93,7 +98,7 @@ czMapMltCntStruct ::
   )
   => Struct Dst y
   -> Variant2 Contravariant h x y
-  -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt (Dual p) d (Dual t) n m y
+  -> ConeZeroHead Mlt p d t n m x -> Dual1 (ConeZeroHead Mlt p d t n m) y
 czMapMltCntStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapMltCnt h c)
 
 czMapMltCnt ::
@@ -101,7 +106,7 @@ czMapMltCnt ::
   , NaturalDiagrammaticSDualisable h d t n m
   )
   => Variant2 Contravariant h x y
-  -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt (Dual p) d (Dual t) n m y
+  -> ConeZeroHead Mlt p d t n m x -> Dual1 (ConeZeroHead Mlt p d t n m) y  
 czMapMltCnt h = czMapMltCntStruct (tau (range h)) h
 
 czMapDstCntStruct ::
@@ -110,7 +115,7 @@ czMapDstCntStruct ::
   )
   => Struct Dst y
   -> Variant2 Contravariant h x y
-  -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst (Dual p) d (Dual t) n m y
+  -> ConeZeroHead Dst p d t n m x -> Dual1 (ConeZeroHead Dst p d t n m) y
 czMapDstCntStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapDstCnt h c)
 
 czMapDstCnt ::
@@ -118,13 +123,8 @@ czMapDstCnt ::
   , NaturalDiagrammaticSDualisable h d t n m
   )
   => Variant2 Contravariant h x y
-  -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst (Dual p) d (Dual t) n m y
+  -> ConeZeroHead Dst p d t n m x -> Dual1 (ConeZeroHead Dst p d t n m) y  
 czMapDstCnt h = czMapDstCntStruct (tau (range h)) h
-
---------------------------------------------------------------------------------
--- ConeZeroHead - Dual -
-
-type instance Dual1 (ConeZeroHead s p d t n m)  = ConeZeroHead s (Dual p) d (Dual t) n m 
 
 --------------------------------------------------------------------------------
 -- ConeZeroHead - Mlt - DualisableGBiDual1 -
