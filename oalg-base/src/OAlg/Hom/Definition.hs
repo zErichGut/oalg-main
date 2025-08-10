@@ -144,6 +144,9 @@ data HomId s x y where
   ToId   :: (Structure s x, Structure s (Id x)) => HomId s x (Id x)
   FromId :: (Structure s x, Structure s (Id x)) => HomId s (Id x) x
 
+deriving instance Show (HomId s x y)
+instance Show2 (HomId s)
+
 instance Morphism (HomId s) where
   type ObjectClass (HomId s) = s
   homomorphous ToId = Struct :>: Struct
