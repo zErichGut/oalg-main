@@ -31,7 +31,7 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Natural
   , NaturalDiagrammatic
   , NaturalDiagrammaticDual1
-  , NaturalDiagrammaticSelfDual1
+  , NaturalDiagrammaticBi
   
   , NaturalDiagrammaticSDualisable, drohS
   , NaturalDiagrammaticSDualBi
@@ -39,7 +39,7 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Duality
   , DualisableDiagrammatic
   , DualisableDiagrammaticDual1
-  , DualisableDiagrammaticSelfDual1
+  , DualisableDiagrammaticBi
   , DualityDiagrammatic
 
   -- * Proposition
@@ -210,11 +210,10 @@ instance
 instance HomOriented h => NaturalDiagrammaticDual1 (Id2 h) Diagram t n m
 
 --------------------------------------------------------------------------------
--- NaturalDiagrammaticSelfDual1 -
+-- NaturalDiagrammaticBi -
 
--- | constrains for diagrammatic objects @__d__@ which are natural diagrammatic according to
--- @h@ and alos for its dual.
-type NaturalDiagrammaticSelfDual1 h d t n m =
+-- | constrains for diagrammatic objects @__d__@ which are bi-natural diagrammatic.
+type NaturalDiagrammaticBi h d t n m =
   ( NaturalDiagrammatic h d t n m 
   , NaturalDiagrammaticDual1 h d t n m
   )
@@ -233,14 +232,14 @@ type NaturalDiagrammaticSelfDual1 h d t n m =
 --
 -- where @n@ is a proxy in  @__q s o d t n m__@.
 class ( Diagrammatic d
-      , DualisableGBiDual1 s (->) o (DiagramG d t n m)
+      , DualisableGBi s (->) o (DiagramG d t n m)
       , DualisableOriented s o, TransformableOrt s, TransformableGRefl o s
       , t ~ Dual (Dual t)
       )
   => DualisableDiagrammatic s o d t n m
 
 --------------------------------------------------------------------------------
--- DiagramG - Diagram - DualisableGBiDual1 -
+-- DiagramG - Diagram - DualisableGBi -
 
 instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , DualisableOriented s o
@@ -252,7 +251,7 @@ instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , DualisableOriented s o
          , t' ~ Dual t, t ~ Dual t'
          )
-  => DualisableGBi s (->) o (DiagramG Diagram t n m) (DiagramG Diagram t' n m) where
+  => DualisableGPair s (->) o (DiagramG Diagram t n m) (DiagramG Diagram t' n m) where
   toDualGLft s (DiagramG d) = DiagramG (toDualGLft s d)
   toDualGRgt s (DiagramG d) = DiagramG (toDualGRgt s d)
 
@@ -260,7 +259,7 @@ instance ( Transformable s Type, TransformableOrt s, TransformableGRefl o s
          , DualisableOriented s o
          , t ~ Dual (Dual t)
          )
-  => DualisableGBiDual1 s (->) o (DiagramG Diagram t n m)
+  => DualisableGBi s (->) o (DiagramG Diagram t n m)
 
 instance
   ( TransformableOrt s, TransformableType s, TransformableGRefl Op s
@@ -283,11 +282,11 @@ instance
   => DualisableDiagrammaticDual1 s Op Diagram t n m
 
 --------------------------------------------------------------------------------
--- DualisableDiagrammaticSelfDual1 -
+-- DualisableDiagrammaticBi -
 
--- | constrains for dualisable diagrammatic objects @__d__@ which are dualisable diagrammatic
--- according to @__s o__@ and alos for its dual.
-type DualisableDiagrammaticSelfDual1 s o d t n m =
+-- | constrains for dualisable diagrammatic objects @__d__@ which are bi-dual diagrammatic
+-- according to @__s o__@.
+type DualisableDiagrammaticBi s o d t n m =
   ( DualisableDiagrammatic s o d t n m
   , DualisableDiagrammaticDual1 s o d t n m
   )

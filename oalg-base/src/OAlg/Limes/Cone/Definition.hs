@@ -229,7 +229,7 @@ cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
       SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 --------------------------------------------------------------------------------
--- Cone - Mlt - DualisableGBiDual1
+-- Cone - Mlt - DualisableGBi
 
 cnToBidualMlt ::
   ( TransformableMlt s
@@ -267,7 +267,7 @@ instance
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
   )
-  => DualisableGBi s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
+  => DualisableGPair s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
   toDualGLft s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
@@ -275,7 +275,7 @@ instance
     Contravariant2 (Inv2 t _) = isoO s
 
 --------------------------------------------------------------------------------
--- Cone - Dst - DualisableGBiDual1
+-- Cone - Dst - DualisableGBi
 
 cnToBidualDst ::
   ( TransformableDst s
@@ -313,7 +313,7 @@ instance
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
   )
-  => DualisableGBi s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
+  => DualisableGPair s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
   toDualGLft s = cnMapDstCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
@@ -327,7 +327,7 @@ instance
   , DualisableDiagrammaticDual1 s o d t n m
   , p ~ Dual (Dual p)
   )
-  => DualisableGBiDual1 s (->) o (Cone Dst p d t n m)
+  => DualisableGBi s (->) o (Cone Dst p d t n m)
 
 --------------------------------------------------------------------------------
 -- Cone - ApplicativeG - 
@@ -368,7 +368,7 @@ instance
   , DualisableDiagrammaticDual1 s o d t n m
   , p ~ Dual (Dual p)
   )
-  => DualisableGBiDual1 s (->) o (Cone Mlt p d t n m)
+  => DualisableGBi s (->) o (Cone Mlt p d t n m)
 
 instance
   ( HomMultiplicative h
@@ -379,8 +379,8 @@ instance
 instance 
   ( HomMultiplicative h, TransformableMlt s
   , DualisableMultiplicative s o
-  , NaturalDiagrammaticSelfDual1 h d t n m
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
@@ -389,8 +389,8 @@ instance
 instance 
   ( HomMultiplicative h, TransformableMlt s
   , DualisableMultiplicative s o
-  , NaturalDiagrammaticSelfDual1 h d t n m
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->)
@@ -404,8 +404,8 @@ instance
 instance 
   ( HomDistributive h, TransformableDst s
   , DualisableDistributive s o
-  , NaturalDiagrammaticSelfDual1 h d t n m
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (Cone Dst p d t n m)) (HomDisj s o h) (->) where
@@ -414,8 +414,8 @@ instance
 instance 
   ( HomDistributive h, TransformableDst s
   , DualisableDistributive s o
-  , NaturalDiagrammaticSelfDual1 h d t n m
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Dst p d t n m)) (HomDisj s o h) (->)

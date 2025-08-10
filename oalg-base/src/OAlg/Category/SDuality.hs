@@ -30,7 +30,6 @@ module OAlg.Category.SDuality
     
     -- ** Bi-Dualisable
   , SDualBi(..), smapBi
-  , DualisableGBiDual1
   , ApplicativeGDual1
   
   , ShowDual1, EqDual1, ValidableDual1
@@ -318,7 +317,7 @@ smap h d = d' where SDual d' = amapG h (SDual d)
 --------------------------------------------------------------------------------
 -- SDualBi -
 
--- | duality for 'DualisableGBi' types @__d__@.
+-- | duality for 'DualisableGPair' types @__d__@.
 newtype SDualBi d x = SDualBi (Either1 (Dual1 d) d x)
 
 deriving instance (Show (d x), ShowDual1 d x) => Show (SDualBi d x)
@@ -328,12 +327,6 @@ deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDualBi d 
 type instance Dual1 (SDualBi d) = SDualBi (Dual1 d)
 
 --------------------------------------------------------------------------------
--- DualisableGBiDual1 -
-
--- | helper class to avoid undecidible instances.
-class DualisableGBi r c o d (Dual1 d) => DualisableGBiDual1 r c o d
-
---------------------------------------------------------------------------------
 -- ApplicativeGDual1 -
 
 class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
@@ -341,7 +334,7 @@ class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
 smpMapSDualBi ::
   ( Morphism h
   , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-  , DualisableGBi r (->) o d (Dual1 d)
+  , DualisableGPair r (->) o d (Dual1 d)
   , Transformable s r
   )
   => SMorphism r s o h x y -> SDualBi d x -> SDualBi d y
@@ -360,7 +353,7 @@ smpMapSDualBi sh (SDualBi e)
 smpPathMapSDualBi ::
   ( Morphism h
   , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-  , DualisableGBiDual1 r (->) o d
+  , DualisableGBi r (->) o d
   , Transformable s r
   )
   => Path (SMorphism r s o h) x y -> SDualBi d x -> SDualBi d y
@@ -375,7 +368,7 @@ smpPathMapSDualBi h
 -- | application of 'SHom' on 'SDaulity'
 --
 -- __Properties__ Let @'Morphism' __h__@, @'ApplicativeG' __d h__ (->)@,
--- @'ApplicativeG' ('Dual1' __d__) __h__ (->)@, @'DualisableGBiDual1' __r__ (->) __o d__@
+-- @'ApplicativeG' ('Dual1' __d__) __h__ (->)@, @'DualisableGBi' __r__ (->) __o d__@
 -- and @'Transformable' __s r__@, then holds:
 --
 -- (1) 'smapBi' is functorial.
@@ -396,7 +389,7 @@ smpPathMapSDualBi h
 smapBi ::
   ( Morphism h
   , ApplicativeG d h (->), ApplicativeG (Dual1 d) h (->)
-  , DualisableGBiDual1 r (->) o d
+  , DualisableGBi r (->) o d
   , Transformable s r
   )
   => SHom r s o h x y -> SDualBi d x -> SDualBi d y
@@ -405,7 +398,7 @@ smapBi = smpPathMapSDualBi . form
 instance
   ( Morphism h
   , ApplicativeG d h (->), ApplicativeGDual1 d h (->)
-  , DualisableGBiDual1 r (->) o d
+  , DualisableGBi r (->) o d
   , Transformable s r
   )
   => ApplicativeG (SDualBi d) (SHom r s o h) (->) where
@@ -414,7 +407,7 @@ instance
 instance
   ( Morphism h
   , ApplicativeG d h (->), ApplicativeGDual1 d h (->)
-  , DualisableGBiDual1 r (->) o d
+  , DualisableGBi r (->) o d
   , Transformable s r
   )
   => FunctorialG (SDualBi d) (SHom r s o h) (->) where

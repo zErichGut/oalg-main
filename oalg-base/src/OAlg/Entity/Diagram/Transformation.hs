@@ -156,7 +156,7 @@ instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
          , t' ~ Dual t, t ~ Dual t'
          )
-  => DualisableGBi s (->) o (DiagramTrafo t n m) (DiagramTrafo t' n m) where
+  => DualisableGPair s (->) o (DiagramTrafo t n m) (DiagramTrafo t' n m) where
   toDualGLft s = dgtMapCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
   toDualGRgt s = dgtMapCnt (Contravariant2 t) where
@@ -166,9 +166,9 @@ instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
          , t ~ Dual (Dual t)
          )
-  => DualisableGBiDual1 s (->) o (DiagramTrafo t n m)
+  => DualisableGBi s (->) o (DiagramTrafo t n m)
 
-instance (HomMultiplicative h, DualisableGBiDual1 s (->) o (DiagramTrafo t n m))
+instance (HomMultiplicative h, DualisableGBi s (->) o (DiagramTrafo t n m))
   => ApplicativeG (SDualBi (DiagramTrafo t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smapBi h
 

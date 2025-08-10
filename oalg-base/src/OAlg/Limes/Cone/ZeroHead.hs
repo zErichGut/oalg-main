@@ -127,7 +127,7 @@ czMapDstCnt ::
 czMapDstCnt h = czMapDstCntStruct (tau (range h)) h
 
 --------------------------------------------------------------------------------
--- ConeZeroHead - Mlt - DualisableGBiDual1 -
+-- ConeZeroHead - Mlt - DualisableGBi -
 
 instance
   ( TransformableDst s
@@ -147,7 +147,7 @@ instance
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
   )
-  => DualisableGBi s (->) o (ConeZeroHead Mlt p d t n m) (ConeZeroHead Mlt p' d t' n m) where
+  => DualisableGPair s (->) o (ConeZeroHead Mlt p d t n m) (ConeZeroHead Mlt p' d t' n m) where
 
   toDualGLft s = czMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
@@ -158,13 +158,13 @@ instance
 instance 
   ( TransformableDst s
   , DualisableDistributive s o
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
-  => DualisableGBiDual1 s (->) o (ConeZeroHead Mlt p d t n m)
+  => DualisableGBi s (->) o (ConeZeroHead Mlt p d t n m)
 
 --------------------------------------------------------------------------------
--- ConeZeroHead - Dst - DualisableGBiDual1 -
+-- ConeZeroHead - Dst - DualisableGBi -
 
 instance
   ( TransformableDst s
@@ -184,7 +184,7 @@ instance
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
   )
-  => DualisableGBi s (->) o (ConeZeroHead Dst p d t n m) (ConeZeroHead Dst p' d t' n m) where
+  => DualisableGPair s (->) o (ConeZeroHead Dst p d t n m) (ConeZeroHead Dst p' d t' n m) where
 
   toDualGLft s = czMapDstCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
@@ -195,10 +195,10 @@ instance
 instance 
   ( TransformableDst s
   , DualisableDistributive s o
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
-  => DualisableGBiDual1 s (->) o (ConeZeroHead Dst p d t n m)
+  => DualisableGBi s (->) o (ConeZeroHead Dst p d t n m)
 
 --------------------------------------------------------------------------------
 -- ConeZeroHead - ApplicativeG -
@@ -220,8 +220,8 @@ instance
 instance 
   ( HomDistributive h, TransformableDst s
   , DualisableDistributive s o
-  , NaturalDiagrammaticSelfDual1 h d t n m 
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , NaturalDiagrammaticBi h d t n m 
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (ConeZeroHead Mlt p d t n m)) (HomDisj s o h) (->) where
@@ -236,8 +236,8 @@ instance
 instance 
   ( HomDistributive h, TransformableDst s
   , DualisableDistributive s o
-  , NaturalDiagrammaticSelfDual1 h d t n m 
-  , DualisableDiagrammaticSelfDual1 s o d t n m
+  , NaturalDiagrammaticBi h d t n m 
+  , DualisableDiagrammaticBi s o d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (ConeZeroHead Dst p d t n m)) (HomDisj s o h) (->) where

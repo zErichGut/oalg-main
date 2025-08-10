@@ -24,8 +24,7 @@
 -- generalized duality for categories.
 module OAlg.Category.Dualisable
   (
-    -- * Structural Duality
-    -- ** Dualisable
+    -- * Dualisable
     DualisableG(..), DualityG(..)
   , DualisableGId, DualisableGPnt
   
@@ -34,8 +33,8 @@ module OAlg.Category.Dualisable
   , tauO
 
   
-    -- ** Bi-Dualisable
-  , DualisableGBi(..)
+    -- * Dualisable Pairing
+  , DualisableGPair(..), DualisableGBi
 
     -- * Proposition
   , prpDualisableG
@@ -47,6 +46,7 @@ import Data.Kind
 import OAlg.Category.Definition
 import OAlg.Data.Identity
 
+import OAlg.Data.Dualisable
 import OAlg.Data.EqualExtensional
 import OAlg.Data.Statement.Definition
 
@@ -143,11 +143,11 @@ prpDualisableG q r = Prp "DualisableG" :<=>:
         Inv2 _ v' = reflG' q r'
 
 --------------------------------------------------------------------------------
--- DualisableGBi -
+-- DualisableGPair -
 
--- | category @__c__@ equipped with a bi-duality via reflections.
+-- | category @__c__@ equipped with a duality pairing between @__a__@ and @__b__@ via reflections.
 class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
-  => DualisableGBi r c o a b where
+  => DualisableGPair r c o a b where
   toDualGLft :: Struct r x -> c (a x) (b (o x))
   toDualGRgt :: Struct r x -> c (b x) (a (o x))
 
@@ -156,6 +156,13 @@ class (ReflexiveG r c o a, ReflexiveG r c o b, Transformable1 o r)
   
   fromDualGRgt :: Struct r x -> c (a (o x)) (b x)
   fromDualGRgt r = v . toDualGLft (tau1 r) where Inv2 _ v = reflG r
+
+--------------------------------------------------------------------------------
+-- DualisableGBi -
+
+-- | category @__c__@ equipped with a duality pairing between @__d__@ and its dual @'Dual1' __d__@
+-- via reflections.
+class DualisableGPair r c o d (Dual1 d) => DualisableGBi r c o d
 
 --------------------------------------------------------------------------------
 -- Op - DualisableG - Id -

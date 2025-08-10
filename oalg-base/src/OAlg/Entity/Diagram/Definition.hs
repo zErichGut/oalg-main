@@ -307,7 +307,7 @@ dgMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
     Left1 d'         -> Right1 (dgMapCnt hCnt d')
 
 --------------------------------------------------------------------------------
--- Diagram - DualisableGBiDual1 -
+-- Diagram - DualisableGBi -
 
 dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
@@ -328,7 +328,7 @@ instance (Transformable s Type, DualisableOriented s o, TransformableOrt s, Tran
 instance (DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
          , t' ~ Dual t, t ~ Dual t'
          )
-  => DualisableGBi s (->) o (Diagram t n m) (Diagram t' n m) where
+  => DualisableGPair s (->) o (Diagram t n m) (Diagram t' n m) where
   toDualGLft s = dgMapCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
@@ -339,7 +339,7 @@ instance (DualisableOriented s o, Transformable s Type, TransformableGRefl o s, 
 instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
          , t ~ Dual (Dual t)
          )
-  => DualisableGBiDual1 s (->) o (Diagram t n m)
+  => DualisableGBi s (->) o (Diagram t n m)
 
 --------------------------------------------------------------------------------
 -- Diagram - FunctorialG -
