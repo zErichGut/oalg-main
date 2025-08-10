@@ -24,6 +24,7 @@ module OAlg.Category.Applicative
     -- * Generalized
   , ApplicativeG(..), amapG'
   , ApplicationG(..), apType
+  , ApplicativeGDual1
 
   )
   where
@@ -32,6 +33,7 @@ import Control.Monad (fmap)
 
 import Data.List (map)
 
+import OAlg.Data.Dualisable
 import OAlg.Data.Either
 import OAlg.Data.X
 
@@ -86,4 +88,10 @@ type Applicative1 h f = ApplicativeG f h (->)
 -- | representation of @__h__@ in @('->')@ according to @__f__@.
 amap1 :: Applicative1 h f => h x y -> f x -> f y
 amap1 = amapG
+
+--------------------------------------------------------------------------------
+-- ApplicativeGDual1 -
+
+-- | helper class to avoid undecidable instances.
+class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
 

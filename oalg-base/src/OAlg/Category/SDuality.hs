@@ -30,7 +30,6 @@ module OAlg.Category.SDuality
     
     -- ** Bi-Dualisable
   , SDualBi(..), smapBi
-  , ApplicativeGDual1
   
   , ShowDual1, EqDual1, ValidableDual1
 
@@ -327,9 +326,7 @@ deriving instance (Validable (d x), ValidableDual1 d x) => Validable (SDualBi d 
 type instance Dual1 (SDualBi d) = SDualBi (Dual1 d)
 
 --------------------------------------------------------------------------------
--- ApplicativeGDual1 -
-
-class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
+-- smpPathMapSDualBi -
 
 smpMapSDualBi ::
   ( Morphism h
