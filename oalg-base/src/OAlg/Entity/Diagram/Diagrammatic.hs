@@ -43,7 +43,7 @@ module OAlg.Entity.Diagram.Diagrammatic
   , DualityDiagrammatic
 
   -- * Proposition
-  -- , prpDiagrammatic
+  , prpDiagrammatic
 
   ) where
 
@@ -492,39 +492,23 @@ prpNaturalDiagrammaticSDualisable q xsa = Prp "NaturalDiagrammaticSDualisable"
 --------------------------------------------------------------------------------
 -- xsoOrtSite -
 
--- | random variable for some object classees of @'SHom' __s s__ ('HomEmpty' __s__)@.
+-- | random variable for some object classees of @'SHom' __s s 'Op' __h__@.
 xsoOrtSite :: s ~ OrtSiteX => X (SomeObjectClass (SHom s s Op h))
 xsoOrtSite = xOneOf [ SomeObjectClass (Struct :: Struct OrtSiteX OS)
                     , SomeObjectClass (Struct :: Struct OrtSiteX (Op OS))
                     , SomeObjectClass (Struct :: Struct OrtSiteX (U N))
                     ]
 
+--------------------------------------------------------------------------------
+-- HomTest -
 
+-- | type for test homs.
 type HomTest s = HomDisj s Op (HomId s)
 
-xosToId :: XOrtSite To x -> XOrtSite To (Id x)
-xosToId (XEnd xp xa) = XEnd xp (amap1 Id . xa)
+--------------------------------------------------------------------------------
+-- xsOrtSiteXOp -
 
-xosFromId :: XOrtSite From x -> XOrtSite From (Id x)
-xosFromId (XStart xp xa) = XStart xp (amap1 Id . xa)
-  
-instance XStandardOrtSite To x => XStandardOrtSite To (Id x) where
-  xStandardOrtSite = xosToId xStandardOrtSite
-  
-instance XStandardOrtSiteTo x => XStandardOrtSiteTo (Id x)
-
-instance XStandardOrtSite From x => XStandardOrtSite From (Id x) where
-  xStandardOrtSite = xosFromId xStandardOrtSite
-  
-instance XStandardOrtSiteFrom x => XStandardOrtSiteFrom (Id x)
-
-xooId :: XOrtOrientation x -> XOrtOrientation (Id x)
-xooId (XOrtOrientation xo xa) = XOrtOrientation xo (amap1 Id . xa)
-
-instance XStandardOrtOrientation x => XStandardOrtOrientation (Id x) where
-  xStandardOrtOrientation = xooId xStandardOrtOrientation
-
--- | random variable for some @'Sub' 'OrtSiteX'@ on @'HomDisjEmpty' 'OrtSiteX' 'Op')@
+-- | random variable for some object classees of @'HomTest' __s__@.
 xsOrtSiteXOp :: X (SomeMorphism (HomTest OrtSiteX))
 xsOrtSiteXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrtSite xhid where
   xhid = xOneOf [ SomeMorphism (ToId   :: HomId OrtSiteX OS (Id OS))
@@ -532,7 +516,7 @@ xsOrtSiteXOp = amap1 smCmpb2 $ xscmHomDisj xsoOrtSite xhid where
                 , SomeMorphism (ToId   :: HomId OrtSiteX (U N) (Id (U N)))
                 , SomeMorphism (FromId :: HomId OrtSiteX (Id (U Z)) (U Z)) 
                 ]
-
+         
 --------------------------------------------------------------------------------
 -- xsaChainTo -
 
@@ -612,15 +596,6 @@ xsaSink m = do
 --------------------------------------------------------------------------------
 -- snaDual -
 
-type IsoO' s o h x = Variant2 Contravariant (Inv2 (HomDisj s o h)) x (o x)
-
-isoO' :: (Morphism h, TransformableGRefl o s)
-  => Struct s x -> IsoO' s o h x
-isoO' s = Contravariant2 (Inv2 t f) where
-  Contravariant2 t = cToDual s
-  Contravariant2 f = cFromDual s
-
-
 instance TransformableOrt s => ApplicativeG (DiagramG Diagram t n m) (HomId s) (->) where
   amapG h = amapG (Id2 h)
 
@@ -630,8 +605,8 @@ instance TransformableOrt s
 instance TransformableOrt s => NaturalDiagrammatic (HomId s) Diagram t n m
 instance TransformableOrt s => NaturalDiagrammaticDual1 (HomId s) Diagram t n m
 
-isoHomTest :: TransformableGRefl Op s => HomTest s x y -> IsoO' s Op (HomId s) x
-isoHomTest = isoO' . domain
+isoHomTest :: TransformableGRefl Op s => HomTest s x y -> IsoHomDisj s Op (HomId s) x
+isoHomTest = isoHomDisj . domain
 
 snaDual ::
   ( TransformableOrt s

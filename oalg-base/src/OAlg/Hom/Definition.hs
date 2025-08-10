@@ -20,8 +20,11 @@ module OAlg.Hom.Definition
   (
     -- * Disjunctive
     HomDisj(..), homDisj
-  , IsoO, isoO
   , HomDisjEmpty
+
+    -- * Contravariant Isomorphism
+  , IsoHomDisj, isoHomDisj
+  , IsoO, isoO
 
 
     -- * Empty
@@ -123,6 +126,22 @@ instance TransformableObjectClass OrtX (HomDisj OrtX Op (HomEmpty OrtX))
 instance Transformable s Typ => EqExt (HomDisjEmpty s Op)
 
 --------------------------------------------------------------------------------
+-- IsoHomDisj -
+
+-- | type for contravariant isomorphism of @'HomDisj' __s o h x (__o x__)@.
+type IsoHomDisj s o h x = Variant2 Contravariant (Inv2 (HomDisj s o h)) x (o x)
+
+--------------------------------------------------------------------------------
+-- isoHomDisj -
+
+-- | contravariant isomorphism for @'HomDisj' __s o h x (__o x__)@.
+isoHomDisj :: (Morphism h, TransformableGRefl o s)
+  => Struct s x -> IsoHomDisj s o h x
+isoHomDisj s = Contravariant2 (Inv2 t f) where
+  Contravariant2 t = cToDual s
+  Contravariant2 f = cFromDual s
+
+--------------------------------------------------------------------------------
 -- IsoO -
 
 type IsoO s o x = Variant2 Contravariant (Inv2 (HomDisjEmpty s o)) x (o x)
@@ -132,9 +151,7 @@ type IsoO s o x = Variant2 Contravariant (Inv2 (HomDisjEmpty s o)) x (o x)
 
 isoO :: TransformableGRefl o s
   => Struct s x -> IsoO s o x
-isoO s = Contravariant2 (Inv2 t f) where
-  Contravariant2 t = cToDual s
-  Contravariant2 f = cFromDual s
+isoO = isoHomDisj
 
 --------------------------------------------------------------------------------
 -- HomId -

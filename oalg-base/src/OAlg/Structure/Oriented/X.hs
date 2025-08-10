@@ -187,24 +187,6 @@ xEndOrnt :: X p -> XOrtSite To (Orientation p)
 xEndOrnt xp = XEnd xp xq where xq e = xp >>= return . (:>e)
 
 --------------------------------------------------------------------------------
--- XStandardOrtSite t U -
-
-xosUFrom :: X x -> XOrtSite From (U x)
-xosUFrom xx = XStart (return ()) (const (amap1 U xx))
-
-xosUTo :: X x -> XOrtSite To (U x)
-xosUTo xx = XEnd (return ()) (const (amap1 U xx))
-
-instance XStandard x => XStandardOrtSite To (U x) where
-  xStandardOrtSite = xosUTo xStandard
-
-instance XStandard x => XStandardOrtSite From (U x) where
-  xStandardOrtSite = xosUFrom xStandard
-  
-instance XStandard x => XStandardOrtSiteTo (U x)
-instance XStandard x => XStandardOrtSiteFrom (U x)
-
---------------------------------------------------------------------------------
 -- XStandardOrtSite -
 
 -- | standard random variable for 'XOrtSite'.
@@ -244,6 +226,50 @@ class XStandardOrtSite From a => XStandardOrtSiteFrom a
 
 instance XStandard p => XStandardOrtSiteFrom (Orientation p)
 instance XStandardOrtSiteTo x => XStandardOrtSiteFrom (Op x)
+
+--------------------------------------------------------------------------------
+-- xosIdTo -
+
+-- | to 'Id' promoted random variable.
+xosIdTo :: XOrtSite To x -> XOrtSite To (Id x)
+xosIdTo (XEnd xp xa) = XEnd xp (amap1 Id . xa)
+
+instance XStandardOrtSite To x => XStandardOrtSite To (Id x) where
+  xStandardOrtSite = xosIdTo xStandardOrtSite
+  
+instance XStandardOrtSiteTo x => XStandardOrtSiteTo (Id x)
+
+--------------------------------------------------------------------------------
+-- xosIdFrom
+
+-- | to 'Id' promoted random variable.
+xosIdFrom :: XOrtSite From x -> XOrtSite From (Id x)
+xosIdFrom (XStart xp xa) = XStart xp (amap1 Id . xa)
+  
+instance XStandardOrtSite From x => XStandardOrtSite From (Id x) where
+  xStandardOrtSite = xosIdFrom xStandardOrtSite
+  
+instance XStandardOrtSiteFrom x => XStandardOrtSiteFrom (Id x)
+
+--------------------------------------------------------------------------------
+-- XStandardOrtSite t U -
+
+-- | to 'U' promoted random variable.
+xosUFrom :: X x -> XOrtSite From (U x)
+xosUFrom xx = XStart (return ()) (const (amap1 U xx))
+
+-- | to 'Id' promoted random variable.
+xosUTo :: X x -> XOrtSite To (U x)
+xosUTo xx = XEnd (return ()) (const (amap1 U xx))
+
+instance XStandard x => XStandardOrtSite To (U x) where
+  xStandardOrtSite = xosUTo xStandard
+
+instance XStandard x => XStandardOrtSite From (U x) where
+  xStandardOrtSite = xosUFrom xStandard
+  
+instance XStandard x => XStandardOrtSiteTo (U x)
+instance XStandard x => XStandardOrtSiteFrom (U x)
 
 --------------------------------------------------------------------------------
 -- OrtSiteX -
@@ -391,5 +417,15 @@ instance XStandard x => XStandardOrtOrientation (U x) where
     xo = return (():>())
     xq _ = amap1 U xStandard
     
+--------------------------------------------------------------------------------
+-- xooId -
+
+-- | to 'Id' promoted random variable.
+xooId :: XOrtOrientation x -> XOrtOrientation (Id x)
+xooId (XOrtOrientation xo xa) = XOrtOrientation xo (amap1 Id . xa)
+
+instance XStandardOrtOrientation x => XStandardOrtOrientation (Id x) where
+  xStandardOrtOrientation = xooId xStandardOrtOrientation
+
 
 
