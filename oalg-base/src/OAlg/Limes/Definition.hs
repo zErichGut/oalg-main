@@ -14,15 +14,15 @@
 
 -- |
 -- Module      : OAlg.Limes.Definition
--- Description : definition of a limes of a diagram.
+-- Description : definition of a limes over a digrammatic object.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- definition of a 'Limes' of a 'Diagram'.
+-- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
   (
-
+{-
     -- * Limes
     Limes(..), lmDiagramTypeRefl, lmMap
 
@@ -35,7 +35,7 @@ module OAlg.Limes.Definition
   
     -- * Proposition
   , relLimes
-
+-}
   ) where
 
 
@@ -55,34 +55,34 @@ import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
-import OAlg.Limes.OpDuality
+-- import OAlg.Limes.Universal
+-- import OAlg.Limes.OpDuality
+
 
 --------------------------------------------------------------------------------
 -- Limes -
 
--- | limes of a diagram, i.e. a distinguished cone over a given diagram
--- having the following /universal/ property
+-- | limes of a 'Diagrammatic' object, i.e. a distinguished 'Conic' object over a the underlying
+-- 'diagrammaticObject' having the following /universal/ property
 --
--- __Property__ Let __@a@__ be a 'Multiplicative' structure and
--- @u@ in @'Limes' __s__ __p__ __t__ __n__ __m__ __a__@ then holds:
--- Let @l = 'universalCone' u@ in
+-- __Property__ Let @'Conic' __c__@, @'Diagrammatic' ___d__@, @'Multiplicative' __x__@ and
+-- @l@ in @'Limes' __c s p d t n m x__@ then holds:
+-- Let @u = 'universalCone' l@ in
 --
 -- (1) @l@ is 'valid'.
 --
--- (2) @'eligibleCone' u l@.
+-- (2) @'eligibleCone' l ('cone' u)@.
 --
--- (3) @'eligibleFactor' u l ('one' ('tip' l))@.
+-- (3) @'eligibleFactor' l ('cone' u) ('one' ('tip' '$' 'cone' u))@.
 --
--- (4) For all @c@ in @'Cone' __s__ __p__ __t__ __n__ __m__ __a__@ with
--- @'eligibleCone' u c@ holds: Let @f = 'universalFactor' u c@ in
+-- (4) For all @c@ in @'Cone' __s p d t n m x__@ with
+-- @'eligibleCone' l c@ holds: Let @f = 'universalFactor' l c@ in
 --
 --     (1) @f@ is 'valid'.
 --
---     (2) @'eligibleFactor' u c f@.
+--     (2) @'eligibleFactor' l c f@.
 --
---     (3) For all @x@ in __@a@__ with @'eligibleFactor' u c x@
---     holds: @x '==' f@.
+--     (3) For all @x@ in @__x__@ with @'eligibleFactor' l c x@ holds: @x '==' f@.
 --
 -- __Note__
 --
@@ -94,13 +94,47 @@ import OAlg.Limes.OpDuality
 -- (2) It is not required that the evaluation of universal factor on a non eligible cone
 --  yield an exception! The implementation of the general algorithms for limits do not
 --  check for eligibility.
-data Limes s p t n m a where
-  LimesProjective :: Cone s Projective t n m a -> (Cone s Projective t n m a -> a)
-            -> Limes s Projective t n m a
-  LimesInjective :: Cone s Injective t n m a -> (Cone s Injective t n m a -> a)
-            -> Limes s Injective t n m a
+data Limes c s p d t n m x where
+  LimesProjective :: c s Projective d t n m x -> (Cone s Projective d t n m x -> x)
+                  -> Limes c s Projective d t n m x
+                  
+  LimesInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
+                  -> Limes c s Injective  d t n m x
 
+--------------------------------------------------------------------------------
+-- universalCone -
 
+-- | the unviersal 'Conic' object given by the 'Limes'.
+universalCone :: Limes c s p d t n m x -> c s p d t n m x
+universalCone (LimesProjective u _) = u
+universalCone (LimesInjective  u _) = u
+
+--------------------------------------------------------------------------------
+-- universalFactor -
+
+universalFactor :: Limes c s p d t n m x -> Cone s p d t n m x -> x
+universalFactor (LimesProjective _ f) = f
+universalFactor (LimesInjective  _ f) = f
+
+--------------------------------------------------------------------------------
+-- eligibleCone -
+
+eligibleCone :: (Conic c, Eq (d t n m x)) => Limes c s p d t n m x -> Cone s p d t n m x -> Bool
+eligibleCone l c = (diagrammaticObject $ cone $ universalCone l) == diagrammaticObject c
+
+--------------------------------------------------------------------------------
+-- eligibleFactor -
+
+eligibleFactor :: Conic c => Limes c s p d t n m x -> Cone s p d t n m x -> x -> Bool
+eligibleFactor l = cnEligibleFactor (cone $ universalCone l)
+
+--------------------------------------------------------------------------------
+-- cnEligibleFactor -
+
+cnEligibleFactor :: Cone s p d t n m x -> Cone s p d t n m x -> x ->  Bool
+cnEligibleFactor = error "nyi"
+
+{-
 instance Oriented a => Show (Limes s p t n m a) where
   show (LimesProjective l _) = "LimesProjective[" L.++ show l L.++ "]"
   show (LimesInjective l _)  = "LimesInjective[" L.++ show l L.++ "]"
@@ -263,3 +297,4 @@ lmFromInjOrnt t d = LimesInjective l u where
     u (ConeInjective _ x _) = t:>x
 
 
+-}

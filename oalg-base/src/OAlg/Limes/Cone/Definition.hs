@@ -28,6 +28,9 @@ module OAlg.Limes.Cone.Definition
   , cnMapDst, cnMapDstCnt
   , cnDstAdjZero
 
+    -- * Constructions
+  , cnPrjOrnt, cnInjOrnt
+  , cnPrjDstOrnt, cnInjDstOrnt
     -- * X
   , xCnPrjOrnt, xCnPrjDstOrnt
   , xCnInjOrnt, xCnInjDstOrnt
@@ -137,7 +140,7 @@ cnMltOrDst :: Cone s p d t n m a -> Either (s :~: Mlt) (s :~: Dst)
 cnMltOrDst = cnStructMltOrDst . coneStruct
 
 --------------------------------------------------------------------------------
--- diagrammaticObject -
+-- diagrxoammaticObject -
 
 -- | the underlying 'Diagrammatic' object.
 diagrammaticObject :: Cone s p d t n m a -> d t n m a

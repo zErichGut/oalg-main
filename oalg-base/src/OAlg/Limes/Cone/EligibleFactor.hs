@@ -39,6 +39,7 @@ module OAlg.Limes.Cone.EligibleFactor
 -}
   ) where
 
+{-
 import Control.Monad
 
 import Data.Typeable
@@ -57,7 +58,6 @@ import OAlg.Hom.Distributive
 import OAlg.Hom.Definition
 
 import OAlg.Limes.Perspective
-import OAlg.Limes.Diagrammatic
 import OAlg.Limes.Cone.Definition
 
 --------------------------------------------------------------------------------
@@ -164,6 +164,10 @@ coEligibleFactor s (EligibleFactorTo l x c) = EligibleFactorFrom l' (Op x) c' wh
 coEligibleFactor s (EligibleFactorFrom l x c) = EligibleFactorTo l' (Op x) c' where
   l' = coCone s l
   c' = coCone s c
+-}
+
+
+
 {-
 -- | from the bidual.
 elfFromOpOp :: ConeStruct s a

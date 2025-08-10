@@ -84,7 +84,7 @@ instance Diagrammatic Diagram where diagram = id
 --------------------------------------------------------------------------------
 -- DiagramG -
 
--- | wrapping a 'Diagrammatic'-object.
+-- | wrapper for 'Diagrammatic'-objects.
 newtype DiagramG d (t :: DiagramType) (n :: N') (m :: N') x = DiagramG (d t n m x)
   deriving (Show,Eq)
 
