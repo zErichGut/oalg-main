@@ -44,7 +44,13 @@ import Data.List as L ((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
+import OAlg.Data.Variant
+
 import OAlg.Entity.Diagram
+import OAlg.Entity.FinList
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -112,6 +118,7 @@ universalCone (LimesInjective  u _) = u
 --------------------------------------------------------------------------------
 -- universalFactor -
 
+-- | the unviersal factor given by the 'Limes'.
 universalFactor :: Limes c s p d t n m x -> Cone s p d t n m x -> x
 universalFactor (LimesProjective _ f) = f
 universalFactor (LimesInjective  _ f) = f
@@ -119,20 +126,81 @@ universalFactor (LimesInjective  _ f) = f
 --------------------------------------------------------------------------------
 -- eligibleCone -
 
+-- | eligibility of a 'Cone' according to the given 'Limes'.
 eligibleCone :: (Conic c, Eq (d t n m x)) => Limes c s p d t n m x -> Cone s p d t n m x -> Bool
 eligibleCone l c = (diagrammaticObject $ cone $ universalCone l) == diagrammaticObject c
 
 --------------------------------------------------------------------------------
--- eligibleFactor -
+-- cnEligibleFactorDgm -
 
-eligibleFactor :: Conic c => Limes c s p d t n m x -> Cone s p d t n m x -> x -> Bool
-eligibleFactor l = cnEligibleFactor (cone $ universalCone l)
+-- | eligibility of a factor according to the given 'Cones' over 'Diagram's,
+cnEligibleFactorDgm :: Cone s p Diagram t n m x -> Cone s p Diagram t n m x -> x ->  Bool
+cnEligibleFactorDgm (ConeProjective _ a as) (ConeProjective _ b bs) x
+  = orientation x == b:>a && comPrj x as bs where
+    comPrj :: Multiplicative x => x -> FinList n x -> FinList n x -> Bool
+    comPrj _ Nil Nil         = True
+    comPrj x (a:|as) (b:|bs) = a*x == b && comPrj x as bs
+    
+cnEligibleFactorDgm a@(ConeInjective d _ _) b x = case dgTypeRefl d of
+  Refl -> cnEligibleFactorDgm a' b' x' where
+    Contravariant2 (Inv2 t _) = isoOpMlt
+  
+    SDualBi (Left1 a') = amapG t (SDualBi (Right1 a))
+    SDualBi (Left1 b') = amapG t (SDualBi (Right1 b))
+    x'                 = amap  t x
 
+cnEligibleFactorDgm (ConeKernel _ a) (ConeKernel _ b) x
+  = orientation x == start b :> start a && a*x == b
+
+cnEligibleFactorDgm a@(ConeCokernel d _) b x = case dgTypeRefl d of
+  Refl -> cnEligibleFactorDgm a' b' x' where
+    Contravariant2 (Inv2 t _) = isoOpDst
+  
+    SDualBi (Left1 a') = amapG t (SDualBi (Right1 a))
+    SDualBi (Left1 b') = amapG t (SDualBi (Right1 b))
+    x'                 = amap  t x
+    
 --------------------------------------------------------------------------------
 -- cnEligibleFactor -
 
-cnEligibleFactor :: Cone s p d t n m x -> Cone s p d t n m x -> x ->  Bool
-cnEligibleFactor = error "nyi"
+-- | eligibility of a factor according to the given 'Cones' over 'Diagrammatic' objects,
+--
+-- __Property__ Let @x@ be in @__x__@ and
+-- @a@, @b@ in @'Cone' __s p t n m x__@ with
+-- @'diagrammaticObject' a '==' 'diagrammaticObjet' b@, then holds:
+-- 
+-- (1) If @__p__@ is equal to __'Projective'__ then holds:
+-- @'cnEligibleFactor' a b x@ is 'True' if and only if
+--
+--     (1) @'orientation' x '==' 'tip' b ':>' 'tip' a@.
+--
+--     (2) @ai v'*' x '==' bi@ for all @ai@ in @'shell' a@ and @bi@ in @'shell' b@.
+--
+-- (2) If @__p__@ is equal to __'Injective'__ then holds:
+-- @'cnEligibleFactor' a b x@ is 'True' if and only if
+--
+--     (1) @'orientation' x '==' 'tip' a ':>' 'tip' b@.
+--
+--     (2) @x v'*' ai '==' bi@ for all @ai@ in @'shell' a@ and @bi@ in @'shell' b@.
+cnEligibleFactor :: Diagrammatic d
+  => Cone s p d t n m x -> Cone s p d t n m x -> x ->  Bool
+cnEligibleFactor a b = cnEligibleFactorDgm (coneDiagram a) (coneDiagram b)
+-- we map a an b via coneDiagram in order to apply Op-duality for cones over diagrams.
+-- otherwise you would have to stipulate a duality for the abstract diagrammatic
+-- object!
+
+--------------------------------------------------------------------------------
+-- eligibleFactor -
+
+-- | eligibility of a factor according to the given 'Limes' and 'Cone',
+eligibleFactor :: (Conic c, Diagrammatic d)
+  => Limes c s p d t n m x -> Cone s p d t n m x -> x -> Bool
+eligibleFactor l = cnEligibleFactor (cone $ universalCone l)
+
+
+
+
+
 
 {-
 instance Oriented a => Show (Limes s p t n m a) where

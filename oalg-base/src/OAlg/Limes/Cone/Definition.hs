@@ -20,7 +20,7 @@
 module OAlg.Limes.Cone.Definition
   (
     -- * Cone
-    Cone(..), diagrammaticObject
+    Cone(..), diagrammaticObject, coneDiagram
   , Perspective(..), cnMltOrDst, coneStruct
   , cnDiagramTypeRefl
   , tip, shell, cnArrows, cnPoints
@@ -140,7 +140,7 @@ cnMltOrDst :: Cone s p d t n m a -> Either (s :~: Mlt) (s :~: Dst)
 cnMltOrDst = cnStructMltOrDst . coneStruct
 
 --------------------------------------------------------------------------------
--- diagrxoammaticObject -
+-- diagrammaticObject -
 
 -- | the underlying 'Diagrammatic' object.
 diagrammaticObject :: Cone s p d t n m a -> d t n m a
