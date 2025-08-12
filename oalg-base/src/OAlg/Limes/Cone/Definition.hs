@@ -149,7 +149,6 @@ diagrammaticObject (ConeInjective d _ _)  = d
 diagrammaticObject (ConeKernel d _)       = d
 diagrammaticObject (ConeCokernel d _)     = d
 
-
 --------------------------------------------------------------------------------
 -- cnDiagramTypeRefl -
 
@@ -511,8 +510,7 @@ relConePrjMlt (DiagramDiscrete ps) t cs = valid t && vld 0 t ps cs where
          -> Statement
   vld _ _ Nil Nil = SValid
   vld i t (p:|ps) (c:|cs)
-    = And [ valid p
-          , valid c
+    = And [ valid c
           , lO :<=>: (orientation c == t :> p) :?> prm i
           , vld (succ i) t ps cs
           ]
@@ -541,8 +539,7 @@ relConePrjMlt (DiagramChainFrom l as) t cs = vld 0 l as t cl cs' where
           , lO :<=>: (orientation cl == t :> l):?>prm i
           ]
   vld i l (a:|as) t cl (c:|cs)
-    = And [ valid a
-          , valid cl
+    = And [ valid cl
           , lO :<=>: (start a == l):?>prm i
           , lO :<=>: (orientation cl == t:>start a):?>prm i
           , lC :<=>: (a*cl == c):?>prm i
@@ -561,11 +558,11 @@ relConePrjMlt (DiagramParallelLR p q as) t cs
     -> FinList m a -> a -> a -> Statement
   vld _ _ Nil _ _ = SValid
   vld i o (a:|as) cp cq
-    = And [ valid a
-          , lO :<=>: (orientation a == o):?>prm i
+    = And [ lO :<=>: (orientation a == o):?>prm i
           , lC :<=>: (a*cp == cq):?>prm i
           , vld (succ i) o as cp cq
           ]
+      
 relConePrjMlt (DiagramParallelRL p q as) t cs
   = And [ valid cp
         , valid cq
@@ -578,8 +575,7 @@ relConePrjMlt (DiagramParallelRL p q as) t cs
     -> FinList n a -> a -> a -> Statement
   vld _ _ Nil _ _ = SValid
   vld i o (a:|as) cp cq
-    = And [ valid a
-          , lO :<=>: (orientation a == o):?>prm i
+    = And [ lO :<=>: (orientation a == o):?>prm i
           , lC :<=>: (a*cq == cp):?>prm i
           , vld (succ i) o as cp cq
           ]
@@ -594,8 +590,7 @@ relConePrjMlt (DiagramSource s as) t cs
          -> FinList m a -> a -> FinList m a -> Statement
   vld _ _ _ Nil _ Nil = SValid
   vld i t s (a:|as) c0 (c:|cs)
-    = And [ valid a
-          , lS :<=>: (start a == s):?>prm i
+    = And [ lS :<=>: (start a == s):?>prm i
           , lO :<=>: (orientation c == t:>end a):?>prm i
           , lC :<=>: (a*c0 == c):?>prm i
           , vld (succ i) t s as c0 cs
@@ -611,12 +606,12 @@ relConePrjMlt (DiagramSink e as) t cs
          -> FinList m a -> a -> FinList m a -> Statement
   vld _ _ _ Nil _ Nil = SValid
   vld i t e (a:|as) c0 (c:|cs)
-    = And [ valid a
-          , lE :<=>: (end a == e):?>prm i
+    = And [ lE :<=>: (end a == e):?>prm i
           , lO :<=>: (orientation c == t:>start a):?>prm i
           , lC :<=>: (a*c == c0):?>prm i
           , vld (succ i) t e as c0 cs
           ]
+      
 relConePrjMlt (DiagramGeneral ps aijs) t cs
   = And [ vldO 0 t ps cs
         , vldC 0 (toArray cs) aijs
@@ -634,8 +629,7 @@ relConePrjMlt (DiagramGeneral ps aijs) t cs
     -> FinList m (a,Orientation N) -> Statement
   vldC _ _ Nil = SValid
   vldC l cs ((a,i:>j):|aijs)
-    = And [ valid a
-          , lB :<=>: (inRange (bounds cs) i) :?> Params["l":=show l,"i":=show i]
+    = And [ lB :<=>: (inRange (bounds cs) i) :?> Params["l":=show l,"i":=show i]
           , lB :<=>: (inRange (bounds cs) j) :?> Params["l":=show l,"j":=show j]
           , lO :<=>: (orientation a == end ci :> end cj)
                      :?>Params["l":=show l,"(i,j)":=show (i,j)]
@@ -666,12 +660,12 @@ relConeDiagram :: Cone s p Diagram t n m a -> Statement
 relConeDiagram (ConeProjective d t cs) = relConePrjMlt d t cs
 relConeDiagram c@(ConeInjective _ _ _) = case cnDiagramTypeRefl c of
   Refl -> relConeDiagram c' where
-    SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
     Contravariant2 (Inv2 t _) = isoOpMlt
+    SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
 relConeDiagram c@(ConeKernel _ _)      = relConeDiagram (cnDstAdjZero c)
 relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram c' where
-  SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
   Contravariant2 (Inv2 t _) = isoOpDst
+  SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
 
 --------------------------------------------------------------------------------
 -- relCone -
