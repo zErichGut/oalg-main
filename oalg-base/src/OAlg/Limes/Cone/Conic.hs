@@ -19,7 +19,7 @@
 module OAlg.Limes.Cone.Conic
   (
     -- *
-    Conic(..)
+    Conic(..), ConeG(..)
     
   ) where
 

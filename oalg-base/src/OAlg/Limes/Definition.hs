@@ -38,7 +38,6 @@ module OAlg.Limes.Definition
 -}
   ) where
 
-
 import Data.Typeable
 import Data.List as L ((++))
 
@@ -72,7 +71,7 @@ import OAlg.Limes.Cone
 -- 'diagrammaticObject' having the following /universal/ property
 --
 -- __Property__ Let @'Conic' __c__@, @'Diagrammatic' ___d__@, @'Multiplicative' __x__@ and
--- @l@ in @'Limes' __c s p d t n m x__@ then holds:
+-- @l@ in @'Limes' __s p c d t n m x__@ then holds:
 -- Let @u = 'universalCone' l@ in
 --
 -- (1) @l@ is 'valid'.
@@ -100,18 +99,18 @@ import OAlg.Limes.Cone
 -- (2) It is not required that the evaluation of universal factor on a non eligible cone
 --  yield an exception! The implementation of the general algorithms for limits do not
 --  check for eligibility.
-data Limes c s p d t n m x where
+data Limes s p c d t n m x where
   LimesProjective :: c s Projective d t n m x -> (Cone s Projective d t n m x -> x)
-                  -> Limes c s Projective d t n m x
+                  -> Limes s Projective c d t n m x
                   
   LimesInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
-                  -> Limes c s Injective  d t n m x
+                  -> Limes s Injective  c d t n m x
 
 --------------------------------------------------------------------------------
 -- universalCone -
 
 -- | the unviersal 'Conic' object given by the 'Limes'.
-universalCone :: Limes c s p d t n m x -> c s p d t n m x
+universalCone :: Limes s p c d t n m x -> c s p d t n m x
 universalCone (LimesProjective u _) = u
 universalCone (LimesInjective  u _) = u
 
@@ -119,7 +118,7 @@ universalCone (LimesInjective  u _) = u
 -- universalFactor -
 
 -- | the unviersal factor given by the 'Limes'.
-universalFactor :: Limes c s p d t n m x -> Cone s p d t n m x -> x
+universalFactor :: Limes s p c d t n m x -> Cone s p d t n m x -> x
 universalFactor (LimesProjective _ f) = f
 universalFactor (LimesInjective  _ f) = f
 
@@ -127,7 +126,7 @@ universalFactor (LimesInjective  _ f) = f
 -- eligibleCone -
 
 -- | eligibility of a 'Cone' according to the given 'Limes'.
-eligibleCone :: (Conic c, Eq (d t n m x)) => Limes c s p d t n m x -> Cone s p d t n m x -> Bool
+eligibleCone :: (Conic c, Eq (d t n m x)) => Limes s p c d t n m x -> Cone s p d t n m x -> Bool
 eligibleCone l c = (diagrammaticObject $ cone $ universalCone l) == diagrammaticObject c
 
 --------------------------------------------------------------------------------
@@ -194,11 +193,59 @@ cnEligibleFactor a b = cnEligibleFactorDgm (coneDiagram a) (coneDiagram b)
 
 -- | eligibility of a factor according to the given 'Limes' and 'Cone',
 eligibleFactor :: (Conic c, Diagrammatic d)
-  => Limes c s p d t n m x -> Cone s p d t n m x -> x -> Bool
+  => Limes s p c d t n m x -> Cone s p d t n m x -> x -> Bool
 eligibleFactor l = cnEligibleFactor (cone $ universalCone l)
 
+--------------------------------------------------------------------------------
+-- Limes - Dual -
 
+type instance Dual1 (Limes s p c d t n m) = Limes s (Dual p) c d (Dual t) n m
 
+--------------------------------------------------------------------------------
+-- lmMapMlt -
+
+lmMapMlt ::
+  ( HomMultiplicative h
+  , ApplicativeG (ConeG c s p d t n m) h (->)
+  , ApplicativeG (Cone s p d t n m) h (->)
+  , s ~ Mlt
+  )
+  => Inv2 h x y -> Limes s p c d t n m x -> Limes s p c d t n m y
+lmMapMlt (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
+  ConeG u' = amapG t (ConeG u)
+  uf' = amap t . uf . amapG f 
+lmMapMlt (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
+  ConeG u' = amapG t (ConeG u)
+  uf' = amap t . uf . amapG f 
+
+lmMapDst ::
+  ( HomDistributive h
+  , ApplicativeG (ConeG c s p d t n m) h (->)
+  , ApplicativeG (Cone s p d t n m) h (->)
+  , s ~ Dst
+  )
+  => Inv2 h x y -> Limes s p c d t n m x -> Limes s p c d t n m y
+lmMapDst (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
+  ConeG u' = amapG t (ConeG u)
+  uf' = amap t . uf . amapG f 
+lmMapDst (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
+  ConeG u' = amapG t (ConeG u)
+  uf' = amap t . uf . amapG f 
+
+lmMapMltCnt ::
+  ( HomMultiplicativeDisjunctive h
+  , ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->)
+  , ApplicativeG (SDualBi (Cone s p d t n m)) h (->)
+  , s  ~ Mlt
+  )
+  => Variant2 Contravariant (Inv2 h) x y
+  -> Limes s p c d t n m x -> Dual1 (Limes s p c d t n m) y
+lmMapMltCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesInjective uc' uf' where
+  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
+  uf' c' = amap t y where
+    y = uf c
+    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
 
 
 
