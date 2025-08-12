@@ -161,7 +161,11 @@ instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) whe
 -- (1) @'amapG' h '.=.' 'dgMap' h@.
 --
 -- __Note__ This property is required if incoherent instances are permitted.
-class (HomOriented h, NaturalTransformable h (->) (DiagramG d t n m) (Diagram t n m))
+class
+  ( Diagrammatic d
+  , HomOriented h
+  , NaturalTransformable h (->) (DiagramG d t n m) (Diagram t n m)
+  )
   => NaturalDiagrammatic h d t n m
 
 instance ApplicativeG (DiagramG d t n m) (HomEmpty s) (->) where

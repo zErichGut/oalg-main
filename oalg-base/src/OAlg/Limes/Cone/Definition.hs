@@ -42,7 +42,7 @@ module OAlg.Limes.Cone.Definition
   , xCnInjOrnt, xCnInjDstOrnt
 
 
-  , Hom
+  , Hom, HomD
 
   ) where
 

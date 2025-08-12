@@ -23,6 +23,8 @@ module OAlg.Limes.Cone.Conic
 
     -- * Natural
   , NaturalConic
+
+  , NaturalConicSDualisable
     
   ) where
 
@@ -89,3 +91,13 @@ rel ::
   => h x y -> c s p d t n m x -> Statement
 rel h c = (amapG h c' == cnMap h c') :?> Params []
   where c' = cone c
+
+--------------------------------------------------------------------------------
+-- NaturalConicSDualisable -
+
+class
+  ( Conic c
+  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m))
+  )
+  => NaturalConicSDualisable h c s p d t n m

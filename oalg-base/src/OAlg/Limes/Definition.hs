@@ -204,6 +204,19 @@ type instance Dual1 (Limes c s p d t n m) = Limes c s (Dual p) d (Dual t) n m
 --------------------------------------------------------------------------------
 -- lmMap -
 
+lmMap :: (Hom s h, NaturalConic h c s p d t n m)
+  => Inv2 h x y -> Limes c s p d t n m x -> Limes c s p d t n m y
+lmMap (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
+  ConeG u' = amapG t (ConeG u)
+  uf' = amap t . uf . amapG f 
+lmMap (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
+  ConeG u' = amapG t (ConeG u)
+  uf' = amap t . uf . amapG f 
+
+
+
+
+{-
 lmMapMlt ::
   ( HomMultiplicative h
   , NaturalConic h c s p d t n m
@@ -241,10 +254,42 @@ lmMap :: (Conic c, Hom s h, NaturalConic h c s p d t n m)
 lmMap h l     = case cns $ cone $ universalCone l of
   Right Refl -> lmMapMlt h l
   Left Refl  -> lmMapDst h l
-
+-}
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
+lmMapCnt ::
+  ( HomD s h
+  , NaturalConicSDualisable h c s p d t n m
+  )
+  => Variant2 Contravariant (Inv2 h) x y
+  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesInjective uc' uf' where
+      SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
+      uf' c' = amap t y where
+        y = uf c
+        SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
+  = LimesProjective uc' uf' where
+      SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
+      uf' c' = amap t y where
+        y = uf c
+        SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
+
+--------------------------------------------------------------------------------
+-- Limes - Applicative -
+
+instance (HomMultiplicative h, NaturalConic h c Mlt p d t n m)
+  => ApplicativeG (Limes c Mlt p d t n m) (Inv2 h) (->) where
+  amapG = lmMap
+
+instance (HomDistributive h, NaturalConic h c Dst p d t n m)
+  => ApplicativeG (Limes c Dst p d t n m) (Inv2 h) (->) where
+  amapG = lmMap
+
+
+{-
 lmMapMltCnt ::
   ( HomMultiplicativeDisjunctive h
   , ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->)
@@ -266,6 +311,27 @@ lmMapMltCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
     y = uf c
     SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
 
+lmMapDstCnt ::
+  ( HomDistributiveDisjunctive h
+  , ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->)
+  , ApplicativeG (SDualBi (Cone s p d t n m)) h (->)
+  , s  ~ Dst
+  )
+  => Variant2 Contravariant (Inv2 h) x y
+  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
+lmMapDstCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesInjective uc' uf' where
+  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
+  uf' c' = amap t y where
+    y = uf c
+    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
+lmMapDstCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
+  = LimesProjective uc' uf' where
+  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
+  uf' c' = amap t y where
+    y = uf c
+    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
+-}
 
 
 {-
