@@ -41,6 +41,9 @@ module OAlg.Limes.Cone.Definition
   , xCnPrjOrnt, xCnPrjDstOrnt
   , xCnInjOrnt, xCnInjDstOrnt
 
+
+  , Hom
+
   ) where
 
 import Control.Monad

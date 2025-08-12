@@ -67,8 +67,25 @@ type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 --------------------------------------------------------------------------------
 -- NaturalConic -
 
+-- | natural transformation for 'Conic' objects.
+--
+-- (1) @'amapG' h '.=. 'cnMap' h@,
 class
   ( NaturalDiagrammatic h d t n m
   , NaturalTransformable h (->) (ConeG c s p d t n m) (Cone s p d t n m)
   )
   => NaturalConic h c s p d t n m
+
+-- class Hom s h => Hom' s h
+
+-- type N h c s p d t n m = (Hom s h, NaturalConic h c s p d t n m)
+
+rel ::
+  ( Conic c
+  , Hom s h
+  , NaturalConic h c s p d t n m
+  , Eq (d t n m y)
+  )
+  => h x y -> c s p d t n m x -> Statement
+rel h c = (amapG h c' == cnMap h c') :?> Params []
+  where c' = cone c
