@@ -18,8 +18,11 @@
 -- objects with a naturally underlying cone.
 module OAlg.Limes.Cone.Conic
   (
-    -- *
+    -- * Conic
     Conic(..), ConeG(..)
+
+    -- * Natural
+  , NaturalConic
     
   ) where
 
@@ -29,6 +32,8 @@ import OAlg.Prelude
 
 import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
+import OAlg.Category.NaturalTransformable
+
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
@@ -58,3 +63,12 @@ newtype ConeG (c :: Type -> Perspective
   deriving (Show,Eq)
 
 type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- NaturalConic -
+
+class
+  ( NaturalDiagrammatic h d t n m
+  , NaturalTransformable h (->) (ConeG c s p d t n m) (Cone s p d t n m)
+  )
+  => NaturalConic h c s p d t n m

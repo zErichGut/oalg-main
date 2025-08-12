@@ -24,11 +24,17 @@ module OAlg.Limes.Cone.Definition
   , Perspective(..), cnMltOrDst, coneStruct
   , cnDiagramTypeRefl
   , tip, shell, cnArrows, cnPoints
-  , cnMapMlt, cnMapMltCnt
-  , cnMapDst, cnMapDstCnt
-  , cnDstAdjZero
+
+    -- * Map
+    -- ** Covariant
+  , cnMap, cnMapMlt, cnMapDst
+
+    -- ** Contravariant
+  , cnMapCnt, cnMapMltCnt, cnMapDstCnt
+  
 
     -- * Constructions
+  , cnDstAdjZero
   , cnPrjOrnt, cnInjOrnt
   , cnPrjDstOrnt, cnInjDstOrnt
     -- * X
@@ -39,6 +45,7 @@ module OAlg.Limes.Cone.Definition
 
 import Control.Monad
 
+import Data.Kind
 import Data.Typeable
 import Data.Array hiding (range)
 
@@ -184,6 +191,22 @@ instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
 instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
 
 --------------------------------------------------------------------------------
+-- Hom -
+
+type family Hom s (h :: Type -> Type -> Type) :: Constraint
+
+type instance Hom Mlt h = HomMultiplicative h
+type instance Hom Dst h = HomDistributive h
+
+--------------------------------------------------------------------------------
+-- HomD -
+
+type family HomD s (h :: Type -> Type -> Type) :: Constraint
+
+type instance HomD Mlt h = HomMultiplicativeDisjunctive h
+type instance HomD Dst h = HomDistributiveDisjunctive h
+
+--------------------------------------------------------------------------------
 -- cnMap -
 
 -- | mapping of a cone under a 'Multiplicative' homomorphism.
@@ -205,6 +228,18 @@ cnMapDst h c          = case tauDst (range h) of
   Struct             -> case c of
     ConeKernel d a   -> ConeKernel (dmap h d) (amap h a)
     ConeCokernel d a -> ConeCokernel (dmap h d) (amap h a)
+
+-- | mapping of a cone under a @__s__@ homomorphism.
+cnMap :: (Hom s h, NaturalDiagrammatic h d t n m)
+  => h x y -> Cone s p d t n m x -> Cone s p d t n m y
+cnMap h c = case c of
+  ConeProjective _ _ _ -> cnMapMlt h c
+  ConeInjective _ _ _  -> cnMapMlt h c
+  ConeKernel _ _       -> cnMapDst h c
+  ConeCokernel _ _     -> cnMapDst h c
+  
+--------------------------------------------------------------------------------
+-- cnMapCnt -
 
 cnMapMltCnt :: ( HomMultiplicativeDisjunctive h
                , NaturalDiagrammaticSDualisable h d t n m
@@ -230,6 +265,15 @@ cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
     ConeCokernel d a            -> ConeKernel  d' (amap h a) where
       SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
+cnMapCnt :: (HomD s h, NaturalDiagrammaticSDualisable h d t n m)
+  => Variant2 Contravariant h x y
+  -> Cone s p d t n m x -> Dual1 (Cone s p d t n m) y
+cnMapCnt h c = case c of
+  ConeProjective _ _ _ -> cnMapMltCnt h c
+  ConeInjective _ _ _  -> cnMapMltCnt h c
+  ConeKernel _ _       -> cnMapDstCnt h c
+  ConeCokernel _ _     -> cnMapDstCnt h c
+  
 --------------------------------------------------------------------------------
 -- Cone - Mlt - DualisableGBi
 
