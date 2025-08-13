@@ -124,7 +124,7 @@ import OAlg.Limes.Cone.Structure
 -- (1) Let @'Hom' __s__ __h__@ - where @__s__@ is either 'Mlt' or 'Dst' -
 -- and @'NaturalDiagrammatic' __h d t n m__@, then holds
 -- @'NaturalTransformable' __h__ (->) ('DiagramG' __d t n m__) ('Diagram' __t n m__)@
--- (as required by @'NaturalDiagrammatic' __h d t n m__@)
+-- (as required by the definition of @'NaturalDiagrammatic' __h d t n m__@)
 -- and
 -- @'NaturalTransformable' __h__ (->) ('Cone' __s p d t n m__) ('DiagramG' __d t n m__)@
 -- (see comment in source code of its instance declaration and the property of 'dmap')
@@ -427,6 +427,7 @@ instance
 --                 = amapG h (DiagramG d)
 --
 -- ...
+-- q.e.d.
 
 instance
   ( HomMultiplicative h
@@ -518,7 +519,8 @@ instance
 s = Struct :: Struct Mlt OS
 Contravariant2 (Inv2 t _)  = isoO s :: IsoO Mlt Op OS
 Contravariant2 (Inv2 t' _) = isoO (tauO s) :: IsoO Mlt Op (Op OS)
-h = Covariant2 (t' . t)
+h = t' . t
+hCov = Covariant2 h
 -}
 
 --------------------------------------------------------------------------------

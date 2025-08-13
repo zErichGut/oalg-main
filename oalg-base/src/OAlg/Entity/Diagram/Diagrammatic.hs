@@ -189,6 +189,8 @@ instance
 
 instance HomOriented h => NaturalTransformable (Id2 h) (->) (DiagramG Diagram t n m) (Diagram t n m)
 instance HomOriented h => NaturalDiagrammatic (Id2 h) Diagram t n m
+-- we need the wrapper Id2 to not get overlapped instances with the instance declaration
+-- for NaturalDiagrammatic (Variant2 Covariant (HomDisj s o h)) d t n m
 
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammatic -

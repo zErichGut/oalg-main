@@ -149,6 +149,7 @@ library
       OAlg.Hom.Proposition
       OAlg.Hom.Vectorial
       OAlg.Limes.Cone
+      OAlg.Limes.Cone.Conic
       OAlg.Limes.Cone.Definition
       OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Cone.FactorChain
