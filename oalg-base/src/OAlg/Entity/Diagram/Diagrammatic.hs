@@ -134,6 +134,10 @@ dgmTypeRefl = dgTypeRefl . diagram
 -- dmap -
 
 -- | the induced mapping between the 'Diagrammatic' objects.
+--
+-- __Property__ Let @'ApplicativeG' ('DiagramG __d t n m) __h__ (->)@ and @h@ in @__h__@, then holds:
+--
+-- (1) @'DiagramG' '.' 'dmap' h '.=.' 'amapG' h '.' 'DiagramG'@.
 dmap :: ApplicativeG (DiagramG d t n m) h (->)
   => h x y -> d t n m x -> d t n m y
 dmap h d = d' where DiagramG d' = amapG h (DiagramG d)

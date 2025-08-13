@@ -67,6 +67,16 @@ newtype ConeG (c :: Type -> Perspective
 type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
+-- croh -
+
+-- | the underlying cone.
+croh :: Conic c => ConeG c s p d t n m x -> Cone s p d t n m x
+croh (ConeG c) = cone c
+
+instance Conic c => Natural s (->) (ConeG c s p d t n m) (Cone s p d t n m) where
+  roh _ = croh
+
+--------------------------------------------------------------------------------
 -- NaturalConic -
 
 -- | natural transformation for 'Conic' objects.
@@ -77,10 +87,6 @@ class
   , NaturalTransformable h (->) (ConeG c s p d t n m) (Cone s p d t n m)
   )
   => NaturalConic h c s p d t n m
-
--- class Hom s h => Hom' s h
-
--- type N h c s p d t n m = (Hom s h, NaturalConic h c s p d t n m)
 
 rel ::
   ( Conic c

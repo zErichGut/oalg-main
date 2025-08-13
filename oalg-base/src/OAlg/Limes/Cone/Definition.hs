@@ -54,6 +54,7 @@ import Data.Array hiding (range)
 
 import OAlg.Prelude
 
+import OAlg.Category.NaturalTransformable
 import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
@@ -117,6 +118,18 @@ import OAlg.Limes.Cone.Structure
 --
 --     (2) For all @a@ in @'dgArrows' ('diagram' p)@ holds: @k 'Mlt.*' a '==' 'zero' (p1 ':>' t)@
 --     where @t = 'end' k@ and @p0@, @p1@ in @'dgPoints' ('diagram' p)@.
+--
+-- __Note__
+--
+-- (1) Let @'Hom' __s__ __h__@ - where @__s__@ is either 'Mlt' or 'Dst' -
+-- and @'NaturalDiagrammatic' __h d t n m__@, then holds
+-- @'NaturalTransformable' __h__ (->) ('DiagramG' __d t n m__) ('Diagram' __t n m__)@
+-- (as required by @'NaturalDiagrammatic' __h d t n m__@)
+-- and
+-- @'NaturalTransformable' __h__ (->) ('Cone' __s p d t n m__) ('DiagramG' __d t n m__)@
+-- (see comment in source code of its instance declaration and the property of 'dmap')
+-- and therefore this establish a natural
+-- transformation according to @__h__@ from @'Cone' __s p d t n m__@ to @'Diagram' __t n m__@.
 data Cone s (p :: Perspective) d (t :: DiagramType) (n :: N') (m :: N') a where
   ConeProjective :: Multiplicative a
     => d t n m a -> Point a -> FinList n a -> Cone Mlt Projective d t n m a
@@ -158,6 +171,16 @@ diagrammaticObject (ConeProjective d _ _) = d
 diagrammaticObject (ConeInjective d _ _)  = d
 diagrammaticObject (ConeKernel d _)       = d
 diagrammaticObject (ConeCokernel d _)     = d
+
+--------------------------------------------------------------------------------
+-- cdroh -
+
+-- | the diagrammatic object as generalized diagram.
+cdroh :: Cone s p d t n m x -> DiagramG d t n m x
+cdroh = DiagramG . diagrammaticObject
+
+instance Natural r (->) (Cone s p d t n m) (DiagramG d t n m) where
+  roh _ = cdroh
 
 --------------------------------------------------------------------------------
 -- cnDiagramTypeRefl -
@@ -390,11 +413,27 @@ instance
 
 instance
   ( HomMultiplicative h
+  , NaturalDiagrammatic h d t n m
+  )
+  => NaturalTransformable h (->) (Cone Mlt p d t n m) (DiagramG d t n m)
+-- let c = ConeProjective d _ _ in Cone Mlt Projectiv d t n m x
+--
+-- roh (amapG h c) = DiagramG (diamrammaticObject (amapG h c))
+--                 = DiagramG (diamrammaticObject (cnMapMlt h c))
+--                 = DiagramG (dmap h d)
+--                 = amapG h (DiagramG d)                            : property of dmap
+--
+-- amapG h (roh c) = amapG h (DiagramG (diagramaticObject c))
+--                 = amapG h (DiagramG d)
+--
+-- ...
+
+instance
+  ( HomMultiplicative h
   , FunctorialOriented h
   , NaturalDiagrammatic h d t n m
   )
   => FunctorialG (Cone Mlt p d t n m) h (->)
-
 
 instance
   ( HomDistributive h
@@ -402,6 +441,12 @@ instance
   )
   => ApplicativeG (Cone Dst p d t n m) h (->) where
   amapG = cnMapDst
+
+instance
+  ( HomDistributive h
+  , NaturalDiagrammatic h d t n m
+  )
+  => NaturalTransformable h (->) (Cone Dst p d t n m) (DiagramG d t n m)
 
 instance
   ( HomDistributive h
@@ -433,7 +478,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = amapG h
+  amapG (HomDisj h) = amapG h -- i.e. smapBi
 
 instance 
   ( HomMultiplicative h, TransformableMlt s
@@ -846,4 +891,5 @@ instance ( Entity p, t ~ Parallel RightToLeft, n ~ N2
          , XStandard p, XStandard (d t n m (Orientation p))
          ) => XStandard (Cone Dst Injective d t n m (Orientation p)) where
   xStandard = xCnInjDstOrnt xStandard xStandard
+
 
