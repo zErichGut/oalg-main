@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs, StandaloneDeriving #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Limes.Cone.Conic
@@ -22,7 +22,8 @@ module OAlg.Limes.Cone.Conic
     Conic(..), ConeG(..)
 
     -- * Natural
-  , NaturalConic
+  , NaturalConic, NaturalConicDual1
+  , NaturalConicBi
 
   , NaturalConicSDualisable
     
@@ -36,9 +37,14 @@ import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 import OAlg.Category.NaturalTransformable
 
+import OAlg.Data.Variant
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
+
+import OAlg.Structure.Multiplicative
+
+import OAlg.Hom.Definition
 
 import OAlg.Limes.Cone.Definition
 
@@ -99,11 +105,39 @@ rel h c = (amapG h c' == cnMap h c') :?> Params []
   where c' = cone c
 
 --------------------------------------------------------------------------------
+-- NaturalConicDual1 -
+
+-- | helper class to avoid undecidable instances.
+class NaturalConic h c s (Dual p) d (Dual t) n m => NaturalConicDual1 h c s p d t n m
+
+--------------------------------------------------------------------------------
+-- NaturalConicBi -
+
+-- | constrains for conic objects @__c__@ which are bi-natural conic.
+type NaturalConicBi h c s p d t n m
+  = ( NaturalConic h c s p d t n m
+    , NaturalConicDual1 h c s p d t n m
+    )
+--------------------------------------------------------------------------------
 -- NaturalConicSDualisable -
 
+-- | natural transformation for 'Conic' objects from @'SDualBi' ('ConeG' __c s p d t n m__)@ to
+-- @'SDualBi' ('Cone' __s p d t n m__)@.
 class
   ( Conic c
   , NaturalDiagrammaticSDualisable h d t n m
   , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m))
   )
   => NaturalConicSDualisable h c s p d t n m
+
+instance
+  ()
+  => NaturalTransformable (Variant2 Covariant (HomDisj s o h)) (->)
+       (ConeG c Mlt p d t n m) (Cone Mlt p d t n m)
+
+instance
+  ( NaturalDiagrammaticBi h d t n m
+  , DualisableDiagrammatic s o d t n m
+  )
+  => NaturalConic (Variant2 Covariant (HomDisj s o h)) c Mlt p d t n m
+

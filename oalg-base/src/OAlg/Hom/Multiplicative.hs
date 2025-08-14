@@ -75,6 +75,8 @@ instance HomMultiplicative h => HomMultiplicative (Path h)
 
 instance TransformableMlt s => HomMultiplicative (HomEmpty s)
 
+type instance Hom Mlt h = HomMultiplicative h
+
 --------------------------------------------------------------------------------
 -- HomMultiplicativeDisjunctive -
 
@@ -101,6 +103,8 @@ instance TransformableMlt s => HomMultiplicative (HomEmpty s)
 class (HomOrientedDisjunctive h, Transformable (ObjectClass h) Mlt) => HomMultiplicativeDisjunctive h
 
 instance HomMultiplicativeDisjunctive h => HomMultiplicative (Variant2 Covariant h)
+
+type instance HomD Mlt h = HomMultiplicativeDisjunctive h
 
 --------------------------------------------------------------------------------
 -- DualisableMultiplicative -

@@ -43,6 +43,7 @@ import Data.List as L ((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Either
@@ -55,6 +56,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
@@ -255,6 +257,7 @@ lmMap h l     = case cns $ cone $ universalCone l of
   Right Refl -> lmMapMlt h l
   Left Refl  -> lmMapDst h l
 -}
+
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
@@ -278,15 +281,78 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
         SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
 
 --------------------------------------------------------------------------------
+-- Limes - Dualisable -
+
+ff :: Struct s x -> Inv2 (Variant2 Covariant (HomDisjEmpty s o)) x (o (o x))
+ff = error "nyi"
+
+instance ApplicativeG Id h c => ApplicativeG Id (Inv2 h) c where amapG (Inv2 t _) = amapG t
+instance ApplicativeG Pnt h c => ApplicativeG Pnt (Inv2 h) c where amapG (Inv2 t _) = amapG t
+  
+instance HomOriented h => HomOriented (Inv2 h)
+-- instance HomMultiplicative h => HomMultiplicative (Inv2 h)
+
+lmToBidualMlt ::
+  ( TransformableMlt s
+  , DualisableMultiplicative s o
+  , t ~ Dual (Dual t)
+  )
+  => Struct s x -> Limes c Mlt p d t n m x -> Limes c Mlt p d t n m (o (o x))
+lmToBidualMlt s = lmMap (ff s) where
+
+{-  
+lmToBidualMlt s = lmMap (Covariant2 (iso' . iso)) where
+  Covariant2 iso  = isoO s
+  Covariant2 iso' = isoO (tauO s)
+-}
+
+lmFromBidualMlt ::
+  ()
+  => Struct s x -> Limes c Mlt p d t n m (o (o x)) -> Limes c Mlt p d t n m x
+lmFromBidualMlt = error "nyi"
+
+{-
+instance
+  ( TransformableType s
+  )
+  => ReflexiveG s (->) o (Limes c Mlt p d t n m)
+-}
+
+{-  
+instance
+  (p' ~ Dual p,t' ~ Dual t
+  )
+  => DualisableGPair s (->) o (Limes c Mlt p d t n m) (Limes c Mlt p' d t' n m)
+-}
+
+{-  
+instance
+  ()
+  => DualisableGBi s (->) o (Limes c Mlt p d t n m)
+-}
+
+--------------------------------------------------------------------------------
 -- Limes - Applicative -
 
 instance (HomMultiplicative h, NaturalConic h c Mlt p d t n m)
   => ApplicativeG (Limes c Mlt p d t n m) (Inv2 h) (->) where
   amapG = lmMap
 
+instance (HomMultiplicative h, NaturalConicDual1 h c Mlt p d t n m)
+  => ApplicativeGDual1 (Limes c Mlt p d t n m) (Inv2 h) (->)
+  
 instance (HomDistributive h, NaturalConic h c Dst p d t n m)
   => ApplicativeG (Limes c Dst p d t n m) (Inv2 h) (->) where
   amapG = lmMap
+
+{-
+instance
+  ( HomMultiplicative h
+  , NaturalConicBi h c Mlt p d t n m
+  )
+  => ApplicativeG (SDualBi (Limes c Mlt p d t n m)) (HomDisj s o (Inv2 h)) (->) where
+  amapG (HomDisj h) = amapG h
+-}  
 
 
 {-

@@ -42,8 +42,6 @@ module OAlg.Limes.Cone.Definition
   , xCnInjOrnt, xCnInjDstOrnt
 
 
-  , Hom, HomD
-
   ) where
 
 import Control.Monad
@@ -215,22 +213,6 @@ type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
 
 instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
 instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
-
---------------------------------------------------------------------------------
--- Hom -
-
-type family Hom s (h :: Type -> Type -> Type) :: Constraint
-
-type instance Hom Mlt h = HomMultiplicative h
-type instance Hom Dst h = HomDistributive h
-
---------------------------------------------------------------------------------
--- HomD -
-
-type family HomD s (h :: Type -> Type -> Type) :: Constraint
-
-type instance HomD Mlt h = HomMultiplicativeDisjunctive h
-type instance HomD Dst h = HomDistributiveDisjunctive h
 
 --------------------------------------------------------------------------------
 -- cnMap -

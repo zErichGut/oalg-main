@@ -32,11 +32,16 @@ module OAlg.Hom.Definition
 
     -- * Id
   , HomId(..)
-  
+
+    -- * Hom
+  , Hom, HomD
+    
     -- * X
   , xscmHomDisj
   )
   where
+
+import Data.Kind
 
 import OAlg.Prelude
 
@@ -177,6 +182,17 @@ instance ApplicativeG Pnt (HomId s) (->) where
   amapG ToId (Pnt p)   = Pnt p
   amapG FromId (Pnt p) = Pnt p
   
+--------------------------------------------------------------------------------
+-- Hom -
+
+-- | homomorphisms parameterized over @__s__@.
+type family Hom s (h :: Type -> Type -> Type) :: Constraint
+
+--------------------------------------------------------------------------------
+-- HomD -
+
+-- | disjunctive homomorphisms parameterized over @__s__@.
+type family HomD s (h :: Type -> Type -> Type) :: Constraint
 
 --------------------------------------------------------------------------------
 -- xscmHomDisj -

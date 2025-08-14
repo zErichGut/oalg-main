@@ -58,6 +58,8 @@ instance
   )
   => HomDistributive (HomEmpty s)
 
+type instance Hom Dst h = HomDistributive h
+
 --------------------------------------------------------------------------------
 -- DualisableDistributive -
 
@@ -80,6 +82,8 @@ instance (HomDistributive h, DualisableDistributive s o)
   => HomDistributiveDisjunctive (HomDisj s o h)
 
 instance HomDistributiveDisjunctive h => HomDistributive (Variant2 Covariant h)
+
+type instance HomD Dst h = HomDistributiveDisjunctive h
 
 --------------------------------------------------------------------------------
 -- isoOpDst -

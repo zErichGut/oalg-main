@@ -393,8 +393,7 @@ class
   => NaturalDiagrammaticSDualisable h d t n m
 
 instance
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammaticDual1 h d t n m
+  ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
   )
   => ApplicativeG (SDualBi (DiagramG d t n m)) (HomDisj s o h) (->) where
@@ -410,23 +409,20 @@ instance NaturalDiagrammaticDual1 h d t n m
 -}
 
 instance
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammaticDual1 h d t n m
+  ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
   )
   => NaturalTransformable (HomDisj s o h) (->)
        (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m))
 
 instance
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammaticDual1 h d t n m
+  ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
   )
   => NaturalDiagrammaticSDualisable (HomDisj s o h) d t n m
 
 instance
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammaticDual1 h d t n m
+  ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
   )  
   => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
@@ -434,15 +430,13 @@ instance
     SDualBi (Right1 d') = amapG h (SDualBi (Right1 d))
 
 instance
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammaticDual1 h d t n m
+  ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
   )  
   => NaturalTransformable (Variant2 Covariant (HomDisj s o h)) (->) (DiagramG d t n m) (Diagram t n m)
 
 instance
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammaticDual1 h d t n m
+  ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
   )  
   => NaturalDiagrammatic (Variant2 Covariant (HomDisj s o h)) d t n m
