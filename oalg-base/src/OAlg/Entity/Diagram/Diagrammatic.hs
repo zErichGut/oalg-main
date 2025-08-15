@@ -398,15 +398,6 @@ instance
   )
   => ApplicativeG (SDualBi (DiagramG d t n m)) (HomDisj s o h) (->) where
   amapG (HomDisj h) = smapBi h
-  -- actually the implementation should be: amapG (HomDisj h) = smapBi h
-  -- but then ApplicativeGDual1 (DiagramG d t n m) h (->) is needet
-  -- and acutaly it follows form NaturalDiagrammaticDual1 h d t n m,
-  -- but the compiler has a problem with that!
-
-{-
-instance NaturalDiagrammaticDual1 h d t n m
-  => ApplicativeGDual1 (DiagramG d t n m) h (->)
--}
 
 instance
   ( NaturalDiagrammaticBi h d t n m

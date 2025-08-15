@@ -328,6 +328,16 @@ instance
   toDualGRgt s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
+
+instance 
+  ( TransformableMlt s
+  , DualisableMultiplicative s o
+  , DualisableDiagrammatic s o d t n m
+  , DualisableDiagrammaticDual1 s o d t n m
+  , p ~ Dual (Dual p)
+  )
+  => DualisableGBi s (->) o (Cone Mlt p d t n m)
+
 --------------------------------------------------------------------------------
 -- Cone - Dst - DualisableGBi
 
@@ -437,15 +447,6 @@ instance
   , NaturalDiagrammatic h d t n m
   )
   => FunctorialG (Cone Dst p d t n m) h (->)
-
-instance 
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammaticDual1 s o d t n m
-  , p ~ Dual (Dual p)
-  )
-  => DualisableGBi s (->) o (Cone Mlt p d t n m)
 
 instance
   ( HomMultiplicative h

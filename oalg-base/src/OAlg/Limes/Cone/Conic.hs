@@ -44,9 +44,11 @@ import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone.Definition
 
@@ -143,12 +145,121 @@ type NaturalConicBi h c s p d t n m
 --------------------------------------------------------------------------------
 -- DualisableConic -
 
+-- | duality for 'Conic' objects.
+--
+-- __Property__ Let @'DualisableConic' __r o c s p d t n m__@ then
+-- for all @__x__@ and @r@ in @'Struct' __r x__@ holds:
+--
+-- (1) For @__s__@ equal to t'Mlt', @'DualisableMultiplicative' __r o__@ and any proxy
+-- @q@ in @__q r o c__ t'Mlt' __p d t n m__@ holds:
+--
+--     (1) @'cone' '.' 'toDualCncLft'' d r '.=.' 'toDualGLft' r '.' 'cone'@.
+--
+--     (2) @'cone' '.' 'toDualCncRgt'' d r '.=.' 'toDualGRgt' r '.' 'cone'@.
+--
+-- (2) For @__s__@ equal to t'Dst', @'DualisableDistributive' __r o__@ and any proxy
+-- @q@ in @__q r o c__ t'Dst' __p d t n m__@ holds:
+--
+--     (1) @'cone' '.' 'toDualCncLft'' d r '.=.' 'toDualGLft' r '.' 'cone'@.
+--
+--     (2) @'cone' '.' 'toDualCncRgt'' d r '.=.' 'toDualGRgt' r '.' 'cone'@.
 class
   ( Conic c
-  , DualisableDiagrammatic r o d t n m
   , DualisableGBi r (->) o (ConeG c s p d t n m)
+  , DualisableDiagrammaticBi r o d t n m
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
   )
   => DualisableConic r o c s p d t n m
+
+--------------------------------------------------------------------------------
+-- DualityConic -
+
+-- | whiteness for 'DualisableConic'.
+data DualityConic r o c s p d t n m where
+  DualityConic :: DualisableConic r o c s p d t n m => DualityConic r o c s p d t n m
+  
+--------------------------------------------------------------------------------
+-- toDualCncLft -
+
+-- | the induced mapping.
+toDualCncLft :: DualisableConic r o c s p d t n m
+  => Struct r x -> c s p d t n m x -> c s (Dual p) d (Dual t) n m (o x)
+toDualCncLft r c = c' where ConeG c' = toDualGLft r (ConeG c)
+
+-- | the induced mapping.
+toDualCncLft' :: DualisableConic r o c s p d t n m
+  => q r o c s p d t n m -> Struct r x -> c s p d t n m x -> c s (Dual p) d (Dual t) n m (o x)
+toDualCncLft' _ = toDualCncLft
+
+--------------------------------------------------------------------------------
+-- toDualCncRgt -
+
+-- | the induced mapping.
+toDualCncRgt :: DualisableConic r o c s p d t n m
+  => Struct r x -> c s (Dual p) d (Dual t) n m x -> c s p d t n m (o x)
+toDualCncRgt r c' = c where ConeG c = toDualGRgt r (ConeG c')
+
+-- | the induced mapping.
+toDualCncRgt' :: DualisableConic r o c s p d t n m
+  => q r o c s p d t n m
+  -> Struct r x -> c s (Dual p) d (Dual t) n m x -> c s p d t n m (o x)
+toDualCncRgt' _ = toDualCncRgt
+
+--------------------------------------------------------------------------------
+-- prpDualisableConicLft -
+
+relDualisableConicLftMlt ::
+  ( s ~ Mlt
+  , DualisableConic r o c s p d t n m
+  , DualisableMultiplicative r o
+  , TransformableMlt r -- acutally this follows from DualisableMultiplicative r o
+  , Eq (d (Dual t) n m (o x))
+  )
+  => DualityConic r o c s p d t n m
+  -> Struct r x -> c s p d t n m x -> Statement
+relDualisableConicLftMlt d@DualityConic r c
+  = ( cone (toDualCncLft' d r c) == toDualGLft r (cone c)
+    ) :?> Params []
+
+relDualisableConicLftDst ::
+  ( s ~ Dst
+  , DualisableConic r o c s p d t n m
+  , DualisableDistributive r o
+  , TransformableDst r
+  , Eq (d (Dual t) n m (o x))
+  )
+  => DualityConic r o c s p d t n m
+  -> Struct r x -> c s p d t n m x -> Statement
+relDualisableConicLftDst d@DualityConic r c
+  = ( cone (toDualCncLft' d r c) == toDualGLft r (cone c)
+    ) :?> Params []
+
+--------------------------------------------------------------------------------
+-- prpDualisableConicRgt -
+
+relDualisableConicRgtMlt ::
+  ( s ~ Mlt
+  , DualisableMultiplicative r o
+  , TransformableMlt r
+  , Eq (d t n m (o x))
+  )
+  => DualityConic r o c s p d t n m
+  -> Struct r x -> c s (Dual p) d (Dual t) n m x -> Statement
+relDualisableConicRgtMlt d@DualityConic r c
+  = ( cone (toDualCncRgt' d r c) == toDualGRgt r (cone c) 
+    ) :?> Params []
+
+relDualisableConicRgtDst ::
+  ( s ~ Dst
+  , DualisableDistributive r o
+  , TransformableDst r
+  , Eq (d t n m (o x))
+  )
+  => DualityConic r o c s p d t n m
+  -> Struct r x -> c s (Dual p) d (Dual t) n m x -> Statement
+relDualisableConicRgtDst d@DualityConic r c
+  = ( cone (toDualCncRgt' d r c) == toDualGRgt r (cone c) 
+    ) :?> Params []
 
 --------------------------------------------------------------------------------
 -- NaturalConicSDualisable -
@@ -186,24 +297,24 @@ instance
   , NaturalDiagrammaticBi h d t n m
   , DualisableMultiplicative r o
 
-  , Conic c
-  , DualisableDiagrammatic r o d t n m
-  , DualisableGBi r (->) o (ConeG c Mlt p d t n m)
+  , DualisableConic r o c Mlt p d t n m
   )
   => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
        (ConeG c Mlt p d t n m) (Cone Mlt p d t n m)
 
-{-
+
 instance
-  ( NaturalConicBi h c Mlt p d t n m
-  , DualisableConic r o c Mlt p d t n m
+  ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
+
   , HomMultiplicative h
-  , DualisableMultiplicative r o 
-  , NaturalDiagrammaticDual1 h d t n m
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableMultiplicative r o
+
+  , DualisableConic r o c Mlt p d t n m
   )
   => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Mlt p d t n m
 
--}
+
 --------------------------------------------------------------------------------
 -- prpNaturalConicConeOS -
 
