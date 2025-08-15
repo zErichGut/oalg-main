@@ -236,9 +236,9 @@ type NaturalDiagrammaticBi h d t n m =
 --  __Property__ Let @'DualisableDiagrammatic' __s o d t n m__@ then
 -- for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
 --
--- (1) @'diagram' '.' 'toDualLftDgm'' n s '.=.' 'toDualGLft' s '.' 'diagram'@.
+-- (1) @'diagram' '.' 'toDualDgmLft'' n s '.=.' 'toDualGLft' s '.' 'diagram'@.
 --
--- (2) @'diagram' '.' 'toDualRgtDgm'' n s '.=.' 'toDualGRgt' s '.' 'diagram'@.
+-- (2) @'diagram' '.' 'toDualDgmRgt'' n s '.=.' 'toDualGRgt' s '.' 'diagram'@.
 --
 -- where @n@ is a proxy in  @__q s o d t n m__@.
 class ( Diagrammatic d
@@ -309,28 +309,28 @@ data DualityDiagrammatic s o d t n m where
   DualityDiagrammatic :: DualisableDiagrammatic s o d t n m => DualityDiagrammatic s o d t n m
 
 --------------------------------------------------------------------------------
--- toDualLftDgm -
+-- toDualDgmLft -
 
 -- | the induced mapping.
-toDualLftDgm :: DualisableDiagrammatic s o d t n m
+toDualDgmLft :: DualisableDiagrammatic s o d t n m
   => Struct s x -> d t n m x -> d (Dual t) n m (o x)
-toDualLftDgm s d = d' where DiagramG d' = toDualGLft s (DiagramG d)
+toDualDgmLft s d = d' where DiagramG d' = toDualGLft s (DiagramG d)
 
-toDualLftDgm' :: DualisableDiagrammatic s o d t n m
+toDualDgmLft' :: DualisableDiagrammatic s o d t n m
   => q s o d t n m -> Struct s x -> d t n m x -> d (Dual t) n m (o x)
-toDualLftDgm' _ = toDualLftDgm
+toDualDgmLft' _ = toDualDgmLft
 
 --------------------------------------------------------------------------------
--- toDualRgtDgm -
+-- toDualDgmRgt -
 
 -- | the induced mapping.
-toDualRgtDgm :: DualisableDiagrammatic s o d t n m
+toDualDgmRgt :: DualisableDiagrammatic s o d t n m
   => Struct s x -> d (Dual t) n m x -> d t n m (o x)
-toDualRgtDgm s d = d' where DiagramG d' = toDualGRgt s (DiagramG d)
+toDualDgmRgt s d = d' where DiagramG d' = toDualGRgt s (DiagramG d)
 
-toDualRgtDgm' :: DualisableDiagrammatic s o d t n m
+toDualDgmRgt' :: DualisableDiagrammatic s o d t n m
   => q s o d t n m -> Struct s x -> d (Dual t) n m x -> d t n m (o x)
-toDualRgtDgm' _ = toDualRgtDgm
+toDualDgmRgt' _ = toDualDgmRgt
 
 --------------------------------------------------------------------------------
 -- prpDualisableDiagrammatic -
@@ -339,14 +339,14 @@ relDualisableDiagrammaticLft :: Show (d t n m x)
   => DualityDiagrammatic s o d t n m
   -> Struct Ort (o x) -> Struct s x -> d t n m x -> Statement
 relDualisableDiagrammaticLft n@DualityDiagrammatic Struct s d
-  = (toDualGLft s (diagram d) == diagram (toDualLftDgm' n s d))
+  = (toDualGLft s (diagram d) == diagram (toDualDgmLft' n s d))
   :?> Params ["d":=show d]
 
 relDualisableDiagrammaticRgt :: (Show (d (Dual t) n m x))
   => DualityDiagrammatic s o d t n m
   -> Struct Ort (o x) -> Struct s x -> d (Dual t) n m x -> Statement
 relDualisableDiagrammaticRgt n@DualityDiagrammatic Struct s d'
-  = (toDualGRgt s (diagram d') == diagram (toDualRgtDgm' n s d'))
+  = (toDualGRgt s (diagram d') == diagram (toDualDgmRgt' n s d'))
   :?> Params ["d'":=show d']
 
 -- | validity according to 'DualisableDiagrammatic'.

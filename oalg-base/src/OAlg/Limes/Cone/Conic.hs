@@ -163,6 +163,8 @@ type NaturalConicBi h c s p d t n m
 --     (1) @'cone' '.' 'toDualCncLft'' d r '.=.' 'toDualGLft' r '.' 'cone'@.
 --
 --     (2) @'cone' '.' 'toDualCncRgt'' d r '.=.' 'toDualGRgt' r '.' 'cone'@.
+--
+-- (see 'prpDualisableConicLft' and 'prpDualisableConicRgt')
 class
   ( Conic c
   , DualisableGBi r (->) o (ConeG c s p d t n m)
