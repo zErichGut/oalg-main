@@ -17,14 +17,13 @@
 -- application on values.
 module OAlg.Category.Applicative
   (
-
     -- * Applicative
     Applicative1, amap1
 
     -- * Generalized
   , ApplicativeG(..), amapG'
   , ApplicationG(..), apType
-  , ApplicativeGDual1
+  , ApplicativeGDual1, ApplicativeGBi
 
   )
   where
@@ -95,3 +94,11 @@ amap1 = amapG
 -- | helper class to avoid undecidable instances.
 class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
 
+--------------------------------------------------------------------------------
+-- ApplicativeGBi -
+
+-- | constraint for bi-applicative.
+type ApplicativeGBi d h c
+  = ( ApplicativeG d h c
+    , ApplicativeGDual1 d h c
+    )

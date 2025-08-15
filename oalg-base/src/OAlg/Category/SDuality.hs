@@ -394,7 +394,7 @@ smapBi = smpPathMapSDualBi . form
 
 instance
   ( Morphism h
-  , ApplicativeG d h (->), ApplicativeGDual1 d h (->)
+  , ApplicativeGBi d h (->)
   , DualisableGBi r (->) o d
   , Transformable s r
   )
@@ -403,7 +403,7 @@ instance
 
 instance
   ( Morphism h
-  , ApplicativeG d h (->), ApplicativeGDual1 d h (->)
+  , ApplicativeGBi d h (->)
   , DualisableGBi r (->) o d
   , Transformable s r
   )

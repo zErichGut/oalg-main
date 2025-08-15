@@ -147,7 +147,6 @@ class
   ( Conic c
   , DualisableDiagrammatic r o d t n m
   , DualisableGBi r (->) o (ConeG c s p d t n m)
-  , Transformable r s
   )
   => DualisableConic r o c s p d t n m
 
@@ -164,31 +163,37 @@ class
   => NaturalConicSDualisable h c s p d t n m
 
 instance
-  ( NaturalConicBi h c s p d t n m
-  , DualisableConic r o c s p d t n m
+  ( Morphism h
+  , ApplicativeGBi (ConeG c s p d t n m) h (->)
+  , DualisableGBi r (->) o (ConeG c s p d t n m)
   )
   => ApplicativeG (SDualBi (ConeG c s p d t n m)) (HomDisj r o h) (->) where
-  amapG (HomDisj h) = smapBi h
+  amapG (HomDisj h) = amapG h -- i.e. smapBi
 
 instance
-  ( NaturalConicBi h c s p d t n m
-  , DualisableConic r o c s p d t n m
+  ( Morphism h
+  , ApplicativeGBi (ConeG c s p d t n m) h (->)
+  , DualisableGBi r (->) o (ConeG c s p d t n m)
   )
   => ApplicativeG (ConeG c s p d t n m) (Variant2 Covariant (HomDisj r o h)) (->) where
   amapG (Covariant2 h) c = c' where
     SDualBi (Right1 c') = amapG h (SDualBi (Right1 c))
 
 instance
-  ( NaturalConicBi h c Mlt p d t n m
-  , DualisableConic r o c Mlt p d t n m
+  ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
+
   , HomMultiplicative h
-  , DualisableMultiplicative r o 
-  , NaturalDiagrammaticDual1 h d t n m
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableMultiplicative r o
+
+  , Conic c
+  , DualisableDiagrammatic r o d t n m
+  , DualisableGBi r (->) o (ConeG c Mlt p d t n m)
   )
   => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
        (ConeG c Mlt p d t n m) (Cone Mlt p d t n m)
 
-
+{-
 instance
   ( NaturalConicBi h c Mlt p d t n m
   , DualisableConic r o c Mlt p d t n m
@@ -198,6 +203,7 @@ instance
   )
   => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Mlt p d t n m
 
+-}
 --------------------------------------------------------------------------------
 -- prpNaturalConicConeOS -
 
