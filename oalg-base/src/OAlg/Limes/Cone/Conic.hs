@@ -26,6 +26,9 @@ module OAlg.Limes.Cone.Conic
   , NaturalConicBi
 
   , NaturalConicSDualisable
+
+    -- * Duality
+  , DualisableConic
     
   ) where
 
@@ -76,6 +79,10 @@ newtype ConeG (c :: Type -> Perspective
 
 type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 
+instance ApplicativeG (ConeG c s p d t n m) (HomEmpty r) (->) where
+  amapG = fromHomEmpty
+
+instance ApplicativeGDual1 (ConeG c s p d t n m) (HomEmpty r) (->)
 --------------------------------------------------------------------------------
 -- cncGMap -
 

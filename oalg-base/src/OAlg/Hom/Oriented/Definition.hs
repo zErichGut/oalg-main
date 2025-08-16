@@ -80,6 +80,8 @@ instance HomOriented h => HomOriented (Id2 h)
 
 instance TransformableOrt s => HomOriented (HomId s)
 
+instance HomOriented h => HomOriented (Inv2 h)
+
 --------------------------------------------------------------------------------
 -- omapDisj -
 

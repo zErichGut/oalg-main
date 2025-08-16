@@ -328,7 +328,6 @@ instance
   toDualGRgt s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = isoO s
 
-
 instance 
   ( TransformableMlt s
   , DualisableMultiplicative s o

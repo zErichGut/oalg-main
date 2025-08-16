@@ -77,6 +77,8 @@ instance TransformableMlt s => HomMultiplicative (HomEmpty s)
 
 type instance Hom Mlt h = HomMultiplicative h
 
+instance HomMultiplicative h => HomMultiplicative (Inv2 h)
+
 --------------------------------------------------------------------------------
 -- HomMultiplicativeDisjunctive -
 

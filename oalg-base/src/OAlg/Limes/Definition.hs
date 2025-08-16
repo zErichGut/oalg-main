@@ -283,40 +283,32 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
 --------------------------------------------------------------------------------
 -- Limes - Dualisable -
 
-ff :: Struct s x -> Inv2 (Variant2 Covariant (HomDisjEmpty s o)) x (o (o x))
-ff = error "nyi"
-
-instance ApplicativeG Id h c => ApplicativeG Id (Inv2 h) c where amapG (Inv2 t _) = amapG t
-instance ApplicativeG Pnt h c => ApplicativeG Pnt (Inv2 h) c where amapG (Inv2 t _) = amapG t
-  
-instance HomOriented h => HomOriented (Inv2 h)
--- instance HomMultiplicative h => HomMultiplicative (Inv2 h)
-
-lmToBidualMlt ::
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , t ~ Dual (Dual t)
+lmReflToMlt ::
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableConic r o c Mlt p d t n m
   )
-  => Struct s x -> Limes c Mlt p d t n m x -> Limes c Mlt p d t n m (o (o x))
-lmToBidualMlt s = lmMap (ff s) where
+  => Struct r x -> Limes c Mlt p d t n m x -> Limes c Mlt p d t n m (o (o x))
+lmReflToMlt r = lmMap (Inv2 (Covariant2 t) (Covariant2 f)) where
+  Covariant2 (Inv2 t f) = reflO r
 
-{-  
-lmToBidualMlt s = lmMap (Covariant2 (iso' . iso)) where
-  Covariant2 iso  = isoO s
-  Covariant2 iso' = isoO (tauO s)
--}
+lmReflFromMlt ::
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableConic r o c Mlt p d t n m
+  )
+  => Struct r x -> Limes c Mlt p d t n m (o (o x)) -> Limes c Mlt p d t n m x
+lmReflFromMlt r = lmMap (Inv2 (Covariant2 f) (Covariant2 t)) where
+  Covariant2 (Inv2 t f) = reflO r
 
-lmFromBidualMlt ::
-  ()
-  => Struct s x -> Limes c Mlt p d t n m (o (o x)) -> Limes c Mlt p d t n m x
-lmFromBidualMlt = error "nyi"
-
-{-
 instance
-  ( TransformableType s
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableConic r o c Mlt p d t n m
   )
-  => ReflexiveG s (->) o (Limes c Mlt p d t n m)
--}
+  => ReflexiveG r (->) o (Limes c Mlt p d t n m) where
+  reflG r = Inv2 (lmReflToMlt r) (lmReflFromMlt r)
+
 
 {-  
 instance

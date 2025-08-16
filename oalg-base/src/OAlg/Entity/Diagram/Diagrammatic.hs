@@ -23,7 +23,6 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
-
     -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
@@ -44,7 +43,6 @@ module OAlg.Entity.Diagram.Diagrammatic
 
   -- * Proposition
   , prpDiagrammatic
-
   ) where
 
 import Control.Monad
@@ -415,7 +413,7 @@ instance
 instance
   ( NaturalDiagrammaticBi h d t n m
   , DualisableDiagrammatic s o d t n m
-  )  
+  )
   => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
   amapG (Covariant2 h) d = d' where
     SDualBi (Right1 d') = amapG h (SDualBi (Right1 d))
@@ -787,4 +785,5 @@ prpDiagrammatic nMax = Prp "Diagrammatic"
           => Any m -> NaturalDiagrammaticSDualBi (HomTest s) Diagram
                (Parallel RightToLeft) N2 m
         lrF _ = NaturalDiagrammaticSDualBi
+
 

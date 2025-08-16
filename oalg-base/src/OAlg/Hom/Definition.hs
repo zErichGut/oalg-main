@@ -25,6 +25,7 @@ module OAlg.Hom.Definition
     -- * Contravariant Isomorphism
   , IsoHomDisj, isoHomDisj
   , IsoO, isoO
+  , ReflO, reflO
 
 
     -- * Empty
@@ -149,14 +150,54 @@ isoHomDisj s = Contravariant2 (Inv2 t f) where
 --------------------------------------------------------------------------------
 -- IsoO -
 
+-- | the type for contravariant duals.
 type IsoO s o x = Variant2 Contravariant (Inv2 (HomDisjEmpty s o)) x (o x)
 
 --------------------------------------------------------------------------------
 -- isoO -
 
+-- | the contravariant dual.
 isoO :: TransformableGRefl o s
   => Struct s x -> IsoO s o x
 isoO = isoHomDisj
+
+--------------------------------------------------------------------------------
+-- ReflO -
+
+-- | the type for covariant reflections.
+type ReflO r o x = Variant2 Covariant (Inv2 (HomDisjEmpty r o)) x (o (o x))
+
+--------------------------------------------------------------------------------
+-- reflO -
+
+-- | the covariant reflection.
+reflO ::
+  TransformableGRefl o r
+  => Struct r x -> ReflO r o x
+reflO r = Covariant2 (iso' . iso) where
+  Contravariant2 iso  = isoO r
+  Contravariant2 iso' = isoO (tauO r)
+
+{-
+--------------------------------------------------------------------------------
+-- ReflO -
+
+-- | the type for covariant reflections.
+type ReflO r o x = Inv2 (Variant2 Covariant (HomDisjEmpty r o)) x (o (o x))
+
+--------------------------------------------------------------------------------
+-- reflO -
+
+-- | the covariant reflection.
+reflO ::
+  TransformableGRefl o r
+  => Struct r x -> ReflO r o x
+reflO r = Inv2 (Covariant2 t) (Covariant2 f) where
+  Inv2 t f = iso' . iso
+  
+  Contravariant2 iso  = isoO r
+  Contravariant2 iso' = isoO (tauO r)
+-}
 
 --------------------------------------------------------------------------------
 -- HomId -
