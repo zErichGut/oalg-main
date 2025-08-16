@@ -22,7 +22,7 @@ module OAlg.Hom.Distributive
   , DualisableDistributive
 
     -- * Iso
-  , isoOpDst
+  , toDualOpDst
   )
   where
 
@@ -86,8 +86,10 @@ instance HomDistributiveDisjunctive h => HomDistributive (Variant2 Covariant h)
 type instance HomD Dst h = HomDistributiveDisjunctive h
 
 --------------------------------------------------------------------------------
--- isoOpDst -
+-- toDualOpDst -
 
-isoOpDst :: Distributive x => IsoO Dst Op x
-isoOpDst = isoO Struct
+-- | the canonical 'Contravariant' isomorphism on 'Distributive' structures
+-- between @__x__@ and @'Op' __x__@.
+toDualOpDst :: Distributive x => Variant2 Contravariant (IsoO Dst Op) x (Op x)
+toDualOpDst = toDualO Struct
 

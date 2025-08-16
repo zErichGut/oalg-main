@@ -292,8 +292,8 @@ cnToBidualMlt ::
   )
   =>  Struct s x -> Cone Mlt p d t n m x -> Cone Mlt p d t n m (o (o x))
 cnToBidualMlt s = cnMapMlt (Covariant2 (t' . t)) where
-  Contravariant2 (Inv2 t _)  = isoO s
-  Contravariant2 (Inv2 t' _) = isoO (tauO s) 
+  Contravariant2 (Inv2 t _)  = toDualO s
+  Contravariant2 (Inv2 t' _) = toDualO (tauO s) 
 
 cnFromBidualMlt ::
   ( TransformableMlt s
@@ -302,8 +302,8 @@ cnFromBidualMlt ::
   )
   => Struct s x -> Cone Mlt p d t n m (o (o x))  -> Cone Mlt p d t n m x
 cnFromBidualMlt s = cnMapMlt (Covariant2 (f . f')) where
-  Contravariant2 (Inv2 _ f)  = isoO s
-  Contravariant2 (Inv2 _ f') = isoO (tauO s)
+  Contravariant2 (Inv2 _ f)  = toDualO s
+  Contravariant2 (Inv2 _ f') = toDualO (tauO s)
 
 instance 
   ( TransformableMlt s
@@ -323,10 +323,10 @@ instance
   )
   => DualisableGPair s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
   toDualGLft s = cnMapMltCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
   toDualGRgt s = cnMapMltCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
 instance 
   ( TransformableMlt s
@@ -347,8 +347,8 @@ cnToBidualDst ::
   )
   => Struct s x -> Cone Dst p d t n m x -> Cone Dst p d t n m (o (o x))
 cnToBidualDst s = cnMapDst (Covariant2 (t' . t)) where
-  Contravariant2 (Inv2 t _)  = isoO s
-  Contravariant2 (Inv2 t' _) = isoO (tauO s)
+  Contravariant2 (Inv2 t _)  = toDualO s
+  Contravariant2 (Inv2 t' _) = toDualO (tauO s)
   
 cnFromBidualDst ::
   ( TransformableDst s
@@ -357,8 +357,8 @@ cnFromBidualDst ::
   )
   => Struct s x -> Cone Dst p d t n m (o (o x))  -> Cone Dst p d t n m x
 cnFromBidualDst s = cnMapDst (Covariant2 (f . f')) where
-  Contravariant2 (Inv2 _ f)  = isoO s
-  Contravariant2 (Inv2 _ f') = isoO (tauO s)
+  Contravariant2 (Inv2 _ f)  = toDualO s
+  Contravariant2 (Inv2 _ f') = toDualO (tauO s)
 
 instance 
   ( TransformableDst s
@@ -378,10 +378,10 @@ instance
   )
   => DualisableGPair s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
   toDualGLft s = cnMapDstCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
   toDualGRgt s = cnMapDstCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
 instance 
   ( TransformableDst s
@@ -499,8 +499,8 @@ instance
 
 {-
 s = Struct :: Struct Mlt OS
-Contravariant2 (Inv2 t _)  = isoO s :: IsoO Mlt Op OS
-Contravariant2 (Inv2 t' _) = isoO (tauO s) :: IsoO Mlt Op (Op OS)
+Contravariant2 (Inv2 t _)  = toDualO s :: IsoO Mlt Op OS
+Contravariant2 (Inv2 t' _) = toDualO (tauO s) :: IsoO Mlt Op (Op OS)
 h = t' . t
 hCov = Covariant2 h
 -}
@@ -722,7 +722,7 @@ cnDstAdjZero :: Cone Dst p Diagram t n m a -> Cone Mlt p Diagram t n (m+1) a
 cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
   = ConeProjective (dgPrlAdjZero d) t (k:|zero (t:>r):|Nil) where t = start k
 cnDstAdjZero c@(ConeCokernel _ _) = cMlt where
-  Contravariant2 (Inv2 t f) = isoOpDst
+  Contravariant2 (Inv2 t f) = toDualOpDst
   
   SDualBi (Left1 c')    = amapG t (SDualBi (Right1 c))
   cMlt'                 = cnDstAdjZero c'
@@ -736,11 +736,11 @@ relConeDiagram :: Cone s p Diagram t n m a -> Statement
 relConeDiagram (ConeProjective d t cs) = relConePrjMlt d t cs
 relConeDiagram c@(ConeInjective _ _ _) = case cnDiagramTypeRefl c of
   Refl -> relConeDiagram c' where
-    Contravariant2 (Inv2 t _) = isoOpMlt
+    Contravariant2 (Inv2 t _) = toDualOpMlt
     SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
 relConeDiagram c@(ConeKernel _ _)      = relConeDiagram (cnDstAdjZero c)
 relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram c' where
-  Contravariant2 (Inv2 t _) = isoOpDst
+  Contravariant2 (Inv2 t _) = toDualOpDst
   SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
 
 --------------------------------------------------------------------------------

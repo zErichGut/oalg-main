@@ -1,5 +1,4 @@
 
-
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -26,7 +25,7 @@ module OAlg.Hom.Multiplicative
   (
     -- * Disjunctive
     HomMultiplicativeDisjunctive
-  , isoOpMlt
+  , toDualOpMlt
 
     -- * Covariant
   , HomMultiplicative
@@ -133,10 +132,12 @@ instance ( TransformableOrt s, TransformableMlt s, TransformableOp s
          ) => DualisableMultiplicative s Op
 
 --------------------------------------------------------------------------------
--- isoOpMlt -
+-- toDualOpMlt -
 
-isoOpMlt :: Multiplicative x => IsoO Mlt Op x
-isoOpMlt = isoO Struct
+-- | the canonical 'Contravariant' isomorphism on 'Multiplicative' structures
+-- between @__x__@ and @'Op' __x__@.
+toDualOpMlt :: Multiplicative x => Variant2 Contravariant (IsoO Mlt Op) x (Op x)
+toDualOpMlt = toDualO Struct
 
 --------------------------------------------------------------------------------
 -- relMapMltOne -

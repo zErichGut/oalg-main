@@ -144,7 +144,7 @@ cnEligibleFactorDgm (ConeProjective _ a as) (ConeProjective _ b bs) x
     
 cnEligibleFactorDgm a@(ConeInjective d _ _) b x = case dgTypeRefl d of
   Refl -> cnEligibleFactorDgm a' b' x' where
-    Contravariant2 (Inv2 t _) = isoOpMlt
+    Contravariant2 (Inv2 t _) = toDualOpMlt
   
     SDualBi (Left1 a') = amapG t (SDualBi (Right1 a))
     SDualBi (Left1 b') = amapG t (SDualBi (Right1 b))
@@ -155,7 +155,7 @@ cnEligibleFactorDgm (ConeKernel _ a) (ConeKernel _ b) x
 
 cnEligibleFactorDgm a@(ConeCokernel d _) b x = case dgTypeRefl d of
   Refl -> cnEligibleFactorDgm a' b' x' where
-    Contravariant2 (Inv2 t _) = isoOpDst
+    Contravariant2 (Inv2 t _) = toDualOpDst
   
     SDualBi (Left1 a') = amapG t (SDualBi (Right1 a))
     SDualBi (Left1 b') = amapG t (SDualBi (Right1 b))

@@ -1,5 +1,4 @@
 
-
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -135,16 +134,16 @@ dgtToBidual :: ( DualisableMultiplicative s o, TransformableMlt s
                )
   => Struct s x -> DiagramTrafo t n m x -> DiagramTrafo t n m (o (o x))
 dgtToBidual s = dgtMap (Covariant2 (t' . t)) where
-  Contravariant2 (Inv2 t _)  = isoO s
-  Contravariant2 (Inv2 t' _) = isoO (tauO s)
+  Contravariant2 (Inv2 t _)  = toDualO s
+  Contravariant2 (Inv2 t' _) = toDualO (tauO s)
 
 dgtFromBidual :: ( DualisableMultiplicative s o, TransformableMlt s
                  , TransformableGRefl o s
                  )
   => Struct s x -> DiagramTrafo t n m (o (o x)) -> DiagramTrafo t n m x
 dgtFromBidual s = dgtMap (Covariant2 (f . f')) where
-  Contravariant2 (Inv2 _ f)  = isoO s
-  Contravariant2 (Inv2 _ f') = isoO (tauO s)
+  Contravariant2 (Inv2 _ f)  = toDualO s
+  Contravariant2 (Inv2 _ f') = toDualO (tauO s)
 
 instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
@@ -158,9 +157,9 @@ instance ( DualisableMultiplicative s o, TransformableMlt s
          )
   => DualisableGPair s (->) o (DiagramTrafo t n m) (DiagramTrafo t' n m) where
   toDualGLft s = dgtMapCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
   toDualGRgt s = dgtMapCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
 instance ( DualisableMultiplicative s o, TransformableMlt s
          , TransformableGRefl o s, Transformable s Type
@@ -297,7 +296,7 @@ vldTr t@(DiagramTrafo a b ts) = case (a,b) of
   _                                         -> case dgtTypeRefl t of
     Refl -> vldTr t' where
       SDualBi (Left1 t') = amapG toOp (SDualBi (Right1 t))
-      Contravariant2 (Inv2 toOp _) = isoOpMlt
+      Contravariant2 (Inv2 toOp _) = toDualOpMlt
 
 
 instance Multiplicative a => Validable (DiagramTrafo t n m a) where

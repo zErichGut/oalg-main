@@ -38,7 +38,7 @@ module OAlg.Hom.Oriented.Definition
   , toDualArw, toDualPnt, toDualOrt
   
     -- * Iso
-  , isoOpOrt
+  , toDualOpOrt
   )
   where
 
@@ -194,9 +194,10 @@ class (Functorial h, FunctorialPoint h) => FunctorialOriented h
 instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomDisj s o h)
 
 --------------------------------------------------------------------------------
--- isoOpOrt -
+-- toDualOpOrt -
 
--- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpOrt :: Oriented x => IsoO Ort Op x
-isoOpOrt = isoO Struct
+-- | the canonical 'Contravariant' isomorphism on 'Oriented' structures
+-- between @__x__@ and @'Op' __x__@.
+toDualOpOrt :: Oriented x => Variant2 Contravariant (IsoO Ort Op) x (Op x)
+toDualOpOrt = toDualO Struct
 

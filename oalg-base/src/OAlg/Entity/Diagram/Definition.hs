@@ -312,14 +312,14 @@ dgMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
 dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
 dgToBidual s = dgMap (Covariant2 (t' . t)) where
-  Contravariant2 (Inv2 t _)  = isoO s
-  Contravariant2 (Inv2 t' _) = isoO (tauO s) 
+  Contravariant2 (Inv2 t _)  = toDualO s
+  Contravariant2 (Inv2 t' _) = toDualO (tauO s) 
 
 dgFromBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => Struct s x -> Diagram t n m (o (o x)) -> Diagram t n m x
 dgFromBidual s = dgMap (Covariant2 (f . f')) where
-  Contravariant2 (Inv2 _ f)  = isoO s
-  Contravariant2 (Inv2 _ f') = isoO (tauO s) 
+  Contravariant2 (Inv2 _ f)  = toDualO s
+  Contravariant2 (Inv2 _ f') = toDualO (tauO s) 
 
 instance (Transformable s Type, DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
   => ReflexiveG s (->) o (Diagram t n m) where
@@ -330,10 +330,10 @@ instance (DualisableOriented s o, Transformable s Type, TransformableGRefl o s, 
          )
   => DualisableGPair s (->) o (Diagram t n m) (Diagram t' n m) where
   toDualGLft s = dgMapCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
   toDualGRgt s = dgMapCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = isoO s
+    Contravariant2 (Inv2 t _) = toDualO s
 
 
 instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
@@ -419,7 +419,7 @@ instance Oriented a => Validable (Diagram t n m a) where
     _ -> case dgTypeRefl d of
       Refl -> valid d' where
         SDualBi (Left1 d')          = amapG toOp (SDualBi (Right1 d))
-        Contravariant2 (Inv2 toOp _) = isoOpOrt
+        Contravariant2 (Inv2 toOp _) = toDualOpOrt
     where prm :: N -> Message
           prm i = Params["i":=show i]
           lC = Label "chain"
@@ -465,7 +465,7 @@ dgQuiver (DiagramGeneral ps os) = Quiver (toW ps) (amap1 snd os)
 dgQuiver d = case dgTypeRefl d of
   Refl -> coQuiverInv $ dgQuiver d' where
     SDualBi (Left1 d') = amapG toOp (SDualBi (Right1 d))
-    Contravariant2 (Inv2 toOp _) = isoOpOrt
+    Contravariant2 (Inv2 toOp _) = toDualOpOrt
 
 --------------------------------------------------------------------------------
 -- chnToStart -
@@ -492,7 +492,7 @@ chnFromStart (DiagramChainFrom s _) = s
 chnFromEnd :: Oriented a => Diagram (Chain From) n m a -> Point a
 chnFromEnd d@(DiagramChainFrom _ _) = chnToStart d' where
   SDualBi (Left1 d') = amapG toOp (SDualBi (Right1 d))
-  Contravariant2 (Inv2 toOp _) = isoOpOrt
+  Contravariant2 (Inv2 toOp _) = toDualOpOrt
 
 --------------------------------------------------------------------------------
 -- Diagram (Chain t) - Oriented -
@@ -635,7 +635,7 @@ xDiagram rt@Refl xd = case xd of
   XDiagramSink m xe       -> xSink m xe
   _                       ->   amap1 (\d' -> let SDualBi (Right1 d)
                                                    = amapG fromOp (SDualBi (Left1 d'))
-                                                 Contravariant2 (Inv2 _ fromOp) = isoOpOrt
+                                                 Contravariant2 (Inv2 _ fromOp) = toDualOpOrt
                                              in d)
                              $ xDiagram (rt' rt) $ coXDiagram xd
 
@@ -795,21 +795,21 @@ xSomeDiagram xn xTo xFrom xO = do
 
   xChainFrom :: Oriented a => Any n -> XOrtSite From a -> X (SomeDiagram a)
   xChainFrom n xFrom = amap1 (sdgMap f) $ xChainTo n (coXOrtSite xFrom) where
-    Contravariant2 (Inv2 _ f) = isoOpOrt
+    Contravariant2 (Inv2 _ f) = toDualOpOrt
   
   xParallelLR :: Oriented a => Any n -> XOrtOrientation a -> X (SomeDiagram a)
   xParallelLR n xO = amap1 SomeDiagram $ xDiagram Refl (XDiagramParallelLR n xO)
    
   xParallelRL :: Oriented a => Any n -> XOrtOrientation a -> X (SomeDiagram a)
   xParallelRL n xO = amap1 (sdgMap f) $ xParallelLR n (coXOrtOrientation xO) where
-    Contravariant2 (Inv2 _ f) = isoOpOrt
+    Contravariant2 (Inv2 _ f) = toDualOpOrt
     
   xSink :: Oriented a => Any n -> XOrtSite To a -> X (SomeDiagram a)
   xSink n xTo = amap1 SomeDiagram $ xDiagram Refl (XDiagramSink n xTo)
 
   xSource :: Oriented a => Any n -> XOrtSite From a -> X (SomeDiagram a)
   xSource n xFrom = amap1 (sdgMap f) $ xSink n (coXOrtSite xFrom) where
-    Contravariant2 (Inv2 _ f) = isoOpOrt
+    Contravariant2 (Inv2 _ f) = toDualOpOrt
 
 --------------------------------------------------------------------------------
 -- dstSomeDiagram -

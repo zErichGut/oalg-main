@@ -597,7 +597,8 @@ instance TransformableOrt s
 instance TransformableOrt s => NaturalDiagrammatic (HomId s) Diagram t n m
 instance TransformableOrt s => NaturalDiagrammaticDual1 (HomId s) Diagram t n m
 
-isoHomTest :: TransformableGRefl Op s => HomTest s x y -> IsoHomDisj s Op (HomId s) x
+isoHomTest :: TransformableGRefl Op s => HomTest s x y
+  -> Variant2 Contravariant (IsoHomDisj s Op (HomId s)) x (Op x) 
 isoHomTest = isoHomDisj . domain
 
 snaDual ::

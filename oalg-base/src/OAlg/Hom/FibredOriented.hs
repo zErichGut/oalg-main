@@ -1,5 +1,4 @@
 
-
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -31,7 +30,7 @@ module OAlg.Hom.FibredOriented
 
 
     -- * Iso
-  , isoOpFbrOrt
+  , toDualOpFbrOrt
 
     -- * Proposition
   , prpHomFbrOrt, prpHomFbrOrtDisj
@@ -111,11 +110,12 @@ instance (HomFibredOriented h, DualisableFibredOriented s o)
   => HomFibredOrientedDisjunctive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
--- isoOpFbrOrt -
+-- toDualOpFbrOrt -
 
--- | the canonical 'Contravariant' isomorphism between @__x__@ and @'Op' __x__@
-isoOpFbrOrt :: FibredOriented x => IsoO FbrOrt Op x
-isoOpFbrOrt = isoO Struct
+-- | the canonical 'Contravariant' isomorphism on 'FibredOriented' structures
+-- between @__x__@ and @'Op' __x__@.
+toDualOpFbrOrt :: FibredOriented x => Variant2 Contravariant (IsoO FbrOrt Op) x (Op x)
+toDualOpFbrOrt = toDualO Struct
 
 --------------------------------------------------------------------------------
 -- prpHomFbrOrt -
