@@ -359,8 +359,8 @@ prpDualisableDiagrammatic n@DualityDiagrammatic s d d' = Prp "DualisableDiagramm
 --------------------------------------------------------------------------------
 -- drohS -
 
--- | natural assocition betewwn @'SDualBi' ('DiagramG' __d t n m)@ and
--- @'SDualBi' ('Diagram' t n m)@
+-- | natural assocition induced by 'droh' betewwn @'SDualBi' ('DiagramG' __d t n m__)@ and
+-- @'SDualBi' ('Diagram' __t n m__)@.
 drohS :: Diagrammatic d => SDualBi (DiagramG d t n m) x -> SDualBi (Diagram t n m) x
 drohS (SDualBi (Right1 d)) = SDualBi (Right1 (droh d))
 drohS (SDualBi (Left1 d')) = SDualBi (Left1 (droh d'))

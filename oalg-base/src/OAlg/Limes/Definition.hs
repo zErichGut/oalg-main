@@ -215,49 +215,6 @@ lmMap (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
   ConeG u' = amapG t (ConeG u)
   uf' = amap t . uf . amapG f 
 
-
-
-
-{-
-lmMapMlt ::
-  ( HomMultiplicative h
-  , NaturalConic h c s p d t n m
-  , s ~ Mlt
-  )
-  => Inv2 h x y -> Limes c s p d t n m x -> Limes c s p d t n m y
-lmMapMlt (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
-  ConeG u' = amapG t (ConeG u)
-  uf' = amap t . uf . amapG f 
-lmMapMlt (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
-  ConeG u' = amapG t (ConeG u)
-  uf' = amap t . uf . amapG f 
-
-lmMapDst ::
-  ( HomDistributive h
-  , NaturalConic h c s p d t n m
-  , s ~ Dst
-  )
-  => Inv2 h x y -> Limes c s p d t n m x -> Limes c s p d t n m y
-lmMapDst (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
-  ConeG u' = amapG t (ConeG u)
-  uf' = amap t . uf . amapG f 
-lmMapDst (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
-  ConeG u' = amapG t (ConeG u)
-  uf' = amap t . uf . amapG f 
-
-cns :: Cone s p d t n m x -> Either (s :~: Dst) (s :~: Mlt)
-cns (ConeProjective _ _ _) = Right Refl
-cns (ConeInjective _ _ _)  = Right Refl
-cns (ConeKernel _ _)       = Left Refl
-cns (ConeCokernel _ _)     = Left Refl
-
-lmMap :: (Conic c, Hom s h, NaturalConic h c s p d t n m)
-  => Inv2 h x y -> Limes c s p d t n m x -> Limes c s p d t n m y
-lmMap h l     = case cns $ cone $ universalCone l of
-  Right Refl -> lmMapMlt h l
-  Left Refl  -> lmMapDst h l
--}
-
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
@@ -309,19 +266,33 @@ instance
   => ReflexiveG r (->) o (Limes c Mlt p d t n m) where
   reflG r = Inv2 (lmReflToMlt r) (lmReflFromMlt r)
 
-
-{-  
-instance
-  (p' ~ Dual p,t' ~ Dual t
+lmToDualMltLft ::
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableConic r o c Mlt p d t n m
   )
-  => DualisableGPair s (->) o (Limes c Mlt p d t n m) (Limes c Mlt p' d t' n m)
--}
+  => Struct r x -> Limes c Mlt p d t n m x -> Dual1 (Limes c Mlt p d t n m) (o x)
+lmToDualMltLft r = lmMapCnt (toDualO r) where
+  
 
-{-  
 instance
-  ()
-  => DualisableGBi s (->) o (Limes c Mlt p d t n m)
--}
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableConic r o c Mlt p d t n m
+  , DualisableConic r o c Mlt p' d t' n m
+  , t' ~ Dual t, p' ~ Dual p
+  )
+  => DualisableGPair r (->) o (Limes c Mlt p d t n m) (Limes c Mlt p' d t' n m) where
+  toDualGLft r = lmMapCnt (toDualO r)
+  toDualGRgt r = lmMapCnt (toDualO r)
+
+
+instance
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableConicBi r o c Mlt p d t n m
+  )
+  => DualisableGBi r (->) o (Limes c Mlt p d t n m)
 
 --------------------------------------------------------------------------------
 -- Limes - Applicative -
@@ -337,6 +308,16 @@ instance (HomDistributive h, NaturalConic h c Dst p d t n m)
   => ApplicativeG (Limes c Dst p d t n m) (Inv2 h) (->) where
   amapG = lmMap
 
+instance
+  ( HomMultiplicative h
+  , TransformableMlt r
+  , DualisableMultiplicative r o
+  , NaturalConicBi h c Mlt p d t n m
+  , DualisableConicBi r o c Mlt p d t n m
+  )
+  => ApplicativeG (SDualBi (Limes c Mlt p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
+  amapG (Inv2 (HomDisj h) _) = amapG h
+  
 {-
 instance
   ( HomMultiplicative h

@@ -20,6 +20,7 @@ module OAlg.Limes.Cone.Conic
   (
     -- * Conic
     Conic(..), ConeG(..)
+  , ApplicativeConicBi
 
     -- * Natural
   , NaturalConic, NaturalConicDual1
@@ -28,7 +29,8 @@ module OAlg.Limes.Cone.Conic
   , NaturalConicSDualisable
 
     -- * Duality
-  , DualisableConic
+  , DualisableConic, DualisableConicBi
+  , DualisableConicDual1
     
   ) where
 
@@ -271,6 +273,40 @@ relDualisableConicRgtDst d@DualityConic r c
     ) :?> Params []
 
 --------------------------------------------------------------------------------
+-- DualisableConicDual1 -
+
+-- | helper class to avoid undecidable instances.
+class DualisableConic r o c s (Dual p) d (Dual t) n m => DualisableConicDual1 r o c s p d t n m
+
+-- | constrains for conic objects @__c__@ which are bi-dualisable conic.
+type DualisableConicBi r o c s p d t n m
+  = ( DualisableConic r o c s p d t n m
+    , DualisableConicDual1 r o c s p d t n m
+    )
+
+
+--------------------------------------------------------------------------------
+-- crohS -
+
+-- | natural assocition induced by 'croh' betewwn @'SDualBi' ('ConeG' __c s p d t n m__)@ and
+-- @'SDualBi' ('Cone' __s p d t n m__)@.
+crohS :: Conic c => SDualBi (ConeG c s p d t n m) x -> SDualBi (Cone s p d t n m) x
+crohS (SDualBi (Right1 c)) = SDualBi (Right1 (croh c))
+crohS (SDualBi (Left1 c')) = SDualBi (Left1 (croh c'))
+
+instance Conic c
+  => Natural r (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m)) where
+  roh _ = crohS
+
+--------------------------------------------------------------------------------
+-- ApplicativeConicBi -
+
+-- | helper class to avoid undecidable instances.
+class ApplicativeGBi (ConeG c s p d t n m) h (->) => ApplicativeConicBi h c s p d t n m
+
+instance ApplicativeConicBi (HomEmpty r) c Mlt p d t n m
+
+--------------------------------------------------------------------------------
 -- NaturalConicSDualisable -
 
 -- | natural transformation for 'Conic' objects from @'SDualBi' ('ConeG' __c s p d t n m__)@ to
@@ -298,6 +334,30 @@ instance
   => ApplicativeG (ConeG c s p d t n m) (Variant2 Covariant (HomDisj r o h)) (->) where
   amapG (Covariant2 h) c = c' where
     SDualBi (Right1 c') = amapG h (SDualBi (Right1 c))
+
+instance
+  ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
+  
+  , HomMultiplicative h
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableMultiplicative r o
+  , TransformableMlt r
+  
+  , DualisableConic r o c Mlt p d t n m  
+  )
+  => NaturalTransformable (HomDisj r o h) (->)
+       (SDualBi (ConeG c Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
+
+instance
+  ( ApplicativeConicBi h c Mlt p d t n m
+  , HomMultiplicative h
+  , NaturalDiagrammaticBi h d t n m
+  , DualisableMultiplicative r o
+  , TransformableMlt r
+  
+  , DualisableConic r o c Mlt p d t n m  
+  )
+  => NaturalConicSDualisable (HomDisj r o h) c Mlt p d t n m
 
 instance
   ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
