@@ -336,13 +336,12 @@ instance
     SDualBi (Right1 c') = amapG h (SDualBi (Right1 c))
 
 instance
-  ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
-  
-  , HomMultiplicative h
-  , NaturalDiagrammaticBi h d t n m
-  , DualisableMultiplicative r o
+  ( HomMultiplicative h
   , TransformableMlt r
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
   
+  , DualisableMultiplicative r o
   , DualisableConic r o c Mlt p d t n m  
   )
   => NaturalTransformable (HomDisj r o h) (->)

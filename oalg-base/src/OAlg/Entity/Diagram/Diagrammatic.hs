@@ -23,6 +23,7 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
+{-    
     -- * Diagrammatic
     Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
   , droh, dmap
@@ -43,6 +44,7 @@ module OAlg.Entity.Diagram.Diagrammatic
 
   -- * Proposition
   , prpDiagrammatic
+-}
   ) where
 
 import Control.Monad
@@ -113,6 +115,11 @@ instance (Attestable m, n ~ m+1)
 
 instance HomOriented h => ApplicativeG (DiagramG Diagram t n m) (Id2 h) (->) where
   amapG (Id2 h) (DiagramG d) = DiagramG (amapG h d)
+
+instance TransformableOrt r => ApplicativeG (DiagramG Diagram t n m) (HomId r) (->) where
+  amapG h (DiagramG d) = DiagramG (amapG h d)
+  
+instance TransformableOrt r => ApplicativeGDual1 (DiagramG Diagram t n m) (HomId r) (->)
 
 --------------------------------------------------------------------------------
 -- dgmGMap -
@@ -231,20 +238,20 @@ type NaturalDiagrammaticBi h d t n m =
 
 -- | duality for 'Diagrammatic' objects.
 --
---  __Property__ Let @'DualisableDiagrammatic' __s o d t n m__@ then
--- for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+--  __Property__ Let @'DualisableDiagrammatic' __r o d t n m__@ then
+-- for all @__x__@ and @r@ in @'Struct' __r x__@ holds:
 --
--- (1) @'diagram' '.' 'toDualDgmLft'' n s '.=.' 'toDualGLft' s '.' 'diagram'@.
+-- For @'DualisableOriented' __r o__@ and any proxy @q@ in  @__q r o d t n m__@ holds 
 --
--- (2) @'diagram' '.' 'toDualDgmRgt'' n s '.=.' 'toDualGRgt' s '.' 'diagram'@.
+-- (1) @'diagram' '.' 'toDualDgmLft'' q r '.=.' 'toDualGLft' r '.' 'diagram'@.
 --
--- where @n@ is a proxy in  @__q s o d t n m__@.
+-- (2) @'diagram' '.' 'toDualDgmRgt'' q r '.=.' 'toDualGRgt' r '.' 'diagram'@.
 class ( Diagrammatic d
-      , DualisableGBi s (->) o (DiagramG d t n m)
-      , DualisableOriented s o, TransformableOrt s, TransformableGRefl o s
+      , DualisableGBi r (->) o (DiagramG d t n m)
+      , TransformableGRefl o r
       , t ~ Dual (Dual t)
       )
-  => DualisableDiagrammatic s o d t n m
+  => DualisableDiagrammatic r o d t n m
 
 --------------------------------------------------------------------------------
 -- DiagramG - Diagram - DualisableGBi -
@@ -333,24 +340,36 @@ toDualDgmRgt' _ = toDualDgmRgt
 --------------------------------------------------------------------------------
 -- prpDualisableDiagrammatic -
 
-relDualisableDiagrammaticLft :: Show (d t n m x)
-  => DualityDiagrammatic s o d t n m
-  -> Struct Ort (o x) -> Struct s x -> d t n m x -> Statement
+relDualisableDiagrammaticLft ::
+  ( DualisableOriented r o
+  , TransformableOrt r
+  , Show (d t n m x)
+  )
+  => DualityDiagrammatic r o d t n m
+  -> Struct Ort (o x) -> Struct r x -> d t n m x -> Statement
 relDualisableDiagrammaticLft n@DualityDiagrammatic Struct s d
   = (toDualGLft s (diagram d) == diagram (toDualDgmLft' n s d))
   :?> Params ["d":=show d]
 
-relDualisableDiagrammaticRgt :: (Show (d (Dual t) n m x))
-  => DualityDiagrammatic s o d t n m
-  -> Struct Ort (o x) -> Struct s x -> d (Dual t) n m x -> Statement
+relDualisableDiagrammaticRgt ::
+  ( DualisableOriented r o
+  , TransformableOrt r
+  , Show (d (Dual t) n m x)
+  )
+  => DualityDiagrammatic r o d t n m
+  -> Struct Ort (o x) -> Struct r x -> d (Dual t) n m x -> Statement
 relDualisableDiagrammaticRgt n@DualityDiagrammatic Struct s d'
   = (toDualGRgt s (diagram d') == diagram (toDualDgmRgt' n s d'))
   :?> Params ["d'":=show d']
 
 -- | validity according to 'DualisableDiagrammatic'.
-prpDualisableDiagrammatic :: (Show (d t n m x), Show (d (Dual t) n m x))
-  => DualityDiagrammatic s o d t n m
-  -> Struct s x -> d t n m x -> d (Dual t) n m x -> Statement
+prpDualisableDiagrammatic ::
+  ( DualisableOriented r o
+  , TransformableOrt r
+  , Show (d t n m x), Show (d (Dual t) n m x)
+  )
+  => DualityDiagrammatic r o d t n m
+  -> Struct r x -> d t n m x -> d (Dual t) n m x -> Statement
 prpDualisableDiagrammatic n@DualityDiagrammatic s d d' = Prp "DualisableDiagrammatic"
   :<=>: And [ relDualisableDiagrammaticLft n (tau (tauO s)) s d
             , relDualisableDiagrammaticRgt n (tau (tauO s)) s d'
@@ -368,6 +387,14 @@ drohS (SDualBi (Left1 d')) = SDualBi (Left1 (droh d'))
 instance Diagrammatic d
   => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)) where
   roh _ = drohS
+
+--------------------------------------------------------------------------------
+-- ApplicativeDiagrammaticBi -
+
+-- | helper class to avoid undecidable instances.
+class ApplicativeGBi (DiagramG d t n m) h (->) => ApplicativeDiagrammaticBi h d t n m
+
+instance TransformableOrt r => ApplicativeDiagrammaticBi (HomId r) Diagram t n m
 
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticSDualisable -
@@ -391,44 +418,65 @@ class
   => NaturalDiagrammaticSDualisable h d t n m
 
 instance
-  ( NaturalDiagrammaticBi h d t n m
-  , DualisableDiagrammatic s o d t n m
+  ( Morphism h
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+  , DualisableGBi r (->) o (DiagramG d t n m)
   )
-  => ApplicativeG (SDualBi (DiagramG d t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smapBi h
+  => ApplicativeG (SDualBi (DiagramG d t n m)) (HomDisj r o h) (->) where
+  amapG (HomDisj h) = amapG h
 
 instance
-  ( NaturalDiagrammaticBi h d t n m
-  , DualisableDiagrammatic s o d t n m
+  ( HomOriented h
+  , TransformableOrt r
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+  
+  , DualisableOriented r o
+  , DualisableDiagrammatic r o d t n m  
   )
-  => NaturalTransformable (HomDisj s o h) (->)
+  => NaturalTransformable (HomDisj r o h) (->)
        (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m))
 
 instance
-  ( NaturalDiagrammaticBi h d t n m
-  , DualisableDiagrammatic s o d t n m
+  ( HomOriented h
+  , TransformableOrt r
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeDiagrammaticBi h d t n m
+  
+  , DualisableOriented r o
+  , DualisableDiagrammatic r o d t n m  
   )
-  => NaturalDiagrammaticSDualisable (HomDisj s o h) d t n m
+  => NaturalDiagrammaticSDualisable (HomDisj r o h) d t n m
+
 
 instance
-  ( NaturalDiagrammaticBi h d t n m
-  , DualisableDiagrammatic s o d t n m
+  ( Morphism h
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+  , DualisableGBi r (->) o (DiagramG d t n m)
   )
-  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj s o h)) (->) where
+  => ApplicativeG (DiagramG d t n m) (Variant2 Covariant (HomDisj r o h)) (->) where
   amapG (Covariant2 h) d = d' where
     SDualBi (Right1 d') = amapG h (SDualBi (Right1 d))
 
 instance
-  ( NaturalDiagrammaticBi h d t n m
-  , DualisableDiagrammatic s o d t n m
+  ( HomOriented h
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+  , NaturalDiagrammaticBi h d t n m
+  
+  , DualisableOriented r o
+  , DualisableDiagrammatic r o d t n m
   )  
-  => NaturalTransformable (Variant2 Covariant (HomDisj s o h)) (->) (DiagramG d t n m) (Diagram t n m)
+  => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->) (DiagramG d t n m) (Diagram t n m)
 
 instance
-  ( NaturalDiagrammaticBi h d t n m
-  , DualisableDiagrammatic s o d t n m
+  ( HomOriented h
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+  , NaturalDiagrammaticBi h d t n m
+  
+  , DualisableOriented r o
+  , DualisableDiagrammatic r o d t n m
   )  
-  => NaturalDiagrammatic (Variant2 Covariant (HomDisj s o h)) d t n m
+  => NaturalDiagrammatic (Variant2 Covariant (HomDisj r o h)) d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticSDualBi -
@@ -587,9 +635,6 @@ xsaSink m = do
 
 --------------------------------------------------------------------------------
 -- snaDual -
-
-instance TransformableOrt s => ApplicativeG (DiagramG Diagram t n m) (HomId s) (->) where
-  amapG h = amapG (Id2 h)
 
 instance TransformableOrt s
   => NaturalTransformable (HomId s) (->) (DiagramG Diagram t n m) (Diagram t n m)
