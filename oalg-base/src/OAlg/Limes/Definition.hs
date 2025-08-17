@@ -351,7 +351,7 @@ instance
   => DualisableGBi r (->) o (Limes c Dst p d t n m)
   
 --------------------------------------------------------------------------------
--- Limes - Applicative -
+-- Limes - Mlt - FunctorialG - SDualBi -
 
 instance (HomMultiplicative h, NaturalConic h c Mlt p d t n m)
   => ApplicativeG (Limes c Mlt p d t n m) (Inv2 h) (->) where
@@ -360,10 +360,6 @@ instance (HomMultiplicative h, NaturalConic h c Mlt p d t n m)
 instance (HomMultiplicative h, NaturalConicDual1 h c Mlt p d t n m)
   => ApplicativeGDual1 (Limes c Mlt p d t n m) (Inv2 h) (->)
   
-instance (HomDistributive h, NaturalConic h c Dst p d t n m)
-  => ApplicativeG (Limes c Dst p d t n m) (Inv2 h) (->) where
-  amapG = lmMap
-
 instance
   ( HomMultiplicative h
   , TransformableMlt r
@@ -373,6 +369,49 @@ instance
   )
   => ApplicativeG (SDualBi (Limes c Mlt p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
   amapG (Inv2 (HomDisj h) _) = amapG h
+
+instance
+  ( HomMultiplicative h
+  , TransformableMlt r
+  , DualisableMultiplicative r o
+  , NaturalConicBi h c Mlt p d t n m
+  , DualisableConicBi r o c Mlt p d t n m
+  )
+  => FunctorialG (SDualBi (Limes c Mlt p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
+
+--------------------------------------------------------------------------------
+-- Limes - Dst - FunctorialG - SDualBi -
+
+instance (HomDistributive h, NaturalConic h c Dst p d t n m)
+  => ApplicativeG (Limes c Dst p d t n m) (Inv2 h) (->) where
+  amapG = lmMap
+
+instance (HomDistributive h, NaturalConicDual1 h c Dst p d t n m)
+  => ApplicativeGDual1 (Limes c Dst p d t n m) (Inv2 h) (->)
+  
+instance
+  ( HomDistributive h
+  , TransformableDst r
+  , DualisableDistributive r o
+  , NaturalConicBi h c Dst p d t n m
+  , DualisableConicBi r o c Dst p d t n m
+  )
+  => ApplicativeG (SDualBi (Limes c Dst p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
+  amapG (Inv2 (HomDisj h) _) = amapG h
+
+instance
+  ( HomDistributive h
+  , TransformableDst r
+  , DualisableDistributive r o
+  , NaturalConicBi h c Dst p d t n m
+  , DualisableConicBi r o c Dst p d t n m
+  )
+  => FunctorialG (SDualBi (Limes c Dst p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
+
+
+
+
+
   
 {-
 instance

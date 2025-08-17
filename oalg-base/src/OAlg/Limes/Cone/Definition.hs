@@ -390,7 +390,7 @@ instance
   => DualisableGBi r (->) o (Cone Dst p d t n m)
 
 --------------------------------------------------------------------------------
--- Cone - ApplicativeG - 
+-- Cone - Mlt - FunctorialG - SDualBi - 
 
 instance
   ( HomMultiplicative h
@@ -425,26 +425,6 @@ instance
   => FunctorialG (Cone Mlt p d t n m) h (->)
 
 instance
-  ( HomDistributive h
-  , NaturalDiagrammatic h d t n m
-  )
-  => ApplicativeG (Cone Dst p d t n m) h (->) where
-  amapG = cnMapDst
-
-instance
-  ( HomDistributive h
-  , NaturalDiagrammatic h d t n m
-  )
-  => NaturalTransformable h (->) (Cone Dst p d t n m) (DiagramG d t n m)
-
-instance
-  ( HomDistributive h
-  , FunctorialOriented h
-  , NaturalDiagrammatic h d t n m
-  )
-  => FunctorialG (Cone Dst p d t n m) h (->)
-
-instance
   ( HomMultiplicative h
   , NaturalDiagrammaticDual1 h d t n m
   )
@@ -468,6 +448,29 @@ instance
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Mlt p d t n m)) (HomDisj s o h) (->)
+
+--------------------------------------------------------------------------------
+-- Cone - Dst - FunctorialG - SDualBi - 
+
+instance
+  ( HomDistributive h
+  , NaturalDiagrammatic h d t n m
+  )
+  => ApplicativeG (Cone Dst p d t n m) h (->) where
+  amapG = cnMapDst
+
+instance
+  ( HomDistributive h
+  , NaturalDiagrammatic h d t n m
+  )
+  => NaturalTransformable h (->) (Cone Dst p d t n m) (DiagramG d t n m)
+
+instance
+  ( HomDistributive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d t n m
+  )
+  => FunctorialG (Cone Dst p d t n m) h (->)
 
 instance
   ( HomDistributive h
