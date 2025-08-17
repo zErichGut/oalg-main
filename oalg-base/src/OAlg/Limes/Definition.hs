@@ -238,7 +238,7 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
         SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
 
 --------------------------------------------------------------------------------
--- Limes - Dualisable -
+-- Limes - Mlt - DualisableGBi -
 
 lmReflToMlt ::
   ( TransformableMlt r
@@ -294,6 +294,62 @@ instance
   )
   => DualisableGBi r (->) o (Limes c Mlt p d t n m)
 
+
+--------------------------------------------------------------------------------
+-- Limes - Dst - DualisableGBi -
+
+lmReflToDst ::
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  )
+  => Struct r x -> Limes c Dst p d t n m x -> Limes c Dst p d t n m (o (o x))
+lmReflToDst r = lmMap (Inv2 (Covariant2 t) (Covariant2 f)) where
+  Covariant2 (Inv2 t f) = reflO r
+
+lmReflFromDst ::
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  )
+  => Struct r x -> Limes c Dst p d t n m (o (o x)) -> Limes c Dst p d t n m x
+lmReflFromDst r = lmMap (Inv2 (Covariant2 f) (Covariant2 t)) where
+  Covariant2 (Inv2 t f) = reflO r
+
+instance
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  )
+  => ReflexiveG r (->) o (Limes c Dst p d t n m) where
+  reflG r = Inv2 (lmReflToDst r) (lmReflFromDst r)
+
+lmToDualDstLft ::
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  )
+  => Struct r x -> Limes c Dst p d t n m x -> Dual1 (Limes c Dst p d t n m) (o x)
+lmToDualDstLft r = lmMapCnt (toDualO r) where
+
+instance
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  , DualisableConic r o c Dst p' d t' n m
+  , t' ~ Dual t, p' ~ Dual p
+  )
+  => DualisableGPair r (->) o (Limes c Dst p d t n m) (Limes c Dst p' d t' n m) where
+  toDualGLft r = lmMapCnt (toDualO r)
+  toDualGRgt r = lmMapCnt (toDualO r)
+
+instance
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableConicBi r o c Dst p d t n m
+  )
+  => DualisableGBi r (->) o (Limes c Dst p d t n m)
+  
 --------------------------------------------------------------------------------
 -- Limes - Applicative -
 

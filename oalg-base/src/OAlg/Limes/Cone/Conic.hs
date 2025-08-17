@@ -305,6 +305,7 @@ instance Conic c
 class ApplicativeGBi (ConeG c s p d t n m) h (->) => ApplicativeConicBi h c s p d t n m
 
 instance ApplicativeConicBi (HomEmpty r) c Mlt p d t n m
+instance ApplicativeConicBi (HomEmpty r) c Dst p d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalConicSDualisable -
@@ -335,6 +336,9 @@ instance
   amapG (Covariant2 h) c = c' where
     SDualBi (Right1 c') = amapG h (SDualBi (Right1 c))
 
+--------------------------------------------------------------------------------
+-- HomDisj - Mlt - NaturalConicSDualisable -
+
 instance
   ( HomMultiplicative h
   , TransformableMlt r
@@ -359,6 +363,36 @@ instance
   )
   => NaturalConicSDualisable (HomDisj r o h) c Mlt p d t n m
 
+--------------------------------------------------------------------------------
+-- HomDisj - Dst - NaturalConicSDualisable -
+
+instance
+  ( HomDistributive h
+  , TransformableDst r
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeGBi (ConeG c Dst p d t n m) h (->)
+  
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m  
+  )
+  => NaturalTransformable (HomDisj r o h) (->)
+       (SDualBi (ConeG c Dst p d t n m)) (SDualBi (Cone Dst p d t n m))
+
+instance
+  ( HomDistributive h
+  , TransformableDst r
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeConicBi h c Dst p d t n m
+  , ApplicativeDiagrammaticBi h d t n m
+  
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m  
+  )
+  => NaturalConicSDualisable (HomDisj r o h) c Dst p d t n m
+
+--------------------------------------------------------------------------------
+-- HomDisj - Mlt - Covariant - NatualConic -
+
 instance
   ( HomMultiplicative h
   , NaturalDiagrammaticBi h d t n m
@@ -371,7 +405,6 @@ instance
   => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
        (ConeG c Mlt p d t n m) (Cone Mlt p d t n m)
 
-
 instance
   ( HomMultiplicative h
   , NaturalDiagrammaticBi h d t n m
@@ -383,6 +416,31 @@ instance
   )
   => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Mlt p d t n m
 
+--------------------------------------------------------------------------------
+-- HomDisj - Dst - Covariant - NatualConic -
+
+instance
+  ( HomDistributive h
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeGBi (ConeG c Dst p d t n m) h (->)
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  )
+  => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
+       (ConeG c Dst p d t n m) (Cone Dst p d t n m)
+
+instance
+  ( HomDistributive h
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeGBi (ConeG c Dst p d t n m) h (->)
+  , ApplicativeGBi (DiagramG d t n m) h (->)
+
+  , DualisableDistributive r o
+  , DualisableConic r o c Dst p d t n m
+  )
+  => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Dst p d t n m
 
 --------------------------------------------------------------------------------
 -- prpNaturalConicConeOS -
