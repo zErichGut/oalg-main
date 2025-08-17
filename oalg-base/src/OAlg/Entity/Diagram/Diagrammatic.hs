@@ -23,9 +23,10 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
-{-    
     -- * Diagrammatic
-    Diagrammatic(..), DiagramG(..), dgmGMap, dgmTypeRefl
+    Diagrammatic(..)
+  , DiagramG(..), ApplicativeDiagrammaticBi
+  , dgmGMap, dgmTypeRefl
   , droh, dmap
 
     -- * Natural
@@ -44,7 +45,7 @@ module OAlg.Entity.Diagram.Diagrammatic
 
   -- * Proposition
   , prpDiagrammatic
--}
+
   ) where
 
 import Control.Monad
@@ -121,6 +122,11 @@ instance TransformableOrt r => ApplicativeG (DiagramG Diagram t n m) (HomId r) (
   
 instance TransformableOrt r => ApplicativeGDual1 (DiagramG Diagram t n m) (HomId r) (->)
 
+instance ApplicativeG (DiagramG d t n m) (HomEmpty r) (->) where
+  amapG = fromHomEmpty
+
+instance ApplicativeGDual1 (DiagramG d t n m) (HomEmpty r) (->)
+
 --------------------------------------------------------------------------------
 -- dgmGMap -
 
@@ -176,9 +182,6 @@ class
   , NaturalTransformable h (->) (DiagramG d t n m) (Diagram t n m)
   )
   => NaturalDiagrammatic h d t n m
-
-instance ApplicativeG (DiagramG d t n m) (HomEmpty s) (->) where
-  amapG = fromHomEmpty
 
 instance
   ( Diagrammatic d
@@ -396,6 +399,7 @@ class ApplicativeGBi (DiagramG d t n m) h (->) => ApplicativeDiagrammaticBi h d 
 
 instance TransformableOrt r => ApplicativeDiagrammaticBi (HomId r) Diagram t n m
 
+instance ApplicativeDiagrammaticBi (HomEmpty r) d t n m
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticSDualisable -
 

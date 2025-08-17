@@ -41,12 +41,10 @@ module OAlg.Limes.Cone.Definition
   , xCnPrjOrnt, xCnPrjDstOrnt
   , xCnInjOrnt, xCnInjDstOrnt
 
-
   ) where
 
 import Control.Monad
 
-import Data.Kind
 import Data.Typeable
 import Data.Array hiding (range)
 
@@ -285,43 +283,43 @@ cnMapCnt h c = case c of
 --------------------------------------------------------------------------------
 -- Cone - Mlt - DualisableGBi
 
-cnToBidualMlt ::
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , DualisableDiagrammatic s o d t n m
+cnReflToMlt ::
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableDiagrammatic r o d t n m
   )
-  =>  Struct s x -> Cone Mlt p d t n m x -> Cone Mlt p d t n m (o (o x))
-cnToBidualMlt s = cnMapMlt (Covariant2 (t' . t)) where
+  =>  Struct r x -> Cone Mlt p d t n m x -> Cone Mlt p d t n m (o (o x))
+cnReflToMlt s = cnMapMlt (Covariant2 (t' . t)) where
   Contravariant2 (Inv2 t _)  = toDualO s
   Contravariant2 (Inv2 t' _) = toDualO (tauO s) 
 
-cnFromBidualMlt ::
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , DualisableDiagrammatic s o d t n m
+cnReflFromMlt ::
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableDiagrammatic r o d t n m
   )
-  => Struct s x -> Cone Mlt p d t n m (o (o x))  -> Cone Mlt p d t n m x
-cnFromBidualMlt s = cnMapMlt (Covariant2 (f . f')) where
+  => Struct r x -> Cone Mlt p d t n m (o (o x))  -> Cone Mlt p d t n m x
+cnReflFromMlt s = cnMapMlt (Covariant2 (f . f')) where
   Contravariant2 (Inv2 _ f)  = toDualO s
   Contravariant2 (Inv2 _ f') = toDualO (tauO s)
 
 instance 
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , DualisableDiagrammatic s o d t n m
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableDiagrammatic r o d t n m
   )
-  => ReflexiveG s (->) o (Cone Mlt p d t n m) where
-  reflG s = Inv2 (cnToBidualMlt s) (cnFromBidualMlt s)
+  => ReflexiveG r (->) o (Cone Mlt p d t n m) where
+  reflG s = Inv2 (cnReflToMlt s) (cnReflFromMlt s)
 
 instance
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammatic s o d t' n m
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableDiagrammatic r o d t n m
+  , DualisableDiagrammatic r o d t' n m
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
   )
-  => DualisableGPair s (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
+  => DualisableGPair r (->) o (Cone Mlt p d t n m) (Cone Mlt p' d t' n m) where
   toDualGLft s = cnMapMltCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = toDualO s
 
@@ -329,54 +327,54 @@ instance
     Contravariant2 (Inv2 t _) = toDualO s
 
 instance 
-  ( TransformableMlt s
-  , DualisableMultiplicative s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammaticDual1 s o d t n m
+  ( TransformableMlt r
+  , DualisableMultiplicative r o
+  , DualisableDiagrammatic r o d t n m
+  , DualisableDiagrammaticDual1 r o d t n m
   , p ~ Dual (Dual p)
   )
-  => DualisableGBi s (->) o (Cone Mlt p d t n m)
+  => DualisableGBi r (->) o (Cone Mlt p d t n m)
 
 --------------------------------------------------------------------------------
 -- Cone - Dst - DualisableGBi
 
-cnToBidualDst ::
-  ( TransformableDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
+cnReflToDst ::
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableDiagrammatic r o d t n m
   )
-  => Struct s x -> Cone Dst p d t n m x -> Cone Dst p d t n m (o (o x))
-cnToBidualDst s = cnMapDst (Covariant2 (t' . t)) where
+  => Struct r x -> Cone Dst p d t n m x -> Cone Dst p d t n m (o (o x))
+cnReflToDst s = cnMapDst (Covariant2 (t' . t)) where
   Contravariant2 (Inv2 t _)  = toDualO s
   Contravariant2 (Inv2 t' _) = toDualO (tauO s)
-  
-cnFromBidualDst ::
-  ( TransformableDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
+
+cnReflFromDst ::
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableDiagrammatic r o d t n m
   )
-  => Struct s x -> Cone Dst p d t n m (o (o x))  -> Cone Dst p d t n m x
-cnFromBidualDst s = cnMapDst (Covariant2 (f . f')) where
+  => Struct r x -> Cone Dst p d t n m (o (o x))  -> Cone Dst p d t n m x
+cnReflFromDst s = cnMapDst (Covariant2 (f . f')) where
   Contravariant2 (Inv2 _ f)  = toDualO s
   Contravariant2 (Inv2 _ f') = toDualO (tauO s)
 
 instance 
-  ( TransformableDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableDiagrammatic r o d t n m
   )
-  => ReflexiveG s (->) o (Cone Dst p d t n m) where
-  reflG s = Inv2 (cnToBidualDst s) (cnFromBidualDst s)
+  => ReflexiveG r (->) o (Cone Dst p d t n m) where
+  reflG s = Inv2 (cnReflToDst s) (cnReflFromDst s)
 
 instance
-  ( TransformableDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammatic s o d t' n m
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableDiagrammatic r o d t n m
+  , DualisableDiagrammatic r o d t' n m
   , p' ~ Dual p, p ~ Dual p'
   , t' ~ Dual t, t ~ Dual t'
   )
-  => DualisableGPair s (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
+  => DualisableGPair r (->) o (Cone Dst p d t n m) (Cone Dst p' d t' n m) where
   toDualGLft s = cnMapDstCnt (Contravariant2 t) where
     Contravariant2 (Inv2 t _) = toDualO s
 
@@ -384,13 +382,12 @@ instance
     Contravariant2 (Inv2 t _) = toDualO s
 
 instance 
-  ( TransformableDst s
-  , DualisableDistributive s o
-  , DualisableDiagrammatic s o d t n m
-  , DualisableDiagrammaticDual1 s o d t n m
+  ( TransformableDst r
+  , DualisableDistributive r o
+  , DualisableDiagrammaticBi r o d t n m
   , p ~ Dual (Dual p)
   )
-  => DualisableGBi s (->) o (Cone Dst p d t n m)
+  => DualisableGBi r (->) o (Cone Dst p d t n m)
 
 --------------------------------------------------------------------------------
 -- Cone - ApplicativeG - 
@@ -875,5 +872,4 @@ instance ( Entity p, t ~ Parallel RightToLeft, n ~ N2
          , XStandard p, XStandard (d t n m (Orientation p))
          ) => XStandard (Cone Dst Injective d t n m (Orientation p)) where
   xStandard = xCnInjDstOrnt xStandard xStandard
-
 

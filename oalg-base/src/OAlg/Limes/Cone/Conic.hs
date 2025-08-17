@@ -116,6 +116,7 @@ instance Conic c => Natural r (->) (ConeG c s p d t n m) (Cone s p d t n m) wher
 -- this will not pass the type checker.
 class
   ( Conic c
+  , HomMultiplicative h
   , NaturalDiagrammatic h d t n m
   , NaturalTransformable h (->) (ConeG c s p d t n m) (Cone s p d t n m)
   )
@@ -178,9 +179,21 @@ class
   ( Conic c
   , DualisableGBi r (->) o (ConeG c s p d t n m)
   , DualisableDiagrammaticBi r o d t n m
-  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  , p ~ Dual (Dual p)
   )
   => DualisableConic r o c s p d t n m
+
+--------------------------------------------------------------------------------
+-- DualisableConicDual1 -
+
+-- | helper class to avoid undecidable instances.
+class DualisableConic r o c s (Dual p) d (Dual t) n m => DualisableConicDual1 r o c s p d t n m
+
+-- | constrains for conic objects @__c__@ which are bi-dualisable conic.
+type DualisableConicBi r o c s p d t n m
+  = ( DualisableConic r o c s p d t n m
+    , DualisableConicDual1 r o c s p d t n m
+    )
 
 --------------------------------------------------------------------------------
 -- DualityConic -
@@ -273,19 +286,6 @@ relDualisableConicRgtDst d@DualityConic r c
     ) :?> Params []
 
 --------------------------------------------------------------------------------
--- DualisableConicDual1 -
-
--- | helper class to avoid undecidable instances.
-class DualisableConic r o c s (Dual p) d (Dual t) n m => DualisableConicDual1 r o c s p d t n m
-
--- | constrains for conic objects @__c__@ which are bi-dualisable conic.
-type DualisableConicBi r o c s p d t n m
-  = ( DualisableConic r o c s p d t n m
-    , DualisableConicDual1 r o c s p d t n m
-    )
-
-
---------------------------------------------------------------------------------
 -- crohS -
 
 -- | natural assocition induced by 'croh' betewwn @'SDualBi' ('ConeG' __c s p d t n m__)@ and
@@ -348,23 +348,24 @@ instance
        (SDualBi (ConeG c Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
 
 instance
-  ( ApplicativeConicBi h c Mlt p d t n m
-  , HomMultiplicative h
-  , NaturalDiagrammaticBi h d t n m
-  , DualisableMultiplicative r o
+  ( HomMultiplicative h
   , TransformableMlt r
+  , NaturalDiagrammaticBi h d t n m
+  , ApplicativeConicBi h c Mlt p d t n m
+  , ApplicativeDiagrammaticBi h d t n m
   
+  , DualisableMultiplicative r o
   , DualisableConic r o c Mlt p d t n m  
   )
   => NaturalConicSDualisable (HomDisj r o h) c Mlt p d t n m
 
 instance
-  ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
-
-  , HomMultiplicative h
+  ( HomMultiplicative h
   , NaturalDiagrammaticBi h d t n m
-  , DualisableMultiplicative r o
+  , ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
+  , ApplicativeGBi (DiagramG d t n m) h (->)
 
+  , DualisableMultiplicative r o
   , DualisableConic r o c Mlt p d t n m
   )
   => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
@@ -372,12 +373,12 @@ instance
 
 
 instance
-  ( ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
-
-  , HomMultiplicative h
+  ( HomMultiplicative h
   , NaturalDiagrammaticBi h d t n m
-  , DualisableMultiplicative r o
+  , ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
+  , ApplicativeGBi (DiagramG d t n m) h (->)
 
+  , DualisableMultiplicative r o
   , DualisableConic r o c Mlt p d t n m
   )
   => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Mlt p d t n m
