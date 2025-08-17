@@ -41,6 +41,10 @@ import Data.Typeable
 
 import OAlg.Prelude
 
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
+
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
@@ -65,7 +69,6 @@ import OAlg.Limes.Definition
 -- (1) @'diagram' '.' 'cone' '.' 'universalCone' '.' 'limes' l '.=.' 'diagram'@.
 newtype Limits c s p d t n m x = Limits (d t n m x -> Limes c s p d t n m x)
 
-
 --------------------------------------------------------------------------------
 -- limes -
 
@@ -73,8 +76,24 @@ newtype Limits c s p d t n m x = Limits (d t n m x -> Limes c s p d t n m x)
 limes :: Limits c s p d t n m x -> d t n m x -> Limes c s p d t n m x
 limes (Limits l) = l
 
+--------------------------------------------------------------------------------
+-- Limits - Dual -
 
+type instance Dual1 (Limits c s p d t n m) = Limits c s (Dual p) d (Dual t) n m
 
+--------------------------------------------------------------------------------
+-- lmsMap -
+
+lmsMap :: NaturalConic h c s p d t n m
+  => Inv2 h x y -> Limits c s p d t n m x -> Limits c s p d t n m y
+lmsMap i@(Inv2 _ f) (Limits l) = Limits (amapG i . l . dmap f )
+
+lmsMapCnt :: NaturalConicSDualisable h c s p d t n m
+  => Variant2 Contravariant (Inv2 h) x y
+  -> Limits c s p d t n m x -> Dual1 (Limits c s p d t n m) y
+lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (Limits u) = Limits u' where
+  u' d' = lmMapCnt i (u d) where
+    SDualBi (Right1 (DiagramG d)) = amapG f (SDualBi (Left1 (DiagramG d'))) 
 
 
 {-

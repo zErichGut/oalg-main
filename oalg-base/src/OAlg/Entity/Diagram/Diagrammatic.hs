@@ -24,7 +24,8 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Diagrammatic
     Diagrammatic(..)
   , DiagramG(..), ApplicativeDiagrammaticBi
-  , dgmGMap, dgmTypeRefl
+  -- , dgmGMap
+  , dgmTypeRefl
   , droh, dmap
 
     -- * Natural

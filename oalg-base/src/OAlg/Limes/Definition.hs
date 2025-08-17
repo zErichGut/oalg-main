@@ -20,7 +20,6 @@
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
   (
-{-
     -- * Limes
     Limes(..)
   , universalCone, universalFactor
@@ -28,7 +27,6 @@ module OAlg.Limes.Definition
 
     -- * Mapping
   , lmMap, lmMapCnt
--}
   ) where
 
 import Data.Typeable

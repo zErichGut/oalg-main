@@ -46,7 +46,6 @@ import OAlg.Prelude
 
 import OAlg.Category.Dualisable
 import OAlg.Category.Path
-import OAlg.Category.SDuality
 
 import OAlg.Data.Variant as V
 
@@ -176,11 +175,6 @@ toDualOrt q st (s :> e) = opposite (t s :> t e) where t = toDualPnt q st
 --------------------------------------------------------------------------------
 -- HomDisj - HomOrientedDisjunctive -
 
-instance (HomOriented h, DualisableG s (->) o Pnt) => ApplicativeG Pnt (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
-
-instance (HomOriented h, DualisableG s (->) o Pnt) => FunctorialG Pnt (HomDisj s o h) (->)
-  
 instance (HomOriented h, DualisableOriented s o) => HomOrientedDisjunctive (HomDisj s o h)
 
 --------------------------------------------------------------------------------
