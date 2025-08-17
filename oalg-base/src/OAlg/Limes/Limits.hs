@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
-{-# LANGUAGE UndecidableInstances #-}
+-- {-# LANGUAGE UndecidableInstances #-}
 
 -- |
 -- Module      : OAlg.Limes.Limits
@@ -50,11 +50,8 @@ import OAlg.Hom.Oriented
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 
-import OAlg.Limes.Diagrammatic
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
 import OAlg.Limes.Definition
-import OAlg.Limes.OpDuality
 
 --------------------------------------------------------------------------------
 -- Limits -
@@ -62,19 +59,24 @@ import OAlg.Limes.OpDuality
 -- | limes of a diagrammatic object, i.e. assigning to each diagrammatic object @d@ a limes over the
 -- @d@.
 --
--- __Property__ Let @l@ be in @'Limits' __u__ __s__ __p__ __t__ __n__ __m__ __a__@
--- and @d@ in @__d__ __t__ __n__ __m__ __a__@ then holds:
--- @'diagram' ('universalCone' ('limes' l d)) '==' 'diagram' d@.
-newtype Limits d u s (p :: Perspective) (t :: DiagramType) (n :: N') (m :: N') a
-  = Limits (d t n m a -> u s p t n m a)
+-- __Property__ Let @l@ be in @'Limits' __c s p d t n m x__@ for a @'Conic' __c__@ and a
+-- @'Diagrammatic' __d__@, then holds:
+--
+-- (1) @'diagram' '.' 'cone' '.' 'universalCone' '.' 'limes' l '.=.' 'diagram'@.
+newtype Limits c s p d t n m x = Limits (d t n m x -> Limes c s p d t n m x)
 
 
 --------------------------------------------------------------------------------
 -- limes -
 
 -- | the limes over the given diagram.
-limes :: Limits d u s p t n m a -> d t n m a -> u s p t n m a
+limes :: Limits c s p d t n m x -> d t n m x -> Limes c s p d t n m x
 limes (Limits l) = l
+
+
+
+
+
 {-
 --------------------------------------------------------------------------------
 -- lmsMap -

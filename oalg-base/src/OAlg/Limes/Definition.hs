@@ -1,16 +1,14 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , TypeOperators
-  , DataKinds
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Limes.Definition
@@ -21,21 +19,13 @@
 -- 
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
-  (
-{-
-    -- * Limes
-    Limes(..), lmDiagramTypeRefl, lmMap
+  ( -- * Limes
+    Limes(..)
+  , universalCone, universalFactor
+  , eligibleCone, eligibleFactor
 
-    -- * Duality
-  , lmToOp, lmFromOp
-  , coLimes, coLimesInv, lmFromOpOp
-
-    -- * Construction
-  , lmToPrjOrnt, lmFromInjOrnt
-  
-    -- * Proposition
-  , relLimes
--}
+    -- * Mapping
+  , lmMap, lmMapCnt
   ) where
 
 import Data.Typeable
@@ -62,9 +52,6 @@ import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
--- import OAlg.Limes.Universal
--- import OAlg.Limes.OpDuality
-
 
 --------------------------------------------------------------------------------
 -- Limes -
@@ -293,7 +280,6 @@ instance
   , DualisableConicBi r o c Mlt p d t n m
   )
   => DualisableGBi r (->) o (Limes c Mlt p d t n m)
-
 
 --------------------------------------------------------------------------------
 -- Limes - Dst - DualisableGBi -

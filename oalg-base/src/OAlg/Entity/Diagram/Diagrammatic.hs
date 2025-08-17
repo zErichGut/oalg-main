@@ -1,17 +1,15 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , TypeOperators
-  , DataKinds
-  , ConstraintKinds
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Entity.Diagram.Diagrammatic
