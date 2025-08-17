@@ -19,13 +19,16 @@
 -- 
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
-  ( -- * Limes
+  (
+{-
+    -- * Limes
     Limes(..)
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
 
     -- * Mapping
   , lmMap, lmMapCnt
+-}
   ) where
 
 import Data.Typeable
@@ -193,7 +196,7 @@ type instance Dual1 (Limes c s p d t n m) = Limes c s (Dual p) d (Dual t) n m
 --------------------------------------------------------------------------------
 -- lmMap -
 
-lmMap :: (Hom s h, NaturalConic h c s p d t n m)
+lmMap :: NaturalConic h c s p d t n m
   => Inv2 h x y -> Limes c s p d t n m x -> Limes c s p d t n m y
 lmMap (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
   ConeG u' = amapG t (ConeG u)
@@ -205,10 +208,7 @@ lmMap (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
-lmMapCnt ::
-  ( HomD s h
-  , NaturalConicSDualisable h c s p d t n m
-  )
+lmMapCnt :: NaturalConicSDualisable h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
 lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
@@ -337,14 +337,17 @@ instance
   => DualisableGBi r (->) o (Limes c Dst p d t n m)
   
 --------------------------------------------------------------------------------
--- Limes - Mlt - FunctorialG - SDualBi -
+-- Limes - ApplicativeG -
 
-instance (HomMultiplicative h, NaturalConic h c Mlt p d t n m)
-  => ApplicativeG (Limes c Mlt p d t n m) (Inv2 h) (->) where
+instance NaturalConic h c s p d t n m
+  => ApplicativeG (Limes c s p d t n m) (Inv2 h) (->) where
   amapG = lmMap
 
-instance (HomMultiplicative h, NaturalConicDual1 h c Mlt p d t n m)
-  => ApplicativeGDual1 (Limes c Mlt p d t n m) (Inv2 h) (->)
+instance NaturalConicDual1 h c s p d t n m
+  => ApplicativeGDual1 (Limes c s p d t n m) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
+-- Limes - Mlt - FunctorialG - SDualBi -
   
 instance
   ( HomMultiplicative h
@@ -368,13 +371,6 @@ instance
 --------------------------------------------------------------------------------
 -- Limes - Dst - FunctorialG - SDualBi -
 
-instance (HomDistributive h, NaturalConic h c Dst p d t n m)
-  => ApplicativeG (Limes c Dst p d t n m) (Inv2 h) (->) where
-  amapG = lmMap
-
-instance (HomDistributive h, NaturalConicDual1 h c Dst p d t n m)
-  => ApplicativeGDual1 (Limes c Dst p d t n m) (Inv2 h) (->)
-  
 instance
   ( HomDistributive h
   , TransformableDst r
