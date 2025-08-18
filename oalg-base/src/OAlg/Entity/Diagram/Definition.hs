@@ -306,9 +306,11 @@ dgMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
 --------------------------------------------------------------------------------
 -- Diagram - FunctorialG -
 
-instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where amapG = dgMap
+instance HomOriented h
+  => ApplicativeG (Diagram t n m) h (->) where amapG = dgMap
 
-instance (HomOriented h, FunctorialOriented h) => FunctorialG (Diagram t n m) h (->)
+instance (HomOriented h, FunctorialOriented h)
+  => FunctorialG (Diagram t n m) h (->)
 
 instance (HomOrientedDisjunctive h, t ~ Dual (Dual t))
   => ApplicativeG (SDualBi (Diagram t n m)) h (->) where
