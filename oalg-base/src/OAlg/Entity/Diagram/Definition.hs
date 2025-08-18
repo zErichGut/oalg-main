@@ -19,7 +19,6 @@
 -- definition of 'Diagram's on 'Oriented' structures.
 module OAlg.Entity.Diagram.Definition
   (
-
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
@@ -48,14 +47,12 @@ module OAlg.Entity.Diagram.Definition
 
 import Control.Monad 
 
-import Data.Kind
 import Data.Typeable
 import Data.Array as A hiding (range)
 import Data.Foldable (toList)
 
 import OAlg.Prelude hiding (T)
 
-import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Either
@@ -307,6 +304,25 @@ dgMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
     Left1 d'         -> Right1 (dgMapCnt hCnt d')
 
 --------------------------------------------------------------------------------
+-- Diagram - FunctorialG -
+
+instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where amapG = dgMap
+
+instance (HomOriented h, FunctorialOriented h) => FunctorialG (Diagram t n m) h (->)
+
+instance (HomOrientedDisjunctive h, t ~ Dual (Dual t))
+  => ApplicativeG (SDualBi (Diagram t n m)) h (->) where
+  amapG = dgMapS
+
+instance
+  ( HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (Diagram t n m)) h (->)
+
+{-
+--------------------------------------------------------------------------------
 -- Diagram - DualisableGBi -
 
 dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
@@ -344,11 +360,7 @@ instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s,
 --------------------------------------------------------------------------------
 -- Diagram - FunctorialG -
 
-instance HomOriented h => ApplicativeG (Diagram t n m) h (->) where amapG = dgMap
-
 instance HomOriented h => ApplicativeGDual1 (Diagram t n m) h (->)
-
-instance (HomOriented h, FunctorialOriented h) => FunctorialG (Diagram t n m) h (->)
 
 instance
   ( HomOriented h
@@ -366,6 +378,7 @@ instance
   , t ~ Dual (Dual t)
   )  
   => FunctorialG (SDualBi (Diagram t n m)) (HomDisj s o h) (->)
+-}
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -
@@ -735,20 +748,19 @@ instance Oriented a => Validable (SomeDiagram a) where
 --------------------------------------------------------------------------------
 -- sdgMap -
 
-sdgMap :: (HomOriented h, DualisableOriented s o, TransformableGRefl o s, TransformableOrt s)
+sdgMap :: (HomOriented h, DualisableOriented s o)
   => HomDisj s o h x y -> SomeDiagram x -> SomeDiagram y
 sdgMap h (SomeDiagram d)   = case dgTypeRefl d of
   Refl                    -> case amapG h (SDualBi (Right1 d)) of
     SDualBi (Right1 d')  -> SomeDiagram d'
     SDualBi (Left1 d')   -> SomeDiagram d'
   
-instance (HomOriented h, DualisableOriented s o, TransformableGRefl o s, TransformableOrt s)
+instance (HomOriented h, DualisableOriented s o)
   => ApplicativeG SomeDiagram (HomDisj s o h) (->) where
   amapG = sdgMap
 
-instance ( HomOriented h, DualisableOriented s o
-         , TransformableGRefl o s, TransformableOrt s
-         ) => FunctorialG SomeDiagram (HomDisj s o h) (->)
+instance (HomOriented h, DualisableOriented s o)
+  => FunctorialG SomeDiagram (HomDisj s o h) (->)
 
 --------------------------------------------------------------------------------
 -- xSomeDiagram -
@@ -830,4 +842,5 @@ xSomeDiagramOrnt xn xp
 
 xsd :: X (SomeDiagram OS)
 xsd = xSomeDiagramOrnt xn xStandard where xn = amap1 someNatural $ xNB 0 20
+
 
