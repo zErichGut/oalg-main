@@ -19,7 +19,6 @@
 -- definition of 'Cone's over 'Diagrammatic' objects.
 module OAlg.Limes.Cone.Definition
   (
-
     -- * Cone
     Cone(..), diagrammaticObject, coneDiagram
   , Perspective(..), cnMltOrDst, coneStruct
@@ -27,7 +26,9 @@ module OAlg.Limes.Cone.Definition
   , tip, shell, cnArrows, cnPoints
 
     -- * Map
+  , cnMapS  
     -- ** Covariant
+  , cnMapCov, cnMapMltCov, cnMapDstCov
   , cnMap, cnMapMlt, cnMapDst
 
     -- ** Contravariant
@@ -333,13 +334,7 @@ cnMapS ::
   , p ~ Dual (Dual p)
   )
   => h x y -> SDualBi (Cone s p d t n m) x -> SDualBi (Cone s p d t n m) y
-cnMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
-  Right2 hCov       -> case s of
-    Right1 c        -> Right1 (cnMapCov hCov c)
-    Left1 c'        -> Left1 (cnMapCov hCov c')
-  Left2 hCnt        -> case s of
-    Right1 c        -> Left1 (cnMapCnt hCnt c)
-    Left1 c'        -> Right1 (cnMapCnt hCnt c')
+cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
 
 --------------------------------------------------------------------------------
 -- Cone - FunctorialG - Mlt -
@@ -777,6 +772,9 @@ instance ( Entity p, t ~ Parallel RightToLeft, n ~ N2
          , XStandard p, XStandard (d t n m (Orientation p))
          ) => XStandard (Cone Dst Injective d t n m (Orientation p)) where
   xStandard = xCnInjDstOrnt xStandard xStandard
+
+
+
 
 {-  
 --------------------------------------------------------------------------------

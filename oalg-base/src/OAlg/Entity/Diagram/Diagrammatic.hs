@@ -27,7 +27,8 @@ module OAlg.Entity.Diagram.Diagrammatic
   , sdbToDgmObj, sdbFromDgmObj
 
     -- * Natural
-  , NaturalDiagrammatic, droh
+    
+  -- , NaturalDiagrammatic, droh
   , NaturalDiagrammaticSDualisable, drohS, dmapCov
   , NaturalDiagrammaticSDual
   , NaturalDiagrammaticSDualisableBi
@@ -145,6 +146,9 @@ sdbFromDgmObj :: Dual1 (d t n m) ~ d (Dual t) n m
 sdbFromDgmObj (SDualBi (Right1 d)) = SDualBi (Right1 (DiagramG d))
 sdbFromDgmObj (SDualBi (Left1 d')) = SDualBi (Left1 (DiagramG d'))
 
+{-
+
+
 --------------------------------------------------------------------------------
 -- NaturalDiagrammatic -
 
@@ -187,7 +191,7 @@ prpNaturalDiagrammatic :: (NaturalDiagrammatic h d t n m, Show2 h)
   => q h d t n m -> h x y -> Diagram t n m x -> Statement
 prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
   :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
-
+-}
 --------------------------------------------------------------------------------
 -- drohS -
 
@@ -294,7 +298,10 @@ prpHomOrientedDisjunctiveS ::
 prpHomOrientedDisjunctiveS h d = Prp "HomOrientedDisjunctiveS"
   :<=>: relHomOrientedDisjunctiveS (tauHom (homomorphous h)) h d
 
-relNaturalDiagrammaticSDualisable :: (NaturalDiagrammaticSDualisable h d t n m, Show2 h)
+relNaturalDiagrammaticSDualisable ::
+  ( NaturalDiagrammaticSDualisable h d t n m
+  , Show2 h
+  )
   => q h d t n m -> h x y -> SDualBi (Diagram t n m) x -> Statement
 relNaturalDiagrammaticSDualisable _ = prpHomOrientedDisjunctiveS
 

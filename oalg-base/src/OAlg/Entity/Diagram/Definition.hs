@@ -293,14 +293,14 @@ dgMapCnt (Contravariant2 h) d = case d of
 -- dgMapS -
 
 -- | the canonically induced application given by 'dgMap' and 'dgMapCnt'.
-dgMapS :: (HomOrientedDisjunctive h, t ~ Dual (Dual t))
+dgMapS :: ( HomOrientedDisjunctive h, t ~ Dual (Dual t))
   => h x y -> SDualBi (Diagram t n m) x -> SDualBi (Diagram t n m) y
 dgMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
   Right2 hCov        -> case s of
-    Right1 d         -> Right1 (dgMap hCov d)
-    Left1 d'         -> Left1 (dgMap hCov d')
+    Right1 d         -> Right1 (dgMap hCov d)    
+    Left1 d'         -> Left1 (dgMap hCov d')    
   Left2 hCnt         -> case s of
-    Right1 d         -> Left1 (dgMapCnt hCnt d)
+    Right1 d         -> Left1 (dgMapCnt hCnt d)    
     Left1 d'         -> Right1 (dgMapCnt hCnt d')
 
 --------------------------------------------------------------------------------
@@ -840,7 +840,6 @@ dstSomeDiagram n xd = putDstr cnstr n xd where
 xSomeDiagramOrnt :: Entity p => X SomeNatural -> X p -> X (SomeDiagram (Orientation p))
 xSomeDiagramOrnt xn xp
   = xSomeDiagram xn (xEndOrnt xp) (xStartOrnt xp) (xoOrnt xp)
-
 
 xsd :: X (SomeDiagram OS)
 xsd = xSomeDiagramOrnt xn xStandard where xn = amap1 someNatural $ xNB 0 20
