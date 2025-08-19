@@ -19,12 +19,13 @@
 module OAlg.Limes.Cone.Conic
   (
     -- * Conic
-    Conic(..)
+    Conic(..), DualConic
   , ConeG(..)
   , sdbToCncObj, sdbFromCncObj
 
     -- * Natural
   , NaturalConicSDualisable, crohS
+  
 
 {-    
   , ApplicativeConicBi
@@ -48,7 +49,6 @@ import OAlg.Prelude
 import OAlg.Category.SDuality
 import OAlg.Category.NaturalTransformable
 
-import OAlg.Data.Variant
 import OAlg.Data.Either
 
 import OAlg.Entity.Diagram
@@ -57,7 +57,6 @@ import OAlg.Entity.Natural
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -139,6 +138,21 @@ sdbFromCncObj (SDualBi (Right1 c)) = SDualBi (Right1 (ConeG c))
 sdbFromCncObj (SDualBi (Left1 c')) = SDualBi (Left1 (ConeG c'))
 
 --------------------------------------------------------------------------------
+-- DualConic -
+
+-- | sound definition of duality for 'Conic' objects.
+class (Conic c, Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m) => DualConic c s p d t n m
+
+instance DualConic Cone s p d t n m
+
+instance
+  ( ApplicativeG (SDualBi (c s p d t n m)) h (->)
+  , DualConic c s p d t n m
+  ) 
+  => ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+  
+--------------------------------------------------------------------------------
 -- NaturalConicSDualisable -
 
 -- | natural transformation for 'Conic' objects from @'SDualBi' ('ConeG' __c s p d t n m__)@ to
@@ -160,14 +174,6 @@ instance
   , NaturalDiagrammaticSDualisableBi h d t n m
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDualBi (ConeG Cone Mlt p d t n m)) h (->) where
-  amapG h = sdbFromCncObj . cnMapS h . sdbToCncObj
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
-  , p ~ Dual (Dual p)
-  )
   => NaturalTransformable h (->)
        (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
 
@@ -180,14 +186,6 @@ instance
   
 --------------------------------------------------------------------------------
 -- ConeG - Cone - Dst - NaturalConicSDualisable -
-
-instance
-  ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (ConeG Cone Dst p d t n m)) h (->) where
-  amapG h = sdbFromCncObj . cnMapS h . sdbToCncObj
 
 instance
   ( HomDistributiveDisjunctive h

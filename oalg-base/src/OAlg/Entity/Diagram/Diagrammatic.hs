@@ -22,7 +22,7 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
     -- * Diagrammatic
-    Diagrammatic(..)
+    Diagrammatic(..), DualDiagrammatic
   , DiagramG(..), dmap
   , sdbToDgmObj, sdbFromDgmObj
 
@@ -147,8 +147,6 @@ sdbFromDgmObj (SDualBi (Right1 d)) = SDualBi (Right1 (DiagramG d))
 sdbFromDgmObj (SDualBi (Left1 d')) = SDualBi (Left1 (DiagramG d'))
 
 {-
-
-
 --------------------------------------------------------------------------------
 -- NaturalDiagrammatic -
 
@@ -206,6 +204,21 @@ instance Diagrammatic d
   roh _ = drohS
 
 --------------------------------------------------------------------------------
+-- DualDiagrammatic -
+
+-- | sound definition of duality for 'Diagrammatic' objects.
+class (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m) => DualDiagrammatic d t n m
+
+instance DualDiagrammatic Diagram t n m
+
+instance
+  ( DualDiagrammatic d t n m
+  , ApplicativeG (SDualBi (d t n m)) h (->)
+  )
+  => ApplicativeG (SDualBi (DiagramG d t n m)) h (->) where
+  amapG h = sdbFromDgmObj . amapG h . sdbToDgmObj
+  
+--------------------------------------------------------------------------------
 -- NaturalDiagrammaticSDualisable -
 
 -- | natural transformation on 'Diagrammatic' objects from @'SDualBi' ('DiagramG' __d t n m__)@ to
@@ -225,13 +238,6 @@ class
   , t ~ Dual (Dual t)
   )
   => NaturalDiagrammaticSDualisable h d t n m
-
-instance
-  ( HomOrientedDisjunctive h
-  , t ~ Dual (Dual t)
-  )
-  => ApplicativeG (SDualBi (DiagramG Diagram t n m)) h (->) where
-  amapG h = sdbFromDgmObj . dgMapS h . sdbToDgmObj
 
 instance
   ( HomOrientedDisjunctive h
