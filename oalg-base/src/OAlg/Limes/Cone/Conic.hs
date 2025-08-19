@@ -25,6 +25,7 @@ module OAlg.Limes.Cone.Conic
 
     -- * Natural
   , NaturalConicSDualisable, crohS
+  , NaturalConicSDualisableBi
   
 
 {-    
@@ -202,7 +203,16 @@ instance
   )
   => NaturalConicSDualisable h Cone Dst p d t n m
 
-  
+--------------------------------------------------------------------------------
+-- NaturalConicSDualisableBi -
+
+-- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
+-- @__c__@ and also its dual are 'NaturalConicSDualisable'.
+class
+  ( NaturalConicSDualisable h c s p d t n m
+  , NaturalConicSDualisable h c s (Dual p) d (Dual t) n m
+  )
+  => NaturalConicSDualisableBi h c s p d t n m
 
 {-
 instance ApplicativeG (ConeG c s p d t n m) (HomEmpty r) (->) where

@@ -270,8 +270,8 @@ data NaturalDiagrammaticSDual h d t n m where
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticSDualisableBi -
 
--- | bi-natural diagrammatic objects, i.e. diagrammatic objects @__d__@ where
--- @__d__@ and also its dual are natural diagrammatic.
+-- | bi-natural 'Diagrammatic' objects, i.e. 'Diagrammatic' objects @__d__@ where
+-- @__d__@ and also its dual are 'NaturalDiagrammaticSDualisable'.
 class
   ( NaturalDiagrammaticSDualisable h d t n m
   , NaturalDiagrammaticSDualisable h d (Dual t) n m
