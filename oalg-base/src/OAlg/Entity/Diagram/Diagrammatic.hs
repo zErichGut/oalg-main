@@ -21,6 +21,7 @@
 -- Objects with a naturally underlying 'Diagram'.
 module OAlg.Entity.Diagram.Diagrammatic
   (
+{-    
     -- * Diagrammatic
     Diagrammatic(..), DualDiagrammatic
   , DiagramG(..), dmap
@@ -35,7 +36,8 @@ module OAlg.Entity.Diagram.Diagrammatic
   
     -- * Proposition
   , prpDiagrammatic
-
+-}
+    
 {-
   , ApplicativeDiagrammaticBi
   -- , dgmGMap
@@ -91,6 +93,7 @@ class Diagrammatic d where
 
 instance Diagrammatic Diagram where diagram = id
 
+{-
 --------------------------------------------------------------------------------
 -- DiagramG -
 
@@ -145,6 +148,7 @@ sdbFromDgmObj :: Dual1 (d t n m) ~ d (Dual t) n m
   => SDualBi (d t n m) x -> SDualBi (DiagramG d t n m) x
 sdbFromDgmObj (SDualBi (Right1 d)) = SDualBi (Right1 (DiagramG d))
 sdbFromDgmObj (SDualBi (Left1 d')) = SDualBi (Left1 (DiagramG d'))
+-}
 
 {-
 --------------------------------------------------------------------------------
@@ -190,18 +194,6 @@ prpNaturalDiagrammatic :: (NaturalDiagrammatic h d t n m, Show2 h)
 prpNaturalDiagrammatic q h d = Prp "NaturalDiagrammatic"
   :<=>: relNaturalDiagrammatic q (tauHom (homomorphous h)) h d 
 -}
---------------------------------------------------------------------------------
--- drohS -
-
--- | natural assocition induced by 'droh' betewwn @'SDualBi' ('DiagramG' __d t n m__)@ and
--- @'SDualBi' ('Diagram' __t n m__)@.
-drohS :: Diagrammatic d => SDualBi (DiagramG d t n m) x -> SDualBi (Diagram t n m) x
-drohS (SDualBi (Right1 d)) = SDualBi (Right1 (droh d))
-drohS (SDualBi (Left1 d')) = SDualBi (Left1 (droh d'))
-
-instance Diagrammatic d
-  => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)) where
-  roh _ = drohS
 
 --------------------------------------------------------------------------------
 -- DualDiagrammatic -
@@ -210,6 +202,23 @@ instance Diagrammatic d
 class (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m) => DualDiagrammatic d t n m
 
 instance DualDiagrammatic Diagram t n m
+
+--------------------------------------------------------------------------------
+-- drohS -
+
+-- | natural assocition induced by 'droh' betewwn @'SDualBi' ('DiagramG' __d t n m__)@ and
+-- @'SDualBi' ('Diagram' __t n m__)@.
+drohS :: DualDiagrammatic d t n m
+  => SDualBi (d t n m) x -> SDualBi (Diagram t n m) x
+drohS (SDualBi (Right1 d)) = SDualBi (Right1 (diagram d))
+drohS (SDualBi (Left1 d')) = SDualBi (Left1 (diagram d'))
+
+instance DualDiagrammatic d t n m
+  => Natural s (->) (SDualBi (d t n m)) (SDualBi (Diagram t n m)) where
+  roh _ = drohS
+{-
+--------------------------------------------------------------------------------
+-- DualDiagrammatic -
 
 instance
   ( DualDiagrammatic d t n m
@@ -620,6 +629,9 @@ prpDiagrammatic nMax = Prp "Diagrammatic"
           => Any m -> NaturalDiagrammaticSDual (HomTest s) Diagram
                (Parallel RightToLeft) N2 m
         lrF _ = NaturalDiagrammaticSDual
+-}
+
+
 
 
 {-  
