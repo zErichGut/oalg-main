@@ -83,7 +83,7 @@ instance DualConic ConeZeroHead s p d t n m
 
 czMapMltCovStruct ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Struct Dst y
   -> Variant2 Covariant h x y -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt p d t n m y
@@ -91,14 +91,14 @@ czMapMltCovStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapMltCov h c)
 
 czMapMltCov :: 
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> ConeZeroHead Mlt p d t n m x -> ConeZeroHead Mlt p d t n m y
 czMapMltCov h = czMapMltCovStruct (tau (range h)) h
 
 czMapDstCovStruct :: 
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Struct Dst y
   -> Variant2 Covariant h x y -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst p d t n m y
@@ -106,14 +106,14 @@ czMapDstCovStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapDstCov h c)
 
 czMapDstCov ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst p d t n m y
 czMapDstCov h = czMapDstCovStruct (tau (range h)) h
 
 czMapCov ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> ConeZeroHead s p d t n m x -> ConeZeroHead s p d t n m y
 czMapCov h cz@(ConeZeroHead c) = case c of
@@ -124,7 +124,7 @@ czMapCov h cz@(ConeZeroHead c) = case c of
   
 czMapMltCntStruct ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Struct Dst y
   -> Variant2 Contravariant h x y
@@ -133,7 +133,7 @@ czMapMltCntStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapMltCnt h c)
 
 czMapMltCnt ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Contravariant h x y
   -> ConeZeroHead Mlt p d t n m x -> Dual1 (ConeZeroHead Mlt p d t n m) y  
@@ -141,7 +141,7 @@ czMapMltCnt h = czMapMltCntStruct (tau (range h)) h
 
 czMapDstCntStruct ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Struct Dst y
   -> Variant2 Contravariant h x y
@@ -150,7 +150,7 @@ czMapDstCntStruct Struct h (ConeZeroHead c) = ConeZeroHead (cnMapDstCnt h c)
 
 czMapDstCnt ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Contravariant h x y
   -> ConeZeroHead Dst p d t n m x -> Dual1 (ConeZeroHead Dst p d t n m) y  
@@ -158,7 +158,7 @@ czMapDstCnt h = czMapDstCntStruct (tau (range h)) h
 
 czMapCnt ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Contravariant h x y
   -> ConeZeroHead s p d t n m x -> Dual1 (ConeZeroHead s p d t n m) y
@@ -170,18 +170,18 @@ czMapCnt h cz@(ConeZeroHead c) = case c of
   
 czMapS ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => h x y -> SDualBi (ConeZeroHead s p d t n m) x -> SDualBi (ConeZeroHead s p d t n m) y
 czMapS = vmapBi czMapCov czMapCov czMapCnt czMapCnt
 
 --------------------------------------------------------------------------------
--- ZeroHead - NaturalConicSDualisable -
+-- ZeroHead - NaturalConic -
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (ConeZeroHead s p d t n m)) h (->) where
@@ -189,7 +189,7 @@ instance
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
@@ -197,14 +197,14 @@ instance
   
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
-  => NaturalConicSDualisable h ConeZeroHead Mlt p d t n m
+  => NaturalConic h ConeZeroHead Mlt p d t n m
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
@@ -212,10 +212,10 @@ instance
   
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
-  => NaturalConicSDualisable h ConeZeroHead Dst p d t n m
+  => NaturalConic h ConeZeroHead Dst p d t n m
 
 --------------------------------------------------------------------------------
 -- cnDiffHead -

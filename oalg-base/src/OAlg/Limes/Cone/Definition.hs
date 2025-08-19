@@ -219,7 +219,7 @@ instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
 -- | mapping of a cone under a 'Multiplicative' covariant homomorphism.
 cnMapMltCov ::
   ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> Cone Mlt p d t n m x -> Cone Mlt p d t n m y
 cnMapMltCov h c            = case tauMlt (range h) of
@@ -230,7 +230,7 @@ cnMapMltCov h c            = case tauMlt (range h) of
 -- | mapping of a cone under a 'Distributive' covariant homomorphism.
 cnMapDstCov ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> Cone Dst p d t n m x -> Cone Dst p d t n m y
 cnMapDstCov h c          = case tauDst (range h) of
@@ -240,7 +240,7 @@ cnMapDstCov h c          = case tauDst (range h) of
 
 cnMapCov ::
   ( HomD s h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> Cone s p d t n m x -> Cone s p d t n m y
 cnMapCov h c = case c of
@@ -290,7 +290,7 @@ cnMap h c = case c of
 -- | mapping of a cone under a 'Multiplicative' contravariant homomorphism.
 cnMapMltCnt ::
   ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Contravariant h x y
   -> Cone Mlt p d t n m x -> Dual1 (Cone Mlt p d t n m) y
@@ -304,7 +304,7 @@ cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
 -- | mapping of a cone under a 'Distributive' contravariant homomorphism.
 cnMapDstCnt ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   )
   => Variant2 Contravariant h x y
   -> Cone Dst p d t n m x -> Dual1 (Cone Dst p d t n m) y
@@ -316,7 +316,7 @@ cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
       SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a contravariant homomorphism.
-cnMapCnt :: (HomD s h, NaturalDiagrammaticSDualisable h d t n m)
+cnMapCnt :: (HomD s h, NaturalDiagrammatic h d t n m)
   => Variant2 Contravariant h x y
   -> Cone s p d t n m x -> Dual1 (Cone s p d t n m) y
 cnMapCnt h c = case c of
@@ -330,7 +330,7 @@ cnMapCnt h c = case c of
 
 cnMapS ::
   ( HomD s h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => h x y -> SDualBi (Cone s p d t n m) x -> SDualBi (Cone s p d t n m) y
@@ -355,7 +355,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (Cone Mlt p d t n m)) h (->) where
@@ -364,7 +364,7 @@ instance
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Mlt p d t n m)) h (->)
@@ -388,7 +388,7 @@ instance
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => ApplicativeG (SDualBi (Cone Dst p d t n m)) h (->) where
@@ -397,7 +397,7 @@ instance
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Dst p d t n m)) h (->)

@@ -24,23 +24,8 @@ module OAlg.Limes.Cone.Conic
   , sdbToCncObj, sdbFromCncObj
 
     -- * Natural
-  , NaturalConicSDualisable, crohS
-  , NaturalConicSDualisableBi
-  
-
-{-    
-  , ApplicativeConicBi
-
-    -- * Natural
-  , NaturalConic, NaturalConicDual1
+  , NaturalConic, crohS
   , NaturalConicBi
-
-  , NaturalConicSDualisable
-
-    -- * Duality
-  , DualisableConic, DualisableConicBi
-  , DualisableConicDual1
--}    
   ) where
 
 import Data.Kind
@@ -87,14 +72,6 @@ newtype ConeG (c :: Type -> Perspective
 
 type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 
-{-
---------------------------------------------------------------------------------
--- cmap -
-
-cmap :: ApplicativeG (ConeG c s p d t n m)
-  => h x y -> c s p d t n m x -> c s p d t n m y
-cmap
--}
 
 --------------------------------------------------------------------------------
 -- croh -
@@ -154,25 +131,25 @@ instance
   amapG h = sdbFromCncObj . amapG h . sdbToCncObj
   
 --------------------------------------------------------------------------------
--- NaturalConicSDualisable -
+-- NaturalConic -
 
 -- | natural transformation for 'Conic' objects from @'SDualBi' ('ConeG' __c s p d t n m__)@ to
 -- @'SDualBi' ('Cone' __s p d t n m__)@.
 class
   ( Conic c
   , HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalDiagrammatic h d t n m
   , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m))
   , p ~ Dual (Dual p)
   )
-  => NaturalConicSDualisable h c s p d t n m
+  => NaturalConic h c s p d t n m
 
 --------------------------------------------------------------------------------
--- ConeG - Cone - Mlt - NaturalConicSDualisable -
+-- ConeG - Cone - Mlt - NaturalConic -
 
 instance
   ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
@@ -180,17 +157,17 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
-  => NaturalConicSDualisable h Cone Mlt p d t n m
+  => NaturalConic h Cone Mlt p d t n m
   
 --------------------------------------------------------------------------------
--- ConeG - Cone - Dst - NaturalConicSDualisable -
+-- ConeG - Cone - Dst - NaturalConic -
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
@@ -198,358 +175,19 @@ instance
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticSDualisableBi h d t n m
+  , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
-  => NaturalConicSDualisable h Cone Dst p d t n m
-
---------------------------------------------------------------------------------
--- NaturalConicSDualisableBi -
-
--- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
--- @__c__@ and also its dual are 'NaturalConicSDualisable'.
-class
-  ( NaturalConicSDualisable h c s p d t n m
-  , NaturalConicSDualisable h c s (Dual p) d (Dual t) n m
-  )
-  => NaturalConicSDualisableBi h c s p d t n m
-
-{-
-instance ApplicativeG (ConeG c s p d t n m) (HomEmpty r) (->) where
-  amapG = fromHomEmpty
-
-instance ApplicativeGDual1 (ConeG c s p d t n m) (HomEmpty r) (->)
-
---------------------------------------------------------------------------------
--- cncGMap -
-
--- | the induced mapping.
-cncGMap :: (c s p d t n m x -> c s p d t n m y) -> ConeG c s p d t n m x -> ConeG c s p d t n m y
-cncGMap f (ConeG c) = ConeG (f c)
-
---------------------------------------------------------------------------------
--- NaturalConic -
-
--- | natural transformation for 'Conic' objects.
---
--- __Property__ Let @'NaturalConic' __h c s p d t n m__@ and @'Hom' __s h__@ where @__s__@ is either
--- 'Mlt' or 'Dst', then for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
---
--- (1) @'amapG' h '.=. 'cnMap' h@,
---
--- __Note__ We haven't added the constraint @'Hom' __s h__@ to this class declaration because
--- this will not pass the type checker.
-class
-  ( Conic c
-  , HomMultiplicative h
-  , NaturalDiagrammatic h d t n m
-  , NaturalTransformable h (->) (ConeG c s p d t n m) (Cone s p d t n m)
-  )
-  => NaturalConic h c s p d t n m
-
---------------------------------------------------------------------------------
--- prpNaturalConic -
-
--- | validity according to 'NaturalConic'.
-prpNaturalConic ::
-  ( Hom s h
-  , NaturalConic h c s p d t n m
-  , Show (d t n m x), Show2 h
-  , Eq (d t n m y)
-  )
-  => q h c s p d t n m
-  -> h x y -> Cone s p d t n m x -> Statement
-prpNaturalConic _ h c = Prp "NaturalConic" :<=>:
-  (amapG h c == cnMap h c) :?> Params ["h":=show2 h,"c":= show c]
-
---------------------------------------------------------------------------------
--- NaturalConicDual1 -
-
--- | helper class to avoid undecidable instances.
-class NaturalConic h c s (Dual p) d (Dual t) n m => NaturalConicDual1 h c s p d t n m
+  => NaturalConic h Cone Dst p d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalConicBi -
 
--- | constrains for conic objects @__c__@ which are bi-natural conic.
-type NaturalConicBi h c s p d t n m
-  = ( NaturalConic h c s p d t n m
-    , NaturalConicDual1 h c s p d t n m
-    )
-
---------------------------------------------------------------------------------
--- DualisableConic -
-
--- | duality for 'Conic' objects.
---
--- __Property__ Let @'DualisableConic' __r o c s p d t n m__@ then
--- for all @__x__@ and @r@ in @'Struct' __r x__@ holds:
---
--- (1) For @__s__@ equal to t'Mlt', @'DualisableMultiplicative' __r o__@ and any proxy
--- @q@ in @__q r o c__ t'Mlt' __p d t n m__@ holds:
---
---     (1) @'cone' '.' 'toDualCncLft'' d r '.=.' 'toDualGLft' r '.' 'cone'@.
---
---     (2) @'cone' '.' 'toDualCncRgt'' d r '.=.' 'toDualGRgt' r '.' 'cone'@.
---
--- (2) For @__s__@ equal to t'Dst', @'DualisableDistributive' __r o__@ and any proxy
--- @q@ in @__q r o c__ t'Dst' __p d t n m__@ holds:
---
---     (1) @'cone' '.' 'toDualCncLft'' d r '.=.' 'toDualGLft' r '.' 'cone'@.
---
---     (2) @'cone' '.' 'toDualCncRgt'' d r '.=.' 'toDualGRgt' r '.' 'cone'@.
---
--- (see 'prpDualisableConicLft' and 'prpDualisableConicRgt')
+-- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
+-- @__c__@ and also its dual are 'NaturalConic'.
 class
-  ( Conic c
-  , DualisableGBi r (->) o (ConeG c s p d t n m)
-  , DualisableDiagrammaticBi r o d t n m
-  , p ~ Dual (Dual p)
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
   )
-  => DualisableConic r o c s p d t n m
+  => NaturalConicBi h c s p d t n m
 
---------------------------------------------------------------------------------
--- DualisableConicDual1 -
-
--- | helper class to avoid undecidable instances.
-class DualisableConic r o c s (Dual p) d (Dual t) n m => DualisableConicDual1 r o c s p d t n m
-
--- | constrains for conic objects @__c__@ which are bi-dualisable conic.
-type DualisableConicBi r o c s p d t n m
-  = ( DualisableConic r o c s p d t n m
-    , DualisableConicDual1 r o c s p d t n m
-    )
-
---------------------------------------------------------------------------------
--- DualityConic -
-
--- | whiteness for 'DualisableConic'.
-data DualityConic r o c s p d t n m where
-  DualityConic :: DualisableConic r o c s p d t n m => DualityConic r o c s p d t n m
-  
---------------------------------------------------------------------------------
--- toDualCncLft -
-
--- | the induced mapping.
-toDualCncLft :: DualisableConic r o c s p d t n m
-  => Struct r x -> c s p d t n m x -> c s (Dual p) d (Dual t) n m (o x)
-toDualCncLft r c = c' where ConeG c' = toDualGLft r (ConeG c)
-
--- | the induced mapping.
-toDualCncLft' :: DualisableConic r o c s p d t n m
-  => q r o c s p d t n m -> Struct r x -> c s p d t n m x -> c s (Dual p) d (Dual t) n m (o x)
-toDualCncLft' _ = toDualCncLft
-
---------------------------------------------------------------------------------
--- toDualCncRgt -
-
--- | the induced mapping.
-toDualCncRgt :: DualisableConic r o c s p d t n m
-  => Struct r x -> c s (Dual p) d (Dual t) n m x -> c s p d t n m (o x)
-toDualCncRgt r c' = c where ConeG c = toDualGRgt r (ConeG c')
-
--- | the induced mapping.
-toDualCncRgt' :: DualisableConic r o c s p d t n m
-  => q r o c s p d t n m
-  -> Struct r x -> c s (Dual p) d (Dual t) n m x -> c s p d t n m (o x)
-toDualCncRgt' _ = toDualCncRgt
-
---------------------------------------------------------------------------------
--- prpDualisableConicLft -
-
-relDualisableConicLftMlt ::
-  ( s ~ Mlt
-  , DualisableConic r o c s p d t n m
-  , DualisableMultiplicative r o
-  , TransformableMlt r -- acutally this follows from DualisableMultiplicative r o
-  , Eq (d (Dual t) n m (o x))
-  )
-  => DualityConic r o c s p d t n m
-  -> Struct r x -> c s p d t n m x -> Statement
-relDualisableConicLftMlt d@DualityConic r c
-  = ( cone (toDualCncLft' d r c) == toDualGLft r (cone c)
-    ) :?> Params []
-
-relDualisableConicLftDst ::
-  ( s ~ Dst
-  , DualisableConic r o c s p d t n m
-  , DualisableDistributive r o
-  , TransformableDst r
-  , Eq (d (Dual t) n m (o x))
-  )
-  => DualityConic r o c s p d t n m
-  -> Struct r x -> c s p d t n m x -> Statement
-relDualisableConicLftDst d@DualityConic r c
-  = ( cone (toDualCncLft' d r c) == toDualGLft r (cone c)
-    ) :?> Params []
-
---------------------------------------------------------------------------------
--- prpDualisableConicRgt -
-
-relDualisableConicRgtMlt ::
-  ( s ~ Mlt
-  , DualisableMultiplicative r o
-  , TransformableMlt r
-  , Eq (d t n m (o x))
-  )
-  => DualityConic r o c s p d t n m
-  -> Struct r x -> c s (Dual p) d (Dual t) n m x -> Statement
-relDualisableConicRgtMlt d@DualityConic r c
-  = ( cone (toDualCncRgt' d r c) == toDualGRgt r (cone c) 
-    ) :?> Params []
-
-relDualisableConicRgtDst ::
-  ( s ~ Dst
-  , DualisableDistributive r o
-  , TransformableDst r
-  , Eq (d t n m (o x))
-  )
-  => DualityConic r o c s p d t n m
-  -> Struct r x -> c s (Dual p) d (Dual t) n m x -> Statement
-relDualisableConicRgtDst d@DualityConic r c
-  = ( cone (toDualCncRgt' d r c) == toDualGRgt r (cone c) 
-    ) :?> Params []
-
---------------------------------------------------------------------------------
--- ApplicativeConicBi -
-
--- | helper class to avoid undecidable instances.
-class ApplicativeGBi (ConeG c s p d t n m) h (->) => ApplicativeConicBi h c s p d t n m
-
-instance ApplicativeConicBi (HomEmpty r) c Mlt p d t n m
-instance ApplicativeConicBi (HomEmpty r) c Dst p d t n m
-
---------------------------------------------------------------------------------
--- NaturalConicSDualisable -
-
-instance
-  ( Morphism h
-  , ApplicativeGBi (ConeG c s p d t n m) h (->)
-  , DualisableGBi r (->) o (ConeG c s p d t n m)
-  )
-  => ApplicativeG (SDualBi (ConeG c s p d t n m)) (HomDisj r o h) (->) where
-  amapG (HomDisj h) = amapG h -- i.e. smapBi
-
-instance
-  ( Morphism h
-  , ApplicativeGBi (ConeG c s p d t n m) h (->)
-  , DualisableGBi r (->) o (ConeG c s p d t n m)
-  )
-  => ApplicativeG (ConeG c s p d t n m) (Variant2 Covariant (HomDisj r o h)) (->) where
-  amapG (Covariant2 h) c = c' where
-    SDualBi (Right1 c') = amapG h (SDualBi (Right1 c))
-
---------------------------------------------------------------------------------
--- HomDisj - Mlt - NaturalConicSDualisable -
-
-instance
-  ( HomMultiplicative h
-  , TransformableMlt r
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
-  
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m  
-  )
-  => NaturalTransformable (HomDisj r o h) (->)
-       (SDualBi (ConeG c Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
-
-instance
-  ( HomMultiplicative h
-  , TransformableMlt r
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeConicBi h c Mlt p d t n m
-  , ApplicativeDiagrammaticBi h d t n m
-  
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m  
-  )
-  => NaturalConicSDualisable (HomDisj r o h) c Mlt p d t n m
-
---------------------------------------------------------------------------------
--- HomDisj - Dst - NaturalConicSDualisable -
-
-instance
-  ( HomDistributive h
-  , TransformableDst r
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeGBi (ConeG c Dst p d t n m) h (->)
-  
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m  
-  )
-  => NaturalTransformable (HomDisj r o h) (->)
-       (SDualBi (ConeG c Dst p d t n m)) (SDualBi (Cone Dst p d t n m))
-
-instance
-  ( HomDistributive h
-  , TransformableDst r
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeConicBi h c Dst p d t n m
-  , ApplicativeDiagrammaticBi h d t n m
-  
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m  
-  )
-  => NaturalConicSDualisable (HomDisj r o h) c Dst p d t n m
-
---------------------------------------------------------------------------------
--- HomDisj - Mlt - Covariant - NatualConic -
-
-instance
-  ( HomMultiplicative h
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
-  , ApplicativeGBi (DiagramG d t n m) h (->)
-
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
-  )
-  => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
-       (ConeG c Mlt p d t n m) (Cone Mlt p d t n m)
-
-instance
-  ( HomMultiplicative h
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeGBi (ConeG c Mlt p d t n m) h (->)
-  , ApplicativeGBi (DiagramG d t n m) h (->)
-
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
-  )
-  => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Mlt p d t n m
-
---------------------------------------------------------------------------------
--- HomDisj - Dst - Covariant - NatualConic -
-
-instance
-  ( HomDistributive h
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeGBi (ConeG c Dst p d t n m) h (->)
-  , ApplicativeGBi (DiagramG d t n m) h (->)
-
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  )
-  => NaturalTransformable (Variant2 Covariant (HomDisj r o h)) (->)
-       (ConeG c Dst p d t n m) (Cone Dst p d t n m)
-
-instance
-  ( HomDistributive h
-  , NaturalDiagrammaticBi h d t n m
-  , ApplicativeGBi (ConeG c Dst p d t n m) h (->)
-  , ApplicativeGBi (DiagramG d t n m) h (->)
-
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  )
-  => NaturalConic (Variant2 Covariant (HomDisj r o h)) c Dst p d t n m
-
---------------------------------------------------------------------------------
--- prpNaturalConicConeOS -
-
--- | validity according to 'NaturalConic' for @'Cone' 'Mlt' __p__ 'Diagram' __t n m__@ on
--- @'HomDisj' 'Mlt' 'Op' ('HomId' 'Mlt')@,
-prpNaturalConicConeOS :: Statement
-prpNaturalConicConeOS = error "nyi"
--}

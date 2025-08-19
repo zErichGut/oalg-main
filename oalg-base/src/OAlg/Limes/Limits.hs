@@ -39,22 +39,20 @@ module OAlg.Limes.Limits
 -}
   ) where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Category.SDuality
 
 import OAlg.Data.Either
 
-import OAlg.Structure.Oriented
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Distributive
+-- import OAlg.Structure.Oriented
+-- import OAlg.Structure.Multiplicative
+-- import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
 
 import OAlg.Entity.Diagram
-import OAlg.Entity.Natural
+-- import OAlg.Entity.Natural
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Definition
@@ -86,7 +84,7 @@ type instance Dual1 (Limits c s p d t n m) = Limits c s (Dual p) d (Dual t) n m
 --------------------------------------------------------------------------------
 -- lmsMapCov -
 
-lmsMapCov :: NaturalConicSDualisable h c s p d t n m
+lmsMapCov :: NaturalConic h c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> Limits c s p d t n m x -> Limits c s p d t n m y
 lmsMapCov i@(Covariant2 (Inv2 _ f)) (Limits u) = Limits u' where
@@ -96,7 +94,7 @@ lmsMapCov i@(Covariant2 (Inv2 _ f)) (Limits u) = Limits u' where
 --------------------------------------------------------------------------------
 -- lmsMapCnt -
 
-lmsMapCnt :: NaturalConicSDualisable h c s p d t n m
+lmsMapCnt :: NaturalConic h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> Limits c s p d t n m x -> Dual1 (Limits c s p d t n m) y
 lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (Limits u) = Limits u' where
@@ -108,7 +106,7 @@ lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (Limits u) = Limits u' where
 
 lmsMapS ::
   ( CategoryDisjunctive h
-  , NaturalConicSDualisableBi h c s p d t n m
+  , NaturalConicBi h c s p d t n m
   )
   => Inv2 h x y -> SDualBi (Limits c s p d t n m) x -> SDualBi (Limits c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
@@ -118,14 +116,14 @@ lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 
 instance
   ( CategoryDisjunctive h
-  , NaturalConicSDualisableBi h c s p d t n m
+  , NaturalConicBi h c s p d t n m
   )
   => ApplicativeG (SDualBi (Limits c s p d t n m)) (Inv2 h) (->) where
   amapG = lmsMapS
 
 instance
   ( CategoryDisjunctive h
-  , NaturalConicSDualisableBi h c s p d t n m
+  , NaturalConicBi h c s p d t n m
   )
   => FunctorialG (SDualBi (Limits c s p d t n m)) (Inv2 h) (->)  
 

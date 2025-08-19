@@ -195,7 +195,7 @@ type instance Dual1 (Limes c s p d t n m) = Limes c s (Dual p) d (Dual t) n m
 --------------------------------------------------------------------------------
 -- lmMapCov -
 
-lmMapCov :: NaturalConicSDualisable h c s p d t n m
+lmMapCov :: NaturalConic h c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> Limes c s p d t n m x -> Limes c s p d t n m y
 lmMapCov (Covariant2 (Inv2 t f)) (LimesProjective uc uf)
@@ -212,7 +212,7 @@ lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
-lmMapCnt :: NaturalConicSDualisable h c s p d t n m
+lmMapCnt :: NaturalConic h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
 lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
@@ -231,7 +231,7 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
 
 lmMapS ::
   ( CategoryDisjunctive h
-  , NaturalConicSDualisableBi h c s p d t n m
+  , NaturalConicBi h c s p d t n m
   )
   => Inv2 h x y -> SDualBi (Limes c s p d t n m) x -> SDualBi (Limes c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
@@ -241,14 +241,14 @@ lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
 instance
   ( CategoryDisjunctive h
-  , NaturalConicSDualisableBi h c s p d t n m
+  , NaturalConicBi h c s p d t n m
   )
   => ApplicativeG (SDualBi (Limes c s p d t n m)) (Inv2 h) (->) where
   amapG = lmMapS
 
 instance
   ( CategoryDisjunctive h
-  , NaturalConicSDualisableBi h c s p d t n m
+  , NaturalConicBi h c s p d t n m
   )
   => FunctorialG (SDualBi (Limes c s p d t n m)) (Inv2 h) (->)
 
