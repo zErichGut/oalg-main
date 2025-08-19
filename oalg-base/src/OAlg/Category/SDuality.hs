@@ -29,7 +29,7 @@ module OAlg.Category.SDuality
     SDual, smap
     
     -- ** Bi-Dualisable
-  , SDualBi(..), smapBi
+  , SDualBi(..), smapBi, vmapBi
   
   , ShowDual1, EqDual1, ValidableDual1
 
@@ -407,7 +407,26 @@ instance
   , DualisableGBi r (->) o d
   , Transformable s r
   )
-  => FunctorialG (SDualBi d) (SHom r s o h) (->) where
+  => FunctorialG (SDualBi d) (SHom r s o h) (->)
+
+--------------------------------------------------------------------------------
+-- vmapBi -
+
+-- | mapping of 'SDualBi' given by 'Variant2' mappings.
+vmapBi :: Disjunctive2 h
+  => (Variant2 Covariant h x y -> d x -> d y)
+  -> (Variant2 Covariant h x y -> Dual1 d x -> Dual1 d y)
+  -> (Variant2 Contravariant h x y -> d x -> Dual1 d y)
+  -> (Variant2 Contravariant h x y -> Dual1 d x -> d y)
+  -> h x y -> SDualBi d x -> SDualBi d y
+vmapBi dd d'd' dd' d'd h (SDualBi s)
+  = SDualBi    $ case toVariant2 h of
+  Right2 hCov -> case s of
+    Right1 d  -> Right1 (dd hCov d)
+    Left1 d'  -> Left1 (d'd' hCov d')
+  Left2 hCnt  -> case s of
+    Right1 d  -> Left1 (dd' hCnt d)
+    Left1 d'  -> Right1 (d'd hCnt d')
 
 --------------------------------------------------------------------------------
 -- xSDualBi -

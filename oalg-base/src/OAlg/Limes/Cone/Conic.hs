@@ -19,7 +19,16 @@
 module OAlg.Limes.Cone.Conic
   (
     -- * Conic
-    Conic(..), ConeG(..)
+    Conic(..), DualConic
+  , ConeG(..)
+  , sdbToCncObj, sdbFromCncObj
+
+    -- * Natural
+  , NaturalConicSDualisable, crohS
+  , NaturalConicSDualisableBi
+  
+
+{-    
   , ApplicativeConicBi
 
     -- * Natural
@@ -31,18 +40,16 @@ module OAlg.Limes.Cone.Conic
     -- * Duality
   , DualisableConic, DualisableConicBi
   , DualisableConicDual1
-    
+-}    
   ) where
 
 import Data.Kind
 
 import OAlg.Prelude
 
-import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 import OAlg.Category.NaturalTransformable
 
-import OAlg.Data.Variant
 import OAlg.Data.Either
 
 import OAlg.Entity.Diagram
@@ -51,7 +58,6 @@ import OAlg.Entity.Natural
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -81,16 +87,14 @@ newtype ConeG (c :: Type -> Perspective
 
 type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 
-instance ApplicativeG (ConeG c s p d t n m) (HomEmpty r) (->) where
-  amapG = fromHomEmpty
-
-instance ApplicativeGDual1 (ConeG c s p d t n m) (HomEmpty r) (->)
+{-
 --------------------------------------------------------------------------------
--- cncGMap -
+-- cmap -
 
--- | the induced mapping.
-cncGMap :: (c s p d t n m x -> c s p d t n m y) -> ConeG c s p d t n m x -> ConeG c s p d t n m y
-cncGMap f (ConeG c) = ConeG (f c)
+cmap :: ApplicativeG (ConeG c s p d t n m)
+  => h x y -> c s p d t n m x -> c s p d t n m y
+cmap
+-}
 
 --------------------------------------------------------------------------------
 -- croh -
@@ -101,6 +105,127 @@ croh (ConeG c) = cone c
 
 instance Conic c => Natural r (->) (ConeG c s p d t n m) (Cone s p d t n m) where
   roh _ = croh
+
+--------------------------------------------------------------------------------
+-- crohS -
+
+-- | natural assocition induced by 'croh' betewwn @'SDualBi' ('ConeG' __c s p d t n m__)@ and
+-- @'SDualBi' ('Cone' __s p d t n m__)@.
+crohS :: Conic c => SDualBi (ConeG c s p d t n m) x -> SDualBi (Cone s p d t n m) x
+crohS (SDualBi (Right1 c)) = SDualBi (Right1 (croh c))
+crohS (SDualBi (Left1 c')) = SDualBi (Left1 (croh c'))
+
+instance Conic c
+  => Natural r (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m)) where
+  roh _ = crohS
+
+--------------------------------------------------------------------------------
+-- sdbToCncObj -
+
+-- | canonical mapping to its underlying conic object.
+sdbToCncObj ::
+  Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m
+  => SDualBi (ConeG c s p d t n m) x -> SDualBi (c s p d t n m) x
+sdbToCncObj (SDualBi (Right1 (ConeG c))) = SDualBi (Right1 c)
+sdbToCncObj (SDualBi (Left1 (ConeG c'))) = SDualBi (Left1 c')
+
+--------------------------------------------------------------------------------
+-- sdbFromCncObj -
+
+-- | canonical mapping from its underlying conic object.
+sdbFromCncObj :: Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m
+  => SDualBi (c s p d t n m) x -> SDualBi (ConeG c s p d t n m) x
+sdbFromCncObj (SDualBi (Right1 c)) = SDualBi (Right1 (ConeG c))
+sdbFromCncObj (SDualBi (Left1 c')) = SDualBi (Left1 (ConeG c'))
+
+--------------------------------------------------------------------------------
+-- DualConic -
+
+-- | sound definition of duality for 'Conic' objects.
+class (Conic c, Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m) => DualConic c s p d t n m
+
+instance DualConic Cone s p d t n m
+
+instance
+  ( ApplicativeG (SDualBi (c s p d t n m)) h (->)
+  , DualConic c s p d t n m
+  ) 
+  => ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+  
+--------------------------------------------------------------------------------
+-- NaturalConicSDualisable -
+
+-- | natural transformation for 'Conic' objects from @'SDualBi' ('ConeG' __c s p d t n m__)@ to
+-- @'SDualBi' ('Cone' __s p d t n m__)@.
+class
+  ( Conic c
+  , HomMultiplicativeDisjunctive h
+  , NaturalDiagrammaticSDualisable h d t n m
+  , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m))
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConicSDualisable h c s p d t n m
+
+--------------------------------------------------------------------------------
+-- ConeG - Cone - Mlt - NaturalConicSDualisable -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammaticSDualisableBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammaticSDualisableBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConicSDualisable h Cone Mlt p d t n m
+  
+--------------------------------------------------------------------------------
+-- ConeG - Cone - Dst - NaturalConicSDualisable -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticSDualisableBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Dst p d t n m)) (SDualBi (Cone Dst p d t n m))
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticSDualisableBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConicSDualisable h Cone Dst p d t n m
+
+--------------------------------------------------------------------------------
+-- NaturalConicSDualisableBi -
+
+-- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
+-- @__c__@ and also its dual are 'NaturalConicSDualisable'.
+class
+  ( NaturalConicSDualisable h c s p d t n m
+  , NaturalConicSDualisable h c s (Dual p) d (Dual t) n m
+  )
+  => NaturalConicSDualisableBi h c s p d t n m
+
+{-
+instance ApplicativeG (ConeG c s p d t n m) (HomEmpty r) (->) where
+  amapG = fromHomEmpty
+
+instance ApplicativeGDual1 (ConeG c s p d t n m) (HomEmpty r) (->)
+
+--------------------------------------------------------------------------------
+-- cncGMap -
+
+-- | the induced mapping.
+cncGMap :: (c s p d t n m x -> c s p d t n m y) -> ConeG c s p d t n m x -> ConeG c s p d t n m y
+cncGMap f (ConeG c) = ConeG (f c)
 
 --------------------------------------------------------------------------------
 -- NaturalConic -
@@ -286,19 +411,6 @@ relDualisableConicRgtDst d@DualityConic r c
     ) :?> Params []
 
 --------------------------------------------------------------------------------
--- crohS -
-
--- | natural assocition induced by 'croh' betewwn @'SDualBi' ('ConeG' __c s p d t n m__)@ and
--- @'SDualBi' ('Cone' __s p d t n m__)@.
-crohS :: Conic c => SDualBi (ConeG c s p d t n m) x -> SDualBi (Cone s p d t n m) x
-crohS (SDualBi (Right1 c)) = SDualBi (Right1 (croh c))
-crohS (SDualBi (Left1 c')) = SDualBi (Left1 (croh c'))
-
-instance Conic c
-  => Natural r (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m)) where
-  roh _ = crohS
-
---------------------------------------------------------------------------------
 -- ApplicativeConicBi -
 
 -- | helper class to avoid undecidable instances.
@@ -309,15 +421,6 @@ instance ApplicativeConicBi (HomEmpty r) c Dst p d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalConicSDualisable -
-
--- | natural transformation for 'Conic' objects from @'SDualBi' ('ConeG' __c s p d t n m__)@ to
--- @'SDualBi' ('Cone' __s p d t n m__)@.
-class
-  ( Conic c
-  , NaturalDiagrammaticSDualisable h d t n m
-  , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m))
-  )
-  => NaturalConicSDualisable h c s p d t n m
 
 instance
   ( Morphism h
@@ -449,3 +552,4 @@ instance
 -- @'HomDisj' 'Mlt' 'Op' ('HomId' 'Mlt')@,
 prpNaturalConicConeOS :: Statement
 prpNaturalConicConeOS = error "nyi"
+-}

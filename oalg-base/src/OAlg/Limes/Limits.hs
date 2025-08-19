@@ -21,10 +21,12 @@
 -- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.
 module OAlg.Limes.Limits
   (
-{-    
-    -- * Limits
-    Limits(..), lmsMap
 
+    -- * Limits
+    Limits(..)
+  , lmsMapS, lmsMapCov, lmsMapCnt
+
+{-
     -- * Duality
   , lmsToOp, lmsFromOp
   , coLimits, coLimitsInv, lmsFromOpOp
@@ -82,18 +84,70 @@ limes (Limits l) = l
 type instance Dual1 (Limits c s p d t n m) = Limits c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
--- lmsMap -
+-- lmsMapCov -
 
-lmsMap :: NaturalConic h c s p d t n m
-  => Inv2 h x y -> Limits c s p d t n m x -> Limits c s p d t n m y
-lmsMap i@(Inv2 _ f) (Limits l) = Limits (amapG i . l . dmap f )
+lmsMapCov :: NaturalConicSDualisable h c s p d t n m
+  => Variant2 Covariant (Inv2 h) x y
+  -> Limits c s p d t n m x -> Limits c s p d t n m y
+lmsMapCov i@(Covariant2 (Inv2 _ f)) (Limits u) = Limits u' where
+  u' d' = lmMapCov i (u d) where
+    SDualBi (Right1 (DiagramG d)) = amap1 f (SDualBi (Right1 (DiagramG d'))) 
+
+--------------------------------------------------------------------------------
+-- lmsMapCnt -
 
 lmsMapCnt :: NaturalConicSDualisable h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> Limits c s p d t n m x -> Dual1 (Limits c s p d t n m) y
 lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (Limits u) = Limits u' where
   u' d' = lmMapCnt i (u d) where
-    SDualBi (Right1 (DiagramG d)) = amapG f (SDualBi (Left1 (DiagramG d'))) 
+    SDualBi (Right1 (DiagramG d)) = amap1 f (SDualBi (Left1 (DiagramG d'))) 
+
+--------------------------------------------------------------------------------
+-- lmsMapS -
+
+lmsMapS ::
+  ( CategoryDisjunctive h
+  , NaturalConicSDualisableBi h c s p d t n m
+  )
+  => Inv2 h x y -> SDualBi (Limits c s p d t n m) x -> SDualBi (Limits c s p d t n m) y
+lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
+
+--------------------------------------------------------------------------------
+-- Limits - FunctorialG -
+
+instance
+  ( CategoryDisjunctive h
+  , NaturalConicSDualisableBi h c s p d t n m
+  )
+  => ApplicativeG (SDualBi (Limits c s p d t n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+instance
+  ( CategoryDisjunctive h
+  , NaturalConicSDualisableBi h c s p d t n m
+  )
+  => FunctorialG (SDualBi (Limits c s p d t n m)) (Inv2 h) (->)  
+
+
+
+
+
+
+{-
+--------------------------------------------------------------------------------
+-- lmsMap -
+
+lmsMap :: NaturalConic h c s p d t n m
+  => Inv2 h x y -> Limits c s p d t n m x -> Limits c s p d t n m y
+lmsMap i@(Inv2 _ f) (Limits l) = Limits (amapG i . l . dmap f )
+-}
+
+
+
+
+
+
 
 
 {-

@@ -26,7 +26,8 @@ module OAlg.Limes.Definition
   , eligibleCone, eligibleFactor
 
     -- * Mapping
-  , lmMap, lmMapCnt
+  ,lmMapS, lmMapCov, lmMapCnt
+  
   ) where
 
 import Data.Typeable
@@ -192,6 +193,67 @@ eligibleFactor l = cnEligibleFactor (cone $ universalCone l)
 type instance Dual1 (Limes c s p d t n m) = Limes c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
+-- lmMapCov -
+
+lmMapCov :: NaturalConicSDualisable h c s p d t n m
+  => Variant2 Covariant (Inv2 h) x y
+  -> Limes c s p d t n m x -> Limes c s p d t n m y
+lmMapCov (Covariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesProjective uc' uf' where
+  SDualBi (Right1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))  
+  uf' c' = amap t (uf c) where
+    SDualBi (Right1 c) = amap1 f (SDualBi (Right1 c'))
+lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
+  = LimesInjective uc' uf' where
+  SDualBi (Right1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))  
+  uf' c' = amap t (uf c) where
+    SDualBi (Right1 c) = amap1 f (SDualBi (Right1 c'))
+  
+--------------------------------------------------------------------------------
+-- lmMapCnt
+
+lmMapCnt :: NaturalConicSDualisable h c s p d t n m
+  => Variant2 Contravariant (Inv2 h) x y
+  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesInjective uc' uf' where
+  SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
+  uf' c' = amap t (uf c) where
+    SDualBi (Right1 c) = amap1 f (SDualBi (Left1 c'))
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
+  = LimesProjective uc' uf' where
+  SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
+  uf' c' = amap t (uf c) where
+    SDualBi (Right1 c) = amap1 f (SDualBi (Left1 c'))
+
+--------------------------------------------------------------------------------
+-- lmMapS -
+
+lmMapS ::
+  ( CategoryDisjunctive h
+  , NaturalConicSDualisableBi h c s p d t n m
+  )
+  => Inv2 h x y -> SDualBi (Limes c s p d t n m) x -> SDualBi (Limes c s p d t n m) y
+lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
+
+--------------------------------------------------------------------------------
+-- Limes - FunctorialG -
+
+instance
+  ( CategoryDisjunctive h
+  , NaturalConicSDualisableBi h c s p d t n m
+  )
+  => ApplicativeG (SDualBi (Limes c s p d t n m)) (Inv2 h) (->) where
+  amapG = lmMapS
+
+instance
+  ( CategoryDisjunctive h
+  , NaturalConicSDualisableBi h c s p d t n m
+  )
+  => FunctorialG (SDualBi (Limes c s p d t n m)) (Inv2 h) (->)
+
+{-
+--------------------------------------------------------------------------------
 -- lmMap -
 
 lmMap :: NaturalConic h c s p d t n m
@@ -202,25 +264,6 @@ lmMap (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
 lmMap (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
   ConeG u' = amapG t (ConeG u)
   uf' = amap t . uf . amapG f 
-
---------------------------------------------------------------------------------
--- lmMapCnt
-
-lmMapCnt :: NaturalConicSDualisable h c s p d t n m
-  => Variant2 Contravariant (Inv2 h) x y
-  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
-lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
-  = LimesInjective uc' uf' where
-      SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
-      uf' c' = amap t y where
-        y = uf c
-        SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
-lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
-  = LimesProjective uc' uf' where
-      SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
-      uf' c' = amap t y where
-        y = uf c
-        SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
 
 --------------------------------------------------------------------------------
 -- Limes - Mlt - DualisableGBi -
@@ -387,7 +430,7 @@ instance
   , DualisableConicBi r o c Dst p d t n m
   )
   => FunctorialG (SDualBi (Limes c Dst p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
-
+-}
 
 
 
