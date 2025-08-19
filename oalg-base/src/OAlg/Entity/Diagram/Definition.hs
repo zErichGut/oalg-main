@@ -22,7 +22,7 @@ module OAlg.Entity.Diagram.Definition
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
-  , dgMap, dgMapCnt, dgMapS
+  , dgMapS, dgMapCov, dgMapCnt, dgMap
   , dgQuiver
 
      -- ** Chain
@@ -259,6 +259,13 @@ dgMap h d                  =  case d of
         hArw = amap h
 
 --------------------------------------------------------------------------------
+-- dgMapCov -
+
+dgMapCov :: HomOrientedDisjunctive h
+  => Variant2 Covariant h x y -> Diagram t n m x -> Diagram t n m y
+dgMapCov = dgMap
+
+--------------------------------------------------------------------------------
 -- dgMapCnt -
 
 -- | mapping of a diagram via a 'Contravariant' homomorphism on 'Oriented' structures.
@@ -293,15 +300,9 @@ dgMapCnt (Contravariant2 h) d = case d of
 -- dgMapS -
 
 -- | the canonically induced application given by 'dgMap' and 'dgMapCnt'.
-dgMapS :: ( HomOrientedDisjunctive h, t ~ Dual (Dual t))
+dgMapS :: (HomOrientedDisjunctive h, t ~ Dual (Dual t))
   => h x y -> SDualBi (Diagram t n m) x -> SDualBi (Diagram t n m) y
-dgMapS h (SDualBi s) = SDualBi $ case toVariant2 h of
-  Right2 hCov        -> case s of
-    Right1 d         -> Right1 (dgMap hCov d)    
-    Left1 d'         -> Left1 (dgMap hCov d')    
-  Left2 hCnt         -> case s of
-    Right1 d         -> Left1 (dgMapCnt hCnt d)    
-    Left1 d'         -> Right1 (dgMapCnt hCnt d')
+dgMapS = vmapBi dgMapCov dgMapCov dgMapCnt dgMapCnt
 
 --------------------------------------------------------------------------------
 -- Diagram - FunctorialG -
@@ -322,65 +323,6 @@ instance
   , t ~ Dual (Dual t)
   )
   => FunctorialG (SDualBi (Diagram t n m)) h (->)
-
-{-
---------------------------------------------------------------------------------
--- Diagram - DualisableGBi -
-
-dgToBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
-  => Struct s x -> Diagram t n m x -> Diagram t n m (o (o x))
-dgToBidual s = dgMap (Covariant2 (t' . t)) where
-  Contravariant2 (Inv2 t _)  = toDualO s
-  Contravariant2 (Inv2 t' _) = toDualO (tauO s) 
-
-dgFromBidual :: (DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
-  => Struct s x -> Diagram t n m (o (o x)) -> Diagram t n m x
-dgFromBidual s = dgMap (Covariant2 (f . f')) where
-  Contravariant2 (Inv2 _ f)  = toDualO s
-  Contravariant2 (Inv2 _ f') = toDualO (tauO s) 
-
-instance (Transformable s Type, DualisableOriented s o, TransformableOrt s, TransformableGRefl o s)
-  => ReflexiveG s (->) o (Diagram t n m) where
-  reflG s = Inv2 (dgToBidual s) (dgFromBidual s)
-
-instance (DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
-         , t' ~ Dual t, t ~ Dual t'
-         )
-  => DualisableGPair s (->) o (Diagram t n m) (Diagram t' n m) where
-  toDualGLft s = dgMapCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = toDualO s
-
-  toDualGRgt s = dgMapCnt (Contravariant2 t) where
-    Contravariant2 (Inv2 t _) = toDualO s
-
-
-instance ( DualisableOriented s o, Transformable s Type, TransformableGRefl o s, TransformableOrt s
-         , t ~ Dual (Dual t)
-         )
-  => DualisableGBi s (->) o (Diagram t n m)
-
---------------------------------------------------------------------------------
--- Diagram - FunctorialG -
-
-instance HomOriented h => ApplicativeGDual1 (Diagram t n m) h (->)
-
-instance
-  ( HomOriented h
-  , DualisableOriented s o
-  , TransformableOrt s, TransformableGRefl o s
-  , t ~ Dual (Dual t)
-  )
-  => ApplicativeG (SDualBi (Diagram t n m)) (HomDisj s o h) (->) where
-  amapG (HomDisj h) = amapG h
-
-instance
-  ( HomOriented h
-  , DualisableOriented s o
-  , TransformableOrt s, TransformableGRefl o s
-  , t ~ Dual (Dual t)
-  )  
-  => FunctorialG (SDualBi (Diagram t n m)) (HomDisj s o h) (->)
--}
 
 --------------------------------------------------------------------------------
 -- Diagram - Validable -

@@ -29,7 +29,7 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Natural
     
   , NaturalDiagrammatic
-  , drohS, dmapCov
+  , drohS -- , dmapCov
   , NaturalDiagrammaticW
   , NaturalDiagrammaticBi
   
@@ -152,7 +152,13 @@ instance
   )
   => ApplicativeG (SDualBi (DiagramG d t n m)) h (->) where
   amapG h = sdbFromDgmObj . amapG h . sdbToDgmObj
-  
+
+instance
+  ( DualDiagrammatic d t n m
+  , FunctorialG (SDualBi (d t n m)) h (->) 
+  )
+  => FunctorialG (SDualBi (DiagramG d t n m)) h (->)
+
 --------------------------------------------------------------------------------
 -- NaturalDiagrammatic -
 
@@ -186,6 +192,7 @@ instance
   )
   => NaturalDiagrammatic h Diagram t n m
 
+{-
 --------------------------------------------------------------------------------
 -- dmapCov -
 
@@ -193,7 +200,7 @@ dmapCov :: NaturalDiagrammatic h d t n m
   => Variant2 Covariant h x y -> d t n m x -> d t n m y
 dmapCov (Covariant2 h) d = d' where
   SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
-  
+-}  
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticW -
 

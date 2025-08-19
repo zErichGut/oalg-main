@@ -222,10 +222,12 @@ cnMapMltCov ::
   , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> Cone Mlt p d t n m x -> Cone Mlt p d t n m y
-cnMapMltCov h c            = case tauMlt (range h) of
+cnMapMltCov (Covariant2 h) c            = case tauMlt (range h) of
   Struct                  -> case c of
-    ConeProjective d t as -> ConeProjective (dmapCov h d) (pmap h t) (amap1 (amap h) as)
-    ConeInjective d t as  -> ConeInjective (dmapCov h d) (pmap h t) (amap1 (amap h) as)
+    ConeProjective d t as -> ConeProjective d' (pmap h t) (amap1 (amap h) as) where
+      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+    ConeInjective d t as  -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
+      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a 'Distributive' covariant homomorphism.
 cnMapDstCov ::
@@ -233,10 +235,12 @@ cnMapDstCov ::
   , NaturalDiagrammatic h d t n m
   )
   => Variant2 Covariant h x y -> Cone Dst p d t n m x -> Cone Dst p d t n m y
-cnMapDstCov h c          = case tauDst (range h) of
-  Struct             -> case c of
-    ConeKernel d a   -> ConeKernel (dmapCov h d) (amap h a)
-    ConeCokernel d a -> ConeCokernel (dmapCov h d) (amap h a)
+cnMapDstCov (Covariant2 h) c = case tauDst (range h) of
+  Struct                    -> case c of
+    ConeKernel d a          -> ConeKernel d' (amap h a) where
+      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+    ConeCokernel d a        -> ConeCokernel d' (amap h a) where
+      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
 
 cnMapCov ::
   ( HomD s h
@@ -363,7 +367,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
+  , FunctorialG (SDualBi (d t n m)) h (->)
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
