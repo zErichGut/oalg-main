@@ -21,14 +21,22 @@
 module OAlg.Limes.Definition
   (
     -- * Limes
-    Limes(..)
+    Limes, LimesG(..)
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
 
     -- * Mapping
   ,lmMapS, lmMapCov, lmMapCnt
-  
+
+    -- * Proposition
+  , prpLimes, prpLimesFactorExist, prpLimesFactorUnique
+
+    -- * X
+  , XEligibleCone(..), xEligibleConeOrnt
+  , XEligibleConeFactor(..), xEligibleConeFactorOrnt
   ) where
+
+import Control.Monad
 
 import Data.Typeable
 import Data.List as L ((++))
@@ -56,29 +64,21 @@ import OAlg.Hom.Distributive
 import OAlg.Limes.Cone
 
 --------------------------------------------------------------------------------
--- Limes -
+-- LimesG -
 
 -- | limes of a 'Diagrammatic' object, i.e. a distinguished 'Conic' object over a the underlying
 -- 'diagrammaticObject' having the following /universal/ property
 --
 -- __Property__ Let @'Conic' __c__@, @'Diagrammatic' ___d__@, @'Multiplicative' __x__@ and
--- @l@ in @'Limes' __s p c d t n m x__@ then holds:
+-- @l@ in @'LimesG' __s p c d t n m x__@ then holds:
 -- Let @u = 'universalCone' l@ in
 --
--- (1) @l@ is 'valid'.
---
--- (2) @'eligibleCone' l ('cone' u)@.
---
--- (3) @'eligibleFactor' l ('cone' u) ('one' ('tip' '$' 'cone' u))@.
---
--- (4) For all @c@ in @'Cone' __s p d t n m x__@ with
+-- (1) For all @c@ in @'Cone' __s p d t n m x__@ with
 -- @'eligibleCone' l c@ holds: Let @f = 'universalFactor' l c@ in
 --
---     (1) @f@ is 'valid'.
+--     (1) @'eligibleFactor' l c f@.
 --
---     (2) @'eligibleFactor' l c f@.
---
---     (3) For all @x@ in @__x__@ with @'eligibleFactor' l c x@ holds: @x '==' f@.
+--     (2) For all @x@ in @__x__@ with @'eligibleFactor' l c x@ holds: @x '==' f@.
 --
 -- __Note__
 --
@@ -90,34 +90,40 @@ import OAlg.Limes.Cone
 -- (2) It is not required that the evaluation of universal factor on a non eligible cone
 --  yield an exception! The implementation of the general algorithms for limits do not
 --  check for eligibility.
-data Limes c s p d t n m x where
-  LimesProjective :: c s Projective d t n m x -> (Cone s Projective d t n m x -> x)
-                  -> Limes c s Projective d t n m x
+data LimesG c s p d t n m x where
+  LimesGProjective :: c s Projective d t n m x -> (Cone s Projective d t n m x -> x)
+                   -> LimesG c s Projective d t n m x
                   
-  LimesInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
-                  -> Limes c s Injective  d t n m x
+  LimesGInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
+                   -> LimesG c s Injective  d t n m x
+
+--------------------------------------------------------------------------------
+-- Limes -
+
+-- | limes for 'Cone's over 'Diagram's.
+type Limes s p = LimesG Cone s p Diagram
 
 --------------------------------------------------------------------------------
 -- universalCone -
 
--- | the unviersal 'Conic' object given by the 'Limes'.
-universalCone :: Limes c s p d t n m x -> c s p d t n m x
-universalCone (LimesProjective u _) = u
-universalCone (LimesInjective  u _) = u
+-- | the unviersal 'Conic' object given by the 'LimesG'.
+universalCone :: LimesG c s p d t n m x -> c s p d t n m x
+universalCone (LimesGProjective u _) = u
+universalCone (LimesGInjective  u _) = u
 
 --------------------------------------------------------------------------------
 -- universalFactor -
 
--- | the unviersal factor given by the 'Limes'.
-universalFactor :: Limes c s p d t n m x -> Cone s p d t n m x -> x
-universalFactor (LimesProjective _ f) = f
-universalFactor (LimesInjective  _ f) = f
+-- | the unviersal factor given by the 'LimesG'.
+universalFactor :: LimesG c s p d t n m x -> Cone s p d t n m x -> x
+universalFactor (LimesGProjective _ f) = f
+universalFactor (LimesGInjective  _ f) = f
 
 --------------------------------------------------------------------------------
 -- eligibleCone -
 
--- | eligibility of a 'Cone' according to the given 'Limes'.
-eligibleCone :: (Conic c, Eq (d t n m x)) => Limes c s p d t n m x -> Cone s p d t n m x -> Bool
+-- | eligibility of a 'Cone' according to the given 'LimesG'.
+eligibleCone :: (Conic c, Eq (d t n m x)) => LimesG c s p d t n m x -> Cone s p d t n m x -> Bool
 eligibleCone l c = (diagrammaticObject $ cone $ universalCone l) == diagrammaticObject c
 
 --------------------------------------------------------------------------------
@@ -156,7 +162,7 @@ cnEligibleFactorDgm a@(ConeCokernel d _) b x = case dgTypeRefl d of
 -- | eligibility of a factor according to the given 'Cones' over 'Diagrammatic' objects,
 --
 -- __Property__ Let @x@ be in @__x__@ and
--- @a@, @b@ in @'Cone' __s p t n m x__@ with
+-- @a@, @b@ in @'Cone' __s p d t n m x__@ with
 -- @'diagrammaticObject' a '==' 'diagrammaticObjet' b@, then holds:
 -- 
 -- (1) If @__p__@ is equal to __'Projective'__ then holds:
@@ -182,29 +188,29 @@ cnEligibleFactor a b = cnEligibleFactorDgm (coneDiagram a) (coneDiagram b)
 --------------------------------------------------------------------------------
 -- eligibleFactor -
 
--- | eligibility of a factor according to the given 'Limes' and 'Cone',
+-- | eligibility of a factor according to the given 'LimesG' and 'Cone',
 eligibleFactor :: (Conic c, Diagrammatic d)
-  => Limes c s p d t n m x -> Cone s p d t n m x -> x -> Bool
+  => LimesG c s p d t n m x -> Cone s p d t n m x -> x -> Bool
 eligibleFactor l = cnEligibleFactor (cone $ universalCone l)
 
 --------------------------------------------------------------------------------
--- Limes - Dual -
+-- LimesG - Dual -
 
-type instance Dual1 (Limes c s p d t n m) = Limes c s (Dual p) d (Dual t) n m
+type instance Dual1 (LimesG c s p d t n m) = LimesG c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
 -- lmMapCov -
 
 lmMapCov :: NaturalConic h c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
-  -> Limes c s p d t n m x -> Limes c s p d t n m y
-lmMapCov (Covariant2 (Inv2 t f)) (LimesProjective uc uf)
-  = LimesProjective uc' uf' where
+  -> LimesG c s p d t n m x -> LimesG c s p d t n m y
+lmMapCov (Covariant2 (Inv2 t f)) (LimesGProjective uc uf)
+  = LimesGProjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amap1 f (SDualBi (Right1 c'))
-lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
-  = LimesInjective uc' uf' where
+lmMapCov (Covariant2 (Inv2 t f)) (LimesGInjective uc uf)
+  = LimesGInjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amap1 f (SDualBi (Right1 c'))
@@ -214,14 +220,14 @@ lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
 
 lmMapCnt :: NaturalConic h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
-  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
-lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
-  = LimesInjective uc' uf' where
+  -> LimesG c s p d t n m x -> Dual1 (LimesG c s p d t n m) y
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGProjective uc uf)
+  = LimesGInjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amap1 f (SDualBi (Left1 c'))
-lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
-  = LimesProjective uc' uf' where
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGInjective uc uf)
+  = LimesGProjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amap1 f (SDualBi (Left1 c'))
@@ -229,375 +235,156 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
 --------------------------------------------------------------------------------
 -- lmMapS -
 
-lmMapS ::
-  ( CategoryDisjunctive h
-  , NaturalConicBi h c s p d t n m
-  )
-  => Inv2 h x y -> SDualBi (Limes c s p d t n m) x -> SDualBi (Limes c s p d t n m) y
+lmMapS :: NaturalConicBi h c s p d t n m
+  => Inv2 h x y -> SDualBi (LimesG c s p d t n m) x -> SDualBi (LimesG c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
 --------------------------------------------------------------------------------
--- Limes - FunctorialG -
+-- LimesG - FunctorialG -
 
-instance
-  ( CategoryDisjunctive h
-  , NaturalConicBi h c s p d t n m
-  )
-  => ApplicativeG (SDualBi (Limes c s p d t n m)) (Inv2 h) (->) where
+instance NaturalConicBi h c s p d t n m
+  => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
   amapG = lmMapS
 
 instance
   ( CategoryDisjunctive h
   , NaturalConicBi h c s p d t n m
   )
-  => FunctorialG (SDualBi (Limes c s p d t n m)) (Inv2 h) (->)
+  => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
 
+--------------------------------------------------------------------------------
+-- XEligibleCone -
+
+-- | random variable for eligible cones for a given limes.
+data XEligibleCone c s p d t n m x
+  = XEligibleCone (LimesG c s p d t n m x -> X (Cone s p d t n m x))
+
+--------------------------------------------------------------------------------
+-- xEligibleConeOrnt -
+
+-- | random variable of eligible 'Cone's over 'Orientation'.
+xecOrnt ::
+  ( Conic c
+  , Diagrammatic d
+  )
+  => X x -> LimesG c s p d t n m (Orientation x) -> X (Cone s p d t n m (Orientation x))
+xecOrnt xx (LimesGProjective u _)
+  = case cone u of
+  ConeProjective d _ _ -> xCnPrjOrnt xx (return d)
+  ConeKernel d _       -> xCnPrjDstOrnt xx (return d)
+xecOrnt xx (LimesGInjective u _)
+  = case cone u of
+  ConeInjective d _ _ -> xCnInjOrnt xx (return d)
+  ConeCokernel d _    -> xCnInjDstOrnt xx (return d)
+  
+-- | random variable of eligible 'Cone's over 'Orientation'.
+xEligibleConeOrnt ::
+  ( Conic c
+  , Diagrammatic d
+  )
+  => X x -> XEligibleCone c s p d t n m (Orientation x)
+xEligibleConeOrnt = XEligibleCone . xecOrnt
+
+--------------------------------------------------------------------------------
+-- XEligibleCone -
+
+-- | random variable for eligible cones together with a eligible factor for a given limes.
+data XEligibleConeFactor c s p d t n m x
+  = XEligibleConeFactor (LimesG c s p d t n m x -> X (Cone s p d t n m x, x))
+
+--------------------------------------------------------------------------------
+-- xEligibleConeFactorOrnt -
+
+-- | gets a eligible factor for the given 'LimesG' and 'Cone'.
+elgFactorOrnt :: Conic c
+  => LimesG c s p d t n m (Orientation x)
+  -> Cone s p d t n m (Orientation x) -> Orientation x
+elgFactorOrnt l c = case cone $ universalCone l of
+  ConeProjective _ t _ -> tip c :> t  
+  ConeInjective _ t _  -> t :> tip c
+  ConeKernel _ k       -> tip c :> start k
+  ConeCokernel _ k     -> end k :> tip c
+
+-- | random variable of eligible factors over 'Orienteation'.
+xEligibleConeFactorOrnt ::
+  ( Conic c
+  , Diagrammatic d
+  )
+  => X x -> XEligibleConeFactor c s p d t n m (Orientation x)
+xEligibleConeFactorOrnt xx = XEligibleConeFactor xef where
+  XEligibleCone xec = xEligibleConeOrnt xx
+  xef l = amap1 (\c -> (c,elgFactorOrnt l c)) $ xec l
+
+--------------------------------------------------------------------------------
+-- prpLimesFactorExist -
+
+-- | validity according the existence of a eligible factor for a given 'LimesG'
+-- and 'Cone'.
+prpLimesFactorExist ::
+  ( Conic c
+  , Diagrammatic d
+  , Show (d t n m x)
+  , Entity x
+  )
+  => XEligibleCone c s p d t n m x
+  -> LimesG c s p d t n m x -> Statement
+prpLimesFactorExist (XEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
+  Forall (xec l)
+    (\c -> let f = universalFactor l c
+            in And [ valid f
+                   , eligibleFactor l c f :?> Params ["c":=show c, "f":=show f]
+                   ]
+    ) 
+
+--------------------------------------------------------------------------------
+-- prpLimesFactorUnique -
+
+-- | validity according to the uniqueness of a eligible factor for a given 'LimesG'
+-- and 'Cone'.
+prpLimesFactorUnique ::
+  ( Show (d t n m x)
+  , Entity x
+  )
+  => XEligibleConeFactor c s p d t n m x
+  -> LimesG c s p d t n m x -> Statement
+prpLimesFactorUnique (XEligibleConeFactor xef) l = Prp "LimesFactorUnique" :<=>:
+  Forall (xef l)
+    (\(c,x) -> let f = universalFactor l c
+                in (x == f) :?> Params ["c":=show c, "x'":=show x, "f":=show f]
+    )
+
+--------------------------------------------------------------------------------
+-- prpLimes -
+
+-- | validity according to 'LimesG'.
+prpLimes ::
+  ( Conic c
+  , Diagrammatic d
+  , Show (d t n m x)
+  , Entity x
+  )
+  => XEligibleCone c s p d t n m x
+  -> XEligibleConeFactor c s p d t n m x
+  -> LimesG c s p d t n m x -> Statement
+prpLimes xec xef l = Prp "Limes" :<=>:
+  And [ prpLimesFactorExist xec l
+      , prpLimesFactorUnique xef l
+      ]
+
+--------------------------------------------------------------------------------
+-- relLimes -
 {-
---------------------------------------------------------------------------------
--- lmMap -
-
-lmMap :: NaturalConic h c s p d t n m
-  => Inv2 h x y -> Limes c s p d t n m x -> Limes c s p d t n m y
-lmMap (Inv2 t f) (LimesProjective u uf) = LimesProjective u' uf' where
-  ConeG u' = amapG t (ConeG u)
-  uf' = amap t . uf . amapG f 
-lmMap (Inv2 t f) (LimesInjective u uf) = LimesInjective u' uf' where
-  ConeG u' = amapG t (ConeG u)
-  uf' = amap t . uf . amapG f 
-
---------------------------------------------------------------------------------
--- Limes - Mlt - DualisableGBi -
-
-lmReflToMlt ::
-  ( TransformableMlt r
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
+relLimes ::
+  ( Validable (c s p d t n m x)
   )
-  => Struct r x -> Limes c Mlt p d t n m x -> Limes c Mlt p d t n m (o (o x))
-lmReflToMlt r = lmMap (Inv2 (Covariant2 t) (Covariant2 f)) where
-  Covariant2 (Inv2 t f) = reflO r
-
-lmReflFromMlt ::
-  ( TransformableMlt r
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
-  )
-  => Struct r x -> Limes c Mlt p d t n m (o (o x)) -> Limes c Mlt p d t n m x
-lmReflFromMlt r = lmMap (Inv2 (Covariant2 f) (Covariant2 t)) where
-  Covariant2 (Inv2 t f) = reflO r
-
-instance
-  ( TransformableMlt r
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
-  )
-  => ReflexiveG r (->) o (Limes c Mlt p d t n m) where
-  reflG r = Inv2 (lmReflToMlt r) (lmReflFromMlt r)
-
-lmToDualMltLft ::
-  ( TransformableMlt r
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
-  )
-  => Struct r x -> Limes c Mlt p d t n m x -> Dual1 (Limes c Mlt p d t n m) (o x)
-lmToDualMltLft r = lmMapCnt (toDualO r) where
-  
-
-instance
-  ( TransformableMlt r
-  , DualisableMultiplicative r o
-  , DualisableConic r o c Mlt p d t n m
-  , DualisableConic r o c Mlt p' d t' n m
-  , t' ~ Dual t, p' ~ Dual p
-  )
-  => DualisableGPair r (->) o (Limes c Mlt p d t n m) (Limes c Mlt p' d t' n m) where
-  toDualGLft r = lmMapCnt (toDualO r)
-  toDualGRgt r = lmMapCnt (toDualO r)
-
-
-instance
-  ( TransformableMlt r
-  , DualisableMultiplicative r o
-  , DualisableConicBi r o c Mlt p d t n m
-  )
-  => DualisableGBi r (->) o (Limes c Mlt p d t n m)
-
---------------------------------------------------------------------------------
--- Limes - Dst - DualisableGBi -
-
-lmReflToDst ::
-  ( TransformableDst r
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  )
-  => Struct r x -> Limes c Dst p d t n m x -> Limes c Dst p d t n m (o (o x))
-lmReflToDst r = lmMap (Inv2 (Covariant2 t) (Covariant2 f)) where
-  Covariant2 (Inv2 t f) = reflO r
-
-lmReflFromDst ::
-  ( TransformableDst r
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  )
-  => Struct r x -> Limes c Dst p d t n m (o (o x)) -> Limes c Dst p d t n m x
-lmReflFromDst r = lmMap (Inv2 (Covariant2 f) (Covariant2 t)) where
-  Covariant2 (Inv2 t f) = reflO r
-
-instance
-  ( TransformableDst r
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  )
-  => ReflexiveG r (->) o (Limes c Dst p d t n m) where
-  reflG r = Inv2 (lmReflToDst r) (lmReflFromDst r)
-
-lmToDualDstLft ::
-  ( TransformableDst r
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  )
-  => Struct r x -> Limes c Dst p d t n m x -> Dual1 (Limes c Dst p d t n m) (o x)
-lmToDualDstLft r = lmMapCnt (toDualO r) where
-
-instance
-  ( TransformableDst r
-  , DualisableDistributive r o
-  , DualisableConic r o c Dst p d t n m
-  , DualisableConic r o c Dst p' d t' n m
-  , t' ~ Dual t, p' ~ Dual p
-  )
-  => DualisableGPair r (->) o (Limes c Dst p d t n m) (Limes c Dst p' d t' n m) where
-  toDualGLft r = lmMapCnt (toDualO r)
-  toDualGRgt r = lmMapCnt (toDualO r)
-
-instance
-  ( TransformableDst r
-  , DualisableDistributive r o
-  , DualisableConicBi r o c Dst p d t n m
-  )
-  => DualisableGBi r (->) o (Limes c Dst p d t n m)
-  
---------------------------------------------------------------------------------
--- Limes - ApplicativeG -
-
-instance NaturalConic h c s p d t n m
-  => ApplicativeG (Limes c s p d t n m) (Inv2 h) (->) where
-  amapG = lmMap
-
-instance NaturalConicDual1 h c s p d t n m
-  => ApplicativeGDual1 (Limes c s p d t n m) (Inv2 h) (->)
-
---------------------------------------------------------------------------------
--- Limes - Mlt - FunctorialG - SDualBi -
-  
-instance
-  ( HomMultiplicative h
-  , TransformableMlt r
-  , DualisableMultiplicative r o
-  , NaturalConicBi h c Mlt p d t n m
-  , DualisableConicBi r o c Mlt p d t n m
-  )
-  => ApplicativeG (SDualBi (Limes c Mlt p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
-  amapG (Inv2 (HomDisj h) _) = amapG h
-
-instance
-  ( HomMultiplicative h
-  , TransformableMlt r
-  , DualisableMultiplicative r o
-  , NaturalConicBi h c Mlt p d t n m
-  , DualisableConicBi r o c Mlt p d t n m
-  )
-  => FunctorialG (SDualBi (Limes c Mlt p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
-
---------------------------------------------------------------------------------
--- Limes - Dst - FunctorialG - SDualBi -
-
-instance
-  ( HomDistributive h
-  , TransformableDst r
-  , DualisableDistributive r o
-  , NaturalConicBi h c Dst p d t n m
-  , DualisableConicBi r o c Dst p d t n m
-  )
-  => ApplicativeG (SDualBi (Limes c Dst p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
-  amapG (Inv2 (HomDisj h) _) = amapG h
-
-instance
-  ( HomDistributive h
-  , TransformableDst r
-  , DualisableDistributive r o
-  , NaturalConicBi h c Dst p d t n m
-  , DualisableConicBi r o c Dst p d t n m
-  )
-  => FunctorialG (SDualBi (Limes c Dst p d t n m)) (IsoHomDisj r o (Inv2 h)) (->) where
+  => XEligibleCone c s p d t n m x
+  -> XEligibleConeFactor c s p d t n m x -> LimesG c s p d t n m x -> Statement
+relLimes l = And [ valid u
+                 ]
+  where
+    u = universalCone l
 -}
-
-
-
-
-  
 {-
-instance
-  ( HomMultiplicative h
-  , NaturalConicBi h c Mlt p d t n m
-  )
-  => ApplicativeG (SDualBi (Limes c Mlt p d t n m)) (HomDisj s o (Inv2 h)) (->) where
-  amapG (HomDisj h) = amapG h
--}  
-
-
-{-
-lmMapMltCnt ::
-  ( HomMultiplicativeDisjunctive h
-  , ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->)
-  , ApplicativeG (SDualBi (Cone s p d t n m)) h (->)
-  , s  ~ Mlt
-  )
-  => Variant2 Contravariant (Inv2 h) x y
-  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
-lmMapMltCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
-  = LimesInjective uc' uf' where
-  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
-  uf' c' = amap t y where
-    y = uf c
-    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
-lmMapMltCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
-  = LimesProjective uc' uf' where
-  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
-  uf' c' = amap t y where
-    y = uf c
-    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
-
-lmMapDstCnt ::
-  ( HomDistributiveDisjunctive h
-  , ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->)
-  , ApplicativeG (SDualBi (Cone s p d t n m)) h (->)
-  , s  ~ Dst
-  )
-  => Variant2 Contravariant (Inv2 h) x y
-  -> Limes c s p d t n m x -> Dual1 (Limes c s p d t n m) y
-lmMapDstCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
-  = LimesInjective uc' uf' where
-  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
-  uf' c' = amap t y where
-    y = uf c
-    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
-lmMapDstCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
-  = LimesProjective uc' uf' where
-  SDualBi (Left1 (ConeG uc')) = amapG t (SDualBi (Right1 (ConeG uc)))
-  uf' c' = amap t y where
-    y = uf c
-    SDualBi (Right1 c) = amapG f (SDualBi (Left1 c'))
--}
-
-
-{-
-instance Oriented a => Show (Limes s p t n m a) where
-  show (LimesProjective l _) = "LimesProjective[" L.++ show l L.++ "]"
-  show (LimesInjective l _)  = "LimesInjective[" L.++ show l L.++ "]"
-
--- | see "OAlg.Limes.Definition#Nt1"
-instance Oriented a => Eq (Limes s p t n m a) where
-  LimesProjective l _ == LimesProjective l' _  = l == l'
-  LimesInjective l _ == LimesInjective l' _    = l == l'
-
-instance Universal Limes where
-  universalType (LimesProjective _ _) = UniversalProjective
-  universalType (LimesInjective _ _)  = UniversalInjective
-  
-  universalCone (LimesProjective l _) = l
-  universalCone (LimesInjective l _)  = l
-
-  universalFactor (LimesProjective _ u) = u
-  universalFactor (LimesInjective _ u)  = u
-  
---------------------------------------------------------------------------------
--- lmDiagramTypeRefl -
-
--- | reflexivity of the underlying diagram type.
-lmDiagramTypeRefl :: Limes s p t n m a -> Dual (Dual t) :~: t
-lmDiagramTypeRefl = unvDiagramTypeRefl
-
---------------------------------------------------------------------------------
--- lmMap -
-
--- | mapping between limits.
-lmMap :: IsoOrt s h
-  => h a b -> Limes s p t n m a -> Limes s p t n m b
-lmMap h l = case l of
-  LimesProjective t u -> LimesProjective (t' h t) (u' h u)
-  LimesInjective t u  -> LimesInjective  (t' h t) (u' h u)
-  where t' h t = cnMap h t
-        u' h u c = h $ u $ cnMap (invert2 h) c
-
---------------------------------------------------------------------------------
--- Limes - UniversalApplicative -
-
-instance IsoMultiplicative h => Applicative1 h (Limes Mlt p t n m) where amap1 = lmMap
-instance IsoMultiplicative h => UniversalApplicative h Limes Mlt where umap = lmMap
-
-instance IsoDistributive h => Applicative1 h (Limes Dst p t n m) where amap1 = lmMap
-instance IsoDistributive h => UniversalApplicative h Limes Dst where umap = lmMap
-                                                                       
---------------------------------------------------------------------------------
--- Limes - Dual -
-
-type instance Dual (Limes s p t n m a) = Limes s (Dual p) (Dual t) n m (Op a)
-
---------------------------------------------------------------------------------
--- coLimes -
-
-
--- | the co limes with its inverse 'coLimesInv'.
-coLimes :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limes s p t n m a -> Limes s (Dual p) (Dual t) n m (Op a)
-coLimes cs rp rt (LimesProjective l u) = LimesInjective l' u' where
-  l' = coCone l
-  u' c' = Op $ u $ coConeInv cs rp rt c'
-coLimes cs rp rt (LimesInjective l u) = LimesProjective l' u' where
-  l' = coCone l
-  u' c' = Op $ u $ coConeInv cs rp rt c'
-
---------------------------------------------------------------------------------
--- lmFromOpOp -
-
--- | from @'Op' '.' 'Op'@.
-lmFromOpOp :: ConeStruct s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limes s p t n m (Op (Op a)) -> Limes s p t n m a
-lmFromOpOp cs Refl Refl = case cs of
-  ConeStructMlt -> lmMap isoFromOpOpMlt
-  ConeStructDst -> lmMap isoFromOpOpDst
-
---------------------------------------------------------------------------------
--- coLimesInv -
-
-
--- | the inverse of 'coLimes'.
-coLimesInv :: ConeStruct s a
-  -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limes s (Dual p) (Dual t) n m (Op a) -> Limes s p t n m a
-coLimesInv cs rp@Refl rt@Refl
-  = lmFromOpOp cs rp rt . coLimes (cnStructOp cs) Refl Refl
-
---------------------------------------------------------------------------------
--- lmToOp -
-
--- | to @__g__ ('Op' __a__)@.
-lmToOp :: ConeStruct s a -> OpDuality Limes s f f' -> f a -> f' (Op a)
-lmToOp cs (OpDuality rp rt) = coLimes cs rp rt
-
---------------------------------------------------------------------------------
--- lmFromOp -
-
--- | from @__g__ ('Op' __a__)@.
-lmFromOp :: ConeStruct s a -> OpDuality Limes s f f' -> f' (Op a) -> f a
-lmFromOp cs (OpDuality rp rt) = coLimesInv cs rp rt
-
-
-instance OpDualisable ConeStruct Limes s where
-  opdToOp   = lmToOp
-  opdFromOp = lmFromOp
-  
 --------------------------------------------------------------------------------
 -- relLimes -
 

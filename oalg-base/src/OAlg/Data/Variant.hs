@@ -191,7 +191,9 @@ instance CategoryDisjunctive h => Category (Variant2 Covariant h) where
 
 instance CategoryDisjunctive h => Disjunctive2 (Inv2 h) where
   variant2 (Inv2 f _) = variant2 f
-  
+
+instance CategoryDisjunctive c => CategoryDisjunctive (Inv2 c)
+
 --------------------------------------------------------------------------------
 -- vInv2 -
 

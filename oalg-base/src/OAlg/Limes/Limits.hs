@@ -16,12 +16,12 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- 'Limits' of 'Diagram's, i.e. assigning to each diagram a 'Limes' over the given diagram.
+-- 'LimitsG' of 'Diagram's, i.e. assigning to each diagram a 'LimesG' over the given diagram.
 module OAlg.Limes.Limits
   (
 
     -- * Limits
-    Limits(..)
+    Limits, LimitsG(..)
   , lmsMapS, lmsMapCov, lmsMapCnt
 
 {-
@@ -41,6 +41,7 @@ import OAlg.Prelude
 
 import OAlg.Category.SDuality
 
+import OAlg.Data.Variant
 import OAlg.Data.Either
 
 -- import OAlg.Structure.Oriented
@@ -56,36 +57,42 @@ import OAlg.Limes.Cone
 import OAlg.Limes.Definition
 
 --------------------------------------------------------------------------------
--- Limits -
+-- LimitsG -
 
 -- | limes of a diagrammatic object, i.e. assigning to each diagrammatic object @d@ a limes over the
 -- @d@.
 --
--- __Property__ Let @l@ be in @'Limits' __c s p d t n m x__@ for a @'Conic' __c__@ and a
+-- __Property__ Let @l@ be in @'LimitsG' __c s p d t n m x__@ for a @'Conic' __c__@ and a
 -- @'Diagrammatic' __d__@, then holds:
 --
 -- (1) @'diagram' '.' 'cone' '.' 'universalCone' '.' 'limes' l '.=.' 'diagram'@.
-newtype Limits c s p d t n m x = Limits (d t n m x -> Limes c s p d t n m x)
+newtype LimitsG c s p d t n m x = LimitsG (d t n m x -> LimesG c s p d t n m x)
+
+--------------------------------------------------------------------------------
+-- Limits -
+
+-- | limits for 'Cone's over 'Diagram's.
+type Limits s p = LimitsG Cone s p Diagram
 
 --------------------------------------------------------------------------------
 -- limes -
 
 -- | the limes over the given diagram.
-limes :: Limits c s p d t n m x -> d t n m x -> Limes c s p d t n m x
-limes (Limits l) = l
+limes :: LimitsG c s p d t n m x -> d t n m x -> LimesG c s p d t n m x
+limes (LimitsG l) = l
 
 --------------------------------------------------------------------------------
--- Limits - Dual -
+-- LimitsG - Dual -
 
-type instance Dual1 (Limits c s p d t n m) = Limits c s (Dual p) d (Dual t) n m
+type instance Dual1 (LimitsG c s p d t n m) = LimitsG c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
 -- lmsMapCov -
 
 lmsMapCov :: NaturalConic h c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
-  -> Limits c s p d t n m x -> Limits c s p d t n m y
-lmsMapCov i@(Covariant2 (Inv2 _ f)) (Limits u) = Limits u' where
+  -> LimitsG c s p d t n m x -> LimitsG c s p d t n m y
+lmsMapCov i@(Covariant2 (Inv2 _ f)) (LimitsG u) = LimitsG u' where
   u' d' = lmMapCov i (u d) where
     SDualBi (Right1 (DiagramG d)) = amap1 f (SDualBi (Right1 (DiagramG d'))) 
 
@@ -94,36 +101,27 @@ lmsMapCov i@(Covariant2 (Inv2 _ f)) (Limits u) = Limits u' where
 
 lmsMapCnt :: NaturalConic h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
-  -> Limits c s p d t n m x -> Dual1 (Limits c s p d t n m) y
-lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (Limits u) = Limits u' where
+  -> LimitsG c s p d t n m x -> Dual1 (LimitsG c s p d t n m) y
+lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (LimitsG u) = LimitsG u' where
   u' d' = lmMapCnt i (u d) where
     SDualBi (Right1 (DiagramG d)) = amap1 f (SDualBi (Left1 (DiagramG d'))) 
 
 --------------------------------------------------------------------------------
 -- lmsMapS -
 
-lmsMapS ::
-  ( CategoryDisjunctive h
-  , NaturalConicBi h c s p d t n m
-  )
-  => Inv2 h x y -> SDualBi (Limits c s p d t n m) x -> SDualBi (Limits c s p d t n m) y
+lmsMapS :: NaturalConicBi h c s p d t n m
+  => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 
 --------------------------------------------------------------------------------
--- Limits - FunctorialG -
+-- LimitsG - FunctorialG -
 
-instance
-  ( CategoryDisjunctive h
-  , NaturalConicBi h c s p d t n m
-  )
-  => ApplicativeG (SDualBi (Limits c s p d t n m)) (Inv2 h) (->) where
+instance NaturalConicBi h c s p d t n m
+  => ApplicativeG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->) where
   amapG = lmsMapS
 
-instance
-  ( CategoryDisjunctive h
-  , NaturalConicBi h c s p d t n m
-  )
-  => FunctorialG (SDualBi (Limits c s p d t n m)) (Inv2 h) (->)  
+instance NaturalConicBi h c s p d t n m
+  => FunctorialG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->)  
 
 
 

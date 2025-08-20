@@ -176,6 +176,7 @@ instance
 -- __Note__ This property is required if incoherent instances are permitted.
 class
   ( Diagrammatic d
+  , CategoryDisjunctive h
   , HomOrientedDisjunctive h
   , NaturalTransformable h (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m))
   , t ~ Dual (Dual t)
@@ -207,7 +208,8 @@ instance
   => NaturalTransformable h (->) (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m))
 
 instance
-  ( HomOrientedDisjunctive h
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
@@ -233,7 +235,8 @@ class
   => NaturalDiagrammaticBi h d t n m
 
 instance
-  ( HomOrientedDisjunctive h
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
