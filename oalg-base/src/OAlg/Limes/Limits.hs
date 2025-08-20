@@ -9,8 +9,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds, RankNTypes #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Limes.Limits
 -- Description : limits of diagrams

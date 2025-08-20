@@ -86,8 +86,7 @@ instance ( Natural s b f g, Transformable t s
 -- @'amapG' a '.' 'roh'' n ('domain' a) '.=.' 'roh'' n ('range' a) '.' 'amapG' a@.
 class
   ( Natural (ObjectClass a) b f g
-  , Morphism a, Category b
-  , ApplicativeG f a b, ApplicativeG g a b
+  , FunctorialG f a b, FunctorialG g a b
   )
   => NaturalTransformable a b f g
 

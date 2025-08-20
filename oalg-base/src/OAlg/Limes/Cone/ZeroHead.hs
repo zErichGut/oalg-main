@@ -22,7 +22,6 @@ module OAlg.Limes.Cone.ZeroHead
   , cnZeroHead
   , cnKernel, cnCokernel
   , cnDiffHead
-
   ) where
 
 import OAlg.Prelude
@@ -75,8 +74,6 @@ instance (Diagrammatic d, Validable (d t n (S m) x))
 -- ConeZeroHead - Dual -
 
 type instance Dual1 (ConeZeroHead s p d t n m)  = ConeZeroHead s (Dual p) d (Dual t) n m 
-
-instance DualConic ConeZeroHead s p d t n m
 
 --------------------------------------------------------------------------------
 -- czMapS -
@@ -186,17 +183,43 @@ instance
   )
   => ApplicativeG (SDualBi (ConeZeroHead s p d t n m)) h (->) where
   amapG = czMapS
+  
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeZeroHead s p d t n m)) h (->)
 
 instance
   ( HomDistributiveDisjunctive h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
-  => NaturalTransformable h (->)
-       (SDualBi (ConeG ConeZeroHead Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
-  
+  => ApplicativeG (SDualBi (ConeG ConeZeroHead s p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
 instance
   ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG ConeZeroHead s p d t n m)) h (->)  
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG ConeZeroHead Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
@@ -204,6 +227,7 @@ instance
 
 instance
   ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
@@ -212,6 +236,7 @@ instance
   
 instance
   ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
@@ -268,5 +293,4 @@ cnCokernel cz@(ConeZeroHead _) = c where
   SDualBi (Left1 cz') = amap1 t (SDualBi (Right1 cz))
   c'                  = cnKernel cz'
   SDualBi (Right1 c)  = amap1 f (SDualBi (Left1 c'))
-
 
