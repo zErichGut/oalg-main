@@ -19,13 +19,14 @@
 module OAlg.Limes.Cone.Conic
   (
     -- * Conic
-    Conic(..), DualConic
+    Conic(..)
   , ConeG(..)
   , sdbToCncObj, sdbFromCncObj
 
     -- * Natural
   , NaturalConic, crohS
   , NaturalConicBi
+
   ) where
 
 import Data.Kind
@@ -43,6 +44,7 @@ import OAlg.Entity.Natural
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -115,6 +117,7 @@ sdbFromCncObj :: Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m
 sdbFromCncObj (SDualBi (Right1 c)) = SDualBi (Right1 (ConeG c))
 sdbFromCncObj (SDualBi (Left1 c')) = SDualBi (Left1 (ConeG c'))
 
+{-
 --------------------------------------------------------------------------------
 -- DualConic -
 
@@ -129,7 +132,14 @@ instance
   ) 
   => ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->) where
   amapG h = sdbFromCncObj . amapG h . sdbToCncObj
-  
+
+instance
+  ( FunctorialG (SDualBi (c s p d t n m)) h (->)
+  , DualConic c s p d t n m
+  ) 
+  => FunctorialG (SDualBi (ConeG c s p d t n m)) h (->)
+-}
+
 --------------------------------------------------------------------------------
 -- NaturalConic -
 
@@ -145,39 +155,75 @@ class
   => NaturalConic h c s p d t n m
 
 --------------------------------------------------------------------------------
--- ConeG - Cone - Mlt - NaturalConic -
+-- ConeG Cone - Mlt - NaturalConic -
 
 instance
   ( HomMultiplicativeDisjunctive h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
+  => ApplicativeG (SDualBi (ConeG Cone Mlt p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )  
+  => FunctorialG (SDualBi (ConeG Cone Mlt p d t n m)) h (->)
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )  
   => NaturalTransformable h (->)
        (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
-  )
+  )  
   => NaturalConic h Cone Mlt p d t n m
-  
+
 --------------------------------------------------------------------------------
--- ConeG - Cone - Dst - NaturalConic -
+-- ConeG Cone - Dst - NaturalConic -
 
 instance
   ( HomDistributiveDisjunctive h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
+  => ApplicativeG (SDualBi (ConeG Cone Dst p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )  
+  => FunctorialG (SDualBi (ConeG Cone Dst p d t n m)) h (->)
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )  
   => NaturalTransformable h (->)
        (SDualBi (ConeG Cone Dst p d t n m)) (SDualBi (Cone Dst p d t n m))
 
 instance
   ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
-  )
+  )  
   => NaturalConic h Cone Dst p d t n m
 
 --------------------------------------------------------------------------------
@@ -190,4 +236,3 @@ class
   , NaturalConic h c s (Dual p) d (Dual t) n m
   )
   => NaturalConicBi h c s p d t n m
-

@@ -22,14 +22,14 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
     -- * Diagrammatic
-    Diagrammatic(..), DualDiagrammatic
+    Diagrammatic(..) --, DualDiagrammatic
   , DiagramG(..), dmap
   , sdbToDgmObj, sdbFromDgmObj
 
     -- * Natural
     
   , NaturalDiagrammatic
-  , drohS -- , dmapCov
+  , drohS
   , NaturalDiagrammaticW
   , NaturalDiagrammaticBi
   
@@ -138,6 +138,7 @@ instance Diagrammatic d
   => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)) where
   roh _ = drohS
 
+{-
 --------------------------------------------------------------------------------
 -- DualDiagrammatic -
 
@@ -158,6 +159,7 @@ instance
   , FunctorialG (SDualBi (d t n m)) h (->) 
   )
   => FunctorialG (SDualBi (DiagramG d t n m)) h (->)
+-}
 
 --------------------------------------------------------------------------------
 -- NaturalDiagrammatic -
@@ -180,27 +182,37 @@ class
   )
   => NaturalDiagrammatic h d t n m
 
+--------------------------------------------------------------------------------
+-- DiagramG Diagram - NaturalDiagrammatic -
+
 instance
   ( HomOrientedDisjunctive h
+  , t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (DiagramG Diagram t n m)) h (->) where
+  amapG h = sdbFromDgmObj . amapG h . sdbToDgmObj
+
+instance
+  ( HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (DiagramG Diagram t n m)) h (->)
+
+instance
+  ( HomOrientedDisjunctive h
+  , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
   => NaturalTransformable h (->) (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m))
 
 instance
   ( HomOrientedDisjunctive h
+  , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
   => NaturalDiagrammatic h Diagram t n m
 
-{-
---------------------------------------------------------------------------------
--- dmapCov -
-
-dmapCov :: NaturalDiagrammatic h d t n m
-  => Variant2 Covariant h x y -> d t n m x -> d t n m y
-dmapCov (Covariant2 h) d = d' where
-  SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
--}  
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticW -
 
@@ -220,7 +232,11 @@ class
   )
   => NaturalDiagrammaticBi h d t n m
 
-instance (HomOrientedDisjunctive h, t ~ Dual (Dual t))
+instance
+  ( HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
   => NaturalDiagrammaticBi h Diagram t n m
 
 --------------------------------------------------------------------------------

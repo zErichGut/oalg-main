@@ -367,7 +367,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
-  , FunctorialG (SDualBi (d t n m)) h (->)
+  , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
   , p ~ Dual (Dual p)
   )
