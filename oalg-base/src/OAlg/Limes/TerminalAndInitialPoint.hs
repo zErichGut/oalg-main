@@ -20,8 +20,12 @@
 -- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.
 module OAlg.Limes.TerminalAndInitialPoint
   (
+
     -- * Terminal
-    Terminals, GenericTerminals, TerminalPoint, TerminalCone, TerminalDiagram
+    Terminals, TerminalsG
+  , TerminalPoint, TerminalPointG
+  , TerminalCone, TerminalConic
+  , TerminalDiagram, TerminalDiagrammatic
   , trmDiagram, trmCone
 
     -- ** Orientation
@@ -29,7 +33,10 @@ module OAlg.Limes.TerminalAndInitialPoint
     
 
     -- * Initial
-  , Initials, GenericInitials, InitialPoint, InitialCone, InitialDiagram
+  , Initials, InitialsG
+  , InitialPoint, InitialPointG
+  , InitialCone, InitialConic
+  , InitialDiagram, InitialDiagrammatic
   , intDiagram, intCone
 
     -- ** Orientation
@@ -37,22 +44,20 @@ module OAlg.Limes.TerminalAndInitialPoint
 
     -- * Duality
     -- ** Terminal
-  , trmDiagramDuality
-  , trmConeDuality
-  , trmLimesDuality
-  , trmLimitsDuality
+  , coTerminals, coTerminalPoint
 
     -- ** Initial
-  , intDiagramDuality
-  , intConeDuality
-  , intLimesDuality
-  , intLimitsDuality
-
+  , coInitials, coInitialPoint
   ) where
 
-import Data.Typeable
+import Data.Kind
 
 import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
+import OAlg.Data.Variant
 
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList
@@ -61,41 +66,53 @@ import OAlg.Entity.Diagram as D
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
-import OAlg.Limes.Cone.Definition
-import OAlg.Limes.OpDuality
+import OAlg.Hom.Definition
+import OAlg.Hom.Multiplicative
+
+import OAlg.Limes.Cone
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 
 --------------------------------------------------------------------------------
 -- Terminal -
 
+-- | 'Diagrammatic' object for a terminal point.
+type TerminalDiagrammatic d = d 'Empty N0 N0 :: Type -> Type
+
 -- | 'Diagram' for a terminal point.
-type TerminalDiagram = Diagram 'Empty N0 N0
+type TerminalDiagram = TerminalDiagrammatic Diagram
+
+-- | 'Conic' object for a terminal point.
+type TerminalConic c (d :: DiagramType -> N' -> N' -> Type -> Type)
+  = c Mlt Projective d 'Empty N0 N0 :: Type -> Type 
 
 -- | 'Cone' for a terminal point.
-type TerminalCone = Cone Mlt Projective 'Empty N0 N0
+type TerminalCone = TerminalConic Cone Diagram
+
+-- | terminal point as 'LimesG'.
+type TerminalPointG c d = LimesG c Mlt Projective d 'Empty N0 N0 
 
 -- | terminal point as 'Limes'.
-type TerminalPoint = Limes Mlt Projective 'Empty N0 N0
+type TerminalPoint = TerminalPointG Cone Diagram
 
 -- | generic terminal point within a 'Multiplicative' structure.
-type GenericTerminals l = Limits l Mlt Projective 'Empty N0 N0
+type TerminalsG c d = LimitsG c Mlt Projective d 'Empty N0 N0
 
 -- | terminal point within a 'Multiplicative' structure.
-type Terminals = GenericTerminals Limes
+type Terminals = TerminalsG Cone Diagram
 
 --------------------------------------------------------------------------------
 -- trmDiagram -
 
 -- | the terminal diagram.
-trmDiagram :: TerminalDiagram a
+trmDiagram :: TerminalDiagram x
 trmDiagram = DiagramEmpty
 
 --------------------------------------------------------------------------------
 -- trmCone -
 
 -- | the terminal cone of a given point.
-trmCone :: Multiplicative a => Point a -> TerminalCone a
+trmCone :: Multiplicative x => Point x -> TerminalCone x
 trmCone t = ConeProjective DiagramEmpty t Nil
 
 --------------------------------------------------------------------------------
@@ -103,80 +120,52 @@ trmCone t = ConeProjective DiagramEmpty t Nil
 
 -- | the terminal limes of a given point @p@.
 terminalPointOrnt :: Entity p => p -> TerminalPoint (Orientation p)
-terminalPointOrnt p = lmToPrjOrnt p trmDiagram
+terminalPointOrnt p = lmMltPrjOrnt p trmDiagram
 
 -- | terminals for 'Orientation'.
 trmsOrnt :: Entity p => p -> Terminals (Orientation p)
-trmsOrnt = lmsToPrjOrnt 
+trmsOrnt = lmsMltPrjOrnt 
 
 --------------------------------------------------------------------------------
 -- Initial -
 
+-- | 'Diagrammatic' object for a initial point.
+type InitialDiagrammatic d = d 'Empty N0 N0 :: Type -> Type
+
 -- | 'Diagram' for a initial point.
-type InitialDiagram = Diagram 'Empty N0 N0
+type InitialDiagram = InitialDiagrammatic Diagram
+
+-- | 'Conic' object for a initial point.
+type InitialConic c (d :: DiagramType -> N' -> N' -> Type -> Type)
+  = c Mlt Injective d 'Empty N0 N0 :: Type -> Type
 
 -- | 'Cone' for a initial point.
-type InitialCone = Cone Mlt Injective 'Empty N0 N0
+type InitialCone = InitialConic Cone Diagram
+
+-- | initial point as 'LimesG'.
+type InitialPointG c d = LimesG c Mlt Injective d 'Empty N0 N0
 
 -- | initial point as 'Limes'.
-type InitialPoint = Limes Mlt Injective 'Empty N0 N0
+type InitialPoint = InitialPointG Cone Diagram
 
 -- | generic initial point within a 'Multiplicative' structure.
-type GenericInitials l = Limits l Mlt Injective 'Empty N0 N0
+type InitialsG c d = LimitsG c Mlt Injective d 'Empty N0 N0
 
 -- | initial point within a 'Multiplicative' structure.
-type Initials = GenericInitials Limes
-
---------------------------------------------------------------------------------
--- Duality - Terminal -
-
--- | terminal 'Diagram' duality.
-trmDiagramDuality :: Oriented a => DiagramDuality TerminalDiagram InitialDiagram a
-trmDiagramDuality = DiagramDuality Refl Refl Refl
-
--- | terminal 'Cone' duality.
-trmConeDuality :: OpDuality Cone Mlt TerminalCone InitialCone
-trmConeDuality = OpDuality Refl Refl
-
--- |  terminal 'Limes' duality.
-trmLimesDuality ::OpDuality Limes Mlt TerminalPoint InitialPoint
-trmLimesDuality = OpDuality Refl Refl
-
--- |  terminal 'Limits' duality.
-trmLimitsDuality :: OpDuality (Limits Limes) Mlt Terminals Initials
-trmLimitsDuality = OpDuality Refl Refl
-
---------------------------------------------------------------------------------
--- Duality - Initial -
-
--- | initial 'Diagram' duality.
-intDiagramDuality :: Oriented a => DiagramDuality InitialDiagram TerminalDiagram a
-intDiagramDuality = DiagramDuality Refl Refl Refl
-
--- | initial 'Cone' duality.
-intConeDuality :: OpDuality Cone Mlt InitialCone TerminalCone
-intConeDuality = OpDuality Refl Refl
-
--- | initial 'Limes' duality.
-intLimesDuality :: OpDuality Limes Mlt InitialPoint TerminalPoint
-intLimesDuality = OpDuality Refl Refl
-
--- | initial 'Limits' duality.
-intLimitsDuality :: OpDuality (Limits Limes) Mlt Initials Terminals
-intLimitsDuality = OpDuality Refl Refl
+type Initials = InitialsG Cone Diagram 
 
 --------------------------------------------------------------------------------
 -- intDiagram -
 
 -- | the initial diagram.
-intDiagram :: InitialDiagram a
+intDiagram :: InitialDiagram x
 intDiagram = DiagramEmpty
 
 --------------------------------------------------------------------------------
 -- intCone -
 
 -- | the initial cone of a given point.
-intCone :: Multiplicative a => Point a -> InitialCone a
+intCone :: Multiplicative x => Point x -> InitialCone x
 intCone i = ConeInjective DiagramEmpty i Nil
 
 --------------------------------------------------------------------------------
@@ -184,9 +173,64 @@ intCone i = ConeInjective DiagramEmpty i Nil
 
 -- | initial point for 'Orientation'.
 initialPointOrnt :: Entity p => p -> InitialPoint (Orientation p)
-initialPointOrnt i = lmFromInjOrnt i intDiagram
+initialPointOrnt i = lmMltInjOrnt i intDiagram
 
 -- | initials.
 intsOrnt :: Entity p => p -> Initials (Orientation p)
-intsOrnt = lmsFromInjOrnt
+intsOrnt = lmsMltInjOrnt
 
+--------------------------------------------------------------------------------
+-- coTerminalPoint -
+
+-- | co-terminal point over @__x__@, i.e. initial point over @__o x__@. 
+coTerminalPoint ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , DualisableMultiplicative Mlt o
+  )
+  => TerminalPoint x -> InitialPoint (o x)
+coTerminalPoint trm = int where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 int) = amapG i (SDualBi (Right1 trm))
+
+--------------------------------------------------------------------------------
+-- coTerminals -
+
+-- | co-terminals over @__x__@, i.e. initials over @__o x__@. 
+coTerminals ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , DualisableMultiplicative Mlt o
+  )
+  => Terminals x -> Initials (o x)
+coTerminals trms = ints where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 ints) = amapG i (SDualBi (Right1 trms))
+
+--------------------------------------------------------------------------------
+-- coInitialPoint -
+
+-- | co-initial point over @__x__@, i.e. terminal point over @__o x__@. 
+coInitialPoint ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , DualisableMultiplicative Mlt o
+  )
+  => InitialPoint x -> TerminalPoint (o x)
+coInitialPoint int = trm where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 trm) = amapG i (SDualBi (Right1 int))
+
+--------------------------------------------------------------------------------
+-- coInitials -
+
+-- | co-initials over @__x__@, i.e. terminals over @__o x__@. 
+coInitials ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , DualisableMultiplicative Mlt o
+  )
+  => Initials x -> Terminals (o x)
+coInitials ints = trms where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 trms) = amapG i (SDualBi (Right1 ints))

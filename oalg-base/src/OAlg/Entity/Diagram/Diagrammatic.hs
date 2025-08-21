@@ -32,6 +32,7 @@ module OAlg.Entity.Diagram.Diagrammatic
   , drohS
   , NaturalDiagrammaticW
   , NaturalDiagrammaticBi
+  , NaturalDiagrammaticBiDual
   
     -- * Proposition
   , prpDiagrammatic
@@ -242,6 +243,19 @@ instance
   )
   => NaturalDiagrammaticBi h Diagram t n m
 
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticBiDual -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammaticBi h d (Dual t) n m => NaturalDiagrammaticBiDual h d t n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticBiDual h Diagram t n m
 --------------------------------------------------------------------------------
 -- prpHomOrientedDisjunctiveS -
 

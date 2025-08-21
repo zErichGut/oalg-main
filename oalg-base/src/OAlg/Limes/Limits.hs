@@ -20,20 +20,17 @@
 module OAlg.Limes.Limits
   (
     -- * Limits
-    Limits, LimitsG(..)
+    limes, LimitsG(..), Limits
+
+    -- * Mapping
   , lmsMapS, lmsMapCov, lmsMapCnt
 
-{-
-    -- * Duality
-  , lmsToOp, lmsFromOp
-  , coLimits, coLimitsInv, lmsFromOpOp
-
-    -- * Construction
-  , lmsToPrjOrnt, lmsFromInjOrnt
+    -- * Constructions
+  , lmsMltPrjOrnt, lmsMltInjOrnt
   
     -- * Proposition
-  , prpLimits, prpLimitsDiagram
--}
+  , prpLimitsG
+
   ) where
 
 import OAlg.Prelude
@@ -43,14 +40,10 @@ import OAlg.Category.SDuality
 import OAlg.Data.Variant
 import OAlg.Data.Either
 
--- import OAlg.Structure.Oriented
--- import OAlg.Structure.Multiplicative
--- import OAlg.Structure.Distributive
-
-import OAlg.Hom.Oriented
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 
 import OAlg.Entity.Diagram
--- import OAlg.Entity.Natural
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Definition
@@ -123,10 +116,10 @@ instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->)  
 
 --------------------------------------------------------------------------------
--- prpLimits -
+-- prpLimitsG -
 
 -- | validity according to 'LimitsG'.
-prpLimits ::
+prpLimitsG ::
   ( Conic c
   , Diagrammatic d
   , Show (d t n m x)
@@ -137,7 +130,7 @@ prpLimits ::
   -> X (d t n m x)
   -> LimitsG c s p d t n m x
   -> Statement
-prpLimits xec xef xd l = Prp "Limits" :<=>: Forall xd (prpLimes xec xef . limes l)
+prpLimitsG xec xef xd l = Prp "LimitsG" :<=>: Forall xd (prpLimes xec xef . limes l)
 
 --------------------------------------------------------------------------------
 -- LimitsG - Validable -
@@ -152,7 +145,23 @@ instance
   , Entity x
   )
   => Validable (LimitsG c s p d t n m x) where
-  valid = prpLimits xStandardEligibleCone xStandardEligibleConeFactor xStandard
+  valid = prpLimitsG xStandardEligibleCone xStandardEligibleConeFactor xStandard
+
+
+--------------------------------------------------------------------------------
+-- lmsMltPrjOrnt -
+
+-- | projective limits for 'Multiplicative' structures over @'Orientation' __p__@ .
+lmsMltPrjOrnt :: Entity p => p -> Limits Mlt Projective t n m (Orientation p)
+lmsMltPrjOrnt = LimitsG . lmMltPrjOrnt
+
+--------------------------------------------------------------------------------
+-- lmsMltInjOrnt -
+
+-- | injective limits for 'Multiplicative' structures over @'Orientation' __p__@.
+lmsMltInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
+lmsMltInjOrnt = LimitsG . lmMltInjOrnt  
+
 
 
 {-
@@ -195,19 +204,5 @@ instance ( Distributive a
          )
   => Validable (Limits l Dst p t n m a) where
   valid lm = prpLimits ConeStructDst lm xStandard xStandardOrtPerspective
-
---------------------------------------------------------------------------------
--- lmsToPrjOrnt -
-
--- | projective limits for @'Orientation' __p__@.
-lmsToPrjOrnt :: Entity p => p -> Limits Limes Mlt Projective t n m (Orientation p)
-lmsToPrjOrnt = Limits . lmToPrjOrnt
-
---------------------------------------------------------------------------------
--- lmsFromInjOrnt -
-
--- | injective limits for @'Orientation' __p__@.
-lmsFromInjOrnt :: Entity p => p -> Limits Limes Mlt Injective t n m (Orientation p)
-lmsFromInjOrnt = Limits . lmFromInjOrnt  
 
 -}

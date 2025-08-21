@@ -236,3 +236,15 @@ class
   , NaturalConic h c s (Dual p) d (Dual t) n m
   )
   => NaturalConicBi h c s p d t n m
+
+--------------------------------------------------------------------------------
+-- ConeG Cone - Mlt - NaturalConicBi -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammaticBiDual h d t n m
+  , p ~ Dual (Dual p)
+  )  
+  => NaturalConicBi h Cone Mlt p d t n m

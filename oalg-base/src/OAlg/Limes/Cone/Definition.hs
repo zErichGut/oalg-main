@@ -39,6 +39,7 @@ module OAlg.Limes.Cone.Definition
   , cnDstAdjZero
   , cnPrjOrnt, cnInjOrnt
   , cnPrjDstOrnt, cnInjDstOrnt
+  
     -- * X
   , xCnPrjOrnt, xCnPrjDstOrnt
   , xCnInjOrnt, xCnInjDstOrnt

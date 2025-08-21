@@ -28,6 +28,9 @@ module OAlg.Limes.Definition
     -- * Mapping
   ,lmMapS, lmMapCov, lmMapCnt
 
+    -- * Constructions
+  , lmMltPrjOrnt, lmMltInjOrnt
+
     -- * Proposition
   , prpLimes, prpLimesFactorExist, prpLimesFactorUnique
 
@@ -42,11 +45,9 @@ module OAlg.Limes.Definition
 import Control.Monad
 
 import Data.Typeable
-import Data.List as L ((++))
 
 import OAlg.Prelude
 
-import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Either
@@ -57,10 +58,7 @@ import OAlg.Entity.FinList
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
-import OAlg.Structure.Distributive
 
-import OAlg.Hom.Definition
-import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -405,73 +403,21 @@ prpLimes xec xef l = Prp "Limes" :<=>:
       ]
 
 --------------------------------------------------------------------------------
--- relLimes -
-{-
-relLimes ::
-  ( Validable (c s p d t n m x)
-  )
-  => XEligibleCone c s p d t n m x
-  -> XEligibleConeFactor c s p d t n m x -> LimesG c s p d t n m x -> Statement
-relLimes l = And [ valid u
-                 ]
-  where
-    u = universalCone l
--}
-{-
---------------------------------------------------------------------------------
--- relLimes -
-
--- | validity of a 'Limes'.
-relLimes :: ConeStruct s a
-  -> XOrtPerspective p a -> Limes s p t n m a -> Statement
-relLimes cs xop u = Label "Limes" :<=>: case cnStructMlt cs of Struct -> relUniversal cs xop u
-  
---------------------------------------------------------------------------------
--- Limes - Validable -
-
-instance (Multiplicative a, XStandardOrtPerspective p a)
-  => Validable (Limes Mlt p t n m a) where
-  valid l = Label "Mlt" :<=>: relLimes ConeStructMlt xStandardOrtPerspective l
-
-
-instance ( Distributive a, XStandardOrtPerspective p a
-         , Typeable p, Typeable t, Typeable n, Typeable m
-         )
-  => Validable (Limes Dst p t n m a) where
-  valid l = Label (show $ typeOf l) :<=>: relLimes ConeStructDst xStandardOrtPerspective l
-
---------------------------------------------------------------------------------
--- Limes - Entity -
-
-instance ( Multiplicative a, XStandardOrtPerspective p a
-         , Typeable p, Typeable t, Typeable n, Typeable m
-         )
-  => Entity (Limes Mlt p t n m a)
-
-instance ( Distributive a, XStandardOrtPerspective p a
-         , Typeable p, Typeable t, Typeable n, Typeable m
-         )
-  => Entity (Limes Dst p t n m a) 
-
---------------------------------------------------------------------------------
--- lmToPrjOrnt -
+-- lmMltPrjOrnt -
 
 -- | projective limes on oriented structures.
-lmToPrjOrnt :: (Entity p, a ~ Orientation p)
-  => p -> Diagram t n m a -> Limes Mlt Projective t n m a
-lmToPrjOrnt t d = LimesProjective l u where
+lmMltPrjOrnt :: (Entity p, x ~ Orientation p)
+  => p -> Diagram t n m x -> Limes Mlt Projective t n m x
+lmMltPrjOrnt t d = LimesGProjective l u where
     l = cnPrjOrnt t d
     u (ConeProjective _ x _) = x:>t
 
 --------------------------------------------------------------------------------
--- lmFromInjOrnt -
+-- lmMltInjOrnt -
 
 -- | injective limes on oriented structures.
-lmFromInjOrnt :: (Entity p, a ~ Orientation p)
-  => p -> Diagram t n m a -> Limes Mlt Injective t n m a
-lmFromInjOrnt t d = LimesInjective l u where
+lmMltInjOrnt :: (Entity p, x ~ Orientation p)
+  => p -> Diagram t n m x -> Limes Mlt Injective t n m x
+lmMltInjOrnt t d = LimesGInjective l u where
     l = cnInjOrnt t d
     u (ConeInjective _ x _) = t:>x
-
-
--}
