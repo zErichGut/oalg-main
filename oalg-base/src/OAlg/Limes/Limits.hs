@@ -19,7 +19,6 @@
 -- 'LimitsG' of 'Diagram's, i.e. assigning to each diagram a 'LimesG' over the given diagram.
 module OAlg.Limes.Limits
   (
-
     -- * Limits
     Limits, LimitsG(..)
   , lmsMapS, lmsMapCov, lmsMapCnt
@@ -123,107 +122,40 @@ instance NaturalConicBi h c s p d t n m
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->)  
 
+--------------------------------------------------------------------------------
+-- prpLimits -
 
+-- | validity according to 'LimitsG'.
+prpLimits ::
+  ( Conic c
+  , Diagrammatic d
+  , Show (d t n m x)
+  , Entity x
+  )
+  => XEligibleCone c s p d t n m x
+  -> XEligibleConeFactor c s p d t n m x
+  -> X (d t n m x)
+  -> LimitsG c s p d t n m x
+  -> Statement
+prpLimits xec xef xd l = Prp "Limits" :<=>: Forall xd (prpLimes xec xef . limes l)
 
+--------------------------------------------------------------------------------
+-- LimitsG - Validable -
 
+instance
+  ( Conic c
+  , Diagrammatic d
+  , XStandardEligibleCone c s p d t n m x
+  , XStandardEligibleConeFactor c s p d t n m x
+  , XStandard (d t n m x)
+  , Show (d t n m x)
+  , Entity x
+  )
+  => Validable (LimitsG c s p d t n m x) where
+  valid = prpLimits xStandardEligibleCone xStandardEligibleConeFactor xStandard
 
 
 {-
---------------------------------------------------------------------------------
--- lmsMap -
-
-lmsMap :: NaturalConic h c s p d t n m
-  => Inv2 h x y -> Limits c s p d t n m x -> Limits c s p d t n m y
-lmsMap i@(Inv2 _ f) (Limits l) = Limits (amapG i . l . dmap f )
--}
-
-
-
-
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- lmsMap -
-
--- | mapping of limits.
-lmsMap :: UniversalApplicative h l s
-  => h a b -> Limits l s p t n m a -> Limits l s p t n m b
-lmsMap h (Limits ls) = Limits (ls' h ls) where
-  ls' h ls d' = umap h $ ls $ dgMap h' d' where h' = invert2 h 
-
---------------------------------------------------------------------------------
--- Limits - Applicative1 -
-
-instance UniversalApplicative h l s => Applicative1 h (Limits l s p t n m) where
-  amap1 = lmsMap
-
-
---------------------------------------------------------------------------------
--- Limits - Daul -
-
-type instance Dual (Limits l s p t n m a) = Limits l s (Dual p) (Dual t) n m (Op a)
-
---------------------------------------------------------------------------------
--- coLimits -
-
--- | the co limits wit its inverse 'coLimitsInv'.
-coLimits :: OpDualisable c l s
-  => c s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Limits l s p t n m a -> Dual (Limits l s p t n m a)
-coLimits cs rp rt (Limits lm) = Limits lm' where
-  lm' d' = case opdStructMlt cs of Struct -> opdToOp cs (OpDuality rp rt) $ lm $ coDiagramInv rt d'
-
---------------------------------------------------------------------------------
--- lmsFromOpOp -
-
--- | from the bidual.
-lmsFromOpOp :: (OpReflexive c s, UniversalApplicative (IsoOp s) l s)
-  => c s a -> Limits l s p t n m (Op (Op a)) -> Limits l s p t n m a
-lmsFromOpOp cs = amap1 (invert2 $ opdRefl cs)
-
---------------------------------------------------------------------------------
--- coLimitsInv -
-
--- | from the co limits, with its inverse of 'coLimits'.
-coLimitsInv :: ( OpDualisable c l s
-               , UniversalApplicative (IsoOp s) l s
-               )
-  => c s a -> Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Dual (Limits l s p t n m a) -> Limits l s p t n m a
-coLimitsInv cs Refl Refl lms'
-  = lmsFromOpOp cs $ coLimits (opdStructOp cs) Refl Refl lms'
-
---------------------------------------------------------------------------------
--- lmsToOp -
-
--- | to @__f'__ ('Op' __a__)@.
-lmsToOp :: OpDualisable c l s => c s a -> OpDuality (Limits l) s x y -> x a -> y (Op a)
-lmsToOp cs (OpDuality rp rt) = coLimits cs rp rt
-
---------------------------------------------------------------------------------
--- lmsFromOp -
-
--- | from @__f'__ ('Op' __a__)@.
-lmsFromOp :: ( OpDualisable c l s
-             , UniversalApplicative (IsoOp s) l s
-             )
-  => c s a -> OpDuality (Limits l) s x y -> y (Op a) -> x a
-lmsFromOp cs (OpDuality rp rt) = coLimitsInv cs rp rt
-
---------------------------------------------------------------------------------
--- Limits - OpDualisable -
-
--- needs UndecidableInstances to compile!  -- needs UndecidableInstances to compile!
-instance ( OpDualisable c l s
-         , UniversalApplicative (IsoOp s) l s
-         )
-  => OpDualisable c (Limits l) s where
-  opdToOp   = lmsToOp
-  opdFromOp = lmsFromOp
-
 --------------------------------------------------------------------------------
 -- prpLimitsDiagram -
 

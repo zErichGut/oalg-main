@@ -32,8 +32,11 @@ module OAlg.Limes.Definition
   , prpLimes, prpLimesFactorExist, prpLimesFactorUnique
 
     -- * X
-  , XEligibleCone(..), xEligibleConeOrnt
-  , XEligibleConeFactor(..), xEligibleConeFactorOrnt
+  , XEligibleCone(..), XStandardEligibleCone(..)
+  , xEligibleConeOrnt
+  
+  , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
+  , xEligibleConeFactorOrnt
   ) where
 
 import Control.Monad
@@ -260,6 +263,13 @@ data XEligibleCone c s p d t n m x
   = XEligibleCone (LimesG c s p d t n m x -> X (Cone s p d t n m x))
 
 --------------------------------------------------------------------------------
+-- XStandardEligibleCone -
+
+-- | standard random variable for eligible cones.
+class XStandardEligibleCone c s p d t n m x where
+  xStandardEligibleCone :: XEligibleCone c s p d t n m x
+
+--------------------------------------------------------------------------------
 -- xEligibleConeOrnt -
 
 -- | random variable of eligible 'Cone's over 'Orientation'.
@@ -285,6 +295,14 @@ xEligibleConeOrnt ::
   => X x -> XEligibleCone c s p d t n m (Orientation x)
 xEligibleConeOrnt = XEligibleCone . xecOrnt
 
+instance
+  ( Conic c
+  , Diagrammatic d
+  , XStandard x
+  )
+  => XStandardEligibleCone c s p d t n m (Orientation x) where
+  xStandardEligibleCone = xEligibleConeOrnt xStandard
+
 --------------------------------------------------------------------------------
 -- XEligibleCone -
 
@@ -292,6 +310,13 @@ xEligibleConeOrnt = XEligibleCone . xecOrnt
 data XEligibleConeFactor c s p d t n m x
   = XEligibleConeFactor (LimesG c s p d t n m x -> X (Cone s p d t n m x, x))
 
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeFactor -
+
+-- | standard random variable for eligible cone factors.
+class XStandardEligibleConeFactor c s p d t n m x where
+  xStandardEligibleConeFactor :: XEligibleConeFactor c s p d t n m x
+  
 --------------------------------------------------------------------------------
 -- xEligibleConeFactorOrnt -
 
@@ -315,6 +340,14 @@ xEligibleConeFactorOrnt xx = XEligibleConeFactor xef where
   XEligibleCone xec = xEligibleConeOrnt xx
   xef l = amap1 (\c -> (c,elgFactorOrnt l c)) $ xec l
 
+instance
+  ( Conic c
+  , Diagrammatic d
+  , XStandard x
+  )
+  => XStandardEligibleConeFactor c s p d t n m (Orientation x) where
+  xStandardEligibleConeFactor = xEligibleConeFactorOrnt xStandard
+  
 --------------------------------------------------------------------------------
 -- prpLimesFactorExist -
 

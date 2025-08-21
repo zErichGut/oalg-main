@@ -637,7 +637,6 @@ instance (Oriented a, XStandardOrtSite t a, Attestable m, n ~ m + 1)
   => XStandard (Diagram (Chain t) n m a) where
   xStandard = xDiagramChain xStandardOrtSite
 
-
 instance (Oriented x, XStandardOrtSite To x, XStandardOrtSite From x, Attestable m, n ~ m+1)
   => XStandardDual1 (SDualBi (Diagram (Chain To) n m)) x
 
