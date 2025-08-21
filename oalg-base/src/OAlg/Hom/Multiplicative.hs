@@ -103,6 +103,13 @@ instance HomMultiplicative h => HomMultiplicative (Inv2 h)
 --     @'amap' h (x '*' y) '==' 'amap' h y '*' 'amap' h x@.
 class (HomOrientedDisjunctive h, Transformable (ObjectClass h) Mlt) => HomMultiplicativeDisjunctive h
 
+instance
+  ( CategoryDisjunctive h
+  , HomMultiplicativeDisjunctive h
+  )
+  => HomMultiplicativeDisjunctive (Inv2 h)
+
+
 instance HomMultiplicativeDisjunctive h => HomMultiplicative (Variant2 Covariant h)
 
 type instance HomD Mlt h = HomMultiplicativeDisjunctive h

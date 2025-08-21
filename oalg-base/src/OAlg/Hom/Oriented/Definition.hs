@@ -121,7 +121,14 @@ class ( Morphism h, Applicative h, ApplicativePoint h
 
 instance HomOrientedDisjunctive h => HomOrientedDisjunctive (Path h)
 
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  )
+  => HomOrientedDisjunctive (Inv2 h)
+
 instance HomOrientedDisjunctive h => HomOriented (Variant2 Covariant h)
+
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -

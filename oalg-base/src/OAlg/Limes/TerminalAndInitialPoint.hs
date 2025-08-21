@@ -60,6 +60,7 @@ import OAlg.Category.SDuality
 
 import OAlg.Data.Either
 import OAlg.Data.Variant
+import OAlg.Data.Symbol
 
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList
@@ -285,3 +286,14 @@ coInitials ::
   => Initials x -> Terminals (o x)
 coInitials = coInitialsG
 
+--------------------------------------------------------------------------------
+-- prpTerminalAndInitialPoint -
+
+prpTerminalAndInitialPoint :: Statement
+prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
+  And [ prpLimesFactorExist xecT tp
+      , prpLimesFactorExist (xecOp xecT) (coTerminalPoint tp)
+      ]
+  where
+    tp   = terminalPointOrnt T
+    xecT = xEligibleConeOrnt xStandard

@@ -1,18 +1,15 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , TypeOperators
-  , DataKinds
-  , ConstraintKinds
-#-}
-
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Category.NaturalTransformable
@@ -52,6 +49,8 @@ import OAlg.Prelude
 -- between @__f__@ and @__g__@ within @__b__@.
 class Natural s b f g where
   roh :: Struct s x -> b (f x) (g x)
+
+
 {-
 --------------------------------------------------------------------------------
 -- rohSub -

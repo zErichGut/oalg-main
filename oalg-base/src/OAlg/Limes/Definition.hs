@@ -36,7 +36,7 @@ module OAlg.Limes.Definition
 
     -- * X
   , XEligibleCone(..), XStandardEligibleCone(..)
-  , xEligibleConeOrnt
+  , xEligibleConeOrnt, xecOp
   
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt
@@ -60,6 +60,7 @@ import OAlg.Entity.FinList
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -247,9 +248,7 @@ lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 --------------------------------------------------------------------------------
 -- LimesG - FunctorialG -
 
-instance
-  ( NaturalConicBi h c s p d t n m
-  )
+instance NaturalConicBi h c s p d t n m
   => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
   amapG = lmMapS
 
@@ -273,35 +272,25 @@ data XEligibleCone c s p d t n m x
 class XStandardEligibleCone c s p d t n m x where
   xStandardEligibleCone :: XEligibleCone c s p d t n m x
 
-{-
-instance
-  ()
-  => XStandardEligibleCone c s p d t n m (Op x) where
-  xStandardEligibleCone = XEligibleCone xecOp where
-    XEligibleCone xec = xStandardEligibleCone
+--------------------------------------------------------------------------------
+-- xecOp -
 
-instance
+-- | random variable for eligible cones over 'Op'.
+xecOp ::
   ( Multiplicative x
-  , NaturalConic (Inv2 (HomDisjEmpty Mlt Op)) c s p d t n m
-  , NaturalConic (HomDisjEmpty Mlt Op) c s p d t n m
-  , NaturalConic (HomDisjEmpty Mlt Op) c s (Dual p) d (Dual t) n m
-  , XStandardEligibleCone c s (Dual p) d (Dual t) n m x
-  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  , NaturalConicBi (HomDisjEmpty Mlt Op) c s p d t n m
   )
-  => XStandardEligibleCone c s p d t n m (Op x) where
-  xStandardEligibleCone = XEligibleCone xecOp where
-    xecOp lOp = xcOp where
-      XEligibleCone xecOp' = xStandardEligibleCone
-      
-      Contravariant2 i = toDualOpMlt
-      SDualBi (Right1 lOp') = amapG (inv2 i) (SDualBi (Left1 lOp))
-      -- lOp  :: Limes c s p' d t' n m (Op x), p' ~ Dual p, t' ~ Dual t
-      -- lOp' :: Limes c s p  d t  n m x
-      xcOp = do
-        ecOp' <- xecOp' lOp'
-        let SDualBi (Right1 ecOp) = amapG i (SDualBi (Left1 ecOp'))
-         in return ecOp
--}          
+  => XEligibleCone c s p d t n m x
+  -> XEligibleCone c s (Dual p) d (Dual t) n m (Op x)
+xecOp (XEligibleCone xec) = XEligibleCone xecOp where
+  xecOp lOp = xcOp where
+    Contravariant2 i@(Inv2 t _) = toDualOpMlt
+    SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Left1 lOp))
+
+    xcOp = do
+      ec <- xec l
+      let SDualBi (Left1 ecOp) = amapG t (SDualBi (Right1 ec)) in return ecOp 
+
 --------------------------------------------------------------------------------
 -- xEligibleConeOrnt -
 
