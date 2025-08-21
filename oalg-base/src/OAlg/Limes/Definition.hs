@@ -10,6 +10,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 
+-- {-# LANGUAGE UndecidableInstances #-}
+
 -- |
 -- Module      : OAlg.Limes.Definition
 -- Description : definition of a limes over a digrammatic object.
@@ -59,6 +61,7 @@ import OAlg.Entity.FinList
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -267,6 +270,34 @@ data XEligibleCone c s p d t n m x
 class XStandardEligibleCone c s p d t n m x where
   xStandardEligibleCone :: XEligibleCone c s p d t n m x
 
+{-
+instance
+  ()
+  => XStandardEligibleCone c s p d t n m (Op x) where
+  xStandardEligibleCone = XEligibleCone xecOp where
+    XEligibleCone xec = xStandardEligibleCone
+
+instance
+  ( Multiplicative x
+  , NaturalConicBi (Inv2 (HomDisjEmpty Mlt Op)) Cone s p d t n m
+  , NaturalConicBi (HomDisjEmpty Mlt Op) c s (Dual p) d (Dual t) n m
+  , XStandardEligibleCone c s (Dual p) d (Dual t) n m x
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => XStandardEligibleCone c s p d t n m (Op x) where
+  xStandardEligibleCone = XEligibleCone xecOp where
+    xecOp lOp = xcOp where
+      XEligibleCone xecOp' = xStandardEligibleCone
+      
+      Contravariant2 i = toDualOpMlt
+      SDualBi (Right1 lOp') = amapG (inv2 i) (SDualBi (Left1 lOp))
+      -- lOp  :: Limes c s p' d t' n m (Op x), p' ~ Dual p, t' ~ Dual t
+      -- lOp' :: Limes c s p  d t  n m x
+      xcOp = do
+        ecOp' <- xecOp' lOp'
+        let SDualBi (Right1 ecOp) = amapG i (SDualBi (Left1 ecOp'))
+         in return ecOp
+-}          
 --------------------------------------------------------------------------------
 -- xEligibleConeOrnt -
 
