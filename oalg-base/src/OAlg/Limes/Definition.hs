@@ -10,8 +10,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Limes.Definition
 -- Description : definition of a limes over a digrammatic object.
@@ -42,6 +40,7 @@ module OAlg.Limes.Definition
   
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt
+
   ) where
 
 import Control.Monad
@@ -61,7 +60,6 @@ import OAlg.Entity.FinList
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -239,14 +237,19 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGInjective uc uf)
 --------------------------------------------------------------------------------
 -- lmMapS -
 
-lmMapS :: NaturalConicBi h c s p d t n m
+lmMapS ::
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
   => Inv2 h x y -> SDualBi (LimesG c s p d t n m) x -> SDualBi (LimesG c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
 --------------------------------------------------------------------------------
 -- LimesG - FunctorialG -
 
-instance NaturalConicBi h c s p d t n m
+instance
+  ( NaturalConicBi h c s p d t n m
+  )
   => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
   amapG = lmMapS
 
@@ -279,8 +282,9 @@ instance
 
 instance
   ( Multiplicative x
-  , NaturalConicBi (Inv2 (HomDisjEmpty Mlt Op)) Cone s p d t n m
-  , NaturalConicBi (HomDisjEmpty Mlt Op) c s (Dual p) d (Dual t) n m
+  , NaturalConic (Inv2 (HomDisjEmpty Mlt Op)) c s p d t n m
+  , NaturalConic (HomDisjEmpty Mlt Op) c s p d t n m
+  , NaturalConic (HomDisjEmpty Mlt Op) c s (Dual p) d (Dual t) n m
   , XStandardEligibleCone c s (Dual p) d (Dual t) n m x
   , p ~ Dual (Dual p), t ~ Dual (Dual t)
   )
@@ -452,3 +456,4 @@ lmMltInjOrnt :: (Entity p, x ~ Orientation p)
 lmMltInjOrnt t d = LimesGInjective l u where
     l = cnInjOrnt t d
     u (ConeInjective _ x _) = t:>x
+

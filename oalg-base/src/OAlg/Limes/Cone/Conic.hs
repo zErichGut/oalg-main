@@ -24,8 +24,10 @@ module OAlg.Limes.Cone.Conic
   , sdbToCncObj, sdbFromCncObj
 
     -- * Natural
-  , NaturalConic, crohS
+  , NaturalConic
+  , NaturalConicDual
   , NaturalConicBi
+  , crohS
 
   ) where
 
@@ -117,29 +119,6 @@ sdbFromCncObj :: Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m
 sdbFromCncObj (SDualBi (Right1 c)) = SDualBi (Right1 (ConeG c))
 sdbFromCncObj (SDualBi (Left1 c')) = SDualBi (Left1 (ConeG c'))
 
-{-
---------------------------------------------------------------------------------
--- DualConic -
-
--- | sound definition of duality for 'Conic' objects.
-class (Conic c, Dual1 (c s p d t n m) ~ c s (Dual p) d (Dual t) n m) => DualConic c s p d t n m
-
-instance DualConic Cone s p d t n m
-
-instance
-  ( ApplicativeG (SDualBi (c s p d t n m)) h (->)
-  , DualConic c s p d t n m
-  ) 
-  => ApplicativeG (SDualBi (ConeG c s p d t n m)) h (->) where
-  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
-
-instance
-  ( FunctorialG (SDualBi (c s p d t n m)) h (->)
-  , DualConic c s p d t n m
-  ) 
-  => FunctorialG (SDualBi (ConeG c s p d t n m)) h (->)
--}
-
 --------------------------------------------------------------------------------
 -- NaturalConic -
 
@@ -153,6 +132,22 @@ class
   , p ~ Dual (Dual p)
   )
   => NaturalConic h c s p d t n m
+
+--------------------------------------------------------------------------------
+-- NaturalConicDual -
+
+-- | helper class to avoid undecidable instances.
+class NaturalConic h c s (Dual p) d (Dual t) n m => NaturalConicDual h c s p d t n m
+
+--------------------------------------------------------------------------------
+-- NaturalConicBi -
+
+-- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
+-- @__c__@ and also its dual are 'NaturalConic'.
+type NaturalConicBi h c s p d t n m =
+  ( NaturalConic h c s p d t n m
+  , NaturalConicDual h c s p d t n m
+  )
 
 --------------------------------------------------------------------------------
 -- ConeG Cone - Mlt - NaturalConic -
@@ -190,6 +185,15 @@ instance
   )  
   => NaturalConic h Cone Mlt p d t n m
 
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammaticDualDual h d t n m
+  , p ~ Dual (Dual p)
+  )  
+  => NaturalConicDual h Cone Mlt p d t n m
+
 --------------------------------------------------------------------------------
 -- ConeG Cone - Dst - NaturalConic -
 
@@ -225,26 +229,3 @@ instance
   , p ~ Dual (Dual p)
   )  
   => NaturalConic h Cone Dst p d t n m
-
---------------------------------------------------------------------------------
--- NaturalConicBi -
-
--- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
--- @__c__@ and also its dual are 'NaturalConic'.
-class
-  ( NaturalConic h c s p d t n m
-  , NaturalConic h c s (Dual p) d (Dual t) n m
-  )
-  => NaturalConicBi h c s p d t n m
-
---------------------------------------------------------------------------------
--- ConeG Cone - Mlt - NaturalConicBi -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , NaturalDiagrammaticBiDual h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConicBi h Cone Mlt p d t n m

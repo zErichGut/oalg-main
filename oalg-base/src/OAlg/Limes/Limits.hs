@@ -101,7 +101,10 @@ lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (LimitsG u) = LimitsG u' where
 --------------------------------------------------------------------------------
 -- lmsMapS -
 
-lmsMapS :: NaturalConicBi h c s p d t n m
+lmsMapS ::
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
   => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 

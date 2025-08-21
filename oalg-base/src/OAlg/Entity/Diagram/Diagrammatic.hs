@@ -22,17 +22,18 @@
 module OAlg.Entity.Diagram.Diagrammatic
   (
     -- * Diagrammatic
-    Diagrammatic(..) --, DualDiagrammatic
+    Diagrammatic(..)
   , DiagramG(..), dmap
   , sdbToDgmObj, sdbFromDgmObj
 
     -- * Natural
     
   , NaturalDiagrammatic
+  , NaturalDiagrammaticDual
+  , NaturalDiagrammaticDualDual
+  , NaturalDiagrammaticBi
   , drohS
   , NaturalDiagrammaticW
-  , NaturalDiagrammaticBi
-  , NaturalDiagrammaticBiDual
   
     -- * Proposition
   , prpDiagrammatic
@@ -139,29 +140,6 @@ instance Diagrammatic d
   => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)) where
   roh _ = drohS
 
-{-
---------------------------------------------------------------------------------
--- DualDiagrammatic -
-
--- | sound definition of duality for 'Diagrammatic' objects.
-class (Diagrammatic d, Dual1 (d t n m) ~ d (Dual t) n m) => DualDiagrammatic d t n m
-
-instance DualDiagrammatic Diagram t n m
-
-instance
-  ( DualDiagrammatic d t n m
-  , ApplicativeG (SDualBi (d t n m)) h (->)
-  )
-  => ApplicativeG (SDualBi (DiagramG d t n m)) h (->) where
-  amapG h = sdbFromDgmObj . amapG h . sdbToDgmObj
-
-instance
-  ( DualDiagrammatic d t n m
-  , FunctorialG (SDualBi (d t n m)) h (->) 
-  )
-  => FunctorialG (SDualBi (DiagramG d t n m)) h (->)
--}
-
 --------------------------------------------------------------------------------
 -- NaturalDiagrammatic -
 
@@ -225,37 +203,43 @@ data NaturalDiagrammaticW h d t n m where
     => NaturalDiagrammaticW h d t n m
 
 --------------------------------------------------------------------------------
+-- NaturalDiagrammaticDual -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammatic h d (Dual t) n m => NaturalDiagrammaticDual h d t n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticDual h Diagram t n m
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticDualDual -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammaticDual h d (Dual t) n m => NaturalDiagrammaticDualDual h d t n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticDualDual h Diagram t n m
+
+--------------------------------------------------------------------------------
 -- NaturalDiagrammaticBi -
 
 -- | bi-natural 'Diagrammatic' objects, i.e. 'Diagrammatic' objects @__d__@ where
 -- @__d__@ and also its dual are 'NaturalDiagrammatic'.
-class
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammatic h d (Dual t) n m
-  )
-  => NaturalDiagrammaticBi h d t n m
+type NaturalDiagrammaticBi h d t n m
+  = ( NaturalDiagrammatic h d t n m
+    , NaturalDiagrammaticDual h d t n m
+    )
 
-instance
-  ( CategoryDisjunctive h
-  , HomOrientedDisjunctive h
-  , FunctorialOriented h
-  , t ~ Dual (Dual t)
-  )
-  => NaturalDiagrammaticBi h Diagram t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticBiDual -
-
--- | helper class to avoid undecidable instances.
-class NaturalDiagrammaticBi h d (Dual t) n m => NaturalDiagrammaticBiDual h d t n m
-
-instance
-  ( CategoryDisjunctive h
-  , HomOrientedDisjunctive h
-  , FunctorialOriented h
-  , t ~ Dual (Dual t)
-  )
-  => NaturalDiagrammaticBiDual h Diagram t n m
 --------------------------------------------------------------------------------
 -- prpHomOrientedDisjunctiveS -
 
