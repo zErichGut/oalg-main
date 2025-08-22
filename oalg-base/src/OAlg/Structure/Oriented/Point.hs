@@ -184,6 +184,7 @@ instance ValidablePoint x => ValidablePoint (Pnt x)
 instance XStandardPoint x => XStandardPoint (Pnt x)
 
 instance ApplicativeG Pnt h c => ApplicativeG Pnt (Inv2 h) c where amapG (Inv2 t _) = amapG t
+instance FunctorialG Pnt h c => FunctorialG Pnt (Inv2 h) c
 
 ---------------------------------------------------------------------
 -- idPnt -

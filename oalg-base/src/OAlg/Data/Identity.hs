@@ -49,6 +49,8 @@ import OAlg.Category.Applicative
 newtype Id x = Id x deriving (Show,Read,Eq,Ord,Enum,Bounded,Foldable)
 
 instance ApplicativeG Id h c => ApplicativeG Id (Inv2 h) c where amapG (Inv2 t _) = amapG t
+instance FunctorialG Id h c => FunctorialG Id (Inv2 h) c
+
 --------------------------------------------------------------------------------
 -- formId -
 

@@ -292,7 +292,7 @@ coInitials = coInitialsG
 prpTerminalAndInitialPoint :: Statement
 prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
   And [ prpLimesFactorExist xecT tp
-      , prpLimesFactorExist (xecOp xecT) (coTerminalPoint tp)
+      , prpLimesFactorExist (coXEligibleCone xecT) (coTerminalPoint tp)
       ]
   where
     tp   = terminalPointOrnt T
