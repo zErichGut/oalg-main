@@ -108,6 +108,7 @@ lmsMapS ::
   => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 
+{-
 --------------------------------------------------------------------------------
 -- LimitsG - FunctorialG -
 
@@ -117,7 +118,7 @@ instance NaturalConicBi h c s p d t n m
 
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->)  
-
+-}
 --------------------------------------------------------------------------------
 -- prpLimitsG -
 

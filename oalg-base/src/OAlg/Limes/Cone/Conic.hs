@@ -25,8 +25,8 @@ module OAlg.Limes.Cone.Conic
 
     -- * Natural
   , NaturalConic
-  , NaturalConicDual
-  , NaturalConicBi
+  -- , NaturalConicDual
+  -- , NaturalConicBi
   , crohS
 
   ) where
@@ -134,6 +134,50 @@ class
   => NaturalConic h c s p d t n m
 
 --------------------------------------------------------------------------------
+-- NaturalConic - Mlt - Empty -
+
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeG Cone Mlt p d Empty N0 N0)) h (->) where
+  amapG h = sdbFromCncObj . cnMapS h . sdbToCncObj
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG Cone Mlt p d Empty N0 N0)) h (->)
+  -- from h is FunctorialOriented follows that cnMapS is FunctorialG and hence also
+  -- sdbFromCncObj . cnMapS h . sdbToCncObj
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Mlt p d Empty N0 N0)) (SDualBi (Cone Mlt p d Empty N0 N0))
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h Cone Mlt p d 'Empty N0 N0
+
+--------------------------------------------------------------------------------
+-- NaturalConic - Mlt - Parallel LeftToRight -
+
+
+{-
+--------------------------------------------------------------------------------
 -- NaturalConicDual -
 
 -- | helper class to avoid undecidable instances.
@@ -148,7 +192,8 @@ type NaturalConicBi h c s p d t n m =
   ( NaturalConic h c s p d t n m
   , NaturalConicDual h c s p d t n m
   )
-
+-}
+{-
 --------------------------------------------------------------------------------
 -- ConeG Cone - Mlt - NaturalConic -
 
@@ -264,3 +309,4 @@ instance
   , p ~ Dual (Dual p)
   )  
   => NaturalConic h Cone Dst p d t n m
+-}

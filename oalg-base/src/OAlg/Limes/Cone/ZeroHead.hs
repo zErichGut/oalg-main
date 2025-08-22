@@ -18,10 +18,12 @@
 -- cones having a zero for its first arrow.
 module OAlg.Limes.Cone.ZeroHead
   (
+{-    
     ConeZeroHead(..)
   , cnZeroHead
   , cnKernel, cnCokernel
   , cnDiffHead
+-}
   ) where
 
 import OAlg.Prelude
@@ -167,80 +169,150 @@ czMapCnt h cz@(ConeZeroHead c) = case c of
   
 czMapS ::
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d t n m
+  , NaturalDiagrammatic h d (Dual t) n m
   , p ~ Dual (Dual p)
   )
   => h x y -> SDualBi (ConeZeroHead s p d t n m) x -> SDualBi (ConeZeroHead s p d t n m) y
 czMapS = vmapBi czMapCov czMapCov czMapCnt czMapCnt
 
 --------------------------------------------------------------------------------
--- ZeroHead - NaturalConic -
+-- ZeroHead - NaturalConic - Parallel - LeftToRight
 
 instance
   ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDualBi (ConeZeroHead s p d t n m)) h (->) where
+  => ApplicativeG (SDualBi (ConeZeroHead s p d (Parallel LeftToRight) N2 m)) h (->) where
   amapG = czMapS
-  
-instance
-  ( HomDistributiveDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (ConeZeroHead s p d t n m)) h (->)
-
-instance
-  ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (ConeG ConeZeroHead s p d t n m)) h (->) where
-  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
 
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
   , p ~ Dual (Dual p)
   )
-  => FunctorialG (SDualBi (ConeG ConeZeroHead s p d t n m)) h (->)  
+  => FunctorialG (SDualBi (ConeZeroHead s p d (Parallel LeftToRight) N2 m)) h (->)
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeG ConeZeroHead s p d (Parallel LeftToRight) N2 m)) h (->) where
+  amapG h = sdbFromCncObj . czMapS h . sdbToCncObj
 
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG ConeZeroHead s p d (Parallel LeftToRight) N2 m)) h (->)  
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
-       (SDualBi (ConeG ConeZeroHead Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
+       (SDualBi (ConeG ConeZeroHead Mlt p d (Parallel LeftToRight) N2 m))
+       (SDualBi (Cone Mlt p d (Parallel LeftToRight) N2 m))
 
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
   , p ~ Dual (Dual p)
   )
-  => NaturalConic h ConeZeroHead Mlt p d t n m
+  => NaturalConic h ConeZeroHead Mlt p d (Parallel LeftToRight) N2 m
+
+--------------------------------------------------------------------------------
+-- ZeroHead - NaturalConic - Parallel - RightToLeft
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeZeroHead s p d (Parallel RightToLeft) N2 m)) h (->) where
+  amapG = czMapS
 
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeZeroHead s p d (Parallel RightToLeft) N2 m)) h (->)
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeG ConeZeroHead s p d (Parallel RightToLeft) N2 m)) h (->) where
+  amapG h = sdbFromCncObj . czMapS h . sdbToCncObj
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG ConeZeroHead s p d (Parallel RightToLeft) N2 m)) h (->)  
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
-       (SDualBi (ConeG ConeZeroHead Dst p d t n m)) (SDualBi (Cone Dst p d t n m))
-  
+       (SDualBi (ConeG ConeZeroHead Mlt p d (Parallel RightToLeft) N2 m))
+       (SDualBi (Cone Mlt p d (Parallel RightToLeft) N2 m))
+
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
   , p ~ Dual (Dual p)
   )
-  => NaturalConic h ConeZeroHead Dst p d t n m
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG ConeZeroHead Dst p d (Parallel RightToLeft) N2 m))
+       (SDualBi (Cone Dst p d (Parallel RightToLeft) N2 m))
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h ConeZeroHead Mlt p d (Parallel RightToLeft) N2 m
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) N2 m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) N2 m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h ConeZeroHead Dst p d (Parallel RightToLeft) N2 m
 
 --------------------------------------------------------------------------------
 -- cnDiffHead -
@@ -252,17 +324,19 @@ cnDiffHead :: (Distributive a, Abelian a)
 cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
   DiagramParallelLR _ _ _ -> ConeProjective (dgPrlDiffHead d) t (a:|amap1 toZero as) where a:|as = s
   DiagramParallelRL _ _ _ -> ConeProjective (dgPrlDiffHead d) t (toZero a:|as) where a:|as = s
+  
   where toZero a = zero (root a)
+
 cnDiffHead c@(ConeInjective (DiagramParallelLR _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = toDualOpDst
-  SDualBi (Left1 c')  = amap1 t (SDualBi (Right1 c))
-  cz'                 = cnDiffHead c'
-  SDualBi (Right1 cz) = amap1 f (SDualBi (Left1 cz'))
-cnDiffHead c@(ConeInjective (DiagramParallelRL _ _ _) _ _) = cz where
-  Contravariant2 (Inv2 t f) = toDualOpDst
-  SDualBi (Left1 c')  = amapG t (SDualBi (Right1 c))
+  SDualBi (Left1 c')  = cnMapS t (SDualBi (Right1 c))
   cz'                 = cnDiffHead c'
   SDualBi (Right1 cz) = amapG f (SDualBi (Left1 cz'))
+cnDiffHead c@(ConeInjective (DiagramParallelRL _ _ _) _ _) = cz where
+  Contravariant2 (Inv2 t f) = toDualOpDst
+  SDualBi (Left1 c')  = cnMapS t (SDualBi (Right1 c))
+  cz'                 = cnDiffHead c'
+  SDualBi (Right1 cz) = czMapS f (SDualBi (Left1 cz'))
 
 --------------------------------------------------------------------------------
 -- cnZeroHead -
@@ -285,12 +359,13 @@ cnKernel (ConeZeroHead (ConeProjective d _ cs)) = case d of
 -- cnCokernel
 
 -- | the cokernel cone of a zero headed parallel cone, i.e. the inverse of 'cnZeroHead'.
-cnCokernel :: (p ~ Injective, t ~ Parallel RightToLeft)
+cnCokernel :: (p ~ Injective, t ~ Parallel RightToLeft, n ~ N2)
   => ConeZeroHead Mlt p Diagram t n (m+1) a -> Cone Dst p Diagram t n m a
 cnCokernel cz@(ConeZeroHead _) = c where
   Contravariant2 (Inv2 t f) = toDualOpDst
 
-  SDualBi (Left1 cz') = amap1 t (SDualBi (Right1 cz))
+  SDualBi (Left1 cz') = amapG t (SDualBi (Right1 cz))
   c'                  = cnKernel cz'
-  SDualBi (Right1 c)  = amap1 f (SDualBi (Left1 c'))
+  SDualBi (Right1 c)  = amapG f (SDualBi (Left1 c'))
+
 
