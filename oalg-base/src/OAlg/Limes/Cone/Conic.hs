@@ -186,6 +186,7 @@ instance
   => NaturalConic h Cone Mlt p d t n m
 
 {-
+-- this generic declaration gives rise to propagated dualities!!!!!!
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
@@ -203,6 +204,30 @@ instance
   , p ~ Dual (Dual p)
   )  
   => NaturalConicDual h Cone Mlt p d 'Empty n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d Discrete n m
+  , p ~ Dual (Dual p)
+  )  
+  => NaturalConicDual h Cone Mlt p d Discrete n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d (Chain From) n m
+  , p ~ Dual (Dual p)
+  )  
+  => NaturalConicDual h Cone Mlt p d (Chain To) n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )  
+  => NaturalConicDual h Cone Mlt p d (Chain From) n m
 
 --------------------------------------------------------------------------------
 -- ConeG Cone - Dst - NaturalConic -
