@@ -6,7 +6,7 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- |
@@ -42,11 +42,17 @@ module OAlg.Limes.TerminalAndInitialPoint
   , initialPointOrnt, intsOrnt
 
     -- * Duality
+  , NaturalConicBiEmpty
+  
     -- ** Terminal
   , coTerminals, coTerminalPoint
 
     -- ** Initial
   , coInitials, coInitialPoint
+
+    -- * Proposition
+  , prpTerminalAndInitialPoint
+  
   ) where
 
 import Data.Kind
@@ -121,6 +127,9 @@ trmCone t = ConeProjective DiagramEmpty t Nil
 terminalPointOrnt :: Entity p => p -> TerminalPoint (Orientation p)
 terminalPointOrnt p = lmMltPrjOrnt p trmDiagram
 
+--------------------------------------------------------------------------------
+-- trmsOrnt -
+
 -- | terminals for 'Orientation'.
 trmsOrnt :: Entity p => p -> Terminals (Orientation p)
 trmsOrnt = lmsMltPrjOrnt 
@@ -174,9 +183,18 @@ intCone i = ConeInjective DiagramEmpty i Nil
 initialPointOrnt :: Entity p => p -> InitialPoint (Orientation p)
 initialPointOrnt i = lmMltInjOrnt i intDiagram
 
+--------------------------------------------------------------------------------
+-- intsOrnt -
+
 -- | initials.
 intsOrnt :: Entity p => p -> Initials (Orientation p)
 intsOrnt = lmsMltInjOrnt
+
+--------------------------------------------------------------------------------
+-- NaturalConicBiEmpty -
+
+-- | bi-natural conic for empty diagrammatic objects.
+type NaturalConicBiEmpty p o c d = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d 'Empty N0 N0
 
 --------------------------------------------------------------------------------
 -- coTerminalPoint -
@@ -185,7 +203,7 @@ intsOrnt = lmsMltInjOrnt
 coTerminalPoint ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Projective d 'Empty N0 N0
+  , NaturalConicBiEmpty Projective o c d
   )
   => TerminalPointG c d x -> InitialPointG c d (o x)
 coTerminalPoint trm = int where
@@ -199,7 +217,7 @@ coTerminalPoint trm = int where
 coTerminals ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Projective d 'Empty N0 N0
+  , NaturalConicBiEmpty Projective o c d
   )
   => TerminalsG c d x -> InitialsG c d (o x)
 coTerminals trms = ints where
@@ -213,7 +231,7 @@ coTerminals trms = ints where
 coInitialPoint ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Injective d 'Empty N0 N0
+  , NaturalConicBiEmpty Injective o c d
   )
   => InitialPointG c d x -> TerminalPointG c d (o x)
 coInitialPoint int = trm where
@@ -227,7 +245,7 @@ coInitialPoint int = trm where
 coInitials ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Injective d 'Empty N0 N0
+  , NaturalConicBiEmpty Injective o c d
   )
   => InitialsG c d x -> TerminalsG c d (o x)
 coInitials ints = trms where
@@ -237,6 +255,7 @@ coInitials ints = trms where
 --------------------------------------------------------------------------------
 -- prpTerminalAndInitialPoint -
 
+-- | validity of terminals and initials over @'Orientation' 'Symbol'@.
 prpTerminalAndInitialPoint :: Statement
 prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
   And [ prpLimitsG xecT xecfT xStandard tps
@@ -260,4 +279,3 @@ prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
     xecI'  = coXEligibleCone xecI
     xecfI' = coXEligibleConeFactor xecfI
     ips'   = coInitials ips
-    
