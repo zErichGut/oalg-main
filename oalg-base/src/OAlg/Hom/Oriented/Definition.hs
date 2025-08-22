@@ -192,6 +192,8 @@ instance (HomOriented h, DualisableOriented s o) => HomOrientedDisjunctive (HomD
 -- __Note__ It's not mandatory being an homomorphism!
 class (Functorial h, FunctorialPoint h) => FunctorialOriented h
 
+instance FunctorialOriented h => FunctorialOriented (Inv2 h)
+
 instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomDisj s o h)
 
 --------------------------------------------------------------------------------

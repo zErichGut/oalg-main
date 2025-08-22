@@ -36,7 +36,7 @@ module OAlg.Limes.Definition
 
     -- * X
   , XEligibleCone(..), XStandardEligibleCone(..)
-  , xEligibleConeOrnt, xecOp
+  , xEligibleConeOrnt, coXEligibleCone
   
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt
@@ -273,16 +273,17 @@ class XStandardEligibleCone c s p d t n m x where
   xStandardEligibleCone :: XEligibleCone c s p d t n m x
 
 --------------------------------------------------------------------------------
--- xecOp -
+-- coXEligibleCone -
 
 -- | random variable for eligible cones over 'Op'.
-xecOp ::
+coXEligibleCone ::
   ( Multiplicative x
-  , NaturalConicBi (HomDisjEmpty Mlt Op) c s p d t n m
+  , NaturalConicBi (HomDisjEmpty s Op) c s p d t n m
+  , s ~ Mlt
   )
   => XEligibleCone c s p d t n m x
   -> XEligibleCone c s (Dual p) d (Dual t) n m (Op x)
-xecOp (XEligibleCone xec) = XEligibleCone xecOp where
+coXEligibleCone (XEligibleCone xec) = XEligibleCone xecOp where
   xecOp lOp = xcOp where
     Contravariant2 i@(Inv2 t _) = toDualOpMlt
     SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Left1 lOp))
