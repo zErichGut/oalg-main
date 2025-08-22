@@ -246,17 +246,22 @@ lmMapS ::
   => Inv2 h x y -> SDualBi (LimesG c s p d t n m) x -> SDualBi (LimesG c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
-{-
---------------------------------------------------------------------------------
--- LimesG - FunctorialG -
 
-instance NaturalConicBi h c s p d t n m
-  => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
+--------------------------------------------------------------------------------
+-- LimesG - Empty - FunctorialG -
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => ApplicativeG (SDualBi (LimesG c s Projective d 'Empty n m)) (Inv2 h) (->) where
   amapG = lmMapS
 
-instance NaturalConicBi h c s p d t n m
-  => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
--}
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => FunctorialG (SDualBi (LimesG c s Projective d 'Empty n m)) (Inv2 h) (->)
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -

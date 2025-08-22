@@ -373,6 +373,9 @@ instance
   )
   => FunctorialG (SDualBi (Cone Mlt p d 'Empty n m)) h (->)
 
+--------------------------------------------------------------------------------
+-- Cone - FunctorialG - Mlt - Chain To -
+
 instance
   ( HomMultiplicativeDisjunctive h
   , NaturalDiagrammatic h d (Chain To) n m
@@ -381,15 +384,68 @@ instance
   )
   => ApplicativeG (SDualBi (Cone Mlt p d (Chain To) n m)) h (->) where
   amapG = cnMapS
-{-
+
+--------------------------------------------------------------------------------
+-- Cone - FunctorialG - Mlt - Parallel LeftToRight -
+
 instance
   ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
   , p ~ Dual (Dual p)
   )
-  => FunctorialG (SDualBi (Cone Mlt p d t n m)) h (->)
+  => ApplicativeG (SDualBi (Cone Mlt p d (Parallel LeftToRight) n m)) h (->) where
+  amapG = cnMapS
 
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Mlt p d (Parallel LeftToRight) n m)) h (->)
+
+--------------------------------------------------------------------------------
+-- Cone - FunctorialG - Mlt - Parallel RightToLeft -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (Cone Mlt p d (Parallel RightToLeft) n m)) h (->) where
+  amapG = cnMapS
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Mlt p d (Parallel RightToLeft) n m)) h (->)
+
+--------------------------------------------------------------------------------
+-- Cone - FunctorialG - Dst - Parallel RightToLeft -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (Cone Dst p d (Parallel RightToLeft) n m)) h (->) where
+  amapG = cnMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Dst p d (Parallel RightToLeft) n m)) h (->)
+
+{-
 --------------------------------------------------------------------------------
 -- Cone - FunctorialG - Dst -
 
