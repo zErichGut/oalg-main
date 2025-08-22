@@ -145,8 +145,8 @@ cnEligibleFactorDgm a@(ConeInjective d _ _) b x = case dgTypeRefl d of
   Refl -> cnEligibleFactorDgm a' b' x' where
     Contravariant2 (Inv2 t _) = toDualOpMlt
   
-    SDualBi (Left1 a') = amapG t (SDualBi (Right1 a))
-    SDualBi (Left1 b') = amapG t (SDualBi (Right1 b))
+    SDualBi (Left1 a') = cnMapS t (SDualBi (Right1 a))
+    SDualBi (Left1 b') = cnMapS t (SDualBi (Right1 b))
     x'                 = amap  t x
 
 cnEligibleFactorDgm (ConeKernel _ a) (ConeKernel _ b) x
@@ -156,8 +156,8 @@ cnEligibleFactorDgm a@(ConeCokernel d _) b x = case dgTypeRefl d of
   Refl -> cnEligibleFactorDgm a' b' x' where
     Contravariant2 (Inv2 t _) = toDualOpDst
   
-    SDualBi (Left1 a') = amapG t (SDualBi (Right1 a))
-    SDualBi (Left1 b') = amapG t (SDualBi (Right1 b))
+    SDualBi (Left1 a') = cnMapS t (SDualBi (Right1 a))
+    SDualBi (Left1 b') = cnMapS t (SDualBi (Right1 b))
     x'                 = amap  t x
     
 --------------------------------------------------------------------------------
@@ -246,6 +246,7 @@ lmMapS ::
   => Inv2 h x y -> SDualBi (LimesG c s p d t n m) x -> SDualBi (LimesG c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
+{-
 --------------------------------------------------------------------------------
 -- LimesG - FunctorialG -
 
@@ -255,6 +256,7 @@ instance NaturalConicBi h c s p d t n m
 
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
+-}
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -
@@ -319,13 +321,14 @@ xecMapS ::
   -> SDualBi (XEligibleCone c s p d t n m) x -> SDualBi (XEligibleCone c s p d t n m) y
 xecMapS = vmapBi xecMapCov xecMapCov xecMapCnt xecMapCnt 
 
+{-
 instance NaturalConicBi h c s p d t n m
   => ApplicativeG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->) where
   amapG = xecMapS
 
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->)
-
+-}
 --------------------------------------------------------------------------------
 -- coXEligibleCone -
 
@@ -436,13 +439,14 @@ xecfMapS ::
   -> SDualBi (XEligibleConeFactor c s p d t n m) x -> SDualBi (XEligibleConeFactor c s p d t n m) y
 xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt 
 
+{-
 instance NaturalConicBi h c s p d t n m
   => ApplicativeG (SDualBi (XEligibleConeFactor c s p d t n m)) (Inv2 h) (->) where
   amapG = xecfMapS
 
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (XEligibleConeFactor c s p d t n m)) (Inv2 h) (->)
-
+-}
 --------------------------------------------------------------------------------
 -- coXEligibleConeFactor -
 

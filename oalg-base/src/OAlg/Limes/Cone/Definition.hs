@@ -342,7 +342,7 @@ cnMapS ::
 cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
 
 --------------------------------------------------------------------------------
--- Cone - FunctorialG - Mlt -
+-- Cone - FunctorialG - Mlt - Empty -
 
 instance
   ( HomMultiplicative h
@@ -360,12 +360,28 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
+  , NaturalDiagrammatic h d 'Empty n m
   , p ~ Dual (Dual p)
   )
-  => ApplicativeG (SDualBi (Cone Mlt p d t n m)) h (->) where
+  => ApplicativeG (SDualBi (Cone Mlt p d 'Empty n m)) h (->) where
   amapG = cnMapS
 
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d 'Empty n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Mlt p d 'Empty n m)) h (->)
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammatic h d (Chain From) n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (Cone Mlt p d (Chain To) n m)) h (->) where
+  amapG = cnMapS
+{-
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
@@ -406,6 +422,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Dst p d t n m)) h (->)
+-}
 
 --------------------------------------------------------------------------------
 -- tip -
@@ -626,9 +643,9 @@ cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
 cnDstAdjZero c@(ConeCokernel _ _) = cMlt where
   Contravariant2 (Inv2 t f) = toDualOpDst
   
-  SDualBi (Left1 c')    = amapG t (SDualBi (Right1 c))
+  SDualBi (Left1 c')    = cnMapS t (SDualBi (Right1 c))
   cMlt'                 = cnDstAdjZero c'
-  SDualBi (Right1 cMlt) = amapG f (SDualBi (Left1 cMlt'))
+  SDualBi (Right1 cMlt) = cnMapS f (SDualBi (Left1 cMlt'))
 
 --------------------------------------------------------------------------------
 -- relConeDiagram -
@@ -639,11 +656,11 @@ relConeDiagram (ConeProjective d t cs) = relConePrjMlt d t cs
 relConeDiagram c@(ConeInjective _ _ _) = case cnDiagramTypeRefl c of
   Refl -> relConeDiagram c' where
     Contravariant2 (Inv2 t _) = toDualOpMlt
-    SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
+    SDualBi (Left1 c') = cnMapS t (SDualBi (Right1 c))
 relConeDiagram c@(ConeKernel _ _)      = relConeDiagram (cnDstAdjZero c)
 relConeDiagram c@(ConeCokernel _ _)    = relConeDiagram c' where
   Contravariant2 (Inv2 t _) = toDualOpDst
-  SDualBi (Left1 c') = amapG t (SDualBi (Right1 c))
+  SDualBi (Left1 c') = cnMapS t (SDualBi (Right1 c))
 
 --------------------------------------------------------------------------------
 -- relCone -
