@@ -39,7 +39,7 @@ module OAlg.Limes.Definition
   , xEligibleConeOrnt, coXEligibleCone
   
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
-  , xEligibleConeFactorOrnt
+  , xEligibleConeFactorOrnt, coXEligibleConeFactor
 
   ) where
 
@@ -284,8 +284,9 @@ coXEligibleCone ::
   => XEligibleCone c s p d t n m x
   -> XEligibleCone c s (Dual p) d (Dual t) n m (Op x)
 coXEligibleCone (XEligibleCone xec) = XEligibleCone xecOp where
+  Contravariant2 i@(Inv2 t _) = toDualOpMlt
+  
   xecOp lOp = xcOp where
-    Contravariant2 i@(Inv2 t _) = toDualOpMlt
     SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Left1 lOp))
 
     xcOp = do
@@ -339,7 +340,27 @@ data XEligibleConeFactor c s p d t n m x
 -- | standard random variable for eligible cone factors.
 class XStandardEligibleConeFactor c s p d t n m x where
   xStandardEligibleConeFactor :: XEligibleConeFactor c s p d t n m x
-  
+
+--------------------------------------------------------------------------------
+-- coXEligibleConeFactor -
+
+coXEligibleConeFactor ::
+  ( Multiplicative x
+  , NaturalConicBi (HomDisjEmpty s Op) c s p d t n m  
+  , s ~ Mlt
+  )
+  => XEligibleConeFactor c s p d t n m x
+  -> XEligibleConeFactor c s (Dual p) d (Dual t) n m (Op x)
+coXEligibleConeFactor (XEligibleConeFactor xecf) = XEligibleConeFactor xecfOp where
+  Contravariant2 i@(Inv2 t _) = toDualOpMlt
+    
+  xecfOp lOp = xcfOp where
+    SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Left1 lOp))
+
+    xcfOp = do
+      (c,f) <- xecf l
+      let SDualBi (Left1 cOp) = amapG t (SDualBi (Right1 c)) in return (cOp,Op f)
+
 --------------------------------------------------------------------------------
 -- xEligibleConeFactorOrnt -
 

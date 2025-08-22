@@ -20,7 +20,6 @@
 -- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.
 module OAlg.Limes.TerminalAndInitialPoint
   (
-
     -- * Terminal
     Terminals, TerminalsG
   , TerminalPoint, TerminalPointG
@@ -44,11 +43,9 @@ module OAlg.Limes.TerminalAndInitialPoint
 
     -- * Duality
     -- ** Terminal
-  , coTerminalsG, coTerminalPointG
   , coTerminals, coTerminalPoint
 
     -- ** Initial
-  , coInitialsG, coInitialPointG
   , coInitials, coInitialPoint
   ) where
 
@@ -70,7 +67,6 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Definition
@@ -183,44 +179,18 @@ intsOrnt :: Entity p => p -> Initials (Orientation p)
 intsOrnt = lmsMltInjOrnt
 
 --------------------------------------------------------------------------------
--- coTerminalPointG -
-
--- | co-terminal point over @__x__@, i.e. initial point over @__o x__@. 
-coTerminalPointG ::
-  ( Multiplicative x
-  , TransformableGRefl o Mlt
-  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Projective d 'Empty N0 N0
-  )
-  => TerminalPointG c d x -> InitialPointG c d (o x)
-coTerminalPointG trm = int where
-  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 int) = amapG i (SDualBi (Right1 trm))
-
---------------------------------------------------------------------------------
 -- coTerminalPoint -
 
 -- | co-terminal point over @__x__@, i.e. initial point over @__o x__@. 
 coTerminalPoint ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , DualisableMultiplicative Mlt o
-  )
-  => TerminalPoint x -> InitialPoint (o x)
-coTerminalPoint = coTerminalPointG
-
---------------------------------------------------------------------------------
--- coTerminalsG -
-
--- | co-terminals over @__x__@, i.e. initials over @__o x__@. 
-coTerminalsG ::
-  ( Multiplicative x
-  , TransformableGRefl o Mlt
   , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Projective d 'Empty N0 N0
   )
-  => TerminalsG c d x -> InitialsG c d (o x)
-coTerminalsG trms = ints where
+  => TerminalPointG c d x -> InitialPointG c d (o x)
+coTerminalPoint trm = int where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 ints) = amapG i (SDualBi (Right1 trms))
+  SDualBi (Left1 int) = amapG i (SDualBi (Right1 trm))
 
 --------------------------------------------------------------------------------
 -- coTerminals -
@@ -229,24 +199,12 @@ coTerminalsG trms = ints where
 coTerminals ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , DualisableMultiplicative Mlt o
+  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Projective d 'Empty N0 N0
   )
-  => Terminals x -> Initials (o x)
-coTerminals = coTerminalsG
-
---------------------------------------------------------------------------------
--- coInitialPointG -
-
--- | co-initial point over @__x__@, i.e. terminal point over @__o x__@. 
-coInitialPointG ::
-  ( Multiplicative x
-  , TransformableGRefl o Mlt
-  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Injective d 'Empty N0 N0
-  )
-  => InitialPointG c d x -> TerminalPointG c d (o x)
-coInitialPointG int = trm where
+  => TerminalsG c d x -> InitialsG c d (o x)
+coTerminals trms = ints where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 trm) = amapG i (SDualBi (Right1 int))
+  SDualBi (Left1 ints) = amapG i (SDualBi (Right1 trms))
 
 --------------------------------------------------------------------------------
 -- coInitialPoint -
@@ -255,24 +213,12 @@ coInitialPointG int = trm where
 coInitialPoint ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , DualisableMultiplicative Mlt o
-  )
-  => InitialPoint x -> TerminalPoint (o x)
-coInitialPoint = coInitialPointG
-
---------------------------------------------------------------------------------
--- coInitialsG -
-
--- | co-initials over @__x__@, i.e. terminals over @__o x__@. 
-coInitialsG ::
-  ( Multiplicative x
-  , TransformableGRefl o Mlt
   , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Injective d 'Empty N0 N0
   )
-  => InitialsG c d x -> TerminalsG c d (o x)
-coInitialsG ints = trms where
+  => InitialPointG c d x -> TerminalPointG c d (o x)
+coInitialPoint int = trm where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 trms) = amapG i (SDualBi (Right1 ints))
+  SDualBi (Left1 trm) = amapG i (SDualBi (Right1 int))
 
 --------------------------------------------------------------------------------
 -- coInitials -
@@ -281,19 +227,37 @@ coInitialsG ints = trms where
 coInitials ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , DualisableMultiplicative Mlt o
+  , NaturalConicBi (HomDisjEmpty Mlt o) c Mlt Injective d 'Empty N0 N0
   )
-  => Initials x -> Terminals (o x)
-coInitials = coInitialsG
+  => InitialsG c d x -> TerminalsG c d (o x)
+coInitials ints = trms where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 trms) = amapG i (SDualBi (Right1 ints))
 
 --------------------------------------------------------------------------------
 -- prpTerminalAndInitialPoint -
 
 prpTerminalAndInitialPoint :: Statement
 prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
-  And [ prpLimesFactorExist xecT tp
-      , prpLimesFactorExist (coXEligibleCone xecT) (coTerminalPoint tp)
+  And [ prpLimitsG xecT xecfT xStandard tps
+      , prpLimitsG xecT' xecfT' xStandard tps'
+      , prpLimitsG xecI xecfI xStandard ips
+      , prpLimitsG xecI' xecfI' xStandard ips'
       ]
   where
-    tp   = terminalPointOrnt T
-    xecT = xEligibleConeOrnt xStandard
+    xecT   = xEligibleConeOrnt xStandard
+    xecfT  = xEligibleConeFactorOrnt xStandard 
+    tps    = trmsOrnt T
+
+    xecT'  = coXEligibleCone xecT
+    xecfT' = coXEligibleConeFactor xecfT
+    tps'   = coTerminals tps
+
+    xecI   = xEligibleConeOrnt xStandard
+    xecfI  = xEligibleConeFactorOrnt xStandard
+    ips    = intsOrnt I
+
+    xecI'  = coXEligibleCone xecI
+    xecfI' = coXEligibleConeFactor xecfI
+    ips'   = coInitials ips
+    
