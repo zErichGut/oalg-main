@@ -20,6 +20,7 @@
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
   (
+
     -- * Limes
     Limes, LimesG(..)
   , universalCone, universalFactor
@@ -252,10 +253,7 @@ instance NaturalConicBi h c s p d t n m
   => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
   amapG = lmMapS
 
-instance
-  ( CategoryDisjunctive h
-  , NaturalConicBi h c s p d t n m
-  )
+instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
 
 --------------------------------------------------------------------------------
@@ -273,25 +271,76 @@ class XStandardEligibleCone c s p d t n m x where
   xStandardEligibleCone :: XEligibleCone c s p d t n m x
 
 --------------------------------------------------------------------------------
+-- Duality - XEligibleCone -
+
+type instance Dual1 (XEligibleCone c s p d t n m) = XEligibleCone c s (Dual p) d (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- xecMapCov -
+
+-- | mapping according to a covariant isomorphism.
+xecMapCov ::
+  ( NaturalConic h c s p d t n m
+  )
+  => Variant2 Covariant (Inv2 h) x y
+  -> XEligibleCone c s p d t n m x -> XEligibleCone c s p d t n m y
+xecMapCov (Covariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' where
+  xec' l' = xc' where
+    l = lmMapCov (Covariant2 (inv2 i)) l'
+
+    xc' = do
+      c <- xec l
+      let SDualBi (Right1 c') = amapG t (SDualBi (Right1 c)) in return c'
+
+--------------------------------------------------------------------------------
+-- xecMapCnt -
+
+-- | mapping according to a contravariant isomorphism.
+xecMapCnt ::
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
+  => Variant2 Contravariant (Inv2 h) x y
+  -> XEligibleCone c s p d t n m x -> Dual1 (XEligibleCone c s p d t n m) y
+xecMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' where
+  xec' l' = xc' where
+    l = lmMapCnt (Contravariant2 (inv2 i)) l'
+
+    xc' = do
+      c <- xec l
+      let SDualBi (Left1 c') = amapG t (SDualBi (Right1 c)) in return c'
+
+--------------------------------------------------------------------------------
+-- xecMapS -
+
+xecMapS ::
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
+  => Inv2 h x y
+  -> SDualBi (XEligibleCone c s p d t n m) x -> SDualBi (XEligibleCone c s p d t n m) y
+xecMapS = vmapBi xecMapCov xecMapCov xecMapCnt xecMapCnt 
+
+instance NaturalConicBi h c s p d t n m
+  => ApplicativeG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->) where
+  amapG = xecMapS
+
+instance NaturalConicBi h c s p d t n m
+  => FunctorialG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->) where
+
+--------------------------------------------------------------------------------
 -- coXEligibleCone -
 
 -- | random variable for eligible cones over 'Op'.
 coXEligibleCone ::
   ( Multiplicative x
-  , NaturalConicBi (HomDisjEmpty s Op) c s p d t n m
+  , NaturalConic (HomDisjEmpty s Op) c s p d t n m
+  , NaturalConic (HomDisjEmpty s Op) c s (Dual p) d (Dual t) n m
   , s ~ Mlt
   )
   => XEligibleCone c s p d t n m x
   -> XEligibleCone c s (Dual p) d (Dual t) n m (Op x)
-coXEligibleCone (XEligibleCone xec) = XEligibleCone xecOp where
-  Contravariant2 i@(Inv2 t _) = toDualOpMlt
-  
-  xecOp lOp = xcOp where
-    SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Left1 lOp))
-
-    xcOp = do
-      ec <- xec l
-      let SDualBi (Left1 ecOp) = amapG t (SDualBi (Right1 ec)) in return ecOp 
+coXEligibleCone = xecMapCnt toDualOpMlt
 
 --------------------------------------------------------------------------------
 -- xEligibleConeOrnt -

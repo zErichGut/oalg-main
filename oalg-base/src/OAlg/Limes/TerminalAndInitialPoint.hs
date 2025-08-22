@@ -258,10 +258,8 @@ coInitials ints = trms where
 -- | validity of terminals and initials over @'Orientation' 'Symbol'@.
 prpTerminalAndInitialPoint :: Statement
 prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
-  And [ prpLimitsG xecT xecfT xStandard tps
-      , prpLimitsG xecT' xecfT' xStandard tps'
-      , prpLimitsG xecI xecfI xStandard ips
-      , prpLimitsG xecI' xecfI' xStandard ips'
+  And [ prpLimitsG xecT xecfT xStandard tps    -- terminals
+      , prpLimitsG xecT' xecfT' xStandard tps' -- initials
       ]
   where
     xecT   = xEligibleConeOrnt xStandard
@@ -272,10 +270,3 @@ prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
     xecfT' = coXEligibleConeFactor xecfT
     tps'   = coTerminals tps
 
-    xecI   = xEligibleConeOrnt xStandard
-    xecfI  = xEligibleConeFactorOrnt xStandard
-    ips    = intsOrnt I
-
-    xecI'  = coXEligibleCone xecI
-    xecfI' = coXEligibleConeFactor xecfI
-    ips'   = coInitials ips

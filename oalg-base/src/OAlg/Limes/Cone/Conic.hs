@@ -185,14 +185,24 @@ instance
   )  
   => NaturalConic h Cone Mlt p d t n m
 
+{-
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
   , NaturalDiagrammaticBi h d t n m
-  , NaturalDiagrammaticDualDual h d t n m
+  , NaturalDiagrammaticDualDual h d t n m   -- problematic!!!!!
   , p ~ Dual (Dual p)
   )  
   => NaturalConicDual h Cone Mlt p d t n m
+-}
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d 'Empty n m
+  , p ~ Dual (Dual p)
+  )  
+  => NaturalConicDual h Cone Mlt p d 'Empty n m
 
 --------------------------------------------------------------------------------
 -- ConeG Cone - Dst - NaturalConic -
