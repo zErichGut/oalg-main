@@ -279,9 +279,7 @@ type instance Dual1 (XEligibleCone c s p d t n m) = XEligibleCone c s (Dual p) d
 -- xecMapCov -
 
 -- | mapping according to a covariant isomorphism.
-xecMapCov ::
-  ( NaturalConic h c s p d t n m
-  )
+xecMapCov :: NaturalConic h c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> XEligibleCone c s p d t n m x -> XEligibleCone c s p d t n m y
 xecMapCov (Covariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' where
@@ -326,7 +324,7 @@ instance NaturalConicBi h c s p d t n m
   amapG = xecMapS
 
 instance NaturalConicBi h c s p d t n m
-  => FunctorialG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->) where
+  => FunctorialG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->)
 
 --------------------------------------------------------------------------------
 -- coXEligibleCone -
@@ -383,6 +381,9 @@ instance
 data XEligibleConeFactor c s p d t n m x
   = XEligibleConeFactor (LimesG c s p d t n m x -> X (Cone s p d t n m x, x))
 
+type instance Dual1 (XEligibleConeFactor c s p d t n m)
+  = XEligibleConeFactor c s (Dual p) d (Dual t) n m
+  
 --------------------------------------------------------------------------------
 -- XStandardEligibleConeFactor -
 
@@ -391,15 +392,71 @@ class XStandardEligibleConeFactor c s p d t n m x where
   xStandardEligibleConeFactor :: XEligibleConeFactor c s p d t n m x
 
 --------------------------------------------------------------------------------
+-- xecfMapCov -
+
+xecfMapCov :: NaturalConic h c s p d t n m
+  => Variant2 Covariant (Inv2 h) x y
+  -> XEligibleConeFactor c s p d t n m x
+  -> XEligibleConeFactor c s p d t n m y
+xecfMapCov (Covariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleConeFactor xecf' where
+  xecf' l' = xcf' where
+    l = lmMapCov (Covariant2 (inv2 i)) l'
+
+    xcf' = do
+      (c,f) <- xecf l
+      let SDualBi (Right1 c') = amapG t (SDualBi (Right1 c)) in return (c',amap t f)
+
+--------------------------------------------------------------------------------
+-- xecfMapCnt -
+
+xecfMapCnt ::
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
+  => Variant2 Contravariant (Inv2 h) x y
+  -> XEligibleConeFactor c s p d t n m x
+  -> Dual1 (XEligibleConeFactor c s p d t n m) y
+xecfMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleConeFactor xecf' where
+    
+  xecf' l' = xcf' where
+    l = lmMapCnt (Contravariant2 (inv2 i)) l'
+
+    xcf' = do
+      (c,f) <- xecf l
+      let SDualBi (Left1 cOp) = amapG t (SDualBi (Right1 c)) in return (cOp,amap t f)
+
+--------------------------------------------------------------------------------
+-- xecfMapS -
+
+xecfMapS ::
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
+  => Inv2 h x y
+  -> SDualBi (XEligibleConeFactor c s p d t n m) x -> SDualBi (XEligibleConeFactor c s p d t n m) y
+xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt 
+
+instance NaturalConicBi h c s p d t n m
+  => ApplicativeG (SDualBi (XEligibleConeFactor c s p d t n m)) (Inv2 h) (->) where
+  amapG = xecfMapS
+
+instance NaturalConicBi h c s p d t n m
+  => FunctorialG (SDualBi (XEligibleConeFactor c s p d t n m)) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
 -- coXEligibleConeFactor -
 
 coXEligibleConeFactor ::
   ( Multiplicative x
-  , NaturalConicBi (HomDisjEmpty s Op) c s p d t n m  
+  , NaturalConic (HomDisjEmpty s Op) c s p d t n m
+  , NaturalConic (HomDisjEmpty s Op) c s (Dual p) d (Dual t) n m  
   , s ~ Mlt
   )
   => XEligibleConeFactor c s p d t n m x
   -> XEligibleConeFactor c s (Dual p) d (Dual t) n m (Op x)
+coXEligibleConeFactor = xecfMapCnt toDualOpMlt
+
+{-  
 coXEligibleConeFactor (XEligibleConeFactor xecf) = XEligibleConeFactor xecfOp where
   Contravariant2 i@(Inv2 t _) = toDualOpMlt
     
@@ -409,7 +466,7 @@ coXEligibleConeFactor (XEligibleConeFactor xecf) = XEligibleConeFactor xecfOp wh
     xcfOp = do
       (c,f) <- xecf l
       let SDualBi (Left1 cOp) = amapG t (SDualBi (Right1 c)) in return (cOp,Op f)
-
+-}
 --------------------------------------------------------------------------------
 -- xEligibleConeFactorOrnt -
 
