@@ -47,8 +47,10 @@ module OAlg.Category.Definition
   , Applicative1, amap1
   
     -- * Functorial
+  , amapF
   , Functorial1, Functor1(..)
   , FunctorialG, FunctorG(..)
+  
 
     -- * Forget
   , Forget(..)
@@ -277,6 +279,13 @@ instance Category (->) where
 class ( Category a, Category b, ApplicativeG t a b
       , TransformableG t (ObjectClass a) (ObjectClass b)
       ) => FunctorialG t a b
+
+--------------------------------------------------------------------------------
+-- amapF -
+
+-- | functorial application.
+amapF :: FunctorialG t a b => a x y -> b (t x) (t y)
+amapF = amapG
 
 --------------------------------------------------------------------------------
 -- Op2 -

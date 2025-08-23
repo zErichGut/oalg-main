@@ -18,12 +18,10 @@
 -- cones having a zero for its first arrow.
 module OAlg.Limes.Cone.ZeroHead
   (
-{-    
     ConeZeroHead(..)
   , cnZeroHead
   , cnKernel, cnCokernel
   , cnDiffHead
--}
   ) where
 
 import OAlg.Prelude
@@ -177,7 +175,7 @@ czMapS ::
 czMapS = vmapBi czMapCov czMapCov czMapCnt czMapCnt
 
 --------------------------------------------------------------------------------
--- ZeroHead - NaturalConic - Parallel - LeftToRight
+-- NaturalConic - Parallel - LeftToRight
 
 instance
   ( HomDistributiveDisjunctive h
@@ -236,7 +234,7 @@ instance
   => NaturalConic h ConeZeroHead Mlt p d (Parallel LeftToRight) N2 m
 
 --------------------------------------------------------------------------------
--- ZeroHead - NaturalConic - Parallel - RightToLeft
+-- NaturalConic - Parallel - RightToLeft
 
 instance
   ( HomDistributiveDisjunctive h
@@ -329,14 +327,14 @@ cnDiffHead (ConeProjective d t s) = ConeZeroHead $ case d of
 
 cnDiffHead c@(ConeInjective (DiagramParallelLR _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = toDualOpDst
-  SDualBi (Left1 c')  = cnMapS t (SDualBi (Right1 c))
+  SDualBi (Left1 c')  = amapF t (SDualBi (Right1 c))
   cz'                 = cnDiffHead c'
-  SDualBi (Right1 cz) = amapG f (SDualBi (Left1 cz'))
+  SDualBi (Right1 cz) = amapF f (SDualBi (Left1 cz'))
 cnDiffHead c@(ConeInjective (DiagramParallelRL _ _ _) _ _) = cz where
   Contravariant2 (Inv2 t f) = toDualOpDst
-  SDualBi (Left1 c')  = cnMapS t (SDualBi (Right1 c))
+  SDualBi (Left1 c')  = amapF t (SDualBi (Right1 c))
   cz'                 = cnDiffHead c'
-  SDualBi (Right1 cz) = czMapS f (SDualBi (Left1 cz'))
+  SDualBi (Right1 cz) = amapF f (SDualBi (Left1 cz'))
 
 --------------------------------------------------------------------------------
 -- cnZeroHead -
@@ -364,8 +362,8 @@ cnCokernel :: (p ~ Injective, t ~ Parallel RightToLeft, n ~ N2)
 cnCokernel cz@(ConeZeroHead _) = c where
   Contravariant2 (Inv2 t f) = toDualOpDst
 
-  SDualBi (Left1 cz') = amapG t (SDualBi (Right1 cz))
+  SDualBi (Left1 cz') = amapF t (SDualBi (Right1 cz))
   c'                  = cnKernel cz'
-  SDualBi (Right1 c)  = amapG f (SDualBi (Left1 c'))
+  SDualBi (Right1 c)  = amapF f (SDualBi (Left1 c'))
 
 

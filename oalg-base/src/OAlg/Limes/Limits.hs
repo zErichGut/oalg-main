@@ -108,17 +108,41 @@ lmsMapS ::
   => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 
-{-
---------------------------------------------------------------------------------
--- LimitsG - FunctorialG -
 
-instance NaturalConicBi h c s p d t n m
-  => ApplicativeG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->) where
+--------------------------------------------------------------------------------
+-- LimitsG - Projective - Empty - FunctorialG -
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => ApplicativeG (SDualBi (LimitsG c s Projective d 'Empty n m)) (Inv2 h) (->) where
   amapG = lmsMapS
 
-instance NaturalConicBi h c s p d t n m
-  => FunctorialG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->)  
--}
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => FunctorialG (SDualBi (LimitsG c s Projective d 'Empty n m)) (Inv2 h) (->)  
+
+--------------------------------------------------------------------------------
+-- LimitsG - Injective - Empty - FunctorialG -
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => ApplicativeG (SDualBi (LimitsG c s Injective d 'Empty n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => FunctorialG (SDualBi (LimitsG c s Injective d 'Empty n m)) (Inv2 h) (->)  
+
 --------------------------------------------------------------------------------
 -- prpLimitsG -
 

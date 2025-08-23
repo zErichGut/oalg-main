@@ -45,9 +45,11 @@ module OAlg.Limes.TerminalAndInitialPoint
     
     -- ** Terminal
   , coTerminals, coTerminalPoint
+  , coTerminalsG, coTerminalPointG
 
     -- ** Initial
   , coInitials, coInitialPoint
+  , coInitialsG, coInitialPointG
 
     -- * Proposition
   , prpTerminalAndInitialPoint
@@ -211,7 +213,7 @@ coTerminalPointG ::
   => TerminalPointG c d x -> InitialPointG c d (o x)
 coTerminalPointG trm = int where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 int) = amapG i (SDualBi (Right1 trm))
+  SDualBi (Left1 int) = amapF i (SDualBi (Right1 trm))
 
 --------------------------------------------------------------------------------
 -- coTerminalPoint -
@@ -238,7 +240,7 @@ coTerminalsG ::
   => TerminalsG c d x -> InitialsG c d (o x)
 coTerminalsG trms = ints where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 ints) = lmsMapS i (SDualBi (Right1 trms))
+  SDualBi (Left1 ints) = amapF i (SDualBi (Right1 trms))
 
 --------------------------------------------------------------------------------
 -- coTerminals -
@@ -256,15 +258,44 @@ coTerminals = coTerminalsG
 -- coInitialPoint -
 
 -- | co-initial point over @__x__@, i.e. terminal point over @__o x__@. 
+coInitialPointG ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , NaturalConicEmpty Projective o c d
+  , NaturalConicEmpty Injective o c d
+  )
+  => InitialPointG c d x -> TerminalPointG c d (o x)
+coInitialPointG int = trm where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 trm) = amapF i (SDualBi (Right1 int))
+
+
+--------------------------------------------------------------------------------
+-- coInitialPoint -
+
+-- | co-initial point over @__x__@, i.e. terminal point over @__o x__@. 
 coInitialPoint ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
   , DualisableMultiplicative Mlt o
   )
   => InitialPoint x -> TerminalPoint (o x)
-coInitialPoint int = trm where
+coInitialPoint = coInitialPointG
+
+--------------------------------------------------------------------------------
+-- coInitials -
+
+-- | co-initials over @__x__@, i.e. terminals over @__o x__@. 
+coInitialsG ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , NaturalConicEmpty Projective o c d
+  , NaturalConicEmpty Injective o c d
+  )
+  => InitialsG c d x -> TerminalsG c d (o x)
+coInitialsG ints = trms where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 trm) = lmMapS i (SDualBi (Right1 int))
+  SDualBi (Left1 trms) = amapF i (SDualBi (Right1 ints))
 
 --------------------------------------------------------------------------------
 -- coInitials -
@@ -276,9 +307,7 @@ coInitials ::
   , DualisableMultiplicative Mlt o
   )
   => Initials x -> Terminals (o x)
-coInitials ints = trms where
-  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
-  SDualBi (Left1 trms) = lmsMapS i (SDualBi (Right1 ints))
+coInitials = coInitialsG
 
 --------------------------------------------------------------------------------
 -- prpTerminalAndInitialPoint -

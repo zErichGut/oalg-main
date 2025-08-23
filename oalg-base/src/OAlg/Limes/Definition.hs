@@ -248,7 +248,7 @@ lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
 
 --------------------------------------------------------------------------------
--- LimesG - Empty - FunctorialG -
+-- LimesG - Projective - Empty - FunctorialG -
 
 instance
   ( NaturalConic h c s Projective d 'Empty n m
@@ -262,6 +262,22 @@ instance
   , NaturalConic h c s Injective d 'Empty n m
   )
   => FunctorialG (SDualBi (LimesG c s Projective d 'Empty n m)) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
+-- LimesG - Injective - Empty - FunctorialG -
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => ApplicativeG (SDualBi (LimesG c s Injective d 'Empty n m)) (Inv2 h) (->) where
+  amapG = lmMapS
+
+instance
+  ( NaturalConic h c s Projective d 'Empty n m
+  , NaturalConic h c s Injective d 'Empty n m
+  )
+  => FunctorialG (SDualBi (LimesG c s Injective d 'Empty n m)) (Inv2 h) (->)
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -
