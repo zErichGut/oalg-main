@@ -32,6 +32,7 @@ module OAlg.Limes.MinimaAndMaxima
   , maximaTo, maximaFrom, maximaTo', maximaFrom'
 
     -- * Duality
+  , NaturalConicChain
   , coMinimaGTo, coMinimaGFrom
   )
   where
@@ -155,6 +156,7 @@ type Maxima t n = MaximaG Cone Diagram t n
 --------------------------------------------------------------------------------
 -- NaturalConicChain -
 
+-- | natural conic for chain diagrammatic objects.
 type NaturalConicChain p t o c d n
   = NaturalConic (HomDisjEmpty Mlt o) c Mlt p d (Chain t) (n+1) n
 

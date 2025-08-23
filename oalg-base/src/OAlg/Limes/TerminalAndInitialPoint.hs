@@ -42,7 +42,7 @@ module OAlg.Limes.TerminalAndInitialPoint
   , initialPointOrnt, intsOrnt
 
     -- * Duality
-    
+  , NaturalConicEmpty    
     -- ** Terminal
   , coTerminals, coTerminalPoint
   , coTerminalsG, coTerminalPointG
@@ -197,7 +197,7 @@ intsOrnt = lmsMltInjOrnt
 --------------------------------------------------------------------------------
 -- NaturalConicEmpty -
 
--- | bi-natural conic for empty diagrammatic objects.
+-- | natural conic for empty diagrammatic objects.
 type NaturalConicEmpty p o c d = NaturalConic (HomDisjEmpty Mlt o) c Mlt p d 'Empty N0 N0
 
 --------------------------------------------------------------------------------
