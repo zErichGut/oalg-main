@@ -29,8 +29,6 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Natural
     
   , NaturalDiagrammatic
-  -- , NaturalDiagrammaticDual
-  -- , NaturalDiagrammaticBi
   , drohS
   , NaturalDiagrammaticW
   
@@ -162,7 +160,7 @@ class
   => NaturalDiagrammatic h d t n m
 
 --------------------------------------------------------------------------------
--- DiagramG Diagram - NaturalDiagrammatic -
+-- - NaturalDiagrammatic - Diagram -
 
 instance
   ( HomOrientedDisjunctive h
@@ -200,31 +198,7 @@ instance
 data NaturalDiagrammaticW h d t n m where
   NaturalDiagrammaticW :: NaturalDiagrammatic h d t n m
     => NaturalDiagrammaticW h d t n m
-{-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticDual -
 
--- | helper class to avoid undecidable instances.
-class NaturalDiagrammatic h d (Dual t) n m => NaturalDiagrammaticDual h d t n m
-
-instance
-  ( CategoryDisjunctive h
-  , HomOrientedDisjunctive h
-  , FunctorialOriented h
-  , t ~ Dual (Dual t)
-  )
-  => NaturalDiagrammaticDual h Diagram t n m
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticBi -
-
--- | bi-natural 'Diagrammatic' objects, i.e. 'Diagrammatic' objects @__d__@ where
--- @__d__@ and also its dual are 'NaturalDiagrammatic'.
-type NaturalDiagrammaticBi h d t n m
-  = ( NaturalDiagrammatic h d t n m
-    , NaturalDiagrammaticDual h d t n m
-    )
--}
 --------------------------------------------------------------------------------
 -- prpHomOrientedDisjunctiveS -
 

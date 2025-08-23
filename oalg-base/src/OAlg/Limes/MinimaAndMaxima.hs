@@ -189,6 +189,20 @@ coMinimaGFrom min = max where
   SDualBi (Left1 max) = amapF i (SDualBi (Right1 min))
 
 --------------------------------------------------------------------------------
+-- coMaximaFrom -
+
+coMaximaGFrom ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , NaturalConicChain Projective To o c d n
+  , NaturalConicChain Injective From o c d n
+  )
+  => MaximaG c d From n x -> MinimaG c d To n (o x)
+coMaximaGFrom min = max where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 max) = amapF i (SDualBi (Right1 min))
+
+--------------------------------------------------------------------------------
 -- maxima -
 
 maximaTo :: Multiplicative x => Maxima To n x
@@ -209,3 +223,25 @@ maximaTo' _ _ = maximaTo
 maximaFrom' :: Multiplicative x => p n -> f x -> Maxima From n x
 maximaFrom' _ _ = maximaFrom
 
+--------------------------------------------------------------------------------
+-- prpMinimaAndMaxima -
+
+prpMinimaAndMaxima :: N -> Statement
+prpMinimaAndMaxima n = case someNatural n of
+  SomeNatural n' -> And [ prpLimitsG xecMaxTo xecfMaxTo xStandard maxTo
+                        , prpLimitsG xecMaxFm xecfMaxFm xStandard maxFm
+                        , prpLimitsG xecMaxFm' xecfMaxFm' xStandard maxFm'
+                        ]
+    where
+      maxTo     = maximaTo' n' (Proxy :: Proxy OS)
+      xecMaxTo  = xEligibleConeOrnt xStandard
+      xecfMaxTo = xEligibleConeFactorOrnt xStandard
+
+      maxFm     = maximaFrom' n' (Proxy :: Proxy OS)
+      xecMaxFm  = xEligibleConeOrnt xStandard
+      xecfMaxFm = xEligibleConeFactorOrnt xStandard
+
+      Contravariant2 i = toDualOpMlt
+      SDualBi (Left1 maxFm') = amapG i (SDualBi (Right1 maxFm))
+      xecMaxFm'  = coXEligibleCone xecMaxFm
+      xecfMaxFm' = coXEligibleConeFactor xecfMaxFm
