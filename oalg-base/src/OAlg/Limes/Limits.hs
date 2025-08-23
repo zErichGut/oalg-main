@@ -110,7 +110,7 @@ lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 
 
 --------------------------------------------------------------------------------
--- LimitsG - Projective - Empty - FunctorialG -
+-- FunctorialG - Projective - Empty - 
 
 instance
   ( NaturalConic h c s Projective d 'Empty n m
@@ -127,7 +127,7 @@ instance
   => FunctorialG (SDualBi (LimitsG c s Projective d 'Empty n m)) (Inv2 h) (->)  
 
 --------------------------------------------------------------------------------
--- LimitsG - Injective - Empty - FunctorialG -
+-- FunctorialG - Injective - Empty -
 
 instance
   ( NaturalConic h c s Projective d 'Empty n m
@@ -142,6 +142,71 @@ instance
   , NaturalConic h c s Injective d 'Empty n m
   )
   => FunctorialG (SDualBi (LimitsG c s Injective d 'Empty n m)) (Inv2 h) (->)  
+
+--------------------------------------------------------------------------------
+-- FunctorialG - Projective - Chain To - 
+
+instance
+  ( NaturalConic h c s Projective d (Chain To) n m
+  , NaturalConic h c s Injective d (Chain From) n m
+  )
+  => ApplicativeG (SDualBi (LimitsG c s Projective d (Chain To) n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+
+instance
+  ( NaturalConic h c s Projective d (Chain To) n m
+  , NaturalConic h c s Injective d (Chain From) n m
+  )
+  => FunctorialG (SDualBi (LimitsG c s Projective d (Chain To) n m)) (Inv2 h) (->)  
+
+--------------------------------------------------------------------------------
+-- FunctorialG - Injective - Chain To - 
+
+instance
+  ( NaturalConic h c s Injective d (Chain To) n m
+  , NaturalConic h c s Projective d (Chain From) n m
+  )
+  => ApplicativeG (SDualBi (LimitsG c s Injective d (Chain To) n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+instance
+  ( NaturalConic h c s Injective d (Chain To) n m
+  , NaturalConic h c s Projective d (Chain From) n m
+  )
+  => FunctorialG (SDualBi (LimitsG c s Injective d (Chain To) n m)) (Inv2 h) (->)  
+
+--------------------------------------------------------------------------------
+-- FunctorialG - Projective - Chain From - 
+
+instance
+  ( NaturalConic h c s Projective d (Chain From) n m
+  , NaturalConic h c s Injective d (Chain To) n m
+  )
+  => ApplicativeG (SDualBi (LimitsG c s Projective d (Chain From) n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+instance
+  ( NaturalConic h c s Projective d (Chain From) n m
+  , NaturalConic h c s Injective d (Chain To) n m
+  )
+  => FunctorialG (SDualBi (LimitsG c s Projective d (Chain From) n m)) (Inv2 h) (->)  
+
+--------------------------------------------------------------------------------
+-- FunctorialG - Injective - Chain From - 
+
+instance
+  ( NaturalConic h c s Injective d (Chain From) n m
+  , NaturalConic h c s Projective d (Chain To) n m 
+  )
+  => ApplicativeG (SDualBi (LimitsG c s Injective d (Chain From) n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+instance
+  ( NaturalConic h c s Injective d (Chain From) n m
+  , NaturalConic h c s Projective d (Chain To) n m 
+  )
+  => FunctorialG (SDualBi (LimitsG c s Injective d (Chain From) n m)) (Inv2 h) (->)  
 
 --------------------------------------------------------------------------------
 -- prpLimitsG -

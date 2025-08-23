@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Limes.MinimaAndMaxima
@@ -17,30 +17,46 @@
 module OAlg.Limes.MinimaAndMaxima
   (
     -- * Minima
-    Minima, Minimum, MinimumCone, MinimumDiagram
-  , minimaTo, minimaFrom
+    Minima, MinimaG
+  , Minimum, MinimumG
+  , MinimumCone, MinimumConic
+  , MinimumDiagram, MinimumDiagrammatic
+  , minimaTo, minimaGTo
+  , minimaFrom, minimaGFrom
 
     -- * Maxima
-  , Maxima, Maximum, MaximumCone, MaximumDiagram
-  , maximaTo, maximaTo', maximaFrom, maximaFrom'
+  , Maxima, MaximaG
+  , Maximum, MaximumG
+  , MaximumCone, MaximumConic
+  , MaximumDiagram, MaximumDiagrammatic
+  , maximaTo, maximaFrom, maximaTo', maximaFrom'
 
     -- * Duality
-  , maxLimitsDualityTo, maxLimitsDualityFrom
-
+  , coMinimaGTo, coMinimaGFrom
   )
   where
 
 import Data.Typeable
+import Data.Kind
 
 import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
+import OAlg.Data.Variant
 
 import OAlg.Entity.Natural
 import OAlg.Entity.Diagram
 
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
+import OAlg.Hom.Definition
+import OAlg.Hom.Multiplicative
+
 import OAlg.Limes.Cone
-import OAlg.Limes.OpDuality
+import OAlg.Limes.Cone.FactorChain
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 
@@ -48,84 +64,146 @@ import OAlg.Limes.Limits
 --------------------------------------------------------------------------------
 -- Minima -
 
+-- | 'Diagrammatic' object for a minimum.
+type MinimumDiagrammatic d t n = d (Chain t) (n+1) n :: Type -> Type
+
 -- | 'Diagram' for a minimum.
-type MinimumDiagram t n = Diagram (Chain t) (n+1) n
+type MinimumDiagram t n = MinimumDiagrammatic Diagram t n
+
+-- | 'Conic' object for a minimum.
+type MinimumConic c (d :: DiagramType -> N' -> N' -> Type -> Type) t n
+  = c Mlt Projective d (Chain t) (n+1) n :: Type -> Type
 
 -- | 'Cone' for a minimum.
-type MinimumCone t n = Cone Mlt Projective (Chain t) (n+1) n
+type MinimumCone t n = MinimumConic Cone Diagram t n
+
+-- | generic minimum as 'LimesG'.
+type MinimumG c d t n = LimesG c Mlt Projective d (Chain t) (n+1) n
 
 -- | minimum as 'Limes'.
-type Minimum t n = Limes Mlt Projective (Chain t) (n+1) n
+type Minimum t n = MinimumG Cone Diagram t n
 
 -- | generic minima for a 'Multiplicative' structure.
-type GenericMinima l t n = Limits l Mlt Projective (Chain t) (n+1) n
+type MinimaG c d t n = LimitsG c Mlt Projective d (Chain t) (n+1) n
 
 -- | minima for a 'Multiplicative' structure.
-type Minima t n = GenericMinima Limes t n
+type Minima t n = MinimaG Cone Diagram t n
 
 --------------------------------------------------------------------------------
 -- minima -
 
--- | minima according to @'Chain' 'To'@.
-minimaTo :: Multiplicative a => Minima To n a
-minimaTo = Limits lMin where
-  lMin :: Multiplicative a => MinimumDiagram To n a -> Minimum To n a
-  lMin d = LimesProjective l u where
-    l = cnPrjChainTo (FactorChain (one (chnToStart d)) d)
+-- | generic minima according to @'Chain' 'To'@.
+minimaGTo ::
+  ( Multiplicative x
+  , Diagrammatic d
+  ) => MinimaG Cone d To n x
+minimaGTo = LimitsG lMin where
+  lMin :: (Multiplicative x, Diagrammatic d)
+       => MinimumDiagrammatic d To n x -> MinimumG Cone d To n x
+  lMin d = LimesGProjective l u where
+    l = cnPrjChainTo (FactorChain (one (chnToStart $ diagram d)) d)
     u c = f where FactorChain f _ = cnPrjChainToInv c
 
--- | minima according to @'Chain' 'From'@.
-minimaFrom :: Multiplicative a => Minima From n a
-minimaFrom = Limits lMin where
-  lMin :: Multiplicative a => MinimumDiagram From n a -> Minimum From n a
-  lMin d = LimesProjective l u where
-    l = cnPrjChainFrom (FactorChain (one (chnFromStart d)) d)
+-- | minima according to @'Chain' 'To'@.
+minimaTo :: Multiplicative x => Minima To n x
+minimaTo = minimaGTo
+
+-- | generic minima according to @'Chain' 'From'@.
+minimaGFrom ::
+  ( Multiplicative x
+  , Diagrammatic d
+  ) => MinimaG Cone d From n x
+minimaGFrom = LimitsG lMin where
+  lMin :: ( Multiplicative x, Diagrammatic d)
+       => MinimumDiagrammatic d From n x -> MinimumG Cone d From n x
+  lMin d = LimesGProjective l u where
+    l = cnPrjChainFrom (FactorChain (one (chnFromStart $ diagram d)) d)
     u c = f where FactorChain f _ = cnPrjChainFromInv c
+
+-- | minima according to @'Chain' 'From'@.
+minimaFrom :: Multiplicative x => Minima From n x
+minimaFrom = minimaGFrom
 
 --------------------------------------------------------------------------------
 -- Maxima -
 
+-- | 'Diagrammatic' object for a maximum.
+type MaximumDiagrammatic d t n = d (Chain t) (n+1) n :: Type -> Type
+
 -- | 'Diagram' for a maximum.
-type MaximumDiagram t n = Diagram (Chain t) (n+1) n
+type MaximumDiagram t n = MaximumDiagrammatic Diagram t n
+
+-- | 'Conic' object for a maximum.
+type MaximumConic c (d :: DiagramType -> N' -> N' -> Type -> Type) t n
+  = c Mlt Injective d (Chain t) (n+1) n :: Type -> Type
 
 -- | 'Cone' for a maximum.
-type MaximumCone t n = Cone Mlt Injective (Chain t) (n+1) n
+type MaximumCone t n = MaximumConic Cone Diagram t n
 
--- | maximum as a 'Limes'.
-type Maximum t n = Limes Mlt Injective (Chain t) (n+1) n
+-- | generic maximum as 'LimesG'.
+type MaximumG c d t n = LimesG c Mlt Injective d (Chain t) (n+1) n
+
+-- | maximum as 'Limes'.
+type Maximum t n = MaximumG Cone Diagram t n
 
 -- | generic maxima for a 'Multiplicative' structure.
-type GenericMaxima l t n = Limits l Mlt Injective (Chain t) (n+1) n
+type MaximaG c d t n = LimitsG c Mlt Injective d (Chain t) (n+1) n
 
 -- | maxima for a 'Multiplicative' structure.
-type Maxima t n = GenericMaxima Limes t n
+type Maxima t n = MaximaG Cone Diagram t n
 
 --------------------------------------------------------------------------------
--- Duality - Max -
+-- NaturalConicChain -
 
--- | duality between @'Maxima' 'To'@ and @'Minima' 'From'@.
-maxLimitsDualityTo :: OpDuality (Limits Limes) Mlt (Maxima To n) (Minima From n)
-maxLimitsDualityTo = OpDuality Refl Refl
+type NaturalConicChain p t o c d n
+  = NaturalConic (HomDisjEmpty Mlt o) c Mlt p d (Chain t) (n+1) n
 
--- | duality between @'Maxima' 'From'@ and @'Minima' 'To'@.
-maxLimitsDualityFrom :: OpDuality (Limits Limes) Mlt (Maxima From n) (Minima To n)
-maxLimitsDualityFrom = OpDuality Refl Refl
+--------------------------------------------------------------------------------
+-- coMinimaTo -
+
+coMinimaGTo ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , NaturalConicChain Projective To o c d n
+  , NaturalConicChain Injective From o c d n
+  )
+  => MinimaG c d To n x -> MaximaG c d From n (o x)
+coMinimaGTo min = max where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 max) = amapF i (SDualBi (Right1 min))
+
+--------------------------------------------------------------------------------
+-- coMinimaFrom -
+
+coMinimaGFrom ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , NaturalConicChain Projective From o c d n
+  , NaturalConicChain Injective To o c d n
+  )
+  => MinimaG c d From n x -> MaximaG c d To n (o x)
+coMinimaGFrom min = max where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 max) = amapF i (SDualBi (Right1 min))
 
 --------------------------------------------------------------------------------
 -- maxima -
 
--- | maxima according to @'Chain' 'To'@.
-maximaTo :: Multiplicative a => Maxima To n a
-maximaTo = lmsFromOp ConeStructMlt maxLimitsDualityTo minimaFrom
+maximaTo :: Multiplicative x => Maxima To n x
+maximaTo = maxs where
+  Contravariant2 i = toDualOpMlt
+  SDualBi (Left1 maxs) = amapF (inv2 i) (SDualBi (Right1 minimaFrom)) 
 
--- | maxima according to @'Chain' 'From'@.
-maximaFrom :: Multiplicative a => Maxima From n a
-maximaFrom = lmsFromOp ConeStructMlt maxLimitsDualityFrom minimaTo
+maximaFrom :: Multiplicative x => Maxima From n x
+maximaFrom = maxs where
+  Contravariant2 i = toDualOpMlt
+  SDualBi (Left1 maxs) = amapF (inv2 i) (SDualBi (Right1 minimaTo)) 
 
 -- | maxima according to @'Chain' 'To'@ given by two proxy types.
-maximaTo' :: Multiplicative a => p n -> f a -> Maxima To n a
+maximaTo' :: Multiplicative x => p n -> f x -> Maxima To n x
 maximaTo' _ _ = maximaTo
 
 -- | maxima according to @'Chain' 'From'@ given by two proxy types.
-maximaFrom' :: Multiplicative a => p n -> f a -> Maxima From n a
+maximaFrom' :: Multiplicative x => p n -> f x -> Maxima From n x
 maximaFrom' _ _ = maximaFrom
+

@@ -134,8 +134,7 @@ class
   => NaturalConic h c s p d t n m
 
 --------------------------------------------------------------------------------
--- NaturalConic - Mlt - Empty -
-
+-- - Mlt - Empty -
 
 instance
   ( HomMultiplicativeDisjunctive h
@@ -173,8 +172,83 @@ instance
   => NaturalConic h Cone Mlt p d 'Empty N0 N0
 
 --------------------------------------------------------------------------------
--- NaturalConic - Mlt - Parallel LeftToRight -
+-- Mlt - Parallel LeftToRight -
 
+--------------------------------------------------------------------------------
+-- Mlt - Chain From -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeG Cone Mlt p d (Chain From) n m)) h (->) where
+  amapG h = sdbFromCncObj . cnMapS h . sdbToCncObj
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG Cone Mlt p d (Chain From) n m)) h (->)
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Mlt p d (Chain From) n m))
+       (SDualBi (Cone Mlt p d (Chain From) n m))
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h Cone Mlt p d (Chain From) n m
+
+--------------------------------------------------------------------------------
+-- Mlt - Chain To -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeG Cone Mlt p d (Chain To) n m)) h (->) where
+  amapG h = sdbFromCncObj . cnMapS h . sdbToCncObj
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG Cone Mlt p d (Chain To) n m)) h (->)
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Mlt p d (Chain To) n m))
+       (SDualBi (Cone Mlt p d (Chain To) n m))
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h Cone Mlt p d (Chain To) n m
 
 {-
 --------------------------------------------------------------------------------

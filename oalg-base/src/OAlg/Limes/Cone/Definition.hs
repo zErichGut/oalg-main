@@ -225,9 +225,9 @@ cnMapMltCov ::
 cnMapMltCov (Covariant2 h) c            = case tauMlt (range h) of
   Struct                  -> case c of
     ConeProjective d t as -> ConeProjective d' (pmap h t) (amap1 (amap h) as) where
-      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
     ConeInjective d t as  -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
-      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a 'Distributive' covariant homomorphism.
 cnMapDstCov ::
@@ -238,9 +238,9 @@ cnMapDstCov ::
 cnMapDstCov (Covariant2 h) c = case tauDst (range h) of
   Struct                    -> case c of
     ConeKernel d a          -> ConeKernel d' (amap h a) where
-      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
     ConeCokernel d a        -> ConeCokernel d' (amap h a) where
-      SDualBi (Right1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 cnMapCov ::
   ( HomD s h
@@ -301,9 +301,9 @@ cnMapMltCnt ::
 cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
   Struct                        -> case c of
     ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
-      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
     ConeInjective d t as        -> ConeProjective d' (pmap h t) (amap1 (amap h) as) where
-      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a 'Distributive' contravariant homomorphism.
 cnMapDstCnt ::
@@ -315,9 +315,9 @@ cnMapDstCnt ::
 cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
   Struct                        -> case c of
     ConeKernel d a              -> ConeCokernel d' (amap h a) where
-      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
     ConeCokernel d a            -> ConeKernel  d' (amap h a) where
-      SDualBi (Left1 (DiagramG d')) = amapG h (SDualBi (Right1 (DiagramG d)))
+      SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a contravariant homomorphism.
 cnMapCnt :: (HomD s h, NaturalDiagrammatic h d t n m)
@@ -374,7 +374,7 @@ instance
   => FunctorialG (SDualBi (Cone Mlt p d 'Empty n m)) h (->)
 
 --------------------------------------------------------------------------------
--- Cone - FunctorialG - Mlt - Chain To -
+-- Mlt - Chain To -
 
 instance
   ( HomMultiplicativeDisjunctive h
@@ -385,8 +385,36 @@ instance
   => ApplicativeG (SDualBi (Cone Mlt p d (Chain To) n m)) h (->) where
   amapG = cnMapS
 
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammatic h d (Chain From) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Mlt p d (Chain To) n m)) h (->)
+
 --------------------------------------------------------------------------------
--- Cone - FunctorialG - Mlt - Parallel LeftToRight -
+-- Mlt - Chain From -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammatic h d (Chain From) n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (Cone Mlt p d (Chain From) n m)) h (->) where
+  amapG = cnMapS
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammatic h d (Chain From) n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Mlt p d (Chain From) n m)) h (->)
+
+--------------------------------------------------------------------------------
+-- - Mlt - Parallel LeftToRight -
 
 instance
   ( HomMultiplicativeDisjunctive h
@@ -406,7 +434,7 @@ instance
   => FunctorialG (SDualBi (Cone Mlt p d (Parallel LeftToRight) n m)) h (->)
 
 --------------------------------------------------------------------------------
--- Cone - FunctorialG - Mlt - Parallel RightToLeft -
+-- Mlt - Parallel RightToLeft -
 
 instance
   ( HomMultiplicativeDisjunctive h
@@ -426,7 +454,7 @@ instance
   => FunctorialG (SDualBi (Cone Mlt p d (Parallel RightToLeft) n m)) h (->)
 
 --------------------------------------------------------------------------------
--- Cone - FunctorialG - Dst - Parallel RightToLeft -
+-- - Dst - Parallel RightToLeft -
 
 instance
   ( HomDistributiveDisjunctive h
@@ -444,6 +472,8 @@ instance
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Dst p d (Parallel RightToLeft) n m)) h (->)
+
+
 
 {-
 --------------------------------------------------------------------------------

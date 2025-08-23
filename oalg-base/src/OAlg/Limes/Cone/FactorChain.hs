@@ -70,9 +70,6 @@ instance (Diagrammatic d, Oriented x) => Validable (FactorChain d From n x) wher
           ]
     where d' = diagram d
 
--- instance (Multiplicative a, Typeable n) => Entity (FactorChain To n a)
--- instance (Multiplicative a, Typeable n) => Entity (FactorChain From n a)
-
 --------------------------------------------------------------------------------
 -- cnPrjChainTo
 

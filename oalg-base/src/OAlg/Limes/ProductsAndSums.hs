@@ -20,6 +20,7 @@
 -- products and sums, i.e. limits of @'Diagram' 'Discrete'@.
 module OAlg.Limes.ProductsAndSums
   (
+{-    
     -- * Products
     Products, Product, ProductCone, ProductDiagram
 
@@ -42,7 +43,7 @@ module OAlg.Limes.ProductsAndSums
 
     -- *** Orientation
   , sumConeOrnt, sumOrnt, sumsOrnt
-
+-}
   )
   where
 
@@ -58,14 +59,12 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Limes.Cone
-import OAlg.Limes.OpDuality
-import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 
 import OAlg.Limes.TerminalAndInitialPoint
 import OAlg.Limes.MinimaAndMaxima
-
+{-
 --------------------------------------------------------------------------------
 -- Product -
 
@@ -273,3 +272,4 @@ sumOrnt p ps = lmFromInjOrnt p (DiagramDiscrete ps)
 sumsOrnt :: Entity p => p -> Sums n (Orientation p)
 sumsOrnt = lmsFromInjOrnt
 
+-}

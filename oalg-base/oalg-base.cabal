@@ -151,7 +151,6 @@ library
       OAlg.Limes.Cone
       OAlg.Limes.Cone.Conic
       OAlg.Limes.Cone.Definition
-      OAlg.Limes.Cone.EligibleFactor
       OAlg.Limes.Cone.FactorChain
       OAlg.Limes.Cone.Structure
       OAlg.Limes.Cone.ZeroHead

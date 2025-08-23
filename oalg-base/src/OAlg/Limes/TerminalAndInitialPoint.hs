@@ -98,16 +98,16 @@ type TerminalConic c (d :: DiagramType -> N' -> N' -> Type -> Type)
 -- | 'Cone' for a terminal point.
 type TerminalCone = TerminalConic Cone Diagram
 
--- | terminal point as 'LimesG'.
+-- | generic terminal point as 'LimesG'.
 type TerminalPointG c d = LimesG c Mlt Projective d 'Empty N0 N0 
 
 -- | terminal point as 'Limes'.
 type TerminalPoint = TerminalPointG Cone Diagram
 
--- | generic terminal point within a 'Multiplicative' structure.
+-- | generic terminal points within a 'Multiplicative' structure.
 type TerminalsG c d = LimitsG c Mlt Projective d 'Empty N0 N0
 
--- | terminal point within a 'Multiplicative' structure.
+-- | terminal points within a 'Multiplicative' structure.
 type Terminals = TerminalsG Cone Diagram
 
 --------------------------------------------------------------------------------
@@ -160,10 +160,10 @@ type InitialPointG c d = LimesG c Mlt Injective d 'Empty N0 N0
 -- | initial point as 'Limes'.
 type InitialPoint = InitialPointG Cone Diagram
 
--- | generic initial point within a 'Multiplicative' structure.
+-- | generic initial points within a 'Multiplicative' structure.
 type InitialsG c d = LimitsG c Mlt Injective d 'Empty N0 N0
 
--- | initial point within a 'Multiplicative' structure.
+-- | initial points within a 'Multiplicative' structure.
 type Initials = InitialsG Cone Diagram 
 
 --------------------------------------------------------------------------------
