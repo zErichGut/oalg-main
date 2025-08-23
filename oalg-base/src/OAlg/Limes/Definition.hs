@@ -41,6 +41,7 @@ module OAlg.Limes.Definition
   
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt, coXEligibleConeFactor
+  , xecfOrtSite, SiteToPerspective
 
   ) where
 
@@ -342,14 +343,6 @@ xecMapS ::
   -> SDualBi (XEligibleCone c s p d t n m) x -> SDualBi (XEligibleCone c s p d t n m) y
 xecMapS = vmapBi xecMapCov xecMapCov xecMapCnt xecMapCnt 
 
-{-
-instance NaturalConicBi h c s p d t n m
-  => ApplicativeG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->) where
-  amapG = xecMapS
-
-instance NaturalConicBi h c s p d t n m
-  => FunctorialG (SDualBi (XEligibleCone c s p d t n m)) (Inv2 h) (->)
--}
 --------------------------------------------------------------------------------
 -- coXEligibleCone -
 
@@ -399,7 +392,7 @@ instance
   xStandardEligibleCone = xEligibleConeOrnt xStandard
 
 --------------------------------------------------------------------------------
--- XEligibleCone -
+-- XEligibleConeFactor -
 
 -- | random variable for eligible cones together with a eligible factor for a given limes.
 data XEligibleConeFactor c s p d t n m x
@@ -460,14 +453,6 @@ xecfMapS ::
   -> SDualBi (XEligibleConeFactor c s p d t n m) x -> SDualBi (XEligibleConeFactor c s p d t n m) y
 xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt 
 
-{-
-instance NaturalConicBi h c s p d t n m
-  => ApplicativeG (SDualBi (XEligibleConeFactor c s p d t n m)) (Inv2 h) (->) where
-  amapG = xecfMapS
-
-instance NaturalConicBi h c s p d t n m
-  => FunctorialG (SDualBi (XEligibleConeFactor c s p d t n m)) (Inv2 h) (->)
--}
 --------------------------------------------------------------------------------
 -- coXEligibleConeFactor -
 
@@ -481,17 +466,6 @@ coXEligibleConeFactor ::
   -> XEligibleConeFactor c s (Dual p) d (Dual t) n m (Op x)
 coXEligibleConeFactor = xecfMapCnt toDualOpMlt
 
-{-  
-coXEligibleConeFactor (XEligibleConeFactor xecf) = XEligibleConeFactor xecfOp where
-  Contravariant2 i@(Inv2 t _) = toDualOpMlt
-    
-  xecfOp lOp = xcfOp where
-    SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Left1 lOp))
-
-    xcfOp = do
-      (c,f) <- xecf l
-      let SDualBi (Left1 cOp) = amapG t (SDualBi (Right1 c)) in return (cOp,Op f)
--}
 --------------------------------------------------------------------------------
 -- xEligibleConeFactorOrnt -
 
@@ -522,7 +496,37 @@ instance
   )
   => XStandardEligibleConeFactor c s p d t n m (Orientation x) where
   xStandardEligibleConeFactor = xEligibleConeFactorOrnt xStandard
-  
+
+--------------------------------------------------------------------------------
+-- -
+
+xecfPrjOrtSiteTo :: Conic c
+  => XOrtSite To x -> LimesG c s Projective d t n m x -> X (Cone s Projective d t n m x, x)
+xecfPrjOrtSiteTo (XEnd _ xe) l = amap1 (cn u) $ xe $ tip u where
+  u = cone $ universalCone l
+    
+  cn :: Cone s Projective d t n m x -> x -> (Cone s Projective d t n m x, x)
+  cn (ConeProjective d _ as) f = (ConeProjective d (start f) (amap1 (*f) as), f)
+  cn (ConeKernel d a) f        = (ConeKernel d (a*f),f)     
+
+xecfInjOrtSiteFrom :: Conic c
+  => XOrtSite From x -> LimesG c s Injective d t n m x -> X (Cone s Injective d t n m x, x)
+xecfInjOrtSiteFrom (XStart _ xs) l = amap1 (cn u) $ xs $ tip u where
+  u = cone $ universalCone l
+    
+  cn :: Cone s Injective d t n m x -> x -> (Cone s Injective d t n m x, x)
+  cn (ConeInjective d _ as) f = (ConeInjective d (end f) (amap1 (f*) as),f)
+  cn (ConeCokernel d a) f     = (ConeCokernel d (f*a),f)
+
+type family SiteToPerspective x where
+  SiteToPerspective To   = Projective
+  SiteToPerspective From = Injective
+
+xecfOrtSite :: Conic c
+  => XOrtSite r x -> XEligibleConeFactor c s (SiteToPerspective r) d t n m x
+xecfOrtSite xe@(XEnd _ _)   = XEligibleConeFactor (xecfPrjOrtSiteTo xe)
+xecfOrtSite xs@(XStart _ _) = XEligibleConeFactor (xecfInjOrtSiteFrom xs)
+
 --------------------------------------------------------------------------------
 -- prpLimesFactorExist -
 

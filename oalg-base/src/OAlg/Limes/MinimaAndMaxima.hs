@@ -245,3 +245,7 @@ prpMinimaAndMaxima n = case someNatural n of
       SDualBi (Left1 maxFm') = amapG i (SDualBi (Right1 maxFm))
       xecMaxFm'  = coXEligibleCone xecMaxFm
       xecfMaxFm' = coXEligibleConeFactor xecfMaxFm
+{-
+      maxToN     = maximaTo n' (Proxy :: Proxy N)
+      xecMaxToN  =
+-}
