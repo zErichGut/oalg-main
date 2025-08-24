@@ -16,7 +16,6 @@
 -- minima and maxima within a 'Multiplicative' structure, i.e. limits of @'Diagram' ('Chain' __t__)@.
 module OAlg.Limes.MinimaAndMaxima
   (
-{-    
     -- * Minima
     Minima, MinimaG
   , Minimum, MinimumG
@@ -35,7 +34,6 @@ module OAlg.Limes.MinimaAndMaxima
     -- * Duality
   , DualisableGChain
   , coMinimaGTo, coMinimaGFrom
--}
   )
   where
 

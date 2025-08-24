@@ -59,7 +59,6 @@ import OAlg.Data.Variant
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.FinList
-import OAlg.Entity.Natural
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -214,14 +213,14 @@ lmMapCov :: NaturalConic h c s p d t n m
   -> LimesG c s p d t n m x -> LimesG c s p d t n m y
 lmMapCov (Covariant2 (Inv2 t f)) (LimesGProjective uc uf)
   = LimesGProjective uc' uf' where
-  SDualBi (Right1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))  
+  SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amap1 f (SDualBi (Right1 c'))
+    SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
 lmMapCov (Covariant2 (Inv2 t f)) (LimesGInjective uc uf)
   = LimesGInjective uc' uf' where
-  SDualBi (Right1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))  
+  SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amap1 f (SDualBi (Right1 c'))
+    SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
   
 --------------------------------------------------------------------------------
 -- lmMapCnt
@@ -233,12 +232,12 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGProjective uc uf)
   = LimesGInjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amap1 f (SDualBi (Left1 c'))
+    SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
 lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGInjective uc uf)
   = LimesGProjective uc' uf' where
-  SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
+  SDualBi (Left1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amap1 f (SDualBi (Left1 c'))
+    SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
 
 --------------------------------------------------------------------------------
 -- lmMapS -
@@ -275,49 +274,49 @@ instance NaturalConicBi h c s p d t n m
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammatic h d 'Empty N0 N0
+  , NaturalDiagrammaticEmpty h d n m
   )
-  => NaturalConicBi h Cone Mlt Projective d 'Empty N0 N0
+  => NaturalConicBi h Cone Mlt Projective d Empty n m
 
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammatic h d 'Empty N0 N0
+  , NaturalDiagrammaticEmpty h d n m
   )
-  => NaturalConicBi h Cone Mlt Injective d 'Empty N0 N0
+  => NaturalConicBi h Cone Mlt Injective d Empty n m
 
 --------------------------------------------------------------------------------
--- Chain To -
+-- Chain -
 
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammatic h d (Chain From) n m
-  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammaticChain h d From n m
+  , NaturalDiagrammaticChain h d To n m
   )
   => NaturalConicBi h Cone Mlt Projective d (Chain From) n m
 
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammatic h d (Chain From) n m
-  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammaticChain h d From n m
+  , NaturalDiagrammaticChain h d To n m
   )
   => NaturalConicBi h Cone Mlt Projective d (Chain To) n m
 
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammatic h d (Chain From) n m
-  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammaticChain h d From n m
+  , NaturalDiagrammaticChain h d To n m
   )
   => NaturalConicBi h Cone Mlt Injective d (Chain From) n m
 
 instance
   ( HomMultiplicativeDisjunctive h
   , FunctorialOriented h
-  , NaturalDiagrammatic h d (Chain From) n m
-  , NaturalDiagrammatic h d (Chain To) n m
+  , NaturalDiagrammaticChain h d From n m
+  , NaturalDiagrammaticChain h d To n m
   )
   => NaturalConicBi h Cone Mlt Injective d (Chain To) n m
 

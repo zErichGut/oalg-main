@@ -32,8 +32,12 @@ module OAlg.Limes.Cone.Definition
 
     -- ** Contravariant
   , cnMapCnt, cnMapMltCnt, cnMapDstCnt
-  
 
+    -- * Duality
+  , NaturalDiagrammaticBi
+  , NaturalDiagrammaticEmpty
+  , NaturalDiagrammaticChain
+  
     -- * Constructions
   , cnDstAdjZero
   , cnPrjOrnt, cnInjOrnt
@@ -342,6 +346,74 @@ cnMapS ::
 cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
 
 --------------------------------------------------------------------------------
+-- NaturalDiagrammaticBi -
+
+class
+  ( NaturalDiagrammatic h d t n m
+  , NaturalDiagrammatic h d (Dual t) n m
+  )
+  => NaturalDiagrammaticBi h d t n m
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (Cone Mlt p d t n m)) h (->) where
+  amapG = cnMapS
+  
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Mlt p d t n m)) h (->)
+  
+--------------------------------------------------------------------------------
+-- Empty -
+
+class NaturalDiagrammatic h d Empty n m => NaturalDiagrammaticEmpty h d n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  )
+  => NaturalDiagrammaticEmpty h Diagram n m
+
+instance NaturalDiagrammaticEmpty h d n m => NaturalDiagrammaticBi h d Empty n m
+
+--------------------------------------------------------------------------------
+-- Chain -
+
+class NaturalDiagrammatic h d (Chain t) n m => NaturalDiagrammaticChain h d t n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticChain h Diagram t n m
+
+instance
+  ( NaturalDiagrammaticChain h d To n m
+  , NaturalDiagrammaticChain h d From n m
+  )
+  => NaturalDiagrammaticBi h d (Chain To) n m
+
+instance
+  ( NaturalDiagrammaticChain h d To n m
+  , NaturalDiagrammaticChain h d From n m
+  )
+  => NaturalDiagrammaticBi h d (Chain From) n m
+
+{-
+--------------------------------------------------------------------------------
 -- Cone - FunctorialG - Mlt - Empty -
 
 instance
@@ -472,42 +544,6 @@ instance
   , p ~ Dual (Dual p)
   )
   => FunctorialG (SDualBi (Cone Dst p d (Parallel RightToLeft) n m)) h (->)
-
-
-
-{-
---------------------------------------------------------------------------------
--- Cone - FunctorialG - Dst -
-
-instance
-  ( HomDistributive h
-  , t ~ Dual (Dual t)
-  )
-  => ApplicativeG (Cone Dst p Diagram t n m) h (->) where
-  amapG = cnMapDst 
-
-instance
-  ( HomDistributive h
-  , FunctorialOriented h
-  , t ~ Dual (Dual t)
-  )
-  => FunctorialG (Cone Dst p Diagram t n m) h (->)
-
-instance
-  ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (Cone Dst p d t n m)) h (->) where
-  amapG = cnMapS
-
-instance
-  ( HomDistributiveDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (Cone Dst p d t n m)) h (->)
 -}
 
 --------------------------------------------------------------------------------

@@ -76,7 +76,6 @@ newtype ConeG (c :: Type -> Perspective
 
 type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 
-
 --------------------------------------------------------------------------------
 -- croh -
 
@@ -133,6 +132,44 @@ class
   )
   => NaturalConic h c s p d t n m
 
+--------------------------------------------------------------------------------
+-- -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConeG Cone Mlt p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConeG Cone Mlt p d t n m)) h (->)
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h Cone Mlt p d t n m
+
+
+{-
 --------------------------------------------------------------------------------
 -- - Mlt - Empty -
 
@@ -255,138 +292,4 @@ instance
   , p ~ Dual (Dual p)
   )
   => NaturalConic h Cone Mlt p d (Chain To) n m
-
-{-
---------------------------------------------------------------------------------
--- NaturalConicDual -
-
--- | helper class to avoid undecidable instances.
-class NaturalConic h c s (Dual p) d (Dual t) n m => NaturalConicDual h c s p d t n m
-
---------------------------------------------------------------------------------
--- NaturalConicBi -
-
--- | bi-natural 'Conic' objects, i.e. 'Conic' objects @__c__@ where
--- @__c__@ and also its dual are 'NaturalConic'.
-type NaturalConicBi h c s p d t n m =
-  ( NaturalConic h c s p d t n m
-  , NaturalConicDual h c s p d t n m
-  )
--}
-{-
---------------------------------------------------------------------------------
--- ConeG Cone - Mlt - NaturalConic -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (ConeG Cone Mlt p d t n m)) h (->) where
-  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => FunctorialG (SDualBi (ConeG Cone Mlt p d t n m)) h (->)
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalTransformable h (->)
-       (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConic h Cone Mlt p d t n m
-
-{-
--- this generic declaration gives rise to propagated dualities!!!!!!
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , NaturalDiagrammaticDualDual h d t n m   -- problematic!!!!!
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConicDual h Cone Mlt p d t n m
--}
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d 'Empty n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConicDual h Cone Mlt p d 'Empty n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d Discrete n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConicDual h Cone Mlt p d Discrete n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d (Chain From) n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConicDual h Cone Mlt p d (Chain To) n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d (Chain To) n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConicDual h Cone Mlt p d (Chain From) n m
-
---------------------------------------------------------------------------------
--- ConeG Cone - Dst - NaturalConic -
-
-instance
-  ( HomDistributiveDisjunctive h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (ConeG Cone Dst p d t n m)) h (->) where
-  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
-
-instance
-  ( HomDistributiveDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => FunctorialG (SDualBi (ConeG Cone Dst p d t n m)) h (->)
-
-instance
-  ( HomDistributiveDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalTransformable h (->)
-       (SDualBi (ConeG Cone Dst p d t n m)) (SDualBi (Cone Dst p d t n m))
-
-instance
-  ( HomDistributiveDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticBi h d t n m
-  , p ~ Dual (Dual p)
-  )  
-  => NaturalConic h Cone Dst p d t n m
 -}
