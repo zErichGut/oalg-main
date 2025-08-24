@@ -2,7 +2,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
 
@@ -36,6 +36,8 @@ module OAlg.Limes.MinimaAndMaxima
   , coMinimaGTo, coMinimaGFrom
   )
   where
+
+import Control.Monad
 
 import Data.Typeable
 import Data.Kind
@@ -224,6 +226,41 @@ maximaFrom' :: Multiplicative x => p n -> f x -> Maxima From n x
 maximaFrom' _ _ = maximaFrom
 
 --------------------------------------------------------------------------------
+-- xecOrtSite -
+
+xecPrjOrtSiteTo :: (Conic c, Diagrammatic d, Multiplicative x)
+  => XOrtSite To x -> MinimumG c d t n x -> X (MinimumConic Cone d t n x)
+xecPrjOrtSiteTo xe = xcn xe . diagrammaticObject . cone . universalCone where
+  
+  xcn :: (Diagrammatic d, Multiplicative x)
+    => XOrtSite To x -> d (Chain t) (n+1) n x -> X (MinimumConic Cone d t n x)
+  xcn (XEnd _ xe) d = case diagram d of
+    d'@(DiagramChainTo _ _)   -> do
+      f <- xe $ chnToStart d'
+      return $ cnPrjChainTo (FactorChain f d)
+    DiagramChainFrom s _      -> do
+      f <- xe s
+      return $ cnPrjChainFrom (FactorChain f d)
+
+xecOrtSite ::
+  ( Multiplicative x
+  , s ~ Mlt
+  , t ~ Dual (Dual t)
+  , NaturalConicChain Projective (Dual t) Op c d n
+  , NaturalConicChain Projective t Op c d n
+  , NaturalConicChain Injective t Op c d n
+  , NaturalConicChain Injective (Dual t) Op c d n  
+  )
+  => XOrtSite r x -> XEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
+xecOrtSite xe@(XEnd _ _)   = XEligibleCone (xecPrjOrtSiteTo xe)
+xecOrtSite xs@(XStart _ _) = xec where
+  xec' = xecOrtSite (coXOrtSite xs)
+  i = toDualOpMlt
+  xec = xecMapCnt (vInv2 i) xec'
+
+instance XStandardOrtSite To N where
+  xStandardOrtSite = XEnd (return ()) (const xN)
+--------------------------------------------------------------------------------
 -- prpMinimaAndMaxima -
 
 prpMinimaAndMaxima :: N -> Statement
@@ -231,6 +268,7 @@ prpMinimaAndMaxima n = case someNatural n of
   SomeNatural n' -> And [ prpLimitsG xecMaxTo xecfMaxTo xStandard maxTo
                         , prpLimitsG xecMaxFm xecfMaxFm xStandard maxFm
                         , prpLimitsG xecMaxFm' xecfMaxFm' xStandard maxFm'
+                        , prpLimitsG xecMaxToN xecfMaxToN xStandard maxToN
                         ]
     where
       maxTo     = maximaTo' n' (Proxy :: Proxy OS)
@@ -245,7 +283,8 @@ prpMinimaAndMaxima n = case someNatural n of
       SDualBi (Left1 maxFm') = amapG i (SDualBi (Right1 maxFm))
       xecMaxFm'  = coXEligibleCone xecMaxFm
       xecfMaxFm' = coXEligibleConeFactor xecfMaxFm
-{-
-      maxToN     = maximaTo n' (Proxy :: Proxy N)
-      xecMaxToN  =
--}
+
+      maxToN     = maximaTo' n' (Proxy :: Proxy N)
+      xecMaxToN  = xecOrtSite (xoFrom $ xoTtl $ xNB 0 100)
+      xecfMaxToN = xecfOrtSite (xoFrom $ xoTtl $ xNB 0 100)
+

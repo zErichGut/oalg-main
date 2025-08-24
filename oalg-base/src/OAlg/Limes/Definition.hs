@@ -27,7 +27,7 @@ module OAlg.Limes.Definition
   , eligibleCone, eligibleFactor
 
     -- * Mapping
-  ,lmMapS, lmMapCov, lmMapCnt
+  , lmMapS, lmMapCov, lmMapCnt
 
     -- * Constructions
   , lmMltPrjOrnt, lmMltInjOrnt
@@ -38,10 +38,11 @@ module OAlg.Limes.Definition
     -- * X
   , XEligibleCone(..), XStandardEligibleCone(..)
   , xEligibleConeOrnt, coXEligibleCone
+  , xecMapS, xecMapCnt
   
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt, coXEligibleConeFactor
-  , xecfOrtSite, SiteToPerspective
+  , xecfOrtSite
 
   ) where
 
@@ -498,7 +499,7 @@ instance
   xStandardEligibleConeFactor = xEligibleConeFactorOrnt xStandard
 
 --------------------------------------------------------------------------------
--- -
+-- xecfOrtSite -
 
 xecfPrjOrtSiteTo :: Conic c
   => XOrtSite To x -> LimesG c s Projective d t n m x -> X (Cone s Projective d t n m x, x)
@@ -518,12 +519,8 @@ xecfInjOrtSiteFrom (XStart _ xs) l = amap1 (cn u) $ xs $ tip u where
   cn (ConeInjective d _ as) f = (ConeInjective d (end f) (amap1 (f*) as),f)
   cn (ConeCokernel d a) f     = (ConeCokernel d (f*a),f)
 
-type family SiteToPerspective x where
-  SiteToPerspective To   = Projective
-  SiteToPerspective From = Injective
-
 xecfOrtSite :: Conic c
-  => XOrtSite r x -> XEligibleConeFactor c s (SiteToPerspective r) d t n m x
+  => XOrtSite r x -> XEligibleConeFactor c s (ToPerspective r) d t n m x
 xecfOrtSite xe@(XEnd _ _)   = XEligibleConeFactor (xecfPrjOrtSiteTo xe)
 xecfOrtSite xs@(XStart _ _) = XEligibleConeFactor (xecfInjOrtSiteFrom xs)
 
