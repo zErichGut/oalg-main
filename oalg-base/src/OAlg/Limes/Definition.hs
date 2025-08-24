@@ -25,6 +25,7 @@ module OAlg.Limes.Definition
     Limes, LimesG(..)
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
+  , NaturalConicBi
 
     -- * Mapping
   , lmMapS, lmMapCov, lmMapCnt
@@ -59,11 +60,13 @@ import OAlg.Data.Variant
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.FinList
+import OAlg.Entity.Natural
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
@@ -248,7 +251,72 @@ lmMapS ::
   => Inv2 h x y -> SDualBi (LimesG c s p d t n m) x -> SDualBi (LimesG c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
+--------------------------------------------------------------------------------
+-- NaturalConicBi -
 
+class
+  ( NaturalConic h c s p d t n m
+  , NaturalConic h c s (Dual p) d (Dual t) n m
+  )
+  => NaturalConicBi h c s p d t n m
+
+instance NaturalConicBi h c s p d t n m
+  => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
+  amapG = lmMapS
+
+instance NaturalConicBi h c s p d t n m
+  => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
+-- Empty -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  )
+  => NaturalConicBi h Cone Mlt Projective d 'Empty N0 N0
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  )
+  => NaturalConicBi h Cone Mlt Injective d 'Empty N0 N0
+
+{-
+class NaturalConic h c s Projective d 'Empty n m => NaturalConicProjectiveEmpty h c s d n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  )
+  => NaturalConicProjectiveEmpty h Cone Mlt d N0 N0
+
+class NaturalConic h c s Injective d 'Empty n m => NaturalConicInjectiveEmpty h c s d n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d 'Empty N0 N0
+  )
+  => NaturalConicInjectiveEmpty h Cone Mlt d N0 N0
+
+instance
+  ( NaturalConicProjectiveEmpty h c s d n m
+  , NaturalConicInjectiveEmpty h c s d n m
+  )
+  => NaturalConicBi h c s Projective d 'Empty n m
+
+instance
+  ( NaturalConicProjectiveEmpty h c s d n m
+  , NaturalConicInjectiveEmpty h c s d n m
+  )
+  => NaturalConicBi h c s Injective d 'Empty n m
+-}
+
+{-
 --------------------------------------------------------------------------------
 -- LimesG - Projective - Empty - FunctorialG -
 
@@ -280,6 +348,7 @@ instance
   , NaturalConic h c s Injective d 'Empty n m
   )
   => FunctorialG (SDualBi (LimesG c s Injective d 'Empty n m)) (Inv2 h) (->)
+-}
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -

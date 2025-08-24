@@ -86,7 +86,7 @@ lmsMapCov :: NaturalConic h c s p d t n m
   -> LimitsG c s p d t n m x -> LimitsG c s p d t n m y
 lmsMapCov i@(Covariant2 (Inv2 _ f)) (LimitsG u) = LimitsG u' where
   u' d' = lmMapCov i (u d) where
-    SDualBi (Right1 (DiagramG d)) = amap1 f (SDualBi (Right1 (DiagramG d'))) 
+    SDualBi (Right1 (DiagramG d)) = amapF f (SDualBi (Right1 (DiagramG d'))) 
 
 --------------------------------------------------------------------------------
 -- lmsMapCnt -
@@ -96,7 +96,7 @@ lmsMapCnt :: NaturalConic h c s p d t n m
   -> LimitsG c s p d t n m x -> Dual1 (LimitsG c s p d t n m) y
 lmsMapCnt i@(Contravariant2 (Inv2 _ f)) (LimitsG u) = LimitsG u' where
   u' d' = lmMapCnt i (u d) where
-    SDualBi (Right1 (DiagramG d)) = amap1 f (SDualBi (Left1 (DiagramG d'))) 
+    SDualBi (Right1 (DiagramG d)) = amapF f (SDualBi (Left1 (DiagramG d'))) 
 
 --------------------------------------------------------------------------------
 -- lmsMapS -
@@ -107,7 +107,6 @@ lmsMapS ::
   )
   => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
-
 
 --------------------------------------------------------------------------------
 -- FunctorialG - Projective - Empty - 

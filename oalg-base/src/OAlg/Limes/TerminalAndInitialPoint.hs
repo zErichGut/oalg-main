@@ -20,6 +20,7 @@
 -- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.
 module OAlg.Limes.TerminalAndInitialPoint
   (
+{-    
     -- * Terminal
     Terminals, TerminalsG
   , TerminalPoint, TerminalPointG
@@ -42,7 +43,7 @@ module OAlg.Limes.TerminalAndInitialPoint
   , initialPointOrnt, intsOrnt
 
     -- * Duality
-  , NaturalConicEmpty    
+  , DualsiableGEmpty    
     -- ** Terminal
   , coTerminals, coTerminalPoint
   , coTerminalsG, coTerminalPointG
@@ -53,7 +54,7 @@ module OAlg.Limes.TerminalAndInitialPoint
 
     -- * Proposition
   , prpTerminalAndInitialPoint
- 
+ -}
   ) where
 
 import Data.Kind
@@ -195,10 +196,10 @@ intsOrnt :: Entity p => p -> Initials (Orientation p)
 intsOrnt = lmsMltInjOrnt
 
 --------------------------------------------------------------------------------
--- NaturalConicEmpty -
+-- DualsiableGEmpty -
 
 -- | natural conic for empty diagrammatic objects.
-type NaturalConicEmpty p o c d = NaturalConic (HomDisjEmpty Mlt o) c Mlt p d 'Empty N0 N0
+type DualsiableGEmpty p o c d = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d 'Empty N0 N0
 
 --------------------------------------------------------------------------------
 -- coTerminalPointG -
@@ -207,8 +208,7 @@ type NaturalConicEmpty p o c d = NaturalConic (HomDisjEmpty Mlt o) c Mlt p d 'Em
 coTerminalPointG ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicEmpty Projective o c d
-  , NaturalConicEmpty Injective o c d
+  , DualsiableGEmpty Projective o c d
   )
   => TerminalPointG c d x -> InitialPointG c d (o x)
 coTerminalPointG trm = int where
@@ -234,8 +234,7 @@ coTerminalPoint = coTerminalPointG
 coTerminalsG ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicEmpty Projective o c d
-  , NaturalConicEmpty Injective o c d
+  , DualsiableGEmpty Projective o c d
   )
   => TerminalsG c d x -> InitialsG c d (o x)
 coTerminalsG trms = ints where
@@ -261,14 +260,12 @@ coTerminals = coTerminalsG
 coInitialPointG ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicEmpty Projective o c d
-  , NaturalConicEmpty Injective o c d
+  , DualsiableGEmpty Injective o c d
   )
   => InitialPointG c d x -> TerminalPointG c d (o x)
 coInitialPointG int = trm where
   Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
   SDualBi (Left1 trm) = amapF i (SDualBi (Right1 int))
-
 
 --------------------------------------------------------------------------------
 -- coInitialPoint -
@@ -289,8 +286,7 @@ coInitialPoint = coInitialPointG
 coInitialsG ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicEmpty Projective o c d
-  , NaturalConicEmpty Injective o c d
+  , DualsiableGEmpty Injective o c d
   )
   => InitialsG c d x -> TerminalsG c d (o x)
 coInitialsG ints = trms where
@@ -326,4 +322,5 @@ prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
     xecT'  = coXEligibleCone xecT
     xecfT' = coXEligibleConeFactor xecfT
     tps'   = coTerminals tps
+
 
