@@ -30,7 +30,6 @@ module OAlg.Limes.Limits
   
     -- * Proposition
   , prpLimitsG
-
   ) where
 
 import OAlg.Prelude
@@ -108,6 +107,18 @@ lmsMapS ::
   => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt
 
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance NaturalConicBi h c s p d t n m
+  => ApplicativeG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->) where
+  amapG = lmsMapS
+
+instance NaturalConicBi h c s p d t n m
+  => FunctorialG (SDualBi (LimitsG c s p d t n m)) (Inv2 h) (->)
+
+
+{-
 --------------------------------------------------------------------------------
 -- FunctorialG - Projective - Empty - 
 
@@ -206,7 +217,7 @@ instance
   , NaturalConic h c s Projective d (Chain To) n m 
   )
   => FunctorialG (SDualBi (LimitsG c s Injective d (Chain From) n m)) (Inv2 h) (->)  
-
+-}
 --------------------------------------------------------------------------------
 -- prpLimitsG -
 
@@ -253,48 +264,3 @@ lmsMltPrjOrnt = LimitsG . lmMltPrjOrnt
 -- | injective limits for 'Multiplicative' structures over @'Orientation' __p__@.
 lmsMltInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
 lmsMltInjOrnt = LimitsG . lmMltInjOrnt  
-
-
-
-{-
---------------------------------------------------------------------------------
--- prpLimitsDiagram -
-
--- | validity according to 'Limits'.
-prpLimitsDiagram :: (OpReflexive c s, Universal l, Show (l s p t n m a))
-  => c s a -> XOrtPerspective p a
-  -> Limits l s p t n m a -> Diagram t n m a 
-  -> Statement
-prpLimitsDiagram cs xop lms d = Prp "LimesDiagram"
-  :<=>: And [ case opdStructMlt cs of
-                Struct -> (diagram (universalCone lm) == d) :?> Params["d":=show d,"lm":=show lm]
-            , relUniversal (opdConeStruct cs) xop lm
-            ]
-  where lm = limes lms d
-
---------------------------------------------------------------------------------
--- prpLimits -
-
--- | validity according to 'Limits', relative to the given random variable for 'Diagram's. 
-prpLimits :: (OpReflexive c s, Universal l, Show (l s p t n m a))
-  => c s a -> Limits l s p t n m a
-  -> X (Diagram t n m a) -> XOrtPerspective p a -> Statement
-prpLimits cs lms xd xop = Prp "Limits"
-  :<=>: Forall xd (prpLimitsDiagram cs xop lms)
-
-
-instance ( Multiplicative a
-         , Universal l, Show (l Mlt p t n m a)
-         , XStandard (Diagram t n m a), XStandardOrtPerspective p a
-         )
-  => Validable (Limits l Mlt p t n m a) where
-  valid lm = prpLimits ConeStructMlt lm xStandard xStandardOrtPerspective
-
-instance ( Distributive a
-         , Universal l, Show (l Dst p t n m a)
-         , XStandard (Diagram t n m a), XStandardOrtPerspective p a
-         )
-  => Validable (Limits l Dst p t n m a) where
-  valid lm = prpLimits ConeStructDst lm xStandard xStandardOrtPerspective
-
--}

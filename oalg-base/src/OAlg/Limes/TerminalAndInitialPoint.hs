@@ -2,12 +2,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE GADTs, StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds, ConstraintKinds #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- |
 -- Module      : OAlg.Limes.TerminalAndInitialPoint
@@ -20,7 +18,6 @@
 -- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.
 module OAlg.Limes.TerminalAndInitialPoint
   (
-{-    
     -- * Terminal
     Terminals, TerminalsG
   , TerminalPoint, TerminalPointG
@@ -54,7 +51,6 @@ module OAlg.Limes.TerminalAndInitialPoint
 
     -- * Proposition
   , prpTerminalAndInitialPoint
- -}
   ) where
 
 import Data.Kind

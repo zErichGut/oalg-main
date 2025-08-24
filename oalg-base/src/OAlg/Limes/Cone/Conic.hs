@@ -188,6 +188,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d (Chain From) n m
   , NaturalDiagrammatic h d (Chain To) n m
   , p ~ Dual (Dual p)
@@ -196,6 +197,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d (Chain From) n m
   , NaturalDiagrammatic h d (Chain To) n m
   , p ~ Dual (Dual p)
@@ -206,6 +208,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d (Chain From) n m
   , NaturalDiagrammatic h d (Chain To) n m
   , p ~ Dual (Dual p)
@@ -226,6 +229,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d (Chain From) n m
   , NaturalDiagrammatic h d (Chain To) n m
   , p ~ Dual (Dual p)
@@ -234,6 +238,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d (Chain From) n m
   , NaturalDiagrammatic h d (Chain To) n m
   , p ~ Dual (Dual p)
@@ -244,6 +249,7 @@ instance
 
 instance
   ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d (Chain From) n m
   , NaturalDiagrammatic h d (Chain To) n m
   , p ~ Dual (Dual p)

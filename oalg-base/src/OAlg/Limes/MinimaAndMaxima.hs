@@ -16,6 +16,7 @@
 -- minima and maxima within a 'Multiplicative' structure, i.e. limits of @'Diagram' ('Chain' __t__)@.
 module OAlg.Limes.MinimaAndMaxima
   (
+{-    
     -- * Minima
     Minima, MinimaG
   , Minimum, MinimumG
@@ -32,8 +33,9 @@ module OAlg.Limes.MinimaAndMaxima
   , maximaTo, maximaFrom, maximaTo', maximaFrom'
 
     -- * Duality
-  , NaturalConicChain
+  , DualisableGChain
   , coMinimaGTo, coMinimaGFrom
+-}
   )
   where
 
@@ -156,11 +158,24 @@ type MaximaG c d t n = LimitsG c Mlt Injective d (Chain t) (n+1) n
 type Maxima t n = MaximaG Cone Diagram t n
 
 --------------------------------------------------------------------------------
--- NaturalConicChain -
+-- DualisableGChain -
 
 -- | natural conic for chain diagrammatic objects.
-type NaturalConicChain p t o c d n
-  = NaturalConic (HomDisjEmpty Mlt o) c Mlt p d (Chain t) (n+1) n
+type DualisableGChain p t o c d n
+  = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d (Chain t) (n+1) n
+
+--------------------------------------------------------------------------------
+-- coMinimumTo -
+
+coMinimumGTo ::
+  ( Multiplicative x
+  , TransformableGRefl o Mlt
+  , DualisableGChain Projective To o c d n
+  )
+  => MinimumG c d To n x -> MaximumG c d From n (o x)
+coMinimumGTo min = max where
+  Contravariant2 i = toDualO (Struct :: Multiplicative x => Struct Mlt x)
+  SDualBi (Left1 max) = amapF i (SDualBi (Right1 min))
 
 --------------------------------------------------------------------------------
 -- coMinimaTo -
@@ -168,8 +183,7 @@ type NaturalConicChain p t o c d n
 coMinimaGTo ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicChain Projective To o c d n
-  , NaturalConicChain Injective From o c d n
+  , DualisableGChain Projective To o c d n
   )
   => MinimaG c d To n x -> MaximaG c d From n (o x)
 coMinimaGTo min = max where
@@ -182,8 +196,7 @@ coMinimaGTo min = max where
 coMinimaGFrom ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicChain Projective From o c d n
-  , NaturalConicChain Injective To o c d n
+  , DualisableGChain Projective From o c d n
   )
   => MinimaG c d From n x -> MaximaG c d To n (o x)
 coMinimaGFrom min = max where
@@ -196,8 +209,7 @@ coMinimaGFrom min = max where
 coMaximaGFrom ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
-  , NaturalConicChain Projective To o c d n
-  , NaturalConicChain Injective From o c d n
+  , DualisableGChain Injective From o c d n
   )
   => MaximaG c d From n x -> MinimaG c d To n (o x)
 coMaximaGFrom min = max where
@@ -211,6 +223,7 @@ maximaTo :: Multiplicative x => Maxima To n x
 maximaTo = maxs where
   Contravariant2 i = toDualOpMlt
   SDualBi (Left1 maxs) = amapF (inv2 i) (SDualBi (Right1 minimaFrom)) 
+
 
 maximaFrom :: Multiplicative x => Maxima From n x
 maximaFrom = maxs where
@@ -244,12 +257,18 @@ xecPrjOrtSiteTo xe = xcn xe . diagrammaticObject . cone . universalCone where
 
 xecOrtSite ::
   ( Multiplicative x
+  , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Projective d (Chain (Dual t)) (n+1) n
+  , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Projective d (Chain t) (n+1) n
+  , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Injective d (Chain t) (n+1) n
+  , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Injective d (Chain (Dual t)) (n+1) n
   , s ~ Mlt
   , t ~ Dual (Dual t)
+{-  
   , NaturalConicChain Projective (Dual t) Op c d n
   , NaturalConicChain Projective t Op c d n
   , NaturalConicChain Injective t Op c d n
-  , NaturalConicChain Injective (Dual t) Op c d n  
+  , NaturalConicChain Injective (Dual t) Op c d n
+-}
   )
   => XOrtSite r x -> XEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
 xecOrtSite xe@(XEnd _ _)   = XEligibleCone (xecPrjOrtSiteTo xe)
@@ -287,4 +306,5 @@ prpMinimaAndMaxima n = case someNatural n of
       maxToN     = maximaTo' n' (Proxy :: Proxy N)
       xecMaxToN  = xecOrtSite (xoFrom $ xoTtl $ xNB 0 100)
       xecfMaxToN = xecfOrtSite (xoFrom $ xoTtl $ xNB 0 100)
+
 

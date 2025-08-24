@@ -20,7 +20,6 @@
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
   (
-
     -- * Limes
     Limes, LimesG(..)
   , universalCone, universalFactor
@@ -260,6 +259,9 @@ class
   )
   => NaturalConicBi h c s p d t n m
 
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
 instance NaturalConicBi h c s p d t n m
   => ApplicativeG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->) where
   amapG = lmMapS
@@ -283,6 +285,41 @@ instance
   , NaturalDiagrammatic h d 'Empty N0 N0
   )
   => NaturalConicBi h Cone Mlt Injective d 'Empty N0 N0
+
+--------------------------------------------------------------------------------
+-- Chain To -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  )
+  => NaturalConicBi h Cone Mlt Projective d (Chain From) n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  )
+  => NaturalConicBi h Cone Mlt Projective d (Chain To) n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  )
+  => NaturalConicBi h Cone Mlt Injective d (Chain From) n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammatic h d (Chain From) n m
+  , NaturalDiagrammatic h d (Chain To) n m
+  )
+  => NaturalConicBi h Cone Mlt Injective d (Chain To) n m
 
 {-
 class NaturalConic h c s Projective d 'Empty n m => NaturalConicProjectiveEmpty h c s d n m
