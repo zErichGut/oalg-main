@@ -18,6 +18,7 @@
 -- definition of 'Cone's over 'Diagrammatic' objects.
 module OAlg.Limes.Cone.Definition
   (
+{-    
     -- * Cone
     Cone(..), diagrammaticObject, coneDiagram
   , Perspective(..), cnMltOrDst, coneStruct
@@ -42,7 +43,7 @@ module OAlg.Limes.Cone.Definition
     -- * X
   , xCnPrjOrnt, xCnPrjDstOrnt
   , xCnInjOrnt, xCnInjDstOrnt
-
+-}
   ) where
 
 import Control.Monad
@@ -186,6 +187,7 @@ instance Natural r (->) (Cone s p d t n m) (DiagramG d t n m) where
 cnDiagramTypeRefl :: Diagrammatic d => Cone s p d t n m a -> Dual (Dual t) :~: t
 cnDiagramTypeRefl = dgTypeRefl . diagram . diagrammaticObject
 
+{-
 --------------------------------------------------------------------------------
 -- cnTypeRefl -
 
@@ -194,6 +196,7 @@ cnTypeRefl (ConeProjective _ _ _) = Refl
 cnTypeRefl (ConeInjective _ _ _)  = Refl
 cnTypeRefl (ConeKernel _ _)       = Refl
 cnTypeRefl (ConeCokernel _ _)     = Refl
+-}
 
 --------------------------------------------------------------------------------
 -- coneDiagram -
@@ -208,7 +211,7 @@ coneDiagram (ConeCokernel d k)     = ConeCokernel (diagram d) k
 --------------------------------------------------------------------------------
 -- Cone - Duality -
 
-type instance Dual1 (Cone s p d t n m) = Cone s (Dual p) d (Dual t) n m
+type instance Dual1 (Cone s p d t n m) = Cone s (DualPerspective p) d (Dual t) n m
 
 instance (Show x, ShowPoint x) => ShowDual1 (Cone s p Diagram t n m) x
 instance (Eq x, EqPoint x) => EqDual1 (Cone s p Diagram t n m) x
@@ -336,11 +339,11 @@ cnMapS ::
   ( HomD s h
   , NaturalDiagrammatic h d t n m
   , NaturalDiagrammatic h d (Dual t) n m
-  , p ~ Dual (Dual p)
+  , p ~ DualPerspective (DualPerspective p)
   )
   => h x y -> SDualBi (Cone s p d t n m) x -> SDualBi (Cone s p d t n m) y
 cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
-
+{-
 --------------------------------------------------------------------------------
 -- Cone - FunctorialG - Mlt - Empty -
 
@@ -881,3 +884,4 @@ instance ( Entity p, t ~ Parallel RightToLeft, n ~ N2
          ) => XStandard (Cone Dst Injective d t n m (Orientation p)) where
   xStandard = xCnInjDstOrnt xStandard xStandard
 
+-}

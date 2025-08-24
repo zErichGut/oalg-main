@@ -522,10 +522,21 @@ type family SiteToPerspective x where
   SiteToPerspective To   = Projective
   SiteToPerspective From = Injective
 
-xecfOrtSite :: Conic c
+xecfOrtSite ::
+  ( Multiplicative x
+  , NaturalConic (HomDisjEmpty Mlt Op) c s Projective d (Dual t) n m
+  , NaturalConic (HomDisjEmpty Mlt Op) c s Projective d t n m
+  , NaturalConic (HomDisjEmpty Mlt Op) c s Injective d t n m
+  , NaturalConic (HomDisjEmpty Mlt Op) c s Injective d (Dual t) n m
+  , s ~ Mlt
+  )
   => XOrtSite r x -> XEligibleConeFactor c s (SiteToPerspective r) d t n m x
 xecfOrtSite xe@(XEnd _ _)   = XEligibleConeFactor (xecfPrjOrtSiteTo xe)
-xecfOrtSite xs@(XStart _ _) = XEligibleConeFactor (xecfInjOrtSiteFrom xs)
+-- xecfOrtSite xs@(XStart _ _) = XEligibleConeFactor (xecfInjOrtSiteFrom xs)
+xecfOrtSite xs@(XStart _ _) = xecf where
+  xecf' = xecfOrtSite (coXOrtSite xs)
+  Contravariant2 i = toDualOpMlt
+  SDualBi (Left1 xecf) = xecfMapS (inv2 i) (SDualBi (Right1 xecf'))
 
 --------------------------------------------------------------------------------
 -- prpLimesFactorExist -
