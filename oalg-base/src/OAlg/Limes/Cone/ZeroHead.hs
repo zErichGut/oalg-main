@@ -22,6 +22,7 @@ module OAlg.Limes.Cone.ZeroHead
   , cnZeroHead
   , cnKernel, cnCokernel
   , cnDiffHead
+
   ) where
 
 import OAlg.Prelude
@@ -175,6 +176,62 @@ czMapS ::
 czMapS = vmapBi czMapCov czMapCov czMapCnt czMapCnt
 
 --------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeZeroHead s p d t n m)) h (->) where
+  amapG = czMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeZeroHead s p d t n m)) h (->)
+
+--------------------------------------------------------------------------------
+-- NaturalConic -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (ConeG ConeZeroHead s p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (ConeG ConeZeroHead s p d t n m)) h (->) 
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG ConeZeroHead Mlt p d t n m))
+       (SDualBi (ConeG Cone Mlt p d t n m))
+
+instance   ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h ConeZeroHead Mlt p d t n m
+  
+{-
+--------------------------------------------------------------------------------
 -- NaturalConic - Parallel - LeftToRight
 
 instance
@@ -311,7 +368,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => NaturalConic h ConeZeroHead Dst p d (Parallel RightToLeft) N2 m
-
+-}
 --------------------------------------------------------------------------------
 -- cnDiffHead -
 
