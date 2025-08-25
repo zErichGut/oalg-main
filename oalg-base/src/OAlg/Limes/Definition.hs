@@ -20,7 +20,6 @@
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
   (
-{-    
     -- * Limes
     Limes, LimesG(..)
   , universalCone, universalFactor
@@ -44,7 +43,7 @@ module OAlg.Limes.Definition
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt, coXEligibleConeFactor
   , xecfOrtSite
--}
+
   ) where
 
 import Control.Monad
@@ -313,7 +312,6 @@ instance
   )
   => NaturalConicBi h Cone Mlt Injective d Discrete n m
 
-
 --------------------------------------------------------------------------------
 -- Chain -
 
@@ -357,6 +355,7 @@ instance
 
 --------------------------------------------------------------------------------
 -- General -
+-}
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -
@@ -390,7 +389,7 @@ xecMapCov (Covariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' whe
 
     xc' = do
       c <- xec l
-      let SDualBi (Right1 c') = amapG t (SDualBi (Right1 c)) in return c'
+      let SDualBi (Right1 (ConeG c')) = amapF t (SDualBi (Right1 (ConeG c))) in return c'
 
 --------------------------------------------------------------------------------
 -- xecMapCnt -
@@ -408,7 +407,7 @@ xecMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec'
 
     xc' = do
       c <- xec l
-      let SDualBi (Left1 c') = amapG t (SDualBi (Right1 c)) in return c'
+      let SDualBi (Left1 (ConeG c')) = amapF t (SDualBi (Right1 (ConeG c))) in return c'
 
 --------------------------------------------------------------------------------
 -- xecMapS -
@@ -499,7 +498,7 @@ xecfMapCov (Covariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleConeF
 
     xcf' = do
       (c,f) <- xecf l
-      let SDualBi (Right1 c') = amapG t (SDualBi (Right1 c)) in return (c',amap t f)
+      let SDualBi (Right1 (ConeG c')) = amapG t (SDualBi (Right1 (ConeG c))) in return (c',amap t f)
 
 --------------------------------------------------------------------------------
 -- xecfMapCnt -
@@ -518,7 +517,7 @@ xecfMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleC
 
     xcf' = do
       (c,f) <- xecf l
-      let SDualBi (Left1 cOp) = amapG t (SDualBi (Right1 c)) in return (cOp,amap t f)
+      let SDualBi (Left1 (ConeG cOp)) = amapG t (SDualBi (Right1 (ConeG c))) in return (cOp,amap t f)
 
 --------------------------------------------------------------------------------
 -- xecfMapS -
@@ -677,4 +676,4 @@ lmMltInjOrnt t d = LimesInjective l u where
     l = cnInjOrnt t d
     u (ConeInjective _ x _) = t:>x
 
--}
+

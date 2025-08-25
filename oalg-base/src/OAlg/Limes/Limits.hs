@@ -162,3 +162,4 @@ lmsMltPrjOrnt = LimitsG . lmMltPrjOrnt
 -- | injective limits for 'Multiplicative' structures over @'Orientation' __p__@.
 lmsMltInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
 lmsMltInjOrnt = LimitsG . lmMltInjOrnt  
+
