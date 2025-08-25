@@ -36,6 +36,7 @@ module OAlg.Limes.Cone.Definition
     -- * Duality
   , NaturalDiagrammaticBi
   , NaturalDiagrammaticEmpty
+  , NaturalDiagrammaticDiscrete
   , NaturalDiagrammaticChain
   
     -- * Constructions
@@ -348,6 +349,7 @@ cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticBi -
 
+-- | bi-natural diagrammatic objects @__d__@ on @__h__@.
 class
   ( NaturalDiagrammatic h d t n m
   , NaturalDiagrammatic h d (Dual t) n m
@@ -357,6 +359,7 @@ class
 --------------------------------------------------------------------------------
 -- FunctorialG -
 
+-- it is not possible to use the constraint HomD s h to make the declaration more generic!
 instance
   ( HomMultiplicativeDisjunctive h
   , NaturalDiagrammaticBi h d t n m
@@ -373,9 +376,26 @@ instance
   )
   => FunctorialG (SDualBi (Cone Mlt p d t n m)) h (->)
   
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (Cone Dst p d t n m)) h (->) where
+  amapG = cnMapS
+  
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (Cone Dst p d t n m)) h (->)
+
 --------------------------------------------------------------------------------
 -- Empty -
 
+-- | helper class to avoid undecidable instances.
 class NaturalDiagrammatic h d Empty n m => NaturalDiagrammaticEmpty h d n m
 
 instance
@@ -388,8 +408,24 @@ instance
 instance NaturalDiagrammaticEmpty h d n m => NaturalDiagrammaticBi h d Empty n m
 
 --------------------------------------------------------------------------------
+-- Discrete -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammatic h d Discrete n m => NaturalDiagrammaticDiscrete h d n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  )
+  => NaturalDiagrammaticDiscrete h Diagram n m
+
+instance NaturalDiagrammaticDiscrete h d n m => NaturalDiagrammaticBi h d Discrete n m
+
+--------------------------------------------------------------------------------
 -- Chain -
 
+-- | helper class to avoid undecidable instances.
 class NaturalDiagrammatic h d (Chain t) n m => NaturalDiagrammaticChain h d t n m
 
 instance
@@ -412,139 +448,38 @@ instance
   )
   => NaturalDiagrammaticBi h d (Chain From) n m
 
-{-
 --------------------------------------------------------------------------------
--- Cone - FunctorialG - Mlt - Empty -
+-- Parallel -
+
+-- | helper class to avoid undecidable instances.
+class NaturalDiagrammatic h d (Parallel t) n m => NaturalDiagrammaticParallel h d t n m
 
 instance
-  ( HomMultiplicative h
-  , t ~ Dual (Dual t)
-  )
-  => ApplicativeG (Cone Mlt p Diagram t n m) h (->) where
-  amapG = cnMapMlt 
-
-instance
-  ( HomMultiplicative h
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
-  => FunctorialG (Cone Mlt p Diagram t n m) h (->)
+  => NaturalDiagrammaticParallel h Diagram t n m
 
 instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d 'Empty n m
-  , p ~ Dual (Dual p)
+  ( NaturalDiagrammaticParallel h d LeftToRight n m
+  , NaturalDiagrammaticParallel h d RightToLeft n m
   )
-  => ApplicativeG (SDualBi (Cone Mlt p d 'Empty n m)) h (->) where
-  amapG = cnMapS
+  => NaturalDiagrammaticBi h d (Parallel LeftToRight) n m
 
 instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d 'Empty n m
-  , p ~ Dual (Dual p)
+  ( NaturalDiagrammaticParallel h d LeftToRight n m
+  , NaturalDiagrammaticParallel h d RightToLeft n m
   )
-  => FunctorialG (SDualBi (Cone Mlt p d 'Empty n m)) h (->)
+  => NaturalDiagrammaticBi h d (Parallel RightToLeft) n m
+
 
 --------------------------------------------------------------------------------
--- Mlt - Chain To -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Chain To) n m
-  , NaturalDiagrammatic h d (Chain From) n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (Cone Mlt p d (Chain To) n m)) h (->) where
-  amapG = cnMapS
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Chain To) n m
-  , NaturalDiagrammatic h d (Chain From) n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (Cone Mlt p d (Chain To) n m)) h (->)
+-- Star -
 
 --------------------------------------------------------------------------------
--- Mlt - Chain From -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Chain To) n m
-  , NaturalDiagrammatic h d (Chain From) n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (Cone Mlt p d (Chain From) n m)) h (->) where
-  amapG = cnMapS
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Chain To) n m
-  , NaturalDiagrammatic h d (Chain From) n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (Cone Mlt p d (Chain From) n m)) h (->)
-
---------------------------------------------------------------------------------
--- - Mlt - Parallel LeftToRight -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (Cone Mlt p d (Parallel LeftToRight) n m)) h (->) where
-  amapG = cnMapS
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (Cone Mlt p d (Parallel LeftToRight) n m)) h (->)
-
---------------------------------------------------------------------------------
--- Mlt - Parallel RightToLeft -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (Cone Mlt p d (Parallel RightToLeft) n m)) h (->) where
-  amapG = cnMapS
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (Cone Mlt p d (Parallel RightToLeft) n m)) h (->)
-
---------------------------------------------------------------------------------
--- - Dst - Parallel RightToLeft -
-
-instance
-  ( HomDistributiveDisjunctive h
-  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
-  , p ~ Dual (Dual p)
-  )
-  => ApplicativeG (SDualBi (Cone Dst p d (Parallel RightToLeft) n m)) h (->) where
-  amapG = cnMapS
-
-instance
-  ( HomDistributiveDisjunctive h
-  , NaturalDiagrammatic h d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic h d (Parallel RightToLeft) n m
-  , p ~ Dual (Dual p)
-  )
-  => FunctorialG (SDualBi (Cone Dst p d (Parallel RightToLeft) n m)) h (->)
--}
+-- General -
 
 --------------------------------------------------------------------------------
 -- tip -
@@ -765,9 +700,9 @@ cnDstAdjZero (ConeKernel d@(DiagramParallelLR _ r _) k)
 cnDstAdjZero c@(ConeCokernel _ _) = cMlt where
   Contravariant2 (Inv2 t f) = toDualOpDst
   
-  SDualBi (Left1 c')    = cnMapS t (SDualBi (Right1 c))
+  SDualBi (Left1 c')    = amapF t (SDualBi (Right1 c))
   cMlt'                 = cnDstAdjZero c'
-  SDualBi (Right1 cMlt) = cnMapS f (SDualBi (Left1 cMlt'))
+  SDualBi (Right1 cMlt) = amapF f (SDualBi (Left1 cMlt'))
 
 --------------------------------------------------------------------------------
 -- relConeDiagram -

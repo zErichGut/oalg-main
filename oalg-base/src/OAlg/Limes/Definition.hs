@@ -98,11 +98,11 @@ import OAlg.Limes.Cone
 --  yield an exception! The implementation of the general algorithms for limits do not
 --  check for eligibility.
 data LimesG c s p d t n m x where
-  LimesGProjective :: c s Projective d t n m x -> (Cone s Projective d t n m x -> x)
-                   -> LimesG c s Projective d t n m x
+  LimesProjective :: c s Projective d t n m x -> (Cone s Projective d t n m x -> x)
+                  -> LimesG c s Projective d t n m x
                   
-  LimesGInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
-                   -> LimesG c s Injective  d t n m x
+  LimesInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
+                  -> LimesG c s Injective  d t n m x
 
 --------------------------------------------------------------------------------
 -- Limes -
@@ -115,16 +115,16 @@ type Limes s p = LimesG Cone s p Diagram
 
 -- | the unviersal 'Conic' object given by the 'LimesG'.
 universalCone :: LimesG c s p d t n m x -> c s p d t n m x
-universalCone (LimesGProjective u _) = u
-universalCone (LimesGInjective  u _) = u
+universalCone (LimesProjective u _) = u
+universalCone (LimesInjective  u _) = u
 
 --------------------------------------------------------------------------------
 -- universalFactor -
 
 -- | the unviersal factor given by the 'LimesG'.
 universalFactor :: LimesG c s p d t n m x -> Cone s p d t n m x -> x
-universalFactor (LimesGProjective _ f) = f
-universalFactor (LimesGInjective  _ f) = f
+universalFactor (LimesProjective _ f) = f
+universalFactor (LimesInjective  _ f) = f
 
 --------------------------------------------------------------------------------
 -- eligibleCone -
@@ -211,13 +211,13 @@ type instance Dual1 (LimesG c s p d t n m) = LimesG c s (Dual p) d (Dual t) n m
 lmMapCov :: NaturalConic h c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> LimesG c s p d t n m x -> LimesG c s p d t n m y
-lmMapCov (Covariant2 (Inv2 t f)) (LimesGProjective uc uf)
-  = LimesGProjective uc' uf' where
+lmMapCov (Covariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesProjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
-lmMapCov (Covariant2 (Inv2 t f)) (LimesGInjective uc uf)
-  = LimesGInjective uc' uf' where
+lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
+  = LimesInjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
@@ -228,13 +228,13 @@ lmMapCov (Covariant2 (Inv2 t f)) (LimesGInjective uc uf)
 lmMapCnt :: NaturalConic h c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> LimesG c s p d t n m x -> Dual1 (LimesG c s p d t n m) y
-lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGProjective uc uf)
-  = LimesGInjective uc' uf' where
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
+  = LimesInjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
-lmMapCnt (Contravariant2 (Inv2 t f)) (LimesGInjective uc uf)
-  = LimesGProjective uc' uf' where
+lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
+  = LimesProjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
     SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
@@ -252,6 +252,7 @@ lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 --------------------------------------------------------------------------------
 -- NaturalConicBi -
 
+-- | helper class to avoid undecidable instances.
 class
   ( NaturalConic h c s p d t n m
   , NaturalConic h c s (Dual p) d (Dual t) n m
@@ -284,6 +285,24 @@ instance
   , NaturalDiagrammaticEmpty h d n m
   )
   => NaturalConicBi h Cone Mlt Injective d Empty n m
+
+--------------------------------------------------------------------------------
+-- Discrete -
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticDiscrete h d n m
+  )
+  => NaturalConicBi h Cone Mlt Projective d Discrete n m
+
+instance
+  ( HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticDiscrete h d n m
+  )
+  => NaturalConicBi h Cone Mlt Injective d Discrete n m
+
 
 --------------------------------------------------------------------------------
 -- Chain -
@@ -320,71 +339,14 @@ instance
   )
   => NaturalConicBi h Cone Mlt Injective d (Chain To) n m
 
-{-
-class NaturalConic h c s Projective d 'Empty n m => NaturalConicProjectiveEmpty h c s d n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammatic h d 'Empty N0 N0
-  )
-  => NaturalConicProjectiveEmpty h Cone Mlt d N0 N0
-
-class NaturalConic h c s Injective d 'Empty n m => NaturalConicInjectiveEmpty h c s d n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammatic h d 'Empty N0 N0
-  )
-  => NaturalConicInjectiveEmpty h Cone Mlt d N0 N0
-
-instance
-  ( NaturalConicProjectiveEmpty h c s d n m
-  , NaturalConicInjectiveEmpty h c s d n m
-  )
-  => NaturalConicBi h c s Projective d 'Empty n m
-
-instance
-  ( NaturalConicProjectiveEmpty h c s d n m
-  , NaturalConicInjectiveEmpty h c s d n m
-  )
-  => NaturalConicBi h c s Injective d 'Empty n m
--}
-
-{-
 --------------------------------------------------------------------------------
--- LimesG - Projective - Empty - FunctorialG -
-
-instance
-  ( NaturalConic h c s Projective d 'Empty n m
-  , NaturalConic h c s Injective d 'Empty n m
-  )
-  => ApplicativeG (SDualBi (LimesG c s Projective d 'Empty n m)) (Inv2 h) (->) where
-  amapG = lmMapS
-
-instance
-  ( NaturalConic h c s Projective d 'Empty n m
-  , NaturalConic h c s Injective d 'Empty n m
-  )
-  => FunctorialG (SDualBi (LimesG c s Projective d 'Empty n m)) (Inv2 h) (->)
+-- Parallel -
 
 --------------------------------------------------------------------------------
--- LimesG - Injective - Empty - FunctorialG -
+-- Star -
 
-instance
-  ( NaturalConic h c s Projective d 'Empty n m
-  , NaturalConic h c s Injective d 'Empty n m
-  )
-  => ApplicativeG (SDualBi (LimesG c s Injective d 'Empty n m)) (Inv2 h) (->) where
-  amapG = lmMapS
-
-instance
-  ( NaturalConic h c s Projective d 'Empty n m
-  , NaturalConic h c s Injective d 'Empty n m
-  )
-  => FunctorialG (SDualBi (LimesG c s Injective d 'Empty n m)) (Inv2 h) (->)
--}
+--------------------------------------------------------------------------------
+-- General -
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -
@@ -472,11 +434,11 @@ xecOrnt ::
   , Diagrammatic d
   )
   => X x -> LimesG c s p d t n m (Orientation x) -> X (Cone s p d t n m (Orientation x))
-xecOrnt xx (LimesGProjective u _)
+xecOrnt xx (LimesProjective u _)
   = case cone u of
   ConeProjective d _ _ -> xCnPrjOrnt xx (return d)
   ConeKernel d _       -> xCnPrjDstOrnt xx (return d)
-xecOrnt xx (LimesGInjective u _)
+xecOrnt xx (LimesInjective u _)
   = case cone u of
   ConeInjective d _ _ -> xCnInjOrnt xx (return d)
   ConeCokernel d _    -> xCnInjDstOrnt xx (return d)
@@ -691,7 +653,7 @@ prpLimes xec xef l = Prp "Limes" :<=>:
 -- | projective limes on oriented structures.
 lmMltPrjOrnt :: (Entity p, x ~ Orientation p)
   => p -> Diagram t n m x -> Limes Mlt Projective t n m x
-lmMltPrjOrnt t d = LimesGProjective l u where
+lmMltPrjOrnt t d = LimesProjective l u where
     l = cnPrjOrnt t d
     u (ConeProjective _ x _) = x:>t
 
@@ -701,7 +663,7 @@ lmMltPrjOrnt t d = LimesGProjective l u where
 -- | injective limes on oriented structures.
 lmMltInjOrnt :: (Entity p, x ~ Orientation p)
   => p -> Diagram t n m x -> Limes Mlt Injective t n m x
-lmMltInjOrnt t d = LimesGInjective l u where
+lmMltInjOrnt t d = LimesInjective l u where
     l = cnInjOrnt t d
     u (ConeInjective _ x _) = t:>x
 

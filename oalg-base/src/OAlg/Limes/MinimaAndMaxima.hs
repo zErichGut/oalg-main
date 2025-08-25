@@ -103,7 +103,7 @@ minimaGTo ::
 minimaGTo = LimitsG lMin where
   lMin :: (Multiplicative x, Diagrammatic d)
        => MinimumDiagrammatic d To n x -> MinimumG Cone d To n x
-  lMin d = LimesGProjective l u where
+  lMin d = LimesProjective l u where
     l = cnPrjChainTo (FactorChain (one (chnToStart $ diagram d)) d)
     u c = f where FactorChain f _ = cnPrjChainToInv c
 
@@ -119,7 +119,7 @@ minimaGFrom ::
 minimaGFrom = LimitsG lMin where
   lMin :: ( Multiplicative x, Diagrammatic d)
        => MinimumDiagrammatic d From n x -> MinimumG Cone d From n x
-  lMin d = LimesGProjective l u where
+  lMin d = LimesProjective l u where
     l = cnPrjChainFrom (FactorChain (one (chnFromStart $ diagram d)) d)
     u c = f where FactorChain f _ = cnPrjChainFromInv c
 
@@ -158,7 +158,7 @@ type Maxima t n = MaximaG Cone Diagram t n
 --------------------------------------------------------------------------------
 -- DualisableGChain -
 
--- | natural conic for chain diagrammatic objects.
+-- | type for dualisable generic limits of 'Conic'' objects over t'Chain' 'Diagrammatic' objects.
 type DualisableGChain p t o c d n
   = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d (Chain t) (n+1) n
 

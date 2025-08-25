@@ -23,7 +23,7 @@ module OAlg.Limes.TerminalAndInitialPoint
   , TerminalPoint, TerminalPointG
   , TerminalCone, TerminalConic
   , TerminalDiagram, TerminalDiagrammatic
-  , trmDiagram, trmCone
+  , trmDiagram, trmCone, trmConeG
 
     -- ** Orientation
   , terminalPointOrnt, trmsOrnt
@@ -115,11 +115,19 @@ trmDiagram :: TerminalDiagram x
 trmDiagram = DiagramEmpty
 
 --------------------------------------------------------------------------------
+-- trmConeG -
+
+-- | the terminal cone of a given point according to the given diagrammatic object.
+trmConeG :: Multiplicative x
+  => d Empty N0 N0 x -> Point x -> TerminalConic Cone d x
+trmConeG d t = ConeProjective d t Nil
+
+--------------------------------------------------------------------------------
 -- trmCone -
 
 -- | the terminal cone of a given point.
 trmCone :: Multiplicative x => Point x -> TerminalCone x
-trmCone t = ConeProjective DiagramEmpty t Nil
+trmCone = trmConeG DiagramEmpty
 
 --------------------------------------------------------------------------------
 -- trmPoinitialPointOrnt -
@@ -194,7 +202,7 @@ intsOrnt = lmsMltInjOrnt
 --------------------------------------------------------------------------------
 -- DualsiableGEmpty -
 
--- | natural conic for empty diagrammatic objects.
+-- | type for dualisable generic limits of 'Conic' objects over t'Empty' 'Diagrammatic' objects.
 type DualsiableGEmpty p o c d = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d 'Empty N0 N0
 
 --------------------------------------------------------------------------------

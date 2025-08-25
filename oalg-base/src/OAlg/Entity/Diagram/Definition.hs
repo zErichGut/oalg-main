@@ -84,15 +84,12 @@ data DiagramType
 ----------------------------------------
 -- DiagramType - Dual -
 
-type instance Dual 'Empty                   = 'Empty
-type instance Dual 'Discrete                = 'Discrete
-type instance Dual ('Chain t)               = 'Chain (Dual t)
-type instance Dual ('Parallel 'LeftToRight) = 'Parallel 'RightToLeft
-type instance Dual ('Parallel 'RightToLeft) = 'Parallel 'LeftToRight
-type instance Dual ('Star 'To)              = 'Star 'From
-type instance Dual ('Star 'From)            = 'Star 'To
-type instance Dual 'General                 = 'General
-
+type instance Dual 'Empty        = 'Empty
+type instance Dual 'Discrete     = 'Discrete
+type instance Dual ('Chain t)    = 'Chain (Dual t)
+type instance Dual ('Parallel t) = 'Parallel (Dual t)
+type instance Dual ('Star t)     = 'Star (Dual t)
+type instance Dual 'General      = 'General
 
 --------------------------------------------------------------------------------
 -- rt'
