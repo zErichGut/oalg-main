@@ -277,86 +277,6 @@ instance
   )
   => NaturalConicBi h Cone Mlt p Diagram t n m
 
-{-
---------------------------------------------------------------------------------
--- Empty -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticEmpty h d n m
-  )
-  => NaturalConicBi h Cone Mlt Projective d Empty n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticEmpty h d n m
-  )
-  => NaturalConicBi h Cone Mlt Injective d Empty n m
-
---------------------------------------------------------------------------------
--- Discrete -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticDiscrete h d n m
-  )
-  => NaturalConicBi h Cone Mlt Projective d Discrete n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticDiscrete h d n m
-  )
-  => NaturalConicBi h Cone Mlt Injective d Discrete n m
-
---------------------------------------------------------------------------------
--- Chain -
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticChain h d From n m
-  , NaturalDiagrammaticChain h d To n m
-  )
-  => NaturalConicBi h Cone Mlt Projective d (Chain From) n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticChain h d From n m
-  , NaturalDiagrammaticChain h d To n m
-  )
-  => NaturalConicBi h Cone Mlt Projective d (Chain To) n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticChain h d From n m
-  , NaturalDiagrammaticChain h d To n m
-  )
-  => NaturalConicBi h Cone Mlt Injective d (Chain From) n m
-
-instance
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , NaturalDiagrammaticChain h d From n m
-  , NaturalDiagrammaticChain h d To n m
-  )
-  => NaturalConicBi h Cone Mlt Injective d (Chain To) n m
-
---------------------------------------------------------------------------------
--- Parallel -
-
---------------------------------------------------------------------------------
--- Star -
-
---------------------------------------------------------------------------------
--- General -
--}
-
 --------------------------------------------------------------------------------
 -- XEligibleCone -
 
@@ -609,16 +529,29 @@ prpLimesFactorExist ::
   ( Conic c
   , Diagrammatic d
   , Show (d t n m x)
+  , Eq (d t n m x)
   , Entity x
   )
   => XEligibleCone c s p d t n m x
   -> LimesG c s p d t n m x -> Statement
 prpLimesFactorExist (XEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
   Forall (xec l)
-    (\c -> let f = universalFactor l c
+    (\c -> eligibleCone l c :?> Params ["c":=show c]
+           -- actually the random variable should produce eligible cones!!
+           -- but the preconditions tests also the validity of xec
+       :=> let f = universalFactor l c
             in And [ valid f
                    , eligibleFactor l c f :?> Params ["c":=show c, "f":=show f]
                    ]
+
+
+{-
+       let f = universalFactor l c
+            in And [ valid f
+                   , eligibleCone l c :?> Params []
+                     :=> eligibleFactor l c f :?> Params ["c":=show c, "f":=show f]
+                   ]
+-}
     ) 
 
 --------------------------------------------------------------------------------
@@ -627,14 +560,19 @@ prpLimesFactorExist (XEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
 -- | validity according to the uniqueness of a eligible factor for a given 'LimesG'
 -- and 'Cone'.
 prpLimesFactorUnique ::
-  ( Show (d t n m x)
+  ( Conic c, Diagrammatic d
+  , Show (d t n m x)
+  , Eq (d t n m x)
   , Entity x
   )
   => XEligibleConeFactor c s p d t n m x
   -> LimesG c s p d t n m x -> Statement
 prpLimesFactorUnique (XEligibleConeFactor xef) l = Prp "LimesFactorUnique" :<=>:
   Forall (xef l)
-    (\(c,x) -> let f = universalFactor l c
+    (\(c,x) -> And [ eligibleCone l c :?> Params []
+                   , eligibleFactor l c x :?> Params []
+                   ]
+           :=> let f = universalFactor l c
                 in (x == f) :?> Params ["c":=show c, "x'":=show x, "f":=show f]
     )
 
@@ -645,7 +583,7 @@ prpLimesFactorUnique (XEligibleConeFactor xef) l = Prp "LimesFactorUnique" :<=>:
 prpLimes ::
   ( Conic c
   , Diagrammatic d
-  , Show (d t n m x)
+  , Entity (d t n m x)
   , Entity x
   )
   => XEligibleCone c s p d t n m x

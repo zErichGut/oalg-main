@@ -124,7 +124,7 @@ instance NaturalConicBi h c s p d t n m
 prpLimitsG ::
   ( Conic c
   , Diagrammatic d
-  , Show (d t n m x)
+  , Entity (d t n m x)
   , Entity x
   )
   => XEligibleCone c s p d t n m x
@@ -143,7 +143,7 @@ instance
   , XStandardEligibleCone c s p d t n m x
   , XStandardEligibleConeFactor c s p d t n m x
   , XStandard (d t n m x)
-  , Show (d t n m x)
+  , Entity (d t n m x)
   , Entity x
   )
   => Validable (LimitsG c s p d t n m x) where

@@ -261,12 +261,6 @@ xecOrtSite ::
   , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Injective d (Chain (Dual t)) (n+1) n
   , s ~ Mlt
   , t ~ Dual (Dual t)
-{-  
-  , NaturalConicChain Projective (Dual t) Op c d n
-  , NaturalConicChain Projective t Op c d n
-  , NaturalConicChain Injective t Op c d n
-  , NaturalConicChain Injective (Dual t) Op c d n
--}
   )
   => XOrtSite r x -> XEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
 xecOrtSite xe@(XEnd _ _)   = XEligibleCone (xecPrjOrtSiteTo xe)
@@ -277,6 +271,7 @@ xecOrtSite xs@(XStart _ _) = xec where
 
 instance XStandardOrtSite To N where
   xStandardOrtSite = XEnd (return ()) (const xN)
+
 --------------------------------------------------------------------------------
 -- prpMinimaAndMaxima -
 
