@@ -215,13 +215,13 @@ lmMapCov (Covariant2 (Inv2 t f)) (LimesProjective uc uf)
   = LimesProjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Right1 (ConeG c')))
 lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
   = LimesInjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
-  
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Right1 (ConeG c')))
+
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
@@ -232,12 +232,12 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
   = LimesInjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Left1 (ConeG c')))
 lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
   = LimesProjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Left1 (ConeG c')))
 
 --------------------------------------------------------------------------------
 -- lmMapS -
@@ -269,6 +269,15 @@ instance NaturalConicBi h c s p d t n m
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
 
+instance
+  ( CategoryDisjunctive h
+  , HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => NaturalConicBi h Cone Mlt p Diagram t n m
+
+{-
 --------------------------------------------------------------------------------
 -- Empty -
 
@@ -302,7 +311,6 @@ instance
   , NaturalDiagrammaticDiscrete h d n m
   )
   => NaturalConicBi h Cone Mlt Injective d Discrete n m
-
 
 --------------------------------------------------------------------------------
 -- Chain -
@@ -347,6 +355,7 @@ instance
 
 --------------------------------------------------------------------------------
 -- General -
+-}
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -
@@ -380,7 +389,7 @@ xecMapCov (Covariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' whe
 
     xc' = do
       c <- xec l
-      let SDualBi (Right1 c') = amapG t (SDualBi (Right1 c)) in return c'
+      let SDualBi (Right1 (ConeG c')) = amapF t (SDualBi (Right1 (ConeG c))) in return c'
 
 --------------------------------------------------------------------------------
 -- xecMapCnt -
@@ -398,7 +407,7 @@ xecMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec'
 
     xc' = do
       c <- xec l
-      let SDualBi (Left1 c') = amapG t (SDualBi (Right1 c)) in return c'
+      let SDualBi (Left1 (ConeG c')) = amapF t (SDualBi (Right1 (ConeG c))) in return c'
 
 --------------------------------------------------------------------------------
 -- xecMapS -
@@ -489,7 +498,7 @@ xecfMapCov (Covariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleConeF
 
     xcf' = do
       (c,f) <- xecf l
-      let SDualBi (Right1 c') = amapG t (SDualBi (Right1 c)) in return (c',amap t f)
+      let SDualBi (Right1 (ConeG c')) = amapG t (SDualBi (Right1 (ConeG c))) in return (c',amap t f)
 
 --------------------------------------------------------------------------------
 -- xecfMapCnt -
@@ -508,7 +517,7 @@ xecfMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleC
 
     xcf' = do
       (c,f) <- xecf l
-      let SDualBi (Left1 cOp) = amapG t (SDualBi (Right1 c)) in return (cOp,amap t f)
+      let SDualBi (Left1 (ConeG cOp)) = amapG t (SDualBi (Right1 (ConeG c))) in return (cOp,amap t f)
 
 --------------------------------------------------------------------------------
 -- xecfMapS -
@@ -666,4 +675,5 @@ lmMltInjOrnt :: (Entity p, x ~ Orientation p)
 lmMltInjOrnt t d = LimesInjective l u where
     l = cnInjOrnt t d
     u (ConeInjective _ x _) = t:>x
+
 

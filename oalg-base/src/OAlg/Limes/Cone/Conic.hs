@@ -80,10 +80,10 @@ type instance Dual1 (ConeG c s p d t n m) = ConeG c s (Dual p) d (Dual t) n m
 -- croh -
 
 -- | the underlying cone.
-croh :: Conic c => ConeG c s p d t n m x -> Cone s p d t n m x
-croh (ConeG c) = cone c
+croh :: Conic c => ConeG c s p d t n m x -> ConeG Cone s p d t n m x
+croh (ConeG c) = ConeG (cone c)
 
-instance Conic c => Natural r (->) (ConeG c s p d t n m) (Cone s p d t n m) where
+instance Conic c => Natural r (->) (ConeG c s p d t n m) (ConeG Cone s p d t n m) where
   roh _ = croh
 
 --------------------------------------------------------------------------------
@@ -91,12 +91,12 @@ instance Conic c => Natural r (->) (ConeG c s p d t n m) (Cone s p d t n m) wher
 
 -- | natural assocition induced by 'croh' betewwn @'SDualBi' ('ConeG' __c s p d t n m__)@ and
 -- @'SDualBi' ('Cone' __s p d t n m__)@.
-crohS :: Conic c => SDualBi (ConeG c s p d t n m) x -> SDualBi (Cone s p d t n m) x
+crohS :: Conic c => SDualBi (ConeG c s p d t n m) x -> SDualBi (ConeG Cone s p d t n m) x
 crohS (SDualBi (Right1 c)) = SDualBi (Right1 (croh c))
 crohS (SDualBi (Left1 c')) = SDualBi (Left1 (croh c'))
 
 instance Conic c
-  => Natural r (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m)) where
+  => Natural r (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (ConeG Cone s p d t n m)) where
   roh _ = crohS
 
 --------------------------------------------------------------------------------
@@ -127,13 +127,13 @@ class
   ( Conic c
   , HomMultiplicativeDisjunctive h
   , NaturalDiagrammatic h d t n m
-  , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (Cone s p d t n m))
+  , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (ConeG Cone s p d t n m))
   , p ~ Dual (Dual p)
   )
   => NaturalConic h c s p d t n m
 
 --------------------------------------------------------------------------------
--- -
+-- Cone - Mlt -
 
 instance
   ( HomMultiplicativeDisjunctive h
@@ -158,7 +158,7 @@ instance
   , p ~ Dual (Dual p)
   )
   => NaturalTransformable h (->)
-       (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (Cone Mlt p d t n m))
+       (SDualBi (ConeG Cone Mlt p d t n m)) (SDualBi (ConeG Cone Mlt p d t n m))
 
 instance
   ( HomMultiplicativeDisjunctive h
@@ -167,6 +167,14 @@ instance
   , p ~ Dual (Dual p)
   )
   => NaturalConic h Cone Mlt p d t n m
+
+
+
+
+
+
+
+
 
 
 {-
