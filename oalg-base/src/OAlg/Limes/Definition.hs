@@ -20,6 +20,7 @@
 -- Definition of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
 module OAlg.Limes.Definition
   (
+{-    
     -- * Limes
     Limes, LimesG(..)
   , universalCone, universalFactor
@@ -43,7 +44,7 @@ module OAlg.Limes.Definition
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt, coXEligibleConeFactor
   , xecfOrtSite
-
+-}
   ) where
 
 import Control.Monad
@@ -215,13 +216,13 @@ lmMapCov (Covariant2 (Inv2 t f)) (LimesProjective uc uf)
   = LimesProjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Right1 (ConeG c')))
 lmMapCov (Covariant2 (Inv2 t f)) (LimesInjective uc uf)
   = LimesInjective uc' uf' where
   SDualBi (Right1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))  
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Right1 c'))
-  
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Right1 (ConeG c')))
+
 --------------------------------------------------------------------------------
 -- lmMapCnt
 
@@ -232,12 +233,12 @@ lmMapCnt (Contravariant2 (Inv2 t f)) (LimesProjective uc uf)
   = LimesInjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amap1 t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Left1 (ConeG c')))
 lmMapCnt (Contravariant2 (Inv2 t f)) (LimesInjective uc uf)
   = LimesProjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amapF t (SDualBi (Right1 (ConeG uc)))
   uf' c' = amap t (uf c) where
-    SDualBi (Right1 c) = amapF f (SDualBi (Left1 c'))
+    SDualBi (Right1 (ConeG c)) = amapF f (SDualBi (Left1 (ConeG c')))
 
 --------------------------------------------------------------------------------
 -- lmMapS -
@@ -269,6 +270,15 @@ instance NaturalConicBi h c s p d t n m
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
 
+instance
+  ( CategoryDisjunctive h
+  , HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => NaturalConicBi h Cone Mlt p Diagram t n m
+
+{-
 --------------------------------------------------------------------------------
 -- Empty -
 
@@ -667,3 +677,4 @@ lmMltInjOrnt t d = LimesInjective l u where
     l = cnInjOrnt t d
     u (ConeInjective _ x _) = t:>x
 
+-}

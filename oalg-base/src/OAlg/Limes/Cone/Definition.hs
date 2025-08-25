@@ -35,10 +35,11 @@ module OAlg.Limes.Cone.Definition
 
     -- * Duality
   , NaturalDiagrammaticBi
+{-  
   , NaturalDiagrammaticEmpty
   , NaturalDiagrammaticDiscrete
   , NaturalDiagrammaticChain
-  
+-}  
     -- * Constructions
   , cnDstAdjZero
   , cnPrjOrnt, cnInjOrnt
@@ -346,6 +347,7 @@ cnMapS ::
   => h x y -> SDualBi (Cone s p d t n m) x -> SDualBi (Cone s p d t n m) y
 cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
 
+
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticBi -
 
@@ -355,6 +357,14 @@ class
   , NaturalDiagrammatic h d (Dual t) n m
   )
   => NaturalDiagrammaticBi h d t n m
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedDisjunctive h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammaticBi h Diagram t n m
 
 --------------------------------------------------------------------------------
 -- FunctorialG -
@@ -392,6 +402,7 @@ instance
   )
   => FunctorialG (SDualBi (Cone Dst p d t n m)) h (->)
 
+{-
 --------------------------------------------------------------------------------
 -- Empty -
 
@@ -480,6 +491,7 @@ instance
 
 --------------------------------------------------------------------------------
 -- General -
+-}
 
 --------------------------------------------------------------------------------
 -- tip -

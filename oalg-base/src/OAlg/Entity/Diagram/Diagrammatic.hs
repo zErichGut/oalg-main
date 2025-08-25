@@ -31,9 +31,10 @@ module OAlg.Entity.Diagram.Diagrammatic
   , NaturalDiagrammatic
   , drohS
   , NaturalDiagrammaticW
-  
+{-  
     -- * Proposition
   , prpDiagrammatic
+-}
   ) where
 
 import Control.Monad
@@ -96,14 +97,15 @@ dmap :: ApplicativeG (DiagramG d t n m) h (->)
   => h x y -> d t n m x -> d t n m y
 dmap h d = d' where DiagramG d' = amapG h (DiagramG d)
 
+
 --------------------------------------------------------------------------------
 -- droh -
 
 -- | the underlying diagram.
-droh :: Diagrammatic d => DiagramG d t n m x -> Diagram t n m x
-droh (DiagramG d) = diagram d
+droh :: Diagrammatic d => DiagramG d t n m x -> DiagramG Diagram t n m x
+droh (DiagramG d) = DiagramG (diagram d)
 
-instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (Diagram t n m) where
+instance Diagrammatic d => Natural s (->) (DiagramG d t n m) (DiagramG Diagram t n m) where
   roh _ = droh
 
 --------------------------------------------------------------------------------
@@ -129,12 +131,12 @@ sdbFromDgmObj (SDualBi (Left1 d')) = SDualBi (Left1 (DiagramG d'))
 
 -- | natural assocition induced by 'droh' betewwn @'SDualBi' ('DiagramG' __d t n m__)@ and
 -- @'SDualBi' ('Diagram' __t n m__)@.
-drohS :: Diagrammatic d => SDualBi (DiagramG d t n m) x -> SDualBi (Diagram t n m) x
+drohS :: Diagrammatic d => SDualBi (DiagramG d t n m) x -> SDualBi (DiagramG Diagram t n m) x
 drohS (SDualBi (Right1 d)) = SDualBi (Right1 (droh d))
 drohS (SDualBi (Left1 d')) = SDualBi (Left1 (droh d'))
 
 instance Diagrammatic d
-  => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)) where
+  => Natural s (->) (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m)) where
   roh _ = drohS
 
 --------------------------------------------------------------------------------
@@ -154,13 +156,13 @@ class
   ( Diagrammatic d
   , CategoryDisjunctive h
   , HomOrientedDisjunctive h
-  , NaturalTransformable h (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m))
+  , NaturalTransformable h (->) (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m))
   , t ~ Dual (Dual t)
   )
   => NaturalDiagrammatic h d t n m
 
 --------------------------------------------------------------------------------
--- - NaturalDiagrammatic - Diagram -
+-- Diagram -
 
 instance
   ( HomOrientedDisjunctive h
@@ -181,7 +183,7 @@ instance
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
-  => NaturalTransformable h (->) (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m))
+  => NaturalTransformable h (->) (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m))
 
 instance
   ( CategoryDisjunctive h
@@ -198,7 +200,7 @@ instance
 data NaturalDiagrammaticW h d t n m where
   NaturalDiagrammaticW :: NaturalDiagrammatic h d t n m
     => NaturalDiagrammaticW h d t n m
-
+{-
 --------------------------------------------------------------------------------
 -- prpHomOrientedDisjunctiveS -
 
@@ -228,21 +230,21 @@ relNaturalDiagrammatic ::
   )
   => q h d t n m -> h x y -> SDualBi (Diagram t n m) x -> Statement
 relNaturalDiagrammatic _ = prpHomOrientedDisjunctiveS
+-}
 
-prpNaturalDiagrammatic ::
-  NaturalDiagrammatic h d t n m
+prpNaturalDiagrammatic :: NaturalDiagrammatic h d t n m
   => q h d t n m
-  -> X (SomeNaturalApplication h (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m)))
+  -> X (SomeNaturalApplication h (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m)))
   -> Statement
 prpNaturalDiagrammatic q xsa = Prp "NaturalDiagrammatic"
   :<=>: Forall xsa (\(SomeNaturalApplication h d)
                     -> And [ relNaturalTransformable (n q) h d
-                           , prpHomOrientedDisjunctiveS h (drohS d)
                            ]
                    )
   where n :: NaturalDiagrammatic h d t n m
           => q h d t n m
-          -> NaturalTransformation h (->) (SDualBi (DiagramG d t n m)) (SDualBi (Diagram t n m))
+          -> NaturalTransformation h (->)
+               (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m))
         n _ = NaturalTransformation
 
 --------------------------------------------------------------------------------
@@ -280,7 +282,7 @@ xdChainToStruct :: (n ~ m+1, t ~ Chain To, Show2 h)
   => Any m
   -> Homomorphous OrtSiteX x y 
   -> h x y
-  -> X (SomeNaturalApplication h (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+  -> X (SomeNaturalApplication h (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdChainToStruct m (Struct :>: Struct) h = do
   b <- xBool
   case b of
@@ -299,14 +301,15 @@ xdChainTo ::
   => Any m
   -> h x y
   -> X (SomeNaturalApplication h
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdChainTo m h = xdChainToStruct m (homomorphous h) h
 
 
 xsaChainTo ::(n ~ m+1, t ~ Chain To)
   => Any m
   -> X (SomeNaturalApplication (HomTest OrtSiteX)
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m))
+       )
 xsaChainTo m = do
   SomeMorphism h <- xsOrtSiteXOp
   xdChainTo m h
@@ -318,7 +321,7 @@ xdSinkStruct :: (n ~ m+1, t ~ Star To, Show2 h)
   => Any m
   -> Homomorphous OrtSiteX x y 
   -> h x y
-  -> X (SomeNaturalApplication h (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+  -> X (SomeNaturalApplication h (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdSinkStruct m (Struct :>: Struct) h = do
   b <- xBool
   case b of
@@ -337,13 +340,13 @@ xdSink ::
   => Any m
   -> h x y
   -> X (SomeNaturalApplication h
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdSink m h = xdSinkStruct m (homomorphous h) h
 
 xsaSink ::(n ~ m+1, t ~ Star To)
   => Any m
   -> X (SomeNaturalApplication (HomTest OrtSiteX)
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xsaSink m = do
   SomeMorphism h <- xsOrtSiteXOp
   xdSink m h
@@ -363,7 +366,7 @@ snaDual ::
   , t ~ Dual (Dual t)
   )
   => SomeNaturalApplication (HomTest s)
-        (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m))    
+        (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m))    
   -> SomeNaturalApplication (HomTest s)
         (SDualBi (DiagramG Diagram (Dual t) n m)) (SDualBi (Diagram (Dual t) n m))
 snaDual (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h)) of
@@ -374,14 +377,14 @@ snaDual (SomeNaturalApplication h sd) = case (tauOrt (domain h), tauOrt (range h
       sd' = case amapG t sd of
         SDualBi (Right1 d) -> SDualBi (Left1 d)
         SDualBi (Left1 d') -> SDualBi (Right1 d') 
-
+{-
 --------------------------------------------------------------------------------
 -- xsaChainFrom -
 
 xsaChainFrom :: (n ~ m+1, t ~ Chain From)
   => Any m
   -> X (SomeNaturalApplication (HomTest OrtSiteX)
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xsaChainFrom m = amap1 snaDual $ xsaChainTo m
 
 --------------------------------------------------------------------------------
@@ -390,7 +393,7 @@ xsaChainFrom m = amap1 snaDual $ xsaChainTo m
 xsaSource ::(n ~ m+1, t ~ Star From)
   => Any m
   -> X (SomeNaturalApplication (HomTest OrtSiteX)
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xsaSource m = amap1 snaDual $ xsaSink m
 
 --------------------------------------------------------------------------------
@@ -456,7 +459,7 @@ xdParallelLRStruct :: (n ~ N2, t ~ Parallel LeftToRight, Show2 h)
   => Any m
   -> Homomorphous OrtOrientationX x y 
   -> h x y
-  -> X (SomeNaturalApplication h (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+  -> X (SomeNaturalApplication h (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdParallelLRStruct m (Struct :>: Struct) h = do
   b <- xBool
   case b of
@@ -475,13 +478,13 @@ xdParallelLR ::
   => Any m
   -> h x y
   -> X (SomeNaturalApplication h
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdParallelLR m h = xdParallelLRStruct m (homomorphous h) h
 
 xsaParallelLR ::(n ~ N2, t ~ Parallel LeftToRight)
   => Any m
   -> X (SomeNaturalApplication (HomTest OrtOrientationX)
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xsaParallelLR m = do
   SomeMorphism h <- xsOrtOrientationXOp
   xdParallelLR m h
@@ -492,7 +495,7 @@ xsaParallelLR m = do
 xsaParallelRL ::(n ~ N2, t ~ Parallel RightToLeft)
   => Any m
   -> X (SomeNaturalApplication (HomTest OrtOrientationX)
-         (SDualBi (DiagramG Diagram t n m)) (SDualBi (Diagram t n m)))
+         (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xsaParallelRL m = amap1 snaDual $ xsaParallelLR m
 
 --------------------------------------------------------------------------------
@@ -538,3 +541,4 @@ prpDiagrammatic nMax = Prp "Diagrammatic"
           => Any m -> NaturalDiagrammaticW (HomTest s) Diagram
                (Parallel RightToLeft) N2 m
         lrF _ = NaturalDiagrammaticW
+-}
