@@ -16,6 +16,9 @@ module OAlg.Limes.Definition
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
 
+    -- * Constructions
+  , lmMltPrjOrnt, lmMltInjOrnt  
+
     -- * Duality
   , module Dl
 

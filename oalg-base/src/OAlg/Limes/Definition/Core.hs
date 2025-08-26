@@ -1,14 +1,12 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds, ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Limes.Definition.Core
@@ -28,23 +26,6 @@ module OAlg.Limes.Definition.Core
     -- * Constructions
   , lmMltPrjOrnt, lmMltInjOrnt
 
-{-  
-    -- * Mapping
-  , lmMapS, lmMapCov, lmMapCnt
-
-
-    -- * Proposition
-  , prpLimes, prpLimesFactorExist, prpLimesFactorUnique
-
-    -- * X
-  , XEligibleCone(..), XStandardEligibleCone(..)
-  , xEligibleConeOrnt, coXEligibleCone
-  , xecMapS, xecMapCnt
-  
-  , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
-  , xEligibleConeFactorOrnt, coXEligibleConeFactor
-  , xecfOrtSite
--}
   ) where
 
 import Data.Typeable

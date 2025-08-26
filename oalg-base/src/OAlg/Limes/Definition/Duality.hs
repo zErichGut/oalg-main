@@ -3,14 +3,11 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds, ConstraintKinds #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
 
 {-# LANGUAGE UndecidableInstances #-}
 -- see comment for UndecidableInstances in OAlg.Limes.Cone.Duality

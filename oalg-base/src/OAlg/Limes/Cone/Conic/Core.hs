@@ -25,12 +25,6 @@ module OAlg.Limes.Cone.Conic.Core
     -- * Natural
   , NaturalConic
   , crohS
-{-
-    -- * Duality
-  , sdbToCncObj, sdbFromCncObj
-  , NaturalConicDual
-  , NaturalConicBi
--}
   ) where
 
 import Data.Kind

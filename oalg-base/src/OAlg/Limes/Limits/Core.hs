@@ -1,34 +1,54 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds, RankNTypes #-}
+
 -- |
--- Module      : OAlg.Limes.Limits
--- Description : limits of diagrams
+-- Module      : OAlg.Limes.Limits.Core
+-- Description : basic definition for limits of diagrammatic objects.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- 'LimitsG' of 'Diagram's, i.e. assigning to each diagram a 'LimesG' over the given diagram.
-module OAlg.Limes.Limits
+-- basic definition for a 'LimesG' of diagrammatic object.
+module OAlg.Limes.Limits.Core
   (
     -- * Limits
     limes, LimitsG(..), Limits
 
     -- * Constructions
   , lmsMltPrjOrnt, lmsMltInjOrnt
-  
-    -- * Duality
-  , module Dl
-
-    -- * Proposition
-  , module Prp
-  ) where
-
-import OAlg.Limes.Limits.Core
-import OAlg.Limes.Limits.Duality as Dl
-import OAlg.Limes.Limits.Proposition as Prp
 
 {-
+    -- * Mapping
+  , lmsMapS, lmsMapCov, lmsMapCnt
+
+    -- * Proposition
+  , prpLimitsG
+-}
+  ) where
+
+import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Variant
+import OAlg.Data.Either
+
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
+
+import OAlg.Entity.Diagram
+
+import OAlg.Limes.Cone
+import OAlg.Limes.Definition
+
 --------------------------------------------------------------------------------
 -- LimitsG -
 
@@ -54,6 +74,21 @@ type Limits s p = LimitsG Cone s p Diagram
 limes :: LimitsG c s p d t n m x -> d t n m x -> LimesG c s p d t n m x
 limes (LimitsG l) = l
 
+--------------------------------------------------------------------------------
+-- lmsMltPrjOrnt -
+
+-- | projective limits for 'Multiplicative' structures over @'Orientation' __p__@ .
+lmsMltPrjOrnt :: Entity p => p -> Limits Mlt Projective t n m (Orientation p)
+lmsMltPrjOrnt = LimitsG . lmMltPrjOrnt
+
+--------------------------------------------------------------------------------
+-- lmsMltInjOrnt -
+
+-- | injective limits for 'Multiplicative' structures over @'Orientation' __p__@.
+lmsMltInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
+lmsMltInjOrnt = LimitsG . lmMltInjOrnt  
+
+{-
 --------------------------------------------------------------------------------
 -- LimitsG - Dual -
 
@@ -130,19 +165,5 @@ instance
   )
   => Validable (LimitsG c s p d t n m x) where
   valid = prpLimitsG xStandardEligibleCone xStandardEligibleConeFactor xStandard
-
---------------------------------------------------------------------------------
--- lmsMltPrjOrnt -
-
--- | projective limits for 'Multiplicative' structures over @'Orientation' __p__@ .
-lmsMltPrjOrnt :: Entity p => p -> Limits Mlt Projective t n m (Orientation p)
-lmsMltPrjOrnt = LimitsG . lmMltPrjOrnt
-
---------------------------------------------------------------------------------
--- lmsMltInjOrnt -
-
--- | injective limits for 'Multiplicative' structures over @'Orientation' __p__@.
-lmsMltInjOrnt :: Entity p => p -> Limits Mlt Injective t n m (Orientation p)
-lmsMltInjOrnt = LimitsG . lmMltInjOrnt  
-
 -}
+
