@@ -253,21 +253,57 @@ xecPrjOrtSiteTo xe = xcn xe . diagrammaticObject . cone . universalCone where
       f <- xe s
       return $ cnPrjChainFrom (FactorChain f d)
 
-xecOrtSite ::
+gg ::
   ( Multiplicative x
+  , NaturalDiagrammaticBi (Inv2 (HomDisjEmpty Mlt Op)) d (Chain t) (n+1) n
+  )
+  => MinimumConic Cone d t n (Op x) -> MaximumConic Cone d (Dual t) n x
+gg min = max where
+  Contravariant2 i      = toDualOpMlt
+  SDualBi (Left1 max) = amapF (inv2 i) (SDualBi (Right1 min))
+
+hh ::
+  ( Multiplicative x
+  , DualisableGChain Injective t Op c d n
+  )
+  => MaximumG c d t n x -> MinimumG c d (Dual t) n (Op x)
+hh max = min where
+  Contravariant2 i = toDualOpMlt
+  SDualBi (Left1 min) = amapF i (SDualBi (Right1 max))
+
+ff ::
+  ( Multiplicative x
+  , DualisableGChain Injective t Op c d n
+  , NaturalDiagrammaticBi (Inv2 (HomDisjEmpty Mlt Op)) d (Chain (Dual t)) (n+1) n  
+  , t ~ Dual (Dual t)
+  )
+  => XOrtSite From x -> MaximumG c d t n x -> X (MaximumConic Cone d t n x)
+ff xf max = amap1 gg xmin where
+  xmin = xecPrjOrtSiteTo (coXOrtSite xf) (hh max)
+
+
+xecOrtSite ::
+  ( Conic c, Diagrammatic d, Multiplicative x
+{-  
   , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Projective d (Chain (Dual t)) (n+1) n
   , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Projective d (Chain t) (n+1) n
   , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Injective d (Chain t) (n+1) n
   , NaturalConic (HomDisjEmpty Mlt Op) c Mlt Injective d (Chain (Dual t)) (n+1) n
+-}
   , s ~ Mlt
-  , t ~ Dual (Dual t)
+  -- , t ~ Dual (Dual t)
   )
   => XOrtSite r x -> XEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
 xecOrtSite xe@(XEnd _ _)   = XEligibleCone (xecPrjOrtSiteTo xe)
+-- xecOrtSite xs@(XStart _ _) = XEligibleCone (ff xs)
+
+
+{-
 xecOrtSite xs@(XStart _ _) = xec where
   xec' = xecOrtSite (coXOrtSite xs)
-  i = toDualOpMlt
-  xec = xecMapCnt (vInv2 i) xec'
+  i    = toDualOpMlt
+  xec  = xecMapCnt (vInv2 i) xec'
+-}
 
 instance XStandardOrtSite To N where
   xStandardOrtSite = XEnd (return ()) (const xN)

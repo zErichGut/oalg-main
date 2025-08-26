@@ -8,7 +8,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Limes.Definition
@@ -24,7 +24,6 @@ module OAlg.Limes.Definition
     Limes, LimesG(..)
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
-  , NaturalConicBi
 
     -- * Mapping
   , lmMapS, lmMapCov, lmMapCnt
@@ -250,16 +249,6 @@ lmMapS ::
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt
 
 --------------------------------------------------------------------------------
--- NaturalConicBi -
-
--- | helper class to avoid undecidable instances.
-class
-  ( NaturalConic h c s p d t n m
-  , NaturalConic h c s (Dual p) d (Dual t) n m
-  )
-  => NaturalConicBi h c s p d t n m
-
---------------------------------------------------------------------------------
 -- FunctorialG -
 
 instance NaturalConicBi h c s p d t n m
@@ -268,14 +257,6 @@ instance NaturalConicBi h c s p d t n m
 
 instance NaturalConicBi h c s p d t n m
   => FunctorialG (SDualBi (LimesG c s p d t n m)) (Inv2 h) (->)
-
-instance
-  ( CategoryDisjunctive h
-  , HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  , p ~ Dual (Dual p), t ~ Dual (Dual t)
-  )
-  => NaturalConicBi h Cone Mlt p Diagram t n m
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -

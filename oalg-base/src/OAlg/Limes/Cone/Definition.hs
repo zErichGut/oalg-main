@@ -33,13 +33,6 @@ module OAlg.Limes.Cone.Definition
     -- ** Contravariant
   , cnMapCnt, cnMapMltCnt, cnMapDstCnt
 
-    -- * Duality
-  , NaturalDiagrammaticBi
-{-  
-  , NaturalDiagrammaticEmpty
-  , NaturalDiagrammaticDiscrete
-  , NaturalDiagrammaticChain
--}  
     -- * Constructions
   , cnDstAdjZero
   , cnPrjOrnt, cnInjOrnt
@@ -346,25 +339,6 @@ cnMapS ::
   )
   => h x y -> SDualBi (Cone s p d t n m) x -> SDualBi (Cone s p d t n m) y
 cnMapS = vmapBi cnMapCov cnMapCov cnMapCnt cnMapCnt
-
-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticBi -
-
--- | bi-natural diagrammatic objects @__d__@ on @__h__@.
-class
-  ( NaturalDiagrammatic h d t n m
-  , NaturalDiagrammatic h d (Dual t) n m
-  )
-  => NaturalDiagrammaticBi h d t n m
-
-instance
-  ( CategoryDisjunctive h
-  , HomOrientedDisjunctive h
-  , FunctorialOriented h
-  , t ~ Dual (Dual t)
-  )
-  => NaturalDiagrammaticBi h Diagram t n m
 
 --------------------------------------------------------------------------------
 -- FunctorialG -
