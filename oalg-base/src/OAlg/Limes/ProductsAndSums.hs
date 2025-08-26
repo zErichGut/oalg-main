@@ -237,7 +237,7 @@ type Sums n = SumsG Cone Diagram n
 
 -- | type for dualisable generic limits of 'Conic'' objects over t'Discrete' 'Diagrammatic' objects.
 type DualisableGDiscrete p o c d n
-  = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d Discrete n N0
+  = NaturalConicBi (IsoO Mlt o) c Mlt p d Discrete n N0
   
 --------------------------------------------------------------------------------
 -- coProductsG -

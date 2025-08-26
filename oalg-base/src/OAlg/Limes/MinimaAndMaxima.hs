@@ -237,7 +237,7 @@ maximaFrom' :: Multiplicative x => p n -> f x -> Maxima From n x
 maximaFrom' _ _ = maximaFrom
 
 --------------------------------------------------------------------------------
--- xecOrtSite -
+-- xecOrtSiteChain -
 
 xecPrjOrtSiteTo :: (Conic c, Diagrammatic d, Multiplicative x)
   => XOrtSite To x -> MinimumG c d t n x -> X (MinimumConic Cone d t n x)
@@ -258,31 +258,15 @@ xecInjOrtSiteFrom ::
   , NaturalConicBi (IsoO Mlt Op) c Mlt Injective d (Chain t) (n+1) n
   )
   => XOrtSite From x -> MaximumG c d t n x -> X (MaximumConic Cone d t n x)
-xecInjOrtSiteFrom xf max = amap1 coMin xmin where
-  xmin = xecPrjOrtSiteTo (coXOrtSite xf) (coMax max)
-
-  coMax ::
-    ( Multiplicative x
-    , DualisableGChain Injective t Op c d n
-    )
-    => MaximumG c d t n x -> MinimumG c d (Dual t) n (Op x)
-  coMax max = min where
-    Contravariant2 i = toDualOpMlt
-    SDualBi (Left1 min) = amapF i (SDualBi (Right1 max))
-
-  coMin ::
-    ( Multiplicative x
-    , NaturalDiagrammaticBi (IsoO Mlt Op) d (Chain t) (n+1) n
-    )
-    => MinimumConic Cone d t n (Op x) -> MaximumConic Cone d (Dual t) n x
-  coMin min = max where
-    Contravariant2 i    = toDualOpMlt
-    SDualBi (Left1 max) = amapF (inv2 i) (SDualBi (Right1 min))
+xecInjOrtSiteFrom xosFrom = xec where
+  xec' = xecPrjOrtSiteTo (coXOrtSite xosFrom)
+  Contravariant2 i = toDualOpMlt
+  SDualBi (Left1 (XEligibleCone xec)) = xecMapS (inv2 i) (SDualBi (Right1 (XEligibleCone xec')))
 
 xecOrtSiteChain ::
   (  Multiplicative x
   , s ~ Mlt
-  , DualisableGChain Injective t Op c d n
+  , NaturalConicBi (IsoO Mlt Op) c Mlt Injective d (Chain t) (n+1) n
   )
   => XOrtSite r x -> XEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
 xecOrtSiteChain xe@(XEnd _ _)   = XEligibleCone (xecPrjOrtSiteTo xe)
@@ -297,6 +281,7 @@ prpMinimaAndMaxima n = case someNatural n of
                         , prpLimitsG xecMaxFm xecfMaxFm xStandard maxFm
                         , prpLimitsG xecMaxFm' xecfMaxFm' xStandard maxFm'
                         , prpLimitsG xecMaxToN xecfMaxToN xStandard maxToN
+                        , prpLimitsG xecMaxFromN xecfMaxFromN xStandard maxFromN
                         ]
     where
       maxTo     = maximaTo' n' (Proxy :: Proxy OS)
@@ -316,4 +301,7 @@ prpMinimaAndMaxima n = case someNatural n of
       xecMaxToN  = xecOrtSiteChain (xoFrom $ xoTtl $ xNB 0 100)
       xecfMaxToN = xecfOrtSite (xoFrom $ xoTtl $ xNB 0 100)
 
+      maxFromN     = maximaFrom' n' (Proxy :: Proxy N)
+      xecMaxFromN  = xecOrtSiteChain (xoFrom $ xoTtl $ xNB 0 100)
+      xecfMaxFromN = xecfOrtSite (xoFrom $ xoTtl $ xNB 0 100)
 

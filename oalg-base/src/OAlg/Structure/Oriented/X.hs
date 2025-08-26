@@ -212,6 +212,9 @@ instance XStandardOrtSite To a => XStandardOrtSite From (Op a) where
 instance XStandardOrtSite To N where
   xStandardOrtSite = XEnd (return ()) (const xN)
 
+instance XStandardOrtSite From N where
+  xStandardOrtSite = XStart (return ()) (const xN)
+
 --------------------------------------------------------------------------------
 -- XStandardOrtSiteTo -
 
