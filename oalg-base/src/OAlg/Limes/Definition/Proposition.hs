@@ -28,7 +28,7 @@ module OAlg.Limes.Definition.Proposition
   , XEligibleConeFactor(..), XStandardEligibleConeFactor(..)
   , xEligibleConeFactorOrnt, coXEligibleConeFactor
   , xecfOrtSite
-  
+
   ) where
 
 import Control.Monad
@@ -76,42 +76,36 @@ type instance Dual1 (XEligibleCone c s p d t n m) = XEligibleCone c s (Dual p) d
 -- xecMapCov -
 
 -- | mapping according to a covariant isomorphism.
-xecMapCov :: NaturalConic h c s p d t n m
+xecMapCov :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> XEligibleCone c s p d t n m x -> XEligibleCone c s p d t n m y
-xecMapCov (Covariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' where
+xecMapCov (Covariant2 i) (XEligibleCone xec) = XEligibleCone xec' where
   xec' l' = xc' where
-    l = lmMapCov (Covariant2 (inv2 i)) l'
+    SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Right1 l'))
 
     xc' = do
       c <- xec l
-      let SDualBi (Right1 (ConeG c')) = amapF t (SDualBi (Right1 (ConeG c))) in return c'
+      let SDualBi (Right1 (ConeG c')) = amapF i (SDualBi (Right1 (ConeG c))) in return c'
 
 --------------------------------------------------------------------------------
 -- xecMapCnt -
 
 -- | mapping according to a contravariant isomorphism.
-xecMapCnt ::
-  ( NaturalConic h c s p d t n m
-  , NaturalConic h c s (Dual p) d (Dual t) n m
-  )
+xecMapCnt :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> XEligibleCone c s p d t n m x -> Dual1 (XEligibleCone c s p d t n m) y
-xecMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleCone xec) = XEligibleCone xec' where
+xecMapCnt (Contravariant2 i) (XEligibleCone xec) = XEligibleCone xec' where
   xec' l' = xc' where
-    l = lmMapCnt (Contravariant2 (inv2 i)) l'
+    SDualBi (Left1 l) = amapG (inv2 i) (SDualBi (Right1 l'))
 
     xc' = do
       c <- xec l
-      let SDualBi (Left1 (ConeG c')) = amapF t (SDualBi (Right1 (ConeG c))) in return c'
+      let SDualBi (Left1 (ConeG c')) = amapF i (SDualBi (Right1 (ConeG c))) in return c'
 
 --------------------------------------------------------------------------------
 -- xecMapS -
 
-xecMapS ::
-  ( NaturalConic h c s p d t n m
-  , NaturalConic h c s (Dual p) d (Dual t) n m
-  )
+xecMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y
   -> SDualBi (XEligibleCone c s p d t n m) x -> SDualBi (XEligibleCone c s p d t n m) y
 xecMapS = vmapBi xecMapCov xecMapCov xecMapCnt xecMapCnt 
@@ -122,8 +116,7 @@ xecMapS = vmapBi xecMapCov xecMapCov xecMapCnt xecMapCnt
 -- | random variable for eligible cones over 'Op'.
 coXEligibleCone ::
   ( Multiplicative x
-  , NaturalConic (HomDisjEmpty s Op) c s p d t n m
-  , NaturalConic (HomDisjEmpty s Op) c s (Dual p) d (Dual t) n m
+  , NaturalConicBi (Inv2 (HomDisjEmpty s Op)) c s p d t n m
   , s ~ Mlt
   )
   => XEligibleCone c s p d t n m x
@@ -184,44 +177,37 @@ class XStandardEligibleConeFactor c s p d t n m x where
 --------------------------------------------------------------------------------
 -- xecfMapCov -
 
-xecfMapCov :: NaturalConic h c s p d t n m
+xecfMapCov :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> XEligibleConeFactor c s p d t n m x
   -> XEligibleConeFactor c s p d t n m y
-xecfMapCov (Covariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleConeFactor xecf' where
+xecfMapCov (Covariant2 i) (XEligibleConeFactor xecf) = XEligibleConeFactor xecf' where
   xecf' l' = xcf' where
-    l = lmMapCov (Covariant2 (inv2 i)) l'
+    SDualBi (Right1 l) = amapF (inv2 i) (SDualBi (Right1 l'))
 
     xcf' = do
       (c,f) <- xecf l
-      let SDualBi (Right1 (ConeG c')) = amapG t (SDualBi (Right1 (ConeG c))) in return (c',amap t f)
+      let SDualBi (Right1 (ConeG c')) = amapF i (SDualBi (Right1 (ConeG c))) in return (c',amapf i f)
 
 --------------------------------------------------------------------------------
 -- xecfMapCnt -
 
-xecfMapCnt ::
-  ( NaturalConic h c s p d t n m
-  , NaturalConic h c s (Dual p) d (Dual t) n m
-  )
+xecfMapCnt :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> XEligibleConeFactor c s p d t n m x
   -> Dual1 (XEligibleConeFactor c s p d t n m) y
-xecfMapCnt (Contravariant2 i@(Inv2 t _)) (XEligibleConeFactor xecf) = XEligibleConeFactor xecf' where
-    
+xecfMapCnt (Contravariant2 i) (XEligibleConeFactor xecf) = XEligibleConeFactor xecf' where
   xecf' l' = xcf' where
-    l = lmMapCnt (Contravariant2 (inv2 i)) l'
+    SDualBi (Left1 l) = amapF (inv2 i) (SDualBi (Right1 l'))
 
     xcf' = do
       (c,f) <- xecf l
-      let SDualBi (Left1 (ConeG cOp)) = amapG t (SDualBi (Right1 (ConeG c))) in return (cOp,amap t f)
+      let SDualBi (Left1 (ConeG cOp)) = amapG i (SDualBi (Right1 (ConeG c))) in return (cOp,amapf i f)
 
 --------------------------------------------------------------------------------
 -- xecfMapS -
 
-xecfMapS ::
-  ( NaturalConic h c s p d t n m
-  , NaturalConic h c s (Dual p) d (Dual t) n m
-  )
+xecfMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y
   -> SDualBi (XEligibleConeFactor c s p d t n m) x -> SDualBi (XEligibleConeFactor c s p d t n m) y
 xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt 
@@ -231,8 +217,7 @@ xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt
 
 coXEligibleConeFactor ::
   ( Multiplicative x
-  , NaturalConic (HomDisjEmpty s Op) c s p d t n m
-  , NaturalConic (HomDisjEmpty s Op) c s (Dual p) d (Dual t) n m  
+  , NaturalConicBi (Inv2 (HomDisjEmpty s Op)) c s p d t n m
   , s ~ Mlt
   )
   => XEligibleConeFactor c s p d t n m x
@@ -360,3 +345,4 @@ prpLimes xec xef l = Prp "Limes" :<=>:
   And [ prpLimesFactorExist xec l
       , prpLimesFactorUnique xef l
       ]
+

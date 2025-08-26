@@ -1,15 +1,13 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Entity.Diagram.Diagrammatic
@@ -43,7 +41,6 @@ module OAlg.Entity.Diagram.Diagrammatic
 
 import Control.Monad
 
-import Data.Kind
 import Data.Typeable
 
 import OAlg.Prelude
@@ -51,16 +48,13 @@ import OAlg.Prelude
 import OAlg.Category.NaturalTransformable
 import OAlg.Category.SDuality
 import OAlg.Category.Unify
-import OAlg.Category.Path
 
 import OAlg.Data.Either
-import OAlg.Data.Constructable
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 
-import OAlg.Structure.Oriented hiding (Path(..))
-import OAlg.Structure.Additive
+import OAlg.Structure.Oriented
 
 import OAlg.Entity.Natural
 import OAlg.Entity.Diagram.Definition
@@ -160,6 +154,7 @@ class
   ( Diagrammatic d
   , CategoryDisjunctive h
   , HomOrientedDisjunctive h
+  , FunctorialOriented h
   , NaturalTransformable h (->) (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m))
   , t ~ Dual (Dual t)
   )

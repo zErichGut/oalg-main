@@ -39,6 +39,7 @@ import OAlg.Data.Either
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 
+import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone.Definition
@@ -98,6 +99,7 @@ instance Conic c
 class
   ( Conic c
   , HomMultiplicativeDisjunctive h
+  , FunctorialOriented h
   , NaturalDiagrammatic h d t n m
   , NaturalTransformable h (->) (SDualBi (ConeG c s p d t n m)) (SDualBi (ConeG Cone s p d t n m))
   , p ~ Dual (Dual p)

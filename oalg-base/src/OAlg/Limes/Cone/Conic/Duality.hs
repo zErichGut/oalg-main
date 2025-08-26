@@ -104,22 +104,6 @@ instance
   )
   => NaturalConic h Cone Mlt p d t n m
 
-{-
---------------------------------------------------------------------------------
--- NaturalConicDual -
-
--- | helper class to avoid undecidable instances.
-class NaturalConic h c s (Dual p) d (Dual t) n m => NaturalConicDual h c s p d t n m
-
-instance
-  ( CategoryDisjunctive h
-  , HomMultiplicativeDisjunctive h
-  , FunctorialOriented h    
-  , p ~ Dual (Dual p), t ~ Dual (Dual t)
-  )
-  => NaturalConicDual h Cone Mlt p Diagram t n m
--}
-
 --------------------------------------------------------------------------------
 -- NaturalConicBi -
 

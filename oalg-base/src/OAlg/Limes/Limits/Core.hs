@@ -2,12 +2,11 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds, RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Limes.Limits.Core
@@ -24,22 +23,9 @@ module OAlg.Limes.Limits.Core
 
     -- * Constructions
   , lmsMltPrjOrnt, lmsMltInjOrnt
-
-{-
-    -- * Mapping
-  , lmsMapS, lmsMapCov, lmsMapCnt
-
-    -- * Proposition
-  , prpLimitsG
--}
   ) where
 
 import OAlg.Prelude
-
-import OAlg.Category.SDuality
-
-import OAlg.Data.Variant
-import OAlg.Data.Either
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative

@@ -30,7 +30,8 @@ module OAlg.Data.Identity
 
     -- * Applicative
   , Applicative, amap, ($)
-  , Functorial, Functor
+  , Functorial, amapf
+  , Functor
 
     -- * Id2
   , Id2(..)
@@ -120,6 +121,12 @@ instance ApplicativeG Id (->) (->) where amapG = toIdG
 
 -- | functorials form @__c__@ to @('->')@ according to 'Id'.
 type Functorial c = FunctorialG Id c (->)
+
+--------------------------------------------------------------------------------
+-- amapf -
+-- | functorial representation of @__h__@ in @('->')@. 
+amapf :: Functorial h => h x y -> x -> y
+amapf = amap
 
 --------------------------------------------------------------------------------
 -- Functor -

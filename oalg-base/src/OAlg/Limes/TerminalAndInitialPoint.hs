@@ -203,7 +203,8 @@ intsOrnt = lmsMltInjOrnt
 -- DualsiableGEmpty -
 
 -- | type for dualisable generic limits of 'Conic' objects over t'Empty' 'Diagrammatic' objects.
-type DualsiableGEmpty p o c d = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d 'Empty N0 N0
+-- type DualsiableGEmpty p o c d = NaturalConicBi (Inv2 (HomDisjEmpty Mlt o)) c Mlt p d 'Empty N0 N0
+type DualsiableGEmpty p o c d = NaturalConicBi (IsoO Mlt o) c Mlt p d 'Empty N0 N0
 
 --------------------------------------------------------------------------------
 -- coTerminalPointG -

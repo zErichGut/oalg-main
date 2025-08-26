@@ -160,7 +160,7 @@ type Maxima t n = MaximaG Cone Diagram t n
 
 -- | type for dualisable generic limits of 'Conic'' objects over t'Chain' 'Diagrammatic' objects.
 type DualisableGChain p t o c d n
-  = NaturalConicBi (HomDisjEmpty Mlt o) c Mlt p d (Chain t) (n+1) n
+  = NaturalConicBi (IsoO Mlt o) c Mlt p d (Chain t) (n+1) n
 
 --------------------------------------------------------------------------------
 -- coMinimumTo -
@@ -255,8 +255,7 @@ xecPrjOrtSiteTo xe = xcn xe . diagrammaticObject . cone . universalCone where
 
 xecInjOrtSiteFrom ::
   ( Multiplicative x
-  , DualisableGChain Injective t Op c d n
-  , NaturalDiagrammaticBi (Inv2 (HomDisjEmpty Mlt Op)) d (Chain (Dual t)) (n+1) n  
+  , NaturalConicBi (IsoO Mlt Op) c Mlt Injective d (Chain t) (n+1) n
   )
   => XOrtSite From x -> MaximumG c d t n x -> X (MaximumConic Cone d t n x)
 xecInjOrtSiteFrom xf max = amap1 coMin xmin where
@@ -273,18 +272,17 @@ xecInjOrtSiteFrom xf max = amap1 coMin xmin where
 
   coMin ::
     ( Multiplicative x
-    , NaturalDiagrammaticBi (Inv2 (HomDisjEmpty Mlt Op)) d (Chain t) (n+1) n
+    , NaturalDiagrammaticBi (IsoO Mlt Op) d (Chain t) (n+1) n
     )
     => MinimumConic Cone d t n (Op x) -> MaximumConic Cone d (Dual t) n x
   coMin min = max where
-    Contravariant2 i      = toDualOpMlt
+    Contravariant2 i    = toDualOpMlt
     SDualBi (Left1 max) = amapF (inv2 i) (SDualBi (Right1 min))
 
 xecOrtSiteChain ::
   (  Multiplicative x
   , s ~ Mlt
   , DualisableGChain Injective t Op c d n
-  , NaturalDiagrammaticBi (Inv2 (HomDisjEmpty Mlt Op)) d (Chain (Dual t)) (n+1) n  
   )
   => XOrtSite r x -> XEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
 xecOrtSiteChain xe@(XEnd _ _)   = XEligibleCone (xecPrjOrtSiteTo xe)
