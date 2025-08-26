@@ -209,6 +209,9 @@ instance XStandardOrtSite To a => XStandardOrtSite From (Op a) where
     co :: XOrtSite To a -> XOrtSite From (Op a)
     co = coXOrtSite
 
+instance XStandardOrtSite To N where
+  xStandardOrtSite = XEnd (return ()) (const xN)
+
 --------------------------------------------------------------------------------
 -- XStandardOrtSiteTo -
 
