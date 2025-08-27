@@ -17,9 +17,12 @@
 -- pullbacks and pushouts, i.e. limits of @'Diagram' ('Star' __d__)@.
 module OAlg.Limes.PullbacksAndPushouts
   (
-{-    
+
     -- * Pullbacks
-    Pullbacks, GenericPullbacks, Pullback, PullbackCone, PullbackDiagram
+    Pullbacks, PullbacksG
+  , Pullback, PullbackG
+  , PullbackCone, PullbackConic
+  , PullbackDiagram, PullbackDiagrammatic
 
     -- ** Construction
   , pullbacks, pullbacks0, pullbacks1, plbPrdEql2
@@ -28,7 +31,10 @@ module OAlg.Limes.PullbacksAndPushouts
   , pullbacksOrnt
 
     -- * Pushouts
-  , Pushouts, GenericPushouts, Pushout, PushoutCone, PushoutDiagram
+  , Pushouts, PushoutsG
+  , Pushout, PushoutG
+  , PushoutCone, PushoutConic
+  , PushoutDiagram, PushoutDiagrammatic
 
     -- ** Construction
   , pushouts, pushouts', pshSumCoeql2
@@ -36,16 +42,17 @@ module OAlg.Limes.PullbacksAndPushouts
     -- *** Orientation
   , pushoutsOrnt
 
-    -- * Duality
-  , pshLimitsDuality
--}
   )
   where
 
 import Data.Kind
-import Data.Typeable
 
 import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
+import OAlg.Data.Variant
 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
@@ -53,6 +60,8 @@ import OAlg.Entity.Diagram
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+
+import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Definition
@@ -89,8 +98,6 @@ type PullbacksG c d n = LimitsG c Mlt Projective d (Star To) (n+1) n
 -- | pullbacks for 'Multiplicative' structures.
 type Pullbacks n = PullbacksG Cone Diagram n
 
-
-
 --------------------------------------------------------------------------------
 -- plbMinimumDiagram0 -
 
@@ -118,7 +125,6 @@ pullbacks0 = LimitsG (plb minimaTo) where
     LimesProjective lMin uMin = limes min (plbMinimumDiagram0 d)
     l = ConeProjective d (tip lMin) (shell lMin)  
     u = uMin . plbMinimumCone0
-
 
 --------------------------------------------------------------------------------
 -- plbMinimumDiagram1 -
@@ -214,42 +220,51 @@ plbPrdEql2 prd eql = LimitsG (plb prd eql) where
 -- | pullbacks for 'Orientation'.
 pullbacksOrnt :: Entity p => p -> Pullbacks n (Orientation p)
 pullbacksOrnt = lmsMltPrjOrnt
-{-
+
+
 --------------------------------------------------------------------------------
 -- Pushouts -
 
+-- | 'Diagrammmatic' object for a pushout.
+type PushoutDiagrammatic d (n :: N') = d (Star From) (n+1) n :: Type -> Type
+
 -- | 'Diagram' for a pushout.
-type PushoutDiagram n = Diagram (Star From) (n+1) n
+type PushoutDiagram n = PushoutDiagrammatic Diagram n
+
+-- | 'Conic' object for a pushout.
+type PushoutConic c (d :: DiagramType -> N' -> N' -> Type -> Type) (n :: N')
+  = c Mlt Injective d (Star From) (n+1) n :: Type -> Type
 
 -- | 'Cone' for a pushout.
-type PushoutCone n = Cone Mlt Injective (Star From) (n+1) n
+type PushoutCone n = PushoutConic Cone Diagram n
+
+-- | generic pushout as 'LimesG'.
+type PushoutG c d n = LimesG c Mlt Injective d (Star From) (n+1) n
 
 -- | pushout as 'Limes'.
-type Pushout n = Limes Mlt Injective (Star From) (n+1) n
+type Pushout n = PushoutG Cone Diagram n
 
--- | generic pushouts for a 'Multiplicative' structures.
-type GenericPushouts l n = Limits l Mlt Injective (Star From) (n+1) n
+-- | generic pushouts for 'Multiplicative' structures.
+type PushoutsG c d n = LimitsG c Mlt Injective d (Star From) (n+1) n
 
--- | pushouts for a 'Multiplicative' structures.
-type Pushouts n = GenericPushouts Limes n
+-- | pushouts for 'Multiplicative' structures.
+type Pushouts n = PushoutsG Cone Diagram n
 
---------------------------------------------------------------------------------
--- Pusouts - Duality -
-
--- | duality between pushouts and pullbacks.
-pshLimitsDuality :: OpDuality (Limits Limes) Mlt (Pushouts n) (Pullbacks n)
-pshLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- pushouts -
 
 -- | promotion of pushouts.
-pushouts :: Multiplicative a => Pushouts N2 a -> Pushouts n a
-pushouts psh2 = lmsFromOp ConeStructMlt pshLimitsDuality $ pullbacks plb2 where
-  plb2 = lmsToOp ConeStructMlt pshLimitsDuality psh2
+pushouts :: Multiplicative x => Pushouts N2 x -> Pushouts n x
+pushouts psh2 = pshs where
+  Contravariant2 i      = toDualOpMlt
+  SDualBi (Left1 plb2)  = amapF i (SDualBi (Right1 psh2))
+  plbs                  = pullbacks plb2
+  SDualBi (Right1 pshs) = amapF (inv2 i) (SDualBi (Left1 plbs))
+  
 
 -- | 'pushouts' given by a proxy for @n@.
-pushouts' :: Multiplicative a => p n -> Pushouts N2 a -> Pushouts n a
+pushouts' :: Multiplicative x => p n -> Pushouts N2 x -> Pushouts n x
 pushouts' _ = pushouts
 
 --------------------------------------------------------------------------------
@@ -257,15 +272,17 @@ pushouts' _ = pushouts
 
 -- | pushouts for 'Orientation'.
 pushoutsOrnt :: Entity p => p -> Pushouts n (Orientation p)
-pushoutsOrnt = lmsFromInjOrnt
+pushoutsOrnt = lmsMltInjOrnt
 
 --------------------------------------------------------------------------------
 -- pshSumCoeql2 -
 
 -- | pushouts given by sums and coequalizers.
-pshSumCoeql2 :: Multiplicative a => Sums N2 a -> Coequalizers N2 a -> Pushouts N2 a
-pshSumCoeql2 sum coeql = lmsFromOp ConeStructMlt pshLimitsDuality $ plbPrdEql2 prd eql where
-  prd = lmsToOp ConeStructMlt sumLimitsDuality sum
-  eql = lmsToOp ConeStructMlt coeqlLimitsDuality coeql
-
--}
+pshSumCoeql2 :: Multiplicative x => Sums N2 x -> Coequalizers N2 x -> Pushouts N2 x
+pshSumCoeql2 sum coeql = pshs where
+  Contravariant2 i      = toDualOpMlt
+  SDualBi (Left1 prd)   = amapF i (SDualBi (Right1 sum))
+  SDualBi (Left1 eql)   = amapF i (SDualBi (Right1 coeql))
+  plbs                  = plbPrdEql2 prd eql
+  SDualBi (Right1 pshs) = amapF (inv2 i) (SDualBi (Left1 plbs))
+  
