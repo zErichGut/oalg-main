@@ -1,8 +1,10 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
@@ -16,9 +18,12 @@
 -- making all arrows 'zero'.
 module OAlg.Limes.KernelsAndCokernels
   (
+
     -- * Kernels
-    Kernels, Kernel, KernelCone, KernelDiagram
-  , GenericKernel, GenericKernels
+    Kernels, KernelsG
+  , Kernel, KernelG
+  , KernelCone, KernelConic
+  , KernelDiagram, KernelDiagrammatic
   , kernelFactor
   , kernelDiagram
 
@@ -31,8 +36,10 @@ module OAlg.Limes.KernelsAndCokernels
   , kernelsOrnt
 
     -- * Cokernels
-  , Cokernels, Cokernel, CokernelCone, CokernelDiagram
-  , GenericCokernel, GenericCokernels
+  , Cokernels, CokernelsG
+  , Cokernel, CokernelG
+  , CokernelCone, CokernelConic
+  , CokernelDiagram, CokernelDiagrammatic
   , cokernelFactor
   , cokernelDiagram
 
@@ -42,20 +49,20 @@ module OAlg.Limes.KernelsAndCokernels
     -- *** Orientation
   , cokernelsOrnt
 
-    -- * Duality
-  , krnLimesDuality, cokrnLimesDuality
-  , krnLimitsDuality
-  , cokrnLimitsDuality
-
     -- * Proposition
   , prpIsKernel, prpIsCokernel
+
   )
   where
 
 import Data.Kind
-import Data.Typeable
 
 import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Either
+import OAlg.Data.Variant
 
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList 
@@ -66,8 +73,9 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Distributive
+
 import OAlg.Limes.Cone
-import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.EqualizersAndCoequalizers
@@ -75,69 +83,74 @@ import OAlg.Limes.EqualizersAndCoequalizers
 --------------------------------------------------------------------------------
 -- Kernels -
 
+-- | 'Diagrammatic' object for a kernel.
+type KernelDiagrammatic d (n :: N') = d (Parallel LeftToRight) N2 n :: Type -> Type
+
 -- | 'Diagram' for a kernel.
-type KernelDiagram n = Diagram (Parallel LeftToRight) N2 n
+type KernelDiagram n = KernelDiagrammatic Diagram n
+
+-- | 'Conic' object for a kernel.
+type KernelConic c (d :: DiagramType -> N' -> N' -> Type -> Type) (n :: N')
+  = c Dst Projective d (Parallel LeftToRight) N2 n :: Type -> Type
 
 -- | 'Cone' for a kernel.
-type KernelCone n = Cone Dst Projective (Parallel LeftToRight) N2 n
+type KernelCone n = KernelConic Cone Diagram n
 
--- | generic kenrel over a 'Universal' @__l__@.
-type GenericKernel (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> Type) n
-  = l Dst Projective (Parallel LeftToRight) N2 n
+-- | generic kernel as a 'LimesG'.
+type KernelG c d n = LimesG c Dst Projective d (Parallel LeftToRight) N2 n
 
--- | kernel as a 'Limes'.
-type Kernel n = GenericKernel Limes n
+-- | kernel as a 'KernelG'.
+type Kernel n = KernelG Cone Diagram n
 
 -- | generic kernels for 'Distributive' structures.
-type GenericKernels l n = Limits l Dst Projective (Parallel LeftToRight) N2 n
+type KernelsG c d n = LimitsG c Dst Projective d (Parallel LeftToRight) N2 n
 
 -- | kernels for 'Distributive' structures.
-type Kernels n = GenericKernels Limes n
+type Kernels n = KernelsG Cone Diagram n
 
 --------------------------------------------------------------------------------
 -- kernelFactor -
 
 -- | the factor of its shell.
-kernelFactor :: KernelCone N1 c -> c
+kernelFactor :: KernelCone N1 x -> x
 kernelFactor (ConeKernel _ f) = f
 
 --------------------------------------------------------------------------------
 -- kernelDiagram -
 
 -- | the kernel diagram of a given factor.
-kernelDiagram :: Oriented c => c -> KernelDiagram N1 c
+kernelDiagram :: Oriented x => x -> KernelDiagram N1 x
 kernelDiagram f = DiagramParallelLR (start f) (end f) (f:|Nil)
 
 --------------------------------------------------------------------------------
 -- kernelZero -
 
 -- | the kernel of the 'zero' factor given by the orientation, i.e. 'one'
-kernelZero :: Distributive c => p c -> Orientation (Point c) -> Kernel N1 c
+kernelZero :: Distributive x => p x -> Orientation (Point x) -> Kernel N1 x
 kernelZero _ o = LimesProjective oKer kernelFactor where
   z = zero o
   oKer = ConeKernel (kernelDiagram z) (one (start z))
-
   
 --------------------------------------------------------------------------------
 -- kernels0 -
 
 -- | kernels for zero arrows.
-kernels0 :: Distributive a => Kernels N0 a
-kernels0 = Limits krn where
-  krn :: Distributive a => KernelDiagram N0 a -> Kernel N0 a
+kernels0 :: Distributive x => Kernels N0 x
+kernels0 = LimitsG krn where
+  krn :: Distributive x => KernelDiagram N0 x -> Kernel N0 x
   krn d@(DiagramParallelLR p _ Nil) = LimesProjective l u where
     l = ConeKernel d (one p)
-    u :: KernelCone N0 a -> a
+    u :: KernelCone N0 x -> x
     u (ConeKernel _ f) = f
 
 --------------------------------------------------------------------------------
 -- krnEqls -
 
 -- | the induced equalizers where its first arrow is 'zero'.
-krnEqls :: (Distributive a, Abelian a) => Kernels n a -> Equalizers (n+1) a
-krnEqls krn = Limits (eql krn) where
-  eql :: (Distributive a, Abelian a)
-    => Kernels n a -> EqualizerDiagram (n+1) a -> Equalizer (n+1) a
+krnEqls :: (Distributive x, Abelian x) => Kernels n x -> Equalizers (n+1) x
+krnEqls krn = LimitsG (eql krn) where
+  eql :: (Distributive x, Abelian x)
+    => Kernels n x -> EqualizerDiagram (n+1) x -> Equalizer (n+1) x
   eql krn d = LimesProjective l u where
     LimesProjective (ConeKernel dKrn k) uKrn = limes krn (dgPrlDiffTail d)
     a0 = head $ dgArrows d
@@ -149,9 +162,11 @@ krnEqls krn = Limits (eql krn) where
 -- eqlKrns -
 
 -- | the induced kernels given by adjoining a 'zero' arrow as first arrow.
-eqlKrns :: Distributive a => Equalizers (n+1) a -> Kernels n a
-eqlKrns eql = Limits (krn eql) where
-  krn :: Distributive a => Equalizers (n+1) a -> KernelDiagram n a -> Kernel n a
+eqlKrns :: Distributive x => Equalizers (n+1) x -> Kernels n x
+eqlKrns eql = LimitsG (krn eql) where
+  cnDiagram = diagram . diagrammaticObject
+  
+  krn :: Distributive x => Equalizers (n+1) x -> KernelDiagram n x -> Kernel n x
   krn eql d = LimesProjective l u where
     LimesProjective lEql uEql = limes eql (dgPrlAdjZero d)
     
@@ -162,9 +177,9 @@ eqlKrns eql = Limits (krn eql) where
 -- kenrels1 -
 
 -- | promoting kernels.
-kernels1 :: Distributive a => Kernels N1 a -> Kernels (n+1) a
-kernels1 krn1 = Limits (krn krn1) where
-  krn :: Distributive a => Kernels N1 a -> KernelDiagram (n+1) a -> Kernel (n+1) a
+kernels1 :: Distributive x => Kernels N1 x -> Kernels (n+1) x
+kernels1 krn1 = LimitsG (krn krn1) where
+  krn :: Distributive x => Kernels N1 x -> KernelDiagram (n+1) x -> Kernel (n+1) x
   krn krn1 d@(DiagramParallelLR _ _ (_:|Nil))        = limes krn1 d
   krn krn1 d@(DiagramParallelLR p q (a0:|aN@(_:|_))) = LimesProjective l u where
     dN = DiagramParallelLR p q aN
@@ -181,10 +196,10 @@ kernels1 krn1 = Limits (krn krn1) where
 -- kernels -
 
 -- | promoting kernels.
-kernels :: Distributive a => Kernels N1 a -> Kernels n a
-kernels krn1 = Limits (krn krn1) where
-  krn :: Distributive a
-    => Kernels N1 a -> KernelDiagram n a -> Kernel n a
+kernels :: Distributive x => Kernels N1 x -> Kernels n x
+kernels krn1 = LimitsG (krn krn1) where
+  krn :: Distributive x
+    => Kernels N1 x -> KernelDiagram n x -> Kernel n x
   krn krn1 d = case dgArrows d of
     Nil     -> limes kernels0 d
     _:|Nil  -> limes krn1 d
@@ -195,86 +210,66 @@ kernels krn1 = Limits (krn krn1) where
 
 -- | kernels for 'Orientation'.
 kernelsOrnt :: Entity p => p -> Kernels n (Orientation p)
-kernelsOrnt t = Limits (krn t) where
-  krn :: (Entity p, a ~ Orientation p) => p -> KernelDiagram n a -> Kernel n a
+kernelsOrnt t = LimitsG (krn t) where
+  krn :: (Entity p, x ~ Orientation p) => p -> KernelDiagram n x -> Kernel n x
   krn t d@(DiagramParallelLR p _ _) = LimesProjective l u where
     l = ConeKernel d (t:>p)
     u (ConeKernel _ x) = start x :> t
-  
 
 --------------------------------------------------------------------------------
 -- Cokernels -
 
+-- | 'Diagrammatic' object for a cokernel.
+type CokernelDiagrammatic d (n :: N') = d (Parallel RightToLeft) N2 n :: Type -> Type
+
 -- | 'Diagram' for a cokernel.
-type CokernelDiagram n = Diagram (Parallel RightToLeft) N2 n
+type CokernelDiagram n = CokernelDiagrammatic Diagram n
+
+-- | 'Conic' object for a cokernel.
+type CokernelConic c (d :: DiagramType -> N' -> N' -> Type -> Type) (n :: N')
+  = c Dst Injective d (Parallel RightToLeft) N2 n :: Type -> Type
 
 -- | 'Cone' for a cokernel.
-type CokernelCone n = Cone Dst Injective (Parallel RightToLeft) N2 n
+type CokernelCone n = CokernelConic Cone Diagram n
 
--- | generic cokenrel over a 'Universal' @__l__@.
-type GenericCokernel (l :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> Type) n
-  = l Dst Injective (Parallel RightToLeft) N2 n
+-- | generic cokernel as a 'LimesG'.
+type CokernelG c d n = LimesG c Dst Injective d (Parallel RightToLeft) N2 n
 
--- | cokernel as 'Limes'.
-type Cokernel n = GenericCokernel Limes n -- Limes Dst Injective (Parallel RightToLeft) N2 n
+-- | cokernel as a 'CokernelG'.
+type Cokernel n = CokernelG Cone Diagram n
 
 -- | generic cokernels for 'Distributive' structures.
-type GenericCokernels l n = Limits l Dst Injective (Parallel RightToLeft) N2 n
+type CokernelsG c d n = LimitsG c Dst Injective d (Parallel RightToLeft) N2 n
 
 -- | cokernels for 'Distributive' structures.
-type Cokernels n = GenericCokernels Limes n
+type Cokernels n = CokernelsG Cone Diagram n
 
 --------------------------------------------------------------------------------
 -- cokernelFactor -
 
 -- | the factor of its shell.
-cokernelFactor :: CokernelCone N1 c -> c
+cokernelFactor :: CokernelCone N1 x -> x
 cokernelFactor (ConeCokernel _ f) = f
 
 --------------------------------------------------------------------------------
 -- cokernelDiagram -
 
 -- | the cokernel diagram of a given factor.
-cokernelDiagram :: Oriented c => c -> CokernelDiagram N1 c
+cokernelDiagram :: Oriented x => x -> CokernelDiagram N1 x
 cokernelDiagram f = DiagramParallelRL (end f) (start f) (f:|Nil)
-
---------------------------------------------------------------------------------
--- Cokernels - Duality -
-
--- | duality between cokernels and kernels.
-cokrnLimitsDuality :: OpDuality (Limits Limes) Dst (Cokernels n) (Kernels n)
-cokrnLimitsDuality = OpDuality  Refl Refl
-
---------------------------------------------------------------------------------
--- cokrnLimesDuality -
-
--- | duality between 'Cokernel' to 'Kernel'.
-cokrnLimesDuality :: OpDuality Limes Dst (Cokernel n) (Kernel n)
-cokrnLimesDuality = OpDuality  Refl Refl
-
---------------------------------------------------------------------------------
--- krnLimesDuality -
-
--- | duality from 'Kernel' to 'Cokernel'.
-krnLimesDuality :: OpDuality Limes Dst (Kernel n) (Cokernel n)
-krnLimesDuality = OpDuality Refl Refl
-
---------------------------------------------------------------------------------
--- krnLimitsDuality -
-
-krnLimitsDuality ::  OpDuality (Limits Limes) Dst (Kernels n) (Cokernels n)
-krnLimitsDuality = OpDuality Refl Refl
 
 --------------------------------------------------------------------------------
 -- cokernels -
 
 -- | promoting cokernels.
-cokernels :: Distributive a => Cokernels N1 a -> Cokernels n a
-cokernels ckrn = lmsFromOp ConeStructDst cokrnLimitsDuality $ kernels krn where
-  krn = lmsToOp ConeStructDst cokrnLimitsDuality ckrn
+cokernels :: Distributive x => Cokernels N1 x -> Cokernels n x
+cokernels ck1 = cks where
+  Contravariant2 i     = toDualOpDst
+  SDualBi (Left1 k1)   = amapF i (SDualBi (Right1 ck1))
+  ks                   = kernels k1
+  SDualBi (Right1 cks) = amapF (inv2 i) (SDualBi (Left1 ks))
 
--- | 'cokernels' given by an additional proxy for @n@.
-cokernels' :: Distributive a => p n -> Cokernels N1 a -> Cokernels n a
+cokernels' :: Distributive x => q n -> Cokernels N1 x -> Cokernels n x
 cokernels' _ = cokernels
 
 --------------------------------------------------------------------------------
@@ -282,8 +277,8 @@ cokernels' _ = cokernels
 
 -- | cokernels for 'Orientation'.
 cokernelsOrnt :: Entity p => p -> Cokernels n (Orientation p)
-cokernelsOrnt t = Limits (cokrn t) where
-  cokrn :: (Entity p, a ~ Orientation p) => p -> CokernelDiagram n a -> Cokernel n a
+cokernelsOrnt t = LimitsG (cokrn t) where
+  cokrn :: (Entity p, x ~ Orientation p) => p -> CokernelDiagram n x -> Cokernel n x
   cokrn t d@(DiagramParallelRL p _ _) = LimesInjective l u where
     l = ConeCokernel d (p:>t)
     u (ConeCokernel _ x) = t :> end x
@@ -291,7 +286,7 @@ cokernelsOrnt t = Limits (cokrn t) where
 --------------------------------------------------------------------------------
 -- prpIsKernel -
 
-relIsKernel :: Eq a => Kernel n a -> FinList n a -> a -> Statement
+relIsKernel :: Eq x => Kernel n x -> FinList n x -> x -> Statement
 relIsKernel (LimesProjective (ConeKernel d k') _) fs k
   = And [ Label "1" :<=>: (fs == dgArrows d) :?> Params ["fs":=show fs, "d":= show d]
         , Label "2" :<=>: (k == k') :?> Params ["k":= show k, "k'":= show k']
@@ -325,9 +320,12 @@ prpIsKernel ker fs k = Prp "IsKernel" :<=>: relIsKernel ker fs k
 -- (1) @fs '==' 'dgArrows' d@.
 --
 -- (2) @k '==' k'@.
-prpIsCokernel :: Distributive a => Cokernel n a -> FinList n a -> a -> Statement
-prpIsCokernel coker fs k = Prp "IsCokernel" :<=>: relIsKernel ker (amap1 Op fs) (Op k)
-  where ker = lmToOp ConeStructDst cokrnLimesDuality coker
+prpIsCokernel :: Distributive x => Cokernel n x -> FinList n x -> x -> Statement
+prpIsCokernel coker fs k = Prp "IsCokernel" :<=>: relIsKernel ker fs' k' where
+  Contravariant2 i = toDualOpDst
+  SDualBi (Left1 ker) = amapF i (SDualBi (Right1 coker))
+  fs'                 = amap1 (amapf i) fs
+  k'                  = amapf i k
   
 
 

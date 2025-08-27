@@ -75,6 +75,8 @@ instance HomAdditive h => HomAdditive (Path h)
 instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
 instance (HomAdditive h, Disjunctive2 h) => HomAdditive (Variant2 v h)
 
+instance HomAdditive h => HomAdditive (Inv2 h)
+
 --------------------------------------------------------------------------------
 -- DualisableAdditive -
 

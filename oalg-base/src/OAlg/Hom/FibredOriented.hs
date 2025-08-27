@@ -28,7 +28,6 @@ module OAlg.Hom.FibredOriented
     -- * Covariant
   , HomFibredOriented
 
-
     -- * Iso
   , toDualOpFbrOrt
 
@@ -71,6 +70,8 @@ instance HomFibredOriented h => HomFibredOriented (Path h)
 instance (TransformableOrt s, TransformableFbr s, TransformableFbrOrt s)
   => HomFibredOriented (HomEmpty s)
 
+instance HomFibredOriented h => HomFibredOriented (Inv2 h)
+
 --------------------------------------------------------------------------------
 -- HomFibredOrientedDisjunctive -
 
@@ -88,6 +89,12 @@ instance HomFibredOrientedDisjunctive h => HomFibredOrientedDisjunctive (Path h)
 
 instance HomFibredOrientedDisjunctive h => HomFibredOriented (Variant2 Covariant h)
 
+instance
+  ( CategoryDisjunctive h
+  , HomFibredOrientedDisjunctive h
+  )
+  => HomFibredOrientedDisjunctive (Inv2 h)
+  
 --------------------------------------------------------------------------------
 -- DualisableFibredOriented -
 

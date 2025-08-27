@@ -69,7 +69,9 @@ instance HomFibred h => HomFibred (Path h)
 instance TransformableFbr s => HomFibred (HomEmpty s)
 
 instance (HomFibred h, Disjunctive2 h)  => HomFibred (Variant2 v h)
-         
+
+instance HomFibred h => HomFibred (Inv2 h)
+
 --------------------------------------------------------------------------------
 -- DualisableFibred -
 

@@ -150,16 +150,28 @@ library
       OAlg.Hom.Vectorial
       OAlg.Limes.Cone
       OAlg.Limes.Cone.Conic
+      OAlg.Limes.Cone.Conic.Core
+      OAlg.Limes.Cone.Conic.Duality
+      OAlg.Limes.Cone.Core
       OAlg.Limes.Cone.Definition
+      OAlg.Limes.Cone.Duality
       OAlg.Limes.Cone.FactorChain
       OAlg.Limes.Cone.Structure
       OAlg.Limes.Cone.ZeroHead
+      OAlg.Limes.Cone.ZeroHead.Core
+      OAlg.Limes.Cone.ZeroHead.Duality
       OAlg.Limes.Definition
+      OAlg.Limes.Definition.Core
+      OAlg.Limes.Definition.Duality
+      OAlg.Limes.Definition.Proposition
       OAlg.Limes.EqualizersAndCoequalizers
       OAlg.Limes.Exact.ConsZero
       OAlg.Limes.Exact.Deviation
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
+      OAlg.Limes.Limits.Core
+      OAlg.Limes.Limits.Duality
+      OAlg.Limes.Limits.Proposition
       OAlg.Limes.MinimaAndMaxima
       OAlg.Limes.Perspective
       OAlg.Limes.ProductsAndSums

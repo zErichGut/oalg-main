@@ -89,7 +89,7 @@ type PullbackCone n = PullbackConic Cone Diagram n
 -- | generic pullback as 'LimesG'.
 type PullbackG c d n = LimesG c Mlt Projective d (Star To) (n+1) n
 
--- | pullback as 'Limes'.
+-- | pullback as 'PullbackG'.
 type Pullback n = PullbackG Cone Diagram n
 
 -- | generic pullbacks for 'Multiplicative' structures.

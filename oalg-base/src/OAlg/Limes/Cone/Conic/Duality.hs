@@ -41,9 +41,11 @@ import OAlg.Data.Either
 import OAlg.Entity.Diagram
 
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone.Definition
 
@@ -103,6 +105,42 @@ instance
   , p ~ Dual (Dual p)
   )
   => NaturalConic h Cone Mlt p d t n m
+
+--------------------------------------------------------------------------------
+-- Cone - Dst -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConeG Cone Dst p d t n m)) h (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConeG Cone Dst p d t n m)) h (->)
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (ConeG Cone Dst p d t n m)) (SDualBi (ConeG Cone Dst p d t n m))
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , NaturalDiagrammaticBi h d t n m
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic h Cone Dst p d t n m
 
 --------------------------------------------------------------------------------
 -- NaturalConicBi -

@@ -60,6 +60,8 @@ instance
 
 type instance Hom Dst h = HomDistributive h
 
+instance HomDistributive h => HomDistributive (Inv2 h)
+
 --------------------------------------------------------------------------------
 -- DualisableDistributive -
 
@@ -85,6 +87,12 @@ instance HomDistributiveDisjunctive h => HomDistributive (Variant2 Covariant h)
 
 type instance HomD Dst h = HomDistributiveDisjunctive h
 
+instance
+  ( CategoryDisjunctive h
+  , HomDistributiveDisjunctive h
+  )
+  => HomDistributiveDisjunctive (Inv2 h)
+  
 --------------------------------------------------------------------------------
 -- toDualOpDst -
 

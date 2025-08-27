@@ -160,6 +160,9 @@ deriving instance ShowRoot x => Show (Rt x)
 deriving instance EqRoot x => Eq (Rt x)
 deriving instance ValidableRoot x => Validable (Rt x)
 
+instance ApplicativeG Rt h c => ApplicativeG Rt (Inv2 h) c where
+  amapG (Inv2 t _) = amapG t
+
 --------------------------------------------------------------------------------
 -- idRt -
 
