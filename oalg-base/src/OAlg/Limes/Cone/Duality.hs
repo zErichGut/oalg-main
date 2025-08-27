@@ -13,11 +13,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 -- we allow undecidable instances to use NaturalConicBi as constraint for
 -- the functorial property for cones! As such we separated this
--- declaration in a separate module.
+-- declaration.
 --
--- the problem in the constraint is NaturalDiagrammatic h d (Dual t) n m,
--- but the kind of the type t is DiagramType and as such this should not
--- cause prblems...hopfully.
+-- the problem in the declaration for NaturalConicBi is the constraint
+-- NaturalDiagrammatic h d (Dual t) n m, which forces undecidable instances,
+-- but as we demand t ~ Dual (Dual t) in being
+-- NaturalDiagrammatic this should prevent the type checker from indefinite loops...hopfully!
 
 -- |
 -- Module      : OAlg.Limes.Cone.Duality
