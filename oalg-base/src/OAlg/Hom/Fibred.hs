@@ -111,11 +111,6 @@ toDualRt q s = fromRtG (toDualG' (d q s) s) where
 --------------------------------------------------------------------------------
 -- HomDisj - HomFibred -
 
-instance (HomFibred h, DualisableG s (->) o Rt) => ApplicativeG Rt (HomDisj s o h) (->) where
-  amapG (HomDisj h) = smap h
-
-instance (HomFibred h, DualisableG s (->) o Rt) => FunctorialG Rt (HomDisj s o h) (->)
-
 instance (HomFibred h, DualisableFibred s o) => HomFibred (HomDisj s o h)
 
 --------------------------------------------------------------------------------

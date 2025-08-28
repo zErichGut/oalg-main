@@ -1,4 +1,6 @@
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}

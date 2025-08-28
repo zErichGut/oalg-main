@@ -93,7 +93,14 @@ instance (Morphism h, ApplicativePoint h, DualisableG s (->) o Pnt)
 
 instance (Morphism h, ApplicativePoint h, DualisableG s (->) o Pnt)
   => FunctorialG Pnt (HomDisj s o h) (->)
-    
+
+instance (Morphism h, ApplicativeRoot h, DualisableG s (->) o Rt)
+  => ApplicativeG Rt (HomDisj s o h) (->) where
+  amapG (HomDisj h) = smap h
+
+instance (Morphism h, ApplicativeRoot h, DualisableG s (->) o Rt)
+  => FunctorialG Rt (HomDisj s o h) (->)
+
 --------------------------------------------------------------------------------
 -- HomEmpty -
 

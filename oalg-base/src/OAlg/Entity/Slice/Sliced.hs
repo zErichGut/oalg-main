@@ -43,6 +43,7 @@ import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
@@ -98,10 +99,10 @@ instance TransformableSld i Mlt Ort
 sldStruct :: Struct (Sld s i) x -> Struct s x
 sldStruct Struct = Struct
 
-instance Transformable1 Op s => Transformable1 Op (Sld s i) where
-  tau1 s@Struct = case tauOp (sldStruct s) of Struct -> Struct
+instance Transformable1 Op s => TransformableG Op (Sld s i) (Sld s i) where
+  tauG s@Struct = case tauOp (sldStruct s) of Struct -> Struct
 
-instance Transformable1 Op s => TransformableOp (Sld s i)
+instance TransformableOp s => TransformableOp (Sld s i)
 
 instance Transformable (Sld s i) Ort where tau Struct = Struct
 instance TransformableOrt (Sld s i)
@@ -145,7 +146,7 @@ instance TransformableSld i Dst Mlt
 --
 -- (1) For all @__a__@, @__b__@ and @h@ in @__h__ __a__ __b__@ holds:
 -- @'pmap' h ('slicePoint' i) '==' 'slicePioint' ('singelton1' i)@, where @i@ is in @__i__ __a__@.
-class (HomOriented h, Transformable (ObjectClass h) (Sld s i)) => HomSliced s i h
+class (HomOrientedDisjunctive h, Transformable (ObjectClass h) (Sld s i)) => HomSliced s i h
 
 type instance Hom (Sld s i) h = (HomSliced s i h, Hom s h)
 
@@ -154,12 +155,15 @@ type instance Hom (Sld s i) h = (HomSliced s i h, Hom s h)
 
 instance HomSliced s i h => HomSliced s i (Path h)
 
+{-
 --------------------------------------------------------------------------------
 -- Forget - HomSliced -
 
-instance (HomSliced t i h, Transformable1 Op t, TransformableSld i t s)
+instance (HomSliced t i h, TransformableOp t, TransformableSld i t s)
   => HomSliced s i (Forget (Sld t i) h)
+-}
 
+{-
 --------------------------------------------------------------------------------
 -- IdHom - HomSliced -
 
@@ -169,13 +173,26 @@ instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IdHom (
 -- IsoOp - HomSliced -
 
 instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IsoOp (Sld t i))
+-}
 
+instance Transformable (Sld t i) Type where
+  tau _ = Struct
+  
+instance TransformableType (Sld t i)
+
+instance
+  ( TransformableOp t
+  , TransformableSld i t s
+  )
+  => HomSliced s i (HomDisjEmpty (Sld t i) Op)
+
+{-
 --------------------------------------------------------------------------------
 -- Forget' - HomSliced -
 
 instance ( HomSliced t i h
          , TransformableSld i t s
-         , Transformable1 Op t
+         , TransformableOp t
          ) => HomSliced s i (Forget' (Sld t i) h)
-
+-}
 
