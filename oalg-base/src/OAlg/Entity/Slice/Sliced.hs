@@ -9,7 +9,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DataKinds, ConstraintKinds #-}
+{-# LANGUAGE DataKinds, ConstraintKinds, RankNTypes #-}
 
 -- |
 -- Module      : OAlg.Entity.Slice.Sliced
@@ -21,13 +21,13 @@
 -- 'Oriented' structures with a distinguished 'Point'.
 module OAlg.Entity.Slice.Sliced
   (
-
+{-
     -- * Sliced
     Sliced(..), TransformableSld
 
     -- * Hom
   , HomSliced, Sld
-
+-}
   ) where
 
 import Data.Kind
@@ -38,6 +38,7 @@ import OAlg.Prelude
 import OAlg.Category.Path
 
 import OAlg.Data.Singleton
+import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
@@ -75,6 +76,75 @@ instance Sliced i c => Sliced i (Op c) where
 instance Sliced Proxy OS where
   slicePoint _ = P
 
+--------------------------------------------------------------------------------
+-- sliceIndex -
+
+sliceIndex :: Sliced i x => q i x -> i x
+sliceIndex _ = unit1
+
+--------------------------------------------------------------------------------
+-- Sld -
+
+data Sld (i :: Type -> Type)
+
+type instance Structure (Sld i) x = Sliced i x
+
+--------------------------------------------------------------------------------
+-- HomSlicedOriented -
+
+-- | homomorphisms between 'Sliced' structures, i.e homomorphisms between 'Oriented' structures where
+-- 'pmap' preserves the distinguished point.
+--
+-- __Property__ Let @'HomSlicedOriented' __i__ __h__@, then holds:
+--
+-- (1) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
+-- @'pmap' h px '==' py@, where @px = 'slicePoint' '$' 'sliceIndexDomain' '$' 'sldHom' q h@,
+-- @py = 'slicePoint' '$' 'sliceIndexRange' '$' 'sldHom' q h@ and @q@ is any proxy in @__q i__@.
+class (HomOrientedDisjunctive h, Transformable (ObjectClass h) (Sld i)) => HomSlicedOriented i h
+
+--------------------------------------------------------------------------------
+-- sliceIndexDomain -
+-- | the slice index for the 'domain'.
+sliceIndexDomain :: Homomorphous (Sld i) x y -> i x
+sliceIndexDomain (Struct :>: _) = unit1
+
+--------------------------------------------------------------------------------
+-- sliceIndexRange -
+
+-- | the slice index for the 'range'.
+sliceIndexRange :: Homomorphous (Sld i) x y -> i y
+sliceIndexRange (_ :>: Struct) = unit1
+
+--------------------------------------------------------------------------------
+-- sldHom -
+
+-- | the induced homomorphous structure.
+sldHom :: HomSlicedOriented i h => q i -> h x y -> Homomorphous (Sld i) x y
+sldHom _ h = tauHom (homomorphous h)
+
+--------------------------------------------------------------------------------
+-- prpHomSlicedOriented -
+
+relHomSlicedOriented :: (HomSlicedOriented i h, Show2 h)
+  => Homomorphous Ort x y -> Homomorphous (Sld i) x y -> h x y -> Statement
+relHomSlicedOriented (Struct:>:Struct) hSld@(Struct:>:Struct) h
+  = (pmap h px == py) :?> Params [ "h":=show2 h
+                                 , "px":= show px
+                                 , "py":=show py
+                                 ] 
+    where
+      px = slicePoint $ sliceIndexDomain hSld
+      py = slicePoint $ sliceIndexRange hSld
+
+
+prpHomSlicedOriented :: (HomSlicedOriented i h, Show2 h)
+  => q i -> h x y -> Statement
+prpHomSlicedOriented q h = Prp "HomSlicedOriented"
+  :<=>: relHomSlicedOriented (tauHom $ homomorphous h) (sldHom q h) h
+
+
+
+{-
 --------------------------------------------------------------------------------
 -- Sld -
 
@@ -136,19 +206,8 @@ instance Transformable (Sld Mlt i) (Sld Ort i) where tau Struct = Struct
 instance Transformable (Sld Dst i) (Sld Mlt i) where tau Struct = Struct
 instance TransformableSld i Dst Mlt
 
---------------------------------------------------------------------------------
--- HomSliced -
 
--- | homomorphisms between 'Sliced' structures, i.e homomorphisms between 'Oriented' structures where
--- 'pmap' preserves the distinguished point.
---
--- __Property__ Let @__h__@ be in instance of @'HomSliced' __i__ __h__@, then holds:
---
--- (1) For all @__a__@, @__b__@ and @h@ in @__h__ __a__ __b__@ holds:
--- @'pmap' h ('slicePoint' i) '==' 'slicePioint' ('singelton1' i)@, where @i@ is in @__i__ __a__@.
-class (HomOrientedDisjunctive h, Transformable (ObjectClass h) (Sld s i)) => HomSliced s i h
-
-type instance Hom (Sld s i) h = (HomSliced s i h, Hom s h)
+type instance Hom (Sld s i) h = (HomSliced s i h, HomD s h)
 
 --------------------------------------------------------------------------------
 -- Path - HomSliced -
@@ -180,12 +239,19 @@ instance Transformable (Sld t i) Type where
   
 instance TransformableType (Sld t i)
 
+-- because Op operates identical on points!
 instance
   ( TransformableOp t
   , TransformableSld i t s
   )
   => HomSliced s i (HomDisjEmpty (Sld t i) Op)
 
+
+instance
+  ( TransformableOp t
+  , TransformableSld i t s
+  )
+  => HomSliced s i (Inv2 (HomDisjEmpty (Sld t i) Op))
 {-
 --------------------------------------------------------------------------------
 -- Forget' - HomSliced -
@@ -196,3 +262,4 @@ instance ( HomSliced t i h
          ) => HomSliced s i (Forget' (Sld t i) h)
 -}
 
+-}

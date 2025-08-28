@@ -24,7 +24,7 @@
 -- definition of slicing a 'Multiplicative' structures according a given indexed 'Point'.
 module OAlg.Entity.Slice.Definition
   (
-
+{-
     -- * Slice
     Slice(..), slice, slSiteType, slMap
 
@@ -55,18 +55,20 @@ module OAlg.Entity.Slice.Definition
   , xosXOrtSiteToSliceFactorTo
   , xosXOrtSiteFromSliceFactorFrom
   , xosAdjTerminal
-
+-}
   ) where
 
 import Control.Monad
 
 import Data.Typeable
 import Data.List ((++))
-import Data.Either
 
 import OAlg.Prelude
 
+import OAlg.Category.SDuality
+
 import OAlg.Data.Singleton
+import OAlg.Data.Either
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
@@ -82,7 +84,6 @@ import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.TerminalAndInitialPoint
@@ -135,72 +136,83 @@ slSiteType (SliceFrom _ _ ) = Left Refl
 slSiteType (SliceTo _ _)    = Right Refl
 
 --------------------------------------------------------------------------------
+-- slTypeRefl -
+
+slTypeRefl :: Slice s i c -> s :~: Dual (Dual s)
+slTypeRefl (SliceFrom _ _) = Refl
+slTypeRefl (SliceTo _ _)   = Refl
+
+--------------------------------------------------------------------------------
 -- sldRange -
 
 -- | the associated 'Sliced' structure of the 'range' of @h@.
-sldRange :: Hom (Sld Ort i) h => i x -> h a b -> Struct (Sld Ort i) b
+sldRange :: HomSliced Ort i h => i x -> h a b -> Struct (Sld Ort i) b
 sldRange _ h = tau (range h)
 
 --------------------------------------------------------------------------------
--- slMap -
+-- slMapCov -
 
 -- | mapping of slices.
 --
 -- __Note__ As 'IsoOp' is generated only by 'isoToOpOpOrt' ans 'isoFromOpOpOrt' the 'slicePoint' is
--- invariant under these mappings and as such 'slMap' maps 'valid' slices to 'valid' slices.
-slMap :: Hom (Sld Ort i) h => h a b -> Slice s i a -> Slice s i b
-slMap h s        = case s of
-  SliceFrom i a -> case sldRange i h of
-    Struct      -> SliceFrom (singleton1 i) (amap h a)
-  SliceTo i a   -> case sldRange i h of
-    Struct      -> SliceTo (singleton1 i) (amap h a)
+-- invariant under these mappings and as such 'slMapCov' maps 'valid' slices to 'valid' slices.
+slMapCov :: HomSliced Ort i h
+  => Variant2 Covariant h a b -> Slice s i a -> Slice s i b
+slMapCov (Covariant2 h) s = case s of
+  SliceFrom i a          -> case sldRange i h of
+    Struct               -> SliceFrom (singleton1 i) (amap h a)
+  SliceTo i a            -> case sldRange i h of
+    Struct               -> SliceTo (singleton1 i) (amap h a)
 
-
-instance HomSliced Ort i h => Applicative1 h (Slice s i) where amap1 = slMap
-
-{-
 --------------------------------------------------------------------------------
--- sldRange -
+-- slMapCnt -
 
--- | the associated 'Sliced' structure of the 'range' of @h@.
-sldRange :: HomSliced o i h => p o -> i x -> h a b -> Struct (Sld o i) b
-sldRange _ _ h = tau (range h)
+slMapCnt :: HomSliced Ort i h
+  => Variant2 Contravariant h x y -> Slice s i x -> Slice (Dual s) i y
+slMapCnt (Contravariant2 h) s = case s of
+  SliceFrom i x              -> case sldRange i h of
+    Struct                   -> SliceTo (singleton1 i) (amap h x)
+  SliceTo i x                -> case sldRange i h of
+    Struct                   -> SliceFrom (singleton1 i) (amap h x)
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (Slice s i) = Slice (Dual s) i
 
 --------------------------------------------------------------------------------
 -- slMap -
 
--- | mapping of slices.
---
--- __Note__ As 'IsoOp' is generated only by 'isoToOpOpOrt' ans 'isoFromOpOpOrt' the 'slicePoint' is
--- invariant under these mappings and as such 'slMap' maps 'valid' slices to 'valid' slices.
-slMap :: HomSliced o i h => p o -> h a b -> Slice s i a -> Slice s i b
-slMap o h s        = case s of
-  SliceFrom i a -> case sldRange o i h of
-    Struct      -> SliceFrom (singleton1 i) (amap h a)
-  SliceTo i a   -> case sldRange o i h of
-    Struct      -> SliceTo (singleton1 i) (amap h a)
-
-
-instance HomSliced Ort i h => Applicative1 h (Slice s i) where amap1 = slMap (Proxy :: Proxy Ort)
--}
+slMap :: (HomSliced Ort i h, s ~ Dual (Dual s))
+  => h x y -> SDualBi (Slice s i) x -> SDualBi (Slice s i) y
+slMap = vmapBi slMapCov slMapCov slMapCnt slMapCnt
 
 --------------------------------------------------------------------------------
--- Slice - Dual -
+-- FunctorialG - 
+instance
+  ( HomSliced Ort i h
+  , s ~ Dual (Dual s)
+  )
+  => ApplicativeG (SDualBi (Slice s i)) h (->) where
+  amapG = slMap
 
-type instance Dual (Slice s i c) = Slice (Dual s) i (Op c)
+instance
+  ( HomSliced Ort i h
+  , FunctorialOriented h
+  , s ~ Dual (Dual s)
+  )
+  => FunctorialG (SDualBi (Slice s i)) h (->)
 
--- | to the dual 'Slice'.
-coSlice :: Sliced i c => Slice s i c -> Dual (Slice s i c)
-coSlice (SliceFrom i f) = SliceTo (singleton1 i) (Op f)
-coSlice (SliceTo i f)   = SliceFrom (singleton1 i) (Op f)
+--------------------------------------------------------------------------------
+-- toDualOpSldOrt -
 
-slFromOpOp :: Sliced i c => Slice s i (Op (Op c)) -> Slice s i c
-slFromOpOp s = slMap (fromOpOp s) s where
-  fromOpOp :: Sliced i c => Slice s i (Op (Op c)) -> IsoOp (Sld Ort i) (Op (Op c)) c
-  fromOpOp _ = isoFromOpOp
+instance TransformableGRefl Op (Sld Ort i)
 
-coSliceInv :: Sliced i c => Dual (Dual s) :~: s -> Dual (Slice s i c) -> Slice s i c
-coSliceInv Refl = slFromOpOp . coSlice
+toDualOpSldOrt :: Sliced i x => Variant2 Contravariant (IsoO (Sld Ort i) Op) x (Op x)
+toDualOpSldOrt = toDualO Struct
+
+toDualOpSldOrt' :: Sliced i x => Slice s i x -> Variant2 Contravariant (IsoO (Sld Ort i) Op) x (Op x)
+toDualOpSldOrt' _ = toDualOpSldOrt
 
 --------------------------------------------------------------------------------
 -- Slice - Validable -
@@ -211,16 +223,16 @@ relValidSlice s@(SliceFrom i f)
   = And [ valid1 i
         , valid f
         , let p = slicePoint i in
-            (start f == p):?>Params ["s":=show s]
+            (start f == p) :?> Params ["s":=show s]
         ]
-relValidSlice s                 = relValidSlice (coSlice s)
-
+    
+relValidSlice s = case slTypeRefl s of
+  Refl -> relValidSlice s' where
+            Contravariant2 i = toDualOpSldOrt' s
+            SDualBi (Left1 s') = amapF i (SDualBi (Right1 s))
 
 instance Sliced i c => Validable (Slice s i c) where
   valid s = Label "Slice" :<=>: relValidSlice s
-
-
-instance (Oriented c, Sliced i c, Typeable s) => Entity (Slice s i c)
 
 --------------------------------------------------------------------------------
 -- SliceFactor -
@@ -258,6 +270,15 @@ slfFactor (SliceFactor _ _ f) = f
 -- | the associated index.
 slfIndex :: Sliced i c => f (SliceFactor To i c) -> i c
 slfIndex _ = unit1
+{-
+--------------------------------------------------------------------------------
+-- slfMapCov -
+
+slfMapCov :: Variant2 Covariant h x y -> SliceFactor s i x -> SliceFactor s i y
+slfMapCov h@(Covariant2 h')  (SliceFactor a b f) = SliceFactor a' b' (amap h f) where
+  a' = slMapCov h a
+  b' = slMapCov h b
+  
 
 --------------------------------------------------------------------------------
 -- SliceFactor - Dual -
@@ -665,3 +686,4 @@ instance (Distributive d, Vectorial d, Sliced i d) => Vectorial (Slice From i d)
   type Scalar (Slice From i d) = Scalar d
   x ! SliceFrom i a = SliceFrom i (x!a)
 
+-}

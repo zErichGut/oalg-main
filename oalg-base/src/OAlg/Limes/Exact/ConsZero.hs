@@ -64,6 +64,25 @@ import OAlg.Entity.FinList
 import OAlg.Hom.Definition
 import OAlg.Hom.Distributive ()
 
+-- import OAlg.Entity.Slice
+
+
+data DiagramP f t n m x where
+  DiagramP :: Point (f t x) ~ Point x => Diagram t n m (f t x) -> DiagramP f t n m x
+
+class DiagrammaticProdicate f where
+  ff :: f (t :: DiagramType) x -> x
+
+{-
+data SomeSlice i t x where
+  SomeSlice :: (Attestable n, Sliced (i n) x) => Slice t (i n) x -> SomeSlice i t x
+-}
+  
+instance DiagrammaticProdicate f => Diagrammatic (DiagramP f) where
+  diagram (DiagramP dp) = case dp of
+    DiagramChainTo p aps -> DiagramChainTo p (amap1 ff aps)
+
+  
 {-
 --------------------------------------------------------------------------------
 -- ConsZero -
