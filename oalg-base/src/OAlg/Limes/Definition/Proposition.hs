@@ -51,7 +51,7 @@ import OAlg.Hom.Multiplicative
 import OAlg.Limes.Cone
 
 import OAlg.Limes.Definition.Core
-import OAlg.Limes.Definition.Duality
+import OAlg.Limes.Definition.Duality()
 
 --------------------------------------------------------------------------------
 -- XEligibleCone -
@@ -289,8 +289,8 @@ xecfOrtSite xs@(XStart _ _) = XEligibleConeFactor (xecfInjOrtSiteFrom xs)
 prpLimesFactorExist ::
   ( Conic c
   , Diagrammatic d
-  , Show (d t n m x)
-  , Eq (d t n m x)
+  , Show (c s p d t n m x)
+  , Entity (d t n m x)
   , Entity x
   )
   => XEligibleCone c s p d t n m x
@@ -302,7 +302,11 @@ prpLimesFactorExist (XEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
            -- but the preconditions tests also the validity of xec
        :=> let f = universalFactor l c
             in And [ valid f
-                   , eligibleFactor l c f :?> Params ["c":=show c, "f":=show f]
+                   , eligibleFactor l c f :?> Params
+                       [ "u":= show (universalCone l)
+                       , "c":=show c
+                       , "f":=show f
+                       ]
                    ]
     ) 
 
@@ -335,6 +339,8 @@ prpLimesFactorUnique (XEligibleConeFactor xef) l = Prp "LimesFactorUnique" :<=>:
 prpLimes ::
   ( Conic c
   , Diagrammatic d
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )
@@ -342,7 +348,21 @@ prpLimes ::
   -> XEligibleConeFactor c s p d t n m x
   -> LimesG c s p d t n m x -> Statement
 prpLimes xec xef l = Prp "Limes" :<=>:
-  And [ prpLimesFactorExist xec l
+  And [ valid (universalCone l)
+      , prpLimesFactorExist xec l
       , prpLimesFactorUnique xef l
       ]
 
+--------------------------------------------------------------------------------
+-- Validable -
+
+instance
+  ( Conic c, Diagrammatic d
+  , XStandardEligibleCone c s p d t n m x
+  , XStandardEligibleConeFactor c s p d t n m x
+  , Entity (c s p d t n m x)
+  , Entity (d t n m x)
+  , Entity x
+  )
+  => Validable (LimesG c s p d t n m x) where
+  valid = prpLimes xStandardEligibleCone xStandardEligibleConeFactor

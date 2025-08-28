@@ -341,7 +341,6 @@ variance kers cokers c@(ConsZero (DiagramChainFrom _ _))
   cokers' = lmsToOp krnLimitsDuality kers
 -}
 
-
 --------------------------------------------------------------------------------
 -- variances -
 
@@ -376,7 +375,7 @@ deviations kers cokers = DiagramDiscrete . amap1 deviation . variances kers coke
 --------------------------------------------------------------------------------
 -- VarianceTrafo -
 
--- | transformation between two 'Variance', i.e. the 'ConsZeroTrafo' between its top 'ConeZero' chains
+-- | transformation between two 'Variance's, i.e. the 'ConsZeroTrafo' between its top 'ConeZero' chains
 -- given by 'vrcTop' (see diagram for 'Variance'). Such a transformation give rise to a
 -- 'ConsZeroTrafo' betweeen its bottom 'ConsZero' chains, given by 'vrctBottom'.
 --

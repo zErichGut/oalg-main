@@ -37,6 +37,8 @@ import OAlg.Limes.Limits.Core
 prpLimitsG ::
   ( Conic c
   , Diagrammatic d
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )
@@ -56,6 +58,7 @@ instance
   , XStandardEligibleCone c s p d t n m x
   , XStandardEligibleConeFactor c s p d t n m x
   , XStandard (d t n m x)
+  , Entity (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )

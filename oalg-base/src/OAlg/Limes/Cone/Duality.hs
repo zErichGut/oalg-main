@@ -91,9 +91,9 @@ cnMapDstCov ::
   => Variant2 Covariant h x y -> Cone Dst p d t n m x -> Cone Dst p d t n m y
 cnMapDstCov (Covariant2 h) c = case tauDst (range h) of
   Struct                    -> case c of
-    ConeKernel d a          -> ConeKernel d' (amap h a) where
+    ConeKernel d a          -> ConeKernel d' (amapf h a) where
       SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
-    ConeCokernel d a        -> ConeCokernel d' (amap h a) where
+    ConeCokernel d a        -> ConeCokernel d' (amapf h a) where
       SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 cnMapCov ::
@@ -154,9 +154,9 @@ cnMapMltCnt ::
   -> Cone Mlt p d t n m x -> Dual1 (Cone Mlt p d t n m) y
 cnMapMltCnt (Contravariant2 h) c = case tauMlt (range h) of
   Struct                        -> case c of
-    ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amap h) as) where
+    ConeProjective d t as       -> ConeInjective d' (pmap h t) (amap1 (amapf h) as) where
       SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
-    ConeInjective d t as        -> ConeProjective d' (pmap h t) (amap1 (amap h) as) where
+    ConeInjective d t as        -> ConeProjective d' (pmap h t) (amap1 (amapf h) as) where
       SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a 'Distributive' contravariant homomorphism.
@@ -168,9 +168,9 @@ cnMapDstCnt ::
   -> Cone Dst p d t n m x -> Dual1 (Cone Dst p d t n m) y
 cnMapDstCnt (Contravariant2 h) c = case tauDst (range h) of
   Struct                        -> case c of
-    ConeKernel d a              -> ConeCokernel d' (amap h a) where
+    ConeKernel d a              -> ConeCokernel d' (amapf h a) where
       SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
-    ConeCokernel d a            -> ConeKernel  d' (amap h a) where
+    ConeCokernel d a            -> ConeKernel  d' (amapf h a) where
       SDualBi (Left1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
 -- | mapping of a cone under a contravariant homomorphism.

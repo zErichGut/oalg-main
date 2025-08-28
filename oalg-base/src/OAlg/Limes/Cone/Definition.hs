@@ -309,7 +309,7 @@ cnInjOrnt p d = ConeInjective d p (amap1 (:>p) $ dgPoints $ diagram d)
 
 cnInjDstOrnt :: (Diagrammatic d, Entity p, t ~ Parallel RightToLeft, n ~ N2)
   => p -> d t n m (Orientation p) -> Cone Dst Injective d t n m (Orientation p)
-cnInjDstOrnt t d = ConeCokernel d (q:>t) where DiagramParallelRL _ q _ = diagram d
+cnInjDstOrnt t d = ConeCokernel d (p:>t) where DiagramParallelRL p _ _ = diagram d
 
 --------------------------------------------------------------------------------
 -- xCnPrjOrnt -

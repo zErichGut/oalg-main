@@ -28,7 +28,7 @@ module OAlg.Limes.KernelsAndCokernels
   , kernelDiagram
 
     -- ** Construction
-  , kernels, kernels0, kernels1
+  , kernels, kernels', kernels0, kernels1
   , krnEqls, eqlKrns
   , kernelZero
 
@@ -45,6 +45,7 @@ module OAlg.Limes.KernelsAndCokernels
 
     -- ** Construction
   , cokernels, cokernels'
+  , coKernelsG
 
     -- *** Orientation
   , cokernelsOrnt
@@ -73,6 +74,7 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
@@ -205,6 +207,9 @@ kernels krn1 = LimitsG (krn krn1) where
     _:|Nil  -> limes krn1 d
     _:|_:|_ -> limes (kernels1 krn1) d
 
+kernels' :: Distributive x => q n -> Kernels N1 x -> Kernels n x
+kernels' _ = kernels
+
 --------------------------------------------------------------------------------
 -- kernelsOrnt -
 
@@ -243,6 +248,20 @@ type CokernelsG c d n = LimitsG c Dst Injective d (Parallel RightToLeft) N2 n
 
 -- | cokernels for 'Distributive' structures.
 type Cokernels n = CokernelsG Cone Diagram n
+
+
+--------------------------------------------------------------------------------
+-- coKernelsG -
+
+coKernelsG ::
+  ( Distributive x
+  , TransformableGRefl o Dst
+  , NaturalConicBi (IsoO Dst o) c Dst Projective d (Parallel LeftToRight) N2 n
+  )
+  => KernelsG c d n x -> CokernelsG c d n (o x)
+coKernelsG ks = cks where
+  Contravariant2 i    = toDualO (Struct :: Distributive x => Struct Dst x)
+  SDualBi (Left1 cks) = amapF i (SDualBi (Right1 ks))
 
 --------------------------------------------------------------------------------
 -- cokernelFactor -
@@ -322,7 +341,7 @@ prpIsKernel ker fs k = Prp "IsKernel" :<=>: relIsKernel ker fs k
 -- (2) @k '==' k'@.
 prpIsCokernel :: Distributive x => Cokernel n x -> FinList n x -> x -> Statement
 prpIsCokernel coker fs k = Prp "IsCokernel" :<=>: relIsKernel ker fs' k' where
-  Contravariant2 i = toDualOpDst
+  Contravariant2 i    = toDualOpDst
   SDualBi (Left1 ker) = amapF i (SDualBi (Right1 coker))
   fs'                 = amap1 (amapf i) fs
   k'                  = amapf i k

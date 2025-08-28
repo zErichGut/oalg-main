@@ -18,7 +18,9 @@
 -- 
 -- Chain diagrams with consecutive zero-able arrows. 
 module OAlg.Limes.Exact.ConsZero
-  ( -- * Consecutive Zero
+  (
+{-
+    -- * Consecutive Zero
     ConsZero(..), cnzDiagram, cnzPoints, cnzArrows
   , cnzHead, cnzTail
   , cnzMap
@@ -36,6 +38,7 @@ module OAlg.Limes.Exact.ConsZero
 
     -- * X
   , xSomeConsZeroTrafoOrnt, SomeConsZeroTrafo(..)
+-}
   ) where
 
 import Control.Monad
@@ -61,6 +64,7 @@ import OAlg.Entity.FinList
 import OAlg.Hom.Definition
 import OAlg.Hom.Distributive ()
 
+{-
 --------------------------------------------------------------------------------
 -- ConsZero -
 
@@ -378,3 +382,4 @@ xSomeConsZeroTrafoOrnt n = xscnztTo n <|> xscnztFrom n where
     t              <- xcnztFrom n'
     return $ SomeConsZeroTrafo t
   
+-}
