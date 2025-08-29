@@ -29,6 +29,7 @@ module OAlg.Limes.Definition.Core
   ) where
 
 import Data.Typeable
+import Data.List ((++))
 
 import OAlg.Prelude
 
@@ -38,7 +39,7 @@ import OAlg.Data.Either
 import OAlg.Data.Variant
 
 import OAlg.Entity.Diagram
-import OAlg.Entity.FinList
+import OAlg.Entity.FinList hiding ((++))
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -82,6 +83,10 @@ data LimesG c s p d t n m x where
   LimesInjective  :: c s Injective  d t n m x -> (Cone s Injective  d t n m x -> x)
                   -> LimesG c s Injective  d t n m x
 
+instance Show (c s p d t n m x) => Show (LimesG c s p d t n m x) where
+  show (LimesProjective l _) = "LimesProjective (" ++ show l ++ ")"
+  show (LimesInjective l _)  = "LimesInjective (" ++ show l ++ ")"
+  
 --------------------------------------------------------------------------------
 -- Limes -
 

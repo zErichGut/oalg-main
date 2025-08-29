@@ -42,8 +42,8 @@ prpLimitsG ::
   , Entity (d t n m x)
   , Entity x
   )
-  => XEligibleCone c s p d t n m x
-  -> XEligibleConeFactor c s p d t n m x
+  => XGEligibleCone c s p d t n m x
+  -> XGEligibleConeFactor c s p d t n m x
   -> X (d t n m x)
   -> LimitsG c s p d t n m x
   -> Statement
@@ -55,14 +55,14 @@ prpLimitsG xec xef xd l = Prp "LimitsG" :<=>: Forall xd (prpLimes xec xef . lime
 instance
   ( Conic c
   , Diagrammatic d
-  , XStandardEligibleCone c s p d t n m x
-  , XStandardEligibleConeFactor c s p d t n m x
+  , XStandardGEligibleCone c s p d t n m x
+  , XStandardGEligibleConeFactor c s p d t n m x
   , XStandard (d t n m x)
   , Entity (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )
   => Validable (LimitsG c s p d t n m x) where
-  valid = prpLimitsG xStandardEligibleCone xStandardEligibleConeFactor xStandard
+  valid = prpLimitsG xStandardGEligibleCone xStandardGEligibleConeFactor xStandard
 
 
