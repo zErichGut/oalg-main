@@ -21,13 +21,21 @@
 -- 'Oriented' structures with a distinguished 'Point'.
 module OAlg.Entity.Slice.Sliced
   (
-{-
     -- * Sliced
-    Sliced(..), TransformableSld
+    Sliced(..), sliceIndex
 
     -- * Hom
-  , HomSliced, Sld
--}
+  , HomSlicedOriented, Sld
+  , sliceIndexDomain, sliceIndexRange
+  , sldHom
+  , toDualOpOrtSld, toDualOpOrtSld'
+
+  , HomSlicedMultiplicative
+  , toDualOpMltSld, toDualOpMltSld'  
+    -- * IsoO
+
+    -- * Proposition
+  , prpHomSlicedOriented
   ) where
 
 import Data.Kind
@@ -49,6 +57,7 @@ import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
 
 import OAlg.Data.Symbol
 
@@ -136,130 +145,71 @@ relHomSlicedOriented (Struct:>:Struct) hSld@(Struct:>:Struct) h
       px = slicePoint $ sliceIndexDomain hSld
       py = slicePoint $ sliceIndexRange hSld
 
-
+-- | validity according to 'HomSlicedOriented'.
 prpHomSlicedOriented :: (HomSlicedOriented i h, Show2 h)
   => q i -> h x y -> Statement
 prpHomSlicedOriented q h = Prp "HomSlicedOriented"
   :<=>: relHomSlicedOriented (tauHom $ homomorphous h) (sldHom q h) h
 
-
-
-{-
 --------------------------------------------------------------------------------
--- Sld -
+-- IsoO - HomSlicedOriented -
 
--- | type representing the class of 'Sliced' structures.
-data Sld s (i :: Type -> Type) 
+instance Transformable s Ort => Transformable (s,Sld i) Ort where
+  tau = tau . tauFst
 
-type instance Structure (Sld s i) x = (Sliced i x, Structure s x)
-
---------------------------------------------------------------------------------
--- TransformableSld -
-
--- | helper class to circumvent @UndecidableInstances@.
-class Transformable (Sld s i) (Sld t i) => TransformableSld i s t
-
-instance TransformableSld i s s
-instance TransformableSld i Mlt Ort
-
---------------------------------------------------------------------------------
--- sldStruct -
-
--- | the underlying 'Structure' of the 'Sliced'-'Structure'.
-sldStruct :: Struct (Sld s i) x -> Struct s x
-sldStruct Struct = Struct
-
-instance Transformable1 Op s => TransformableG Op (Sld s i) (Sld s i) where
-  tauG s@Struct = case tauOp (sldStruct s) of Struct -> Struct
-
-instance TransformableOp s => TransformableOp (Sld s i)
-
-instance Transformable (Sld s i) Ort where tau Struct = Struct
-instance TransformableOrt (Sld s i)
-
-instance Transformable (Sld s i) Typ where tau Struct = Struct
-instance TransformableTyp (Sld s i)
-
-instance Transformable s Mlt => Transformable (Sld s i) Mlt where
-  tau s@Struct = case tauMlt (sldStruct s) of Struct -> Struct
-instance Transformable s Mlt => TransformableMlt (Sld s i)
-
-instance Transformable s Fbr => Transformable (Sld s i) Fbr where
-  tau s@Struct = case tauFbr (sldStruct s) of Struct -> Struct
-instance Transformable s Fbr => TransformableFbr (Sld s i)
-
-instance Transformable s Add => Transformable (Sld s i) Add where
-  tau s@Struct = case tauAdd (sldStruct s) of Struct -> Struct
-instance (Transformable s Fbr, Transformable s Add) => TransformableAdd (Sld s i)
-
-instance Transformable s FbrOrt => Transformable (Sld s i) FbrOrt where
-  tau s@Struct = case tauFbrOrt (sldStruct s) of Struct -> Struct
-instance (Transformable s Fbr, Transformable s FbrOrt) => TransformableFbrOrt (Sld s i)
-
-instance Transformable s Dst => Transformable (Sld s i) Dst where
-  tau s@Struct = case tauDst (sldStruct s) of Struct -> Struct
-instance ( Transformable s Fbr, Transformable s FbrOrt, Transformable s Add
-         , Transformable s Mlt, Transformable s Dst
-         ) => TransformableDst (Sld s i)
+instance Transformable s Mlt => Transformable (s,Sld i) Mlt where
+  tau = tau . tauFst
   
-instance Transformable (Sld Mlt i) (Sld Ort i) where tau Struct = Struct
-instance Transformable (Sld Dst i) (Sld Mlt i) where tau Struct = Struct
-instance TransformableSld i Dst Mlt
+instance Transformable s Ort => TransformableOrt (s,Sld i)
+instance TransformableMlt s  => TransformableMlt (s,Sld i)
 
+instance Transformable (s,Sld i) Type where tau _ = Struct
 
-type instance Hom (Sld s i) h = (HomSliced s i h, HomD s h)
+instance TransformableType (s,Sld i)
 
---------------------------------------------------------------------------------
--- Path - HomSliced -
+tauOpSld :: (Struct s x -> Struct s (Op x)) -> Struct (s,Sld i) x -> Struct (s,Sld i) (Op x)
+tauOpSld tauOp s = case (s,tauOp $ tauFst s) of (Struct,Struct) -> Struct
 
-instance HomSliced s i h => HomSliced s i (Path h)
+instance TransformableG Op s s => TransformableG Op (s,Sld i) (s,Sld i) where tauG = tauOpSld tauOp
 
-{-
---------------------------------------------------------------------------------
--- Forget - HomSliced -
+instance TransformableGRefl Op s => TransformableGRefl Op (s,Sld i)
 
-instance (HomSliced t i h, TransformableOp t, TransformableSld i t s)
-  => HomSliced s i (Forget (Sld t i) h)
--}
-
-{-
---------------------------------------------------------------------------------
--- IdHom - HomSliced -
-
-instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IdHom (Sld t i))
-
---------------------------------------------------------------------------------
--- IsoOp - HomSliced -
-
-instance (Transformable1 Op t, TransformableSld i t s) => HomSliced s i (IsoOp (Sld t i))
--}
-
-instance Transformable (Sld t i) Type where
-  tau _ = Struct
-  
-instance TransformableType (Sld t i)
-
--- because Op operates identical on points!
-instance
-  ( TransformableOp t
-  , TransformableSld i t s
-  )
-  => HomSliced s i (HomDisjEmpty (Sld t i) Op)
-
+instance TransformableGRefl Op s => TransformableOp (s,Sld i)
 
 instance
-  ( TransformableOp t
-  , TransformableSld i t s
+  ( Transformable s Ort
+  , TransformableGRefl Op s
   )
-  => HomSliced s i (Inv2 (HomDisjEmpty (Sld t i) Op))
-{-
+  => HomSlicedOriented i (HomDisjEmpty (s,Sld i) Op)
+
+instance
+  ( Transformable s Ort
+  , TransformableGRefl Op s
+  )
+  => HomSlicedOriented i (IsoO (s,Sld i) Op)
+
 --------------------------------------------------------------------------------
--- Forget' - HomSliced -
+-- toDualOpOrtSld -
 
-instance ( HomSliced t i h
-         , TransformableSld i t s
-         , TransformableOp t
-         ) => HomSliced s i (Forget' (Sld t i) h)
--}
+toDualOpOrtSld :: Sliced i x => Variant2 Contravariant (IsoO (Ort,Sld i) Op) x (Op x)
+toDualOpOrtSld = toDualO Struct
 
--}
+toDualOpOrtSld' :: Sliced i x => q i -> Variant2 Contravariant (IsoO (Ort, Sld i) Op) x (Op x)
+toDualOpOrtSld' _ = toDualOpOrtSld
+
+--------------------------------------------------------------------------------
+-- HomSlicedMultiplicative -
+
+type HomSlicedMultiplicative i h = (HomSlicedOriented i h, HomMultiplicativeDisjunctive h)
+
+--------------------------------------------------------------------------------
+-- toDualOpMltSld -
+
+toDualOpMltSld :: (Sliced i x, Multiplicative x)
+  => Variant2 Contravariant (IsoO (Mlt,Sld i) Op) x (Op x)
+toDualOpMltSld = toDualO Struct
+
+toDualOpMltSld' :: (Sliced i x, Multiplicative x)
+  => q i -> Variant2 Contravariant (IsoO (Mlt,Sld i) Op) x (Op x)
+toDualOpMltSld' _ = toDualOpMltSld
+

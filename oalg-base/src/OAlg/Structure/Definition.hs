@@ -22,7 +22,8 @@ module OAlg.Structure.Definition
   (
     -- * Structure
     Structure, Struct(..)
-
+  , tauFst, tauSnd
+  
   , Structure2, Struct2(..)
 
     -- * Transformable
@@ -58,6 +59,11 @@ import OAlg.Data.Maybe
 type family Structure s x :: Constraint
 
 --------------------------------------------------------------------------------
+-- (,) -
+
+type instance Structure (s,t) x = (Structure s x,Structure t x)
+
+--------------------------------------------------------------------------------
 -- Struct -
 
 -- | attest that the type @__x__@ admits the constrains given by the parameter @__s__@.
@@ -72,6 +78,24 @@ instance Show1 (Struct s) where
 
 instance Eq1 (Struct s) 
 instance Singular (Struct s)
+
+--------------------------------------------------------------------------------
+-- tauFst -
+
+-- | the first struct according to @__(s,t)__@.
+tauFst :: Struct (s,t) x -> Struct s x
+tauFst Struct = Struct
+
+instance Transformable (s,t) s where tau = tauFst
+
+-----------------------------------------------------------------------------------------
+-- tauSnd -
+
+-- | the second struct according to @__(s,t)__@.
+tauSnd :: Struct (s,t) x -> Struct t x
+tauSnd Struct = Struct
+
+instance Transformable (s,t) t where tau = tauSnd
 
 --------------------------------------------------------------------------------
 -- Structure2 -

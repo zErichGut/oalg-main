@@ -182,7 +182,6 @@ tauHom (d :>: r) = tau d :>: tau r
 tauHomG :: TransformableG t u v => Homomorphous u x y -> Homomorphous v (t x) (t y)
 tauHomG (d :>: r) = tauG d :>: tauG r
 
-
 --------------------------------------------------------------------------------
 -- tau1Hom -
 
