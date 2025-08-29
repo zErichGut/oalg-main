@@ -6,13 +6,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
-
-{-# LANGUAGE RankNTypes #-}
-
 
 -- |
 -- Module      : OAlg.Entity.Slice.Definition
@@ -24,16 +19,18 @@
 -- definition of slicing a 'Multiplicative' structures according a given indexed 'Point'.
 module OAlg.Entity.Slice.Definition
   (
-{-
-    -- * Slice
-    Slice(..), slice, slSiteType, slMap
 
-    -- ** Duality
-  , coSlice, coSliceInv
-  , slFromOpOp
+    -- * Slice
+    Slice(..), slice, slSiteType
+  , slMap, slMapCov, slMapCnt
 
     -- * Factor
   , SliceFactor(..), slfFactor, slfIndex
+  , slfMap, slfMapCov, slfMapCnt
+  
+    -- * Duality
+  , toDualOpOrtSld, toDualOpOrtSld'
+  , toDualOpMltSld, toDualOpMltSld'
   
     -- * Hom
   , SliceFactorDrop(..)
@@ -55,7 +52,7 @@ module OAlg.Entity.Slice.Definition
   , xosXOrtSiteToSliceFactorTo
   , xosXOrtSiteFromSliceFactorFrom
   , xosAdjTerminal
--}
+
   ) where
 
 import Control.Monad
@@ -79,7 +76,6 @@ import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 import OAlg.Structure.Vectorial
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
@@ -98,7 +94,7 @@ import OAlg.Entity.Slice.Sliced
 --------------------------------------------------------------------------------
 -- Slice -
 
--- | slice over __@c@__ by a given 'Site' and indexed by @__i__@.
+-- | slice over __@x@__ by a given 'Site' and indexed by @__i__@.
 data Slice s i x where
   SliceFrom :: i x -> x -> Slice From i x
   SliceTo :: i x -> x -> Slice To i x
@@ -145,7 +141,7 @@ slTypeRefl (SliceTo _ _)   = Refl
 --------------------------------------------------------------------------------
 -- slMapCov -
 
--- | mapping of slices.
+-- | mapping of slices under a covariant homomorphism.
 --
 -- __Note__ As 'IsoOp' is generated only by 'isoToOpOpOrt' ans 'isoFromOpOpOrt' the 'slicePoint' is
 -- invariant under these mappings and as such 'slMapCov' maps 'valid' slices to 'valid' slices.
@@ -160,6 +156,7 @@ slMapCov (Covariant2 h) s = case s of
 --------------------------------------------------------------------------------
 -- slMapCnt -
 
+-- | mapping of slices under a contravariant homomorphism.
 slMapCnt :: HomSlicedOriented i h
   => Variant2 Contravariant h x y -> Slice s i x -> Slice (Dual s) i y
 slMapCnt (Contravariant2 h) s = case s of
@@ -171,6 +168,7 @@ slMapCnt (Contravariant2 h) s = case s of
 --------------------------------------------------------------------------------
 -- slMap -
 
+-- | mapping of slices.
 slMap :: (HomSlicedOriented i h, s ~ Dual (Dual s))
   => h x y -> SDualBi (Slice s i) x -> SDualBi (Slice s i) y
 slMap = vmapBi slMapCov slMapCov slMapCnt slMapCnt
@@ -222,8 +220,8 @@ instance Sliced i x => Validable (Slice s i x) where
 -- | factor between two slices.
 --
 --  __Property__ Let @SliceFactor a b f@ be in
--- @'SliceFactor' __s__ __i__ __c__@ for a 'Multiplicative' structure __@c@__
--- constrained by @'Sliced' __i__ __c__@ then holds:
+-- @'SliceFactor' __s i x__@ for a 'Multiplicative' structure __@x@__
+-- constrained by @'Sliced' __i x__@ then holds:
 --
 -- (1) If @a@ matches @'SliceFrom' _ a'@ then holds: Let @'SliceFrom' _ b' = b@ in
 --
@@ -256,12 +254,14 @@ slfIndex _ = unit1
 --------------------------------------------------------------------------------
 -- slfTypeRefl -
 
+-- | proof of being reflexive.
 slfTypeRefl :: SliceFactor s i x -> s :~: Dual (Dual s)
 slfTypeRefl (SliceFactor a _ _) = slTypeRefl a
 
 --------------------------------------------------------------------------------
 -- slfMapCov -
 
+-- | mapping of slices factor under a covariant homomorphism.
 slfMapCov :: HomSlicedMultiplicative i h
   => Variant2 Covariant h x y -> SliceFactor s i x -> SliceFactor s i y
 slfMapCov h (SliceFactor a b f) = SliceFactor a' b' (amap h f) where
@@ -271,6 +271,7 @@ slfMapCov h (SliceFactor a b f) = SliceFactor a' b' (amap h f) where
 --------------------------------------------------------------------------------
 -- slfMapCnt -
 
+-- | mapping of slices factor under a contravariant homomorphism.
 slfMapCnt :: HomSlicedMultiplicative i h
   => Variant2 Contravariant h x y -> SliceFactor s i x -> SliceFactor (Dual s) i y
 slfMapCnt h@(Contravariant2 h') (SliceFactor a b f) = SliceFactor b' a' (amap h' f) where
@@ -280,6 +281,7 @@ slfMapCnt h@(Contravariant2 h') (SliceFactor a b f) = SliceFactor b' a' (amap h'
 --------------------------------------------------------------------------------
 -- slfMap -
 
+-- | mapping of slices factor.
 slfMap :: (HomSlicedMultiplicative i h, s ~ Dual (Dual s))
   => h x y -> SDualBi (SliceFactor s i) x -> SDualBi (SliceFactor s i) y
 slfMap = vmapBi slfMapCov slfMapCov slfMapCnt slfMapCnt
@@ -364,7 +366,7 @@ slfTerminalPoint = LimesProjective l u where
 -- DiagramSlicedCenter -
 
 -- | predicate for a @'Star' __t__@ diagram with center 'Point' given by the index type
--- @__i__ __c__@.
+-- @__i x__@.
 --
 -- __Property__ Let @'DiagramSlicedCenter' i d@ be in
 -- @'DiagramSlicedCenter' __i t n m x__@ then holds:
@@ -416,7 +418,7 @@ slfPullback prds (DiagramSlicedCenter kc d@(DiagramSink _ as))
 -- | predicate for a limes with a sliced tip of the universal cone.
 --
 --  __Property__ Let @'LimesSlicedTip' i l@ be in
--- @'LimesSlicedTip' __i__ __s__ __p__ __t__ __n__ __m__ __c__@ then holds:
+-- @'LimesSlicedTip' __i s p t n m x__@ then holds:
 -- @'tip' ('universalCone' l) '==' 'slicePoint' i@.
 data LimesSlicedTip i s p t n m x where
   LimesSlicedTip :: Sliced i x => i x -> Limes s p t n m x -> LimesSlicedTip i s p t n m x
@@ -427,12 +429,10 @@ instance Oriented x => Show (LimesSlicedTip i s p t n m x) where
 
 instance
   ( Oriented x
-  -- , XStandardEligibleCone Cone s p Diagram t n m x
   , XStandardEligibleCone s p t n m x
-  -- , XStandardEligibleConeFactor Cone s p Diagram t n m x
   , XStandardEligibleConeFactor s p t n m x
   , Typeable s, Typeable p, Typeable t, Typeable n, Typeable m
-  ) -- , Validable (Limes s p t n m x))
+  )
   => Validable (LimesSlicedTip i s p t n m x) where
   valid (LimesSlicedTip i l) = Label "LimesSlicedTip" :<=>:
     And [ valid1 i
@@ -460,10 +460,6 @@ data SliceFactorDrop s x y where
     :: (Multiplicative x, Sliced i x)
     => SliceFactorDrop To (SliceFactor To i x) x
 
-{-
-instance TransformableObjectClassTyp (SliceFactorDrop s)
--}
-
 --------------------------------------------------------------------------------
 -- SliceFactorDrop - Entity -
 
@@ -486,24 +482,25 @@ instance Morphism (SliceFactorDrop s) where
   homomorphous SliceFactorFromDrop = Struct :>: Struct
   homomorphous SliceFactorToDrop   = Struct :>: Struct
 
-{-
 --------------------------------------------------------------------------------
--- SliceFactorDrop - Hom Mlt -
+-- SliceFactorDrop - HomMultiplicative -
 
-instance Applicative (SliceFactorDrop s) where
-  amap SliceFactorFromDrop = slfFactor
-  amap SliceFactorToDrop   = slfFactor
+instance ApplicativeG Id (SliceFactorDrop s) (->) where
+  amapG SliceFactorFromDrop = toIdG slfFactor
+  amapG SliceFactorToDrop   = toIdG slfFactor
 
-instance HomOriented (SliceFactorDrop s) where
-  pmap SliceFactorFromDrop (SliceFrom _ a) = end a
-  pmap SliceFactorToDrop (SliceTo _ a)     = start a
+instance ApplicativeG Pnt (SliceFactorDrop s) (->) where
+  amapG SliceFactorFromDrop (Pnt (SliceFrom _ a)) = Pnt (end a)
+  amapG SliceFactorToDrop (Pnt (SliceTo _ a))     = Pnt (start a)
 
-instance HomMultiplicative (SliceFactorDrop s) where
-  
+
+instance HomOriented (SliceFactorDrop s)
+instance HomMultiplicative (SliceFactorDrop s)
+
 --------------------------------------------------------------------------------
 -- slfSliceIndex -
 
--- | the given attest for the slice index @__i__ __c__@ given by the diagram proxy.
+-- | the given attest for the slice index @__i x__@ given by the diagram proxy.
 slfSliceIndex :: Sliced i x => Diagram t n m (SliceFactor To i x) -> i x
 slfSliceIndex _ = unit1
 
@@ -512,7 +509,7 @@ slfSliceIndex _ = unit1
 
 -- | the diagram as a cone with its tip given by the 'slicePoint'.
 dgSlfToSlicePoint :: (Multiplicative x, Sliced i x)
-  => Diagram t n m (SliceFactor To i x) -> Cone Mlt Injective t n m x
+  => Diagram t n m (SliceFactor To i x) -> Cone Mlt Injective Diagram t n m x
 dgSlfToSlicePoint d = ConeInjective d' t cs where
   d' = dgMap SliceFactorToDrop d
   t  = slicePoint $ slfSliceIndex d
@@ -523,7 +520,7 @@ dgSlfToSlicePoint d = ConeInjective d' t cs where
 
 -- | the induced 'Injective' limes for 'SliceFactor'. 
 slfLimesInjective :: (Multiplicative x, Sliced i x)
-  => Limits Limes Mlt Injective t n m x
+  => Limits Mlt Injective t n m x
   -> Diagram t n m (SliceFactor To i x)
   -> Limes Mlt Injective t n m (SliceFactor To i x)
 slfLimesInjective l dgSlf = LimesInjective slfLim slfUniv where
@@ -532,17 +529,19 @@ slfLimesInjective l dgSlf = LimesInjective slfLim slfUniv where
   slfLim = ConeInjective dgSlf tSlf csSlf where
     tSlf = SliceTo (slfSliceIndex dgSlf) (lUniv (dgSlfToSlicePoint dgSlf))
     csSlf = amap1 (\(s,f) -> SliceFactor s tSlf f) (dgPoints dgSlf `zip` shell lLim)
-    
-  slfUniv slfCn = SliceFactor (tip slfLim) (tip slfCn) u where
-    u = lUniv $ cnMap SliceFactorToDrop slfCn
+
+  slfUniv slfCn = case cnDiagramTypeRefl slfCn of
+    Refl -> SliceFactor (tip slfLim) (tip slfCn) u where
+              u = lUniv $ cnMap SliceFactorToDrop slfCn
 
 --------------------------------------------------------------------------------
 -- slfLimitsInjective -
 
 -- | the induced 'Injective' 'Limits'.
 slfLimitsInjective :: (Multiplicative x, Sliced i x)
-  => Limits Limes Mlt Injective t n m x -> Limits Limes Mlt Injective t n m (SliceFactor To i x)
-slfLimitsInjective lms = Limits $ slfLimesInjective lms
+  => Limits Mlt Injective t n m x -> Limits Mlt Injective t n m (SliceFactor To i x)
+slfLimitsInjective lms = LimitsG $ slfLimesInjective lms
+
 
 --------------------------------------------------------------------------------
 -- xSliceTo -
@@ -652,7 +651,7 @@ instance XStandardOrtSiteFrom (SliceFactor To Proxy OS)
 -- xosAdjTerminal -
 
 -- | adjoins a terminal point with the given probability to the random variable of the points of
--- the given @'XOrtSite' 'To'@ of the @'SliceFactor' 'To' __i__ __c__@. Such a terminal point is given
+-- the given @'XOrtSite' 'To'@ of the @'SliceFactor' 'To' __i x__@. Such a terminal point is given
 -- by @'one' s@ where @s@ is the slice point. 
 xosAdjTerminal :: (Multiplicative x, Sliced i x)
   => Q -> XOrtSite To (SliceFactor To i x) -> XOrtSite To (SliceFactor To i x)
@@ -666,8 +665,14 @@ xosAdjTerminal w xos@(XEnd xp xf) = XEnd xp' xf where
 --------------------------------------------------------------------------------
 -- Slice - Structure -
 
+type instance Point (Slice s i x) = Point x
+
+instance ShowPoint x => ShowPoint (Slice s i x)
+instance EqPoint x => EqPoint (Slice s i x)
+instance ValidablePoint x => ValidablePoint (Slice s i x)
+instance TypeablePoint x => TypeablePoint (Slice s i x)
+
 instance (Oriented x, Sliced i x, Typeable s) => Oriented (Slice s i x) where
-  type Point (Slice s i x) = Point x
   orientation s = orientation $ slice s
 
 instance (Sliced i x, Ord x) => Ord (Slice s i x) where
@@ -682,31 +687,36 @@ instance Multiplicative x => Opl x (Slice From i x) where
 
 instance (Multiplicative x, Sliced i x) => OrientedOpl x (Slice From i x)
 
-instance (Distributive d, Sliced i d, Typeable s) => Fibred (Slice s i d) where
- type Root (Slice s i d) = Point d
+type instance Root (Slice s i x) = Point x
+
+instance ShowPoint x => ShowRoot (Slice s i x)
+instance EqPoint x => EqRoot (Slice s i x)
+instance ValidablePoint x => ValidableRoot (Slice s i x)
+instance TypeablePoint x => TypeableRoot (Slice s i x)
+
+instance (Distributive x, Sliced i x, Typeable s) => Fibred (Slice s i x) where
  root (SliceFrom _ s) = end s
  root (SliceTo _ s)   = start s
 
-instance (Distributive d, Sliced i d) => Additive (Slice From i d) where
+instance (Distributive x, Sliced i x) => Additive (Slice From i x) where
   zero e = SliceFrom i (zero (slicePoint i :> e))
     where i = i' e
-          i' :: Sliced i d => Point d -> i d
+          i' :: Sliced i x => Point x -> i x
           i' _ = unit1
-
 
   SliceFrom i a + SliceFrom _ b = SliceFrom i (a+b)
 
   ntimes n (SliceFrom i a) = SliceFrom i (ntimes n a)
   
-instance (Distributive d, Abelian d, Sliced i d) => Abelian (Slice From i d) where
+instance (Distributive x, Abelian x, Sliced i x) => Abelian (Slice From i x) where
   negate (SliceFrom i a) = SliceFrom i (negate a)
 
   SliceFrom i a - SliceFrom _ b = SliceFrom i (a-b)
   
   ztimes z (SliceFrom i a) = SliceFrom i (ztimes z a)
 
-instance (Distributive d, Vectorial d, Sliced i d) => Vectorial (Slice From i d) where
-  type Scalar (Slice From i d) = Scalar d
+instance (Distributive x, Vectorial x, Sliced i x) => Vectorial (Slice From i x) where
+  type Scalar (Slice From i x) = Scalar x
   x ! SliceFrom i a = SliceFrom i (x!a)
 
--}
+
