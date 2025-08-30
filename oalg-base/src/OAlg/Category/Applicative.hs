@@ -31,6 +31,7 @@ module OAlg.Category.Applicative
 import Control.Monad (fmap)
 
 import Data.List (map)
+import Data.Maybe
 
 import OAlg.Data.Dualisable
 import OAlg.Data.Either
@@ -49,6 +50,7 @@ class ApplicativeG t a b where
 
 instance ApplicativeG X (->) (->)  where amapG = fmap
 instance ApplicativeG [] (->) (->) where amapG = map
+instance ApplicativeG Maybe (->) (->) where amapG = fmap
 
 instance (ApplicativeG t f c, ApplicativeG t g c) => ApplicativeG t (Either2 f g) c where
   amapG (Left2 f)  = amapG f

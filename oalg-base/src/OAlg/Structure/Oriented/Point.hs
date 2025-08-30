@@ -6,7 +6,7 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE StandaloneDeriving, DeriveFunctor, DeriveFoldable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 
@@ -22,7 +22,7 @@ module OAlg.Structure.Oriented.Point
   (
     -- * Point
     Point, EntityPoint
-  , U(..)
+  , U(..), fromU
 
     -- * Applicative
   , ApplicativePoint, pmap
@@ -42,7 +42,10 @@ module OAlg.Structure.Oriented.Point
   )
   where
 
+import Control.Monad as M (Functor)
+
 import Data.Typeable
+import Data.Foldable
 
 import OAlg.Prelude
 
@@ -210,9 +213,7 @@ fromPntG f p = p' where Pnt p' = f (Pnt p)
 -- U -
 
 -- | accosiating @()@ as 'Point'
-newtype U x = U x deriving (Show,Eq)
-
-instance Validable x => Validable (U x) where valid (U x) = valid x
+newtype U x = U x deriving (Eq,Ord,Show,M.Functor,Validable,Foldable)
 
 type instance Point (U x) = ()
 
@@ -221,6 +222,14 @@ instance EqPoint (U x)
 instance ValidablePoint (U x)
 instance TypeablePoint (U x)
 instance SingletonPoint (U x)
+instance OrdPoint (U x)
+
+--------------------------------------------------------------------------------
+-- fromU -
+
+-- | deconstructor.
+fromU :: U x -> x
+fromU (U x) = x
 
 --------------------------------------------------------------------------------
 -- ApplicativePoint -

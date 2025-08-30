@@ -1,17 +1,15 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies
-           , TypeOperators
-           , MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , GADTs
-           , StandaloneDeriving
-           , DataKinds
-           , DeriveFoldable
-#-}
-
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFoldable #-}
 
 -- |
 -- Module      : OAlg.Homology.IO.FSequence
@@ -30,7 +28,6 @@
 -- - values which may have a very time consuming evaluation. 
 module OAlg.Entity.Sequence.FSequence
   (
-
     -- * FSequence
     FSequence(), Behavior(..), fsqIsEmpty
   , fsqxs, fsqx
@@ -49,7 +46,6 @@ module OAlg.Entity.Sequence.FSequence
   , relHomogenRoot
   , prpFSequenceSpan
   , prpFSequence
-
   ) where
 
 import Data.Typeable
@@ -97,10 +93,16 @@ instance (Validable d, Entity i, Ord i, Entity x) => Validable (FSequenceForm d 
               , valid xs
               ]
 
-instance (Entity d, Entity i, Ord i, Entity x) => Entity (FSequenceForm d i x)
+-- instance (Entity d, Entity i, Ord i, Entity x) => Entity (FSequenceForm d i x)
+
+type instance Root (FSequenceForm d i x) = d
+
+instance Show d => ShowRoot (FSequenceForm d i x)
+instance Eq d => EqRoot (FSequenceForm d i x)
+instance Validable d => ValidableRoot (FSequenceForm d i x)
+instance Typeable d => TypeableRoot (FSequenceForm d i x)
 
 instance (Entity d, Entity i, Ord i, Entity x) => Fibred (FSequenceForm d i x) where
-  type Root (FSequenceForm d i x) = d
   root (FSequenceForm d _) = d
 
 --------------------------------------------------------------------------------
@@ -295,12 +297,20 @@ instance (DefaultValue d i x,Ord d, Ord i,Ord x) => Ord (FSequence s d i x) wher
 instance (Entity d, Entity i, Entity x, Ord i) => Validable (FSequence s d i x) where
   valid f = Label "FSequence" :<=>: (valid $ fsqD f) && (valid $ fsqT f)
 
+{-
 instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i, Typeable s)
   => Entity (FSequence s d i x)
+-}
+
+type instance Root (FSequence s d i x) = d
+
+instance Show d => ShowRoot (FSequence s d i x)
+instance Eq d => EqRoot (FSequence s d i x)
+instance Validable d => ValidableRoot (FSequence s d i x)
+instance Typeable d => TypeableRoot (FSequence s d i x)
 
 instance (DefaultValue d i x, Entity d, Entity i, Entity x, Ord i, Typeable s)
   => Fibred (FSequence s d i x) where
-  type Root (FSequence s d i x) = d
   root = fsqD
   
 --------------------------------------------------------------------------------
@@ -328,7 +338,7 @@ deriving instance (Fibred a, OrdRoot a) => Ord (DefaultZeroValue a)
 instance Fibred a => Validable (DefaultZeroValue a) where
   valid (DefaultZeroValue r) = Label "DefaultZeroValue" :<=>: valid r
 
-instance Fibred a => Entity (DefaultZeroValue a)
+-- instance Fibred a => Entity (DefaultZeroValue a)
 
 instance Additive a => DefaultValue (DefaultZeroValue a) i a where
   defaultValue (DefaultZeroValue r) _ = zero r
@@ -373,4 +383,5 @@ prpFSequenceSpan l = Prp ("FSequenceSpan " ++ show l)
 -- | validating 'FSequence'.
 prpFSequence :: Statement
 prpFSequence = Prp "FSequence" :<=>: prpFSequenceSpan 50
+
 
