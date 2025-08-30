@@ -78,7 +78,7 @@ relSet (Set (x:xs)) = valid x && vld (0::N) x xs where
 instance (Validable x, Ord x, Show x) => Validable (Set x) where
   valid xs = Label "Set" :<=>: relSet xs
 
-instance (Entity x, Ord x) => Entity (Set x)
+-- instance (Entity x, Ord x) => Entity (Set x)
 
 --------------------------------------------------------------------------------
 -- set -
@@ -268,15 +268,17 @@ lp t x = let (x',y) = trLookup t x in if x' == x then Just y else Nothing
 --------------------------------------------------------------------------------
 -- Map -
 
-instance Applicative1 (Map Ord') Set where
-  amap1 (Map f) (Set xs) = set $ amap1 f xs
-instance Functorial1 (Map Ord') Set
+instance ApplicativeG Set (Map Ord') (->) where
+  amapG (Map f) (Set xs) = set $ amap1 f xs
 
-instance Applicative1 (Map EntOrd) Set where
-  amap1 f = amap1 (ordMap f) where
+instance FunctorialG Set (Map Ord') (->)
+
+instance ApplicativeG Set (Map EntOrd) (->) where
+  amapG f = amap1 (ordMap f) where
     ordMap :: Map EntOrd x y -> Map Ord' x y
     ordMap (Map f) = Map f
-instance Functorial1 (Map EntOrd) Set
+
+instance FunctorialG Set (Map EntOrd) (->)
 
 --------------------------------------------------------------------------------
 -- xSet -
@@ -286,7 +288,6 @@ xSet :: Ord x => N -> X x -> X (Set x)
 xSet n xx = do
   xs <- xTakeN n xx
   return $ Set $ map head $ group $ sort xs
-
 
 --------------------------------------------------------------------------------
 -- prpSetUnion -
