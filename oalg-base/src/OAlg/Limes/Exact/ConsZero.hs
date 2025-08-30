@@ -64,25 +64,73 @@ import OAlg.Entity.FinList
 import OAlg.Hom.Definition
 import OAlg.Hom.Distributive ()
 
--- import OAlg.Entity.Slice
+import OAlg.Entity.Slice.Definition
+import OAlg.Entity.Slice.Sliced
 
+import OAlg.Limes.Cone
+import OAlg.Limes.KernelsAndCokernels
+import OAlg.Limes.Limits
 
+{-
 data DiagramP f t n m x where
   DiagramP :: Point (f t x) ~ Point x => Diagram t n m (f t x) -> DiagramP f t n m x
 
 class DiagrammaticProdicate f where
   ff :: f (t :: DiagramType) x -> x
 
-{-
-data SomeSlice i t x where
-  SomeSlice :: (Attestable n, Sliced (i n) x) => Slice t (i n) x -> SomeSlice i t x
--}
-  
 instance DiagrammaticProdicate f => Diagrammatic (DiagramP f) where
   diagram (DiagramP dp) = case dp of
     DiagramChainTo p aps -> DiagramChainTo p (amap1 ff aps)
+-}
 
-  
+data SomeSlice i t x where
+  SomeSlice :: (Attestable n, Sliced (i n) x) => Slice t (i n) x -> SomeSlice i t x
+
+ssSlice :: SomeSlice i t x -> x
+ssSlice (SomeSlice s) = slice s
+
+data SomeSliceConsZero i t n x where
+  SomeSliceFromConsZero
+    :: Diagram (Chain To) (n+1) n (SomeSlice i From x)
+    -> SomeSliceConsZero i From n x
+  SomeSliceToConsZero
+    :: Diagram (Chain From) (n+1) n (SomeSlice i To x)
+    -> SomeSliceConsZero i To n x
+    
+data SomeSliceDiagram i t n m x where
+  SomeSliceFromDiagram :: SomeSlice i From x -> SomeSliceDiagram i (Parallel LeftToRight) N2 N1 x
+  SomeSliceToDiagram   :: SomeSlice i To x -> SomeSliceDiagram i (Parallel RightToLeft) N2 N1 x
+
+instance Diagrammatic (SomeSliceDiagram i) where
+  diagram (SomeSliceFromDiagram (SomeSlice s)) = DiagramParallelLR l r (x:|Nil) where
+    x      = slice s
+    l :> r = orientation x
+  diagram (SomeSliceToDiagram (SomeSlice s))   = DiagramParallelRL l r (x:|Nil) where
+    x      = slice s
+    r :> l = orientation x
+
+data SomeSliceCone i s p d t n m x where
+  SomeSliceFromCone :: Distributive x
+    => SomeSliceConsZero i From N2 x
+    -> SomeSliceCone i Dst Projective (SomeSliceDiagram i) (Parallel LeftToRight) N2 N1 x
+  SomeSliceToCone :: Distributive x
+    => SomeSliceConsZero i To N2 x
+    -> SomeSliceCone i Dst Injective (SomeSliceDiagram i) (Parallel RightToLeft) N2 N1 x
+
+instance Conic (SomeSliceCone i) where
+  cone (SomeSliceFromCone (SomeSliceFromConsZero (DiagramChainTo _ (x:|k:|Nil))))
+    = ConeKernel (SomeSliceFromDiagram x) (ssSlice k)
+
+  cone (SomeSliceToCone (SomeSliceToConsZero (DiagramChainFrom _ (x:|c:|Nil))))
+    = ConeCokernel (SomeSliceToDiagram x) (ssSlice c)
+
+type SomeSliceKernel i  = KernelG (SomeSliceCone i) (SomeSliceDiagram i) N1
+type SomeSliceKernels i = KernelsG (SomeSliceCone i) (SomeSliceDiagram i) N1
+
+ff :: SomeSliceKernels i x -> SomeSliceDiagram i (Parallel LeftToRight) N2 N1 x -> SomeSliceKernel i x
+ff = limes
+
+
 {-
 --------------------------------------------------------------------------------
 -- ConsZero -
