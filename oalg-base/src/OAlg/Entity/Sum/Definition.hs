@@ -29,7 +29,7 @@ module OAlg.Entity.Sum.Definition
 
   ) where
 
-import Control.Monad(Functor(..))
+import Control.Monad as M (Functor(..))
 
 import Data.List (map,groupBy,(++),filter)
 import Data.Foldable
@@ -45,6 +45,7 @@ import OAlg.Data.Singleton
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented.Definition
 import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Ring.Definition
@@ -53,7 +54,6 @@ import OAlg.Structure.Vectorial.Definition
 import OAlg.Structure.Algebraic.Definition
 import OAlg.Structure.Number.Definition
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Fibred
 
 --------------------------------------------------------------------------------
@@ -93,19 +93,26 @@ instance (Fibred a, Semiring r, Commutative r) => Validable (SumForm r a) where
       r :! a   -> valid r && vld a
       a :+ b   -> vld a && vld b
       
-instance (Fibred a, Semiring r, Commutative r) => Entity (SumForm r a)
+-- instance (Fibred a, Semiring r, Commutative r) => Entity (SumForm r a)
 
 --------------------------------------------------------------------------------
 -- SumForm - Fibred -
 
+type instance Root (SumForm r a) = Root a
+
+instance ShowRoot a => ShowRoot (SumForm r a)
+instance EqRoot a => EqRoot (SumForm r a)
+instance ValidableRoot a => ValidableRoot (SumForm r a)
+instance TypeableRoot a => TypeableRoot (SumForm r a)
+
 instance (Fibred a, Semiring r, Commutative r) => Fibred (SumForm r a) where
-  type Root (SumForm r a) = Root a
+
   root sf = case sf of
     Zero e -> e
     S a    -> root a
     _ :! a -> root a
     a :+ b -> let r = root a in if r == root b then r else throw NotAddable
-    
+
 --------------------------------------------------------------------------------
 -- SumFrom - Foldable -
 
@@ -161,9 +168,9 @@ instance LengthN (SumForm N a) where
 -- | list of symbols in @__a__@ together with a scalar in @__r__@.
 --
 -- __Note__ 'valid' linear combinations must not be sorted according to the second component!
-newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Validable,Functor)
+newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Validable,M.Functor)
 
-instance (Entity a, Entity r) => Entity (LinearCombination r a)
+-- instance (Entity a, Entity r) => Entity (LinearCombination r a)
 
 --------------------------------------------------------------------------------
 -- lcs -
@@ -239,7 +246,7 @@ instance (Fibred a, Ord a, Semiring r, Commutative r) => Reducible (SumForm r a)
 -- @s'@ is reduced, i.e. @s' '==' 'reduce' s'@.
 newtype Sum r a = Sum (SumForm r a) deriving (Show,Eq,Ord,Validable)
 
-instance (Fibred a, Semiring r, Commutative r) => Entity (Sum r a)
+-- instance (Fibred a, Semiring r, Commutative r) => Entity (Sum r a)
 
 --------------------------------------------------------------------------------
 -- Sum - Constructable -
@@ -254,10 +261,16 @@ instance (Fibred a, Ord a, Semiring r, Commutative r) => Constructable (Sum r a)
 --------------------------------------------------------------------------------
 -- Sum - Abelian -
 
+type instance Root (Sum r a) = Root a
+
+instance ShowRoot a => ShowRoot (Sum r a)
+instance EqRoot a => EqRoot (Sum r a)
+instance ValidableRoot a => ValidableRoot (Sum r a)
+instance TypeableRoot a => TypeableRoot (Sum r a)
+
 instance (Fibred a, Semiring r, Commutative r) => Fibred (Sum r a) where
-  type Root (Sum r a) = Root a
   root (Sum sf) = root sf
-  
+
 instance (Fibred a, Ord a, Semiring r, Commutative r) => Additive (Sum r a) where
   zero e = Sum (Zero e)
   Sum a + Sum b | root a == root b = make (a :+ b)
@@ -312,25 +325,37 @@ smMap f (Sum s) = make (smfMap f s)
 -- nSum -
 
 -- | additive homomorphism for sums over 'N'.
-nSum :: (Hom Fbr h,Additive x) => h a x -> Sum N a -> x
+nSum :: (HomFibred h,Additive x) => h a x -> Sum N a -> x
 nSum h = restrict (smfSum (zero . rmap h) ntimes (+) (amap h))
 
 --------------------------------------------------------------------------------
 -- zSum -
 
 -- | additive homomorphism for sums over 'Z'.
-zSum :: (Hom Fbr h,Abelian x) => h a x -> Sum Z a -> x
+zSum :: (HomFibred h,Abelian x) => h a x -> Sum Z a -> x
 zSum h = restrict (smfSum (zero . rmap h) ztimes (+) (amap h))
 
 --------------------------------------------------------------------------------
 -- Sum - Algebra -
 
+type instance Point (SumForm r a) = Point a
+
+instance ShowPoint a => ShowPoint (SumForm r a)
+instance EqPoint a => EqPoint (SumForm r a)
+instance ValidablePoint a => ValidablePoint (SumForm r a)
+instance TypeablePoint a => TypeablePoint (SumForm r a)
+
 instance (Semiring r, Commutative r, FibredOriented m) => Oriented (SumForm r m) where
-  type Point (SumForm r m) = Point m
   orientation = root
 
+type instance Point (Sum r a) = Point a
+
+instance ShowPoint a => ShowPoint (Sum r a)
+instance EqPoint a => EqPoint (Sum r a)
+instance ValidablePoint a => ValidablePoint (Sum r a)
+instance TypeablePoint a => TypeablePoint (Sum r a)
+
 instance (Semiring r, Commutative r, FibredOriented m) => Oriented (Sum r m) where
-  type Point (Sum r m) = Point m
   orientation = root
 
 instance (Semiring r, Commutative r, Multiplicative m, FibredOriented m, Ord m)
@@ -354,4 +379,5 @@ instance (Semiring r, Commutative r, Multiplicative m, FibredOriented m, Ord m)
 
 instance (Semiring r, Commutative r, Multiplicative m, FibredOriented m, Ord m)
   => Algebraic (Sum r m)
+
 
