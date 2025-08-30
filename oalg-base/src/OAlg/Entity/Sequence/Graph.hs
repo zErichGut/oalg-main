@@ -27,7 +27,7 @@ module OAlg.Entity.Sequence.Graph
   , gphset, setgph
   ) where
 
-import Control.Monad hiding (sequence)
+import Control.Monad as M hiding (sequence)
 
 import Data.List (head,map,groupBy)
 
@@ -65,9 +65,9 @@ relGraph (Graph (ix:ixs)) = valid ix && vld (0::N) ix ixs where
 instance (Entity x, Entity i, Ord i) => Validable (Graph i x) where
   valid g = Label "Graph" :<=>: relGraph g
 
-instance (Entity x, Entity i, Ord i) => Entity (Graph i x)
+-- instance (Entity x, Entity i, Ord i) => Entity (Graph i x)
 
-instance Functor (Graph i) where
+instance M.Functor (Graph i) where
   fmap f (Graph ixs) = Graph $ map (\(i,x) -> (i, f x)) ixs
 
 instance Filterable (Graph i) where

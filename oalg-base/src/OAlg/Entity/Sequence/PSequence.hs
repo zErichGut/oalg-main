@@ -46,7 +46,7 @@ module OAlg.Entity.Sequence.PSequence
   , prpPSequence, prpPTreeFilter
   ) where
 
-import Control.Monad 
+import Control.Monad as M
 
 import Data.Monoid
 import Data.Foldable
@@ -220,7 +220,7 @@ psqMapShift t = psqMapWithIndex (Monotone (+t))
 psqMap :: (x -> y) -> PSequence i x -> PSequence i y
 psqMap f = psqMapWithIndex (Monotone id) (f . fst)
 
-instance Functor (PSequence i) where fmap = psqMap
+instance M.Functor (PSequence i) where fmap = psqMap
 
 --------------------------------------------------------------------------------
 -- PSequence - Entity -
@@ -237,7 +237,7 @@ relPSequence (PSequence (xi:xis)) = vld (0::N) xi xis where
 instance (Entity x, Entity i, Ord i) => Validable (PSequence i x) where
   valid xs = Label "PSequence" :<=>: valid (graph (iProxy xs) xs)
 
-instance (Entity x, Entity i, Ord i) => Entity (PSequence i x)
+-- instance (Entity x, Entity i, Ord i) => Entity (PSequence i x)
 
 --------------------------------------------------------------------------------
 -- psequence -
@@ -443,7 +443,7 @@ instance (Entity x, Entity i, Ord i) => Validable (PTree i x) where
                            ]
         Node i' l r -> valid i' && vldl i' l && vldr i' r
     
-instance (Entity x, Entity i, Ord i) => Entity (PTree i x)
+-- instance (Entity x, Entity i, Ord i) => Entity (PTree i x)
 
 --------------------------------------------------------------------------------
 -- ptrEmpty -
@@ -552,7 +552,7 @@ ptrMapShift t = ptrMapWithIndex (Monotone (+t))
 ptrMap :: (x -> y) -> PTree i x -> PTree i y
 ptrMap f = ptrMapWithIndex (Monotone id) (f . fst)
 
-instance Functor (PTree i) where fmap = ptrMap
+instance M.Functor (PTree i) where fmap = ptrMap
 
 --------------------------------------------------------------------------------
 -- prpTreeFilter -
