@@ -26,7 +26,7 @@ module OAlg.Structure.Oriented.Point
 
     -- * Applicative
   , ApplicativePoint, pmap
-  , FunctorialPoint
+  , FunctorialPoint, pmapf
 
     -- * Point Wrapper
   , Pnt(..)
@@ -242,8 +242,14 @@ type ApplicativePoint h = ApplicativeG Pnt h (->)
 
 -- | the induced mapping of 'Point's given by 'amapG'. 
 pmap :: ApplicativePoint h => h x y -> Point x -> Point y
-pmap h = fromPntG (amapG h)
+pmap = fromPntG . amapG
 
+--------------------------------------------------------------------------------
+-- pmapf -
+
+-- | the induced functoiral mapping of 'Point's given by 'pmap'. 
+pmapf :: FunctorialPoint h => h x y -> Point x -> Point y
+pmapf = pmap
 --------------------------------------------------------------------------------
 -- FunctorialPoint -
 

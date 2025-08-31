@@ -231,33 +231,47 @@ adjHomDisj ::
 adjHomDisj (Adjunction l r u v) = Adjunction (homDisj l) (homDisj r) u v
 
 --------------------------------------------------------------------------------
--- isoHomDisj' -
-
-isoHomDisj' :: (Morphism h, TransformableGRefl o s)
-  => q h -> Struct s x -> Variant2 Contravariant (IsoHomDisj s o h) x (o x)
-isoHomDisj' _ = isoHomDisj
-
---------------------------------------------------------------------------------
 -- adjMapCnt -
 
 adjMapCnt ::
-  ()
-  => Variant2 Contravariant h x x'
-  -> Variant2 Contravariant h y y'
-  -> Adjunction h x y -> Adjunction h x' y'
-adjMapCnt = error "nyi"
+  ( HomMultiplicativeDisjunctive h -- haskell type checker identifies it as reduntant, but it is needed!
+  , FunctorialOriented h
+  )
+  => Variant2 Contravariant (Inv2 h) x x'
+  -> Variant2 Contravariant (Inv2 h) y y'
+  -> Adjunction (Variant2 Covariant h) x y -> Adjunction (Variant2 Covariant h) y' x'
+adjMapCnt (Contravariant2 (Inv2 tx fx)) (Contravariant2 (Inv2 ty fy))
+  (Adjunction (Covariant2 l) (Covariant2 r) u v) = Adjunction l' r' u' v' where
+
+  l' = Covariant2 (ty . r . fx) 
+  r' = Covariant2 (tx . l . fy)
+  u' = amapf tx . v . pmapf fx
+  v' = amapf ty . u . pmapf fy
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual (Adjunction h x y)
+  = Adjunction (Variant2 Covariant (HomDisj Mlt Op h)) (Op y) (Op x)
 
 --------------------------------------------------------------------------------
 -- coAdjunction -
 
-coAdjunction ::
+coAdjunctionStruct ::
   ( HomMultiplicative h
   , Transformable (ObjectClass h) s
   , TransformableGRefl o s
   , DualisableMultiplicative s o
   )
-  => Struct s x -> Struct s y
+  => Homomorphous s x y
   -> Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) (o y) (o x)
+coAdjunctionStruct (sx:>:sy) adj = adjMapCnt (isoHomDisj sx) (isoHomDisj sy) (adjHomDisj adj)
+
+coAdjunctionOp :: HomMultiplicative h => Adjunction h x y -> Dual (Adjunction h x y)
+coAdjunctionOp a = coAdjunctionStruct (adjHomMlt a) a 
+
+
+{-  
 coAdjunction sx sy a = Adjunction l' r' u' v' where
   Adjunction (Covariant2 l) (Covariant2 r) u v = adjHomDisj a
 
@@ -277,7 +291,7 @@ coAdjunction sx sy a = Adjunction l' r' u' v' where
 
   v' = amap t . u . pmap f where     -- v' :: Point (o y) -> o y, u :: Point y -> y
          Contravariant2 (Inv2 t f) = isoHomDisj' (qh l) sy
-
+-}
 {-
 --------------------------------------------------------------------------------
 -- Adjunction - Duality -

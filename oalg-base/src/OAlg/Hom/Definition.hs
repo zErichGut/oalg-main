@@ -23,7 +23,7 @@ module OAlg.Hom.Definition
   , HomDisjEmpty
 
     -- * Contravariant Isomorphism
-  , IsoHomDisj, isoHomDisj
+  , IsoHomDisj, isoHomDisj, isoHomDisj'
   , IsoO, toDualO
   , ReflO, reflO
 
@@ -148,18 +148,25 @@ instance Transformable s Typ => EqExt (HomDisjEmpty s Op)
 --------------------------------------------------------------------------------
 -- IsoHomDisj -
 
--- | type for contravariant isomorphism of @'HomDisj' __s o h x (__o x__)@.
+-- | type for contravariant isomorphism of @'HomDisj' __s o h x__ (__o x__)@.
 type IsoHomDisj s o h = Inv2 (HomDisj s o h)
 
 --------------------------------------------------------------------------------
 -- isoHomDisj -
 
--- | contravariant isomorphism for @'HomDisj' __s o h x (__o x__)@.
+-- | contravariant isomorphism for @'HomDisj' __s o h x__ (__o x__)@.
 isoHomDisj :: (Morphism h, TransformableGRefl o s)
   => Struct s x -> Variant2 Contravariant (IsoHomDisj s o h) x (o x)
 isoHomDisj s = Contravariant2 (Inv2 t f) where
   Contravariant2 t = cToDual s
   Contravariant2 f = cFromDual s
+
+--------------------------------------------------------------------------------
+-- isoHomDisj' -
+
+isoHomDisj' :: (Morphism h, TransformableGRefl o s)
+  => q h -> Struct s x -> Variant2 Contravariant (IsoHomDisj s o h) x (o x)
+isoHomDisj' _ = isoHomDisj
 
 --------------------------------------------------------------------------------
 -- IsoO -
