@@ -17,7 +17,6 @@
 -- free products of symbols in @__x__@ with index type 'N'.
 module OAlg.Entity.Product.ProductSymbol
   (
-{-    
     -- * ProductSymbol
     ProductSymbol(..), sy, psyShow
   , psyxs, psywrd,wrdpsy, nProxy
@@ -25,12 +24,8 @@ module OAlg.Entity.Product.ProductSymbol
   , productSymbol, psyLength, psyFactor
   , psyMap
   
-    -- * U
-  , U(..), fromU
-
     -- * X
   , xProductSymbol
--}
   ) where
 
 import Control.Monad
@@ -51,16 +46,6 @@ import OAlg.Structure.Exponential
 import OAlg.Entity.Product.Definition
 import OAlg.Entity.Sequence.Definition
 import OAlg.Entity.Sequence.Set
-
-{-
---------------------------------------------------------------------------------
--- U -
-
--- | adjoins the point @()@ to an entity.
---
---  __Note__ Serves to build sums or products over symbols in @__x__@.
-newtype U x = U x deriving (Eq,Ord,Show,Functor,Validable,Foldable)
--}
 
 --------------------------------------------------------------------------------
 -- ProductSymbol -

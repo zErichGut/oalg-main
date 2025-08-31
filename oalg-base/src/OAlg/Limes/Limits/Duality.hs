@@ -21,10 +21,8 @@
 -- duality for 'LimitsG'.
 module OAlg.Limes.Limits.Duality
   (
-{-
     -- * Mapp
     lmsMapS, lmsMapCov, lmsMapCnt
--}
   ) where
 
 import OAlg.Prelude

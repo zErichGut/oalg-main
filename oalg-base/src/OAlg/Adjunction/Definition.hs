@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Adjunction.Definition
@@ -18,6 +19,7 @@
 -- used in [nLab](http://ncatlab.org/nlab/show/adjoint+functor)
 module OAlg.Adjunction.Definition
   (
+{-    
     -- * Adjunction
     Adjunction(..), unitr, unitl, adjl, adjr, adjHomMlt
 
@@ -26,9 +28,12 @@ module OAlg.Adjunction.Definition
 
     -- * Proposition
   , prpAdjunction, prpAdjunctionRight, prpAdjunctionLeft
+-}
   ) where
 
 import OAlg.Prelude
+
+import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -39,8 +44,8 @@ import OAlg.Hom
 -- Adjunction -
 
 -- | adjunction between two multiplicative structures @__d__@ and @__c__@ according
---   two given multiplicative homomorphisms @l :: __h__ __c__ __d__@ and
---   @r :: __h__ __d__ __c__@.  
+--   two given multiplicative homomorphisms @l :: __h c d__@ and
+--   @r :: __h d c__@.  
 --
 -- @
 --              l
@@ -50,7 +55,7 @@ import OAlg.Hom
 --              r
 -- @
 --
---  __Property__ Let @'Adjunction' l r u v@ be in @'Adjunction' __h__ __d__ __c__@ where
+--  __Property__ Let @'Adjunction' l r u v@ be in @'Adjunction' __h d c__@ where
 --  @__h__@ is a 'Mlt'-homomorphism,
 --  then holds:
 --
@@ -215,6 +220,66 @@ adjHomMlt :: Hom Mlt h => Adjunction h d c -> Homomorphous Mlt d c
 adjHomMlt (Adjunction _ r _ _) = tauHom (homomorphous r)
 
 --------------------------------------------------------------------------------
+-- adjHomDisj -
+
+-- | the induce adjunction.
+adjHomDisj ::
+  ( HomMultiplicative h
+  , Transformable (ObjectClass h) s
+  )
+  => Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) x y
+adjHomDisj (Adjunction l r u v) = Adjunction (homDisj l) (homDisj r) u v
+
+--------------------------------------------------------------------------------
+-- isoHomDisj' -
+
+isoHomDisj' :: (Morphism h, TransformableGRefl o s)
+  => q h -> Struct s x -> Variant2 Contravariant (IsoHomDisj s o h) x (o x)
+isoHomDisj' _ = isoHomDisj
+
+--------------------------------------------------------------------------------
+-- adjMapCnt -
+
+adjMapCnt ::
+  ()
+  => Variant2 Contravariant h x x'
+  -> Variant2 Contravariant h y y'
+  -> Adjunction h x y -> Adjunction h x' y'
+adjMapCnt = error "nyi"
+
+--------------------------------------------------------------------------------
+-- coAdjunction -
+
+coAdjunction ::
+  ( HomMultiplicative h
+  , Transformable (ObjectClass h) s
+  , TransformableGRefl o s
+  , DualisableMultiplicative s o
+  )
+  => Struct s x -> Struct s y
+  -> Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) (o y) (o x)
+coAdjunction sx sy a = Adjunction l' r' u' v' where
+  Adjunction (Covariant2 l) (Covariant2 r) u v = adjHomDisj a
+
+  qh :: HomDisj s o h x y -> Proxy h
+  qh _ = Proxy
+  
+  l' = Covariant2 (t . r . f) where  -- r :: HomDisj s o h x y, l' :: HomDisj s o h (o x) (o y)
+         Contravariant2 (Inv2 _ f) = isoHomDisj sx
+         Contravariant2 (Inv2 t _) = isoHomDisj sy
+        
+  r' = Covariant2 (t . l . f) where  -- l :: HomDisj s o h y x, r' :: HomDisj s o h (o y) (o x)
+         Contravariant2 (Inv2 _ f) = isoHomDisj sy
+         Contravariant2 (Inv2 t _) = isoHomDisj sx
+         
+  u' = amap t . v . pmap f where     -- u' :: Point (o x) -> o x, v :: Point x -> x
+         Contravariant2 (Inv2 t f) = isoHomDisj' (qh l) sx
+
+  v' = amap t . u . pmap f where     -- v' :: Point (o y) -> o y, u :: Point y -> y
+         Contravariant2 (Inv2 t f) = isoHomDisj' (qh l) sy
+
+{-
+--------------------------------------------------------------------------------
 -- Adjunction - Duality -
 
 type instance Dual (Adjunction h d c) = Adjunction (OpHom h) (Op c) (Op d)
@@ -300,4 +365,4 @@ instance ( HomMultiplicative h, Entity2 h
   valid adj = Label "Mlt" :<=>:
     prpAdjunction adj xStandard xStandard xStandard xStandard
 
-
+-}
