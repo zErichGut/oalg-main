@@ -19,21 +19,18 @@
 -- used in [nLab](http://ncatlab.org/nlab/show/adjoint+functor)
 module OAlg.Adjunction.Definition
   (
-{-    
     -- * Adjunction
     Adjunction(..), unitr, unitl, adjl, adjr, adjHomMlt
 
     -- * Dual
-  , coAdjunction
+  , coAdjunctionOp
 
     -- * Proposition
   , prpAdjunction, prpAdjunctionRight, prpAdjunctionLeft
--}
+
   ) where
 
 import OAlg.Prelude
-
-import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -249,12 +246,6 @@ adjMapCnt (Contravariant2 (Inv2 tx fx)) (Contravariant2 (Inv2 ty fy))
   v' = amapf ty . u . pmapf fy
 
 --------------------------------------------------------------------------------
--- Duality -
-
-type instance Dual (Adjunction h x y)
-  = Adjunction (Variant2 Covariant (HomDisj Mlt Op h)) (Op y) (Op x)
-
---------------------------------------------------------------------------------
 -- coAdjunction -
 
 coAdjunctionStruct ::
@@ -267,45 +258,10 @@ coAdjunctionStruct ::
   -> Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) (o y) (o x)
 coAdjunctionStruct (sx:>:sy) adj = adjMapCnt (isoHomDisj sx) (isoHomDisj sy) (adjHomDisj adj)
 
-coAdjunctionOp :: HomMultiplicative h => Adjunction h x y -> Dual (Adjunction h x y)
+coAdjunctionOp :: HomMultiplicative h
+  => Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj Mlt Op h)) (Op y) (Op x)
 coAdjunctionOp a = coAdjunctionStruct (adjHomMlt a) a 
 
-
-{-  
-coAdjunction sx sy a = Adjunction l' r' u' v' where
-  Adjunction (Covariant2 l) (Covariant2 r) u v = adjHomDisj a
-
-  qh :: HomDisj s o h x y -> Proxy h
-  qh _ = Proxy
-  
-  l' = Covariant2 (t . r . f) where  -- r :: HomDisj s o h x y, l' :: HomDisj s o h (o x) (o y)
-         Contravariant2 (Inv2 _ f) = isoHomDisj sx
-         Contravariant2 (Inv2 t _) = isoHomDisj sy
-        
-  r' = Covariant2 (t . l . f) where  -- l :: HomDisj s o h y x, r' :: HomDisj s o h (o y) (o x)
-         Contravariant2 (Inv2 _ f) = isoHomDisj sy
-         Contravariant2 (Inv2 t _) = isoHomDisj sx
-         
-  u' = amap t . v . pmap f where     -- u' :: Point (o x) -> o x, v :: Point x -> x
-         Contravariant2 (Inv2 t f) = isoHomDisj' (qh l) sx
-
-  v' = amap t . u . pmap f where     -- v' :: Point (o y) -> o y, u :: Point y -> y
-         Contravariant2 (Inv2 t f) = isoHomDisj' (qh l) sy
--}
-{-
---------------------------------------------------------------------------------
--- Adjunction - Duality -
-
-type instance Dual (Adjunction h d c) = Adjunction (OpHom h) (Op c) (Op d)
-
-
--- | the dual adjunction.
-coAdjunction :: Hom Mlt h => Adjunction h d c -> Dual (Adjunction h d c)
-coAdjunction (Adjunction l r u v)
-  = Adjunction (OpHom r) (OpHom l) (coUnit v) (coUnit u) where
-
-  coUnit :: (Point x -> x) -> Point (Op x) -> Op x
-  coUnit u = Op . u
 
 --------------------------------------------------------------------------------
 -- relAdjunctionRightUnit -
@@ -350,7 +306,7 @@ prpAdjunctionRight adj@(Adjunction _ r _ _) x f = Prp "AdjunctionRight" :<=>:
 -- | validity of the unit on the left side.
 prpAdjunctionLeft :: (Hom Mlt h, Show2 h) => Adjunction h d c -> Point d -> d -> Statement
 prpAdjunctionLeft adj y g = Prp "AdjucntionLeft" :<=>:
-  prpAdjunctionRight (coAdjunction adj) y (Op g)
+  prpAdjunctionRight (coAdjunctionOp adj) y (Op g)
 
 --------------------------------------------------------------------------------
 -- prpAjunction -
@@ -379,4 +335,4 @@ instance ( HomMultiplicative h, Entity2 h
   valid adj = Label "Mlt" :<=>:
     prpAdjunction adj xStandard xStandard xStandard xStandard
 
--}
+
