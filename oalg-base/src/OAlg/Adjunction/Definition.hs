@@ -21,7 +21,8 @@ module OAlg.Adjunction.Definition
   (
     -- * Adjunction
     Adjunction(..), unitr, unitl, adjl, adjr
-  , adjHomMlt, adjHomDisj
+  , adjHomMlt, adjHomDst
+  , adjHomDisj
 
     -- * Map
   , adjMapCnt
@@ -36,6 +37,7 @@ import OAlg.Prelude
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
 
 import OAlg.Hom
 
@@ -219,6 +221,13 @@ adjHomMlt :: Hom Mlt h => Adjunction h d c -> Homomorphous Mlt d c
 adjHomMlt (Adjunction _ r _ _) = tauHom (homomorphous r)
 
 --------------------------------------------------------------------------------
+-- adjHomDst -
+
+-- | attest of being 'Distributive' homomorphous.
+adjHomDst :: HomDistributive h => Adjunction h d c -> Homomorphous Dst d c
+adjHomDst (Adjunction _ r _ _) = tauHom (homomorphous r)
+
+--------------------------------------------------------------------------------
 -- adjHomDisj -
 
 -- | the induce adjunction.
@@ -232,10 +241,7 @@ adjHomDisj (Adjunction l r u v) = Adjunction (homDisj l) (homDisj r) u v
 --------------------------------------------------------------------------------
 -- adjMapCnt -
 
-adjMapCnt ::
-  ( HomMultiplicativeDisjunctive h -- haskell type checker identifies it as reduntant, but it is needed!
-  , FunctorialOriented h
-  )
+adjMapCnt :: FunctorialOriented h
   => Variant2 Contravariant (Inv2 h) x x'
   -> Variant2 Contravariant (Inv2 h) y y'
   -> Adjunction (Variant2 Covariant h) x y -> Adjunction (Variant2 Covariant h) y' x'

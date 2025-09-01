@@ -18,13 +18,12 @@
 -- mapping of 'OAlg.Limes.Limits.Limits' under 'Adjunction's.
 module OAlg.Adjunction.Limes
   (
-{-    
     -- * Multiplicative
     lmPrjMap, lmInjMap
     
     -- * Distributive
   , lmPrjMapDst, lmInjMapDst
--}
+
   ) where
 
 import Data.Typeable
@@ -135,19 +134,6 @@ lmPrjMap :: HomMultiplicative h
 lmPrjMap adj@(Adjunction _ r _ _) = lmPrjMapStruct (tau (domain r)) adj
 
 --------------------------------------------------------------------------------
--- coAdjunctionOp -
-
-coAdjunctionOp ::
-  ( HomMultiplicativeDisjunctive h
-  , FunctorialOriented h
-  )
-  => Variant2 Contravariant (Inv2 h) x (Op x)
-  -> Variant2 Contravariant (Inv2 h) y (Op y)
-  -> Adjunction (Variant2 Covariant h) x y
-  -> Adjunction (Variant2 Covariant h) (Op y) (Op x)
-coAdjunctionOp = adjMapCnt 
-  
---------------------------------------------------------------------------------
 -- lmInjMap -
 
 lmInjMapGStruct ::
@@ -173,7 +159,6 @@ lmInjMap :: HomMultiplicative h
 lmInjMap adj l = case lmDiagramTypeRefl l of
   Refl -> lmInjMapGStruct sc (isoHomDisj sd) (isoHomDisj sc) (adjHomDisj adj) l where
             sd :>: sc = adjHomMlt adj
-
 
 --------------------------------------------------------------------------------
 -- lmPrjMapDst -
@@ -229,22 +214,29 @@ lmPrjMapDst :: HomDistributive h
   => Adjunction h d c -> Limes Dst Projective t n m d -> Limes Dst Projective t n m c
 lmPrjMapDst adj@(Adjunction _ r _ _) = lmPrjMapDstStruct (tau (domain r)) adj 
 
-{-
 --------------------------------------------------------------------------------
 -- lmInjMapDst -
 
-lmInjMapDstHom :: Hom Dst h
-  => Homomorphous Dst d c
-  -> Dual (Dual t) :~: t
-  -> Adjunction h d c -> Limes Dst Injective t n m c -> Limes Dst Injective t n m d
-lmInjMapDstHom (Struct:>:Struct) rt adj@(Adjunction _ _ _ _) lim
-  = coLimesInv ConeStructDst Refl rt
-  $ lmPrjMapDst (coAdjunction adj) (coLimes ConeStructDst Refl rt lim)
+lmInjMapDstGStruct ::
+  ( HomDistributiveDisjunctive h
+  , NaturalConicBi (Inv2 h) c s Injective d t n m
+  , NaturalConic h c s Projective d (Dual t) n m
+  , s ~ Dst
+  )
+  => Struct s y
+  -> Variant2 Contravariant (Inv2 h) x (Op x)
+  -> Variant2 Contravariant (Inv2 h) y (Op y)
+  -> Adjunction (Variant2 Covariant h) x y
+  -> LimesG c s Injective d t n m y -> LimesG c s Injective d t n m x
+lmInjMapDstGStruct sy xOp@(Contravariant2 ixOp) yOp@(Contravariant2 iyOp) adj yLmInj = xLmInj where
+  adj'                    = adjMapCnt xOp yOp adj  -- :: Adjunctin (Variant2 Covariant h) (Op y) (Op x)
+  SDualBi (Left1 yLmPrj') = amapF iyOp (SDualBi (Right1 yLmInj))
+  xLmPrj'                 = lmPrjMapDstGStruct (tauO sy) adj' yLmPrj'
+  SDualBi (Right1 xLmInj) = amapG (inv2 ixOp) (SDualBi (Left1 xLmPrj'))
 
--- | mapping a injective limes under an adjunction.
-lmInjMapDst :: Hom Dst h
+lmInjMapDst :: HomDistributive h
   => Adjunction h d c -> Limes Dst Injective t n m c -> Limes Dst Injective t n m d
-lmInjMapDst adj@(Adjunction _ r _ _) lim
-  = lmInjMapDstHom (tauHom (homomorphous r)) (lmDiagramTypeRefl lim) adj lim
+lmInjMapDst adj l = case lmDiagramTypeRefl l of
+  Refl -> lmInjMapDstGStruct sc (isoHomDisj sd) (isoHomDisj sc) (adjHomDisj adj) l where
+            sd :>: sc = adjHomDst adj
 
--}
