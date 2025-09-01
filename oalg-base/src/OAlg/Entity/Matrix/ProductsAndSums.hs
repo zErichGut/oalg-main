@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
-
+{-# LANGUAGE DataKinds #-}
 -- |
 -- Module      : OAlg.Entity.Matrix.ProductsAndSums
 -- Description : products and sums for matrices
@@ -23,6 +23,11 @@ import Data.Foldable
 import Data.List (map)
 
 import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Variant
+import OAlg.Data.Either
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -44,12 +49,15 @@ import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Definition
 import OAlg.Entity.Matrix.Entries
 
+import OAlg.Hom.Definition
+import OAlg.Hom.Distributive
+
 --------------------------------------------------------------------------------
 -- mtxProducts -
 
 -- | products for matrices.
 mtxProducts :: Distributive x => Products n (Matrix x)
-mtxProducts = Limits prd where
+mtxProducts = LimitsG prd where
   
   prd :: Distributive x => ProductDiagram n (Matrix x) -> Product n (Matrix x)
   prd d = LimesProjective l u where
@@ -73,21 +81,29 @@ mtxProducts = Limits prd where
     => ProductCone n (Matrix x) -> Matrix x
   univ (ConeProjective _ t cs)
     = mtxJoin $ Matrix rw cl $ etsElimZeros $ Entries $ PSequence $ u 0 cs where
-      rw = productDim $ toList $ fmap end cs
+      rw = productDim $ toList $ amap1 end cs
       cl = dim t
       
       u :: Distributive x => N -> FinList n (Matrix x) -> [(Matrix x,(N,N))]
       u _ Nil     = []
       u i (c:|cs) = (c,(i,0)) : u (succ i) cs 
-  
+
+isoOpMtx :: Variant2 Contravariant (IsoO Dst Op) (Matrix x) (Matrix (Op x))
+isoOpMtx = error "nyi"
+
 --------------------------------------------------------------------------------
 -- mtxSums -
 
 -- | sums for matrices.
 mtxSums :: Distributive x => Sums n (Matrix x)
+mtxSums = sms where
+  Covariant2 i        = isoOpMtx
+  SDualBi (Left1 sms) = amapF (inv2 i) (SDualBi (Right1 mtxProducts))
+
+{-
 mtxSums = lmsFromOp ConeStructMlt sumLimitsDuality $ lmsMap isoToOp $ mtxProducts where
   isoToOp :: Distributive x => IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x)) 
   isoToOp = invert2 isoCoMatrixDst
-
+-}
   
   

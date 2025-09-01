@@ -172,6 +172,9 @@ newtype LinearCombination r a = LinearCombination [(r,a)] deriving (Show,Eq,Vali
 
 -- instance (Entity a, Entity r) => Entity (LinearCombination r a)
 
+instance ApplicativeG (LinearCombination r) (->) (->) where
+  amapG = M.fmap
+  
 --------------------------------------------------------------------------------
 -- lcs -
 

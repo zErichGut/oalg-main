@@ -18,7 +18,8 @@
 module OAlg.Hom.Distributive
   (
     -- * Distributive
-    HomDistributive, HomDistributiveDisjunctive
+    HomDistributive, homDisjOpDst
+  , HomDistributiveDisjunctive
   , DualisableDistributive
 
     -- * Iso
@@ -93,6 +94,13 @@ instance
   )
   => HomDistributiveDisjunctive (Inv2 h)
   
+--------------------------------------------------------------------------------
+-- homDisjOpDst -
+
+-- | canonical embedding of 'HomDistributive' to @'HomDisj' 'Dst' 'Op'@.
+homDisjOpDst :: HomDistributive h => h x y -> Variant2 Covariant (HomDisj Dst Op h) x y
+homDisjOpDst = homDisj
+
 --------------------------------------------------------------------------------
 -- toDualOpDst -
 

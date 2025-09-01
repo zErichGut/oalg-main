@@ -130,7 +130,7 @@ instance ApplicativeG Rt (HomEmpty s) c where amapG = fromHomEmpty
 --------------------------------------------------------------------------------
 -- homDisj -
 
--- | embedding of 'HomOriented' to 'HomDisj'.
+-- | canonical embedding of 'HomOriented' to 'HomDisj'.
 homDisj :: (Morphism h, Transformable (ObjectClass h) s)
   => h x y -> Variant2 Covariant (HomDisj s o h) x y
 homDisj h = Covariant2 (HomDisj h') where Covariant2 h' = sCov h

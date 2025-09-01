@@ -20,7 +20,6 @@
 -- defintion of matrices over 'Distributive' structures.
 module OAlg.Entity.Matrix.Definition
   (
-
     -- * Matrix
     Matrix(..), rows, cols, mtxxs
   , mtxRowCol, mtxColRow
@@ -35,11 +34,13 @@ module OAlg.Entity.Matrix.Definition
   , diagonal, diagonal'
 
     -- * Duality
-  , coMatrix, coMatrixInv, mtxFromOpOp
+  , mtxMapS, mtxMapCov, mtxMapCnt
 
+{-  
     -- * Homomorphisms
   , isoCoMatrixDst
-
+-}
+  
     -- * X
   , XStandardOrientationMatrix(..)
   , xMatrix, xMatrixTtl
@@ -58,6 +59,8 @@ import Data.List (map,repeat,zip,span)
 import OAlg.Prelude
 
 import OAlg.Category.Path as P
+import OAlg.Category.SDuality
+
 import OAlg.Data.Singleton
 import OAlg.Data.Canonical
 
@@ -67,6 +70,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
@@ -168,7 +172,7 @@ instance (Additive x, FibredOriented x) => Validable (Matrix x) where
                 :?> Params ["xij":=show xij]
             ]
               
-instance (Additive x, FibredOriented x) => Entity (Matrix x)
+-- instance (Additive x, FibredOriented x) => Entity (Matrix x)
 
 --------------------------------------------------------------------------------
 -- mtxColRow -
@@ -187,13 +191,24 @@ mtxRowCol (Matrix _ _ xs) = etsrc xs
 --------------------------------------------------------------------------------
 -- Matrix - Distributive -
 
+type instance Point (Matrix x) = Dim' x
+
+instance Oriented x => ShowPoint (Matrix x)
+instance Oriented x => EqPoint (Matrix x)
+instance Oriented x => ValidablePoint (Matrix x)
+instance (Typeable x, TypeablePoint x) => TypeablePoint (Matrix x)
+
 instance (Additive x, FibredOriented x) => Oriented (Matrix x) where
-  type Point (Matrix x) = Dim' x
   orientation (Matrix rw cl _) = cl :> rw
 
+type instance Root (Matrix x) = Orientation (Dim' x)
 
-instance (Additive x, FibredOriented x) => Fibred (Matrix x) where
-  type Root (Matrix x) = Orientation (Dim' x)
+instance Oriented x => ShowRoot (Matrix x)
+instance Oriented x => EqRoot (Matrix x)
+instance Oriented x => ValidableRoot (Matrix x)
+instance (Typeable x, TypeablePoint x) => TypeableRoot (Matrix x)
+
+instance (Additive x, FibredOriented x) => Fibred (Matrix x)
 
 instance (Additive x, FibredOriented x) => FibredOriented (Matrix x)
 
@@ -262,7 +277,6 @@ matrix :: (Additive x, p ~ Point x)
 matrix rw cl xijs = Matrix rw cl xijs' where
   xijs' = etsElimZeros $ Entries $ psequence (+) $ map (\(x,i,j) -> (x,(i,j))) xijs
 
-
 --------------------------------------------------------------------------------
 -- matrixTtl -
 
@@ -305,7 +319,6 @@ diagonal' r n m xs = matrix n m xs' where
 -- | diagonal matrix with entries starting at the index @0@ (see 'diagonal'').
 diagonal :: Additive x => Dim' x -> Dim' x -> [x] -> Matrix x
 diagonal = diagonal' 0
-
   
 --------------------------------------------------------------------------------
 -- mtxJoinDim -
@@ -370,52 +383,62 @@ mtxGroupRow (Matrix r c xs) = Matrix r' c' xs' where
           xs = Col $ PSequence $ map (\(rw,i') -> (rw,i'>-i)) xs'
 
 --------------------------------------------------------------------------------
--- mtxMap -
+-- mtxMapCov -
 
-mtxMapStruct :: Hom Dst h => Struct Dst y -> h x y -> Matrix x -> Matrix y
-mtxMapStruct Struct h (Matrix rw cl xs) = Matrix rw' cl' ys where
+mtxMapCovStruct :: HomDistributiveDisjunctive h
+  => Struct Dst y
+  -> Variant2 Covariant h x y -> Matrix x -> Matrix y
+mtxMapCovStruct Struct h (Matrix rw cl xs) = Matrix rw' cl' ys where
   rw' = dimMap (pmap h) rw
   cl' = dimMap (pmap h) cl
-  ys = etsElimZeros $ fmap (amap h) xs
-
+  ys  = etsMapCov h xs
 
 -- | mapping of a matrix.
-mtxMap :: Hom Dst h => h x y -> Matrix x -> Matrix y
-mtxMap h = mtxMapStruct (tau $ range h) h
-
-instance HomDistributive h => Applicative1 h Matrix where
-  amap1 = mtxMap
+mtxMapCov :: HomDistributiveDisjunctive h => Variant2 Covariant h x y -> Matrix x -> Matrix y
+mtxMapCov h = mtxMapCovStruct (tau $ range h) h
 
 --------------------------------------------------------------------------------
--- Matrix - Duality -
+-- mtxMap -
 
-type instance Dual (Matrix x) = Matrix (Op x)
+mtxMap :: HomDistributive h => h x y -> Matrix x -> Matrix y
+mtxMap h = mtxMapCov (homDisjOpDst h)
 
--- | the dual matrix, with inverse 'coMatrixInv'.
-coMatrix :: Entity (Point x) => Matrix x -> Dual (Matrix x)
-coMatrix (Matrix rw cl xs) = Matrix cl' rw' xs' where
-  cl' = dimMap id cl
-  rw' = dimMap id rw
-  xs' = coEntries xs
+--------------------------------------------------------------------------------
+-- mtxMapCnt -
 
--- | from the bidual.
-mtxFromOpOp :: Entity (Point x) => Matrix (Op (Op x)) -> Matrix x
-mtxFromOpOp (Matrix rw cl xs) = Matrix rw' cl' xs' where
-  rw' = dimMap id rw
-  cl' = dimMap id cl
-  xs' = fmap fromOpOp xs
+mtxMapCntStruct :: HomDistributiveDisjunctive h
+  => Struct Dst y
+  -> Variant2 Contravariant h x y -> Matrix x -> Matrix y
+mtxMapCntStruct Struct h (Matrix rw cl xs) = Matrix cl' rw' ys where
+  cl' = dimMap (pmap h) cl
+  rw' = dimMap (pmap h) rw
+  ys  = etsMapCnt h xs
 
--- | from the dual matrix, with inverse 'coMatrix'.
-coMatrixInv :: Entity (Point x) => Dual (Matrix x) -> Matrix x
-coMatrixInv (Matrix rw cl xs) = Matrix cl' rw' xs' where
-  cl' = dimMap id cl
-  rw' = dimMap id rw
-  xs' = coEntriesInv xs
+mtxMapCnt :: HomDistributiveDisjunctive h
+  => Variant2 Contravariant h x y -> Matrix x -> Matrix y
+mtxMapCnt h = mtxMapCntStruct (tau $ range h) h 
 
-instance EntityPoint x => Dualisable (Matrix x) where
-  toDual   = coMatrix
-  fromDual = coMatrixInv
+--------------------------------------------------------------------------------
+-- Duality -
 
+type instance Dual1 Matrix = Matrix
+
+--------------------------------------------------------------------------------
+-- mtxMapS -
+
+mtxMapS :: HomDistributiveDisjunctive h
+  => h x y -> SDualBi Matrix x -> SDualBi Matrix y
+mtxMapS = vmapBi mtxMapCov mtxMapCov mtxMapCnt mtxMapCnt
+
+instance HomDistributiveDisjunctive h => ApplicativeG (SDualBi Matrix) h (->) where
+  amapG = mtxMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  ) => FunctorialG (SDualBi Matrix) h (->)
+
+{-
 --------------------------------------------------------------------------------
 -- OpMap Matrix s - Hom -
 
@@ -488,6 +511,8 @@ instance (TransformableOp s, TransformableDst s, TransformableTyp s)
 -- | the contravariant isomorphism from @'Matrix' __x__@ to @'Matrix' ('Op' __x__)@.
 isoCoMatrixDst :: Distributive x => IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
 isoCoMatrixDst = make (ToOp1 :. IdPath Struct)
+
+-}
 
 --------------------------------------------------------------------------------
 -- xMatrixRL -

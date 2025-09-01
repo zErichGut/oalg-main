@@ -57,7 +57,7 @@ deriving instance (Oriented x, OrdPoint x) => Ord (Dim x p)
 instance Oriented x => Validable (Dim x p) where
   valid (Dim ps) = Label "Dim" :<=>: valid ps
  
-instance (Oriented x, Typeable p) => Entity (Dim x p)
+-- instance (Oriented x, Typeable p) => Entity (Dim x p)
 
 instance Sequence (Dim x) N p where
   list p (Dim ps) = list p ps
@@ -81,16 +81,21 @@ type Dim' x = Dim x (Point x)
 --------------------------------------------------------------------------------
 -- Dim - Multiplicative -
 
+type instance Point (Dim x p) = ()
+
+instance ShowPoint (Dim x p)
+instance EqPoint (Dim x p)
+instance ValidablePoint (Dim x p)
+instance TypeablePoint (Dim x p)
+instance SingletonPoint (Dim x p)
+
 instance (Oriented x, Typeable p) => Oriented (Dim x p) where
-  type Point (Dim x p) = ()
   orientation _ = ():>()
 
 instance (Oriented x, Typeable p, p ~ Point x) => Multiplicative (Dim x p) where
   one _ = Dim $ one ()
   Dim a * Dim b = Dim (a*b)
   npower (Dim a) n = Dim $ npower a n
-
-instance Total (Dim x p)
 
 instance (Oriented x, Typeable p, p ~ Point x) => Exponential (Dim x p) where
   type Exponent (Dim x p) = N

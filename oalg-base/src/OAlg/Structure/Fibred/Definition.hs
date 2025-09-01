@@ -83,6 +83,7 @@ instance Fibred Z
 instance Fibred Q
 instance Entity p => Fibred (Orientation p)
 instance Fibred x => Fibred (Id x) where root (Id x) = root x
+instance Entity a => Fibred (R a) where  root _ = ()
 
 --------------------------------------------------------------------------------
 -- Sheaf -

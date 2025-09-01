@@ -29,6 +29,8 @@ module OAlg.Structure.Fibred.Root
   , ApplicativeRoot, rmap, amapRt
   , FunctorialRoot
 
+  -- * R
+  , R(..)
   )
   where
 
@@ -197,4 +199,20 @@ rmap h = fromRtG (amapG h)
 -- FunctorialRoot -
 
 type FunctorialRoot h = FunctorialG Rt h (->)
+
+--------------------------------------------------------------------------------
+-- R -
+
+-- | adjoining the root @()@.
+newtype R x = R x deriving (Show,Eq,Ord,Validable)
+
+type instance Root (R x) = ()
+
+instance ShowRoot (R x)
+instance EqRoot (R x)
+instance ValidableRoot (R x)
+instance TypeableRoot (R x)
+instance SingletonRoot (R x)
+instance OrdRoot (R x)
+
 

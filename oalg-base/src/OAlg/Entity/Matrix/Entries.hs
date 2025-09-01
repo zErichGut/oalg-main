@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Entries
@@ -23,6 +23,9 @@ module OAlg.Entity.Matrix.Entries
     Entries(..), etsxs, etsEmpty, etsAdd, etsMlt, etsJoin
   , etscr, etsrc, crets, rcets
   , etsElimZeros
+
+    -- ** Mapping
+  , etsMapCov, etsMapCnt
 
     -- * Row
   , Row(..), rowxs, rowEmpty, rowIsEmpty, rowHead, rowTail
@@ -49,6 +52,8 @@ import Data.List (map,sortBy,filter,(++))
 
 import OAlg.Prelude
 
+import OAlg.Data.Variant
+
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
@@ -58,6 +63,7 @@ import OAlg.Structure.Operational
 
 import OAlg.Entity.Sequence
 
+import OAlg.Hom.Distributive
 
 --------------------------------------------------------------------------------
 -- Row -
@@ -470,7 +476,7 @@ instance (Transposable x, Ord n) => Transposable (Entries n n x) where
                          $ psqxs $ xs
                          
 --------------------------------------------------------------------------------
--- Entrie - Duality -
+-- Entries - Duality -
 
 type instance Dual (Entries i j x) = Entries j i (Op x)
 
@@ -490,6 +496,27 @@ coEntriesInv (Entries xs') = Entries
                            $ sortBy (fcompare snd)
                            $ map (\(Op x,(j,i)) -> (x,(i,j)))
                            $ (\(PSequence xs) -> xs) $ xs'
+
+--------------------------------------------------------------------------------
+-- etsMapCov -
+
+etsMapCov :: HomDistributiveDisjunctive h
+  => Variant2 Covariant h x y -> Entries i j x -> Entries i j y
+etsMapCov (Covariant2 h) (Entries xs) = case tauDst (range h) of
+  Struct -> etsElimZeros $ Entries $ amap1 (amap h) xs
+
+--------------------------------------------------------------------------------
+-- etsMapCnt -
+
+etsMapCnt :: (HomDistributiveDisjunctive h, Ord i, Ord j)
+  => Variant2 Contravariant h x y -> Entries i j x -> Entries j i y
+etsMapCnt (Contravariant2 h) (Entries xs) = case tauDst $ range h of
+  Struct -> etsElimZeros
+          $ Entries
+          $ PSequence
+          $ sortBy (fcompare snd)
+          $ map (\(x,(i,j)) -> (amap h x,(j,i)))
+          $ psqxs $ xs
 
 --------------------------------------------------------------------------------
 -- etscr -

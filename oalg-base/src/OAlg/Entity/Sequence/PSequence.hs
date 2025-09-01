@@ -222,6 +222,8 @@ psqMap f = psqMapWithIndex (Monotone id) (f . fst)
 
 instance M.Functor (PSequence i) where fmap = psqMap
 
+instance ApplicativeG (PSequence i) (->) (->) where amapG = psqMap
+
 --------------------------------------------------------------------------------
 -- PSequence - Entity -
 
