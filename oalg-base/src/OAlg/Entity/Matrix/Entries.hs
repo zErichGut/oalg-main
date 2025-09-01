@@ -42,13 +42,14 @@ module OAlg.Entity.Matrix.Entries
  
   ) where
 
-import Control.Monad
+import Control.Monad as M
 
 import Data.Foldable
 import Data.List (map,sortBy,filter,(++))
 
 import OAlg.Prelude
 
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
@@ -62,7 +63,7 @@ import OAlg.Entity.Sequence
 -- Row -
 
 -- | viewing a partial sequence as a row.
-newtype Row j x = Row (PSequence j x) deriving (Eq,Validable,Entity,Functor,LengthN)
+newtype Row j x = Row (PSequence j x) deriving (Eq,Validable,M.Functor,LengthN)
 
 instance (Show x,Show j) => Show (Row j x) where
   show (Row (PSequence xs)) = "Row " ++ show xs
@@ -216,7 +217,7 @@ rowScale (<*) j s rw
 -- Col - 
 
 -- | viewing a partial sequence as a column.
-newtype Col i x = Col (PSequence i x) deriving (Eq,Validable,Entity,Functor,LengthN)
+newtype Col i x = Col (PSequence i x) deriving (Eq,Validable,M.Functor,LengthN)
 
 instance (Show x,Show i) => Show (Col i x) where
   show (Col (PSequence xs)) = "Col " ++ show xs
@@ -403,7 +404,7 @@ coColRowInv = error "nyi"
 
 -- | two dimensional partial sequence.
 newtype Entries i j x = Entries (PSequence (i,j) x)
-  deriving (Eq,Ord,Validable,Entity,Functor,LengthN)
+  deriving (Eq,Ord,Validable,M.Functor,LengthN)
 
 instance (Show x, Show i, Show j) => Show (Entries i j x) where
   show ets = "Entries" ++ (show $ etsxs ets)  
