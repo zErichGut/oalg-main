@@ -20,9 +20,11 @@
 module OAlg.Adjunction.Definition
   (
     -- * Adjunction
-    Adjunction(..), unitr, unitl, adjl, adjr, adjHomMlt
+    Adjunction(..), unitr, unitl, adjl, adjr
+  , adjHomMlt, adjHomDisj
 
-    -- * Dual
+    -- * Map
+  , adjMapCnt
   , coAdjunctionOp
 
     -- * Proposition

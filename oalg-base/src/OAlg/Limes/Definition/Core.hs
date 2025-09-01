@@ -22,6 +22,7 @@ module OAlg.Limes.Definition.Core
     Limes, LimesG(..)
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
+  , lmDiagramTypeRefl
 
     -- * Constructions
   , lmMltPrjOrnt, lmMltInjOrnt
@@ -192,6 +193,13 @@ lmMltPrjOrnt :: (Entity p, x ~ Orientation p)
 lmMltPrjOrnt t d = LimesProjective l u where
     l = cnPrjOrnt t d
     u (ConeProjective _ x _) = x:>t
+
+--------------------------------------------------------------------------------
+-- lmDiagramTypeRefl -
+
+-- | reflexivity for 'DiagramType'.
+lmDiagramTypeRefl :: (Conic c, Diagrammatic d) => LimesG c s p d t n m x -> Dual (Dual t) :~: t
+lmDiagramTypeRefl = dgTypeRefl . diagram . diagrammaticObject . cone . universalCone
 
 --------------------------------------------------------------------------------
 -- lmMltInjOrnt -

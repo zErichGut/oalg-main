@@ -15,7 +15,8 @@ module OAlg.Limes.Definition
     Limes, LimesG(..)
   , universalCone, universalFactor
   , eligibleCone, eligibleFactor
-
+  , lmDiagramTypeRefl
+  
     -- * Constructions
   , lmMltPrjOrnt, lmMltInjOrnt  
 
