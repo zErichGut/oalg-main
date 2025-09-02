@@ -1,18 +1,16 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , TypeOperators
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , GeneralizedNewtypeDeriving
-  , DataKinds
-  , ConstraintKinds
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
+
 
 -- |
 -- Module      : OAlg.Category.SDuality
@@ -26,7 +24,7 @@ module OAlg.Category.SDuality
   (
     -- * Dual
     -- ** Dualisable
-    SDual, smap
+    SVal, smap
     
     -- ** Bi-Dualisable
   , SDualBi(..), smapBi, vmapBi
@@ -71,8 +69,8 @@ import OAlg.Data.Variant
 
 -- | adjoining to a type family @__h__@ of morphisms two auxiliary morphisms 'SToDual' and 'SFromDual'.
 data SMorphism r s o h x y where
-  SCov :: Transformable (ObjectClass h) s => h x y -> SMorphism r s o h x y
-  SToDual :: (Structure s x, Structure s (o x)) => SMorphism r s o h x (o x)
+  SCov      :: Transformable (ObjectClass h) s => h x y -> SMorphism r s o h x y
+  SToDual   :: (Structure s x, Structure s (o x)) => SMorphism r s o h x (o x)
   SFromDual :: (Structure s x, Structure s (o x)) =>  SMorphism r s o h (o x) x
 
 --------------------------------------------------------------------------------
@@ -100,19 +98,19 @@ instance Disjunctive2 (SMorphism r s o h)
 -- SCov - Entity2 -
 
 instance Show2 h => Show2 (SMorphism r s o h) where
-  show2 (SCov h) = "SCov (" ++ show2 h ++ ")"
-  show2 SToDual       = "SToDual"
-  show2 SFromDual     = "SFromDual"
+  show2 (SCov h)  = "SCov (" ++ show2 h ++ ")"
+  show2 SToDual   = "SToDual"
+  show2 SFromDual = "SFromDual"
 
 instance Eq2 h => Eq2 (SMorphism r s o h) where
-  eq2 (SCov f) (SCov g) = eq2 f g
-  eq2 SToDual SToDual             = True
-  eq2 SFromDual SFromDual         = True
-  eq2 _ _                       = False
+  eq2 (SCov f) (SCov g)   = eq2 f g
+  eq2 SToDual SToDual     = True
+  eq2 SFromDual SFromDual = True
+  eq2 _ _                 = False
 
 instance Validable2 h => Validable2 (SMorphism r s o h) where
   valid2 (SCov h) = valid2 h
-  valid2 _            = SValid
+  valid2 _        = SValid
 
 --------------------------------------------------------------------------------
 -- SCov - Morphism -
@@ -162,8 +160,8 @@ rdcPathSMorphism :: PathSMorphism r s o h x y -> Rdc (PathSMorphism r s o h x y)
 rdcPathSMorphism p = case p of
   SFromDual :. SToDual :. p' -> reducesTo p' >>= rdcPathSMorphism
   SToDual :. SFromDual :. p' -> reducesTo p' >>= rdcPathSMorphism
-  p' :. p''                -> rdcPathSMorphism p'' >>= return . (p' :.)
-  _                        -> return p
+  p' :. p''                  -> rdcPathSMorphism p'' >>= return . (p' :.)
+  _                          -> return p
 
 instance Reducible (PathSMorphism r s o h x y) where
   reduce = reduceWith rdcPathSMorphism
@@ -284,34 +282,34 @@ instance (Morphism h, TransformableGRefl o s) => CategoryDualisable o (SHom r s 
   cFromDual = sFromDual
 
 --------------------------------------------------------------------------------
--- SDual -
+-- SVal -
 
 -- | duality for 'DualisableG' types.
-newtype SDual d x = SDual (d x)
+newtype SVal d x = SVal (d x)
 
 --------------------------------------------------------------------------------
 -- SHom - FunctorialG -
 
 instance ( Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r, c ~ (->))
-  => ApplicativeG (SDual d) (SMorphism r s o h) c where
-  amapG (SCov h) (SDual d)    = SDual (amapG h d)
-  amapG t@SToDual (SDual d)   = SDual (toDualG (smpBaseDomain t) d)
-  amapG f@SFromDual (SDual d) = SDual (fromDualG (smpBaseRange f) d)
+  => ApplicativeG (SVal d) (SMorphism r s o h) c where
+  amapG (SCov h) (SVal d)    = SVal (amapG h d)
+  amapG t@SToDual (SVal d)   = SVal (toDualG (smpBaseDomain t) d)
+  amapG f@SFromDual (SVal d) = SVal (fromDualG (smpBaseRange f) d)
 
 instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r, c ~ (->))
-  => ApplicativeG (SDual d) (SHom r s o h) c where
+  => ApplicativeG (SVal d) (SHom r s o h) c where
   amapG = amapG . form
 
 instance (Morphism h, ApplicativeG d h c, DualisableG r c o d, Transformable s r, c ~ (->)
          )
-  => FunctorialG (SDual d) (SHom r s o h) c
+  => FunctorialG (SVal d) (SHom r s o h) c
 
 --------------------------------------------------------------------------------
 -- smap -
 
 -- | the induced mapping.
-smap :: ApplicativeG (SDual d) (SHom r s o h) (->) => SHom r s o h x y -> d x -> d y
-smap h d = d' where SDual d' = amapG h (SDual d)
+smap :: ApplicativeG (SVal d) (SHom r s o h) (->) => SHom r s o h x y -> d x -> d y
+smap h d = d' where SVal d' = amapG h (SVal d)
 
 --------------------------------------------------------------------------------
 -- SDualBi -

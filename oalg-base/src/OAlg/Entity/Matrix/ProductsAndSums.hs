@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 -- |
 -- Module      : OAlg.Entity.Matrix.ProductsAndSums
@@ -88,7 +89,7 @@ mtxProducts = LimitsG prd where
       u _ Nil     = []
       u i (c:|cs) = (c,(i,0)) : u (succ i) cs 
 
-isoOpMtx :: Variant2 Contravariant (IsoO Dst Op) (Matrix x) (Matrix (Op x))
+isoOpMtx :: Variant2 Covariant (IsoO s o) (o (f x)) (f (o x))
 isoOpMtx = error "nyi"
 
 --------------------------------------------------------------------------------
@@ -97,13 +98,7 @@ isoOpMtx = error "nyi"
 -- | sums for matrices.
 mtxSums :: Distributive x => Sums n (Matrix x)
 mtxSums = sms where
-  Covariant2 i        = isoOpMtx
-  SDualBi (Left1 sms) = amapF (inv2 i) (SDualBi (Right1 mtxProducts))
+  Contravariant2 i    = toDualOpDst
+  Covariant2 j        = isoOpMtx
+  SDualBi (Left1 sms) = amapF (inv2 (j . i)) (SDualBi (Right1 mtxProducts))
 
-{-
-mtxSums = lmsFromOp ConeStructMlt sumLimitsDuality $ lmsMap isoToOp $ mtxProducts where
-  isoToOp :: Distributive x => IsoOpMap Matrix Dst (Matrix (Op x)) (Op (Matrix x)) 
-  isoToOp = invert2 isoCoMatrixDst
--}
-  
-  
