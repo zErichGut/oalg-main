@@ -519,45 +519,69 @@ isoCoMatrixDst = make (ToOp1 :. IdPath Struct)
 -}
 
 --------------------------------------------------------------------------------
--- coMatrixG -
+-- coMatrix -
 
 -- | contravariant mapping to its generalized co-matrix.
-coMatrixG ::
+coMatrixGStruct ::
   ( TransformableGRefl o Dst
   , DualisableDistributive Dst o
   )
   => Struct Dst x -> Matrix x -> Matrix (o x)
-coMatrixG s m = m' where
+coMatrixGStruct s m = m' where
   Contravariant2 t   = toDualO s
   SDualBi (Left1 m') = amapG t (SDualBi (Right1 m))
 
+coMatrixG ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  , Transformable s Dst
+  )
+  => Struct s x -> Matrix x -> Matrix (o x)
+coMatrixG s = coMatrixGStruct (tau s)
+
+-- | contravariant mapping to its co-matrix.
+coMatrix :: Transformable s Dst => Struct s x -> Matrix x -> Matrix (Op x)
+coMatrix = coMatrixG
+
 --------------------------------------------------------------------------------
 -- coMatrixCov -
+
+-- | covariant mapping to its generalized co-matrix.
+coMatrixGCovStructStruct ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  )
+  => Struct Dst x -> Struct Dst (Matrix x) -> o (Matrix x) -> Matrix (o x)
+coMatrixGCovStructStruct s sm = coMatrixGStruct s . amap (inv2 t) where Contravariant2 t = toDualO sm
 
 -- | covariant mapping to its generalized co-matrix.
 coMatrixGCovStruct ::
   ( TransformableGRefl o Dst
   , DualisableDistributive Dst o
   )
-  => Struct Dst x -> Struct Dst (Matrix x) -> o (Matrix x) -> Matrix (o x)
-coMatrixGCovStruct s sm = coMatrixG s . amap (inv2 t) where Contravariant2 t = toDualO sm
+  => Struct Dst x -> o (Matrix x) -> Matrix (o x)
+coMatrixGCovStruct s@Struct = coMatrixGCovStructStruct s Struct
 
 -- | covariant mapping to its generalized co-matrix.
 coMatrixGCov ::
   ( TransformableGRefl o Dst
   , DualisableDistributive Dst o
   , Transformable s Dst
-  , TransformableG Matrix s Dst
   )
   => Struct s x -> o (Matrix x) -> Matrix (o x)
-coMatrixGCov s = coMatrixGCovStruct (tau s) (tauG s)
+coMatrixGCov s = coMatrixGCovStruct (tau s)
 
+-- | covariant mapping to its co-matrix.
+coMatrixCov :: Transformable s Dst => Struct s x -> Op (Matrix x) -> Matrix (Op x)
+coMatrixCov = coMatrixGCov
+
+--------------------------------------------------------------------------------
+-- HomCo -
 
 instance
   ( TransformableGRefl o Dst
   , DualisableDistributive Dst o
   , Transformable s Dst
-  , TransformableG Matrix s Dst
   )
   => ApplicativeG Id (MorCo Matrix s o) (->) where
   amapG t@ToCo = toIdG (coMatrixGCov $ mcoStruct t)
