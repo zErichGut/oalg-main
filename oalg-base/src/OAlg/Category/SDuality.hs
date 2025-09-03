@@ -24,7 +24,7 @@ module OAlg.Category.SDuality
   (
     -- * Dual
     -- ** Dualisable
-    SVal, smap
+    SVal(..), smap
     
     -- ** Bi-Dualisable
   , SDualBi(..), smapBi, vmapBi

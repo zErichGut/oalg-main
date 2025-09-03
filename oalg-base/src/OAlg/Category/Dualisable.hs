@@ -176,7 +176,6 @@ instance (Transformable r Type, TransformableOp r) => DualisableG r (->) Op Id w
 
 instance (TransformableType r, TransformableOp r) => DualisableGId r Op
 
-
 instance ReflexiveG OrtX EqualExtOrt Op Id where
   reflG r@Struct = Inv2 (Sub u) (Sub v) where Inv2 u v = reflG r
 

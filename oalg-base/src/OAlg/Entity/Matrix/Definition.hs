@@ -59,10 +59,13 @@ import Data.List (map,repeat,zip,span)
 import OAlg.Prelude
 
 import OAlg.Category.Path as P
+import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Singleton
 import OAlg.Data.Canonical
+import OAlg.Data.Either
+import OAlg.Data.HomCo
 
 import OAlg.Data.Constructable
 
@@ -81,12 +84,13 @@ import OAlg.Structure.Number
 import OAlg.Entity.Product
 import OAlg.Entity.Sequence hiding (span)
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
-import OAlg.Hom.Definition
 
 import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Entries
@@ -514,6 +518,62 @@ isoCoMatrixDst = make (ToOp1 :. IdPath Struct)
 
 -}
 
+--------------------------------------------------------------------------------
+-- coMatrixG -
+
+-- | contravariant mapping to its generalized co-matrix.
+coMatrixG ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  )
+  => Struct Dst x -> Matrix x -> Matrix (o x)
+coMatrixG s m = m' where
+  Contravariant2 t   = toDualO s
+  SDualBi (Left1 m') = amapG t (SDualBi (Right1 m))
+
+--------------------------------------------------------------------------------
+-- coMatrixCov -
+
+-- | covariant mapping to its generalized co-matrix.
+coMatrixGCovStruct ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  )
+  => Struct Dst x -> Struct Dst (Matrix x) -> o (Matrix x) -> Matrix (o x)
+coMatrixGCovStruct s sm = coMatrixG s . amap (inv2 t) where Contravariant2 t = toDualO sm
+
+-- | covariant mapping to its generalized co-matrix.
+coMatrixGCov ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  , Transformable s Dst
+  , TransformableG Matrix s Dst
+  )
+  => Struct s x -> o (Matrix x) -> Matrix (o x)
+coMatrixGCov s = coMatrixGCovStruct (tau s) (tauG s)
+
+
+instance
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  , Transformable s Dst
+  , TransformableG Matrix s Dst
+  )
+  => ApplicativeG Id (MorCo Matrix s o) (->) where
+  amapG t@ToCo = toIdG (coMatrixGCov $ mcoStruct t)
+
+
+{-  
+  amapG ToCo (Id m) = Id (Op mo) where
+    Contravariant2 t = toDualO Struct
+    SDualBi (Left1 mo) = amapG t (SDualBi (Right1 m))
+-}  
+{-
+instance ApplicativeG Id (HomCo s Matrix o) (->) where
+  amapG h x = y where SVal y = amapG h (SVal x)
+  
+instance HomOrientedDisjunctive (HomCo s Matrix o)
+-}
 --------------------------------------------------------------------------------
 -- xMatrixRL -
 
