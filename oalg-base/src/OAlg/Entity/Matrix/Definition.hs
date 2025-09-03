@@ -442,82 +442,6 @@ instance
   , FunctorialOriented h
   ) => FunctorialG (SDualBi Matrix) h (->)
 
-{-
---------------------------------------------------------------------------------
--- OpMap Matrix s - Hom -
-
-instance TransformableDst s => Applicative (OpMap Matrix s) where
-  amap h@ToOp1 = coMatrixDst (tau (toOp1Struct h)) where
-    coMatrixDst :: Struct Dst x -> Op (Matrix x) -> Matrix (Op x)
-    coMatrixDst Struct = coMatrix . fromOp
-    
-  amap h@FromOp1 = coMatrixDst (tau (fromOp1Struct h)) where
-    coMatrixDst :: Struct Dst x -> Matrix (Op x) -> Op (Matrix x)
-    coMatrixDst Struct = Op . coMatrixInv
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomOriented (OpMap Matrix s) where
-  pmap h@ToOp1 = coDimDst (tau (toOp1Struct h)) where
-    coDimDst :: Struct Dst x -> Point (Op (Matrix x)) -> Point (Matrix (Op x))
-    coDimDst Struct = dimMap id
-
-  pmap h@FromOp1 = coDimDst (tau (fromOp1Struct h)) where
-    coDimDst :: Struct Dst x -> Point (Matrix (Op x)) -> Point (Op (Matrix x))
-    coDimDst Struct = dimMap id
-                                                               
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomMultiplicative (OpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibred (OpMap Matrix s)
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibredOriented (OpMap Matrix s)
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomAdditive (OpMap Matrix s)
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomDistributive (OpMap Matrix s)
-
---------------------------------------------------------------------------------
--- IsoOpMap - Hom -
-
-instance TransformableDst s => Applicative (IsoOpMap Matrix s) where
-  amap = restrict amap
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomOriented (IsoOpMap Matrix s) where pmap = restrict pmap
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomMultiplicative (IsoOpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibred (IsoOpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibredOriented (IsoOpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomAdditive (IsoOpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomDistributive (IsoOpMap Matrix s)
-  
---------------------------------------------------------------------------------
--- IsoOpMap - Functorial -
-
-instance TransformableDst s => Functorial (IsoOpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => FunctorialHomOriented (IsoOpMap Matrix s)
-
---------------------------------------------------------------------------------
--- isoCoMatrixDst -
-
--- | the contravariant isomorphism from @'Matrix' __x__@ to @'Matrix' ('Op' __x__)@.
-isoCoMatrixDst :: Distributive x => IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
-isoCoMatrixDst = make (ToOp1 :. IdPath Struct)
-
--}
-
 --------------------------------------------------------------------------------
 -- coMatrix -
 
@@ -547,20 +471,12 @@ coMatrix = coMatrixG
 -- coMatrixCov -
 
 -- | covariant mapping to its generalized co-matrix.
-coMatrixGCovStructStruct ::
-  ( TransformableGRefl o Dst
-  , DualisableDistributive Dst o
-  )
-  => Struct Dst x -> Struct Dst (Matrix x) -> o (Matrix x) -> Matrix (o x)
-coMatrixGCovStructStruct s sm = coMatrixGStruct s . amap (inv2 t) where Contravariant2 t = toDualO sm
-
--- | covariant mapping to its generalized co-matrix.
 coMatrixGCovStruct ::
   ( TransformableGRefl o Dst
   , DualisableDistributive Dst o
   )
-  => Struct Dst x -> o (Matrix x) -> Matrix (o x)
-coMatrixGCovStruct s@Struct = coMatrixGCovStructStruct s Struct
+  => Struct Dst x -> Struct Dst (Matrix x) -> o (Matrix x) -> Matrix (o x)
+coMatrixGCovStruct s sm = coMatrixGStruct s . amap (inv2 t) where Contravariant2 t = toDualO sm
 
 -- | covariant mapping to its generalized co-matrix.
 coMatrixGCov ::
@@ -569,11 +485,60 @@ coMatrixGCov ::
   , Transformable s Dst
   )
   => Struct s x -> o (Matrix x) -> Matrix (o x)
-coMatrixGCov s = coMatrixGCovStruct (tau s)
+coMatrixGCov s = case tauDst s of sDst@Struct -> coMatrixGCovStruct sDst Struct
+
 
 -- | covariant mapping to its co-matrix.
 coMatrixCov :: Transformable s Dst => Struct s x -> Op (Matrix x) -> Matrix (Op x)
 coMatrixCov = coMatrixGCov
+
+--------------------------------------------------------------------------------
+-- coMatrixInv -
+
+-- | contravariant mapping from its generalized co-matrix.
+coMatrixGInvStruct ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  )
+  => Struct Dst x -> Matrix (o x) -> Matrix x
+coMatrixGInvStruct s m' = m where
+  Contravariant2 t   = toDualO s
+  SDualBi (Right1 m) = amapG (inv2 t) (SDualBi (Left1 m'))
+  
+-- | contravariant mapping from its generalized co-matrix.  
+coMatrixGInv ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  , Transformable s Dst
+  )
+  => Struct s x -> Matrix (o x) -> Matrix x
+coMatrixGInv s = coMatrixGInvStruct (tau s)
+
+-- | contravariant mapping from its co-matrix.
+coMatrixInv :: Transformable s Dst => Struct s x -> Matrix (Op x) -> Matrix x
+coMatrixInv = coMatrixGInv
+
+--------------------------------------------------------------------------------
+-- coMatrixCovInv -
+
+-- | covariant mapping from its generalized co-matrix.
+coMatrixGInvCovStruct ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  )
+  => Struct Dst x -> Struct Dst (Matrix x) -> Matrix (o x) -> o (Matrix x)
+coMatrixGInvCovStruct s sm = amap t . coMatrixGInvStruct s where Contravariant2 t = toDualO sm 
+
+coMatrixGInvCov ::
+  ( TransformableGRefl o Dst
+  , DualisableDistributive Dst o
+  , Transformable s Dst
+  )
+  => Struct s x -> Matrix (o x) -> o (Matrix x)
+coMatrixGInvCov s = case tauDst s of sDst@Struct -> coMatrixGInvCovStruct sDst Struct
+
+coMatrixInvCov :: Transformable s Dst => Struct s x -> Matrix (Op x) -> Op (Matrix x)
+coMatrixInvCov = coMatrixGInvCov
 
 --------------------------------------------------------------------------------
 -- HomCo -
@@ -584,7 +549,8 @@ instance
   , Transformable s Dst
   )
   => ApplicativeG Id (MorCo Matrix s o) (->) where
-  amapG t@ToCo = toIdG (coMatrixGCov $ mcoStruct t)
+  amapG t@ToCo   = toIdG (coMatrixGCov $ mcoStruct t)
+  amapG f@FromCo = toIdG (coMatrixGInvCov $ mcoStruct f) 
 
 
 {-  

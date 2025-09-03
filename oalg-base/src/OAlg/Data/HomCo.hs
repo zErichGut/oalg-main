@@ -58,7 +58,7 @@ data MorCo m s o x y where
 -- mcoStruct -
 
 -- | whitness that @__x__@ is a @__s__@ structure.
-mcoStruct :: MorCo m s o (o (m x)) (m (o x)) -> Struct s x
+mcoStruct :: MorCo m s o (i (j x)) y -> Struct s x
 mcoStruct ToCo   = Struct
 mcoStruct FromCo = Struct
 
