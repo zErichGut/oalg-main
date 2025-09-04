@@ -446,24 +446,6 @@ instance
   ) => FunctorialG (SDualBi Matrix) h (->)
 
 --------------------------------------------------------------------------------
--- coMatrix -
-
--- | contravariant mapping to its generalized co-matrix.
-coMatrixG ::
-  ( TransformableDst s
-  , TransformableGRefl o s   
-  , DualisableDistributive s o
-  )
-  => Struct s x -> Matrix x -> Matrix (o x)
-coMatrixG s m = m' where
-  Contravariant2 t   = toDualO s
-  SDualBi (Left1 m') = amapG t (SDualBi (Right1 m))
-
--- | contravariant mapping to its co-matrix.
-coMatrix :: Struct Dst x -> Matrix x -> Matrix (Op x)
-coMatrix = coMatrixG
-
---------------------------------------------------------------------------------
 -- coMatrixCov -
 
 -- | covariant mapping to its generalized co-matrix.
@@ -473,7 +455,7 @@ coMatrixGCovStruct ::
   , DualisableDistributive s o 
   )
   => Struct s (Matrix x) -> Struct s x -> o (Matrix x) -> Matrix (o x)
-coMatrixGCovStruct sm s = coMatrixG s . amap (inv2 t) where Contravariant2 t = toDualO sm
+coMatrixGCovStruct sm s = mtxMapCnt (toDualO s) . amap (inv2 t) where Contravariant2 t = toDualO sm
 
 -- | covariant mapping to its generalized co-matrix.
 coMatrixGCov ::
@@ -490,24 +472,6 @@ coMatrixCov :: Struct Dst x -> Op (Matrix x) -> Matrix (Op x)
 coMatrixCov = coMatrixGCov
 
 --------------------------------------------------------------------------------
--- coMatrixInv -
-
--- | contravariant mapping from its generalized co-matrix.
-coMatrixGInv ::
-  ( TransformableDst s
-  , TransformableGRefl o s   
-  , DualisableDistributive s o
-  )
-  => Struct s x -> Matrix (o x) -> Matrix x
-coMatrixGInv s m' = m where
-  Contravariant2 t   = toDualO s
-  SDualBi (Right1 m) = amapG (inv2 t) (SDualBi (Left1 m'))
-
--- | contravariant mapping from its co-matrix.
-coMatrixInv :: Struct Dst x -> Matrix (Op x) -> Matrix x
-coMatrixInv = coMatrixGInv
-
---------------------------------------------------------------------------------
 -- coMatrixCovInv -
 
 -- | covariant mapping from its generalized co-matrix.
@@ -517,7 +481,9 @@ coMatrixGInvCovStruct ::
   , DualisableDistributive s o
   )
   => Struct s (Matrix x) -> Struct s x -> Matrix (o x) -> o (Matrix x)
-coMatrixGInvCovStruct sm s = amap t . coMatrixGInv s where Contravariant2 t = toDualO sm 
+coMatrixGInvCovStruct sm s = amap tm . mtxMapCnt (Contravariant2 (inv2 ts))
+  where Contravariant2 tm = toDualO sm
+        Contravariant2 ts = toDualO s
 
 -- | covariant mapping from its generalized co-matrix.
 coMatrixGInvCov ::
@@ -533,19 +499,10 @@ coMatrixGInvCov s = coMatrixGInvCovStruct (tauG s) s
 coMatrixInvCov :: Struct Dst x -> Matrix (Op x) -> Op (Matrix x)
 coMatrixInvCov = coMatrixGInvCov
 
-
---------------------------------------------------------------------------------
--- toDualO' -
-
--- | the contravariant to-dual @__o__@ isomorphism.
-toDualO' :: TransformableGRefl o r
-  => q o -> Struct r x -> Variant2 Contravariant (IsoO r o) x (o x)
-toDualO' _ = toDualO
-
-
 --------------------------------------------------------------------------------
 -- coMatrixGPnt -
 
+-- | contravariant 'Point'-mapping to its generalized co-matrix.
 coMatrixGPntStruct ::
   ( TransformableGRefl o s
   , DualisableDistributive s o
@@ -556,13 +513,13 @@ coMatrixGPntStruct so@Struct s (Pnt d) = Pnt $ dimMap (pmap t) d where
   q :: Struct Dst (o x) -> Proxy o
   q _ = Proxy
 
+-- | contravariant 'Point'-mapping to its generalized co-matrix.
 coMatrixGPnt ::
   ( TransformableGRefl o s
   , DualisableDistributive s o
-  , TransformableG o s Dst
   )
   => Struct s x -> Pnt (Matrix x) -> Pnt (Matrix (o x))
-coMatrixGPnt s = coMatrixGPntStruct (tauG s) s
+coMatrixGPnt s = coMatrixGPntStruct (tau $ tauO s) s
   
 --------------------------------------------------------------------------------
 -- coMatrixGCovPnt -
@@ -573,30 +530,138 @@ coMatrixGCovPntStruct ::
   , DualisableDistributive s o
   )
   => Struct Dst (o x) -> Struct s (Matrix x) -> Struct s x -> Pnt (o (Matrix x)) -> Pnt (Matrix (o x))
-coMatrixGCovPntStruct so sm s (Pnt od) = coMatrixGPntStruct so s $ Pnt $ pmap (inv2 t) od where
+coMatrixGCovPntStruct so sm s = coMatrixGPntStruct so s . amapG (inv2 t) where
   Contravariant2 t = toDualO' (q so) sm
   
   q :: Struct Dst (o x) -> Proxy o
   q _ = Proxy
 
+-- | covariant 'Point'-mapping to its generalized co-matrix.
 coMatrixGCovPnt ::
   ( TransformableGRefl o s
   , DualisableDistributive s o
-  , TransformableG o s Dst
   , TransformableG Matrix s s
   )
   => Struct s x -> Pnt (o (Matrix x)) -> Pnt (Matrix (o x))
-coMatrixGCovPnt s = coMatrixGCovPntStruct (tauG s) (tauG s) s
+coMatrixGCovPnt s = coMatrixGCovPntStruct (tau $ tauO s) (tauG s) s
+
+--------------------------------------------------------------------------------
+-- coMatrixGInvPnt -
+
+-- | contravariant 'Point'-mapping from its generalized co-matrix.
+coMatrixGInvPntStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => q o -> Struct Dst x -> Struct s x -> Pnt (Matrix (o x)) -> Pnt (Matrix x)
+coMatrixGInvPntStruct q Struct s (Pnt d) = Pnt $ dimMap (pmap (inv2 t)) d where
+  Contravariant2 t = toDualO' q s
+
+-- | contravariant 'Point'-mapping from its generalized co-matrix.
+coMatrixGInvPnt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct s x -> Pnt (Matrix (o x)) -> Pnt (Matrix x)
+coMatrixGInvPnt s pmo = coMatrixGInvPntStruct (q pmo) (tau s) s pmo where
+  q :: Pnt (Matrix (o x)) -> Proxy o
+  q _ = Proxy
 
 --------------------------------------------------------------------------------
 -- coMatrixGInvCovPnt -
 
+coMatrixGInvCovPntStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )  
+  => q o -> Struct Dst x -> Struct s (Matrix x)
+  -> Struct s x -> Pnt (Matrix (o x)) -> Pnt (o (Matrix x))
+coMatrixGInvCovPntStruct q sDst sm s = amapG t . coMatrixGInvPntStruct q sDst s where
+  Contravariant2 t = toDualO' q sm 
+
 -- | covariant 'Point'-mapping from its generalized co-matrix.
 coMatrixGInvCovPnt ::
-  (
-  )
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )  
   => Struct s x -> Pnt (Matrix (o x)) -> Pnt (o (Matrix x))
-coMatrixGInvCovPnt s = error "nyi"
+coMatrixGInvCovPnt s pmo = coMatrixGInvCovPntStruct (q pmo) (tau s) (tauG s) s pmo where
+  q :: Pnt (Matrix (o x)) -> Proxy o
+  q _ = Proxy
+
+--------------------------------------------------------------------------------
+-- coMatrixGRt -
+
+coMatrixGRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct Dst (o x) -> Struct s x -> Rt (Matrix x) -> Rt (Matrix (o x))
+coMatrixGRtStruct so@Struct s (Rt (cls:>rws)) = Rt (rws':>cls') where
+  rws' = dimMap (pmap t) rws
+  cls' = dimMap (pmap t) cls
+  
+  Contravariant2 t = toDualO' (q so) s
+  
+  q :: Struct Dst (o x) -> Proxy o
+  q _ = Proxy
+
+--------------------------------------------------------------------------------
+-- coMatrixGCovRt -
+
+coMatrixGCovRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct Dst (o x) -> Struct s (Matrix x) -> Struct s x -> Rt (o (Matrix x)) -> Rt (Matrix (o x))
+coMatrixGCovRtStruct so sm s = coMatrixGRtStruct so s . amapG (inv2 t) where
+  Contravariant2 t = toDualO' (q so) sm  
+  q :: Struct Dst (o x) -> Proxy o
+  q _ = Proxy
+
+coMatrixGCovRt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> Rt (o (Matrix x)) -> Rt (Matrix (o x))
+coMatrixGCovRt s = coMatrixGCovRtStruct (tau $ tauO s) (tauG s) s
+
+--------------------------------------------------------------------------------
+-- coMatrixGInvRt -
+
+coMatrixGInvRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => q o -> Struct Dst x -> Struct s x -> Rt (Matrix (o x)) -> Rt (Matrix x)
+coMatrixGInvRtStruct q Struct s (Rt (cls':>rws')) = Rt (rws:>cls) where
+  rws = dimMap (pmap (inv2 t)) rws'
+  cls = dimMap (pmap (inv2 t)) cls'
+  Contravariant2 t = toDualO' q s
+
+--------------------------------------------------------------------------------
+-- coMatrixGInvCovRt -
+
+coMatrixGInvCovRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => q o -> Struct Dst x -> Struct s (Matrix x)
+  -> Struct s x -> Rt (Matrix (o x)) -> Rt (o (Matrix x))
+coMatrixGInvCovRtStruct q sDst sm s = amapG t . coMatrixGInvRtStruct q sDst s where
+  Contravariant2 t = toDualO' q sm 
+
+coMatrixGInvCovRt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> Rt (Matrix (o x)) -> Rt (o (Matrix x))
+coMatrixGInvCovRt s rmo = coMatrixGInvCovRtStruct (q rmo) (tau s) (tauG s) s rmo where
+  q :: Rt (Matrix (o x)) -> Proxy o
+  q _ = Proxy
 
 --------------------------------------------------------------------------------
 -- HomCo -
@@ -620,28 +685,112 @@ instance
   => ApplicativeG Id (HomCo Matrix s o) (->) where
   amapG h x = y where SVal y = amapG h (SVal x)
 
-{- 
-instance
-  ()
-  => ApplicativeG Pnt (MorCo Matrix s o) (->) where
-  amapG t@ToCo   = coMatrixGCovPnt $ mcoStruct t
-  amapG f@FromCo = coMatrixGInvCovPnt $ mcoStruct f
-
-instance
-  ()
-  => ApplicativeG Pnt (HomCo Matrix s o) (->) where
-  amapG h x = y where SVal y = amapG h (SVal x)
--}
-
-{-
 instance
   ( TransformableDst s
   , TransformableGRefl o s   
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
   )
+  => FunctorialG Id (HomCo Matrix s o) (->)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )  
+  => ApplicativeG Pnt (MorCo Matrix s o) (->) where
+  amapG t@ToCo   = coMatrixGCovPnt $ mcoStruct t
+  amapG f@FromCo = coMatrixGInvCovPnt $ mcoStruct f
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  ) 
+  => ApplicativeG Pnt (HomCo Matrix s o) (->) where
+  amapG h x = y where SVal y = amapG h (SVal x)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  ) 
+  => FunctorialG Pnt (HomCo Matrix s o) (->)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
   => HomOrientedDisjunctive (HomCo Matrix s o)
--}
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomMultiplicativeDisjunctive (HomCo Matrix s o)
+
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => ApplicativeG Rt (MorCo Matrix s o) (->) where
+  amapG t@ToCo   = coMatrixGCovRt $ mcoStruct t
+  amapG f@FromCo = coMatrixGInvCovRt $ mcoStruct f
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => ApplicativeG Rt (HomCo Matrix s o) (->) where
+  amapG h x = y where SVal y = amapG h (SVal x)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => FunctorialG Rt (HomCo Matrix s o) (->)
+  
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => HomFibred (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => HomFibredOrientedDisjunctive (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomAdditive (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomDistributiveDisjunctive (HomCo Matrix s o)
+
+
 --------------------------------------------------------------------------------
 -- xMatrixRL -
 

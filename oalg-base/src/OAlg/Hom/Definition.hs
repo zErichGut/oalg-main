@@ -24,7 +24,7 @@ module OAlg.Hom.Definition
 
     -- * Contravariant Isomorphism
   , IsoHomDisj, isoHomDisj, isoHomDisj'
-  , IsoO, toDualO
+  , IsoO, toDualO, toDualO'
   , ReflO, reflO
 
 
@@ -181,6 +181,14 @@ type IsoO r o = Inv2 (HomDisjEmpty r o)
 toDualO :: TransformableGRefl o r
   => Struct r x -> Variant2 Contravariant (IsoO r o) x (o x)
 toDualO = isoHomDisj
+
+--------------------------------------------------------------------------------
+-- toDualO' -
+
+-- | the contravariant to-dual @__o__@ isomorphism.
+toDualO' :: TransformableGRefl o r
+  => q o -> Struct r x -> Variant2 Contravariant (IsoO r o) x (o x)
+toDualO' _ = toDualO
 
 --------------------------------------------------------------------------------
 -- ReflO -
