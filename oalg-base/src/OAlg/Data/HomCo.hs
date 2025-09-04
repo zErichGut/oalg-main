@@ -18,7 +18,7 @@
 module OAlg.Data.HomCo
   (
     -- * Category
-    HomCo()
+    HomCo(), toCo, fromCo
   , PathCo(..), rdcCoToFromCo, rdcCoToFromDual, rdcPathCo
   , MorCo(..), mcoStruct
 
