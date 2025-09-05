@@ -15,7 +15,7 @@
 -- 
 -- 'Products' and 'Sums' for matrices.
 module OAlg.Entity.Matrix.ProductsAndSums
-  ( mtxProducts, mtxSums
+  ( -- mtxProducts, mtxSums
   ) where
 
 import Control.Monad
@@ -29,6 +29,7 @@ import OAlg.Category.SDuality
 
 import OAlg.Data.Variant
 import OAlg.Data.Either
+import OAlg.Data.HomCo
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -89,8 +90,6 @@ mtxProducts = LimitsG prd where
       u _ Nil     = []
       u i (c:|cs) = (c,(i,0)) : u (succ i) cs 
 
-isoOpMtx :: Variant2 Covariant (IsoO s o) (o (f x)) (f (o x))
-isoOpMtx = error "nyi"
 
 --------------------------------------------------------------------------------
 -- mtxSums -
@@ -98,7 +97,6 @@ isoOpMtx = error "nyi"
 -- | sums for matrices.
 mtxSums :: Distributive x => Sums n (Matrix x)
 mtxSums = sms where
-  Contravariant2 i    = toDualOpDst
-  Covariant2 j        = isoOpMtx
-  SDualBi (Left1 sms) = amapF (inv2 (j . i)) (SDualBi (Right1 mtxProducts))
+  Contravariant2 i    = isoCoMatrixOp
+  SDualBi (Left1 sms) = amapF (inv2 i) (SDualBi (Right1 mtxProducts))
 

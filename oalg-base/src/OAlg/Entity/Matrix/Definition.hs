@@ -35,6 +35,7 @@ module OAlg.Entity.Matrix.Definition
 
     -- * Duality
   , mtxMapS, mtxMapCov, mtxMapCnt
+  , isoCoMatrixOp
 
 {-  
     -- * Homomorphisms
@@ -718,6 +719,14 @@ instance
   => FunctorialG Pnt (HomCo Matrix s o) (->)
 
 instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => FunctorialOriented (HomCo Matrix s o)
+
+instance
   ( DualisableDistributive s o
   , TransformableGRefl o s   
   , TransformableGRefl Matrix s
@@ -732,7 +741,6 @@ instance
   , TransformableDst s
   ) 
   => HomMultiplicativeDisjunctive (HomCo Matrix s o)
-
 
 instance
   ( TransformableGRefl o s
@@ -790,6 +798,13 @@ instance
   ) 
   => HomDistributiveDisjunctive (HomCo Matrix s o)
 
+--------------------------------------------------------------------------------
+-- isoCoMatrixOp -
+
+-- | contravariant isomorphism between @'Matrix' __x__@ and @'Matrix' ('Op' __x__)@.
+isoCoMatrixOp :: Distributive x
+  => Variant2 Contravariant (IsoCo Matrix Dst Op) (Matrix x) (Matrix (Op x))
+isoCoMatrixOp = isoCo Struct
 
 --------------------------------------------------------------------------------
 -- xMatrixRL -
