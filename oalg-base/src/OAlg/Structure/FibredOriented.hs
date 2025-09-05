@@ -26,6 +26,7 @@ module OAlg.Structure.FibredOriented
     FibredOriented, FbrOrt, TransformableFbrOrt, tauFbrOrt
 
     -- * X
+  , xoFbrOrt, xFbrOrtOrnt
   , XFbrOrt, FbrOrtX
 
     -- * Proposition

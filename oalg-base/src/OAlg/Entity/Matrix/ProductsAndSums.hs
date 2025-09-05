@@ -15,7 +15,7 @@
 -- 
 -- 'Products' and 'Sums' for matrices.
 module OAlg.Entity.Matrix.ProductsAndSums
-  ( -- mtxProducts, mtxSums
+  ( mtxProducts, mtxSums
   ) where
 
 import Control.Monad

@@ -37,11 +37,6 @@ module OAlg.Entity.Matrix.Definition
   , mtxMapS, mtxMapCov, mtxMapCnt
   , isoCoMatrixOp
 
-{-  
-    -- * Homomorphisms
-  , isoCoMatrixDst
--}
-  
     -- * X
   , XStandardOrientationMatrix(..)
   , xMatrix, xMatrixTtl
@@ -82,6 +77,7 @@ import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Number
 
+import OAlg.Entity.Diagram
 import OAlg.Entity.Product
 import OAlg.Entity.Sequence hiding (span)
 
@@ -96,6 +92,9 @@ import OAlg.Hom.Distributive
 import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Entries
 
+import OAlg.Limes.Cone.Conic
+import OAlg.Limes.Perspective
+import OAlg.Limes.Definition.Proposition
 
 --------------------------------------------------------------------------------
 -- Matrix -
@@ -909,3 +908,29 @@ instance XStandard (Matrix Z) where
 dstXStdMatrixZ :: Int -> (Matrix Z -> String) -> IO ()
 dstXStdMatrixZ n f = getOmega >>= putDistribution n (amap1 f xStandard)
 
+--------------------------------------------------------------------------------
+-- XStandardGEligibleCone -
+
+instance
+  ( Conic c
+  , Diagrammatic d
+  )
+  => XStandardGEligibleCone c Mlt p d Discrete n m (Matrix Z) where
+  xStandardGEligibleCone = xecDiscrete xStandardOrtOrientation
+
+--------------------------------------------------------------------------------
+-- XStandardGEligibleConeFactor -
+
+instance
+  ( Conic c
+  , Diagrammatic d
+  )  
+  => XStandardGEligibleConeFactor c Mlt Projective d Discrete n m (Matrix Z) where
+  xStandardGEligibleConeFactor = xecfOrtSite (xoTo xStandardOrtOrientation)
+
+instance
+  ( Conic c
+  , Diagrammatic d
+  )  
+  => XStandardGEligibleConeFactor c Mlt Injective d Discrete n m (Matrix Z) where
+  xStandardGEligibleConeFactor = xecfOrtSite (xoFrom xStandardOrtOrientation)

@@ -25,6 +25,7 @@ module OAlg.Limes.Definition.Proposition
   , XStandardGEligibleCone(..), XStandardEligibleCone
   , xGEligibleConeOrnt, coXGEligibleCone
   , xecMapS, xecMapCnt
+  , xecDiscrete
   
   , XGEligibleConeFactor(..)
   , XStandardGEligibleConeFactor(..), XStandardEligibleConeFactor
@@ -43,6 +44,7 @@ import OAlg.Data.Either
 import OAlg.Data.Variant
 
 import OAlg.Entity.Diagram
+import OAlg.Entity.FinList
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -165,6 +167,41 @@ instance
   )
   => XStandardGEligibleCone c s p d t n m (Orientation x) where
   xStandardGEligibleCone = xGEligibleConeOrnt xStandard
+
+--------------------------------------------------------------------------------
+-- xecDiscrete -
+
+-- | random variable for eligible cones over 'Discrete' diagrammtic objects
+xecDiscrete ::
+  ( Multiplicative x
+  , Conic c
+  , Diagrammatic d
+  )
+  => XOrtOrientation x -> XGEligibleCone c s p d Discrete n m x
+xecDiscrete xo = XGEligibleCone $ xec xo where
+
+  xArwsPrj :: XOrtOrientation x -> Point x -> FinList n (Point x) -> X (FinList n x)
+  xArwsPrj xo s = xListF . amap1 (\p -> xoArrow xo (s:>p))
+
+  xArwsInj :: XOrtOrientation x -> Point x -> FinList n (Point x) -> X (FinList n x)
+  xArwsInj xo e = xListF . amap1 (\p -> xoArrow xo (p:>e))
+  
+  xec ::
+    ( Multiplicative x
+    , Conic c
+    , Diagrammatic d
+    , t ~ Discrete
+    )
+    => XOrtOrientation x -> LimesG c s p d t n m x -> X (Cone s p d t n m x)
+  xec xo (LimesProjective u _) = do
+    t  <- xoPoint xo
+    case cone u of
+      ConeProjective d _ _ -> xArwsPrj xo t (dgPoints $ diagram d) >>= return . ConeProjective d t
+
+  xec xo (LimesInjective u _) = do
+    t <- xoPoint xo
+    case cone u of
+      ConeInjective d _ _ -> xArwsInj xo t (dgPoints $ diagram d) >>= return . ConeInjective d t
 
 --------------------------------------------------------------------------------
 -- XGEligibleConeFactor -

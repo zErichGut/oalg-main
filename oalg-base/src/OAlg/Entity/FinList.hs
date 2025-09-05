@@ -33,6 +33,9 @@ module OAlg.Entity.FinList
 
     -- ** Induction
   , inductionS, FinList'(..)
+
+    -- * X
+  , xListF
   )
 
   where
@@ -229,6 +232,17 @@ infixr 5 <++>
 -- | concatenation.
 (<++>) :: SomeFinList x -> SomeFinList x -> SomeFinList x
 SomeFinList xs <++> SomeFinList ys = SomeFinList (xs ++ ys)
+
+--------------------------------------------------------------------------------
+-- xListF -
+
+-- | random variable for a finite list of random variables.
+xListF :: FinList n (X x) -> X (FinList n x)
+xListF Nil = return Nil
+xListF (xx:|xxs) = do
+  x  <- xx
+  xListF xxs >>= return . (x:|)
+
 
 
 {-

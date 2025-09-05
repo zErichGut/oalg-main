@@ -28,6 +28,7 @@ import OAlg.Prelude
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
