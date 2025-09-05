@@ -683,8 +683,7 @@ instance
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
   )
-  => ApplicativeG Id (HomCo Matrix s o) (->) where
-  amapG h x = y where SVal y = amapG h (SVal x)
+  => ApplicativeMorCo Id Matrix s o (->)
 
 instance
   ( TransformableDst s
@@ -692,7 +691,7 @@ instance
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
   )
-  => FunctorialG Id (HomCo Matrix s o) (->)
+  => FunctorialHomCo Id Matrix s o (->)
 
 instance
   ( TransformableGRefl o s
@@ -707,25 +706,24 @@ instance
   ( TransformableGRefl o s
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
-  ) 
-  => ApplicativeG Pnt (HomCo Matrix s o) (->) where
-  amapG h x = y where SVal y = amapG h (SVal x)
+  )  
+  => ApplicativeMorCo Pnt Matrix s o (->)
 
 instance
   ( TransformableGRefl o s
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
-  ) 
-  => FunctorialG Pnt (HomCo Matrix s o) (->)
+  )  
+  => FunctorialHomCo Pnt Matrix s o (->)
 
 instance
   ( TransformableGRefl o s
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
   , TransformableDst s
-  ) 
+  )
   => FunctorialOriented (HomCo Matrix s o)
-
+  
 instance
   ( DualisableDistributive s o
   , TransformableGRefl o s   
@@ -751,20 +749,28 @@ instance
   amapG t@ToCo   = coMatrixGCovRt $ mcoStruct t
   amapG f@FromCo = coMatrixGInvCovRt $ mcoStruct f
 
-instance
-  ( TransformableGRefl o s
-  , DualisableDistributive s o
-  , TransformableGRefl Matrix s
-  )
-  => ApplicativeG Rt (HomCo Matrix s o) (->) where
-  amapG h x = y where SVal y = amapG h (SVal x)
 
 instance
   ( TransformableGRefl o s
   , DualisableDistributive s o
   , TransformableGRefl Matrix s
   )
-  => FunctorialG Rt (HomCo Matrix s o) (->)
+  => ApplicativeMorCo Rt Matrix s o (->)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => FunctorialHomCo Rt Matrix s o (->)
+
+instance   
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => FunctorialFibred (HomCo Matrix s o)
   
 instance
   ( TransformableGRefl o s

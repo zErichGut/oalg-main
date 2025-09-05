@@ -23,13 +23,13 @@ module OAlg.Data.HomCo
   , MorCo(..), mcoStruct
 
     -- * Functor
-  , FunctorCo(..), FunctorialCo
+  , ApplicativeMorCo, FunctorialHomCo, FunctorHomCo(..)
 
     -- * Iso
   , isoCo, IsoCo
 
     -- * Proposition
-  , prpFunctorialCo
+  , prpFunctorialHomCo
   )
   where
 
@@ -168,21 +168,24 @@ isoCo ::(TransformableG m s s, TransformableG o s s)
 isoCo s = isoCoStruct (tauO s) (tauO $ tauO s) (tauO $ tauO s) s
 
 --------------------------------------------------------------------------------
--- ApplicativeG -
+-- ApplicativeMorCo -
+
+-- | helper class to avoid undecidable instances.
+class ApplicativeG d (MorCo m s o) c => ApplicativeMorCo d m s o c
 
 instance
-  ( ApplicativeG d (MorCo m s o) (->)
+  ( ApplicativeMorCo d m s o (->)
   , DualisableG s (->) o d
   )
-  => ApplicativeG (SVal d) (HomCo m s o) (->) where
-  amapG (HomCo (PathCo p)) = amapG p
+  => ApplicativeG d (HomCo m s o) (->) where
+  amapG (HomCo (PathCo p)) d = d' where SVal d' = amapG p (SVal d)  
 
 --------------------------------------------------------------------------------
--- FunctorialCo -
+-- FunctorialHomCo -
 
 -- | functorial predicat for 'HomCo'.
 --
--- __Properties__ Let @'FunctorialCo' __d s m o c__@, then for all @__x__@
+-- __Properties__ Let @'FunctorialHomCo' __d s m o c__@, then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
 --
 -- (1) @'amapG' ('fromCo' s) '.'  'amapG' ('toCo' s) '.=.' 'cOneDOF' f s@.
@@ -192,40 +195,40 @@ instance
 -- where @f@ is anay proxy in @__q d s m o c__@.
 class
   ( Category c
-  , ApplicativeG d (MorCo m s o) c
+  , ApplicativeMorCo d m s o c
   , TransformableG m s s, TransformableG o s s
   , TransformableG d s (ObjectClass c)
-  ) => FunctorialCo d s m o c
+  ) => FunctorialHomCo d m s o c
 
 --------------------------------------------------------------------------------
--- FunctorCo -
+-- FunctorHomCo -
 
--- | whiteness of being 'FunctorialCo'.
-data FunctorCo d s m o c where
-  FunctorCo :: FunctorialCo d s m o c => FunctorCo d s m o c
+-- | whiteness of being 'FunctorialHomCo'.
+data FunctorHomCo d m s o c where
+  FunctorHomCo :: FunctorialHomCo d m s o c => FunctorHomCo d m s o c
   
 --------------------------------------------------------------------------------
--- prpFunctorialCo -
+-- prpFunctorialHomCo -
 
-cOneDOM :: FunctorCo d s m o c -> Struct s x -> c (d (o (m x))) (d (o (m x)))
-cOneDOM FunctorCo = cOne . tauG . tauO . tauO
+cOneDOM :: FunctorHomCo d m s o c -> Struct s x -> c (d (o (m x))) (d (o (m x)))
+cOneDOM FunctorHomCo = cOne . tauG . tauO . tauO
 
-cOneDMO :: FunctorCo d s m o c -> Struct s x -> c (d (m (o x))) (d (m (o x)))
-cOneDMO FunctorCo = cOne . tauG . tauO. tauO
+cOneDMO :: FunctorHomCo d m s o c -> Struct s x -> c (d (m (o x))) (d (m (o x)))
+cOneDMO FunctorHomCo = cOne . tauG . tauO. tauO
 
-relFunctorialCo :: EqExt c => FunctorCo d s m o c -> Struct s x -> Statement
-relFunctorialCo f@FunctorCo s
+relFunctorialHomCo :: EqExt c => FunctorHomCo d m s o c -> Struct s x -> Statement
+relFunctorialHomCo f@FunctorHomCo s
   = And [ Label "1" :<=>: (amapG (fromCo s) .  amapG (toCo s) .=. cOneDOM f s)
         , Label "2" :<=>: (amapG (toCo s) . amapG (fromCo s)  .=. cOneDMO f s)
         ]
 
--- | validity according to 'FunctorialCo'.
-prpFunctorialCo :: EqExt c => FunctorCo d s m o c -> Struct s x -> Statement
-prpFunctorialCo m s = Prp "FunctoiralCo" :<=>: relFunctorialCo m s
+-- | validity according to 'FunctorialHomCo'.
+prpFunctorialHomCo :: EqExt c => FunctorHomCo d m s o c -> Struct s x -> Statement
+prpFunctorialHomCo m s = Prp "FunctoiralCo" :<=>: relFunctorialHomCo m s
 
 --------------------------------------------------------------------------------
 -- FunctorialG -
 
-instance (FunctorialCo d s m o (->) , DualisableG s (->) o d)
-  => FunctorialG (SVal d) (HomCo m s o) (->)
+instance (FunctorialHomCo d m s o (->) , DualisableG s (->) o d)
+  => FunctorialG d (HomCo m s o) (->)
 
