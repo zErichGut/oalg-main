@@ -18,7 +18,7 @@
 module OAlg.Data.HomCo
   (
     -- * Category
-    HomCo(), toCo, fromCo
+    HomCo(), toCo, fromCo, sHomCo
   , PathCo(..), rdcCoToFromCo, rdcCoToFromDual, rdcPathCo
   , MorCo(..), mcoStruct
 
@@ -232,3 +232,7 @@ prpFunctorialHomCo m s = Prp "FunctoiralCo" :<=>: relFunctorialHomCo m s
 instance (FunctorialHomCo d m s o (->) , DualisableG s (->) o d)
   => FunctorialG d (HomCo m s o) (->)
 
+--------------------------------------------------------------------------------
+-- xSomeHomCo -
+
+-- xSomeCmpb2HomCo :: 

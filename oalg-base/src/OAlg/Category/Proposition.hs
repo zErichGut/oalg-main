@@ -32,6 +32,7 @@ module OAlg.Category.Proposition
   , prpFunctorial1
   , prpFunctorial2, SomeCmpbAppl(..)
   , prpFunctorialG
+  , prpFunctorialGType, SomeEntityG(..), SomeCmpb2G(..)
 
     -- * Cayleyan2
   , prpCayleyan2
@@ -423,3 +424,53 @@ prpFunctorialG q xo xfg = Prp "FunctorialG" :<=>:
   And [ Label "cOne" :<=>: Forall xo (\(SomeObjectClass s) -> relFunctorialGOne q s)
       , Label "." :<=>: Forall xfg (\(SomeCmpb2 f g) -> relFunctorialGCmp q f g)
       ] 
+
+--------------------------------------------------------------------------------
+-- relFunctorialGOneType -
+
+relFunctorialGOneType ::
+  ( FunctorialG t a (->)
+  , Entity (t x)
+  )
+  => q a -> Struct (ObjectClass a) x -> t x -> Statement
+relFunctorialGOneType q s tx = (amapG (cOne' q s) tx == tx) :?> Params ["tx":=show tx]
+
+--------------------------------------------------------------------------------
+-- relFunctorialGCmpType -
+
+relFunctorialGCmpType ::
+  ( FunctorialG t a (->)
+  , Entity (t x)
+  , Entity (t z)
+  )
+  => a y z -> a x y -> t x -> Statement
+relFunctorialGCmpType f g tx = (amapG (f . g) tx == amapG f (amapG g tx)) :?> Params ["tx":=show tx]
+
+--------------------------------------------------------------------------------
+-- SomeEntityG -
+
+-- | some object class for @__c__@ with a applicable @__t__@-entity.
+data SomeEntityG t c where
+  SomeEntityG :: Entity (t x) => Struct (ObjectClass c) x -> t x -> SomeEntityG t c
+
+--------------------------------------------------------------------------------
+-- SomeCmpb2G -
+
+-- | some combosables for @__c__@ with a applicable @__t__@-entity.
+data SomeCmpb2G t c where
+  SomeCmpb2G :: (Entity (t x), Entity (t z)) => c y z -> c x y -> t x -> SomeCmpb2G t c
+  
+--------------------------------------------------------------------------------
+-- prpFunctorialGType -
+
+-- | validity acording to represatnable 'FunctorialG's.
+prpFunctorialGType :: FunctorialG t a (->)
+  => X (SomeEntityG t a) -> X (SomeCmpb2G t a) -> Statement
+prpFunctorialGType xse xcpb2 = Prp "FunctorialGType" :<=>:
+  And [ Label "cOne" :<=>: Forall xse (\(SomeEntityG s tx) -> relFunctorialGOneType (qa xse) s tx)
+      , Label "." :<=>: Forall xcpb2 (\(SomeCmpb2G f g tx) -> relFunctorialGCmpType f g tx)
+      ]
+  where
+    qa :: X (SomeEntityG t a) -> Proxy a
+    qa _ = Proxy
+

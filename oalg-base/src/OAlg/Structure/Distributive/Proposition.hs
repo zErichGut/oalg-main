@@ -88,7 +88,6 @@ instance Distributive d => Validable (DstRootSide s d) where
   valid (LDstRoot r f)    = valid (r,f) && (start r .==. end f )
   valid rd@(RDstRoot _ _) = valid (toDual rd)
 
-
 --------------------------------------------------------------------------------
 -- prpDst1 -
 

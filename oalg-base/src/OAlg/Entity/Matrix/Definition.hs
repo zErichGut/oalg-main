@@ -20,6 +20,7 @@
 -- defintion of matrices over 'Distributive' structures.
 module OAlg.Entity.Matrix.Definition
   (
+
     -- * Matrix
     Matrix(..), rows, cols, mtxxs
   , mtxRowCol, mtxColRow
@@ -38,7 +39,7 @@ module OAlg.Entity.Matrix.Definition
   , isoCoMatrixOp
 
     -- * X
-  , XStandardOrientationMatrix(..)
+  -- , XStandardOrientationMatrix(..)
   , xMatrix, xMatrixTtl
 
     -- ** Direction
@@ -54,13 +55,11 @@ import Data.List (map,repeat,zip,span)
 
 import OAlg.Prelude
 
-import OAlg.Category.Path as P
 import OAlg.Category.Dualisable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Singleton
 import OAlg.Data.Canonical
-import OAlg.Data.Either
 import OAlg.Data.HomCo
 
 import OAlg.Data.Constructable
@@ -839,6 +838,16 @@ xMatrix qMax xx xoDim = XOrtOrientation xoDim xMtx where
     x  <- xoArrow xx (cl ? j :> rw ? i) 
     return ((x,i,j):xs)
 
+xDim :: Oriented x => XOrtOrientation x -> X (Orientation (Point (Matrix x)))
+xDim (XOrtOrientation xop _) = do
+  pcl <- xTakeB 0 8 (amap1 start xop)
+  prw <- xTakeB 0 8 (amap1 end xop)
+  return (productDim pcl :> productDim prw)
+
+
+instance (Distributive x, XStandardOrtOrientation x) => XStandardOrtOrientation (Matrix x) where
+  xStandardOrtOrientation = xMatrix 1 xStandardOrtOrientation (xDim xStandardOrtOrientation)
+
 --------------------------------------------------------------------------------
 -- xMatrixTtl -
 
@@ -867,18 +876,20 @@ xodZZ = xMatrix 0.7 xodZ xoDim where
     m <- xTakeB 0 dMax xd
     return (productDim n :> productDim m)
 
+{-
 --------------------------------------------------------------------------------
 -- XStandardOrientationMatrix -
 
 -- | standard random variable for the orientations of matrices over @__x__@.
 class XStandardOrientationMatrix x where
   xStandardOrientationMatrix :: X (Orientation (Dim' x))
-  
+-}  
 --------------------------------------------------------------------------------
 -- Matrix - XStandard -
 
 instance XStandardPoint (Matrix Z)
 
+{-
 instance XStandardOrientationMatrix Z where
   xStandardOrientationMatrix = do
     n <- xStandard
@@ -890,7 +901,7 @@ instance ( Additive x, FibredOriented x
          )
   => XStandardOrtOrientation (Matrix x) where
   xStandardOrtOrientation = xMatrix 0.8 xStandardOrtOrientation xStandardOrientationMatrix
-
+-}
 --------------------------------------------------------------------------------
 -- Matrix Z - XStandard -
 
@@ -921,16 +932,11 @@ instance
 --------------------------------------------------------------------------------
 -- XStandardGEligibleConeFactor -
 
-instance
-  ( Conic c
-  , Diagrammatic d
-  )  
+instance Conic c
   => XStandardGEligibleConeFactor c Mlt Projective d Discrete n m (Matrix Z) where
   xStandardGEligibleConeFactor = xecfOrtSite (xoTo xStandardOrtOrientation)
 
-instance
-  ( Conic c
-  , Diagrammatic d
-  )  
+instance Conic c
   => XStandardGEligibleConeFactor c Mlt Injective d Discrete n m (Matrix Z) where
   xStandardGEligibleConeFactor = xecfOrtSite (xoFrom xStandardOrtOrientation)
+
