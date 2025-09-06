@@ -53,6 +53,8 @@ import OAlg.Entity.Matrix.Definition
 import OAlg.Entity.Matrix.ProductsAndSums
 
 import OAlg.Hom.Oriented.Proposition
+import OAlg.Hom.Fibred
+
 --------------------------------------------------------------------------------
 -- prpMatrix -
 
@@ -154,24 +156,29 @@ xsoPnt = amap1 Pnt . xoPoint
 xsoRt :: Distributive x => XOrtOrientation x -> X (Rt x)
 xsoRt (XOrtOrientation xo _) = amap1 Rt xo
 
-xseHomCoMatrixId :: X (SomeEntityG Id (HomCo Matrix DstX Op))
-xseHomCoMatrixId
-  = xOneOfX [ xsoId xStandardOrtOrientation >>= return . SomeEntityG (Struct :: Struct DstX (Matrix Z))
-            , xsoId xStandardOrtOrientation >>= return . SomeEntityG (Struct :: Struct DstX Z)
+xse :: Entity (t x)
+  => (XOrtOrientation x -> X (t x)) -> Struct DstX x -> X (SomeEntityG t (HomCo Matrix DstX Op))
+xse xot s@Struct = xot xStandardOrtOrientation >>= return . SomeEntityG s
+
+xseId :: X (SomeEntityG Id (HomCo Matrix DstX Op))
+xseId
+  = xOneOfX [ xse xsoId (Struct :: Struct DstX (Matrix Z))
+            , xse xsoId (Struct :: Struct DstX ((Matrix (Matrix Z))))
+            , xse xsoId (Struct :: Struct DstX Z)
             ]
 
-xseHomCoMatrixPnt :: X (SomeEntityG Pnt (HomCo Matrix DstX Op))
-xseHomCoMatrixPnt
-  = xOneOfX [ xsoPnt xStandardOrtOrientation
-              >>= return . SomeEntityG (Struct :: Struct DstX (Matrix Z))
-            , xsoPnt xStandardOrtOrientation >>= return . SomeEntityG (Struct :: Struct DstX Z)
+xsePnt :: X (SomeEntityG Pnt (HomCo Matrix DstX Op))
+xsePnt
+  = xOneOfX [ xse xsoPnt (Struct :: Struct DstX (Matrix Z))
+            , xse xsoPnt (Struct :: Struct DstX (Matrix (Matrix Z)))
+            , xse xsoPnt (Struct :: Struct DstX Z)
             ]
 
-xseHomCoMatrixRt :: X (SomeEntityG Rt (HomCo Matrix DstX Op))
-xseHomCoMatrixRt
-  = xOneOfX [ xsoRt xStandardOrtOrientation
-              >>= return . SomeEntityG (Struct :: Struct DstX (Matrix Z))
-            , xsoRt xStandardOrtOrientation >>= return . SomeEntityG (Struct :: Struct DstX Z)
+xseRt :: X (SomeEntityG Rt (HomCo Matrix DstX Op))
+xseRt
+  = xOneOfX [ xse xsoRt (Struct :: Struct DstX (Matrix Z))
+            , xse xsoRt (Struct :: Struct DstX (Matrix (Matrix Z)))
+            , xse xsoRt (Struct :: Struct DstX Z)
             ]
 
 xsct ::
@@ -182,28 +189,27 @@ xsct ::
   -> a y z -> a x y -> X (SomeCmpb2G t a)
 xsct xt Struct f g = xt xStandardOrtOrientation >>= return . SomeCmpb2G f g
 
+xsctId :: Struct DstX x -> Struct DstX z -> a y z -> a x y -> X (SomeCmpb2G Id a)
+xsctId sx@Struct Struct = xsct xsoId sx
 
-xscId :: Struct DstX x -> Struct DstX z -> a y z -> a x y -> X (SomeCmpb2G Id a)
-xscId sx@Struct Struct = xsct xsoId sx
+xsctPnt :: Struct DstX x -> Struct DstX z -> a y z -> a x y -> X (SomeCmpb2G Pnt a)
+xsctPnt sx@Struct Struct = xsct xsoPnt sx 
 
-xscPnt :: Struct DstX x -> Struct DstX z -> a y z -> a x y -> X (SomeCmpb2G Pnt a)
-xscPnt sx@Struct Struct = xsct xsoPnt sx 
+xsctRt :: Struct DstX x -> Struct DstX z -> a y z -> a x y -> X (SomeCmpb2G Rt a)
+xsctRt sx@Struct Struct = xsct xsoRt sx
 
-xscRt :: Struct DstX x -> Struct DstX z -> a y z -> a x y -> X (SomeCmpb2G Rt a)
-xscRt sx@Struct Struct = xsct xsoRt sx
+xscId :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Id (HomCo Matrix DstX Op))
+xscId (SomeCmpb2 f g) = xsctId (domain g) (range f) f g
 
-scXscHomCoMatrixId :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Id (HomCo Matrix DstX Op))
-scXscHomCoMatrixId (SomeCmpb2 f g) = xscId (domain g) (range f) f g
+xscPnt :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Pnt (HomCo Matrix DstX Op))
+xscPnt (SomeCmpb2 f g) = xsctPnt (domain g) (range f) f g
 
-scXscHomCoMatrixPnt :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Pnt (HomCo Matrix DstX Op))
-scXscHomCoMatrixPnt (SomeCmpb2 f g) = xscPnt (domain g) (range f) f g
-
-scXscHomCoMatrixRt :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Rt (HomCo Matrix DstX Op))
-scXscHomCoMatrixRt (SomeCmpb2 f g) = xscRt (domain g) (range f) f g
+xscRt :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Rt (HomCo Matrix DstX Op))
+xscRt (SomeCmpb2 f g) = xsctRt (domain g) (range f) f g
 
 
-xscHomCoMatrix :: X (SomeCmpb2 (HomCo Matrix DstX Op))
-xscHomCoMatrix = amap1 soce $ xSctSomeCmpb2 10 (amap1 seoc xseHomCoMatrixId) xMorCo
+xsc :: X (SomeCmpb2 (HomCo Matrix DstX Op))
+xsc = amap1 soce $ xSctSomeCmpb2 10 (amap1 seoc xseId) xMorCo
 
 soce :: SomeCmpb2 (SHom s s o (MorCo m s o)) -> SomeCmpb2 (HomCo m s o)
 soce (SomeCmpb2 f g) = SomeCmpb2 (sHomCo f) (sHomCo g)
@@ -212,26 +218,26 @@ seoc :: Transformable s Typ
   => SomeEntityG t (HomCo m s o) -> SomeObjectClass (SHom s s o (MorCo m s o))
 seoc (SomeEntityG s _) = SomeObjectClass s
 
-
 xMorCo :: X (SomeMorphism (MorCo Matrix DstX Op))
 xMorCo = xOneOf [ SomeMorphism (ToCo   :: MorCo Matrix DstX Op (Op (Matrix Z)) (Matrix (Op Z)))
-                , SomeMorphism ( FromCo :: MorCo Matrix DstX Op (Matrix (Op Z)) (Op (Matrix Z)))
+                , SomeMorphism (FromCo :: MorCo Matrix DstX Op (Matrix (Op Z)) (Op (Matrix Z)))
                 ]
 
-scga :: Category c => SomeCmpb2G Id c -> SomeApplication c
-scga (SomeCmpb2G f g (Id x)) = SomeApplication (f . g) x
+sap :: Category c => SomeCmpb2G Id c -> SomeApplication c
+sap (SomeCmpb2G f g (Id x)) = SomeApplication (f . g) x
 
-xscGHomCoMatrix :: X (SomeCmpb2G Id (HomCo Matrix DstX Op))
-xscGHomCoMatrix = join $ amap1 scXscHomCoMatrixId xscHomCoMatrix
+xscG :: X (SomeCmpb2G Id (HomCo Matrix DstX Op))
+xscG = join $ amap1 xscId xsc
 
 --------------------------------------------------------------------------------
 -- prpHomCoMatrixOp -
 
 prpHomCoMatrixOp :: Statement
 prpHomCoMatrixOp = Prp "HomCoMatrixOp" :<=>:
-  And [ prpHomCoMatrixOpFunctorial xseHomCoMatrixId xscGHomCoMatrix
-      , prpHomCoMatrixOpFunctorial xseHomCoMatrixPnt (join $ amap1 scXscHomCoMatrixPnt xscHomCoMatrix)
-      , prpHomCoMatrixOpFunctorial xseHomCoMatrixRt (join $ amap1 scXscHomCoMatrixRt xscHomCoMatrix)
-      , prpHomOrientedDisjunctive (amap1 scga xscGHomCoMatrix)
+  And [ prpHomCoMatrixOpFunctorial xseId xscG
+      , prpHomCoMatrixOpFunctorial xsePnt (join $ amap1 xscPnt xsc)
+      , prpHomCoMatrixOpFunctorial xseRt (join $ amap1 xscRt xsc)
+      , prpHomOrientedDisjunctive (amap1 sap xscG)
+      , prpHomFibred (amap1 sap xscG)
       ]
 

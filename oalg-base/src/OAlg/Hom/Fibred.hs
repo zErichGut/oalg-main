@@ -33,6 +33,7 @@ module OAlg.Hom.Fibred
 
     -- * Proposition
   , prpHomFbr, prpHomDisjOpFbr
+  , prpHomFibred
   )
   where
 
@@ -134,6 +135,14 @@ relHomFbrStruct (Struct :>: Struct) h x
 -- | validity according to 'HomFibred'.
 prpHomFbr :: (HomFibred h, Show2 h) => h x y -> x -> Statement
 prpHomFbr h x = Prp "HomFbr" :<=>: relHomFbrStruct (tauHom (homomorphous h)) h x
+
+--------------------------------------------------------------------------------
+-- prpHomFibred -
+
+-- | validity according to 'HomFibred'.
+prpHomFibred :: (HomFibred h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomFibred xsa = Prp "HomFibred" :<=>: Forall xsa (\(SomeApplication h x) -> prpHomFbr h x)
 
 --------------------------------------------------------------------------------
 -- xsoFbrOrtX -
