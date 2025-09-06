@@ -26,7 +26,7 @@ module OAlg.Hom.Additive
   , DualisableAdditive
   
     -- * Proposition
-  , prpHomAdd1, prpHomAdd2
+  , prpHomAdditive, prpHomAdd1, prpHomAdd2
   , prpDualisableAdditiveAdd1, prpDualisableAdditiveAdd2
   , prpHomDisjOpAdd
   )
@@ -156,6 +156,16 @@ prpHomAdd2 :: (HomAdditive h, Show2 h) => h a b -> Adbl2 a -> Statement
 prpHomAdd2 f xy = Prp "HomAdd2"
   :<=>: relHomAdd2Homomorphous (tauHom (homomorphous f)) f xy
 
+--------------------------------------------------------------------------------
+-- prpHomAdditive -
+
+-- | validity according to 'HomAdditive'.
+prpHomAdditive :: (HomAdditive h, Show2 h) => h x y -> XAdd x -> Statement
+prpHomAdditive h (XAdd _ xr _ xa2 _) = Prp "HomAdditive" :<=>:
+  And [ Forall xr (prpHomAdd1 h)
+      , Forall xa2 (prpHomAdd2 h)
+      ]
+  
 --------------------------------------------------------------------------------
 -- AddX -
 

@@ -54,6 +54,9 @@ import OAlg.Entity.Matrix.ProductsAndSums
 
 import OAlg.Hom.Oriented.Proposition
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.Additive
 
 --------------------------------------------------------------------------------
 -- prpMatrix -
@@ -220,15 +223,45 @@ seoc (SomeEntityG s _) = SomeObjectClass s
 
 xMorCo :: X (SomeMorphism (MorCo Matrix DstX Op))
 xMorCo = xOneOf [ SomeMorphism (ToCo   :: MorCo Matrix DstX Op (Op (Matrix Z)) (Matrix (Op Z)))
+                , SomeMorphism (ToCo   :: MorCo Matrix DstX Op
+                                            (Op (Matrix (Matrix Z))) (Matrix (Op (Matrix Z)))
+                               )
                 , SomeMorphism (FromCo :: MorCo Matrix DstX Op (Matrix (Op Z)) (Op (Matrix Z)))
+                , SomeMorphism (FromCo :: MorCo Matrix DstX Op
+                                            (Matrix (Op (Matrix Z))) (Op (Matrix (Matrix Z)))
+                               )
                 ]
 
 sap :: Category c => SomeCmpb2G Id c -> SomeApplication c
 sap (SomeCmpb2G f g (Id x)) = SomeApplication (f . g) x
 
+smp :: Category c => SomeCmpb2G t c -> SomeMorphism c
+smp (SomeCmpb2G f g _) = SomeMorphism (f.g)
+
 xscG :: X (SomeCmpb2G Id (HomCo Matrix DstX Op))
 xscG = join $ amap1 xscId xsc
 
+relHomMltStruct :: HomMultiplicativeDisjunctive h => Struct DstX x -> h x y -> Statement
+relHomMltStruct Struct h = prpHomMultiplicativeDisjunctive h (xoMlt (xNB 0 5) xStandardOrtOrientation)
+
+relHomMlt :: X (SomeMorphism (HomCo Matrix DstX Op)) -> Statement
+relHomMlt xsm = Forall xsm (\(SomeMorphism h) -> relHomMltStruct (domain h) h) 
+
+xo :: Struct DstX x -> XOrtOrientation x
+xo Struct = xStandardOrtOrientation
+
+relHomFbrOrtStruct :: (HomFibredOrientedDisjunctive h, Show2 h)
+  => Struct DstX x -> h x y ->  Statement
+relHomFbrOrtStruct s@Struct h = Forall (xoRoot $ xo s) (prpHomFbrOrtDisj h)
+
+relHomFbrOrt :: X (SomeMorphism (HomCo Matrix DstX Op)) -> Statement
+relHomFbrOrt xsm = Forall xsm (\(SomeMorphism h) -> relHomFbrOrtStruct (domain h) h)
+
+relHomAddStruct :: (HomAdditive h, Show2 h) => Struct DstX x -> h x y -> Statement
+relHomAddStruct Struct h = prpHomAdditive h (xoAdd (xNB 0 5) xStandardOrtOrientation)
+
+relHomAdd :: X (SomeMorphism (HomCo Matrix DstX Op)) -> Statement
+relHomAdd xsm = Forall xsm (\(SomeMorphism h) -> relHomAddStruct (domain h) h)
 --------------------------------------------------------------------------------
 -- prpHomCoMatrixOp -
 
@@ -239,5 +272,8 @@ prpHomCoMatrixOp = Prp "HomCoMatrixOp" :<=>:
       , prpHomCoMatrixOpFunctorial xseRt (join $ amap1 xscRt xsc)
       , prpHomOrientedDisjunctive (amap1 sap xscG)
       , prpHomFibred (amap1 sap xscG)
+      , relHomFbrOrt (amap1 smp xscG)
+      , relHomAdd (amap1 smp xscG)
+      , relHomMlt (amap1 smp xscG)
       ]
 
