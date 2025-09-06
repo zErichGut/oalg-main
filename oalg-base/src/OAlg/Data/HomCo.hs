@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
@@ -54,6 +55,9 @@ data MorCo m s o x y where
   FromCo :: (Structure s x, TransformableG m s s, TransformableG o s s)
          => MorCo m s o (m (o x)) (o (m x))
 
+deriving instance Show (MorCo m s o x y)
+instance Show2 (MorCo m s o)
+
 --------------------------------------------------------------------------------
 -- mcoStruct -
 
@@ -92,6 +96,9 @@ fromCo Struct = FromCo
 -- PathCo -
 
 newtype PathCo m s o x y = PathCo (Path (SMorphism s s o (MorCo m s o)) x y)
+  deriving (Show)
+
+instance Show2 (PathCo m s o)
 
 rdcCoToFromCo :: PathCo m s o x y -> Rdc (PathCo m s o x y)
 rdcCoToFromCo (PathCo p) = case p of
@@ -113,6 +120,9 @@ instance Reducible (PathCo m s o x y) where reduce = reduceWith rdcPathCo
 -- HomCo -
 
 newtype HomCo m s o x y = HomCo (PathCo m s o x y)
+  deriving (Show)
+
+instance Show2 (HomCo m s o)
 
 --------------------------------------------------------------------------------
 -- Constructable -
@@ -232,7 +242,3 @@ prpFunctorialHomCo m s = Prp "FunctoiralCo" :<=>: relFunctorialHomCo m s
 instance (FunctorialHomCo d m s o (->) , DualisableG s (->) o d)
   => FunctorialG d (HomCo m s o) (->)
 
---------------------------------------------------------------------------------
--- xSomeHomCo -
-
--- xSomeCmpb2HomCo :: 
