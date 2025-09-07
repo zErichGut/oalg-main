@@ -62,8 +62,6 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
 import OAlg.Limes.Definition
-import OAlg.Limes.OpDuality
-import OAlg.Limes.Universal
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels

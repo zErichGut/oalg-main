@@ -239,3 +239,11 @@ dstrHomCoMatrix n = putDstr asp n (amap1 smp xscG) where
   asp :: SomeMorphism (HomCo Matrix DstX Op) -> [String]
   asp (SomeMorphism h) = [show $ variant h]
   
+--------------------------------------------------------------------------------
+-- dstDimMatixMatrix -
+
+dstDimMatrixMatrix :: Int -> IO ()
+dstDimMatrixMatrix n = putDstr asp n xMM where
+  xMM = xoPoint (xStandardOrtOrientation :: XOrtOrientation (Matrix (Matrix Z)))
+  asp dMM = [show dMM]  
+                                         

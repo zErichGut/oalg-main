@@ -24,6 +24,7 @@
 -- liftable slices.
 module OAlg.Entity.Slice.Liftable
   (
+{-    
     -- * Liftables
     Liftable(..), lift, lftbBase, lftbMap
   , LiftableStruct(..)
@@ -50,6 +51,7 @@ module OAlg.Entity.Slice.Liftable
 
     -- * Exception
   , LiftableException(..)
+-}
   ) where
 
 import Control.Monad
@@ -59,7 +61,9 @@ import Data.Typeable
 import OAlg.Prelude
 
 import OAlg.Category.Path
+import OAlg.Category.SDuality
 
+import OAlg.Data.Either
 import OAlg.Data.Singleton
 
 import OAlg.Structure.Oriented
@@ -67,11 +71,10 @@ import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
-import OAlg.Limes.OpDuality
 import OAlg.Limes.Definition
 import OAlg.Limes.KernelsAndCokernels
 
@@ -98,101 +101,109 @@ instance Exception LiftableException where
 
 -- | liftable slices.
 --
--- __Property__ Let @l@ be in @'Liftable' __p__ __i__ __c__@ for an @__i__@-sliced 'Mulitiplicative'
--- structure @__c__@, then holds:
+-- __Property__ Let @l@ be in @'Liftable' __p i x__@ for an @__i__@-sliced 'Mulitiplicative'
+-- structure @__x__@, then holds:
 --
--- (1) If @l@ matches @'LiftableProjective' c lft@, then holds:
--- For all @t@ in @'Slice' 'To' __i__ __c__@ holds:
+-- (1) If @l@ matches @'LiftableProjective' x lft@, then holds:
+-- For all @t@ in @'Slice' 'To' __i x__@ holds:
 --
---     (1) If @'start' c '/=' 'start' ('slice' t)@ then the evaluation of @lft t@ ends up in a
+--     (1) If @'start' x '/=' 'start' ('slice' t)@ then the evaluation of @lft t@ ends up in a
 --     'NotLiftable'-exception.
 --
---     (2) If @'start' c '==' 'start' ('slice' t)@ then holds: Let @t' = lft t@ in
+--     (2) If @'start' x '==' 'start' ('slice' t)@ then holds: Let @t' = lft t@ in
 --
 --         (1) @t'@ is 'valid'.
 --
---         (2) @'start' ('slice' t') '==' 'end' c@,
+--         (2) @'start' ('slice' t') '==' 'end' x@,
 --
---         (3) @'slice' t '==' 'slice' t' '*' c@.
+--         (3) @'slice' t '==' 'slice' t' '*' x@.
 --
--- (2) If @l@ matches @'LiftableIjective' c lft@, then holds:
--- For all @f@ in @'Slice' 'From' __i__ __c__@ holds:
+-- (2) If @l@ matches @'LiftableIjective' x lft@, then holds:
+-- For all @f@ in @'Slice' 'From' __i x__@ holds:
 --
---     (1) If @'end' c '/=' 'end' ('slice' f)@ then the evaluation of @lft f@ ends up in a
+--     (1) If @'end' x '/=' 'end' ('slice' f)@ then the evaluation of @lft f@ ends up in a
 --     'NotLiftable'-exception.
 --
---     (2) If @'end' c '==' 'end' ('slice' f)@, then holds: Let @f' = lft f@ in
+--     (2) If @'end' x '==' 'end' ('slice' f)@, then holds: Let @f' = lft f@ in
 --
 --         (1) @f'@ is 'valid'.
 --
---         (2) @'end' ('slice' f') '==' 'start' c@.
+--         (2) @'end' ('slice' f') '==' 'start' x@.
 --
---         (3) @'slice' f '==' c '*' 'slice' f'@.
+--         (3) @'slice' f '==' x '*' 'slice' f'@.
 --
-data Liftable p i c where
-  LiftableProjective :: c -> (Slice To i c -> Slice To i c) -> Liftable Projective i c
-  LiftableInjective :: c -> (Slice From i c -> Slice From i c) -> Liftable Injective i c
+data Liftable p i x where
+  LiftableProjective :: x -> (Slice To i x -> Slice To i x) -> Liftable Projective i x
+  LiftableInjective :: x -> (Slice From i x -> Slice From i x) -> Liftable Injective i x
+
+instance Show x => Show (Liftable s i x) where
+  show (LiftableProjective x _) = join ["LiftableProjective (",show x,") lft"]
+  show (LiftableInjective x _)  = join ["LiftableInjective (",show x,") lft"]
+
+--------------------------------------------------------------------------------
+-- lftMapCov -
 
 
-instance Show c => Show (Liftable s i c) where
-  show (LiftableProjective c _) = join ["LiftableProjective (",show c,") lft"]
-  show (LiftableInjective c _)  = join ["LiftableInjective (",show c,") lft"]
+lftMapCov :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
+  => Variant2 Covariant (Inv2 h) x y -> Liftable p i x -> Liftable p i y
+lftMapCov (Covariant2 i) (LiftableProjective x xLft) = LiftableProjective y yLft where
+  y    = amap i x
+  yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
+lftMapCov (Covariant2 i) (LiftableInjective x xLft) = LiftableInjective y yLft where
+  y    = amap i x
+  yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
 
 
 --------------------------------------------------------------------------------
--- lftbMap -
+-- lftMapCnt -
 
-lftbMap :: IsoOrt (Sld Mlt i) h => h a b -> Liftable p i a -> Liftable p i b
-lftbMap h l = case l of
-  LiftableProjective a lft -> LiftableProjective (amap h a) lft' where
-    lft' = slMap (forget l h) . lft . slMap (forget l h')    
-  LiftableInjective a lft  -> LiftableInjective (amap h a) lft' where
-    lft' = slMap (forget l h) . lft . slMap (forget l h')
-  where
-    h' = invert2 h
-
-    forget :: IsoOrt (Sld Mlt i) h => Liftable p i x -> h a b -> Forget (Sld Mlt i) h a b
-    forget _ = Forget
+lftMapCnt :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
+  => Variant2 Contravariant (Inv2 h) x y -> Liftable p i x -> Liftable (Dual p) i y
+lftMapCnt (Contravariant2 i) (LiftableProjective x xLft) = LiftableInjective y yLft where
+  y    = amap i x
+  yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
+lftMapCnt (Contravariant2 i) (LiftableInjective x xLft) = LiftableProjective y yLft where
+  y    = amap i x
+  yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
 
 --------------------------------------------------------------------------------
--- Liftable - Dual -
+-- Duality -
 
-type instance Dual (Liftable p i c) = Liftable (Dual p) i (Op c)
+type instance Dual1 (Liftable p i) = Liftable (Dual p) i
 
+--------------------------------------------------------------------------------
+-- lftMapS -
 
-coLiftable :: Sliced i c => Liftable p i c -> Dual (Liftable p i c)
-coLiftable (LiftableProjective c lft) = LiftableInjective (Op c) (coSlice . lft . coSliceInv Refl)
-coLiftable (LiftableInjective c lft)  = LiftableProjective (Op c) (coSlice . lft . coSliceInv Refl)
+lftMapS :: (CategoryDisjunctive h, HomSlicedMultiplicative i h, p ~ Dual (Dual p))
+  => Inv2 h x y -> SDualBi (Liftable p i) x -> SDualBi (Liftable p i) y
+lftMapS = vmapBi lftMapCov lftMapCov lftMapCnt lftMapCnt
 
+instance (CategoryDisjunctive h, HomSlicedMultiplicative i h, p ~ Dual (Dual p))
+  => ApplicativeG (SDualBi (Liftable p i)) (Inv2 h) (->) where
+  amapG = lftMapS
 
-lftbFromOpOp :: (Sliced i c, Multiplicative c) => Liftable p i (Op (Op c)) -> Liftable p i c
-lftbFromOpOp l = lftbMap (fromOpOp l) l where
-  fromOpOp :: (Sliced i c, Multiplicative c)
-    => Liftable p i (Op (Op c)) -> IsoOp (Sld Mlt i) (Op (Op c)) c
-  fromOpOp _ = isoFromOpOp
+instance (CategoryDisjunctive h, HomSlicedMultiplicative i h, p ~ Dual (Dual p))
+  => FunctorialG (SDualBi (Liftable p i)) (Inv2 h) (->)
 
-coLiftableInv :: (Sliced i c, Multiplicative c)
-  => Dual (Dual p) :~: p -> Dual (Liftable p i c) -> Liftable p i c
-coLiftableInv Refl = lftbFromOpOp . coLiftable
 
 --------------------------------------------------------------------------------
 -- Liftable - Valid -
 
-relLiftableProjective :: (Sliced i c, Multiplicative c)
-  => i c -> XOrtOrientation c -> Liftable Projective i c -> Statement
-relLiftableProjective i xo (LiftableProjective c lft)
-  = And [ valid c        
+relLiftableProjective :: (Sliced i x, Multiplicative x)
+  => i x -> XOrtOrientation x -> Liftable Projective i x -> Statement
+relLiftableProjective i xo (LiftableProjective x lft)
+  = And [ valid x        
         , Forall xt (\t
             -> And [ valid t
-                   , let t' = lft t in case start c == start (slice t) of
+                   , let t' = lft t in case start x == start (slice t) of
                        False -> Label "1.1" :<=>: (valid t' :=> throw implError)
                                   `Catch` (\e -> case e of NotLiftable -> SValid)
                                        
                        True  -> And [ Label "1.2.1" :<=>: valid t'
-                                    , Label "1.2.2" :<=>: (start (slice t') == end c)
-                                        :?> Params ["c":=show c,"t":=show t,"t'":=show t']
-                                    , Label "1.2.3" :<=>: (slice t == slice t' * c)
-                                        :?> Params ["c":=show c,"t":=show t,"t'":=show t']
+                                    , Label "1.2.2" :<=>: (start (slice t') == end x)
+                                        :?> Params ["x":=show x,"t":=show t,"t'":=show t']
+                                    , Label "1.2.3" :<=>: (slice t == slice t' * x)
+                                        :?> Params ["x":=show x,"t":=show t,"t'":=show t']
                                     ]
 
                    ]
@@ -204,122 +215,182 @@ relLiftableProjective i xo (LiftableProjective c lft)
         ip = slicePoint i
   
         xt = amap1 (SliceTo i)
-           $ xOneOfXW [ (9,xoArrow xo (start c :> ip))
+           $ xOneOfXW [ (9,xoArrow xo (start x :> ip))
                       , (1,xoPoint xo >>= xoArrow xo . (:>ip))
                       ]
 
-relLiftable :: (Sliced i c, Multiplicative c) => XOrtOrientation c -> Liftable p i c -> Statement
+relLiftable :: (Sliced i x, Multiplicative x) => XOrtOrientation x -> Liftable p i x -> Statement
 relLiftable xo l = case l of
   LiftableProjective _ _ -> relLiftableProjective unit1 xo l
-  LiftableInjective _ _  -> relLiftable (coXOrtOrientation xo) (coLiftable l)
-  
-instance (Sliced i c, Multiplicative c, XStandardOrtOrientation c)
-  => Validable (Liftable s i c) where
+  LiftableInjective _ _  -> relLiftable (coXOrtOrientation xo) l' where
+    Contravariant2 i = toDualOpMltSld' (q l)
+    SDualBi (Left1 l') = amapG i (SDualBi (Right1 l))
+
+    q :: Liftable p i x -> Proxy i
+    q _ = Proxy
+    
+
+instance (Sliced i x, Multiplicative x, XStandardOrtOrientation x)
+  => Validable (Liftable s i x) where
   valid l = Label "Liftable" :<=>: relLiftable xStandardOrtOrientation l
                                       
 --------------------------------------------------------------------------------
 -- lftbBase -
 
 -- | the underlying factor.
-lftbBase :: Liftable s i c -> c
-lftbBase (LiftableProjective c _) = c
-lftbBase (LiftableInjective c _)  = c
+lftbBase :: Liftable s i x -> x
+lftbBase (LiftableProjective x _) = x
+lftbBase (LiftableInjective x _)  = x
 
 --------------------------------------------------------------------------------
 -- lift -
 
 -- | the lifting map.
-lift :: Liftable p i c -> Slice (ToSite p) i c -> Slice (ToSite p) i c
+lift :: Liftable p i x -> Slice (ToSite p) i x -> Slice (ToSite p) i x
 lift (LiftableProjective _ l) = l
 lift (LiftableInjective _ l)  = l
 
 --------------------------------------------------------------------------------
--- LiftableLimes -
+-- LiftableCone -
 
--- | liftable kernel respectively cokernel.
+-- | kernel respectively cokernel cones with a liftable factor.
 --
--- __Property__ Let @l@ be in @'LiftableLimes' __i__ __s__ __p__ __t__ __n__ __m__ __c__@ for a
--- 'Distributive' structure @__c__@, then holds: @'lmLiftable' l@ is 'valid'.
-data LiftableLimes i s p t n m c where
-  LiftableKernel
-    :: Kernel N1 c -> (Slice To i c -> Slice To i c)
-    -> LiftableLimes i Dst Projective (Parallel LeftToRight) N2 N1 c
-  LiftableCokernel
-    :: Cokernel N1 c -> (Slice From i c -> Slice From i c)
-    -> LiftableLimes i Dst Injective (Parallel RightToLeft) N2 N1 c
+-- __Property__ Let @c@ be in @'LiftableCone' __i s p d t n m x__@ for a
+-- 'Distributive' structure @__x__@, then holds: @'lftcLiftable' c@ is 'valid'.
+data LiftableCone i s p d t n m x where
+  LiftableKernelCone
+    :: KernelCone N1 x -> (Slice To i x -> Slice To i x)
+    -> LiftableCone i Dst Projective Diagram (Parallel LeftToRight) N2 N1 x
+  LiftableCokernelCone
+    :: CokernelCone N1 x -> (Slice From i x -> Slice From i x)
+    -> LiftableCone i Dst Injective Diagram (Parallel RightToLeft) N2 N1 x
 
+instance Conic (LiftableCone i) where
+  cone (LiftableKernelCone k _)   = k
+  cone (LiftableCokernelCone c _) = c
+  
 --------------------------------------------------------------------------------
--- lftlLiftable -
+-- lftcLiftable -
 
 -- | the associated 'Liftable'.
-lftlLiftable :: LiftableLimes i s p t n m c -> Liftable p i c
-lftlLiftable (LiftableKernel k lft)   = LiftableProjective (kernelFactor $ universalCone k) lft
-lftlLiftable (LiftableCokernel c lft) = LiftableInjective (cokernelFactor $ universalCone c) lft
+lftcLiftable :: LiftableCone i s p d t n m x -> Liftable p i x
+lftcLiftable (LiftableKernelCone k lft)   = LiftableProjective (kernelFactor k) lft
+lftcLiftable (LiftableCokernelCone c lft) = LiftableInjective (cokernelFactor c) lft
 
 --------------------------------------------------------------------------------
--- lftlMap -
+-- lftcMapCov -
 
-lftlMap :: IsoOrt (Sld Dst i) h => h a b -> LiftableLimes i s p t n m a -> LiftableLimes i s p t n m b
-lftlMap h l = case l of
-  LiftableKernel ker _ -> LiftableKernel ker' lft' where
-    ker' = lmMap h ker
-    lft' = lift $ lftbMap (forget (tau' l h) h) (lftlLiftable l)
-  LiftableCokernel coker _ -> LiftableCokernel coker' lft' where
-    coker' = lmMap h coker
-    LiftableInjective _ lft' = lftbMap (forget (tau' l h) h) (lftlLiftable l)
-  where 
-    tau' :: IsoOrt (Sld Dst i) h => LiftableLimes i s p t n m a -> h a b -> Struct (Sld Dst i) a
-    tau' _ h = tau (domain h)
-    
-    forget :: IsoOrt (Sld Dst i) h => Struct (Sld Dst i) a -> h a b -> Forget' (Sld Dst i) h a b
-    forget Struct h = forget' Proxy h
+lftcMapCov :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
+  => Variant2 Covariant (Inv2 h) x y
+  -> LiftableCone i s p d t n m x -> LiftableCone i s p d t n m y
+lftcMapCov (Covariant2 i) c@(LiftableKernelCone k _) = LiftableKernelCone k' lft' where
+  SDualBi (Right1 k')                          = amapG i (SDualBi (Right1 k))
+  SDualBi (Right1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+lftcMapCov (Covariant2 i) c@(LiftableCokernelCone k _) = LiftableCokernelCone k' lft' where
+  SDualBi (Right1 k')                         = amapG i (SDualBi (Right1 k))
+  SDualBi (Right1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+
+--------------------------------------------------------------------------------
+-- lftcMapCnt
+
+lftcMapCnt :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
+  => Variant2 Contravariant (Inv2 h) x y
+  -> LiftableCone i s p d t n m x -> LiftableCone i s (Dual p) d (Dual t) n m y
+lftcMapCnt (Contravariant2 i) c@(LiftableKernelCone k _) = LiftableCokernelCone k' lft' where
+  SDualBi (Left1 k')                         = amapG i (SDualBi (Right1 k))
+  SDualBi (Left1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+lftcMapCnt (Contravariant2 i) c@(LiftableCokernelCone k _) = LiftableKernelCone k' lft' where
+  SDualBi (Left1 k')                          = amapG i (SDualBi (Right1 k))
+  SDualBi (Left1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (LiftableCone i s p d t n m) = LiftableCone i s (Dual p) d (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- lftcMapS -
+
+lftcMapS ::
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => Inv2 h x y -> SDualBi (LiftableCone i s p d t n m) x -> SDualBi (LiftableCone i s p d t n m) y
+lftcMapS = vmapBi lftcMapCov lftcMapCov lftcMapCnt lftcMapCnt
+
+instance 
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (LiftableCone i s p d t n m)) (Inv2 h) (->) where
+  amapG = lftcMapS
+
+instance 
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (LiftableCone i s p d t n m)) (Inv2 h) (->)  
+
 
 --------------------------------------------------------------------------------
 -- LiftableKernel -
 
 -- | liftable kenrel according to a slice index @__i__@.
-type LiftableKernel i = GenericKernel (LiftableLimes i) N1
+type LiftableKernel i = KernelG (LiftableCone i) Diagram N1
+
 
 -- | liftable kernels according to a slice index @__i__@.
-type LiftableKernels i = GenericKernels (LiftableLimes i) N1
+type LiftableKernels i = KernelsG (LiftableCone i) Diagram N1
+
 
 --------------------------------------------------------------------------------
 -- LiftableCokernel -
 
 -- | liftable cokernel according to a slice index @__i__@.
-type LiftableCokernel i = GenericCokernel (LiftableLimes i) N1
+type LiftableCokernel i = CokernelG (LiftableCone i) Diagram N1
 
 -- | liftable cokernels according to a slice index @__i__@.
-type LiftableCokernels i = GenericCokernels (LiftableLimes i) N1
+type LiftableCokernels i = CokernelsG (LiftableCone i) Diagram N1
+
 
 --------------------------------------------------------------------------------
 -- lftlKernel -
 
 -- | the liftable property of 'LiftableKernel'.
-lftlKernel :: LiftableKernel i c -> Slice To i c -> Slice To i c
-lftlKernel l = lift (lftlLiftable l)
+lftlKernel :: LiftableKernel i x -> Slice To i x -> Slice To i x
+lftlKernel = lift . lftcLiftable . universalCone
 
 --------------------------------------------------------------------------------
 -- lftlCokernel -
 
-lftlCokernel :: LiftableCokernel i c -> Slice From i c -> Slice From i c
-lftlCokernel l = lift (lftlLiftable l)
+lftlCokernel :: LiftableCokernel i x -> Slice From i x -> Slice From i x
+lftlCokernel = lift . lftcLiftable . universalCone
 
 --------------------------------------------------------------------------------
 -- LiftableLimes - Predicate -
 
-instance Oriented c => Show (LiftableLimes i s p t n m c) where
-  show (LiftableKernel k _)   = join ["LiftableKernel (", show k, ") lft"]
-  show (LiftableCokernel c _) = join ["LiftableCokernel (", show c, ") lft"]
+instance Oriented x => Show (LiftableCone i s p d t n m x) where
+  show (LiftableKernelCone k _)   = join ["LiftableKernelCone (", show k, ") lft"]
+  show (LiftableCokernelCone c _) = join ["LiftableCokernelCone (", show c, ") lft"]
   
 
-instance ( Distributive c, Sliced i c
-         , XStandardOrtSiteTo c, XStandardOrtSiteFrom c
-         , XStandardOrtOrientation c
-         ) => Validable (LiftableLimes i s p t n m c) where
-  valid l@(LiftableKernel k _)   = Label "LiftableKernel" :<=>: valid k && valid (lftlLiftable l)
-  valid l@(LiftableCokernel c _) = Label "LiftableCokernel" :<=>: valid c && valid (lftlLiftable l)
+instance ( Distributive x, Sliced i x
+         , XStandardOrtOrientation x
+         ) => Validable (LiftableCone i s p d t n m x) where
+  valid l@(LiftableKernelCone k _)   = Label "LiftableKernel" :<=>: valid k && valid (lftcLiftable l)
+  valid l@(LiftableCokernelCone c _) = Label "LiftableCokernel" :<=>: valid c && valid (lftcLiftable l)
 
+--------------------------------------------------------------------------------
+-- NatrualConic -
+
+
+{-
 --------------------------------------------------------------------------------
 -- LiftableLimes - Universal -
 
@@ -379,3 +450,4 @@ instance OpDualisable (LiftableStruct i) (LiftableLimes i) Dst where
 instance Typeable i => UniversalApplicative (IsoOp (Sld Dst i)) (LiftableLimes i) Dst where
   umap = lftlMap
 
+-}

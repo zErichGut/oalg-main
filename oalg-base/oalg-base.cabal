@@ -74,6 +74,7 @@ library
       OAlg.Data.Filterable
       OAlg.Data.FinitelyPresentable
       OAlg.Data.Generator
+      OAlg.Data.HomCo
       OAlg.Data.Identity
       OAlg.Data.Logical
       OAlg.Data.Maybe

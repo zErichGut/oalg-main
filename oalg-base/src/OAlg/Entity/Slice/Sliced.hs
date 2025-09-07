@@ -25,15 +25,20 @@ module OAlg.Entity.Slice.Sliced
     Sliced(..), sliceIndex
 
     -- * Hom
+    
+    -- ** Oriented
   , HomSlicedOriented, Sld
   , sliceIndexDomain, sliceIndexRange
   , sldHom
   , toDualOpOrtSld, toDualOpOrtSld'
 
+    -- ** Multiplicative
   , HomSlicedMultiplicative
-  , toDualOpMltSld, toDualOpMltSld'  
-    -- * IsoO
+  , toDualOpMltSld, toDualOpMltSld'
 
+    -- ** Distributive
+  , HomSlicedDistributive
+  
     -- * Proposition
   , prpHomSlicedOriented
   ) where
@@ -58,6 +63,7 @@ import OAlg.Structure.Additive
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 
 import OAlg.Data.Symbol
 
@@ -182,11 +188,7 @@ instance
   )
   => HomSlicedOriented i (HomDisjEmpty (s,Sld i) Op)
 
-instance
-  ( Transformable s Ort
-  , TransformableGRefl Op s
-  )
-  => HomSlicedOriented i (IsoO (s,Sld i) Op)
+instance (CategoryDisjunctive h, HomSlicedOriented i h) => HomSlicedOriented i (Inv2 h)
 
 --------------------------------------------------------------------------------
 -- toDualOpOrtSld -
@@ -213,3 +215,7 @@ toDualOpMltSld' :: (Sliced i x, Multiplicative x)
   => q i -> Variant2 Contravariant (IsoO (Mlt,Sld i) Op) x (Op x)
 toDualOpMltSld' _ = toDualOpMltSld
 
+--------------------------------------------------------------------------------
+-- HomSlicedDistributive -
+
+type HomSlicedDistributive i h = (HomSlicedOriented i h, HomDistributiveDisjunctive h)
