@@ -18,8 +18,6 @@ module OAlg.Entity.Matrix.ProductsAndSums
   ( mtxProducts, mtxSums
   ) where
 
-import Control.Monad
-
 import Data.Foldable
 import Data.List (map)
 
@@ -29,14 +27,11 @@ import OAlg.Category.SDuality
 
 import OAlg.Data.Variant
 import OAlg.Data.Either
-import OAlg.Data.HomCo
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
-
-import OAlg.Hom.Oriented
 
 import OAlg.Entity.FinList
 import OAlg.Entity.Diagram
@@ -50,9 +45,6 @@ import OAlg.Limes.ProductsAndSums
 import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Definition
 import OAlg.Entity.Matrix.Entries
-
-import OAlg.Hom.Definition
-import OAlg.Hom.Distributive
 
 --------------------------------------------------------------------------------
 -- mtxProducts -

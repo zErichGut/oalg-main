@@ -29,6 +29,9 @@ module OAlg.Data.HomCo
     -- * Iso
   , isoCo, IsoCo
 
+    -- * X
+  , xscHomCo
+  
     -- * Proposition
   , prpFunctorialHomCo
   )
@@ -41,6 +44,7 @@ import OAlg.Prelude
 import OAlg.Category.SDuality
 import OAlg.Category.Dualisable
 import OAlg.Category.Path
+import OAlg.Category.Unify
 
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
@@ -241,4 +245,21 @@ prpFunctorialHomCo m s = Prp "FunctoiralCo" :<=>: relFunctorialHomCo m s
 
 instance (FunctorialHomCo d m s o (->) , DualisableG s (->) o d)
   => FunctorialG d (HomCo m s o) (->)
+
+--------------------------------------------------------------------------------
+-- xHomCo -
+
+-- | random variable for some composable 'HomCo's.
+xscHomCo :: TransformableG o s s
+  => N -> X (SomeObjectClass (HomCo m s o)) -> X (SomeMorphism (MorCo m s o))
+  -> X (SomeCmpb2 (HomCo m s o))
+xscHomCo n xsoHomCo xsmMorCo
+  = amap1 soce $ xSctSomeCmpb2 n (amap1 socSHom xsoHomCo) xsmMorCo where
+  
+  socSHom :: SomeObjectClass (HomCo m s o) -> SomeObjectClass (SHom s s o (MorCo m s o))
+  socSHom (SomeObjectClass o) = SomeObjectClass o
+
+  soce :: SomeCmpb2 (SHom s s o (MorCo m s o)) -> SomeCmpb2 (HomCo m s o)
+  soce (SomeCmpb2 f g) = SomeCmpb2 (sHomCo f) (sHomCo g)
+
 

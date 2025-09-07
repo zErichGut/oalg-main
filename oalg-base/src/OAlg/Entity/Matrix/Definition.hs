@@ -838,15 +838,21 @@ xMatrix qMax xx xoDim = XOrtOrientation xoDim xMtx where
     x  <- xoArrow xx (cl ? j :> rw ? i) 
     return ((x,i,j):xs)
 
-xDim :: Oriented x => XOrtOrientation x -> X (Orientation (Point (Matrix x)))
-xDim (XOrtOrientation xop _) = do
-  pcl <- xTakeB 0 8 (amap1 start xop)
-  prw <- xTakeB 0 8 (amap1 end xop)
+--------------------------------------------------------------------------------
+-- xoDim -
+
+-- | random variable of orientations of @'Dim'' __x__@.
+xoDim :: Oriented x => N -> N -> XOrtOrientation x -> X (Orientation (Dim' x))
+xoDim l h (XOrtOrientation xo _) = do
+  pcl <- xTakeB l h (amap1 start xo)
+  prw <- xTakeB l h (amap1 end xo)
   return (productDim pcl :> productDim prw)
 
-
 instance (Distributive x, XStandardOrtOrientation x) => XStandardOrtOrientation (Matrix x) where
-  xStandardOrtOrientation = xMatrix 1 xStandardOrtOrientation (xDim xStandardOrtOrientation)
+  xStandardOrtOrientation = xMatrix 1 xo (xoDim 0 5 xo) where xo = xStandardOrtOrientation
+
+instance TransformableG Matrix DstX DstX where tauG Struct = Struct
+instance TransformableGRefl Matrix DstX
 
 --------------------------------------------------------------------------------
 -- xMatrixTtl -
@@ -864,7 +870,6 @@ xMatrixTtl dimMax qMax xx = xMatrix qMax (xoTtl xx) xoDim where
 -- | a random variable of t'Z'-matrices.
 xodZ :: XOrtOrientation (Matrix Z)
 xodZ = xMatrixTtl 5 0.9 (xZB (-100) 100)
-
 
 -- | a random variable of t'Z'-bolck-matrices.
 xodZZ :: XOrtOrientation (Matrix (Matrix Z))

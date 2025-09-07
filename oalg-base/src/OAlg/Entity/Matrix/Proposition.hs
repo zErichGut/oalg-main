@@ -21,19 +21,17 @@ module OAlg.Entity.Matrix.Proposition
   (
     -- * Proposition
     prpMatrix, prpMatrixZ
+  , prpHomCoMatrixOp
     
   ) where
 
 import Control.Monad
 
-import Data.Typeable
-import Data.Kind
-
 import OAlg.Prelude
 
 import OAlg.Category.Unify
-import OAlg.Category.SDuality
 
+import OAlg.Data.Variant
 import OAlg.Data.HomCo
 
 import OAlg.Structure.Oriented
@@ -99,46 +97,6 @@ prpMatrixZ = Prp "MatrixZ"
   where xo = xodZZ
         xf = xoFrom xo
         xt = xoTo xo
-
---------------------------------------------------------------------------------
--- DstX -
-
-data DstX
-
-type instance Structure DstX x = (Distributive x, XStandardOrtOrientation x)
-
-instance Transformable DstX Typ where tau Struct = Struct
-
-instance Transformable DstX Type where tau _ = Struct
-instance TransformableType DstX
-
-instance Transformable DstX Ort where tau Struct = Struct
-instance TransformableOrt DstX
-
-instance Transformable DstX Mlt where tau Struct = Struct
-instance TransformableMlt DstX
-
-instance Transformable DstX Fbr where tau Struct = Struct
-instance TransformableFbr DstX
-
-instance Transformable DstX Add where tau Struct = Struct
-instance TransformableAdd DstX
-
-instance Transformable DstX FbrOrt where tau Struct = Struct
-instance TransformableFbrOrt DstX
-
-instance Transformable DstX Dst where tau Struct = Struct
-instance TransformableDst DstX
-
-instance TransformableG Op DstX DstX where tauG Struct = Struct
-instance TransformableGRefl Op DstX
-instance TransformableOp DstX
-
-instance TransformableG Matrix DstX DstX where tauG Struct = Struct
-instance TransformableGRefl Matrix DstX
-
-instance XStandardDst (Matrix Z) where
-  xStandardDst = xoDst xStandardOrtOrientation xStandardOrtSite xStandardOrtSite
 
 --------------------------------------------------------------------------------
 -- prpHomCoMatrixFunctorial -
@@ -210,15 +168,10 @@ xscPnt (SomeCmpb2 f g) = xsctPnt (domain g) (range f) f g
 xscRt :: SomeCmpb2 (HomCo Matrix DstX Op) -> X (SomeCmpb2G Rt (HomCo Matrix DstX Op))
 xscRt (SomeCmpb2 f g) = xsctRt (domain g) (range f) f g
 
-
 xsc :: X (SomeCmpb2 (HomCo Matrix DstX Op))
-xsc = amap1 soce $ xSctSomeCmpb2 10 (amap1 seoc xseId) xMorCo
+xsc = xscHomCo 10 (amap1 seoc xseId) xMorCo
 
-soce :: SomeCmpb2 (SHom s s o (MorCo m s o)) -> SomeCmpb2 (HomCo m s o)
-soce (SomeCmpb2 f g) = SomeCmpb2 (sHomCo f) (sHomCo g)
-
-seoc :: Transformable s Typ
-  => SomeEntityG t (HomCo m s o) -> SomeObjectClass (SHom s s o (MorCo m s o))
+seoc :: Transformable s Typ => SomeEntityG t (HomCo m s o) -> SomeObjectClass (HomCo m s o)
 seoc (SomeEntityG s _) = SomeObjectClass s
 
 xMorCo :: X (SomeMorphism (MorCo Matrix DstX Op))
@@ -262,6 +215,7 @@ relHomAddStruct Struct h = prpHomAdditive h (xoAdd (xNB 0 5) xStandardOrtOrienta
 
 relHomAdd :: X (SomeMorphism (HomCo Matrix DstX Op)) -> Statement
 relHomAdd xsm = Forall xsm (\(SomeMorphism h) -> relHomAddStruct (domain h) h)
+
 --------------------------------------------------------------------------------
 -- prpHomCoMatrixOp -
 
@@ -277,3 +231,11 @@ prpHomCoMatrixOp = Prp "HomCoMatrixOp" :<=>:
       , relHomMlt (amap1 smp xscG)
       ]
 
+--------------------------------------------------------------------------------
+-- distributions -
+
+dstrHomCoMatrix :: Int -> IO ()
+dstrHomCoMatrix n = putDstr asp n (amap1 smp xscG) where
+  asp :: SomeMorphism (HomCo Matrix DstX Op) -> [String]
+  asp (SomeMorphism h) = [show $ variant h]
+  

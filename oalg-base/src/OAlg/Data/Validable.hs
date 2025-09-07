@@ -77,7 +77,6 @@ instance XStandard N where xStandard = xN
 instance XStandard Z where xStandard = xZ
 instance XStandard Q where xStandard = xQ
 
-
 --------------------------------------------------------------------------------
 -- xStandard' -
 

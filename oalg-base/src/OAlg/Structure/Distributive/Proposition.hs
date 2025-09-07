@@ -20,7 +20,7 @@ module OAlg.Structure.Distributive.Proposition
   (
 
     -- * Distributive
-    prpDst, XDst(..)
+    prpDst, XDst(..), DstX
   , prpDst1, prpDst2, prpDst3, prpDst4
   , DstRootSide(..), DstSide(..)
 
@@ -43,6 +43,8 @@ module OAlg.Structure.Distributive.Proposition
   where
 
 import Control.Monad
+
+import Data.Kind
 
 import OAlg.Prelude
 
@@ -364,3 +366,39 @@ xoDst xo xf xt = XDst xrsl xsl xrsr xsr where
   xsl = xoDstSideL xo xt
   xrsr = xoDstRootSideR xo xf
   xsr = xoDstSideR xo xf
+
+--------------------------------------------------------------------------------
+-- DstX -
+
+data DstX
+
+type instance Structure DstX x = (Distributive x, XStandardOrtOrientation x)
+
+instance Transformable DstX Typ where tau Struct = Struct
+
+instance Transformable DstX Type where tau _ = Struct
+instance TransformableType DstX
+
+instance Transformable DstX Ort where tau Struct = Struct
+instance TransformableOrt DstX
+
+instance Transformable DstX Mlt where tau Struct = Struct
+instance TransformableMlt DstX
+
+instance Transformable DstX Fbr where tau Struct = Struct
+instance TransformableFbr DstX
+
+instance Transformable DstX Add where tau Struct = Struct
+instance TransformableAdd DstX
+
+instance Transformable DstX FbrOrt where tau Struct = Struct
+instance TransformableFbrOrt DstX
+
+instance Transformable DstX Dst where tau Struct = Struct
+instance TransformableDst DstX
+
+instance TransformableG Op DstX DstX where tauG Struct = Struct
+instance TransformableGRefl Op DstX
+instance TransformableOp DstX
+
+
