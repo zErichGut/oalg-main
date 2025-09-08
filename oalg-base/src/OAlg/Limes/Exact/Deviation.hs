@@ -10,7 +10,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 
-{-# LANGUAGE UndecidableInstances #-}
+-- {-# LANGUAGE UndecidableInstances #-}
 
 -- |
 -- Module      : OAlg.Limes.Exact.Deviation
@@ -69,7 +69,7 @@ import OAlg.Limes.Exact.ConsZero
 
 
 import OAlg.Data.Symbol
-
+{-
 --------------------------------------------------------------------------------
 -- Variance -
 
@@ -139,6 +139,9 @@ data Variance t k c d where
     :: ConsZeroTrafo t N0 d
     -> GenericKernel k N1 d -> GenericCokernel c N1 d
     -> Variance t k c d
+-}
+
+
 
 {-
 --------------------------------------------------------------------------------

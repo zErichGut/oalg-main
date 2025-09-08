@@ -11,6 +11,10 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
+
+
+-- has to be revised!!!
+
 -- |
 -- Module      : OAlg.Entity.Slice.Free
 -- Description : slicing by free points.
@@ -22,6 +26,7 @@
 -- with /specialized/ limits.
 module OAlg.Entity.Slice.Free
   (
+
     -- * Free
     Free(..), freeN, castFree, isFree
   , SomeFree(..), SomeFreeSlice(..)
@@ -30,9 +35,12 @@ module OAlg.Entity.Slice.Free
   , LimesFree(..), limesFree
   , DiagramFree(..),dgfDiagram
   , KernelSliceFromSomeFreeTip(..), ksfKernel
+  , XStandardEligibleConeKernel
+  , XStandardEligibleConeFactorKernel
 
     -- ** Kernel
   , KernelFree, KernelDiagramFree
+
 {-  
     -- ** Liftable Cokernel
   , CokernelDiagramFree
@@ -44,10 +52,8 @@ module OAlg.Entity.Slice.Free
 -}  
     -- ** Pullback
   , PullbackFree, PullbackDiagramFree  
-  
-  ) where
 
-import Control.Monad (join)
+  ) where
 
 import Data.Typeable
 import Data.List ((++))
@@ -61,7 +67,6 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Limes.Definition
-import OAlg.Limes.Universal
 import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 
@@ -70,7 +75,7 @@ import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
 import OAlg.Entity.Slice.Definition
 import OAlg.Entity.Slice.Sliced
-import OAlg.Entity.Slice.Liftable
+-- import OAlg.Entity.Slice.Liftable
 
 --------------------------------------------------------------------------------
 -- Free -
@@ -79,7 +84,7 @@ import OAlg.Entity.Slice.Liftable
 --
 -- >>> lengthN (Free attest :: Free N3 c)
 -- 3
-newtype Free k c = Free (Any k) deriving (Show,Eq,Validable,Entity)
+newtype Free k c = Free (Any k) deriving (Show,Eq,Validable)
 
 instance Attestable k => Singleton1 (Free k) where
   unit1 = Free attest
@@ -87,7 +92,7 @@ instance Attestable k => Singleton1 (Free k) where
 instance Show1 (Free k)
 instance Eq1 (Free k)
 instance Validable1 (Free k)
-instance Typeable k => Entity1 (Free k)
+-- instance Typeable k => Entity1 (Free k)
 
 --------------------------------------------------------------------------------
 -- freeN -
@@ -110,7 +115,7 @@ castFree (Free k) = Free k
 --
 -- __Definition__ Let @n@ be in @'Free' __n__ __c__@ and @p@ in @'Point' __c__@ then
 -- we call @p@ of __/order/__ @n@ if and only if @'slicePoint' i '==' p@.
-isFree :: (Eq (Point c), Sliced (Free k) c) => Free k c -> Point c -> Bool
+isFree :: Sliced (Free k) c => Free k c -> Point c -> Bool
 isFree i p = slicePoint i == p
 
 --------------------------------------------------------------------------------
@@ -135,7 +140,7 @@ data SomeFreeSlice s c where
     
 deriving instance Show c => Show (SomeFreeSlice s c)
 
-instance Oriented c => Validable (SomeFreeSlice s c) where
+instance Validable (SomeFreeSlice s c) where
   valid (SomeFreeSlice s) = Label "SomeFreeSlice" :<=>: valid s
 
 --------------------------------------------------------------------------------
@@ -158,7 +163,9 @@ data LimesFree s p t n m a where
 
 deriving instance Oriented a => Show (LimesFree s p t n m a)
 
-instance ( Distributive a, XStandardOrtPerspective p a
+instance ( Distributive a
+         , XStandardEligibleCone Dst p t n m a
+         , XStandardEligibleConeFactor Dst p t n m a
          , Typeable p, Typeable t, Typeable n, Typeable m
          )
   => Validable (LimesFree Dst p t n m a) where
@@ -175,6 +182,20 @@ instance ( Distributive a, XStandardOrtPerspective p a
 limesFree :: LimesFree s p t n m a -> Limes s p t n m a
 limesFree (LimesFree _ l) = l
 
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeKernel -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleCone Dst Projective (Parallel LeftToRight) N2 n x
+  => XStandardEligibleConeKernel n x
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeFactorKernel -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeFactor Dst Projective (Parallel LeftToRight) N2 n x
+  => XStandardEligibleConeFactorKernel n x
+  
 --------------------------------------------------------------------------------
 -- KernelSliceFromSomeFreeTip -
 
@@ -196,12 +217,19 @@ instance (Oriented c, Sliced i c) => Show (KernelSliceFromSomeFreeTip n i c) whe
     = "KernelSliceFromSomeFreeTip[" ++ show1 k ++ "," ++ show1 i ++ "] ("
     ++ show ker ++ ")" 
 
-instance (Distributive c, Sliced i c, XStandardOrtSiteTo c, Typeable n)
+instance
+  ( Distributive c, Sliced i c
+  , XStandardEligibleConeKernel n c
+  , XStandardEligibleConeFactorKernel n c
+  , Typeable n
+  )
   => Validable (KernelSliceFromSomeFreeTip n i c) where
   valid (KernelSliceFromSomeFreeTip k' i ker) = Label "KernelSliceFromSomeFreeTip" :<=>:
     And [ valid1 k'
         , valid ker
-        , Label "1" :<=>: let DiagramParallelLR s _ _ = diagram (universalCone ker) in
+        , Label "1" :<=>: let DiagramParallelLR s _ _
+                                = diagrammaticObject $ cone $ universalCone ker
+                           in
             (slicePoint i == s) :?> Params ["i":=show1 i,"s":= show s]
         , Label "2" :<=>: (slicePoint k' == tip (universalCone ker))
             :?> Params ["k'":=show1 k',"ker":=show ker]
@@ -261,6 +289,9 @@ type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
 
 -- | pullback of a diagram with free points.
 type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
+
+
+
 
 {-
 --------------------------------------------------------------------------------
