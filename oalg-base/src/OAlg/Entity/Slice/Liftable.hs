@@ -24,16 +24,16 @@
 -- liftable slices.
 module OAlg.Entity.Slice.Liftable
   (
-{-    
+
     -- * Liftables
-    Liftable(..), lift, lftbBase, lftbMap
-  , LiftableStruct(..)
-
-    -- ** Duality
-  , coLiftable, coLiftableInv, lftbFromOpOp
-
+    Liftable(..), lift, lftbBase
+  , lftMapS, lftMapCov, lftMapCnt
+  -- , LiftableStruct(..)
+  
     -- * Limes
-  , LiftableLimes(..), lftlLiftable, lftlMap
+    -- ** Cone
+  , LiftableCone(..), lftcLiftable
+  , lftcMapS, lftcMapCov, lftcMapCnt
   
     -- ** Kernel
   , LiftableKernels, LiftableKernel
@@ -43,15 +43,12 @@ module OAlg.Entity.Slice.Liftable
   , LiftableCokernels, LiftableCokernel
   , lftlCokernel
 
-    -- ** Duality
-  , coLiftableLimes, coLiftableLimesInv, lftlFromOpOp
-
     -- * Proposition
   , relLiftable
 
     -- * Exception
   , LiftableException(..)
--}
+
   ) where
 
 import Control.Monad
@@ -60,8 +57,8 @@ import Data.Typeable
 
 import OAlg.Prelude
 
-import OAlg.Category.Path
 import OAlg.Category.SDuality
+import OAlg.Category.NaturalTransformable
 
 import OAlg.Data.Either
 import OAlg.Data.Singleton
@@ -71,8 +68,6 @@ import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
-import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
 import OAlg.Limes.Definition
@@ -389,49 +384,44 @@ instance ( Distributive x, Sliced i x
 --------------------------------------------------------------------------------
 -- NatrualConic -
 
+instance 
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConeG (LiftableCone i) s p d t n m)) (Inv2 h) (->) where
+  amapG i = sdbFromCncObj . amapG i . sdbToCncObj
+
+instance
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConeG (LiftableCone i) s p d t n m)) (Inv2 h) (->)  
+
+instance
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  , s ~ Dst
+  )
+  => NaturalTransformable (Inv2 h) (->)
+       (SDualBi (ConeG (LiftableCone i) s p Diagram t n m)) (SDualBi (ConeG Cone s p Diagram t n m))  
+
+instance
+  ( CategoryDisjunctive h
+  , HomSlicedDistributive i h
+  , FunctorialOriented h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  , s ~ Dst
+  )
+  => NaturalConic (Inv2 h) (LiftableCone i) s p Diagram t n m
+
 
 {-
---------------------------------------------------------------------------------
--- LiftableLimes - Universal -
-
-instance Universal (LiftableLimes i) where
-  universalType (LiftableKernel _ _)   = UniversalProjective
-  universalType (LiftableCokernel _ _) = UniversalInjective
-
-  universalCone (LiftableKernel k _)   = universalCone k
-  universalCone (LiftableCokernel c _) = universalCone c
-
-  universalFactor (LiftableKernel k _)   = universalFactor k
-  universalFactor (LiftableCokernel c _) = universalFactor c
-
-
---------------------------------------------------------------------------------
--- LiftableLimes - Duality -
-
-type instance Dual (LiftableLimes i s p t n m c) = LiftableLimes i s (Dual p) (Dual t) n m (Op c)
-
-coLiftableLimes :: (Sliced i c, Distributive c)
-  => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> LiftableLimes i s p t n m c -> Dual (LiftableLimes i s p t n m c)
-coLiftableLimes rp rt l@(LiftableKernel ker _) = LiftableCokernel coker lft' where
-  coker = coLimes ConeStructDst rp rt ker
-  lft' = lift $ coLiftable $ lftlLiftable l
-coLiftableLimes rp rt l@(LiftableCokernel coker _) = LiftableKernel ker lft' where
-  ker = coLimes ConeStructDst rp rt coker
-  lft' = lift $ coLiftable $ lftlLiftable l
-
-lftlFromOpOp :: (Sliced i c, Distributive c)
-  => LiftableLimes i s p t n m (Op (Op c)) -> LiftableLimes i s p t n m c
-lftlFromOpOp l = lftlMap (fromOpOp l) l where
-  fromOpOp :: (Sliced i c, Distributive c)
-    => LiftableLimes i s p t n m (Op (Op c)) -> IsoOp (Sld Dst i) (Op (Op c)) c
-  fromOpOp _ = isoFromOpOp
-
-coLiftableLimesInv :: (Distributive c, Sliced i c)
-  => Dual (Dual p) :~: p -> Dual (Dual t) :~: t
-  -> Dual (LiftableLimes i s p t n m c) -> LiftableLimes i s p t n m c
-coLiftableLimesInv Refl Refl = lftlFromOpOp . coLiftableLimes Refl Refl
-
 --------------------------------------------------------------------------------
 -- LiftableStruct -
 
