@@ -35,10 +35,10 @@ prpOAlgBase = Prp "OAlgBase"
                     , prpStatement
                     ]
             , prpStructure
-            , Label "Hom" :<=>: prpHom
+            , Label "HomDisjOp" :<=>: prpHomDisjOp
             , Label "Product" :<=>: prpOrtProductZOrntSymbol
             , Label "Diagram" :<=>: prpDiagramOrntSymbol
-            , Label "Limes"   :<=>: prpLimitsOrntSymbol
+            , Label "Limes"   :<=>: prpLimitsOrntSymbol 5
             , Label "Permutation" :<=>: prpPermutation
             , Label "Matrix"  :<=>: prpMatrixZ
             , Label "Vector"  :<=>: prpRepMatrixZ 8 15
