@@ -1,12 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , FlexibleInstances
-  , GADTs
-  , MultiParamTypeClasses
-  , StandaloneDeriving
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Vector
@@ -18,7 +16,6 @@
 -- 'Vector's with coefficients, lying in a 'Semiring'.
 module OAlg.Entity.Matrix.Vector
   (
-
     -- * Vector
     Vector(..), vecpsq, cf, cfsssy, ssycfs, vecrc, vecAppl
 

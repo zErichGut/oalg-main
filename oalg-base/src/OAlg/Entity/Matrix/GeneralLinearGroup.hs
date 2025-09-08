@@ -17,6 +17,7 @@
 -- general linear group 'GL' and elementary transformations over a 'Galoisian' structure.
 module OAlg.Entity.Matrix.GeneralLinearGroup
   (
+
     -- * Transformation
     Transformation(..)
 
@@ -49,7 +50,6 @@ module OAlg.Entity.Matrix.GeneralLinearGroup
 
 import Control.Monad hiding (sequence)
 
-import Data.Typeable
 import Data.List ((++))
 
 import OAlg.Prelude hiding (T)
@@ -135,19 +135,18 @@ gl2GL g = Inv (gl g) (gl $ invert g) where
 --------------------------------------------------------------------------------
 -- GL2 - Cayleyan -
 
-instance Galoisian x => Validable (GL2 x) where
-  valid g@(GL2 s t u v)
-    = And [ valid (s,t,u,v)
-          , Label "det" :<=>: isInvertible (gl2Det g) :?> Params ["g":=show g] 
-          ]
+-- instance Galoisian x => Entity (GL2 x)
 
-instance Galoisian x => Entity (GL2 x)
+type instance Point (GL2 x) = Point x
+
+instance ShowPoint x => ShowPoint (GL2 x)
+instance EqPoint x => EqPoint (GL2 x)
+instance ValidablePoint x => ValidablePoint (GL2 x)
+instance TypeablePoint x => TypeablePoint (GL2 x)
+instance SingletonPoint x => SingletonPoint (GL2 x)
 
 instance Galoisian x => Oriented (GL2 x) where
-  type Point (GL2 x) = Point x
   orientation _ = unit :> unit
-
-instance Galoisian x => Total (GL2 x)
 
 instance Galoisian x => Multiplicative (GL2 x) where
   one p = GL2 o z z o where
@@ -156,11 +155,16 @@ instance Galoisian x => Multiplicative (GL2 x) where
 
   GL2 s t u v * GL2 s' t' u' v' = GL2 (s*s' + t*u') (s*t' + t*v')
                                       (u*s' + v*u') (u*t' + v*v')
-
 instance Galoisian x => Invertible (GL2 x) where
   tryToInvert g@(GL2 s t u v) = do
     r <- tryToInvert (gl2Det g)
     return (GL2 (r*v) (negate (r*t)) (negate (r*u)) (r*s))
+
+instance Galoisian x => Validable (GL2 x) where
+  valid g@(GL2 s t u v)
+    = And [ valid (s,t,u,v)
+          , Label "det" :<=>: isInvertible (gl2Det g) :?> Params ["g":=show g] 
+          ]
 
 instance Galoisian x => Cayleyan (GL2 x)
 
@@ -273,13 +277,18 @@ instance Validable (Transformation x) where
         , Label "3.3" :<=>: valid g
         ]
 
-instance Typeable x => Entity (Transformation x)
+-- instance Typeable x => Entity (Transformation x)
 
 --------------------------------------------------------------------------------
 -- Transformation - Oriented -
 
+type instance Point (Transformation x) = Dim x (Point x)
+instance Oriented x => ShowPoint (Transformation x)
+instance Oriented x => EqPoint (Transformation x)
+instance Oriented x => ValidablePoint (Transformation x)
+instance Oriented x => TypeablePoint (Transformation x)
+
 instance Oriented x => Oriented (Transformation x) where
-  type Point (Transformation x) = Dim x (Point x)
   orientation tr = case tr of
     Permute r c _ -> c :> r
     Scale d _ _   -> d :> d
@@ -446,7 +455,7 @@ type FT x = Product Z (Transformation x)
 --
 -- __Note__: As a consequence of the property (1.), 'GLT' can be canonically embedded
 -- via @'prj' '.' 'form'@ - in to @'ProductForm' 'N' ('Transformation' x)@. 
-newtype GLT x = GLT (GLTForm x) deriving (Eq,Show,Validable,Entity)
+newtype GLT x = GLT (GLTForm x) deriving (Eq,Show,Validable)
 
 --------------------------------------------------------------------------------
 -- GLT - Constructable -
@@ -460,7 +469,7 @@ instance Oriented x => Constructable (GLT x) where
 
 instance Embeddable (GLT x) (ProductForm N (Transformation x)) where
   inj = prj . form
-  
+
 --------------------------------------------------------------------------------
 -- trGLT -
 
@@ -471,8 +480,13 @@ trGLT = make . P
 --------------------------------------------------------------------------------
 -- GLT - Multiplictive -
 
+type instance Point (GLT x) = Dim x (Point x)
+instance Oriented x => ShowPoint (GLT x)
+instance Oriented x => EqPoint (GLT x)
+instance Oriented x => ValidablePoint (GLT x)
+instance Oriented x => TypeablePoint (GLT x)
+
 instance Oriented x => Oriented (GLT x) where
-  type Point (GLT x) = Dim x (Point x)
   orientation = restrict orientation
 
 instance Oriented x => Multiplicative (GLT x) where
@@ -537,8 +551,8 @@ instance Validable (TrApp x y) where
   
 instance Validable2 TrApp
 
-instance (Typeable x, Typeable y) => Entity (TrApp x y)
-instance Entity2 TrApp
+-- instance (Typeable x, Typeable y) => Entity (TrApp x y)
+-- instance Entity2 TrApp
 
 --------------------------------------------------------------------------------
 -- TrApp - HomOriented -
@@ -551,15 +565,18 @@ instance Morphism TrApp where
 
 instance TransformableObjectClassTyp TrApp
 
-instance Applicative TrApp where
-  amap TrFT  = make . P
-  amap TrGL  = trGL
-  amap TrGLT = trGLT
+instance ApplicativeG Id TrApp (->) where
+  amapG TrFT  = toIdG (make . P)
+  amapG TrGL  = toIdG trGL
+  amapG TrGLT = toIdG trGLT
 
-instance HomOriented TrApp where
-  pmap TrFT  = id
-  pmap TrGL  = id
-  pmap TrGLT = id
+instance ApplicativeG Pnt TrApp (->) where
+  amapG TrFT  = toPntG id
+  amapG TrGL  = toPntG id
+  amapG TrGLT = toPntG id
+
+instance HomOriented TrApp
+
 
 --------------------------------------------------------------------------------
 -- GLApp -
@@ -585,8 +602,8 @@ instance Validable (GLApp x y) where
   
 instance Validable2 GLApp
 
-instance (Typeable x, Typeable y) => Entity (GLApp x y)
-instance Entity2 GLApp
+-- instance (Typeable x, Typeable y) => Entity (GLApp x y)
+-- instance Entity2 GLApp
 
 --------------------------------------------------------------------------------
 -- GLApp - HomMultiplicative -
@@ -600,17 +617,19 @@ instance Morphism GLApp where
 
 instance TransformableObjectClassTyp GLApp
 
-instance Applicative GLApp where
-  amap FTGL  = zProduct TrGL
-  amap FTGLT = zProduct TrGLT 
-  amap GLTGL = zProductForm TrGL . form
-  amap GL2GL = gl2GL
-  
-instance HomOriented GLApp where
-  pmap FTGL  = id
-  pmap FTGLT = id
-  pmap GLTGL = id
-  pmap GL2GL = \p -> productDim [p,p]
+instance ApplicativeG Id GLApp (->) where
+  amapG FTGL  = toIdG (zProduct TrGL)
+  amapG FTGLT = toIdG (zProduct TrGLT)
+  amapG GLTGL = toIdG (zProductForm TrGL . form)
+  amapG GL2GL = toIdG gl2GL
+
+instance ApplicativeG Pnt GLApp (->) where
+  amapG FTGL  = toPntG id
+  amapG FTGLT = toPntG id
+  amapG GLTGL = toPntG id
+  amapG GL2GL = toPntG (\p -> productDim [p,p])
+
+instance HomOriented GLApp
 
 instance HomMultiplicative GLApp
 
@@ -720,3 +739,4 @@ scale d k s = amap TrGLT (Scale d k s)
 -- @
 shear :: Galoisian x  => Dim' x -> N -> N -> GL2 x -> GLT x
 shear d k l g = amap TrGLT (Shear d k l g)
+
