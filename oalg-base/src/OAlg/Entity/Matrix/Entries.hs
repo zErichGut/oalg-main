@@ -85,7 +85,7 @@ instance (Entity x, Entity j, Ord j) => TotalOpr (Permutation j) (Row j x)
 instance (Entity x, Entity j, Ord j) => PermutableSequence (Row j) j x where
   permuteBy f c w (Row xs) = (Row xs',p) where (xs',p) = permuteBy f c w xs
 
-instance ApplicativeG (Row N) (->) (->) where amapG = M.fmap
+instance ApplicativeG (Row i) (->) (->) where amapG = M.fmap
 
 --------------------------------------------------------------------------------
 -- rowxs -
@@ -240,6 +240,9 @@ instance (Entity x, Entity i, Ord i) => TotalOpr (Permutation i) (Col i x)
 
 instance (Entity x, Entity i, Ord i) => PermutableSequence (Col i) i x where
   permuteBy f c w (Col xs) = (Col xs',p) where (xs',p) = permuteBy f c w xs
+
+instance ApplicativeG (Col i) (->) (->) where
+  amapG = M.fmap
 
 --------------------------------------------------------------------------------
 -- colxs -

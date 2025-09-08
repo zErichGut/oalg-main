@@ -17,7 +17,8 @@
 -- 
 -- elementary matrix transformations, i.e. operations of 'GLT' on 'Matrix'.
 module OAlg.Entity.Matrix.Transformation
-  ( -- * Row Trafo
+  (
+    -- * Row Trafo
     RowTrafo(..), crTrafoRows
 
     -- * Col Trafo
@@ -163,18 +164,21 @@ rcTrafoCols cls (Shear _ k l g) = rcShearCols k l g cls
 
 -- | 'GLT' as a column transformation.
 newtype ColTrafo x = ColTrafo (GLT x)  
-  deriving ( Eq,Show,Validable,Entity
-           , Multiplicative, Invertible, Cayleyan
-           )
+  deriving (Eq,Show,Validable, Multiplicative, Invertible, Cayleyan)
+
+type instance Point (ColTrafo x) = Dim x (Point x)
+instance Oriented x => ShowPoint (ColTrafo x)
+instance Oriented x => EqPoint (ColTrafo x)
+instance Oriented x => ValidablePoint (ColTrafo x)
+instance Oriented x => TypeablePoint (ColTrafo x)
 
 instance Oriented x => Oriented (ColTrafo x) where
-  type Point (ColTrafo x) = Dim x (Point x)
   orientation (ColTrafo t) = orientation t
 
 instance Oriented x => Exponential (ColTrafo x) where
   type Exponent (ColTrafo x) = Z
   ColTrafo t ^ z = ColTrafo (t^z)
-
+  
 --------------------------------------------------------------------------------
 -- ColTrafo - OrientedOpr -
 
@@ -194,17 +198,20 @@ instance Distributive x => OrientedOpr (ColTrafo x) (Matrix x)
 -- RowTrafo -
 
 -- | 'GLT' as row transformations.
-newtype RowTrafo a = RowTrafo (GLT a)
-  deriving ( Eq,Show,Validable,Entity
-           , Multiplicative, Invertible, Cayleyan
-           )
+newtype RowTrafo x = RowTrafo (GLT x)
+  deriving (Eq,Show,Validable, Multiplicative, Invertible, Cayleyan)
 
-instance Oriented a => Oriented (RowTrafo a) where
-  type Point (RowTrafo a) = Dim a (Point a)
+type instance Point (RowTrafo x) = Dim x (Point x)
+instance Oriented x => ShowPoint (RowTrafo x)
+instance Oriented x => EqPoint (RowTrafo x)
+instance Oriented x => ValidablePoint (RowTrafo x)
+instance Oriented x => TypeablePoint (RowTrafo x)
+
+instance Oriented x => Oriented (RowTrafo x) where
   orientation (RowTrafo t) = orientation t
 
-instance Oriented a => Exponential (RowTrafo a) where
-  type Exponent (RowTrafo a) = Z
+instance Oriented x => Exponential (RowTrafo x) where
+  type Exponent (RowTrafo x) = Z
   RowTrafo t ^ z = RowTrafo (t^z)
 
 --------------------------------------------------------------------------------
@@ -251,7 +258,7 @@ instance Distributive k => Validable (DiagonalForm k) where
             :<=>: (and $ map (not.isZero) ds) :?>Params ["ds":=show ds]
         ]
 
-instance Distributive k => Entity (DiagonalForm k)
+-- instance Distributive k => Entity (DiagonalForm k)
 
 --------------------------------------------------------------------------------
 -- dgfMatrix -
@@ -263,7 +270,6 @@ dgfMatrix (DiagonalForm ds rt ct) = (rt'*>dm)<*ct' where
   rt' = invert rt
   ct' = invert ct
   dm = diagonal (start rt') (end ct') ds
-
 
 --------------------------------------------------------------------------------
 -- DiagonalFormStrictPositive -
@@ -287,5 +293,5 @@ instance Number k => Validable (DiagonalFormStrictPositive k) where
                        , vld (succ i) ds
                        ]
                    
-instance Number k => Entity (DiagonalFormStrictPositive k)
+-- instance Number k => Entity (DiagonalFormStrictPositive k)
 
