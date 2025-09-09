@@ -114,8 +114,8 @@ type Kernels n = KernelsG Cone Diagram n
 -- kernelFactor -
 
 -- | the factor of its shell.
-kernelFactor :: KernelCone N1 x -> x
-kernelFactor (ConeKernel _ f) = f
+kernelFactor :: Conic c => KernelConic c d n x -> x
+kernelFactor c = case cone c of ConeKernel _ x -> x
 
 --------------------------------------------------------------------------------
 -- kernelDiagram -
@@ -249,7 +249,6 @@ type CokernelsG c d n = LimitsG c Dst Injective d (Parallel RightToLeft) N2 n
 -- | cokernels for 'Distributive' structures.
 type Cokernels n = CokernelsG Cone Diagram n
 
-
 --------------------------------------------------------------------------------
 -- coKernelsG -
 
@@ -267,8 +266,8 @@ coKernelsG ks = cks where
 -- cokernelFactor -
 
 -- | the factor of its shell.
-cokernelFactor :: CokernelCone N1 x -> x
-cokernelFactor (ConeCokernel _ f) = f
+cokernelFactor :: Conic c => CokernelConic c d n x -> x
+cokernelFactor c = case cone c of ConeCokernel _ x -> x
 
 --------------------------------------------------------------------------------
 -- cokernelDiagram -

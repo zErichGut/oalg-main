@@ -22,6 +22,7 @@ module OAlg.Hom.Oriented.Proposition
   (
     -- * Disjunctive Homomorphism
     prpHomOrientedDisjunctive
+  , prpHomOriented
 
     -- * Duality
   , prpDualisableOriented
@@ -105,10 +106,17 @@ prpHomDisjOrtVariant xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
 -- | validity according to 'HomOrientedDisjunctive'.
 prpHomOrientedDisjunctive :: (HomOrientedDisjunctive h, Show2 h)
   => X (SomeApplication h) -> Statement
-prpHomOrientedDisjunctive xa = Prp "HomOrientedDisjunctive" :<=>:
-  And [ prpHomDisjOrtVariant xa
-      ]
+prpHomOrientedDisjunctive xa = Prp "HomOrientedDisjunctive" :<=>: prpHomDisjOrtVariant xa
 
+--------------------------------------------------------------------------------
+-- prpHomOriented -
+
+-- | validity according to 'HomOriented'.
+prpHomOriented :: (HomOriented h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomOriented xa = Prp "HomOriented" :<=>: prpHomOrientedDisjunctive (amap1 saDisj xa) where
+  saDisj :: HomOriented h => SomeApplication h -> SomeApplication (HomDisj Ort Op h)
+  saDisj (SomeApplication h x) = SomeApplication h' x where Covariant2 h' = homDisj h
 
 --------------------------------------------------------------------------------
 -- xsoOrtX -

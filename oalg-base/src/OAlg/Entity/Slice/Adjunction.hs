@@ -21,6 +21,7 @@
 -- 'Cokernel'-'Kernel' 'Adjunction' for 'Slice'd structures. 
 module OAlg.Entity.Slice.Adjunction
   (
+{-
     -- * Adjunction
     slcAdjunction
 
@@ -37,7 +38,7 @@ module OAlg.Entity.Slice.Adjunction
   
     -- * Proposition
   , prpHomMltSliceCokernelKernel
-
+-}
   ) where
 
 import Control.Monad
@@ -58,136 +59,165 @@ import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Universal
+import OAlg.Limes.Definition
+import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
 
 import OAlg.Adjunction
 
-import OAlg.Entity.Diagram.Definition
+import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
+import OAlg.Entity.FinList
 import OAlg.Entity.Slice.Definition
 import OAlg.Entity.Slice.Sliced
 
---------------------------------------------------------------------------------
--- SliceCokernelKernel -
-
--- | the left and right homomorphisms for the cokernel-kernel adjunction 'slcAdjunction' within
--- a 'Distributive' structure @__d__@.
-data SliceCokernelKernel
-       (c :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> Type)
-       (k :: Type -> Perspective -> DiagramType -> N' -> N' -> Type -> Type)
-       i d x y where  
-  SliceCokernel :: SliceCokernelKernel c k i d (SliceFactor To i d) (SliceFactor From i d)
-  SliceKernel   :: SliceCokernelKernel c k i d (SliceFactor From i d) (SliceFactor To i d) 
-
---------------------------------------------------------------------------------
--- SliceCokernelKernel - Entity -
-
-deriving instance Show (SliceCokernelKernel c k i d x y)
-instance Show2 (SliceCokernelKernel c k i d)
-
-deriving instance Eq (SliceCokernelKernel c k i d x y)
-instance Eq2 (SliceCokernelKernel c k i d)
-
-instance Validable (SliceCokernelKernel c k i d x y) where
-  valid SliceCokernel = SValid
-  valid SliceKernel   = SValid
-instance Validable2 (SliceCokernelKernel c k i d)
-
-
+{-
 instance (Typeable c, Typeable k, Typeable i, Typeable d, Typeable x, Typeable y)
   => Entity (SliceCokernelKernel c k i d x y)
 instance (Typeable c, Typeable k, Typeable i, Typeable d) => Entity2 (SliceCokernelKernel c k i d)
+-}
 
 --------------------------------------------------------------------------------
--- SliceCokernelTo -
+-- SliceDiagram -
 
--- | 'Distributive' structures @__d__@ having for each @'Slice' 'To' __i__ __d__@ a
---   'GenericCokernel'.
---
---  __Property__ Let @h = 'SliceTo' _ h'@ be in @'Slice' 'To' __i__ __d__@ for a
---  @__i__@ sliced, 'Distributive' structure @__d__@, then holds:
---
---  @'diagram' ('universalCone' coker) '==' 'cokernelDiagram' h'@ where
---  @coker = 'sliceCokernelTo' h@.
-class (Distributive d, Sliced i d) => SliceCokernelTo c i d where
-  sliceCokernelTo :: Slice To i d -> GenericCokernel c N1 d
+-- | slice as a kernel respectively cokernel diagram.
+data SliceDiagram i t n m x where
+  SliceDiagramKernel :: Sliced i x => Slice From i x -> SliceDiagram i (Parallel LeftToRight) N2 N1 x
+  SliceDiagramCokernel :: Sliced i x => Slice To i x -> SliceDiagram i (Parallel RightToLeft) N2 N1 x
 
-sliceCokernelTo' :: SliceCokernelTo c i d
-  => SliceCokernelKernel c k i d (SliceFactor To i d) (SliceFactor From i d)
-  -> Slice To i d -> GenericCokernel c N1 d
-sliceCokernelTo' SliceCokernel = sliceCokernelTo
+deriving instance Show (SliceDiagram i t n m x)
+deriving instance Eq (SliceDiagram i t n m x)
+
+instance Validable (SliceDiagram i t n m x) where
+  valid (SliceDiagramKernel f)  = valid f
+  valid (SliceDiagramCokernel t) = valid t
 
 --------------------------------------------------------------------------------
--- SliceKernelFrom -
+-- Diagrammatic -
 
--- | 'Distributive' structures @__d__@ having for each @'Slice' 'From' __i__ __d__@ a
---   'GenericKernel'.
---
---  __Property__ Let @h = 'SliceFrom' _ h'@ be in @'Slice' 'From' __i__ __d__@ for a
---  @__i__@ sliced, 'Distributive' structure @__c__@, then holds:
---
---  @'diagram' ('universalCone' ker) '==' 'kernelDiagram' h'@ where
---  @coker = 'sliceKernelFrom' h@.
-class (Distributive d, Sliced i d) => SliceKernelFrom k i d where
-  sliceKernelFrom :: Slice From i d -> GenericKernel k N1 d
+instance Diagrammatic (SliceDiagram i) where
+  diagram (SliceDiagramKernel (SliceFrom _ f)) = DiagramParallelLR s e (f:|Nil)
+    where s:>e = orientation f
+  diagram (SliceDiagramCokernel (SliceTo _ t)) = DiagramParallelRL e s (t:|Nil)
+    where s:>e = orientation t
 
-sliceKernelFrom' :: SliceKernelFrom k i d
-  => SliceCokernelKernel c k i d (SliceFactor From i d) (SliceFactor To i d)
-  -> Slice From i d -> GenericKernel k N1 d
-sliceKernelFrom' SliceKernel = sliceKernelFrom
+--------------------------------------------------------------------------------
+-- SliceKernels -
 
+-- | generalized kernels according to a slice diagram.
+type SliceKernels i c = KernelsG c (SliceDiagram i) N1
+
+--------------------------------------------------------------------------------
+-- SlixeCokernels -
+
+-- | generalized cokernels according to a slice diagram.
+type SliceCokernels i c = CokernelsG c (SliceDiagram i) N1
+
+
+--------------------------------------------------------------------------------
+-- SliceAdjunction -
+
+-- | the left and right homomorphisms for the cokernel-kernel adjunction 'slcAdjunction' within
+-- a 'Distributive' structure @__d__@.
+data SliceAdjunction i c d x y where  
+  SliceCokernel :: SliceCokernels i c d
+                -> SliceAdjunction i c d (SliceFactor To i d) (SliceFactor From i d)
+  SliceKernel   :: SliceKernels i c d
+                -> SliceAdjunction i c d (SliceFactor From i d) (SliceFactor To i d) 
+
+instance Show2 (SliceAdjunction i c d) where
+  show2 (SliceCokernel _) = "SliceCokernel"
+  show2 (SliceKernel _)   = "SliceKernel"
+  
 --------------------------------------------------------------------------------
 -- SliceCokernelKernel - Morphism -
 
-instance (Multiplicative d, Sliced i d) => Morphism (SliceCokernelKernel c k i d) where
-  type ObjectClass (SliceCokernelKernel c k i d) = Mlt
-  homomorphous SliceCokernel = Struct :>: Struct
-  homomorphous SliceKernel = Struct :>: Struct
+instance (Multiplicative d, Sliced i d) => Morphism (SliceAdjunction i c d) where
+  type ObjectClass (SliceAdjunction i c d) = Mlt
+  homomorphous (SliceCokernel _) = Struct :>: Struct
+  homomorphous (SliceKernel _)   = Struct :>: Struct
 
-instance TransformableObjectClassTyp (SliceCokernelKernel c k i d)
+instance TransformableObjectClassTyp (SliceAdjunction i c d)
 
 --------------------------------------------------------------------------------
--- SliceCokernelKernel - HomMultiplicative -
+-- SliceAdjunction - Entity -
 
-instance ( Distributive d
-         , Universal c, SliceCokernelTo c i d
-         , Universal k, SliceKernelFrom k i d
-         )
-  => Applicative (SliceCokernelKernel c k i d) where
+{-
+deriving instance Show (SliceAdjunction i c d x y)
 
-  amap s@SliceCokernel (SliceFactor a@(SliceTo k _) b _)
+instance Show2 (SliceAdjunction c k i d)
+
+deriving instance Eq (SliceAdjunction c k i d x y)
+instance Eq2 (SliceAdjunction c k i d)
+
+instance Validable (SliceAdjunction c k i d x y) where
+  valid SliceCokernel = SValid
+  valid SliceKernel   = SValid
+instance Validable2 (SliceAdjunction c k i d)
+-}
+
+--------------------------------------------------------------------------------
+-- sliceKernel -
+sliceKernel ::
+  ( Distributive d
+  , Sliced i d
+  , Conic c
+  )
+  => SliceKernels i c d -> SliceFactor From i d -> SliceFactor To i d
+sliceKernel ks (SliceFactor a@(SliceFrom k _) b _)
+    = SliceFactor (SliceTo k a') (SliceTo k b') f' where
+    bKer = limes ks (SliceDiagramKernel b)
+    bDgm = diagrammaticObject $ cone $ universalCone bKer
+    aKer = limes ks (SliceDiagramKernel a)
+    
+    a' = kernelFactor $ universalCone $ aKer
+    b' = kernelFactor $ universalCone $ bKer
+    f' = universalFactor bKer (ConeKernel bDgm a')
+    -- from SliceFactor a b f valid follows that ConeKernel (diagram bKer) a' is eligible
+
+--------------------------------------------------------------------------------
+-- sliceCokernel -
+
+sliceCokernel ::
+  ( Distributive d
+  , Sliced i d
+  , Conic c
+  )
+  => SliceCokernels i c d -> SliceFactor To i d -> SliceFactor From i d
+sliceCokernel cs (SliceFactor a@(SliceTo k _) b _)
     = SliceFactor (SliceFrom k a') (SliceFrom k b') f' where
-    aCoker = sliceCokernelTo' s a
+  
+    aCoker = limes cs (SliceDiagramCokernel a)
+    aDgm   = diagrammaticObject $ cone $ universalCone aCoker
+    bCoker = limes cs (SliceDiagramCokernel b)
+    
     a' = cokernelFactor $ universalCone aCoker
-    b' = cokernelFactor $ universalCone $ sliceCokernelTo' s b
-    f' = universalFactor aCoker (ConeCokernel (diagram (universalCone aCoker)) b')
+    b' = cokernelFactor $ universalCone $ bCoker
+    f' = universalFactor aCoker (ConeCokernel aDgm b')
     -- from SliceFactor a b f valid follwos that
     -- ConeCokernel (diagram aCoker) b' is eligible
 
-  amap s@SliceKernel (SliceFactor a@(SliceFrom k _) b _)
-    = SliceFactor (SliceTo k a') (SliceTo k b') f' where
-    bKer = sliceKernelFrom' s b
-    a' = kernelFactor $ universalCone $ sliceKernelFrom' s a
-    b' = kernelFactor $ universalCone $ bKer
-    f' = universalFactor bKer (ConeKernel (diagram (universalCone bKer)) a')
-    -- from SliceFactor a b f valid follows that ConeKernel (diagram bKer) a' is eligible
+--------------------------------------------------------------------------------
+-- SliceAdjunction - HomMultiplicative -
 
-instance ( Distributive d
-         , Universal c, SliceCokernelTo c i d
-         , Universal k, SliceKernelFrom k i d
-         )
-  => HomOriented (SliceCokernelKernel c k i d) where
-  pmap s@SliceCokernel a@(SliceTo k _) = SliceFrom k a' where
-    a' = cokernelFactor $ universalCone $ sliceCokernelTo' s a
-  pmap s@SliceKernel a@(SliceFrom k _) = SliceTo k a' where
-    a' = kernelFactor $ universalCone $ sliceKernelFrom' s a
+instance (Distributive d, Sliced i d, Conic c)
+  => ApplicativeG Id (SliceAdjunction i c d) (->) where
+  
+  amapG (SliceCokernel cs) = toIdG (sliceCokernel cs)
+  amapG (SliceKernel ks)   = toIdG (sliceKernel ks)
 
-instance ( Distributive d
-         , Universal c, SliceCokernelTo c i d
-         , Universal k, SliceKernelFrom k i d
-         )
-  => HomMultiplicative (SliceCokernelKernel c k i d)
+instance (Distributive d, Sliced i d, Conic c)
+  => ApplicativeG Pnt (SliceAdjunction i c d) (->) where
+  
+  amapG (SliceCokernel cs) (Pnt a@(SliceTo k _)) = Pnt (SliceFrom k a') where
+    a' = cokernelFactor $ universalCone $ limes cs (SliceDiagramCokernel a)
+
+  amapG (SliceKernel ks) (Pnt a@(SliceFrom k _)) = Pnt (SliceTo k a') where
+    a' = kernelFactor $ universalCone $ limes ks (SliceDiagramKernel a)
+
+
+instance (Distributive d, Sliced i d, Conic c) => HomOriented (SliceAdjunction i c d)
+instance (Distributive d, Sliced i d, Conic c) => HomMultiplicative (SliceAdjunction i c d)
 
 --------------------------------------------------------------------------------
 -- xSliceFactorTo -
@@ -216,28 +246,29 @@ xSliceFactorFrom (XStart _ xFrom) i = do
   where p = slicePoint i
 
 --------------------------------------------------------------------------------
--- prpHomOrtSliceCokernelKernel -
+-- prpHomOrtSliceAdjunction -
 
--- | validity for the values of 'SliceCokernelKernel' to be 'HomOriented'.
-prpHomOrtSliceCokernelKernel
-  :: (Universal c, SliceCokernelTo c i d, Universal k, SliceKernelFrom k i d)
-  => Proxy c
-  -> Proxy k
+-- | validity for the values of 'SliceAdjunction' to be 'HomOriented'.
+prpHomOrtSliceAdjunction
+  :: (Distributive d, Sliced i d, Conic c)
+  => SliceKernels i c d
+  -> SliceCokernels i c d
   -> XOrtSite To d
   -> XOrtSite From d
   -> i d
   -> Statement
-prpHomOrtSliceCokernelKernel c k xTo xFrom i = Prp "HomOrtSliceCokernelKernel"
-  :<=>: prpHomOrt (xSliceCokernel c k xTo i <|> xSliceKernel c k xFrom i) where
+prpHomOrtSliceAdjunction ks cs xTo xFrom i = Prp "HomOrtSliceAdjunction"
+  :<=>: prpHomOriented (xSliceCokernel cs xTo i <|> xSliceKernel ks xFrom i) where
   
   xSliceCokernel :: (Multiplicative d, Sliced i d)
-    => Proxy c -> Proxy k -> XOrtSite To d -> i d -> XHomOrt (SliceCokernelKernel c k i d)
-  xSliceCokernel _ _ xTo i = amap1 (SomeApplication SliceCokernel) $ xSliceFactorTo xTo i
+    => SliceCokernels i c d -> XOrtSite To d -> i d -> X (SomeApplication (SliceAdjunction i c d))
+  xSliceCokernel cs xTo i = amap1 (SomeApplication (SliceCokernel cs)) $ xSliceFactorTo xTo i
 
   xSliceKernel :: (Multiplicative d, Sliced i d)
-    => Proxy c -> Proxy k -> XOrtSite From d -> i d -> XHomOrt (SliceCokernelKernel c k i d)
-  xSliceKernel _ _ xFrom i = amap1 (SomeApplication SliceKernel) $ xSliceFactorFrom xFrom i
+    => SliceKernels i c d -> XOrtSite From d -> i d -> X (SomeApplication (SliceAdjunction i c d))
+  xSliceKernel ks xFrom i = amap1 (SomeApplication (SliceKernel ks)) $ xSliceFactorFrom xFrom i
 
+{-
 --------------------------------------------------------------------------------
 -- prpHomMltSliceCokernelKernel -
 
@@ -286,48 +317,51 @@ slcCokernel _ _ _ = SliceCokernel
 slcKernel :: Proxy c -> Proxy k -> Slice From i d
   -> SliceCokernelKernel c k i d (SliceFactor From i d) (SliceFactor To i d) 
 slcKernel _ _ _ = SliceKernel
+-}
 
 --------------------------------------------------------------------------------
 -- slcCokerKer -
 
 -- | the right unit of the cokernel-kernel adjunction 'slcAdjunction'.
-slcCokerKer :: (Universal c, SliceCokernelTo c i d, Universal k, SliceKernelFrom k i d)
-  => Proxy c
-  -> Proxy k
+slcCokerKer :: (Distributive d, Sliced i d, Conic c)
+  => SliceCokernels i c d
+  -> SliceKernels i c d
   -> Slice To i d -> SliceFactor To i d 
-slcCokerKer c k a@(SliceTo i a') = SliceFactor a (SliceTo i b') u where
-  f         = pmap (slcCokernel c k a) a
-  aCokerKer = sliceKernelFrom' (slcKernel c k f) f
-  b'        = kernelFactor $ universalCone aCokerKer
-  u         = universalFactor aCokerKer (ConeKernel (diagram (universalCone aCokerKer)) a')
-  
+slcCokerKer cs ks a@(SliceTo i a') = SliceFactor a (SliceTo i b') u where
+  f       = pmap (SliceCokernel cs) a
+  fKer    = limes ks (SliceDiagramKernel f)
+  fKerDgm = diagrammaticObject $ cone $ universalCone fKer
+  b'      = kernelFactor $ universalCone fKer
+  u       = universalFactor fKer (ConeKernel fKerDgm a')
+
 --------------------------------------------------------------------------------
 -- slcKerCoker -
 
 -- | the left unit of the cokernel-kenrel adjunction 'slcAdjunction'.
-slcKerCoker :: (Universal c, SliceCokernelTo c i d, Universal k, SliceKernelFrom k i d)
-  => Proxy c
-  -> Proxy k
+slcKerCoker :: (Distributive d, Sliced i d, Conic c)
+  => SliceCokernels i c d
+  -> SliceKernels i c d
   -> Slice From i d -> SliceFactor From i d
-slcKerCoker c k a@(SliceFrom i a') = SliceFactor (SliceFrom i b') a u where
-  t = pmap (slcKernel c k a) a
-  aKerCoker = sliceCokernelTo' (slcCokernel c k t) t
-  b' = cokernelFactor $ universalCone aKerCoker
-  u = universalFactor aKerCoker (ConeCokernel (diagram (universalCone aKerCoker)) a')
+slcKerCoker cs ks a@(SliceFrom i a') = SliceFactor (SliceFrom i b') a u where
+  t         = pmap (SliceKernel ks) a
+  tCoker    = limes cs (SliceDiagramCokernel t)
+  tCokerDgm = diagrammaticObject $ cone $ universalCone tCoker
+  b'        = cokernelFactor $ universalCone tCoker
+  u         = universalFactor tCoker (ConeCokernel tCokerDgm a')
 
 --------------------------------------------------------------------------------
 -- slcAdjunction -
 
 -- | the cokernel-kenrel adjunction.
-slcAdjunction :: (Universal c, SliceCokernelTo c i d, Universal k, SliceKernelFrom k i d)
-  => Proxy c
-  -> Proxy k
+slcAdjunction :: (Distributive d, Sliced i d, Conic c)
+  => SliceCokernels i c d
+  -> SliceKernels i c d
   -> i d
-  -> Adjunction (SliceCokernelKernel c k i d) (SliceFactor From i d) (SliceFactor To i d)
-slcAdjunction c k _ = Adjunction l r u v where
-  l = SliceCokernel
-  r = SliceKernel
-  u = slcCokerKer c k
-  v = slcKerCoker c k
+  -> Adjunction (SliceAdjunction i c d) (SliceFactor From i d) (SliceFactor To i d)
+slcAdjunction cs ks _ = Adjunction l r u v where
+  l = SliceCokernel cs
+  r = SliceKernel ks
+  u = slcCokerKer cs ks
+  v = slcKerCoker cs ks
 
 
