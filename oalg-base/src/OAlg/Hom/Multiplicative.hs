@@ -26,7 +26,7 @@ module OAlg.Hom.Multiplicative
   (
     -- * Disjunctive
     HomMultiplicativeDisjunctive
-  , toDualOpMlt
+  , toDualOpMlt, homDisjOpMlt
 
     -- * Covariant
   , HomMultiplicative
@@ -34,8 +34,13 @@ module OAlg.Hom.Multiplicative
     -- * Dualisable
   , DualisableMultiplicative
 
+    -- * X
+  , XHomMlt, xMltHomMlt
+  , xosHomMlt
+  
     -- * Proposition
   , prpHomMultiplicativeDisjunctive
+  , prpHomMultiplicative
   , prpHomDisjMultiplicative, prpHomDisjOpMlt
   , prpDualisableMultiplicativeOne
   , prpDualisableMultiplicativeMlt
@@ -188,11 +193,29 @@ prpDualisableMultiplicativeMlt q s xmp = Prp "DualisableMultiplicativeMlt" :<=>:
     mArw = toDualArw q s
 
 --------------------------------------------------------------------------------
+-- XHomMlt -
+
+data XHomMlt x = XHomMlt (X (Point x)) (X (Mltp2 x))
+
+--------------------------------------------------------------------------------
+-- xMltXHomMlt -
+
+xMltHomMlt :: XMlt x -> XHomMlt x
+xMltHomMlt (XMlt _ xp _ _ xm2 _) = XHomMlt xp xm2
+
+--------------------------------------------------------------------------------
+-- xosHomMlt -
+
+xosHomMlt :: Multiplicative x => XOrtSite d x -> XHomMlt x
+xosHomMlt xos = XHomMlt (xosPoint xos) (xMltp2 xos)
+
+--------------------------------------------------------------------------------
 -- prpHomMultiplicativeDisjunctive -
 
+-- | validity according to 'HomMultiplicativeDisjunctive'.
 prpHomMultiplicativeDisjunctive :: HomMultiplicativeDisjunctive h
-  => h x y -> XMlt x -> Statement
-prpHomMultiplicativeDisjunctive h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMultipliative"
+  => h x y -> XHomMlt x -> Statement
+prpHomMultiplicativeDisjunctive h (XHomMlt xp xm2) = Prp "HomDisjunctiveMultipliative"
   :<=>: case variant2 h of
     Covariant     -> Label "Cov" :<=>:
       And [ relMapMltOne sx sy mArw mPnt xp
@@ -210,12 +233,27 @@ prpHomMultiplicativeDisjunctive h (XMlt _ xp _ _ xm2 _) = Prp "HomDisjunctiveMul
     mPnt = pmap h
 
 --------------------------------------------------------------------------------
+-- homDisjOpMlt -
+
+homDisjOpMlt :: HomMultiplicative h
+  => h x y -> Variant2 Covariant (HomDisj Mlt Op h) x y
+homDisjOpMlt = homDisj
+
+--------------------------------------------------------------------------------
+-- prpHomMultiplicative -
+
+-- | validity according to 'HomMultiplicative'.
+prpHomMultiplicative :: HomMultiplicative h
+  => h x y -> XHomMlt x -> Statement
+prpHomMultiplicative h xhMlt = Prp "HomMultiplicative"
+  :<=>: prpHomMultiplicativeDisjunctive h' xhMlt where Covariant2 h' = homDisjOpMlt h
+
+--------------------------------------------------------------------------------
 -- prpHomDisjMultiplicative -
 
 prpHomDisjMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
   => Struct MltX x -> HomDisj s o h x y -> Statement
-prpHomDisjMultiplicative Struct h = prpHomMultiplicativeDisjunctive h xStandardMlt
-
+prpHomDisjMultiplicative Struct h = prpHomMultiplicativeDisjunctive h (xMltHomMlt xStandardMlt)
 
 --------------------------------------------------------------------------------
 -- xsoMltX -

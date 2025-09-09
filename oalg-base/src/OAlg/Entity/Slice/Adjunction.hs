@@ -21,40 +21,47 @@
 -- 'Cokernel'-'Kernel' 'Adjunction' for 'Slice'd structures. 
 module OAlg.Entity.Slice.Adjunction
   (
-{-
+
     -- * Adjunction
-    slcAdjunction
-
-    -- ** Homomorphism
-  , SliceCokernelKernel(..)
-  , SliceCokernelTo(..)
-  , SliceKernelFrom(..)
-
-    -- ** Unit
+    SliceAdjunction(..), slcAdjunction
   , slcCokerKer, slcKerCoker
+
+    -- * Diagram
+  , SliceDiagram(..)
+  , sdgMapS, sdgMapCov, sdgMapCnt
+
+    -- * Limits
+    
+  , SliceCokernels, slcCokernelsCone
+  , sliceCokernel
   
+  , SliceKernels, slcKernelsCone
+  , sliceKernel
+
     -- * X
-  , xSliceFactorTo, xSliceFactorFrom
-  
+  , xSliceFactorFrom
+
     -- * Proposition
-  , prpHomMltSliceCokernelKernel
--}
+  , prpHomOrtSliceAdjunction
+  , prpHomMltSliceAdjunction
   ) where
 
 import Control.Monad
 import Control.Applicative ((<|>))
 
-import Data.Kind
-import Data.Typeable
-
 import OAlg.Prelude
 
+import OAlg.Category.SDuality
+import OAlg.Category.NaturalTransformable
 import OAlg.Category.Unify
+
+import OAlg.Data.Either
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 
@@ -70,12 +77,6 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 import OAlg.Entity.Slice.Definition
 import OAlg.Entity.Slice.Sliced
-
-{-
-instance (Typeable c, Typeable k, Typeable i, Typeable d, Typeable x, Typeable y)
-  => Entity (SliceCokernelKernel c k i d x y)
-instance (Typeable c, Typeable k, Typeable i, Typeable d) => Entity2 (SliceCokernelKernel c k i d)
--}
 
 --------------------------------------------------------------------------------
 -- SliceDiagram -
@@ -93,6 +94,47 @@ instance Validable (SliceDiagram i t n m x) where
   valid (SliceDiagramCokernel t) = valid t
 
 --------------------------------------------------------------------------------
+-- sdgMapCov -
+
+-- | mapping a slice diagram according to a covariant homomorphism.
+sdgMapCovStruct :: HomSlicedOriented i h
+  => Struct (Sld i) y -> Variant2 Covariant h x y -> SliceDiagram i t n m x -> SliceDiagram i t n m y
+sdgMapCovStruct Struct h (SliceDiagramKernel d)   = SliceDiagramKernel $ slMapCov h d
+sdgMapCovStruct Struct h (SliceDiagramCokernel d) = SliceDiagramCokernel $ slMapCov h d
+
+-- | mapping a slice diagram according to a covariant homomorphism.
+sdgMapCov :: HomSlicedOriented i h
+  => Variant2 Covariant h x y -> SliceDiagram i t n m x -> SliceDiagram i t n m y
+sdgMapCov h = sdgMapCovStruct (tau (range h)) h
+
+--------------------------------------------------------------------------------
+-- sdgMapCnt -
+
+-- | mapping a slice diagram according to a contravariant homomorphism.
+sdgMapCntStruct :: HomSlicedOriented i h
+  => Struct (Sld i) y
+  -> Variant2 Contravariant h x y -> SliceDiagram i t n m x -> SliceDiagram i (Dual t) n m y
+sdgMapCntStruct Struct h (SliceDiagramKernel d)   = SliceDiagramCokernel $ slMapCnt h d
+sdgMapCntStruct Struct h (SliceDiagramCokernel d) = SliceDiagramKernel $ slMapCnt h d
+
+-- | mapping a slice diagram according to a contravariant homomorphism.
+sdgMapCnt :: HomSlicedOriented i h
+  => Variant2 Contravariant h x y -> SliceDiagram i t n m x -> SliceDiagram i (Dual t) n m y
+sdgMapCnt h = sdgMapCntStruct (tau (range h)) h
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (SliceDiagram i t n m) = SliceDiagram i (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- sdgMapS -
+
+sdgMapS :: (HomSlicedOriented i h, t ~ Dual (Dual t))
+  => h x y -> SDualBi (SliceDiagram i t n m) x -> SDualBi (SliceDiagram i t n m) y
+sdgMapS = vmapBi sdgMapCov sdgMapCov sdgMapCnt sdgMapCnt
+
+--------------------------------------------------------------------------------
 -- Diagrammatic -
 
 instance Diagrammatic (SliceDiagram i) where
@@ -108,11 +150,75 @@ instance Diagrammatic (SliceDiagram i) where
 type SliceKernels i c = KernelsG c (SliceDiagram i) N1
 
 --------------------------------------------------------------------------------
--- SlixeCokernels -
+-- slcKernelsCone -
+
+-- | the induced slice kernels for 'Cone's.
+slcKernelsCone :: Distributive x => Kernels N1 x -> SliceKernels i Cone x
+slcKernelsCone ks = LimitsG sks where
+  sks sd = LimesProjective sl su where
+    d = diagram sd
+    l = limes ks d
+    
+    sl = ConeKernel sd (kernelFactor $ universalCone l) 
+    su (ConeKernel _ x) = universalFactor l (ConeKernel d x)
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammatic -
+
+instance (HomSlicedOriented i h, t ~ Dual (Dual t))
+  => ApplicativeG (SDualBi (DiagramG (SliceDiagram i) t n m)) h (->) where
+  amapG h = sdbFromDgmObj . sdgMapS h . sdbToDgmObj
+  
+instance
+  ( CategoryDisjunctive h
+  , HomSlicedOriented i h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (DiagramG (SliceDiagram i) t n m)) h (->)
+
+instance
+  ( CategoryDisjunctive h
+  , HomSlicedOriented i h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (DiagramG (SliceDiagram i) t n m)) (SDualBi (DiagramG Diagram t n m))
+
+instance
+  ( CategoryDisjunctive h
+  , HomSlicedOriented i h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammatic h (SliceDiagram i) t n m
+
+--------------------------------------------------------------------------------
+-- SliceCokernels -
 
 -- | generalized cokernels according to a slice diagram.
 type SliceCokernels i c = CokernelsG c (SliceDiagram i) N1
 
+--------------------------------------------------------------------------------
+-- slcCokernelsCone -
+
+slcCokernelConeStruct :: Distributive x
+  => Variant2 Contravariant (IsoO (Dst,Sld i) Op) x (Op x)
+  -> Cokernels N1 x -> SliceCokernels i Cone x
+slcCokernelConeStruct (Contravariant2 i) cs = scs where
+  
+  SDualBi (Left1 ks) = amapG i (SDualBi (Right1 cs))
+  sks = slcKernelsCone ks
+  SDualBi (Right1 scs) = amapG (inv2 i) (SDualBi (Left1 sks))
+
+-- | the induced slice cokernels for 'Cone's.
+slcCokernelsCone ::
+  ( Distributive x
+  , Sliced i x
+  )
+  => Cokernels N1 x -> SliceCokernels i Cone x
+slcCokernelsCone = slcCokernelConeStruct toDualOpDstSld
 
 --------------------------------------------------------------------------------
 -- SliceAdjunction -
@@ -130,7 +236,7 @@ instance Show2 (SliceAdjunction i c d) where
   show2 (SliceKernel _)   = "SliceKernel"
   
 --------------------------------------------------------------------------------
--- SliceCokernelKernel - Morphism -
+-- SliceAdjunction - Morphism -
 
 instance (Multiplicative d, Sliced i d) => Morphism (SliceAdjunction i c d) where
   type ObjectClass (SliceAdjunction i c d) = Mlt
@@ -158,6 +264,7 @@ instance Validable2 (SliceAdjunction c k i d)
 
 --------------------------------------------------------------------------------
 -- sliceKernel -
+
 sliceKernel ::
   ( Distributive d
   , Sliced i d
@@ -251,13 +358,13 @@ xSliceFactorFrom (XStart _ xFrom) i = do
 -- | validity for the values of 'SliceAdjunction' to be 'HomOriented'.
 prpHomOrtSliceAdjunction
   :: (Distributive d, Sliced i d, Conic c)
-  => SliceKernels i c d
-  -> SliceCokernels i c d
+  => SliceCokernels i c d
+  -> SliceKernels i c d
   -> XOrtSite To d
   -> XOrtSite From d
   -> i d
   -> Statement
-prpHomOrtSliceAdjunction ks cs xTo xFrom i = Prp "HomOrtSliceAdjunction"
+prpHomOrtSliceAdjunction cs ks xTo xFrom i = Prp "HomOrtSliceAdjunction"
   :<=>: prpHomOriented (xSliceCokernel cs xTo i <|> xSliceKernel ks xFrom i) where
   
   xSliceCokernel :: (Multiplicative d, Sliced i d)
@@ -268,56 +375,25 @@ prpHomOrtSliceAdjunction ks cs xTo xFrom i = Prp "HomOrtSliceAdjunction"
     => SliceKernels i c d -> XOrtSite From d -> i d -> X (SomeApplication (SliceAdjunction i c d))
   xSliceKernel ks xFrom i = amap1 (SomeApplication (SliceKernel ks)) $ xSliceFactorFrom xFrom i
 
-{-
 --------------------------------------------------------------------------------
--- prpHomMltSliceCokernelKernel -
+-- prpHomMltSliceAdjunction -
 
--- | validity for the values of 'SliceCokernelKernel' to be 'HomMultiplicative'.
-prpHomMltSliceCokernelKernel
-  :: (Universal c, SliceCokernelTo c i d, Universal k, SliceKernelFrom k i d)
-  => Proxy c
-  -> Proxy k
+-- | validity for the values of 'SliceAdjunction' being 'HomMultiplicative'.
+prpHomMltSliceAdjunction
+  :: (Distributive d, Sliced i d, Conic c)
+  => SliceCokernels i c d
+  -> SliceKernels i c d
   -> XOrtSite To d
   -> XOrtSite From d
   -> i d
   -> Statement
-prpHomMltSliceCokernelKernel c k xTo xFrom i = Prp "HomMltSliceCokernelKernel"
-  :<=>: prpHomMlt (xHomMltKernelCokernel c k xTo xFrom i) where
+prpHomMltSliceAdjunction cs ks xTo xFrom i = Prp "HomMltSliceAdjunction" :<=>:
+  And [ prpHomMultiplicative (SliceCokernel cs) xSlcTo
+      , prpHomMultiplicative (SliceKernel ks) xSlcFrom
+      ] where
 
-  xHomMltKernelCokernel :: (Multiplicative d, Sliced i d)
-    => Proxy c -> Proxy k
-    -> XOrtSite To d -> XOrtSite From d -> i d -> XHomMlt (SliceCokernelKernel c k i d)
-  xHomMltKernelCokernel c k xTo xFrom i
-    = XHomMlt (xpCoker <|> xpKer) (xm2Coker <|> xm2Ker) where
-    XHomMlt xpCoker xm2Coker = xHomMltCokernel c k xTo i
-    XHomMlt xpKer xm2Ker = xHomMltKernel c k xFrom i
-  
-  xHomMltCokernel :: (Multiplicative d, Sliced i d)
-    => Proxy c -> Proxy k
-    -> XOrtSite To d -> i d -> XHomMlt (SliceCokernelKernel c k i d)
-  xHomMltCokernel _ _ xTo i = XHomMlt xApplPnt xApplMltp2 where
-    xApplPnt = amap1 (SomeApplPnt SliceCokernel) $ xSliceTo xTo i
-    xApplMltp2 = amap1 (SomeApplMltp2 SliceCokernel)
-               $ xMltp2
-               $ xosXOrtSiteToSliceFactorTo xTo i
-
-  xHomMltKernel :: (Multiplicative d, Sliced i d)
-    => Proxy c -> Proxy k
-    -> XOrtSite From d -> i d -> XHomMlt (SliceCokernelKernel c k i d)
-  xHomMltKernel _ _ xFrom i = XHomMlt xApplPnt xApplMltp2 where
-    xApplPnt = amap1 (SomeApplPnt SliceKernel) $ xSliceFrom xFrom i
-    xApplMltp2 = amap1 (SomeApplMltp2 SliceKernel)
-               $ xMltp2
-               $ xosXOrtSiteFromSliceFactorFrom xFrom i
-
-slcCokernel :: Proxy c -> Proxy k -> Slice To i d
-  -> SliceCokernelKernel c k i d (SliceFactor To i d) (SliceFactor From i d)
-slcCokernel _ _ _ = SliceCokernel
-
-slcKernel :: Proxy c -> Proxy k -> Slice From i d
-  -> SliceCokernelKernel c k i d (SliceFactor From i d) (SliceFactor To i d) 
-slcKernel _ _ _ = SliceKernel
--}
+  xSlcTo   = xosHomMlt $ xosXOrtSiteToSliceFactorTo xTo i
+  xSlcFrom = xosHomMlt $ xosXOrtSiteFromSliceFactorFrom xFrom i
 
 --------------------------------------------------------------------------------
 -- slcCokerKer -

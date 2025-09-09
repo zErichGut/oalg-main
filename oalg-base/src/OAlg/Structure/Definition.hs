@@ -86,16 +86,12 @@ instance Singular (Struct s)
 tauFst :: Struct (s,t) x -> Struct s x
 tauFst Struct = Struct
 
-instance Transformable (s,t) s where tau = tauFst
-
 -----------------------------------------------------------------------------------------
 -- tauSnd -
 
 -- | the second struct according to @__(s,t)__@.
 tauSnd :: Struct (s,t) x -> Struct t x
 tauSnd Struct = Struct
-
-instance Transformable (s,t) t where tau = tauSnd
 
 --------------------------------------------------------------------------------
 -- Structure2 -

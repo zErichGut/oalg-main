@@ -38,6 +38,7 @@ module OAlg.Entity.Slice.Sliced
 
     -- ** Distributive
   , HomSlicedDistributive
+  , toDualOpDstSld, toDualOpDstSld'
   
     -- * Proposition
   , prpHomSlicedOriented
@@ -48,10 +49,7 @@ import Data.Typeable
 
 import OAlg.Prelude
 
-import OAlg.Category.Path
-
 import OAlg.Data.Singleton
-import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
@@ -165,9 +163,27 @@ instance Transformable s Ort => Transformable (s,Sld i) Ort where
 
 instance Transformable s Mlt => Transformable (s,Sld i) Mlt where
   tau = tau . tauFst
-  
-instance Transformable s Ort => TransformableOrt (s,Sld i)
-instance TransformableMlt s  => TransformableMlt (s,Sld i)
+
+instance Transformable s Fbr => Transformable (s,Sld i) Fbr where
+  tau = tau . tauFst
+
+instance Transformable s Add => Transformable (s,Sld i) Add where
+  tau = tau . tauFst
+
+instance Transformable s FbrOrt => Transformable (s,Sld i) FbrOrt where
+  tau = tau . tauFst
+
+instance Transformable s Dst => Transformable (s,Sld i) Dst where
+  tau = tau . tauFst
+
+instance Transformable (s,Sld i) (Sld i) where tau = tauSnd
+
+instance Transformable s Ort   => TransformableOrt (s,Sld i)
+instance TransformableMlt s    => TransformableMlt (s,Sld i)
+instance TransformableFbr s    => TransformableFbr (s,Sld i) 
+instance TransformableAdd s    => TransformableAdd (s,Sld i) 
+instance TransformableFbrOrt s => TransformableFbrOrt (s,Sld i) 
+instance TransformableDst s    => TransformableDst (s,Sld i) 
 
 instance Transformable (s,Sld i) Type where tau _ = Struct
 
@@ -219,3 +235,13 @@ toDualOpMltSld' _ = toDualOpMltSld
 -- HomSlicedDistributive -
 
 type HomSlicedDistributive i h = (HomSlicedOriented i h, HomDistributiveDisjunctive h)
+
+toDualOpDstSld :: (Sliced i x, Distributive x)
+  => Variant2 Contravariant (IsoO (Dst,Sld i) Op) x (Op x)
+toDualOpDstSld = toDualO Struct
+
+toDualOpDstSld' :: (Sliced i x, Distributive x)
+  => q i -> Variant2 Contravariant (IsoO (Dst,Sld i) Op) x (Op x)
+toDualOpDstSld' _  = toDualOpDstSld
+
+  
