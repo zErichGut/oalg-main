@@ -18,7 +18,7 @@
 -- homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.Definition
   (
-{-
+
     -- * Abelian Group
     AbGroup(..), abg, isSmithNormal
   , abgDim
@@ -50,7 +50,7 @@ module OAlg.AbelianGroup.Definition
 
     -- * Proposition
   , prpAbHom
--}
+
   ) where
 
 import Prelude(ceiling)
@@ -59,7 +59,6 @@ import Control.Monad
 import Control.Applicative ((<|>))
 
 import Data.List (foldl,(++),filter,takeWhile,zip)
-import Data.Typeable
 
 import OAlg.Prelude
 
@@ -85,6 +84,7 @@ import OAlg.Structure.Operational
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
@@ -622,9 +622,11 @@ instance Morphism AbHomFree where
   homomorphous AbHomFree = Struct :>: Struct
   homomorphous FreeAbHom = Struct :>: Struct
 
-{-
-instance Applicative AbHomFree where
-  amap AbHomFree h@(AbHom (Matrix _ _ xs)) = Matrix n m xs' where
+--------------------------------------------------------------------------------
+-- abhzFree -
+
+abhzFree :: AbHom -> Matrix Z
+abhzFree h@(AbHom (Matrix _ _ xs)) = Matrix n m xs' where
     s :> e = orientation h
     u = dim ()
     n = u ^ abgFrees e
@@ -652,14 +654,22 @@ instance Applicative AbHomFree where
     rwFrees j'' ((ZMod _,j):js') hs@((_,j'):hs') = if j < j'
       then rwFrees j'' js' hs
       else rwFrees j'' js' hs'
-    
-  amap FreeAbHom m = zabh m
 
-instance HomOriented AbHomFree where
-  pmap AbHomFree g = dim () ^ abgFrees g
-  pmap FreeAbHom n = abg 0 ^ lengthN n
+instance ApplicativeG Id AbHomFree (->) where
+  amapG AbHomFree = toIdG abhzFree
+  amapG FreeAbHom = toIdG zabh
 
+instance ApplicativeG Pnt AbHomFree (->) where
+  amapG AbHomFree (Pnt g) = Pnt (dim () ^ abgFrees g)
+  amapG FreeAbHom (Pnt n) = Pnt (abg 0 ^ lengthN n)
+
+instance HomOriented AbHomFree
 instance HomMultiplicative AbHomFree
+
+instance ApplicativeG Rt AbHomFree (->) where
+  amapG h@AbHomFree (Rt x) = Rt (omap h x)
+  amapG h@FreeAbHom (Rt x) = Rt (omap h x)
+
 instance HomFibred AbHomFree
 instance HomFibredOriented AbHomFree
 instance HomAdditive AbHomFree
@@ -795,11 +805,11 @@ instance Show AbElementForm where
 
 -- | elements of an finitely generated abelian group. There 'root' - which is an element of 'AbGroup' -
 --   gives there affiliated group. They are gererated via 'make'.
-newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Show,Eq,Ord,Validable,Entity)
+newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Show,Eq,Ord,Validable)
 
 instance LengthN AbElement where
   lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a
-  
+
 --------------------------------------------------------------------------------
 -- AbElement - Constructable -
 
@@ -853,8 +863,13 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
 --------------------------------------------------------------------------------
 -- AbElement - Abelian -
 
-instance Fibred AbElement where
-  type Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
+type instance Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
+instance ShowRoot AbElement
+instance EqRoot AbElement
+instance ValidableRoot AbElement
+instance TypeableRoot AbElement
+
+instance Fibred AbElement where  
   root (AbElement a) = root a
 
 instance Additive AbElement where
@@ -1279,4 +1294,4 @@ xAbhSomeFreeSlice nMax = do
     SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
   where z1 = abg 0
 
--}    
+
