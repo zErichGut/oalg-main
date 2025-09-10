@@ -66,6 +66,8 @@ import OAlg.Entity.Diagram
 import OAlg.Entity.Sequence
 import OAlg.Entity.Matrix as M
 import OAlg.Entity.Slice
+import OAlg.Entity.Slice.Free
+import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Product (fromWord)
 
 import OAlg.AbelianGroup.Definition
@@ -73,7 +75,7 @@ import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
 import OAlg.AbelianGroup.Free
 
-{-
+
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFree -
 
@@ -149,7 +151,7 @@ abhCokernelFreeDgmLftFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
         r   = lengthN (start aInv) >- lengthN (rows zf)
 
         
-        
+{-        
 xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagramFree N1 AbHom)
 xCokernelDiagramFree xm = do
   m <- xm

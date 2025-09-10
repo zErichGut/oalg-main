@@ -54,10 +54,10 @@ module OAlg.Limes.KernelsAndCokernels
   , prpIsKernel, prpIsCokernel
 
     -- * X
-  , XStandardEligibleConeKernel
-  , XStandardEligibleConeFactorKernel
-  , XStandardEligibleConeCokernel
-  , XStandardEligibleConeFactorCokernel
+  , XStandardEligibleConeKernel, XStandardEligibleConeKernel1
+  , XStandardEligibleConeFactorKernel, XStandardEligibleConeFactorKernel1
+  , XStandardEligibleConeCokernel, XStandardEligibleConeCokernel1
+  , XStandardEligibleConeFactorCokernel, XStandardEligibleConeFactorCokernel1
 
   )
   where
@@ -379,5 +379,30 @@ class XStandardGEligibleCone Cone Dst Injective Diagram (Parallel RightToLeft) N
 -- | helper class to avoid undecidable instances.
 class XStandardGEligibleConeFactor Cone Dst Injective Diagram (Parallel RightToLeft) N2 n x
   => XStandardEligibleConeFactorCokernel n x
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeKernel1 -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeKernel N1 c => XStandardEligibleConeKernel1 c
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeFactorKernel1 -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeFactorKernel N1 c => XStandardEligibleConeFactorKernel1 c
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeCokernel1 -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeCokernel N1 c => XStandardEligibleConeCokernel1 c
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeFactorCokernel1 -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeFactorCokernel N1 c => XStandardEligibleConeFactorCokernel1 c
+
 
 

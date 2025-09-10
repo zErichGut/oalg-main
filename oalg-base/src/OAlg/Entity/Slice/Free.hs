@@ -39,7 +39,6 @@ module OAlg.Entity.Slice.Free
     -- ** Kernel
   , KernelFree, KernelDiagramFree
 
-{-  
     -- ** Liftable Cokernel
   , CokernelDiagramFree
   , CokernelLiftableFree(..)
@@ -47,11 +46,13 @@ module OAlg.Entity.Slice.Free
 
     -- *** Liftable Cokernels
   , clfLimes, ClfCokernels(..)
--}  
+
     -- ** Pullback
   , PullbackFree, PullbackDiagramFree  
 
   ) where
+
+import Control.Monad (join)
 
 import Data.Typeable
 import Data.List ((++))
@@ -73,7 +74,7 @@ import OAlg.Entity.FinList hiding ((++))
 import OAlg.Entity.Diagram
 import OAlg.Entity.Slice.Definition
 import OAlg.Entity.Slice.Sliced
--- import OAlg.Entity.Slice.Liftable
+import OAlg.Entity.Slice.Liftable
 
 --------------------------------------------------------------------------------
 -- Free -
@@ -274,10 +275,6 @@ type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
 -- | pullback of a diagram with free points.
 type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
 
-
-
-
-{-
 --------------------------------------------------------------------------------
 -- CokernelLiftableFree -
 
@@ -288,13 +285,18 @@ type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
 -- For any @k@ in @'Any' __k__@ holds:
 -- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
 data CokernelLiftableFree c
-  = CokernelLiftableFree (Cokernel N1 c) (forall (k :: N') . Any k -> Liftable From (Free k) c)
+  = CokernelLiftableFree (Cokernel N1 c)
+    (forall (k :: N') . Any k -> Liftable Injective (Free k) c)
 
 instance Oriented c => Show (CokernelLiftableFree c) where
   show (CokernelLiftableFree c _) = join ["CokernelLiftableFree (", show c, ")"]
 
-
-instance (Distributive c, XStandardOrtSiteFrom c, XStandardOrtOrientation c)
+instance
+  ( Distributive c
+  , XStandardEligibleConeCokernel1 c
+  , XStandardEligibleConeFactorCokernel1 c
+  , XStandardOrtOrientation c
+  )
   => Validable (CokernelLiftableFree c) where
   valid (CokernelLiftableFree c l) = Label "CokernelLiftable" :<=>:
     And [ Label "c" :<=>: valid c
@@ -304,10 +306,10 @@ instance (Distributive c, XStandardOrtSiteFrom c, XStandardOrtOrientation c)
           cf = cokernelFactor $ universalCone c
           
           vldLftFree :: (Distributive c, XStandardOrtOrientation c)
-            => Any k -> c -> Liftable From (Free k) c -> Statement
+            => Any k -> c -> Liftable Injective (Free k) c -> Statement
           vldLftFree k cf lk 
             = And [ Label "l k" :<=>: valid lk
-                  , (cf == liftBase lk)
+                  , (cf == lftbBase lk)
                     :?> Params [ "k":=show k
                                , "cokernelFactor (universalCone c)":=show cf
                                , "l k":=show lk
@@ -325,7 +327,7 @@ clfCokernel (CokernelLiftableFree c _) = c
 -- clfLiftableFree -
 
 -- | the induced liftable.
-clfLiftableFree :: CokernelLiftableFree c -> Any k -> Liftable From (Free k) c
+clfLiftableFree :: CokernelLiftableFree c -> Any k -> Liftable Injective (Free k) c
 clfLiftableFree (CokernelLiftableFree _ l) = l
 
 --------------------------------------------------------------------------------
@@ -340,4 +342,4 @@ newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftable
 clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
 clfLimes (ClfCokernels l) = l
 
--}
+

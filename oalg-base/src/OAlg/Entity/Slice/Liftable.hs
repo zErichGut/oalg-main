@@ -128,8 +128,8 @@ instance Exception LiftableException where
 --         (3) @'slice' f '==' x '*' 'slice' f'@.
 --
 data Liftable p i x where
-  LiftableProjective :: x -> (Slice To i x -> Slice To i x) -> Liftable Projective i x
-  LiftableInjective :: x -> (Slice From i x -> Slice From i x) -> Liftable Injective i x
+  LiftableProjective :: Sliced i x => x -> (Slice To i x -> Slice To i x) -> Liftable Projective i x
+  LiftableInjective  :: Sliced i x => x -> (Slice From i x -> Slice From i x) -> Liftable Injective i x
 
 instance Show x => Show (Liftable s i x) where
   show (LiftableProjective x _) = join ["LiftableProjective (",show x,") lft"]
@@ -138,28 +138,35 @@ instance Show x => Show (Liftable s i x) where
 --------------------------------------------------------------------------------
 -- lftMapCov -
 
+lftMapCovStruct :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
+  => Struct (Sld i) y -> Variant2 Covariant (Inv2 h) x y -> Liftable p i x -> Liftable p i y
+lftMapCovStruct Struct (Covariant2 i) (LiftableProjective x xLft) = LiftableProjective y yLft where
+  y    = amap i x
+  yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
+lftMapCovStruct Struct (Covariant2 i) (LiftableInjective x xLft) = LiftableInjective y yLft where
+  y    = amap i x
+  yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
 
 lftMapCov :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
   => Variant2 Covariant (Inv2 h) x y -> Liftable p i x -> Liftable p i y
-lftMapCov (Covariant2 i) (LiftableProjective x xLft) = LiftableProjective y yLft where
-  y    = amap i x
-  yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
-lftMapCov (Covariant2 i) (LiftableInjective x xLft) = LiftableInjective y yLft where
-  y    = amap i x
-  yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
+lftMapCov h = lftMapCovStruct (tau (range h)) h
 
 
 --------------------------------------------------------------------------------
 -- lftMapCnt -
 
+lftMapCntStruct :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
+  => Struct (Sld i) y -> Variant2 Contravariant (Inv2 h) x y -> Liftable p i x -> Liftable (Dual p) i y
+lftMapCntStruct Struct (Contravariant2 i) (LiftableProjective x xLft) = LiftableInjective y yLft where
+  y    = amap i x
+  yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
+lftMapCntStruct Struct (Contravariant2 i) (LiftableInjective x xLft) = LiftableProjective y yLft where
+  y    = amap i x
+  yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
+
 lftMapCnt :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
   => Variant2 Contravariant (Inv2 h) x y -> Liftable p i x -> Liftable (Dual p) i y
-lftMapCnt (Contravariant2 i) (LiftableProjective x xLft) = LiftableInjective y yLft where
-  y    = amap i x
-  yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
-lftMapCnt (Contravariant2 i) (LiftableInjective x xLft) = LiftableProjective y yLft where
-  y    = amap i x
-  yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
+lftMapCnt h = lftMapCntStruct (tau (range h)) h
 
 --------------------------------------------------------------------------------
 -- Duality -
@@ -184,7 +191,7 @@ instance (CategoryDisjunctive h, HomSlicedMultiplicative i h, p ~ Dual (Dual p))
 --------------------------------------------------------------------------------
 -- Liftable - Valid -
 
-relLiftableProjective :: (Sliced i x, Multiplicative x)
+relLiftableProjective :: Multiplicative x
   => i x -> XOrtOrientation x -> Liftable Projective i x -> Statement
 relLiftableProjective i xo (LiftableProjective x lft)
   = And [ valid x        
@@ -214,7 +221,7 @@ relLiftableProjective i xo (LiftableProjective x lft)
                       , (1,xoPoint xo >>= xoArrow xo . (:>ip))
                       ]
 
-relLiftable :: (Sliced i x, Multiplicative x) => XOrtOrientation x -> Liftable p i x -> Statement
+relLiftable :: Multiplicative x => XOrtOrientation x -> Liftable p i x -> Statement
 relLiftable xo l = case l of
   LiftableProjective _ _ -> relLiftableProjective unit1 xo l
   LiftableInjective _ _  -> relLiftable (coXOrtOrientation xo) l' where
@@ -225,7 +232,7 @@ relLiftable xo l = case l of
     q _ = Proxy
     
 
-instance (Sliced i x, Multiplicative x, XStandardOrtOrientation x)
+instance (Multiplicative x, XStandardOrtOrientation x)
   => Validable (Liftable s i x) where
   valid l = Label "Liftable" :<=>: relLiftable xStandardOrtOrientation l
                                       
@@ -268,35 +275,50 @@ instance Conic (LiftableCone i) where
 -- lftcLiftable -
 
 -- | the associated 'Liftable'.
-lftcLiftable :: LiftableCone i s p d t n m x -> Liftable p i x
+lftcLiftable :: Sliced i x => LiftableCone i s p d t n m x -> Liftable p i x
 lftcLiftable (LiftableKernelCone k lft)   = LiftableProjective (kernelFactor k) lft
 lftcLiftable (LiftableCokernelCone c lft) = LiftableInjective (cokernelFactor c) lft
 
 --------------------------------------------------------------------------------
 -- lftcMapCov -
 
+lftcMapCovStruct :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
+  => Struct (Sld i) x -> Variant2 Covariant (Inv2 h) x y
+  -> LiftableCone i s p d t n m x -> LiftableCone i s p d t n m y
+lftcMapCovStruct Struct (Covariant2 i) c@(LiftableKernelCone k _)
+  = LiftableKernelCone k' lft' where
+    SDualBi (Right1 k')                          = amapG i (SDualBi (Right1 k))
+    SDualBi (Right1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))  
+lftcMapCovStruct Struct (Covariant2 i) c@(LiftableCokernelCone k _)
+  = LiftableCokernelCone k' lft' where
+    SDualBi (Right1 k')                         = amapG i (SDualBi (Right1 k))
+    SDualBi (Right1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+
 lftcMapCov :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
   => Variant2 Covariant (Inv2 h) x y
   -> LiftableCone i s p d t n m x -> LiftableCone i s p d t n m y
-lftcMapCov (Covariant2 i) c@(LiftableKernelCone k _) = LiftableKernelCone k' lft' where
-  SDualBi (Right1 k')                          = amapG i (SDualBi (Right1 k))
-  SDualBi (Right1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
-lftcMapCov (Covariant2 i) c@(LiftableCokernelCone k _) = LiftableCokernelCone k' lft' where
-  SDualBi (Right1 k')                         = amapG i (SDualBi (Right1 k))
-  SDualBi (Right1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+lftcMapCov h = lftcMapCovStruct (tau (domain h)) h
 
 --------------------------------------------------------------------------------
 -- lftcMapCnt
 
+lftcMapCntStruct :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
+  => Struct (Sld i) x
+  -> Variant2 Contravariant (Inv2 h) x y
+  -> LiftableCone i s p d t n m x -> LiftableCone i s (Dual p) d (Dual t) n m y
+lftcMapCntStruct Struct (Contravariant2 i) c@(LiftableKernelCone k _)
+  = LiftableCokernelCone k' lft' where
+    SDualBi (Left1 k')                         = amapG i (SDualBi (Right1 k))
+    SDualBi (Left1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+lftcMapCntStruct Struct (Contravariant2 i) c@(LiftableCokernelCone k _)
+  = LiftableKernelCone k' lft' where
+    SDualBi (Left1 k')                          = amapG i (SDualBi (Right1 k))
+    SDualBi (Left1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+
 lftcMapCnt :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
   => Variant2 Contravariant (Inv2 h) x y
   -> LiftableCone i s p d t n m x -> LiftableCone i s (Dual p) d (Dual t) n m y
-lftcMapCnt (Contravariant2 i) c@(LiftableKernelCone k _) = LiftableCokernelCone k' lft' where
-  SDualBi (Left1 k')                         = amapG i (SDualBi (Right1 k))
-  SDualBi (Left1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
-lftcMapCnt (Contravariant2 i) c@(LiftableCokernelCone k _) = LiftableKernelCone k' lft' where
-  SDualBi (Left1 k')                          = amapG i (SDualBi (Right1 k))
-  SDualBi (Left1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
+lftcMapCnt h = lftcMapCntStruct (tau (domain h)) h
 
 --------------------------------------------------------------------------------
 -- Duality -
@@ -332,7 +354,6 @@ instance
   )
   => FunctorialG (SDualBi (LiftableCone i s p d t n m)) (Inv2 h) (->)  
 
-
 --------------------------------------------------------------------------------
 -- LiftableKernel -
 
@@ -353,18 +374,17 @@ type LiftableCokernel i = CokernelG (LiftableCone i) Diagram N1
 -- | liftable cokernels according to a slice index @__i__@.
 type LiftableCokernels i = CokernelsG (LiftableCone i) Diagram N1
 
-
 --------------------------------------------------------------------------------
 -- lftlKernel -
 
 -- | the liftable property of 'LiftableKernel'.
-lftlKernel :: LiftableKernel i x -> Slice To i x -> Slice To i x
+lftlKernel :: Sliced i x => LiftableKernel i x -> Slice To i x -> Slice To i x
 lftlKernel = lift . lftcLiftable . universalCone
 
 --------------------------------------------------------------------------------
 -- lftlCokernel -
 
-lftlCokernel :: LiftableCokernel i x -> Slice From i x -> Slice From i x
+lftlCokernel :: Sliced i x => LiftableCokernel i x -> Slice From i x -> Slice From i x
 lftlCokernel = lift . lftcLiftable . universalCone
 
 --------------------------------------------------------------------------------
