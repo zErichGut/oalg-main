@@ -16,7 +16,8 @@
 --
 -- lifting of abelian homomorphisms.
 module OAlg.AbelianGroup.Liftable
-  ( -- * Lifting
+  (
+    -- * Lifting
     zMatrixLift
 
     -- * Proposition
@@ -26,6 +27,7 @@ module OAlg.AbelianGroup.Liftable
 
     -- * X
   , xLiftable
+
   ) where
 
 import Control.Monad
@@ -44,13 +46,14 @@ import OAlg.Structure.Number
 import OAlg.Structure.Exponential
 
 import OAlg.Entity.Slice
+import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Natural hiding ((++))
 import OAlg.Entity.FinList hiding (zip,(++))
 import OAlg.Entity.Diagram
 import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence.PSequence
 
-import OAlg.Limes.Universal
+import OAlg.Limes.Perspective
 import OAlg.Limes.Definition
 import OAlg.Limes.KernelsAndCokernels
 
@@ -80,8 +83,8 @@ import OAlg.AbelianGroup.Euclid
 -- @
 --
 -- where @c@ is the cokernel of @a@ and @f'@ the lifted @f@. 
-abhCokerLft :: Attestable n => Cokernel N1 AbHom -> Liftable From (Free n) AbHom
-abhCokerLft coker = LiftableFrom c l where
+abhCokerLft :: Cokernel N1 AbHom -> Liftable Injective (Free n) AbHom
+abhCokerLft coker = LiftableInjective c l where
   c = cokernelFactor $ universalCone coker
   l :: Slice From (Free n) AbHom -> Slice From (Free n) AbHom
   l f | end c /= end (slice f) = throw NotLiftable
@@ -144,6 +147,7 @@ prpAbhLift = Prp "AbhLift" :<=>:
                     let x' = p * zabh x in return (a,someNatural k',a * x')
 -}
 
+
 --------------------------------------------------------------------------------
 -- zMatrixLift -
 
@@ -203,14 +207,12 @@ zMatrixLift a y
   lftCol [] (_:_) = Nothing
   lftCol _ _      = Just []
 
-
 --------------------------------------------------------------------------------
 -- xLiftable -
 
 -- | random variable for liftable samples.
 xLiftable :: Multiplicative c => XOrtSite To c -> X (c,c)
 xLiftable xTo = amap1 lft $ xMltp2 xTo where lft (Mltp2 a x) = (a,a*x)
-  
 
 --------------------------------------------------------------------------------
 -- prpMatrixZJustLiftable -
@@ -270,4 +272,5 @@ prpMatrixZLiftable = Prp "MatrixZLiftable" :<=>:
   And [ prpMatrixZJustLiftable xStandardOrtSite
       , prpMatrixZMaybeLiftable (xZB (-1000) 1000)
       ]
+
 
