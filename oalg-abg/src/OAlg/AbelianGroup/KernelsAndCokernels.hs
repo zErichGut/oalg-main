@@ -18,6 +18,7 @@
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
+{-    
     -- * Kernels
     abhKernels
 
@@ -31,7 +32,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
   , abhSliceFreeAdjunction
 
     -- * X
-    
+-}    
   )
   where
 
@@ -53,7 +54,6 @@ import OAlg.Structure.Number
 
 import OAlg.Adjunction
 
-import OAlg.Limes.Universal
 import OAlg.Limes.Cone
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
@@ -73,7 +73,7 @@ import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
 import OAlg.AbelianGroup.Free
 
-
+{-
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFree -
 
@@ -666,4 +666,4 @@ isoSmithNormal g = Inv h h' where
   h  = cokernelFactor $ universalCone c
   h' = universalFactor c (ConeCokernel (diagram c) (one g))
 
-
+-}
