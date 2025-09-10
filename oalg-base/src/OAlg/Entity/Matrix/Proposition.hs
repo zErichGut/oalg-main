@@ -195,7 +195,8 @@ xscG :: X (SomeCmpb2G Id (HomCo Matrix DstX Op))
 xscG = join $ amap1 xscId xsc
 
 relHomMltStruct :: HomMultiplicativeDisjunctive h => Struct DstX x -> h x y -> Statement
-relHomMltStruct Struct h = prpHomMultiplicativeDisjunctive h (xoMlt (xNB 0 5) xStandardOrtOrientation)
+relHomMltStruct Struct h
+  = prpHomMultiplicativeDisjunctive h (xMltHomMlt $ xoMlt (xNB 0 5) xStandardOrtOrientation)
 
 relHomMlt :: X (SomeMorphism (HomCo Matrix DstX Op)) -> Statement
 relHomMlt xsm = Forall xsm (\(SomeMorphism h) -> relHomMltStruct (domain h) h) 

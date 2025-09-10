@@ -35,8 +35,6 @@ module OAlg.Entity.Slice.Free
   , LimesFree(..), limesFree
   , DiagramFree(..),dgfDiagram
   , KernelSliceFromSomeFreeTip(..), ksfKernel
-  , XStandardEligibleConeKernel
-  , XStandardEligibleConeFactorKernel
 
     -- ** Kernel
   , KernelFree, KernelDiagramFree
@@ -182,20 +180,6 @@ instance ( Distributive a
 limesFree :: LimesFree s p t n m a -> Limes s p t n m a
 limesFree (LimesFree _ l) = l
 
---------------------------------------------------------------------------------
--- XStandardEligibleConeKernel -
-
--- | helper class to avoid undecidable instances.
-class XStandardEligibleCone Dst Projective (Parallel LeftToRight) N2 n x
-  => XStandardEligibleConeKernel n x
-
---------------------------------------------------------------------------------
--- XStandardEligibleConeFactorKernel -
-
--- | helper class to avoid undecidable instances.
-class XStandardEligibleConeFactor Dst Projective (Parallel LeftToRight) N2 n x
-  => XStandardEligibleConeFactorKernel n x
-  
 --------------------------------------------------------------------------------
 -- KernelSliceFromSomeFreeTip -
 

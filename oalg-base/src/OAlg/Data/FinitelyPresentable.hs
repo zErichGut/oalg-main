@@ -50,7 +50,6 @@ import OAlg.Entity.FinList
 import OAlg.Entity.Diagram
 import OAlg.Entity.Slice
 
-
 import OAlg.Limes.KernelsAndCokernels
 
 --------------------------------------------------------------------------------
@@ -234,9 +233,14 @@ class XStandardSomeFreeSliceFromLiftable a where
 --------------------------------------------------------------------------------
 -- Validable - FinitePresentation To Free a
 
-instance ( Distributive a, XStandardOrtSiteFrom a, XStandardOrtSiteTo a
-         , XStandardSomeFreeSliceFromLiftable a
-         )
+instance
+  ( Distributive a
+  , XStandardEligibleConeCokernel N1 a
+  , XStandardEligibleConeFactorCokernel N1 a
+  , XStandardEligibleConeKernel N1 a
+  , XStandardEligibleConeFactorKernel N1 a
+  , XStandardSomeFreeSliceFromLiftable a
+  )
   => Validable (FinitePresentation To Free a) where
   valid gen@(GeneratorTo d k' k'' coker ker lft) = Label (show $ typeOf gen) :<=>:
     And [ valid (d,k',k'',coker,ker)
