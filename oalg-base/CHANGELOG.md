@@ -156,3 +156,10 @@ Indroducing generic limits.
 ### Changed
 - HomOp contains only the constructors FromOpOp and ToOpOp and as such IsoOp is generated
 by isoToOpOp ans its inverse isoFromOpOp.
+
+## [3.0.0.0] - 2025-09-10
+
+### Changed
+- Complete revision of the concept of duality (see OAlg.Category.SDuality)
+- Introduction of generic limits.
+- Introduction of generic applications. (see OAlg.Category.Application)
