@@ -63,6 +63,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
@@ -89,7 +90,7 @@ instance Exception ZModException where
 
 -- | cyclic group @'Z'\/n@, i.e. the quotient group of 'Z' /divided/
 --   by @n'Z'@.
-newtype ZMod = ZMod N deriving (Eq,Ord,Validable,Entity)
+newtype ZMod = ZMod N deriving (Eq,Ord,Validable)
 
 instance Show ZMod where
   show (ZMod n) = case n of
@@ -156,7 +157,7 @@ instance Validable ZModHom where
         , zmhEligible a b r :?> Params ["(a,b,r)":= show (a,b,r)]
         ]
 
-instance Entity ZModHom
+-- instance Entity ZModHom
 
 --------------------------------------------------------------------------------
 -- zmhMod -
@@ -183,8 +184,13 @@ zmh o@(a :> b) r | zmhEligible a b r = zmhMod (ZModHom a b r)
 --------------------------------------------------------------------------------
 -- ZModHom - Algebraic -
 
+type instance Point ZModHom = ZMod
+instance ShowPoint ZModHom
+instance EqPoint ZModHom
+instance ValidablePoint ZModHom
+instance TypeablePoint ZModHom
+
 instance Oriented ZModHom where
-  type Point ZModHom = ZMod
   orientation (ZModHom a b _) = a:>b
 
 instance Multiplicative ZModHom where
@@ -205,8 +211,14 @@ instance Invertible ZModHom where
     | otherwise = failure NotInvertible
     where (g,s,_) = euclid r (inj $ zmOrd a)
 
-instance Fibred ZModHom where
-  type Root ZModHom = Orientation ZMod
+type instance Root ZModHom = Orientation ZMod
+instance ShowRoot ZModHom
+instance EqRoot ZModHom
+instance ValidableRoot ZModHom
+instance TypeableRoot ZModHom
+
+instance Fibred ZModHom
+
 
 instance FibredOriented ZModHom
 

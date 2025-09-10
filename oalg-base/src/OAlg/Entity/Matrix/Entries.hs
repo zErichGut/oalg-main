@@ -420,6 +420,8 @@ newtype Entries i j x = Entries (PSequence (i,j) x)
 instance (Show x, Show i, Show j) => Show (Entries i j x) where
   show ets = "Entries" ++ (show $ etsxs ets)  
 
+instance ApplicativeG (Entries i j) (->) (->) where amapG = M.fmap
+
 --------------------------------------------------------------------------------
 -- etsxs -
 

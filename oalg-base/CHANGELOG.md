@@ -163,3 +163,4 @@ by isoToOpOp ans its inverse isoFromOpOp.
 - Complete revision of the concept of duality (see OAlg.Category.SDuality)
 - Introduction of generic limits.
 - Introduction of generic applications. (see OAlg.Category.Application)
+- Indroduction of disjunctive homomorphisms.

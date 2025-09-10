@@ -75,7 +75,7 @@ zmxKernel kDgm@(DiagramParallelLR _ _ (h:|Nil)) = LimesProjective lim univ where
 
 -- | 'N1'-kernels for 'Z'-matrices.
 zmxKernels1 :: Kernels N1 (Matrix Z)
-zmxKernels1 = Limits zmxKernel
+zmxKernels1 = LimitsG zmxKernel
 
 --------------------------------------------------------------------------------
 -- zmxKernels -

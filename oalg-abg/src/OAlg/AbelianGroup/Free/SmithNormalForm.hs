@@ -271,7 +271,7 @@ instance Validable (SmithNormalForm Z) where
             , vld (succ i) (k':ks)
             ]
 
-instance Entity (SmithNormalForm Z)
+-- instance Entity (SmithNormalForm Z)
 
 --------------------------------------------------------------------------------
 -- smithNormalForm -
