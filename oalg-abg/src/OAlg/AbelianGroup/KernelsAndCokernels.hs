@@ -75,6 +75,87 @@ import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
 import OAlg.AbelianGroup.Free
 
+--------------------------------------------------------------------------------
+-- abhCokernelFreeDgmLftFreeG -
+
+-- | a liftable cokernel of a free cokernel diagram.
+--
+--  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
+-- @cf = 'abhCokernelFreeDgmLftFreeG' d@, then holds:
+-- Let @c = 'cone' '$' 'universalCone' cf@ in
+--
+-- (1) @'diagrammaticObject' c '==' d@.
+--
+-- (2) @'tip' c@ is smith normal (see t'AbGroup').
+abhCokernelFreeDgmLftFreeG
+  :: CokernelDiagramFree N1 AbHom -> CokernelG ConeLiftable DiagramFree N1 AbHom
+abhCokernelFreeDgmLftFreeG d@(DiagramFree _ (DiagramParallelRL _ _ (h:|Nil)))
+  = LimesInjective (ConeCokernelLiftable (ConeCokernel d coker) lftAny) univ where
+
+  --------------------
+  -- cokernel -
+
+  m = abhz h
+  SmithNormalForm o ds (RowTrafo ra) _ = smithNormalForm m
+  Inv a aInv = amap GLTGL ra
+  AbHom aInv' = zabh aInv
+  p = lengthN ds
+  q = lengthN (rows m) >- (o + p)
+
+  d0 = dim (ZMod 0)
+  gp = Dim $ productSymbol $ amap1 (ZMod . prj) ds
+  gq = d0 ^ q
+  gpq = gp * gq
+  
+  coker = ( AbHom $ mtxJoin
+          $ matrixBlc [gp,gq] [d0^o,d0^p,gq] [(matrix gp (d0^p) ps,0,1),(one gq,1,2)]
+          )
+        * zabh a where
+    ps = [(zmh (ZMod 0 :> ZMod (prj d)) 1,i,i)| (d,i) <- ds `zip` [0..]]
+    -- @0 < d@ for all d in ds as ds is the diagonal of the smith normal form
+
+  univ :: CokernelConic Cone DiagramFree N1 AbHom -> AbHom
+  univ (ConeCokernel _ (AbHom x))
+    = AbHom
+    $ Matrix (rows x) gpq
+    $ rcets $ Row $ PSequence
+    $ map (\(cl,j) -> (cl,j>-o))
+    $ fcts o (map fst $ listN gp)
+    $ listN $ etsrc $ mtxxs (x*aInv')
+    where
+      
+      fcts :: (Enum j, Ord j) => j -> [ZMod] -> [(Col i ZModHom,j)] -> [(Col i ZModHom,j)] 
+      fcts _ [] cls = cls
+      fcts _ _ []   = []
+      fcts j (z:zs) cls@((cl,j'):cls') = if j < j'
+        then fcts (succ j) zs cls
+        else ((amap1 (fct z) cl,j'):fcts (succ j) zs cls')
+
+      fct :: ZMod -> ZModHom -> ZModHom
+      fct z h = zmh (z:>end h) (toZ h)
+
+  --------------------
+  -- liftable -
+  lftAny :: Any k -> Liftable Injective (Free k) AbHom
+  lftAny k = case ats k of Ats -> LiftableInjective coker (lft coker)
+
+  lft :: Attestable k => AbHom -> Slice From (Free k) AbHom -> Slice From (Free k) AbHom
+  lft c s@(SliceFrom i f)
+    | slicePoint i /= start f = throw $ InvalidData $ show s
+    | end c /= end f          = throw NotLiftable
+    | otherwise               = SliceFrom i f' where
+        f'  = zabh (aInv * zf')
+
+        zf  = abhz f
+        zf' = mtxJoin $ matrixBlc [dim () ^ r,rows zf] [cols zf] [(zf,1,0)]
+        r   = lengthN (start aInv) >- lengthN (rows zf)
+
+--------------------------------------------------------------------------------
+-- abhCokernelsFreeDgmLftFreeG -
+
+-- | the generalized limits, given by 'abhCokernelFreeDgmLftFreeG'.
+abhCokernelsFreeDgmLftFreeG :: CokernelsG ConeLiftable DiagramFree N1 AbHom
+abhCokernelsFreeDgmLftFreeG = LimitsG abhCokernelFreeDgmLftFreeG
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFree -
@@ -88,6 +169,20 @@ import OAlg.AbelianGroup.Free
 --
 -- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
 abhCokernelFreeDgmLftFree :: CokernelDiagramFree N1 AbHom -> CokernelLiftableFree AbHom
+abhCokernelFreeDgmLftFree d
+  = CokernelLiftableFree (LimesInjective (ConeCokernel d' coker) univ') lftAny'
+  where
+    LimesInjective c@(ConeCokernelLiftable (ConeCokernel _ coker) _) univ
+      = limes abhCokernelsFreeDgmLftFreeG d
+
+    DiagramFree dims d' = d
+    
+    univ' (ConeCokernel d f) = univ (ConeCokernel (DiagramFree dims d) f)
+
+    lftAny' :: Any k -> Liftable Injective (Free k) AbHom
+    lftAny' = cnLiftable c
+    
+{-
 abhCokernelFreeDgmLftFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
   = CokernelLiftableFree (LimesInjective (ConeCokernel d coker) univ) lftAny where
 
@@ -136,8 +231,8 @@ abhCokernelFreeDgmLftFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
 
   --------------------
   -- liftable -
-  lftAny :: Any k -> Liftable From (Free k) AbHom
-  lftAny k = case ats k of Ats -> LiftableFrom coker (lft coker)
+  lftAny :: Any k -> Liftable Injective (Free k) AbHom
+  lftAny k = case ats k of Ats -> LiftableInjective coker (lft coker)
 
   lft :: Attestable k => AbHom -> Slice From (Free k) AbHom -> Slice From (Free k) AbHom
   lft c s@(SliceFrom i f)
@@ -149,6 +244,10 @@ abhCokernelFreeDgmLftFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
         zf  = abhz f
         zf' = mtxJoin $ matrixBlc [dim () ^ r,rows zf] [cols zf] [(zf,1,0)]
         r   = lengthN (start aInv) >- lengthN (rows zf)
+-}
+
+
+
 
         
 {-        

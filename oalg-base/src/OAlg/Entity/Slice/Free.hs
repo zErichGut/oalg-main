@@ -13,8 +13,6 @@
 {-# LANGUAGE RankNTypes #-}
 
 
--- has to be revised!!!
-
 -- |
 -- Module      : OAlg.Entity.Slice.Free
 -- Description : slicing by free points.
@@ -48,7 +46,10 @@ module OAlg.Entity.Slice.Free
   , clfLimes, ClfCokernels(..)
 
     -- ** Pullback
-  , PullbackFree, PullbackDiagramFree  
+  , PullbackFree, PullbackDiagramFree
+
+    -- * New
+  , ConeLiftable(..), cnLiftable
 
   ) where
 
@@ -251,6 +252,9 @@ instance Oriented a => Validable (DiagramFree t n m a) where
 dgfDiagram :: DiagramFree t n m a -> Diagram t n m a
 dgfDiagram (DiagramFree _ d) = d
 
+instance Diagrammatic DiagramFree where diagram = dgfDiagram
+
+
 --------------------------------------------------------------------------------
 -- KernelFree -
 
@@ -285,8 +289,7 @@ type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
 -- For any @k@ in @'Any' __k__@ holds:
 -- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
 data CokernelLiftableFree c
-  = CokernelLiftableFree (Cokernel N1 c)
-    (forall (k :: N') . Any k -> Liftable Injective (Free k) c)
+  = CokernelLiftableFree (Cokernel N1 c) (forall (k :: N') . Any k -> Liftable Injective (Free k) c)
 
 instance Oriented c => Show (CokernelLiftableFree c) where
   show (CokernelLiftableFree c _) = join ["CokernelLiftableFree (", show c, ")"]
@@ -342,4 +345,34 @@ newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftable
 clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
 clfLimes (ClfCokernels l) = l
 
+--------------------------------------------------------------------------------
+-- ConeLiftable -
+
+-- | predicate for a liftable cokernel.
+--
+-- __Property__ Let @'CokernelLiftableFree' c l@ be in @'CokernelLiftableFree' __c__@ for a
+-- 'Distributive' structure @__c__@, then holds:
+-- For any @k@ in @'Any' __k__@ holds:
+-- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
+data ConeLiftable s p d t n m x where
+  ConeKernelLiftable
+    :: (KernelConic Cone d N1 x)
+    -> (forall (k :: N') . Any k -> Liftable Projective (Free k) x)
+    -> ConeLiftable Dst Projective d (Parallel LeftToRight) N2 N1 x
+  ConeCokernelLiftable
+    :: (CokernelConic Cone d N1 x)
+    -> (forall (k :: N') . Any k -> Liftable Injective (Free k) x)
+    -> ConeLiftable Dst Injective d (Parallel RightToLeft) N2 N1 x
+
+instance Conic ConeLiftable where
+  cone (ConeKernelLiftable c _)   = c
+  cone (ConeCokernelLiftable c _) = c
+
+--------------------------------------------------------------------------------
+-- cnLiftable -
+
+-- | the underlying liftable.
+cnLiftable :: ConeLiftable s p d t n m x -> Any k -> Liftable p (Free k) x
+cnLiftable (ConeKernelLiftable _ lft)   = lft
+cnLiftable (ConeCokernelLiftable _ lft) = lft
 
