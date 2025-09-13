@@ -1,4 +1,6 @@
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeOperators #-}
@@ -31,7 +33,7 @@ module OAlg.Limes.Definition.Proposition
   , XStandardGEligibleConeFactor(..), XStandardEligibleConeFactor
   , xGEligibleConeFactorOrnt, coXGEligibleConeFactor
   , xecfOrtSite
-
+  
   ) where
 
 import Control.Monad
@@ -369,8 +371,7 @@ prpLimesFactorExist (XGEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
 -- and 'Cone'.
 prpLimesFactorUnique ::
   ( Conic c, Diagrammatic d
-  , Show (d t n m x)
-  , Eq (d t n m x)
+  , Entity (d t n m x)
   , Entity x
   )
   => XGEligibleConeFactor c s p d t n m x
@@ -412,9 +413,11 @@ instance
   ( Conic c, Diagrammatic d
   , XStandardGEligibleCone c s p d t n m x
   , XStandardGEligibleConeFactor c s p d t n m x
-  , Entity (c s p d t n m x)
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )
   => Validable (LimesG c s p d t n m x) where
   valid = prpLimes xStandardGEligibleCone xStandardGEligibleConeFactor
+

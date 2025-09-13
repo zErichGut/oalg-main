@@ -60,11 +60,24 @@ import Data.List ((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.SDuality
+
 import OAlg.Data.Singleton
+import OAlg.Data.Either
+import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Fibred
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
+
+import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
+import OAlg.Hom.Additive
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -166,7 +179,7 @@ deriving instance Oriented a => Show (LimesFree s p t n m a)
 instance ( Distributive a
          , XStandardEligibleCone Dst p t n m a
          , XStandardEligibleConeFactor Dst p t n m a
-         , Typeable p, Typeable t, Typeable n, Typeable m
+         , Typeable t, Typeable n, Typeable m
          )
   => Validable (LimesFree Dst p t n m a) where
   valid (LimesFree k l) = Label "LimesFree" :<=>:
@@ -348,12 +361,15 @@ clfLimes (ClfCokernels l) = l
 --------------------------------------------------------------------------------
 -- ConeLiftable -
 
--- | predicate for a liftable cokernel.
+-- | predicate for a liftable conic object.
 --
--- __Property__ Let @'CokernelLiftableFree' c l@ be in @'CokernelLiftableFree' __c__@ for a
--- 'Distributive' structure @__c__@, then holds:
--- For any @k@ in @'Any' __k__@ holds:
--- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
+-- __Property__ Let @cl@ be in @'ConeLiftable' __s p d t n m x__@, then holds:
+--
+-- (1) If @cl@ matches @'ConeKernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
+-- @'lftbBase' (l k)' '==' 'kernelFactor' ('universalCone' c)@.
+--
+-- (2) If @cl@ matches @'ConeCokernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
+-- @'lftbBase' (l k)' '==' 'cokernelFactor' c@.
 data ConeLiftable s p d t n m x where
   ConeKernelLiftable
     :: (KernelConic Cone d N1 x)
@@ -368,6 +384,10 @@ instance Conic ConeLiftable where
   cone (ConeKernelLiftable c _)   = c
   cone (ConeCokernelLiftable c _) = c
 
+instance Show (d t n m x) => Show (ConeLiftable s p d t n m x) where
+  show (ConeKernelLiftable k _) = "ConeKernelLiftable (" ++ show k ++ ") lftb"
+  show (ConeCokernelLiftable k _) = "ConeCokernelLiftable (" ++ show k ++ ") lftb"
+  
 --------------------------------------------------------------------------------
 -- cnLiftable -
 
@@ -376,3 +396,258 @@ cnLiftable :: ConeLiftable s p d t n m x -> Any k -> Liftable p (Free k) x
 cnLiftable (ConeKernelLiftable _ lft)   = lft
 cnLiftable (ConeCokernelLiftable _ lft) = lft
 
+--------------------------------------------------------------------------------
+-- LiftableFree -
+
+-- | liftable according to a free slice.
+data LiftableFree p x where
+  LiftableFree :: (forall k . Any k -> Liftable p (Free k) x) -> LiftableFree p x
+
+--------------------------------------------------------------------------------
+-- liftFree -
+
+-- | lifting a free slice.
+liftFree :: LiftableFree p x -> Any k -> Liftable p (Free k) x
+liftFree (LiftableFree l) = l
+
+--------------------------------------------------------------------------------
+-- SliceFree -
+
+-- | attest for @__k__@-free sliced @__s__@-structures.
+class SlicedFree s x where
+  slicedFree :: Struct (s,Sld (Free k)) x
+
+--------------------------------------------------------------------------------
+-- HomFree -
+
+-- | homomorphism between free sliced @__s__@-structures.
+data HomFree s x y where
+  HomFree :: (SlicedFree s x, SlicedFree s y)
+          => (forall k . HomDisjEmpty (s,Sld (Free k)) Op x y)
+          -> HomFree s x y
+
+instance Disjunctive2 (HomFree s) where
+  variant2 (HomFree h) = variant2 h
+
+--------------------------------------------------------------------------------
+-- SdlFr -
+
+-- | 'SlicedFree' structures. 
+data SldFr s
+
+type instance Structure (SldFr s) x = SlicedFree s x
+
+--------------------------------------------------------------------------------
+-- tauSldFre -
+
+-- | transforming 'SlcedFree' structures to @(__s__,'Free' __k__@-structures.
+tauSldFr :: Struct (SldFr s) x -> Struct (s,Sld (Free k)) x
+tauSldFr Struct = slicedFree
+
+instance Transformable s Ort => Transformable (SldFr s) Ort where tau = tau . tauFst . tauSldFr
+instance Transformable s Mlt => Transformable (SldFr s) Mlt where tau = tau . tauFst . tauSldFr
+
+--------------------------------------------------------------------------------
+-- HomFree - Homomorphism -
+
+instance TransformableGRefl Op s => ApplicativeG Id (HomFree s) (->) where
+  amapG (HomFree h) = amapG h
+
+instance TransformableGRefl Op s => ApplicativeG Pnt (HomFree s) (->) where
+  amapG (HomFree h) = amapG h
+
+instance Morphism (HomFree s) where
+  type ObjectClass (HomFree s) = SldFr s
+  homomorphous (HomFree _) = Struct :>: Struct
+
+instance Category (HomFree s) where
+  cOne s@Struct = HomFree (cOne (tauSldFr s))
+  HomFree f . HomFree g = HomFree (f . g) 
+
+instance CategoryDisjunctive (HomFree s)
+
+instance
+  ( TransformableGReflOp s
+  , TransformableOrt s
+  ) => HomOrientedDisjunctive (HomFree s)
+
+instance 
+  ( TransformableGReflOp s
+  , TransformableMlt s
+  ) => HomMultiplicativeDisjunctive (HomFree s)
+
+--------------------------------------------------------------------------------
+-- isoHomFrIsoOp -
+
+-- | the underlying 'IsoO' accorging to 'Op'
+isoHomFrIsoOp :: Variant2 v (Inv2 (HomFree Dst)) x y
+              -> Variant2 v (IsoO (Dst,Sld (Free k)) Op) x y
+isoHomFrIsoOp (Covariant2 (Inv2 (HomFree t) (HomFree f))) = Covariant2 (Inv2 t f)
+isoHomFrIsoOp (Contravariant2 (Inv2 (HomFree t) (HomFree f))) = Contravariant2 (Inv2 t f)
+
+--------------------------------------------------------------------------------
+-- lftFrMapCov -
+
+lftFrMapCovIsoO ::
+  ( h ~ IsoO (s,Sld (Free k)) Op
+  , TransformableGRefl Op s
+  , TransformableMlt s
+  )
+  => Variant2 Covariant h x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+lftFrMapCovIsoO i lf k = lftMapCov i (liftFree lf k)
+
+lftFrMapCovHomFree :: Variant2 Covariant (Inv2 (HomFree Dst)) x y
+      -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+lftFrMapCovHomFree h = lftFrMapCovIsoO (isoHomFrIsoOp h)
+
+-- | mapping free liftables according a covariant 'HomFree'
+lftFrMapCov :: Variant2 Covariant (Inv2 (HomFree Dst)) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapCov h lf = LiftableFree (lftFrMapCovHomFree h lf)
+
+
+
+
+
+
+{-  
+data HomSliceFree s k h where
+  HomSliceFreeDst :: (CategoryDisjunctive h, HomSlicedDistributive (Free k) h) => HomSliceFree Dst k h 
+
+data HomFree s h where
+  HomFreeDst :: (forall k . Any k -> HomSliceFree Dst k h) -> HomFree Dst h
+
+gg :: HomFree Dst h
+    -> Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+gg (HomFreeDst f) i lf k = case f k of HomSliceFreeDst -> ff i lf k
+
+gg' :: HomFree Dst h
+    -> Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> LiftableFree p y
+gg' hf i lf = LiftableFree (gg hf i lf)
+
+class CC s h where
+  cc :: HomFree s h
+
+
+gg'' :: CC Dst h => Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> LiftableFree p y
+gg'' = gg' cc
+
+
+cc' :: HomSliceFree Dst k (HomDisjEmpty (Dst,Sld (Free k)) Op)
+cc' = HomSliceFreeDst
+-}
+
+{-
+hh :: CC Dst h => Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+hh h lf k = case cc k of HomSliceFreeDst -> ff h lf k
+-}
+
+{-
+instance ApplicativeG Id (HomFree Dst h) (->) where
+  amapG (HomFreeDst h) = amapG h
+-}
+
+{-
+ff :: Variant2 Covariant (Inv2 (HomFree Dst h)) x y -> LiftableFree p x -> LiftableFree p y
+ff (Covariant2 (Inv2 (HomFreeDst t) (HomFreeDst f))) l = l' error "nyi"
+-}
+
+
+{-
+-1-------------------------------------------------------------------------------
+-- HomSliceFree -
+
+data HomSliceFree s k h where
+  HomSliceFreeDst :: HomSlicedDistributive (Free k) h => HomSliceFree Dst k h 
+
+data HomConeLiftable s h x y where
+  HomConeLiftableDst
+    :: h x y -> (forall k . Any k -> HomSliceFree Dst k h) -> HomConeLiftable Dst h x y
+
+instance ApplicativeG Id h (->) => ApplicativeG Id (HomConeLiftable s h) (->) where
+  amapG (HomConeLiftableDst h _) = amapG h
+
+instance ApplicativeG Pnt h (->) => ApplicativeG Pnt (HomConeLiftable s h) (->) where
+  amapG (HomConeLiftableDst h _) = amapG h
+
+instance ApplicativeG Rt h (->) => ApplicativeG Rt (HomConeLiftable s h) (->) where
+  amapG (HomConeLiftableDst h _) = amapG h
+
+instance Morphism h => Morphism (HomConeLiftable s h) where
+  type ObjectClass (HomConeLiftable s h) = ObjectClass h
+  homomorphous (HomConeLiftableDst h _) = homomorphous h
+
+class CC s h where
+  cc :: Any k -> HomSliceFree s k h
+
+{-
+instance CC Dst (HomDisjEmpty (Dst,Sld (Free k)) Op) where
+  cc _ = HomSliceFreeDst
+-}  
+instance (Category h, CC Dst h) => Category (HomConeLiftable Dst h) where
+  cOne s = HomConeLiftableDst (cOne s) cc
+  HomConeLiftableDst f lf . HomConeLiftableDst g _ = HomConeLiftableDst (f.g) lf
+  
+instance Disjunctive2 h => Disjunctive2 (HomConeLiftable s h) where
+  variant2 (HomConeLiftableDst h _) = variant2 h
+
+instance (CategoryDisjunctive h, CC Dst h) => CategoryDisjunctive (HomConeLiftable Dst h)
+
+instance HomOrientedDisjunctive h => HomOrientedDisjunctive (HomConeLiftable s h)
+instance HomMultiplicativeDisjunctive h => HomMultiplicativeDisjunctive (HomConeLiftable s h)
+instance HomFibred h => HomFibred (HomConeLiftable s h)
+instance HomAdditive h => HomAdditive (HomConeLiftable s h)
+instance HomFibredOrientedDisjunctive h => HomFibredOrientedDisjunctive (HomConeLiftable s h)
+instance HomDistributiveDisjunctive h => HomDistributiveDisjunctive (HomConeLiftable s h)
+
+instance HomSlicedOriented (Free k) h => HomSlicedOriented (Free k) (HomConeLiftable Dst h)
+  
+--------------------------------------------------------------------------------
+-- cnlMapDstCov -
+
+cnlMapDstCov ::
+  ( CategoryDisjunctive h
+  , CC Dst h
+  , HomDistributiveDisjunctive h
+  , NaturalDiagrammatic (Inv2 (HomConeLiftable Dst h)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomConeLiftable Dst h)) d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Covariant (Inv2 (HomConeLiftable Dst h)) x y
+  -> ConeLiftable Dst p d t n m x -> ConeLiftable Dst p d t n m y
+cnlMapDstCov i@(Covariant2 i') (ConeKernelLiftable c l) = ConeKernelLiftable c' (lft' i l) where
+  SDualBi (Right1 c') = amapG i' (SDualBi (Right1 c))
+  
+  lft' ::
+     ( CategoryDisjunctive h
+     , CC Dst h
+     )
+     => Variant2 Covariant (Inv2 (HomConeLiftable Dst h)) x y
+     ->  (Any k -> Liftable Projective (Free k) x)
+     -> Any k -> Liftable Projective (Free k) y
+  lft' (Covariant2 i) l k = case i of
+    Inv2 (HomConeLiftableDst _ w) _ -> case w k of
+      HomSliceFreeDst -> l' where
+        SDualBi (Right1 l') = amapG i (SDualBi (Right1 (l k)))
+
+
+relConeLiftable ::
+  ( Diagrammatic d
+  , Show (d t n m x)
+  , Validable (d t n m x)
+  , Distributive x
+  , XStandardOrtOrientation x
+  )
+  => N -> ConeLiftable s p d t n m x -> Statement
+relConeLiftable kMax (ConeKernelLiftable c l) =
+  And [ valid c
+      , Forall (xNB 0 kMax)
+          (\k -> case someNatural k of
+              SomeNatural k' -> And [ valid (l k')
+                                    , (lftbBase (l k') == kernelFactor c)
+                                        :?> Params ["k":=show k
+                                                   , "c":=show c
+                                                   ]
+                                    ]
+          )
+      ]
+  
+-}

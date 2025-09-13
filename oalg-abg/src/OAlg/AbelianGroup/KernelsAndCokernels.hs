@@ -48,6 +48,7 @@ import OAlg.Data.FinitelyPresentable
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative as M
 import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
 import OAlg.Structure.Exponential
 import OAlg.Structure.Operational
 import OAlg.Structure.Number
@@ -182,75 +183,8 @@ abhCokernelFreeDgmLftFree d
     lftAny' :: Any k -> Liftable Injective (Free k) AbHom
     lftAny' = cnLiftable c
     
-{-
-abhCokernelFreeDgmLftFree (DiagramFree _ d@(DiagramParallelRL _ _ (h:|Nil)))
-  = CokernelLiftableFree (LimesInjective (ConeCokernel d coker) univ) lftAny where
-
-  --------------------
-  -- cokernel -
-
-  m = abhz h
-  SmithNormalForm o ds (RowTrafo ra) _ = smithNormalForm m
-  Inv a aInv = amap GLTGL ra
-  AbHom aInv' = zabh aInv
-  p = lengthN ds
-  q = lengthN (rows m) >- (o + p)
-
-  d0 = dim (ZMod 0)
-  gp = Dim $ productSymbol $ amap1 (ZMod . prj) ds
-  gq = d0 ^ q
-  gpq = gp * gq
-  
-  coker = ( AbHom $ mtxJoin
-          $ matrixBlc [gp,gq] [d0^o,d0^p,gq] [(matrix gp (d0^p) ps,0,1),(one gq,1,2)]
-          )
-        * zabh a where
-    ps = [(zmh (ZMod 0 :> ZMod (prj d)) 1,i,i)| (d,i) <- ds `zip` [0..]]
-    -- @0 < d@ for all d in ds as ds is the diagonal of the smith normal form
-
-  univ :: CokernelCone N1 AbHom -> AbHom
-  univ (ConeCokernel _ (AbHom x))
-    = AbHom
-    $ Matrix (rows x) gpq
-    $ rcets $ Row $ PSequence
-    $ map (\(cl,j) -> (cl,j>-o))
-    $ fcts o (map fst $ listN gp)
-    $ listN $ etsrc $ mtxxs (x*aInv')
-    where
-      
-      fcts :: (Enum j, Ord j) => j -> [ZMod] -> [(Col i ZModHom,j)] -> [(Col i ZModHom,j)] 
-      fcts _ [] cls = cls
-      fcts _ _ []   = []
-      fcts j (z:zs) cls@((cl,j'):cls') = if j < j'
-        then fcts (succ j) zs cls
-        else ((amap1 (fct z) cl,j'):fcts (succ j) zs cls')
-
-      fct :: ZMod -> ZModHom -> ZModHom
-      fct z h = zmh (z:>end h) (toZ h)
-
-
-  --------------------
-  -- liftable -
-  lftAny :: Any k -> Liftable Injective (Free k) AbHom
-  lftAny k = case ats k of Ats -> LiftableInjective coker (lft coker)
-
-  lft :: Attestable k => AbHom -> Slice From (Free k) AbHom -> Slice From (Free k) AbHom
-  lft c s@(SliceFrom i f)
-    | slicePoint i /= start f = throw $ InvalidData $ show s
-    | end c /= end f          = throw NotLiftable
-    | otherwise               = SliceFrom i f' where
-        f'  = zabh (aInv * zf')
-
-        zf  = abhz f
-        zf' = mtxJoin $ matrixBlc [dim () ^ r,rows zf] [cols zf] [(zf,1,0)]
-        r   = lengthN (start aInv) >- lengthN (rows zf)
--}
-
-
-
 
         
-{-        
 xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagramFree N1 AbHom)
 xCokernelDiagramFree xm = do
   m <- xm
@@ -263,7 +197,87 @@ xCokernelDiagramFree xm = do
                        (SomeFree (Free r'):|SomeFree (Free c'):|Nil)
                        (DiagramParallelRL (end a) (start a) (a:|Nil))
                     )
-             
+
+
+--------------------------------------------------------------------------------
+-- xecCokernelLftFreeAbHom -
+
+xecCokernelDiagramFreeAbHom
+  :: XOrtSite From (Matrix Z)
+  -> DiagramFree (Parallel RightToLeft) N2 N1 AbHom
+  -> X (CokernelConic Cone DiagramFree N1 AbHom)
+xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>=  return . ConeCokernel d where
+  DiagramParallelRL _ _ (h:|Nil) = diagram d
+  hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
+               -- eligibel AbHom.
+
+--------------------------------------------------------------------------------
+-- xZeroFactor -
+
+-- | @'xZeroFactor' xTo h@ gives a factor @f@ with @f'*''zabh' h@ is 'zero'.
+xZeroFactor :: XOrtSite From (Matrix Z) -> Matrix Z -> X AbHom
+xZeroFactor xFrom h = do
+  f <- xosStart xFrom (end h)
+  return (prjZero (f * h) * zabh f)
+
+  where
+    prjZero :: Matrix Z -> AbHom
+    prjZero f = abh' ((abg 0 ^ d) :> gcdRows d 0 (colxs $ mtxColRow f)) (one d) where
+      d     = lengthN $ rows f
+      one d = [let i = pred i' in (1,i,i) | i' <- [1..d]] 
+      
+    gcdRows :: N -> N -> [(Row N Z,N)] -> AbGroup
+    gcdRows 0 _ _           = one ()
+    gcdRows d i []          = abg 0          * gcdRows (pred d) (succ i) []
+    gcdRows d i ((c,i'):cs) = case compare i i' of
+      LT                   -> abg 0          * gcdRows (pred d) (succ i) ((c,i'):cs)
+      EQ                   -> abg (gcdRow c) * gcdRows (pred d) (succ i) cs
+      _                    -> throw $ ImplementationError ""
+
+
+    gcdRow :: Row j Z -> N
+    gcdRow = gcds . amap1 (prj . fst) . rowxs 
+
+    
+vldXZeroFactor :: Statement
+vldXZeroFactor = Forall xm (\h   -> Forall (xZeroFactor xStandardOrtSite h)
+                             (\f -> isZero (f * zabh h) :?> Params ["h":=show h,"f":=show f
+                                                                   ,"fh":=show (f*zabh h)
+                                                                   ]
+                             )
+                           )
+  where xm = xoArrow xodZ (dim () ^ 10 :> dim () ^ 8)
+
+
+
+
+
+instance XStandardGEligibleCone
+           ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleCone
+    = XGEligibleCone
+        (xecCokernelDiagramFreeAbHom xStandardOrtSite . diagrammaticObject . cone . universalCone)
+
+
+instance XStandardGEligibleConeFactor
+           ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom where
+
+instance XStandard (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+
+instance Eq (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+
+instance Show (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+
+instance Validable (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+
+instance Eq (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+
+           
+prp :: Statement
+prp = valid abhCokernelsFreeDgmLftFreeG
+
+
+{-             
 vldAbhCokernelFree :: Statement
 vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFreeDgmLftFree) where
   xm = xoOrientation xmo >>= xoArrow xmo
@@ -272,6 +286,7 @@ vldAbhCokernelFree = Forall (xCokernelDiagramFree xm) (valid . abhCokernelFreeDg
 
 atsFree :: Free k c -> Ats k
 atsFree (Free k) = ats k
+
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo' -

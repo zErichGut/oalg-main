@@ -58,7 +58,8 @@ instance
   , XStandardGEligibleCone c s p d t n m x
   , XStandardGEligibleConeFactor c s p d t n m x
   , XStandard (d t n m x)
-  , Entity (c s p d t n m x)
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )

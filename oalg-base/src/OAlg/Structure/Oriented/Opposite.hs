@@ -25,7 +25,9 @@ module OAlg.Structure.Oriented.Opposite
     -- * Transformable
   , TransformableOp, tauOp
   , structOrtOp
+  , TransformableGReflOp
   ) where
+
 
 import OAlg.Prelude
 
@@ -114,6 +116,13 @@ class Transformable1 Op s => TransformableOp s
 -- | 'tau' for 'Op'.
 tauOp :: Transformable1 Op s => Struct s x -> Struct s (Op x)
 tauOp = tauG
+
+--------------------------------------------------------------------------------
+-- TransformableGReflOp -
+
+-- | helper class to avoid undecidable instances.
+class TransformableGRefl Op s => TransformableGReflOp s
+
 
 {-
 --------------------------------------------------------------------------------

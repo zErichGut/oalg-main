@@ -151,7 +151,6 @@ lftMapCov :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
   => Variant2 Covariant (Inv2 h) x y -> Liftable p i x -> Liftable p i y
 lftMapCov h = lftMapCovStruct (tau (range h)) h
 
-
 --------------------------------------------------------------------------------
 -- lftMapCnt -
 
