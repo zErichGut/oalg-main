@@ -61,6 +61,7 @@ import Data.List ((++))
 import OAlg.Prelude
 
 import OAlg.Category.SDuality
+import OAlg.Category.Dualisable
 
 import OAlg.Data.Singleton
 import OAlg.Data.Either
@@ -438,14 +439,57 @@ data SldFr s
 type instance Structure (SldFr s) x = SlicedFree s x
 
 --------------------------------------------------------------------------------
+-- tauOpSldFree -
+
+-- | transforming 'SlicedFree' @__s__@-structures to 'Op'.
+tauOpSldFree :: TransformableG Op s s => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) (Op x)
+tauOpSldFree s@Struct = case tauOp (tauFst s) of Struct -> Struct
+
+instance
+  ( SlicedFree s x
+  , TransformableGRefl Op s
+  )
+  => SlicedFree s (Op x) where
+  slicedFree = tauOpSldFree slicedFree
+  
+--------------------------------------------------------------------------------
 -- tauSldFre -
 
--- | transforming 'SlcedFree' structures to @(__s__,'Free' __k__@-structures.
+-- | transforming 'SlicedFree' @__s__@ structures to @(__s__,'Sld' ('Free' __k__)@-structures.
 tauSldFr :: Struct (SldFr s) x -> Struct (s,Sld (Free k)) x
 tauSldFr Struct = slicedFree
 
 instance Transformable s Ort => Transformable (SldFr s) Ort where tau = tau . tauFst . tauSldFr
 instance Transformable s Mlt => Transformable (SldFr s) Mlt where tau = tau . tauFst . tauSldFr
+
+--------------------------------------------------------------------------------
+-- toDualOpSldFr -
+{-
+toDualOpSldFr ::
+  ( TransformableGRefl Op s
+  )
+  => Struct (SldFr s) x -> Struct (s,Sld (Free k)) x
+  -> Variant2 Contravariant (Inv2 (HomFree s)) x (Op x)
+toDualOpSldFr Struct s@Struct = Contravariant2 (Inv2 (HomFree t) (HomFree f)) where
+  Contravariant2 (Inv2 t f) = toDualO s
+-}
+{-
+tt ::
+  ( SlicedFree s x
+  , SlicedFree s y
+  )
+  => Variant2 v (IsoO (s,Sld (Free k)) Op) x y -> Variant2 v (Inv2 (HomFree s)) x y
+tt (Covariant2 (Inv2 t f)) = Covariant2 (Inv2 (HomFree t) (HomFree f))
+-}
+
+--------------------------------------------------------------------------------
+-- isoHomFrIsoOp -
+
+-- | the underlying 'IsoO' accorging to 'Op'
+isoHomFrIsoOp :: Variant2 v (Inv2 (HomFree s)) x y
+              -> Variant2 v (IsoO (s,Sld (Free k)) Op) x y
+isoHomFrIsoOp (Covariant2 (Inv2 (HomFree t) (HomFree f))) = Covariant2 (Inv2 t f)
+isoHomFrIsoOp (Contravariant2 (Inv2 (HomFree t) (HomFree f))) = Contravariant2 (Inv2 t f)
 
 --------------------------------------------------------------------------------
 -- HomFree - Homomorphism -
@@ -477,25 +521,35 @@ instance
   ) => HomMultiplicativeDisjunctive (HomFree s)
 
 --------------------------------------------------------------------------------
--- isoHomFrIsoOp -
-
--- | the underlying 'IsoO' accorging to 'Op'
-isoHomFrIsoOp :: Variant2 v (Inv2 (HomFree Dst)) x y
-              -> Variant2 v (IsoO (Dst,Sld (Free k)) Op) x y
-isoHomFrIsoOp (Covariant2 (Inv2 (HomFree t) (HomFree f))) = Covariant2 (Inv2 t f)
-isoHomFrIsoOp (Contravariant2 (Inv2 (HomFree t) (HomFree f))) = Contravariant2 (Inv2 t f)
-
---------------------------------------------------------------------------------
 -- lftFrMapCov -
 
-lftFrMapCovIsoO ::
-  ( h ~ IsoO (s,Sld (Free k)) Op
-  , TransformableGRefl Op s
-  , TransformableMlt s
-  )
-  => Variant2 Covariant h x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-lftFrMapCovIsoO i lf k = lftMapCov i (liftFree lf k)
+ff :: Struct t x -> Struct t y -> h x y -> Sub t h x y
+ff Struct Struct = Sub
 
+gg :: q k
+   -> Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
+   -> Variant2 v (IsoO s Op) x y
+   -> Variant2 v (Inv2 (Sub (s,Sld (Free k)) (HomDisjEmpty s Op))) x y
+gg _ sx sy (Covariant2 (Inv2 t f)) = Covariant2 (Inv2 (ff sx sy t) (ff sy sx f))
+gg _ sx sy (Contravariant2 (Inv2 t f)) = Contravariant2 (Inv2 (ff sx sy t) (ff sy sx f))
+
+
+instance Transformable (s,Sld i) s
+  => TransformableObjectClass (s,Sld i) (HomDisjEmpty s Op)
+  
+lftFrMapCovIsoO ::
+  ( h ~ IsoO s Op
+  , TransformableMlt s
+  , TransformableType s
+  , TransformableOp s
+  , Transformable (s,Sld (Free k)) s
+  )
+  => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
+  -> Variant2 Covariant h x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+lftFrMapCovIsoO sx sy i lf k = lftMapCov (gg k sx sy i) (liftFree lf k)
+
+
+{-
 lftFrMapCovHomFree :: Variant2 Covariant (Inv2 (HomFree Dst)) x y
       -> LiftableFree p x -> Any k -> Liftable p (Free k) y
 lftFrMapCovHomFree h = lftFrMapCovIsoO (isoHomFrIsoOp h)
@@ -503,7 +557,7 @@ lftFrMapCovHomFree h = lftFrMapCovIsoO (isoHomFrIsoOp h)
 -- | mapping free liftables according a covariant 'HomFree'
 lftFrMapCov :: Variant2 Covariant (Inv2 (HomFree Dst)) x y -> LiftableFree p x -> LiftableFree p y
 lftFrMapCov h lf = LiftableFree (lftFrMapCovHomFree h lf)
-
+-}
 
 
 

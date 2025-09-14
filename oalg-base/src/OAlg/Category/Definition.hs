@@ -362,6 +362,8 @@ instance Morphism (Sub s c) where
   type ObjectClass (Sub s c) = s
   homomorphous (Sub _) = Struct :>: Struct
 
+instance ApplicativeG f h (->) => ApplicativeG f (Sub t h) (->) where amapG (Sub h) = amapG h
+
 --------------------------------------------------------------------------------
 -- cOneSub -
 

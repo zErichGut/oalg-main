@@ -129,6 +129,11 @@ instance
 
 instance HomOrientedDisjunctive h => HomOriented (Variant2 Covariant h)
 
+instance
+  ( Transformable s Ort
+  , HomOrientedDisjunctive h
+  )
+  => HomOrientedDisjunctive (Sub s h)
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -

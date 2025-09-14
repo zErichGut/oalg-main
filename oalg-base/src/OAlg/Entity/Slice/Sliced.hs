@@ -158,9 +158,15 @@ prpHomSlicedOriented q h = Prp "HomSlicedOriented"
 --------------------------------------------------------------------------------
 -- IsoO - HomSlicedOriented -
 
-instance Transformable s Ort => Transformable (s,Sld i) Ort where
-  tau = tau . tauFst
+-- instance Transformable (s,Sld i) s where tau = tauFst
+instance Transformable (s,Sld i) (Sld i) where tau = tauSnd
 
+instance Transformable s Ort => Transformable (s,Sld i) Ort where tau = tau . tauFst
+instance Transformable s Ort => TransformableOrt (s,Sld i)
+
+instance Transformable s Mlt => Transformable (s,Sld i) Mlt where tau = tau. tauFst
+instance TransformableMlt s => TransformableMlt (s,Sld i)
+{-
 instance Transformable s Mlt => Transformable (s,Sld i) Mlt where
   tau = tau . tauFst
 
@@ -184,6 +190,7 @@ instance TransformableFbr s    => TransformableFbr (s,Sld i)
 instance TransformableAdd s    => TransformableAdd (s,Sld i) 
 instance TransformableFbrOrt s => TransformableFbrOrt (s,Sld i) 
 instance TransformableDst s    => TransformableDst (s,Sld i) 
+-}
 
 instance Transformable (s,Sld i) Type where tau _ = Struct
 
@@ -206,6 +213,19 @@ instance
 
 instance (CategoryDisjunctive h, HomSlicedOriented i h) => HomSlicedOriented i (Inv2 h)
 
+
+instance
+  ( TransformableOrt s
+  , TransformableType s
+  , TransformableOp s
+  ) => HomSlicedOriented i (Sub (s,Sld i) (HomDisjEmpty s Op))
+
+instance
+  ( TransformableOrt s
+  , TransformableType s
+  , TransformableOp s
+  )
+  => HomSlicedOriented i (Sub (s,Sld i) (IsoO s Op))
 --------------------------------------------------------------------------------
 -- toDualOpOrtSld -
 

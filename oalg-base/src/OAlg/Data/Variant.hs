@@ -144,6 +144,8 @@ instance ApplicativeG Rt h c => ApplicativeG Rt (Variant2 v h) c where
   amapG (Covariant2 h)     = amapG h
   amapG (Contravariant2 h) = amapG h
 
+instance Disjunctive2 h => Disjunctive2 (Sub s h) where variant2 (Sub h) = variant2 h
+
 --------------------------------------------------------------------------------
 -- toVariant2 -
 
@@ -194,6 +196,7 @@ instance CategoryDisjunctive h => Disjunctive2 (Inv2 h) where
 
 instance CategoryDisjunctive c => CategoryDisjunctive (Inv2 c)
 
+instance (CategoryDisjunctive c, TransformableObjectClass s c) => CategoryDisjunctive (Sub s c)
 --------------------------------------------------------------------------------
 -- vInv2 -
 
