@@ -22,6 +22,7 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
+
     -- * Covariant
     HomOriented
 
@@ -39,6 +40,7 @@ module OAlg.Hom.Oriented.Definition
   
     -- * Iso
   , toDualOpOrt
+
   )
   where
 

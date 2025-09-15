@@ -538,14 +538,13 @@ instance Transformable (s,Sld i) s
   => TransformableObjectClass (s,Sld i) (HomDisjEmpty s Op)
   
 lftFrMapCovIsoO ::
-  ( h ~ IsoO s Op
-  , TransformableMlt s
+  ( TransformableMlt s
   , TransformableType s
   , TransformableOp s
   , Transformable (s,Sld (Free k)) s
   )
   => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
-  -> Variant2 Covariant h x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+  -> Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
 lftFrMapCovIsoO sx sy i lf k = lftMapCov (gg k sx sy i) (liftFree lf k)
 
 

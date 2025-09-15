@@ -110,6 +110,7 @@ instance Transformable Dst Fbr where tau Struct = Struct
 instance Transformable Dst FbrOrt where tau Struct = Struct
 instance Transformable Dst Add where tau Struct = Struct
 instance TransformableG Op Dst Dst where tauG Struct = Struct
+instance TransformableG Op (Dst,t) Dst where tauG = tauG . tauFst
 instance TransformableOp Dst
 instance TransformableGRefl Op Dst
 

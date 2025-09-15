@@ -69,6 +69,8 @@ instance Oriented q => Oriented (Op q) where
   orientation (Op a) = opposite (orientation a)
 
 instance TransformableG Op Ort Ort where tauG Struct = Struct
+instance TransformableG Op (Ort,t) Ort where tauG = tauG . tauFst
+
 instance TransformableGRefl Op Ort
 instance TransformableOp Ort
 
@@ -108,7 +110,7 @@ fromOpOp (Op (Op x)) = x
 -- TransformableOp -
 
 -- | helper class to avoid undecidable instances.
-class Transformable1 Op s => TransformableOp s
+class TransformableG Op s s => TransformableOp s
 
 --------------------------------------------------------------------------------
 -- tauOp -

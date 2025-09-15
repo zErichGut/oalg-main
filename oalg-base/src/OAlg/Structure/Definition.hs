@@ -22,7 +22,7 @@ module OAlg.Structure.Definition
   (
     -- * Structure
     Structure, Struct(..)
-  , tauFst, tauSnd
+  , tauTuple, tauFst, tauSnd
   
   , Structure2, Struct2(..)
 
@@ -92,6 +92,13 @@ tauFst Struct = Struct
 -- | the second struct according to @__(s,t)__@.
 tauSnd :: Struct (s,t) x -> Struct t x
 tauSnd Struct = Struct
+
+--------------------------------------------------------------------------------
+-- tauTuple -
+
+-- | the product structure. 
+tauTuple :: Struct s x -> Struct t x -> Struct (s,t) x
+tauTuple Struct Struct = Struct
 
 --------------------------------------------------------------------------------
 -- Structure2 -
@@ -165,6 +172,12 @@ class Transformable s t where
 instance Transformable s s where
   tau s = s
 
+instance (Transformable s u, Transformable s v) => Transformable s (u,v) where
+   tau s = tauTuple (tau s) (tau s)
+
+instance Transformable (s,t) s where tau = tauFst
+instance Transformable (s,t) t where tau = tauSnd
+
 --------------------------------------------------------------------------------
 -- TransformaleType -
 
@@ -175,6 +188,7 @@ class Transformable s Type => TransformableType s
 instance Transformable s Type where
   tau _ = Struct
 -}
+
 --------------------------------------------------------------------------------
 -- TransformableG -
 
@@ -185,6 +199,15 @@ class TransformableG t u v where
 instance TransformableG d s Type where
   tauG _ = Struct
 
+instance (TransformableG d s u, TransformableG d s v) => TransformableG d s (u,v) where
+  tauG s = tauTuple (tauG s) (tauG s)
+  
+--------------------------------------------------------------------------------
+-- tauTupleG -
+{-
+tauTupleG :: Struct s (d x) -> Struct t (d x) -> Struct (s,t) (d x)
+tauTupleG Struct
+-}
 --------------------------------------------------------------------------------
 -- tauG' -
 
