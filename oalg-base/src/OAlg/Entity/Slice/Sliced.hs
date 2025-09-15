@@ -11,8 +11,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DataKinds, ConstraintKinds, RankNTypes #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Entity.Slice.Sliced
 -- Description : oriented structures with a distinguished point.
@@ -23,7 +21,6 @@
 -- 'Oriented' structures with a distinguished 'Point'.
 module OAlg.Entity.Slice.Sliced
   (
-{-    
     -- * Sliced
     Sliced(..), sliceIndex
 
@@ -45,7 +42,7 @@ module OAlg.Entity.Slice.Sliced
   
     -- * Proposition
   , prpHomSlicedOriented
--}
+
   ) where
 
 import Data.Kind
@@ -166,8 +163,27 @@ instance Transformable (s,Sld i) Type where tau _ = Struct
 
 instance TransformableType (s,Sld i)
 
+instance Transformable (s,Sld i) (Sld i) where tau = tauSnd
+
 instance Transformable s Ort => Transformable (s,Sld i) Ort where tau = tau . tauFst
 instance Transformable s Ort => TransformableOrt (s,Sld i)
+
+instance Transformable s Mlt => Transformable (s,Sld i) Mlt where tau = tau . tauFst
+instance TransformableMlt s => TransformableMlt (s,Sld i)
+
+instance Transformable s Fbr => Transformable (s,Sld i) Fbr where tau = tau . tauFst
+instance TransformableFbr s => TransformableFbr (s,Sld i)
+
+instance Transformable s Add => Transformable (s,Sld i) Add where tau = tau . tauFst
+instance TransformableAdd s => TransformableAdd (s,Sld i)
+
+instance Transformable s FbrOrt => Transformable (s,Sld i) FbrOrt where tau = tau . tauFst
+instance TransformableFbrOrt s => TransformableFbrOrt (s,Sld i)
+
+instance Transformable s Dst => Transformable (s,Sld i) Dst where tau = tau . tauFst
+instance TransformableDst s => TransformableDst (s,Sld i)
+
+
 instance TransformableG Op (Sld i) (Sld i) where tauG Struct = Struct
 instance TransformableG Op (s,Sld i) (Sld i) where tauG = tauG . tauSnd
 

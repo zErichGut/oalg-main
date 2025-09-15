@@ -23,7 +23,7 @@ module OAlg.Category.Definition
   (
     -- * Category
     Category(..), cOne'
-  , Sub(..), cOneSub, sub, subG
+  , Sub(..), cOneSub, sub, sub', subG
   , Op2(..)
 
     -- | __Some basic definitions in the category @('->')@__

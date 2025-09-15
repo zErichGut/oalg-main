@@ -414,10 +414,24 @@ liftFree (LiftableFree l) = l
 --------------------------------------------------------------------------------
 -- SliceFree -
 
--- | attest for @__k__@-free sliced @__s__@-structures.
-class SlicedFree s x where
-  slicedFree :: Struct (s,Sld (Free k)) x
+-- | attest for @__k__@-free sliced structures.
+class SlicedFree x where
+  slicedFree :: Struct (Sld (Free k)) x
 
+--------------------------------------------------------------------------------
+-- tauSldFreeOp -
+{-
+-- | transforming 'SlicedFree' @__s__@-structures to 'Op'.
+tauSldFreeOp :: TransformableG Op s s => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) (Op x)
+tauSldFreeOp s@Struct = case tauOp (tauFst s) of Struct -> Struct
+-}
+
+tauSldFreeOp :: Struct (Sld (Free k)) x -> Struct (Sld (Free k)) (Op x)
+tauSldFreeOp Struct = Struct 
+
+instance SlicedFree x => SlicedFree (Op x) where slicedFree = tauSldFreeOp slicedFree
+
+{-
 --------------------------------------------------------------------------------
 -- HomFree -
 
@@ -430,28 +444,16 @@ data HomFree s x y where
 instance Disjunctive2 (HomFree s) where
   variant2 (HomFree h) = variant2 h
 
+
 --------------------------------------------------------------------------------
 -- SdlFr -
 
 -- | 'SlicedFree' structures. 
-data SldFr s
+data SldFr
 
-type instance Structure (SldFr s) x = SlicedFree s x
+type instance Structure SldFr x = SlicedFree x
 
---------------------------------------------------------------------------------
--- tauOpSldFree -
 
--- | transforming 'SlicedFree' @__s__@-structures to 'Op'.
-tauOpSldFree :: TransformableG Op s s => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) (Op x)
-tauOpSldFree s@Struct = case tauOp (tauFst s) of Struct -> Struct
-
-instance
-  ( SlicedFree s x
-  , TransformableGRefl Op s
-  )
-  => SlicedFree s (Op x) where
-  slicedFree = tauOpSldFree slicedFree
-  
 --------------------------------------------------------------------------------
 -- tauSldFre -
 
@@ -461,91 +463,61 @@ tauSldFr Struct = slicedFree
 
 instance Transformable s Ort => Transformable (SldFr s) Ort where tau = tau . tauFst . tauSldFr
 instance Transformable s Mlt => Transformable (SldFr s) Mlt where tau = tau . tauFst . tauSldFr
-
---------------------------------------------------------------------------------
--- toDualOpSldFr -
-{-
-toDualOpSldFr ::
-  ( TransformableGRefl Op s
-  )
-  => Struct (SldFr s) x -> Struct (s,Sld (Free k)) x
-  -> Variant2 Contravariant (Inv2 (HomFree s)) x (Op x)
-toDualOpSldFr Struct s@Struct = Contravariant2 (Inv2 (HomFree t) (HomFree f)) where
-  Contravariant2 (Inv2 t f) = toDualO s
 -}
-{-
-tt ::
-  ( SlicedFree s x
-  , SlicedFree s y
-  )
-  => Variant2 v (IsoO (s,Sld (Free k)) Op) x y -> Variant2 v (Inv2 (HomFree s)) x y
-tt (Covariant2 (Inv2 t f)) = Covariant2 (Inv2 (HomFree t) (HomFree f))
--}
-
---------------------------------------------------------------------------------
--- isoHomFrIsoOp -
-
--- | the underlying 'IsoO' accorging to 'Op'
-isoHomFrIsoOp :: Variant2 v (Inv2 (HomFree s)) x y
-              -> Variant2 v (IsoO (s,Sld (Free k)) Op) x y
-isoHomFrIsoOp (Covariant2 (Inv2 (HomFree t) (HomFree f))) = Covariant2 (Inv2 t f)
-isoHomFrIsoOp (Contravariant2 (Inv2 (HomFree t) (HomFree f))) = Contravariant2 (Inv2 t f)
-
---------------------------------------------------------------------------------
--- HomFree - Homomorphism -
-
-instance TransformableGRefl Op s => ApplicativeG Id (HomFree s) (->) where
-  amapG (HomFree h) = amapG h
-
-instance TransformableGRefl Op s => ApplicativeG Pnt (HomFree s) (->) where
-  amapG (HomFree h) = amapG h
-
-instance Morphism (HomFree s) where
-  type ObjectClass (HomFree s) = SldFr s
-  homomorphous (HomFree _) = Struct :>: Struct
-
-instance Category (HomFree s) where
-  cOne s@Struct = HomFree (cOne (tauSldFr s))
-  HomFree f . HomFree g = HomFree (f . g) 
-
-instance CategoryDisjunctive (HomFree s)
-
-instance
-  ( TransformableGReflOp s
-  , TransformableOrt s
-  ) => HomOrientedDisjunctive (HomFree s)
-
-instance 
-  ( TransformableGReflOp s
-  , TransformableMlt s
-  ) => HomMultiplicativeDisjunctive (HomFree s)
 
 --------------------------------------------------------------------------------
 -- lftFrMapCov -
 
-ff :: Struct t x -> Struct t y -> h x y -> Sub t h x y
-ff Struct Struct = Sub
-
-gg :: q k
+lftFrSub :: q k
    -> Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
    -> Variant2 v (IsoO s Op) x y
    -> Variant2 v (Inv2 (Sub (s,Sld (Free k)) (HomDisjEmpty s Op))) x y
-gg _ sx sy (Covariant2 (Inv2 t f)) = Covariant2 (Inv2 (ff sx sy t) (ff sy sx f))
-gg _ sx sy (Contravariant2 (Inv2 t f)) = Contravariant2 (Inv2 (ff sx sy t) (ff sy sx f))
+lftFrSub _ sx sy (Covariant2 (Inv2 t f))
+  = Covariant2 (Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
+lftFrSub _ sx sy (Contravariant2 (Inv2 t f))
+  = Contravariant2 (Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
 
 
 instance Transformable (s,Sld i) s
   => TransformableObjectClass (s,Sld i) (HomDisjEmpty s Op)
-  
-lftFrMapCovIsoO ::
-  ( TransformableMlt s
-  , TransformableType s
+
+tauSldFrTuple :: SlicedFree x => Struct s x -> Struct (s,Sld (Free k)) x
+tauSldFrTuple s = tauTuple s slicedFree
+
+lftFrMapCovStruct ::
+  ( TransformableType s
   , TransformableOp s
+  , TransformableMlt s
   , Transformable (s,Sld (Free k)) s
+  , SlicedFree x
+  , SlicedFree y
   )
-  => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
+  => Struct s x -> Struct s y
   -> Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-lftFrMapCovIsoO sx sy i lf k = lftMapCov (gg k sx sy i) (liftFree lf k)
+lftFrMapCovStruct sx sy i lf k = lftMapCov (lftFrSub k sfx sfy i) (liftFree lf k) where
+  sfx = tauSldFrTuple sx
+  sfy = tauSldFrTuple sy
+
+
+hh ::
+  ( TransformableType s
+  , TransformableOp s
+  , TransformableMlt s
+  , Transformable (s,Sld (Free k)) s
+  , SlicedFree x
+  , SlicedFree y
+  )
+  => Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+hh i lf = lftFrMapCovStruct (domain i) (range i) i lf
+
+hhDst ::
+  ( s ~ Mlt
+  , SlicedFree x
+  , SlicedFree y
+  )
+  => Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> LiftableFree p y
+hhDst i lf = LiftableFree (hh i lf)
+
 
 
 {-

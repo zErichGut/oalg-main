@@ -171,12 +171,12 @@ class Transformable s t where
 
 instance Transformable s s where
   tau s = s
-
+{-
 instance (Transformable s u, Transformable s v) => Transformable s (u,v) where
    tau s = tauTuple (tau s) (tau s)
-
-instance Transformable (s,t) s where tau = tauFst
-instance Transformable (s,t) t where tau = tauSnd
+-}
+-- instance Transformable (s,t) s where tau = tauFst
+-- instance Transformable (s,t) t where tau = tauSnd
 
 --------------------------------------------------------------------------------
 -- TransformaleType -
