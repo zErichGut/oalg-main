@@ -529,26 +529,23 @@ lftFrMapDstCnt (Contravariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
 type instance Dual1 (LiftableFree p) = LiftableFree (Dual p)
 
 --------------------------------------------------------------------------------
--- lftFrMapMltS -
+-- lftFrMapS -
 
-lftFrMapMltS :: p ~ Dual (Dual p)
+lftFrMapSMlt :: p ~ Dual (Dual p)
   => Inv2 (HomFree Mlt) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
-lftFrMapMltS = vmapBi lftFrMapMltCov lftFrMapMltCov lftFrMapMltCnt lftFrMapMltCnt
+lftFrMapSMlt = vmapBi lftFrMapMltCov lftFrMapMltCov lftFrMapMltCnt lftFrMapMltCnt
 
-lftFrMapDstS :: p ~ Dual (Dual p)
+lftFrMapSDst :: p ~ Dual (Dual p)
   => Inv2 (HomFree Dst) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
-lftFrMapDstS = vmapBi lftFrMapDstCov lftFrMapDstCov lftFrMapDstCnt lftFrMapDstCnt
-
---------------------------------------------------------------------------------
--- LiftableFree - FunctoiralG -
+lftFrMapSDst = vmapBi lftFrMapDstCov lftFrMapDstCov lftFrMapDstCnt lftFrMapDstCnt
 
 instance p ~ Dual (Dual p) => ApplicativeG (SDualBi (LiftableFree p)) (Inv2 (HomFree Mlt)) (->) where
-  amapG = lftFrMapMltS
+  amapG = lftFrMapSMlt
 
 instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomFree Mlt)) (->)
 
 instance p ~ Dual (Dual p) => ApplicativeG (SDualBi (LiftableFree p)) (Inv2 (HomFree Dst)) (->) where
-  amapG = lftFrMapDstS
+  amapG = lftFrMapSDst
 
 instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomFree Dst)) (->)
 
@@ -559,10 +556,12 @@ instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomF
 --
 -- __Property__ Let @cl@ be in @'ConeLiftable' __s p d t n m x__@, then holds:
 --
--- (1) If @cl@ matches @'ConeKernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
--- @'lftbBase' (l k)' '==' 'kernelFactor' ('universalCone' c)@.
+-- (1) If @cl@ matches @'ConeKernelLiftableFree' c ('LiftableFree' l)@, then
+-- for any @k@ in @'Any' __k__@ holds:
+-- @'lftbBase' (l k)' '==' 'kernelFactor' c@.
 --
--- (2) If @cl@ matches @'ConeCokernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
+-- (2) If @cl@ matches @'ConeCokernelLiftableFree' c ('LiftableFree' l)@, then
+-- for any @k@ in @'Any' __k__@ holds:
 -- @'lftbBase' (l k)' '==' 'cokernelFactor' c@.
 data ConeLiftable s p d t n m x where
   ConeKernelLiftable
@@ -595,8 +594,8 @@ cnLiftable (ConeCokernelLiftable _ lft) = lft
 -- cnlMapCov -
 
 cnlMapCov ::
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d t n m
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Dual t) n m
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
   )
   => Variant2 Covariant (Inv2 (HomFree s)) x y
   -> ConeLiftable s p d t n m x -> ConeLiftable s p d t n m y
@@ -607,97 +606,101 @@ cnlMapCov (Covariant2 i) (ConeCokernelLiftable k l) = ConeCokernelLiftable k' l'
   SDualBi (Right1 k') = amapG i (SDualBi (Right1 k))
   SDualBi (Right1 l') = amapG i (SDualBi (Right1 l))
 
-
-
-
-{-
--- | homomorphism between free sliced @__s__@-structures.
-data HomFree s x y where
-  HomFree
-    :: ( SlicedFree x, SlicedFree y
-       , Structure s x, Structure s y
-       )
-    => HomDisjEmpty s Op x y
-    -> HomFree s x y
-
-instance Disjunctive2 (HomFree s) where
-  variant2 (HomFree h) = variant2 h
-  variant2 (HomFreeDst h) = variant2 h
-
-instance Morphism (HomFree s) where
-  type ObjectClass (HomFree s) = (s,SldFr)
-  homomorphous (HomFreeMlt _) = Struct :>: Struct
-  homomorphous (HomFreeDst _) = Struct :>: Struct
-
 --------------------------------------------------------------------------------
--- isoHomFreeIsoOp -
+-- cnlMapCnt -
 
-isoHomFreeIsoOp :: Variant2 v (Inv2 (HomFree s)) x y -> Variant2 v (IsoO s Op) x y
-isoHomFreeIsoOp (Covariant2 (Inv2 (HomFreeMlt t) (HomFreeMlt f))) = Covariant2 (Inv2 t f)
-isoHomFreeIsoOp (Contravariant2 (Inv2 (HomFreeMlt t) (HomFreeMlt f))) = Contravariant2 (Inv2 t f)
-isoHomFreeIsoOp (Covariant2 (Inv2 (HomFreeDst t) (HomFreeDst f))) = Covariant2 (Inv2 t f)
-isoHomFreeIsoOp (Contravariant2 (Inv2 (HomFreeDst t) (HomFreeDst f))) = Contravariant2 (Inv2 t f)
-
---------------------------------------------------------------------------------
--- lftFrMapCov -
-
-lftFrMapCov :: Variant2 Covariant (Inv2 (HomFree s)) x y -> LiftableFree p x -> LiftableFree p y
-lftFrMapCov i@(Covariant2 (Inv2 (HomFreeMlt _) _)) = lftFrMapCovMlt (isoHomFreeIsoOp i)
-lftFrMapCov i@(Covariant2 (Inv2 (HomFreeDst _) _)) = lftFrMapCovDst (isoHomFreeIsoOp i)
--}
-
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- cnlMapDstCov -
-
-cnlMapDstCov ::
-  ( CategoryDisjunctive h
-  , CC Dst h
-  , HomDistributiveDisjunctive h
-  , NaturalDiagrammatic (Inv2 (HomConeLiftable Dst h)) d (Parallel LeftToRight) N2 N1
-  , NaturalDiagrammatic (Inv2 (HomConeLiftable Dst h)) d (Parallel RightToLeft) N2 N1
+cnlMapCnt ::
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
   )
-  => Variant2 Covariant (Inv2 (HomConeLiftable Dst h)) x y
-  -> ConeLiftable Dst p d t n m x -> ConeLiftable Dst p d t n m y
-cnlMapDstCov i@(Covariant2 i') (ConeKernelLiftable c l) = ConeKernelLiftable c' (lft' i l) where
-  SDualBi (Right1 c') = amapG i' (SDualBi (Right1 c))
-  
-  lft' ::
-     ( CategoryDisjunctive h
-     , CC Dst h
-     )
-     => Variant2 Covariant (Inv2 (HomConeLiftable Dst h)) x y
-     ->  (Any k -> Liftable Projective (Free k) x)
-     -> Any k -> Liftable Projective (Free k) y
-  lft' (Covariant2 i) l k = case i of
-    Inv2 (HomConeLiftableDst _ w) _ -> case w k of
-      HomSliceFreeDst -> l' where
-        SDualBi (Right1 l') = amapG i (SDualBi (Right1 (l k)))
+  => Variant2 Contravariant (Inv2 (HomFree s)) x y
+  -> ConeLiftable s p d t n m x -> ConeLiftable s (Dual p) d (Dual t) n m y
+cnlMapCnt (Contravariant2 i) (ConeKernelLiftable k l) = ConeCokernelLiftable k' l' where
+  SDualBi (Left1 k') = amapG i (SDualBi (Right1 k))
+  SDualBi (Left1 l') = amapG i (SDualBi (Right1 l))
+cnlMapCnt (Contravariant2 i) (ConeCokernelLiftable k l) = ConeKernelLiftable k' l' where
+  SDualBi (Left1 k') = amapG i (SDualBi (Right1 k))
+  SDualBi (Left1 l') = amapG i (SDualBi (Right1 l))
 
+--------------------------------------------------------------------------------
+-- ConeLiftable - Dual -
 
-relConeLiftable ::
+type instance Dual1 (ConeLiftable s p d t n m) = ConeLiftable s (Dual p) d (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- cnlMapS -
+
+cnlMapS ::
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  , p ~ Dual (Dual p)
+  , t ~ Dual (Dual t)
+  )
+  => Inv2 (HomFree s) x y
+  -> SDualBi (ConeLiftable s p d t n m) x -> SDualBi (ConeLiftable s p d t n m) y
+cnlMapS = vmapBi cnlMapCov cnlMapCov cnlMapCnt cnlMapCnt
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  , p ~ Dual (Dual p)
+  , t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFree s)) (->) where
+  amapG = cnlMapS
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  , p ~ Dual (Dual p)
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFree s)) (->)
+
+--------------------------------------------------------------------------------
+-- toDualOpFree -
+
+toDualOpFreeDst :: (Distributive x, SlicedFree x)
+  => Variant2 Contravariant (Inv2 (HomFree Dst)) x (Op x)
+toDualOpFreeDst = Contravariant2 (Inv2 (Sub t) (Sub f)) where
+  Contravariant2 (Inv2 t f) = toDualOpDst
+
+--------------------------------------------------------------------------------
+-- prpConeLiftable -
+
+relConeKernelLiftable ::
   ( Diagrammatic d
-  , Show (d t n m x)
-  , Validable (d t n m x)
+  , Show (d (Parallel LeftToRight) n m x)
+  , Validable (d (Parallel LeftToRight) n m x)
   , Distributive x
   , XStandardOrtOrientation x
   )
-  => N -> ConeLiftable s p d t n m x -> Statement
-relConeLiftable kMax (ConeKernelLiftable c l) =
+  => N -> ConeLiftable s Projective d (Parallel LeftToRight) n m x -> Statement
+relConeKernelLiftable kMax (ConeKernelLiftable c (LiftableFree l)) =
   And [ valid c
       , Forall (xNB 0 kMax)
           (\k -> case someNatural k of
               SomeNatural k' -> And [ valid (l k')
                                     , (lftbBase (l k') == kernelFactor c)
-                                        :?> Params ["k":=show k
+                                        :?> Params [ "k":=show k
                                                    , "c":=show c
                                                    ]
                                     ]
           )
       ]
-  
--}
+
+-- | validity according to 'ConeLiftable'.
+relConeLiftable ::
+  ( Show (d (Parallel LeftToRight) n m x), Show (d (Parallel LeftToRight) n m (Op x))
+  , Validable (d (Parallel LeftToRight) n m x), Validable (d (Parallel LeftToRight) n m (Op x))
+  , Distributive x
+  , SlicedFree x
+  , XStandardOrtOrientation x
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+  )
+  => N -> ConeLiftable s p d t n m x -> Statement
+relConeLiftable kMax c@(ConeKernelLiftable _ _)   = relConeKernelLiftable kMax c
+relConeLiftable kMax c@(ConeCokernelLiftable _ _) = relConeKernelLiftable kMax c' where
+  Contravariant2 i   = toDualOpFreeDst 
+  SDualBi (Left1 c') = amapG i (SDualBi (Right1 c))
