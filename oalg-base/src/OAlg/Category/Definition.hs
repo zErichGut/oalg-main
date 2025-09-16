@@ -34,6 +34,7 @@ module OAlg.Category.Definition
 
     -- * Cayleyan
   , Cayleyan2(..), Inv2(..), inv2
+  , inv2Forget
   
     -- * Morphism
   , Morphism(..)
@@ -468,6 +469,13 @@ instance (Category c, Eq2 c) => Cayleyan2 (Inv2 c) where
 -- | the inverse.
 inv2 :: Inv2 c x y -> Inv2 c y x
 inv2 (Inv2 f g) = Inv2 g f
+
+--------------------------------------------------------------------------------
+-- inv2Forget -
+
+-- | forgetting the restriction to 'Sub'.
+inv2Forget :: Inv2 (Sub s h) x y -> Inv2 h x y
+inv2Forget (Inv2 (Sub t) (Sub f)) = Inv2 t f
 
 --------------------------------------------------------------------------------
 -- Either2 - Morphism -

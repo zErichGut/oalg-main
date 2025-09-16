@@ -196,6 +196,9 @@ instance TransformableGRefl Op (Mlt,Sld i)
 instance TransformableOp (Dst,Sld i)
 instance TransformableGRefl Op (Dst,Sld i)
 
+instance Transformable (s,Sld i) s
+  => TransformableObjectClass (s,Sld i) (HomDisjEmpty s Op)
+
 instance
   ( Transformable s Ort
   , TransformableOp (s,Sld i)

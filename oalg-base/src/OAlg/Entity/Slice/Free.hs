@@ -419,31 +419,18 @@ class SlicedFree x where
   slicedFree :: Struct (Sld (Free k)) x
 
 --------------------------------------------------------------------------------
+-- tauSldFrTuple -
+
+tauSldFrTuple :: SlicedFree x => Struct s x -> Struct (s,Sld (Free k)) x
+tauSldFrTuple s = tauTuple s slicedFree
+
+--------------------------------------------------------------------------------
 -- tauSldFreeOp -
-{-
--- | transforming 'SlicedFree' @__s__@-structures to 'Op'.
-tauSldFreeOp :: TransformableG Op s s => Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) (Op x)
-tauSldFreeOp s@Struct = case tauOp (tauFst s) of Struct -> Struct
--}
 
 tauSldFreeOp :: Struct (Sld (Free k)) x -> Struct (Sld (Free k)) (Op x)
 tauSldFreeOp Struct = Struct 
 
 instance SlicedFree x => SlicedFree (Op x) where slicedFree = tauSldFreeOp slicedFree
-
-{-
---------------------------------------------------------------------------------
--- HomFree -
-
--- | homomorphism between free sliced @__s__@-structures.
-data HomFree s x y where
-  HomFree :: (SlicedFree s x, SlicedFree s y)
-          => (forall k . HomDisjEmpty (s,Sld (Free k)) Op x y)
-          -> HomFree s x y
-
-instance Disjunctive2 (HomFree s) where
-  variant2 (HomFree h) = variant2 h
-
 
 --------------------------------------------------------------------------------
 -- SdlFr -
@@ -453,38 +440,19 @@ data SldFr
 
 type instance Structure SldFr x = SlicedFree x
 
-
 --------------------------------------------------------------------------------
--- tauSldFre -
-
--- | transforming 'SlicedFree' @__s__@ structures to @(__s__,'Sld' ('Free' __k__)@-structures.
-tauSldFr :: Struct (SldFr s) x -> Struct (s,Sld (Free k)) x
-tauSldFr Struct = slicedFree
-
-instance Transformable s Ort => Transformable (SldFr s) Ort where tau = tau . tauFst . tauSldFr
-instance Transformable s Mlt => Transformable (SldFr s) Mlt where tau = tau . tauFst . tauSldFr
--}
-
---------------------------------------------------------------------------------
--- lftFrMapCov -
+-- lftFrSub -
 
 lftFrSub :: q k
    -> Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
    -> Variant2 v (IsoO s Op) x y
    -> Variant2 v (Inv2 (Sub (s,Sld (Free k)) (HomDisjEmpty s Op))) x y
-lftFrSub _ sx sy (Covariant2 (Inv2 t f))
-  = Covariant2 (Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
-lftFrSub _ sx sy (Contravariant2 (Inv2 t f))
-  = Contravariant2 (Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
+lftFrSub _ sx sy = amapVariant2 (\(Inv2 t f) -> Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
 
+--------------------------------------------------------------------------------
+-- lftFrMapIsoOpCov -
 
-instance Transformable (s,Sld i) s
-  => TransformableObjectClass (s,Sld i) (HomDisjEmpty s Op)
-
-tauSldFrTuple :: SlicedFree x => Struct s x -> Struct (s,Sld (Free k)) x
-tauSldFrTuple s = tauTuple s slicedFree
-
-lftFrMapCovStruct ::
+lftFrMapIsoOpCovStruct ::
   ( TransformableType s
   , TransformableOp s
   , TransformableMlt s
@@ -494,12 +462,30 @@ lftFrMapCovStruct ::
   )
   => Struct s x -> Struct s y
   -> Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-lftFrMapCovStruct sx sy i lf k = lftMapCov (lftFrSub k sfx sfy i) (liftFree lf k) where
+lftFrMapIsoOpCovStruct sx sy i lf k = lftMapCov (lftFrSub k sfx sfy i) (liftFree lf k) where
   sfx = tauSldFrTuple sx
   sfy = tauSldFrTuple sy
 
+lftFrMapIsoOpMltCov ::
+  ( s ~ Mlt
+  , SlicedFree x
+  , SlicedFree y
+  )
+  => Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapIsoOpMltCov i lf = LiftableFree (lftFrMapIsoOpCovStruct (domain i) (range i) i lf)
 
-hh ::
+lftFrMapIsoOpDstCov ::
+  ( s ~ Dst
+  , SlicedFree x
+  , SlicedFree y
+  )
+  => Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapIsoOpDstCov i lf = LiftableFree (lftFrMapIsoOpCovStruct (domain i) (range i) i lf)
+
+--------------------------------------------------------------------------------
+-- lftFrMapIsoOpCnt -
+
+lftFrMapIsoOpCntStruct ::
   ( TransformableType s
   , TransformableOp s
   , TransformableMlt s
@@ -507,125 +493,114 @@ hh ::
   , SlicedFree x
   , SlicedFree y
   )
-  => Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-hh i lf = lftFrMapCovStruct (domain i) (range i) i lf
+  => Struct s x -> Struct s y
+  -> Variant2 Contravariant (IsoO s Op) x y -> LiftableFree p x
+  -> Any k -> Liftable (Dual p) (Free k) y
+lftFrMapIsoOpCntStruct sx sy i lf k = lftMapCnt (lftFrSub k sfx sfy i) (liftFree lf k) where
+  sfx = tauSldFrTuple sx
+  sfy = tauSldFrTuple sy
 
-hhDst ::
+lftFrMapIsoOpMltCnt ::
   ( s ~ Mlt
   , SlicedFree x
   , SlicedFree y
   )
-  => Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> LiftableFree p y
-hhDst i lf = LiftableFree (hh i lf)
+  => Variant2 Contravariant (IsoO s Op) x y -> LiftableFree p x -> LiftableFree (Dual p) y
+lftFrMapIsoOpMltCnt i lf = LiftableFree (lftFrMapIsoOpCntStruct (domain i) (range i) i lf)
+
+lftFrMapIsoOpDstCnt ::
+  ( s ~ Dst
+  , SlicedFree x
+  , SlicedFree y
+  )
+  => Variant2 Contravariant (IsoO s Op) x y -> LiftableFree p x -> LiftableFree (Dual p) y
+lftFrMapIsoOpDstCnt i lf = LiftableFree (lftFrMapIsoOpCntStruct (domain i) (range i) i lf)
+
+--------------------------------------------------------------------------------
+-- HomFree -
+
+type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
+
+--------------------------------------------------------------------------------
+-- lftFrMapCov -
+
+lftFrMapMltCov :: Variant2 Covariant (Inv2 (HomFree Mlt)) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapMltCov (Covariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
+  (Struct,Struct) -> lftFrMapIsoOpMltCov (Covariant2 (inv2Forget i))
+
+lftFrMapDstCov :: Variant2 Covariant (Inv2 (HomFree Dst)) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapDstCov (Covariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
+  (Struct,Struct) -> lftFrMapIsoOpDstCov (Covariant2 (inv2Forget i))
+
+lftFrMapMltCnt :: Variant2 Contravariant (Inv2 (HomFree Mlt)) x y
+  -> LiftableFree p x -> LiftableFree (Dual p) y
+lftFrMapMltCnt (Contravariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
+  (Struct,Struct) -> lftFrMapIsoOpMltCnt (Contravariant2 (inv2Forget i))
+
+lftFrMapDstCnt :: Variant2 Contravariant (Inv2 (HomFree Dst)) x y
+  -> LiftableFree p x -> LiftableFree (Dual p) y
+lftFrMapDstCnt (Contravariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
+  (Struct,Struct) -> lftFrMapIsoOpDstCnt (Contravariant2 (inv2Forget i))
+
+--------------------------------------------------------------------------------
+-- Duality - LiftableFree -
+
+type instance Dual1 (LiftableFree p) = LiftableFree (Dual p)
+
+--------------------------------------------------------------------------------
+-- lftFrMapMltS -
+
+instance Transformable (Mlt,SldFr) Mlt where tau = tauFst
+
+instance TransformableObjectClass (Mlt,SldFr) (HomDisj Mlt Op (HomEmpty Mlt))
+
+lftFrMapMltS :: p ~ Dual (Dual p)
+  => Inv2 (HomFree Mlt) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
+lftFrMapMltS = vmapBi lftFrMapMltCov lftFrMapMltCov lftFrMapMltCnt lftFrMapMltCnt
 
 
 
 {-
-lftFrMapCovHomFree :: Variant2 Covariant (Inv2 (HomFree Dst)) x y
-      -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-lftFrMapCovHomFree h = lftFrMapCovIsoO (isoHomFrIsoOp h)
+-- | homomorphism between free sliced @__s__@-structures.
+data HomFree s x y where
+  HomFree
+    :: ( SlicedFree x, SlicedFree y
+       , Structure s x, Structure s y
+       )
+    => HomDisjEmpty s Op x y
+    -> HomFree s x y
 
--- | mapping free liftables according a covariant 'HomFree'
-lftFrMapCov :: Variant2 Covariant (Inv2 (HomFree Dst)) x y -> LiftableFree p x -> LiftableFree p y
-lftFrMapCov h lf = LiftableFree (lftFrMapCovHomFree h lf)
+instance Disjunctive2 (HomFree s) where
+  variant2 (HomFree h) = variant2 h
+  variant2 (HomFreeDst h) = variant2 h
+
+instance Morphism (HomFree s) where
+  type ObjectClass (HomFree s) = (s,SldFr)
+  homomorphous (HomFreeMlt _) = Struct :>: Struct
+  homomorphous (HomFreeDst _) = Struct :>: Struct
+
+--------------------------------------------------------------------------------
+-- isoHomFreeIsoOp -
+
+isoHomFreeIsoOp :: Variant2 v (Inv2 (HomFree s)) x y -> Variant2 v (IsoO s Op) x y
+isoHomFreeIsoOp (Covariant2 (Inv2 (HomFreeMlt t) (HomFreeMlt f))) = Covariant2 (Inv2 t f)
+isoHomFreeIsoOp (Contravariant2 (Inv2 (HomFreeMlt t) (HomFreeMlt f))) = Contravariant2 (Inv2 t f)
+isoHomFreeIsoOp (Covariant2 (Inv2 (HomFreeDst t) (HomFreeDst f))) = Covariant2 (Inv2 t f)
+isoHomFreeIsoOp (Contravariant2 (Inv2 (HomFreeDst t) (HomFreeDst f))) = Contravariant2 (Inv2 t f)
+
+--------------------------------------------------------------------------------
+-- lftFrMapCov -
+
+lftFrMapCov :: Variant2 Covariant (Inv2 (HomFree s)) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapCov i@(Covariant2 (Inv2 (HomFreeMlt _) _)) = lftFrMapCovMlt (isoHomFreeIsoOp i)
+lftFrMapCov i@(Covariant2 (Inv2 (HomFreeDst _) _)) = lftFrMapCovDst (isoHomFreeIsoOp i)
 -}
 
 
 
 
 
-{-  
-data HomSliceFree s k h where
-  HomSliceFreeDst :: (CategoryDisjunctive h, HomSlicedDistributive (Free k) h) => HomSliceFree Dst k h 
-
-data HomFree s h where
-  HomFreeDst :: (forall k . Any k -> HomSliceFree Dst k h) -> HomFree Dst h
-
-gg :: HomFree Dst h
-    -> Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-gg (HomFreeDst f) i lf k = case f k of HomSliceFreeDst -> ff i lf k
-
-gg' :: HomFree Dst h
-    -> Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> LiftableFree p y
-gg' hf i lf = LiftableFree (gg hf i lf)
-
-class CC s h where
-  cc :: HomFree s h
-
-
-gg'' :: CC Dst h => Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> LiftableFree p y
-gg'' = gg' cc
-
-
-cc' :: HomSliceFree Dst k (HomDisjEmpty (Dst,Sld (Free k)) Op)
-cc' = HomSliceFreeDst
--}
-
 {-
-hh :: CC Dst h => Variant2 Covariant (Inv2 h) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-hh h lf k = case cc k of HomSliceFreeDst -> ff h lf k
--}
-
-{-
-instance ApplicativeG Id (HomFree Dst h) (->) where
-  amapG (HomFreeDst h) = amapG h
--}
-
-{-
-ff :: Variant2 Covariant (Inv2 (HomFree Dst h)) x y -> LiftableFree p x -> LiftableFree p y
-ff (Covariant2 (Inv2 (HomFreeDst t) (HomFreeDst f))) l = l' error "nyi"
--}
-
-
-{-
--1-------------------------------------------------------------------------------
--- HomSliceFree -
-
-data HomSliceFree s k h where
-  HomSliceFreeDst :: HomSlicedDistributive (Free k) h => HomSliceFree Dst k h 
-
-data HomConeLiftable s h x y where
-  HomConeLiftableDst
-    :: h x y -> (forall k . Any k -> HomSliceFree Dst k h) -> HomConeLiftable Dst h x y
-
-instance ApplicativeG Id h (->) => ApplicativeG Id (HomConeLiftable s h) (->) where
-  amapG (HomConeLiftableDst h _) = amapG h
-
-instance ApplicativeG Pnt h (->) => ApplicativeG Pnt (HomConeLiftable s h) (->) where
-  amapG (HomConeLiftableDst h _) = amapG h
-
-instance ApplicativeG Rt h (->) => ApplicativeG Rt (HomConeLiftable s h) (->) where
-  amapG (HomConeLiftableDst h _) = amapG h
-
-instance Morphism h => Morphism (HomConeLiftable s h) where
-  type ObjectClass (HomConeLiftable s h) = ObjectClass h
-  homomorphous (HomConeLiftableDst h _) = homomorphous h
-
-class CC s h where
-  cc :: Any k -> HomSliceFree s k h
-
-{-
-instance CC Dst (HomDisjEmpty (Dst,Sld (Free k)) Op) where
-  cc _ = HomSliceFreeDst
--}  
-instance (Category h, CC Dst h) => Category (HomConeLiftable Dst h) where
-  cOne s = HomConeLiftableDst (cOne s) cc
-  HomConeLiftableDst f lf . HomConeLiftableDst g _ = HomConeLiftableDst (f.g) lf
-  
-instance Disjunctive2 h => Disjunctive2 (HomConeLiftable s h) where
-  variant2 (HomConeLiftableDst h _) = variant2 h
-
-instance (CategoryDisjunctive h, CC Dst h) => CategoryDisjunctive (HomConeLiftable Dst h)
-
-instance HomOrientedDisjunctive h => HomOrientedDisjunctive (HomConeLiftable s h)
-instance HomMultiplicativeDisjunctive h => HomMultiplicativeDisjunctive (HomConeLiftable s h)
-instance HomFibred h => HomFibred (HomConeLiftable s h)
-instance HomAdditive h => HomAdditive (HomConeLiftable s h)
-instance HomFibredOrientedDisjunctive h => HomFibredOrientedDisjunctive (HomConeLiftable s h)
-instance HomDistributiveDisjunctive h => HomDistributiveDisjunctive (HomConeLiftable s h)
-
-instance HomSlicedOriented (Free k) h => HomSlicedOriented (Free k) (HomConeLiftable Dst h)
-  
 --------------------------------------------------------------------------------
 -- cnlMapDstCov -
 

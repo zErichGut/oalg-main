@@ -25,7 +25,9 @@
 -- concept of co- and contra.
 module OAlg.Data.Variant
   ( -- * Variant
-    Variant(..), Variant2(..), toVariant2, vmap2
+    Variant(..)
+  , Variant2(..), toVariant2, vmap2
+  , amapVariant2
 
     -- * Disjunctive
   , Disjunctive(..), Disjunctive2(..)
@@ -162,6 +164,15 @@ toVariant2 h = case variant2 h of
 vmap2 :: ApplicativeG t h b => Variant2 v h x y -> b (t x) (t y)
 vmap2 (Covariant2 h)     = amapG h
 vmap2 (Contravariant2 h) = amapG h
+
+--------------------------------------------------------------------------------
+-- amapVariant2 -
+
+-- | mapping the 'Variant2' by preserving the variance.
+amapVariant2 :: (f x y -> g x y) -> Variant2 v f x y -> Variant2 v g x y
+amapVariant2 g (Covariant2 f)    = Covariant2 (g f)
+amapVariant2 g (Contravariant2 f) = Contravariant2 (g f)
+
 
 --------------------------------------------------------------------------------
 -- Variant2 - Morphism -
