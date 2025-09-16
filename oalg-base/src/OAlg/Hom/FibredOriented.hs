@@ -94,6 +94,9 @@ instance
   , HomFibredOrientedDisjunctive h
   )
   => HomFibredOrientedDisjunctive (Inv2 h)
+
+instance (TransformableFbrOrt s, HomFibredOrientedDisjunctive h)
+  => HomFibredOrientedDisjunctive (Sub s h)
   
 --------------------------------------------------------------------------------
 -- DualisableFibredOriented -

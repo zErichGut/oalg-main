@@ -93,6 +93,12 @@ instance
   , HomDistributiveDisjunctive h
   )
   => HomDistributiveDisjunctive (Inv2 h)
+
+instance
+  ( TransformableDst s
+  , HomDistributiveDisjunctive h
+  )
+  => HomDistributiveDisjunctive (Sub s h)
   
 --------------------------------------------------------------------------------
 -- homDisjOpDst -

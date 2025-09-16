@@ -69,6 +69,8 @@ import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
+import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
@@ -360,44 +362,6 @@ clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
 clfLimes (ClfCokernels l) = l
 
 --------------------------------------------------------------------------------
--- ConeLiftable -
-
--- | predicate for a liftable conic object.
---
--- __Property__ Let @cl@ be in @'ConeLiftable' __s p d t n m x__@, then holds:
---
--- (1) If @cl@ matches @'ConeKernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
--- @'lftbBase' (l k)' '==' 'kernelFactor' ('universalCone' c)@.
---
--- (2) If @cl@ matches @'ConeCokernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
--- @'lftbBase' (l k)' '==' 'cokernelFactor' c@.
-data ConeLiftable s p d t n m x where
-  ConeKernelLiftable
-    :: (KernelConic Cone d N1 x)
-    -> (forall (k :: N') . Any k -> Liftable Projective (Free k) x)
-    -> ConeLiftable Dst Projective d (Parallel LeftToRight) N2 N1 x
-  ConeCokernelLiftable
-    :: (CokernelConic Cone d N1 x)
-    -> (forall (k :: N') . Any k -> Liftable Injective (Free k) x)
-    -> ConeLiftable Dst Injective d (Parallel RightToLeft) N2 N1 x
-
-instance Conic ConeLiftable where
-  cone (ConeKernelLiftable c _)   = c
-  cone (ConeCokernelLiftable c _) = c
-
-instance Show (d t n m x) => Show (ConeLiftable s p d t n m x) where
-  show (ConeKernelLiftable k _) = "ConeKernelLiftable (" ++ show k ++ ") lftb"
-  show (ConeCokernelLiftable k _) = "ConeCokernelLiftable (" ++ show k ++ ") lftb"
-  
---------------------------------------------------------------------------------
--- cnLiftable -
-
--- | the underlying liftable.
-cnLiftable :: ConeLiftable s p d t n m x -> Any k -> Liftable p (Free k) x
-cnLiftable (ConeKernelLiftable _ lft)   = lft
-cnLiftable (ConeCokernelLiftable _ lft) = lft
-
---------------------------------------------------------------------------------
 -- LiftableFree -
 
 -- | liftable according to a free slice.
@@ -439,6 +403,23 @@ instance SlicedFree x => SlicedFree (Op x) where slicedFree = tauSldFreeOp slice
 data SldFr
 
 type instance Structure SldFr x = SlicedFree x
+
+instance Transformable s Ort    => Transformable (s,SldFr) Ort    where tau = tau . tauFst
+instance Transformable s Mlt    => Transformable (s,SldFr) Mlt    where tau = tau . tauFst
+instance Transformable s Fbr    => Transformable (s,SldFr) Fbr    where tau = tau . tauFst
+instance Transformable s Add    => Transformable (s,SldFr) Add    where tau = tau . tauFst
+instance Transformable s FbrOrt => Transformable (s,SldFr) FbrOrt where tau = tau . tauFst
+instance Transformable s Dst    => Transformable (s,SldFr) Dst    where tau = tau . tauFst
+
+instance TransformableOrt s    => TransformableOrt (s,SldFr)
+instance TransformableMlt s    => TransformableMlt (s,SldFr)
+instance TransformableFbr s    => TransformableFbr (s,SldFr)
+instance TransformableAdd s    => TransformableAdd (s,SldFr)
+instance TransformableFbrOrt s => TransformableFbrOrt (s,SldFr)
+instance TransformableDst s    => TransformableDst (s,SldFr) 
+
+instance TransformableObjectClass (Mlt,SldFr) (HomDisj Mlt Op (HomEmpty Mlt))
+instance TransformableObjectClass (Dst,SldFr) (HomDisj Dst Op (HomEmpty Dst))
 
 --------------------------------------------------------------------------------
 -- lftFrSub -
@@ -550,13 +531,82 @@ type instance Dual1 (LiftableFree p) = LiftableFree (Dual p)
 --------------------------------------------------------------------------------
 -- lftFrMapMltS -
 
-instance Transformable (Mlt,SldFr) Mlt where tau = tauFst
-
-instance TransformableObjectClass (Mlt,SldFr) (HomDisj Mlt Op (HomEmpty Mlt))
-
 lftFrMapMltS :: p ~ Dual (Dual p)
   => Inv2 (HomFree Mlt) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
 lftFrMapMltS = vmapBi lftFrMapMltCov lftFrMapMltCov lftFrMapMltCnt lftFrMapMltCnt
+
+lftFrMapDstS :: p ~ Dual (Dual p)
+  => Inv2 (HomFree Dst) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
+lftFrMapDstS = vmapBi lftFrMapDstCov lftFrMapDstCov lftFrMapDstCnt lftFrMapDstCnt
+
+--------------------------------------------------------------------------------
+-- LiftableFree - FunctoiralG -
+
+instance p ~ Dual (Dual p) => ApplicativeG (SDualBi (LiftableFree p)) (Inv2 (HomFree Mlt)) (->) where
+  amapG = lftFrMapMltS
+
+instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomFree Mlt)) (->)
+
+instance p ~ Dual (Dual p) => ApplicativeG (SDualBi (LiftableFree p)) (Inv2 (HomFree Dst)) (->) where
+  amapG = lftFrMapDstS
+
+instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomFree Dst)) (->)
+
+--------------------------------------------------------------------------------
+-- ConeLiftable -
+
+-- | predicate for a liftable conic object.
+--
+-- __Property__ Let @cl@ be in @'ConeLiftable' __s p d t n m x__@, then holds:
+--
+-- (1) If @cl@ matches @'ConeKernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
+-- @'lftbBase' (l k)' '==' 'kernelFactor' ('universalCone' c)@.
+--
+-- (2) If @cl@ matches @'ConeCokernelLiftableFree' c l@, then for any @k@ in @'Any' __k__@ holds:
+-- @'lftbBase' (l k)' '==' 'cokernelFactor' c@.
+data ConeLiftable s p d t n m x where
+  ConeKernelLiftable
+    :: KernelConic Cone d N1 x
+    -> LiftableFree Projective x
+    -> ConeLiftable Dst Projective d (Parallel LeftToRight) N2 N1 x
+  ConeCokernelLiftable
+    :: CokernelConic Cone d N1 x
+    -> LiftableFree Injective x
+    -> ConeLiftable Dst Injective d (Parallel RightToLeft) N2 N1 x
+
+instance Conic ConeLiftable where
+  cone (ConeKernelLiftable c _)   = c
+  cone (ConeCokernelLiftable c _) = c
+
+
+instance Show (d t n m x) => Show (ConeLiftable s p d t n m x) where
+  show (ConeKernelLiftable k _) = "ConeKernelLiftable (" ++ show k ++ ") lftb"
+  show (ConeCokernelLiftable k _) = "ConeCokernelLiftable (" ++ show k ++ ") lftb"
+  
+--------------------------------------------------------------------------------
+-- cnLiftable -
+
+-- | the underlying liftable.
+cnLiftable :: ConeLiftable s p d t n m x -> LiftableFree p x
+cnLiftable (ConeKernelLiftable _ lft)   = lft
+cnLiftable (ConeCokernelLiftable _ lft) = lft
+
+--------------------------------------------------------------------------------
+-- cnlMapCov -
+
+cnlMapCov ::
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d t n m
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Dual t) n m
+  )
+  => Variant2 Covariant (Inv2 (HomFree s)) x y
+  -> ConeLiftable s p d t n m x -> ConeLiftable s p d t n m y
+cnlMapCov (Covariant2 i) (ConeKernelLiftable k l) = ConeKernelLiftable k' l' where
+  SDualBi (Right1 k') = amapG i (SDualBi (Right1 k))
+  SDualBi (Right1 l') = amapG i (SDualBi (Right1 l))
+cnlMapCov (Covariant2 i) (ConeCokernelLiftable k l) = ConeCokernelLiftable k' l' where
+  SDualBi (Right1 k') = amapG i (SDualBi (Right1 k))
+  SDualBi (Right1 l') = amapG i (SDualBi (Right1 l))
+
 
 
 

@@ -119,8 +119,7 @@ instance
 instance HomMultiplicativeDisjunctive h => HomMultiplicative (Variant2 Covariant h)
 
 instance
-  ( Transformable s Ort
-  , Transformable s Mlt
+  ( TransformableMlt s
   , HomMultiplicativeDisjunctive h
   )
   => HomMultiplicativeDisjunctive (Sub s h)

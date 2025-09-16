@@ -77,6 +77,8 @@ instance (HomAdditive h, Disjunctive2 h) => HomAdditive (Variant2 v h)
 
 instance HomAdditive h => HomAdditive (Inv2 h)
 
+instance (TransformableAdd s, HomAdditive h) => HomAdditive (Sub s h)
+
 --------------------------------------------------------------------------------
 -- DualisableAdditive -
 
