@@ -40,7 +40,7 @@ module OAlg.Limes.Exact.ConsZero
   , xSomeConsZeroTrafoOrnt, SomeConsZeroTrafo(..)
 -}
   ) where
-
+{-
 import Control.Monad
 import Control.Applicative ((<|>))
 
@@ -70,7 +70,7 @@ import OAlg.Entity.Slice.Sliced
 import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Limits
-
+-}
 {-
 data DiagramP f t n m x where
   DiagramP :: Point (f t x) ~ Point x => Diagram t n m (f t x) -> DiagramP f t n m x
@@ -83,6 +83,7 @@ instance DiagrammaticProdicate f => Diagrammatic (DiagramP f) where
     DiagramChainTo p aps -> DiagramChainTo p (amap1 ff aps)
 -}
 
+{-
 data SomeSlice i t x where
   SomeSlice :: (Attestable n, Sliced (i n) x) => Slice t (i n) x -> SomeSlice i t x
 
@@ -129,7 +130,7 @@ type SomeSliceKernels i = KernelsG (SomeSliceCone i) (SomeSliceDiagram i) N1
 
 ff :: SomeSliceKernels i x -> SomeSliceDiagram i (Parallel LeftToRight) N2 N1 x -> SomeSliceKernel i x
 ff = limes
-
+-}
 
 {-
 --------------------------------------------------------------------------------

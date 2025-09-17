@@ -48,9 +48,11 @@ module OAlg.Limes.Exact.Deviation
 
   ) where
 
+import OAlg.Prelude
+
+{-
 import Data.Typeable
 
-import OAlg.Prelude
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -69,7 +71,7 @@ import OAlg.Limes.Exact.ConsZero
 
 
 import OAlg.Data.Symbol
-{-
+
 --------------------------------------------------------------------------------
 -- Variance -
 

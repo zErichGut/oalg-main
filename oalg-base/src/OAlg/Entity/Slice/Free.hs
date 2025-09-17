@@ -49,7 +49,14 @@ module OAlg.Entity.Slice.Free
   , PullbackFree, PullbackDiagramFree
 
     -- * New
-  , ConeLiftable(..), cnLiftable
+    -- * Cone Liftable
+  , ConeLiftable(..), cnLiftable, cnlMapS
+
+    -- ** Liftable Free
+  , LiftableFree(..), liftFree
+  , SlicedFree(..), SldFr
+  , HomFree, lftFrMapSMlt, lftFrMapSDst
+  , toDualOpFreeDst
 
   ) where
 
@@ -61,7 +68,6 @@ import Data.List ((++))
 import OAlg.Prelude
 
 import OAlg.Category.SDuality
-import OAlg.Category.Dualisable
 
 import OAlg.Data.Singleton
 import OAlg.Data.Either
@@ -75,11 +81,6 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Oriented
-import OAlg.Hom.Multiplicative
-import OAlg.Hom.Fibred
-import OAlg.Hom.FibredOriented
-import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
@@ -274,7 +275,7 @@ instance Diagrammatic DiagramFree where diagram = dgfDiagram
 --------------------------------------------------------------------------------
 -- KernelFree -
 
--- | kerne diagram with free points. 
+-- | kernel diagram with free points. 
 type KernelDiagramFree = DiagramFree (Parallel LeftToRight) N2
 
 -- | kernel of a diagram with free points.
@@ -360,6 +361,7 @@ newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftable
 -- | the limes of the given diagram.
 clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
 clfLimes (ClfCokernels l) = l
+
 
 --------------------------------------------------------------------------------
 -- LiftableFree -
@@ -698,9 +700,50 @@ relConeLiftable ::
   , XStandardOrtOrientation x
   , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
   , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+  , n ~ N2, m ~ N1
   )
   => N -> ConeLiftable s p d t n m x -> Statement
 relConeLiftable kMax c@(ConeKernelLiftable _ _)   = relConeKernelLiftable kMax c
 relConeLiftable kMax c@(ConeCokernelLiftable _ _) = relConeKernelLiftable kMax c' where
   Contravariant2 i   = toDualOpFreeDst 
   SDualBi (Left1 c') = amapG i (SDualBi (Right1 c))
+
+
+-- | validity according to 'ConeLiftable'.
+prpConeLiftable ::
+  ( Show (d (Parallel LeftToRight) n m x), Show (d (Parallel LeftToRight) n m (Op x))
+  , Validable (d (Parallel LeftToRight) n m x), Validable (d (Parallel LeftToRight) n m (Op x))
+  , Distributive x
+  , SlicedFree x
+  , XStandardOrtOrientation x
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+  , n ~ N2, m ~ N1
+  )
+  => N -> ConeLiftable s p d t n m x -> Statement
+prpConeLiftable kMax c = Prp "ConeLiftable" :<=>: relConeLiftable kMax c
+
+--------------------------------------------------------------------------------
+-- NaturalDiagrammaticFree -
+
+-- | helper class to avoid undecidable instances.
+class
+  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+
+  )
+  => NaturalDiagrammaticFree s d n m
+
+instance
+  ( Show (d (Parallel LeftToRight) n m x), Show (d (Parallel LeftToRight) n m (Op x))
+  , Validable (d (Parallel LeftToRight) n m x), Validable (d (Parallel LeftToRight) n m (Op x))
+  , Distributive x
+  , SlicedFree x
+  , XStandardOrtOrientation x
+  , NaturalDiagrammaticFree s d n m
+  , n ~ N2, m ~ N1
+  )
+  => Validable (ConeLiftable s p d t n m x) where
+  valid = prpConeLiftable 12
+
+
