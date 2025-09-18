@@ -20,45 +20,62 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- sliced structures with an assigned /free/ 'Point' of some given /dimension/ and
--- with /specialized/ limits.
+-- sliced structures with assigned /free/ 'Point's of some given /dimension/.
 module OAlg.Entity.Slice.Free
   (
 
     -- * Free
     Free(..), free', freeN, castFree, isFree
-  , SomeFree(..), SomeFreeSlice(..)
+  , SomeFree(..), sfrMap
+
+    -- * Sliced Free
+  , SlicedFree(..), SldFr, HomOrientedSlicedFree
+  , prpHomOrientedSlicedFree
+
+  
+    -- * Diagram Free
+  , DiagramFree(..),dgfDiagram
+  , dgfMapS, dgfMapCov, dgfMapCnt
+  
+    -- * Cone Liftable
+  , ConeLiftable(..), cnLiftable, cnlMapS
+    
+    -- * Liftable Free
+  , LiftableFree(..), liftFree
+  , HomFree, lftFrMapSMlt, lftFrMapSDst
+  , NaturalDiagrammaticFree
+
+    -- * Duality
+  , toDualOpFreeDst
 
     -- * Limes
+    -- deprecated
   , LimesFree(..), limesFree
-  , DiagramFree(..),dgfDiagram
   , KernelSliceFromSomeFreeTip(..), ksfKernel
 
     -- ** Kernel
+    -- deprecated
   , KernelFree, KernelDiagramFree
 
     -- ** Liftable Cokernel
+    -- deprecated
   , CokernelDiagramFree
   , CokernelLiftableFree(..)
   , clfCokernel, clfLiftableFree
 
     -- *** Liftable Cokernels
+    -- deprecated
   , clfLimes, ClfCokernels(..)
 
     -- ** Pullback
+    -- deprecated
   , PullbackFree, PullbackDiagramFree
 
     -- * New
-    -- * Cone Liftable
-  , ConeLiftable(..), cnLiftable, cnlMapS
 
-    -- ** Liftable Free
-  , LiftableFree(..), liftFree
-  , SlicedFree(..), SldFr, HomOrientedSlicedFree
-  , HomFree, lftFrMapSMlt, lftFrMapSDst
-  , toDualOpFreeDst
-  , NaturalDiagrammaticFree
 
+  , SomeFreeSlice(..)
+  
   ) where
 
 import Control.Monad (join)
@@ -68,6 +85,7 @@ import Data.List ((++))
 
 import OAlg.Prelude
 
+import OAlg.Category.NaturalTransformable
 import OAlg.Category.SDuality
 
 import OAlg.Data.Singleton
@@ -299,7 +317,6 @@ sfrMap :: HomOrientedSlicedFree h => Variant2 v h x y -> SomeFree x -> SomeFree 
 sfrMap h@(Covariant2 hCov)     = sfrMapStruct (tau $ range hCov) h
 sfrMap h@(Contravariant2 hCnt) = sfrMapStruct (tau $ range hCnt) h
 
-
 --------------------------------------------------------------------------------
 -- dgfMapCov -
 
@@ -341,6 +358,37 @@ instance
   )
   => FunctorialG (SDualBi (DiagramFree t n m)) h (->)
 
+--------------------------------------------------------------------------------
+-- DiagramFree - NaturalDiagrammatic -
+
+instance
+  ( HomOrientedSlicedFree h
+  , t ~ Dual (Dual t)
+  )
+  =>  ApplicativeG (SDualBi (DiagramG DiagramFree t n m)) h (->) where
+  amapG h = sdbFromDgmObj . amapG h . sdbToDgmObj
+
+instance
+  ( HomOrientedSlicedFree h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  =>  FunctorialG (SDualBi (DiagramG DiagramFree t n m)) h (->)
+  
+instance
+  ( HomOrientedSlicedFree h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalTransformable h (->)
+       (SDualBi (DiagramG DiagramFree t n m)) (SDualBi (DiagramG Diagram t n m))
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedSlicedFree h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammatic h DiagramFree t n m
 
 --------------------------------------------------------------------------------
 -- LiftableFree -
@@ -437,6 +485,9 @@ instance
   , TransformableType s
   , TransformableOp s
   ) => HomOrientedSlicedFree (HomFree s)
+
+instance HomOrientedSlicedFree (Inv2 (HomFree Mlt))
+instance HomOrientedSlicedFree (Inv2 (HomFree Dst))
 
 --------------------------------------------------------------------------------
 -- lftFrMapCov -
@@ -679,6 +730,9 @@ instance
   )
   => Validable (ConeLiftable s p d t n m x) where
   valid = prpConeLiftable 12
+
+
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

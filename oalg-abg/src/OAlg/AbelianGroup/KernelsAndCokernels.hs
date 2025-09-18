@@ -191,7 +191,7 @@ abhCokernelFreeDgmLftFree d
     
 
 
-xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagramFree N1 AbHom)
+xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagrammatic DiagramFree N1 AbHom)
 xCokernelDiagramFree xm = do
   m <- xm
   let r = lengthN $ rows m
@@ -254,10 +254,6 @@ xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>=  return . ConeCok
   hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
                -- eligibel AbHom.
 
-    
-
-
-
 
 instance XStandardGEligibleCone
            ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom where
@@ -265,29 +261,18 @@ instance XStandardGEligibleCone
     = XGEligibleCone
         (xecCokernelDiagramFreeAbHom xStandardOrtSite . diagrammaticObject . cone . universalCone)
 
-
 instance XStandardGEligibleConeFactor
            ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom where
-
-instance XStandard (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
-
-instance Eq (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
-
-
-instance ApplicativeG (SDualBi (DiagramG DiagramFree t n m)) (Inv2 (HomFree Dst)) (->)
-
-instance FunctorialG (SDualBi (DiagramG DiagramFree t n m)) (Inv2 (HomFree Dst)) (->)
-
-instance t ~ Dual (Dual t) => NaturalTransformable (Inv2 (HomFree Dst)) (->)
-  (SDualBi (DiagramG DiagramFree t n m)) (SDualBi (DiagramG Diagram t n m))
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
   
-instance t ~ Dual (Dual t) => NaturalDiagrammatic (Inv2 (HomFree Dst)) DiagramFree t n m
-
+instance XStandard (DiagramFree (Parallel RightToLeft) N2 N1 AbHom) where
+  xStandard = xCokernelDiagramFree xStandard
 
 instance NaturalDiagrammaticFree Dst DiagramFree n m
 
 prp :: Statement
 prp = valid abhCokernelsFreeDgmLftFreeG
+
 
 
 {-             
