@@ -42,6 +42,9 @@ import Data.List (map,(++),repeat,zip)
 
 import OAlg.Prelude hiding ((//))
 
+import OAlg.Category.NaturalTransformable
+import OAlg.Category.SDuality
+
 import OAlg.Data.Canonical
 import OAlg.Data.FinitelyPresentable
 
@@ -76,6 +79,9 @@ import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
 import OAlg.AbelianGroup.Free
 
+import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
+
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFreeG -
 
@@ -91,7 +97,7 @@ import OAlg.AbelianGroup.Free
 abhCokernelFreeDgmLftFreeG
   :: CokernelDiagramFree N1 AbHom -> CokernelG ConeLiftable DiagramFree N1 AbHom
 abhCokernelFreeDgmLftFreeG d@(DiagramFree _ (DiagramParallelRL _ _ (h:|Nil)))
-  = LimesInjective (ConeCokernelLiftable (ConeCokernel d coker) lftAny) univ where
+  = LimesInjective (ConeCokernelLiftable (ConeCokernel d coker) (LiftableFree lftAny)) univ where
 
   --------------------
   -- cokernel -
@@ -181,10 +187,10 @@ abhCokernelFreeDgmLftFree d
     univ' (ConeCokernel d f) = univ (ConeCokernel (DiagramFree dims d) f)
 
     lftAny' :: Any k -> Liftable Injective (Free k) AbHom
-    lftAny' = cnLiftable c
+    lftAny' = liftFree $ cnLiftable c
     
 
-        
+
 xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagramFree N1 AbHom)
 xCokernelDiagramFree xm = do
   m <- xm
@@ -198,18 +204,6 @@ xCokernelDiagramFree xm = do
                        (DiagramParallelRL (end a) (start a) (a:|Nil))
                     )
 
-
---------------------------------------------------------------------------------
--- xecCokernelLftFreeAbHom -
-
-xecCokernelDiagramFreeAbHom
-  :: XOrtSite From (Matrix Z)
-  -> DiagramFree (Parallel RightToLeft) N2 N1 AbHom
-  -> X (CokernelConic Cone DiagramFree N1 AbHom)
-xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>=  return . ConeCokernel d where
-  DiagramParallelRL _ _ (h:|Nil) = diagram d
-  hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
-               -- eligibel AbHom.
 
 --------------------------------------------------------------------------------
 -- xZeroFactor -
@@ -238,7 +232,6 @@ xZeroFactor xFrom h = do
     gcdRow :: Row j Z -> N
     gcdRow = gcds . amap1 (prj . fst) . rowxs 
 
-    
 vldXZeroFactor :: Statement
 vldXZeroFactor = Forall xm (\h   -> Forall (xZeroFactor xStandardOrtSite h)
                              (\f -> isZero (f * zabh h) :?> Params ["h":=show h,"f":=show f
@@ -248,6 +241,20 @@ vldXZeroFactor = Forall xm (\h   -> Forall (xZeroFactor xStandardOrtSite h)
                            )
   where xm = xoArrow xodZ (dim () ^ 10 :> dim () ^ 8)
 
+
+--------------------------------------------------------------------------------
+-- xecCokernelLftFreeAbHom -
+
+xecCokernelDiagramFreeAbHom
+  :: XOrtSite From (Matrix Z)
+  -> DiagramFree (Parallel RightToLeft) N2 N1 AbHom
+  -> X (CokernelConic Cone DiagramFree N1 AbHom)
+xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>=  return . ConeCokernel d where
+  DiagramParallelRL _ _ (h:|Nil) = diagram d
+  hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
+               -- eligibel AbHom.
+
+    
 
 
 
@@ -264,15 +271,21 @@ instance XStandardGEligibleConeFactor
 
 instance XStandard (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
 
-instance Eq (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
-
-instance Show (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
-
-instance Validable (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
-
 instance Eq (ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
 
-           
+
+instance ApplicativeG (SDualBi (DiagramG DiagramFree t n m)) (Inv2 (HomFree Dst)) (->)
+
+instance FunctorialG (SDualBi (DiagramG DiagramFree t n m)) (Inv2 (HomFree Dst)) (->)
+
+instance t ~ Dual (Dual t) => NaturalTransformable (Inv2 (HomFree Dst)) (->)
+  (SDualBi (DiagramG DiagramFree t n m)) (SDualBi (DiagramG Diagram t n m))
+  
+instance t ~ Dual (Dual t) => NaturalDiagrammatic (Inv2 (HomFree Dst)) DiagramFree t n m
+
+
+instance NaturalDiagrammaticFree Dst DiagramFree n m
+
 prp :: Statement
 prp = valid abhCokernelsFreeDgmLftFreeG
 

@@ -352,7 +352,8 @@ instance Transformable s Type => TransformableObjectClass s (->)
 --------------------------------------------------------------------------------
 -- Sub -
 
--- | sub category of @__c__@ according to the 'ObjectClass' @__s__@.
+-- | sub category of @__c__@ according to the 'ObjectClass' @__s__@, whereas maintaining the
+-- applicative behavior of @__c__@.
 data Sub s c x y where
   Sub :: (Structure s x, Structure s y) => c x y -> Sub s c x y 
 
@@ -361,6 +362,7 @@ instance Morphism (Sub s c) where
   homomorphous (Sub _) = Struct :>: Struct
 
 instance ApplicativeG f h (->) => ApplicativeG f (Sub t h) (->) where amapG (Sub h) = amapG h
+instance (FunctorialG f c (->), TransformableObjectClass s c) => FunctorialG f (Sub s c) (->)
 
 --------------------------------------------------------------------------------
 -- cOneSub -

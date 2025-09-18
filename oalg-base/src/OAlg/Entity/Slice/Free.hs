@@ -26,7 +26,7 @@ module OAlg.Entity.Slice.Free
   (
 
     -- * Free
-    Free(..), freeN, castFree, isFree
+    Free(..), free', freeN, castFree, isFree
   , SomeFree(..), SomeFreeSlice(..)
 
     -- * Limes
@@ -54,9 +54,10 @@ module OAlg.Entity.Slice.Free
 
     -- ** Liftable Free
   , LiftableFree(..), liftFree
-  , SlicedFree(..), SldFr
+  , SlicedFree(..), SldFr, HomOrientedSlicedFree
   , HomFree, lftFrMapSMlt, lftFrMapSDst
   , toDualOpFreeDst
+  , NaturalDiagrammaticFree
 
   ) where
 
@@ -81,6 +82,7 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
@@ -110,6 +112,13 @@ instance Show1 (Free k)
 instance Eq1 (Free k)
 instance Validable1 (Free k)
 -- instance Typeable k => Entity1 (Free k)
+
+--------------------------------------------------------------------------------
+-- free' -
+
+-- | @__k__@-'Free' of @__x__@, given by the proxy @__q x__@.
+free' :: q x -> Any k -> Free k x
+free' _ = Free
 
 --------------------------------------------------------------------------------
 -- freeN -
@@ -144,250 +153,28 @@ data SomeFree c where
 
 deriving instance Show (SomeFree c)
 
+instance Eq (SomeFree c) where
+  SomeFree (Free k) == SomeFree (Free k') = case k `cmpW` k' of
+    EQ -> True
+    _  -> False
+
 instance Validable (SomeFree c) where
   valid (SomeFree k) = Label "SomeFree" :<=>: valid k
-
---------------------------------------------------------------------------------
--- SomeFreeSlice -
-
--- | some free point within a 'Multiplicative' structure @__c__@.
-data SomeFreeSlice s c where
-  SomeFreeSlice :: (Attestable k, Sliced (Free k) c)
-    => Slice s (Free k) c -> SomeFreeSlice s c
-    
-deriving instance Show c => Show (SomeFreeSlice s c)
-
-instance Validable (SomeFreeSlice s c) where
-  valid (SomeFreeSlice s) = Label "SomeFreeSlice" :<=>: valid s
-
---------------------------------------------------------------------------------
--- XStandardSomeFreeSliceFrom -
-
-class XStandardSomeFreeSliceFrom c where
-  xStandardSomeFreeSliceFrom :: X (SomeFreeSlice From c)
-  
---------------------------------------------------------------------------------
--- LimesFree -
-
--- | predicate for a limes with a /free/ tip of its universal cone.
---
--- __Property__ Let @'LimesFree' k l@ be in
--- @'LimesFree' __s__ __p__ __t__ __n__ __m__ __a__@ and
--- then holds: @'slicePoint' k '==' t@ where @t = 'tip' ('universalCone' l)@. 
-data LimesFree s p t n m a where
-  LimesFree :: (Attestable k, Sliced (Free k) a)
-    => Free k a -> Limes s p t n m a -> LimesFree s p t n m a
-
-deriving instance Oriented a => Show (LimesFree s p t n m a)
-
-instance ( Distributive a
-         , XStandardEligibleCone Dst p t n m a
-         , XStandardEligibleConeFactor Dst p t n m a
-         , Typeable t, Typeable n, Typeable m
-         )
-  => Validable (LimesFree Dst p t n m a) where
-  valid (LimesFree k l) = Label "LimesFree" :<=>:
-    And [ valid k
-        , valid l
-        , (slicePoint k == t):?>Params["(k,t)":=show (k,t)]  
-        ] where t = tip $ universalCone l
-
---------------------------------------------------------------------------------
--- limesFree -
-
--- | the underlying free limes.
-limesFree :: LimesFree s p t n m a -> Limes s p t n m a
-limesFree (LimesFree _ l) = l
-
---------------------------------------------------------------------------------
--- KernelSliceFromSomeFreeTip -
-
--- | predicate for a kernel with a start point of its diagram given by the slice index and
--- a free universal tip.
---
--- __Property__ Let @'KernelSliceFromSomeFreeTip' k' i ker@ be in
--- @'KernelSliceFromSomeFreeTip' __n__ __c__@, then holds:
---
--- (1) @'slicePoint' i '==' s@ where @'DiagramParallelLR' s _ _ = 'diagram' ker@.
---
--- (2) @'slicePoint' k' '==' 'tip' ('universalCone' ker)@.
-data KernelSliceFromSomeFreeTip n i c where
-  KernelSliceFromSomeFreeTip :: (Attestable k', Sliced (Free k') c)
-    => Free k' c -> i c -> Kernel n c -> KernelSliceFromSomeFreeTip n i c
-
-instance (Oriented c, Sliced i c) => Show (KernelSliceFromSomeFreeTip n i c) where
-  show (KernelSliceFromSomeFreeTip k i ker)
-    = "KernelSliceFromSomeFreeTip[" ++ show1 k ++ "," ++ show1 i ++ "] ("
-    ++ show ker ++ ")" 
-
-instance
-  ( Distributive c, Sliced i c
-  , XStandardEligibleConeKernel n c
-  , XStandardEligibleConeFactorKernel n c
-  , Typeable n
-  )
-  => Validable (KernelSliceFromSomeFreeTip n i c) where
-  valid (KernelSliceFromSomeFreeTip k' i ker) = Label "KernelSliceFromSomeFreeTip" :<=>:
-    And [ valid1 k'
-        , valid ker
-        , Label "1" :<=>: let DiagramParallelLR s _ _
-                                = diagrammaticObject $ cone $ universalCone ker
-                           in
-            (slicePoint i == s) :?> Params ["i":=show1 i,"s":= show s]
-        , Label "2" :<=>: (slicePoint k' == tip (universalCone ker))
-            :?> Params ["k'":=show1 k',"ker":=show ker]
-        ]
-
---------------------------------------------------------------------------------
--- ksfKernel -
-
--- | the underlying kernel.
-ksfKernel :: KernelSliceFromSomeFreeTip n i c -> Kernel n c
-ksfKernel (KernelSliceFromSomeFreeTip _ _ ker) = ker
-
---------------------------------------------------------------------------------
--- DiagramFree -
-
--- | predicate for diagrams with free points.
-data DiagramFree t n m a = DiagramFree (FinList n (SomeFree a)) (Diagram t n m a)
-  deriving (Show)
-
-instance Oriented a => Validable (DiagramFree t n m a) where
-  valid (DiagramFree sfs d) = Label "DiagramFree"
-    :<=>: valid (sfs,d) && vld 0 sfs (dgPoints d) where
-    vld :: Oriented a => N -> FinList n (SomeFree a) -> FinList n (Point a) -> Statement
-    vld _ Nil Nil = SValid
-    vld i (SomeFree k:|sfs) (p:|ps)
-      = And [ isFree k p :?> Params ["i":=show i,"k":=show k,"p":=show p]
-            , vld (succ i) sfs ps
-            ] 
-
---------------------------------------------------------------------------------
--- dgfDiagram -
-
--- | the underlying diagram.
-dgfDiagram :: DiagramFree t n m a -> Diagram t n m a
-dgfDiagram (DiagramFree _ d) = d
-
-instance Diagrammatic DiagramFree where diagram = dgfDiagram
-
-
---------------------------------------------------------------------------------
--- KernelFree -
-
--- | kernel diagram with free points. 
-type KernelDiagramFree = DiagramFree (Parallel LeftToRight) N2
-
--- | kernel of a diagram with free points.
-type KernelFree = LimesFree Dst Projective (Parallel LeftToRight) N2
-
---------------------------------------------------------------------------------
--- CokernelFree -
-
--- | cokernel diagrams with free points.
-type CokernelDiagramFree = DiagramFree (Parallel RightToLeft) N2
-
---------------------------------------------------------------------------------
--- PullbackFree -
-
--- | pullback diagram with free points.
-type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
-
--- | pullback of a diagram with free points.
-type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
-
---------------------------------------------------------------------------------
--- CokernelLiftableFree -
-
--- | predicate for a liftable cokernel.
---
--- __Property__ Let @'CokernelLiftableFree' c l@ be in @'CokernelLiftableFree' __c__@ for a
--- 'Distributive' structure @__c__@, then holds:
--- For any @k@ in @'Any' __k__@ holds:
--- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
-data CokernelLiftableFree c
-  = CokernelLiftableFree (Cokernel N1 c) (forall (k :: N') . Any k -> Liftable Injective (Free k) c)
-
-instance Oriented c => Show (CokernelLiftableFree c) where
-  show (CokernelLiftableFree c _) = join ["CokernelLiftableFree (", show c, ")"]
-
-instance
-  ( Distributive c
-  , XStandardEligibleConeCokernel1 c
-  , XStandardEligibleConeFactorCokernel1 c
-  , XStandardOrtOrientation c
-  )
-  => Validable (CokernelLiftableFree c) where
-  valid (CokernelLiftableFree c l) = Label "CokernelLiftable" :<=>:
-    And [ Label "c" :<=>: valid c
-        , Forall xk (\(SomeNatural k) -> vldLftFree k cf (l k))  
-        ]
-    where xk = amap1 someNatural $ xNB 0 30
-          cf = cokernelFactor $ universalCone c
-          
-          vldLftFree :: (Distributive c, XStandardOrtOrientation c)
-            => Any k -> c -> Liftable Injective (Free k) c -> Statement
-          vldLftFree k cf lk 
-            = And [ Label "l k" :<=>: valid lk
-                  , (cf == lftbBase lk)
-                    :?> Params [ "k":=show k
-                               , "cokernelFactor (universalCone c)":=show cf
-                               , "l k":=show lk
-                               ]
-                  ]
-
---------------------------------------------------------------------------------
--- clfCokernel -
-
--- | the underlying cokernel.
-clfCokernel :: CokernelLiftableFree c -> Cokernel N1 c
-clfCokernel (CokernelLiftableFree c _) = c
-
---------------------------------------------------------------------------------
--- clfLiftableFree -
-
--- | the induced liftable.
-clfLiftableFree :: CokernelLiftableFree c -> Any k -> Liftable Injective (Free k) c
-clfLiftableFree (CokernelLiftableFree _ l) = l
-
---------------------------------------------------------------------------------
--- ClfCokernels -
-
--- | predicate for liftable free cokernels where for each cokernel diagram @d@ in
---   @'CokernelDiagram' __n__ __d__@ ther is an associated @'CokernelLifatbleFree' __d__@ such
---   that its underlying diagram is equal to @d@.
-newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftableFree d)
-
--- | the limes of the given diagram.
-clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
-clfLimes (ClfCokernels l) = l
-
-
---------------------------------------------------------------------------------
--- LiftableFree -
-
--- | liftable according to a free slice.
-data LiftableFree p x where
-  LiftableFree :: (forall k . Any k -> Liftable p (Free k) x) -> LiftableFree p x
-
---------------------------------------------------------------------------------
--- liftFree -
-
--- | lifting a free slice.
-liftFree :: LiftableFree p x -> Any k -> Liftable p (Free k) x
-liftFree (LiftableFree l) = l
 
 --------------------------------------------------------------------------------
 -- SliceFree -
 
 -- | attest for @__k__@-free sliced structures.
 class SlicedFree x where
-  slicedFree :: Struct (Sld (Free k)) x
+  slicedFree :: Attestable k => Struct (Sld (Free k)) x
+
+slicedFree' :: (SlicedFree x, Attestable k) => q x -> Any k -> Struct (Sld (Free k)) x
+slicedFree' _ _ = slicedFree
 
 --------------------------------------------------------------------------------
 -- tauSldFrTuple -
 
-tauSldFrTuple :: SlicedFree x => Struct s x -> Struct (s,Sld (Free k)) x
+tauSldFrTuple :: (SlicedFree x, Attestable k) => Struct s x -> Struct (s,Sld (Free k)) x
 tauSldFrTuple s = tauTuple s slicedFree
 
 --------------------------------------------------------------------------------
@@ -399,7 +186,7 @@ tauSldFreeOp Struct = Struct
 instance SlicedFree x => SlicedFree (Op x) where slicedFree = tauSldFreeOp slicedFree
 
 --------------------------------------------------------------------------------
--- SdlFr -
+-- SldFr -
 
 -- | 'SlicedFree' structures. 
 data SldFr
@@ -423,6 +210,9 @@ instance TransformableDst s    => TransformableDst (s,SldFr)
 instance TransformableObjectClass (Mlt,SldFr) (HomDisj Mlt Op (HomEmpty Mlt))
 instance TransformableObjectClass (Dst,SldFr) (HomDisj Dst Op (HomEmpty Dst))
 
+instance FunctorialOriented (Sub (Mlt,SldFr) (HomDisjEmpty Mlt Op))
+instance FunctorialOriented (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
+
 --------------------------------------------------------------------------------
 -- lftFrSub -
 
@@ -431,6 +221,140 @@ lftFrSub :: q k
    -> Variant2 v (IsoO s Op) x y
    -> Variant2 v (Inv2 (Sub (s,Sld (Free k)) (HomDisjEmpty s Op))) x y
 lftFrSub _ sx sy = amapVariant2 (\(Inv2 t f) -> Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
+
+--------------------------------------------------------------------------------
+-- DiagramFree -
+
+-- | predicate for diagrams with free points.
+data DiagramFree t n m a = DiagramFree (FinList n (SomeFree a)) (Diagram t n m a)
+  deriving (Show,Eq)
+
+instance Oriented a => Validable (DiagramFree t n m a) where
+  valid (DiagramFree sfs d) = Label "DiagramFree"
+    :<=>: valid (sfs,d) && vld 0 sfs (dgPoints d) where
+    vld :: Oriented a => N -> FinList n (SomeFree a) -> FinList n (Point a) -> Statement
+    vld _ Nil Nil = SValid
+    vld i (SomeFree k:|sfs) (p:|ps)
+      = And [ (slicePoint k == p) :?> Params ["i":=show i,"k":=show k,"p":=show p]
+            , vld (succ i) sfs ps
+            ] 
+
+--------------------------------------------------------------------------------
+-- dgfDiagram -
+
+-- | the underlying diagram.
+dgfDiagram :: DiagramFree t n m a -> Diagram t n m a
+dgfDiagram (DiagramFree _ d) = d
+
+instance Diagrammatic DiagramFree where diagram = dgfDiagram
+
+--------------------------------------------------------------------------------
+-- HomOrientedSlicedFree -
+
+-- | homomorphisms between 'SlicedFree' structures, i.e. homomorphisms between 'Oriented' structures
+-- where 'pmap' preserves the @__k__@-parameterized slice points.
+--
+-- __Property__ Let @'HomOrientedSlicedFree' __h__@, then
+-- for all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
+--
+-- (1) For all @__k__@ holds:
+-- @'pmap' h ('slicePoint' '$' 'free'' qx k) '==' ('slicePoint' '$' 'free'' qy k)@ where
+-- @k@ is in @'Free' __k__ __x__@ and @qx@ is any proxy in @__q x__@
+-- and @qy@ is any proxy in @__q y__@. 
+class (HomOrientedDisjunctive h, Transformable (ObjectClass h) SldFr) => HomOrientedSlicedFree h
+
+--------------------------------------------------------------------------------
+-- prpHomOrientedSlicedFree -
+
+relHomOrientedSlicedFreeStruct :: (HomOrientedSlicedFree h, Show2 h)
+  => Struct Ort x -> Struct Ort y
+  -> Struct SldFr x -> Struct SldFr y
+  -> h x y -> Any k -> Statement
+relHomOrientedSlicedFreeStruct sx@Struct sy@Struct Struct Struct h k = case ats k of
+  Ats               -> case (slicedFree' sx k,slicedFree' sy k) of
+    (Struct,Struct) -> (  pmap h (slicePoint $ free' sx k)
+                       == (slicePoint $ free' sy k)
+                       ) :?> Params [ "h":=show2 h
+                                    , "k":=show k
+                                    ]
+
+relHomOrientedSlicedFree :: (HomOrientedSlicedFree h, Show2 h)
+  => h x y -> Any k -> Statement
+relHomOrientedSlicedFree h k
+  = relHomOrientedSlicedFreeStruct
+      (tau $ domain h) (tau $ range h) (tau $ domain h) (tau $ range h) h k
+
+-- | validity according to 'HomOrientedSlicedFree'.
+prpHomOrientedSlicedFree :: (HomOrientedSlicedFree h, Show2 h)
+  => h x y -> Any k -> Statement
+prpHomOrientedSlicedFree h k = Prp "HomOrientedSlicedFree" :<=>: relHomOrientedSlicedFree h k
+
+--------------------------------------------------------------------------------
+-- sfrMap -
+
+sfrMapStruct :: Struct SldFr y -> Variant2 v h x y -> SomeFree x -> SomeFree y
+sfrMapStruct Struct h (SomeFree (Free k)) = case slicedFree' h k of Struct -> SomeFree (Free k)
+
+sfrMap :: HomOrientedSlicedFree h => Variant2 v h x y -> SomeFree x -> SomeFree y
+sfrMap h@(Covariant2 hCov)     = sfrMapStruct (tau $ range hCov) h
+sfrMap h@(Contravariant2 hCnt) = sfrMapStruct (tau $ range hCnt) h
+
+
+--------------------------------------------------------------------------------
+-- dgfMapCov -
+
+dgfMapCov :: HomOrientedSlicedFree h
+  => Variant2 Covariant h x y -> DiagramFree t n m x -> DiagramFree t n m y
+dgfMapCov h (DiagramFree fs d) = DiagramFree fs' d' where
+  fs' = amap1 (sfrMap h) fs
+  d'  = dgMapCov h d
+
+--------------------------------------------------------------------------------
+-- dgfMapCnt -
+
+dgfMapCnt :: HomOrientedSlicedFree h
+  => Variant2 Contravariant h x y -> DiagramFree t n m x -> DiagramFree (Dual t) n m y
+dgfMapCnt h (DiagramFree fs d) = DiagramFree fs' d' where
+  fs' = amap1 (sfrMap h) fs
+  d'  = dgMapCnt h d
+
+--------------------------------------------------------------------------------
+-- DiagramFree - Dual -
+
+type instance Dual1 (DiagramFree t n m) = DiagramFree (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- dgfMapS -
+
+dgfMapS :: (HomOrientedSlicedFree h, t ~ Dual (Dual t))
+  => h x y -> SDualBi (DiagramFree t n m) x -> SDualBi (DiagramFree t n m) y
+dgfMapS = vmapBi dgfMapCov dgfMapCov dgfMapCnt dgfMapCnt
+
+instance (HomOrientedSlicedFree h, t ~ Dual (Dual t))
+  => ApplicativeG (SDualBi (DiagramFree t n m)) h (->) where
+  amapG = dgfMapS
+
+instance
+  ( HomOrientedSlicedFree h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (DiagramFree t n m)) h (->)
+
+
+--------------------------------------------------------------------------------
+-- LiftableFree -
+
+-- | liftable according to a free slice.
+data LiftableFree p x where
+  LiftableFree :: (forall k . Any k -> Liftable p (Free k) x) -> LiftableFree p x
+
+--------------------------------------------------------------------------------
+-- liftFree -
+
+-- | lifting a free slice.
+liftFree :: LiftableFree p x -> Any k -> Liftable p (Free k) x
+liftFree (LiftableFree l) = l
 
 --------------------------------------------------------------------------------
 -- lftFrMapIsoOpCov -
@@ -445,9 +369,10 @@ lftFrMapIsoOpCovStruct ::
   )
   => Struct s x -> Struct s y
   -> Variant2 Covariant (IsoO s Op) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
-lftFrMapIsoOpCovStruct sx sy i lf k = lftMapCov (lftFrSub k sfx sfy i) (liftFree lf k) where
-  sfx = tauSldFrTuple sx
-  sfy = tauSldFrTuple sy
+lftFrMapIsoOpCovStruct sx sy i lf k = case ats k of
+  Ats -> lftMapCov (lftFrSub k sfx sfy i) (liftFree lf k) where
+            sfx = tauSldFrTuple sx
+            sfy = tauSldFrTuple sy
 
 lftFrMapIsoOpMltCov ::
   ( s ~ Mlt
@@ -479,9 +404,10 @@ lftFrMapIsoOpCntStruct ::
   => Struct s x -> Struct s y
   -> Variant2 Contravariant (IsoO s Op) x y -> LiftableFree p x
   -> Any k -> Liftable (Dual p) (Free k) y
-lftFrMapIsoOpCntStruct sx sy i lf k = lftMapCnt (lftFrSub k sfx sfy i) (liftFree lf k) where
-  sfx = tauSldFrTuple sx
-  sfy = tauSldFrTuple sy
+lftFrMapIsoOpCntStruct sx sy i lf k = case ats k of
+  Ats -> lftMapCnt (lftFrSub k sfx sfy i) (liftFree lf k) where
+           sfx = tauSldFrTuple sx
+           sfy = tauSldFrTuple sy
 
 lftFrMapIsoOpMltCnt ::
   ( s ~ Mlt
@@ -503,6 +429,14 @@ lftFrMapIsoOpDstCnt i lf = LiftableFree (lftFrMapIsoOpCntStruct (domain i) (rang
 -- HomFree -
 
 type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
+
+instance Transformable (s,SldFr) SldFr where tau = tauSnd
+
+instance
+  ( TransformableOrt s
+  , TransformableType s
+  , TransformableOp s
+  ) => HomOrientedSlicedFree (HomFree s)
 
 --------------------------------------------------------------------------------
 -- lftFrMapCov -
@@ -745,5 +679,197 @@ instance
   )
   => Validable (ConeLiftable s p d t n m x) where
   valid = prpConeLiftable 12
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- deprecated -
+
+--------------------------------------------------------------------------------
+-- SomeFreeSlice -
+
+-- | some free point within a 'Multiplicative' structure @__c__@.
+data SomeFreeSlice s c where
+  SomeFreeSlice :: (Attestable k, Sliced (Free k) c)
+    => Slice s (Free k) c -> SomeFreeSlice s c
+    
+deriving instance Show c => Show (SomeFreeSlice s c)
+
+instance Validable (SomeFreeSlice s c) where
+  valid (SomeFreeSlice s) = Label "SomeFreeSlice" :<=>: valid s
+
+--------------------------------------------------------------------------------
+-- XStandardSomeFreeSliceFrom -
+
+class XStandardSomeFreeSliceFrom c where
+  xStandardSomeFreeSliceFrom :: X (SomeFreeSlice From c)
+  
+--------------------------------------------------------------------------------
+-- LimesFree -
+
+-- | predicate for a limes with a /free/ tip of its universal cone.
+--
+-- __Property__ Let @'LimesFree' k l@ be in
+-- @'LimesFree' __s__ __p__ __t__ __n__ __m__ __a__@ and
+-- then holds: @'slicePoint' k '==' t@ where @t = 'tip' ('universalCone' l)@. 
+data LimesFree s p t n m a where
+  LimesFree :: (Attestable k, Sliced (Free k) a)
+    => Free k a -> Limes s p t n m a -> LimesFree s p t n m a
+
+deriving instance Oriented a => Show (LimesFree s p t n m a)
+
+instance ( Distributive a
+         , XStandardEligibleCone Dst p t n m a
+         , XStandardEligibleConeFactor Dst p t n m a
+         , Typeable t, Typeable n, Typeable m
+         )
+  => Validable (LimesFree Dst p t n m a) where
+  valid (LimesFree k l) = Label "LimesFree" :<=>:
+    And [ valid k
+        , valid l
+        , (slicePoint k == t):?>Params["(k,t)":=show (k,t)]  
+        ] where t = tip $ universalCone l
+
+--------------------------------------------------------------------------------
+-- limesFree -
+
+-- | the underlying free limes.
+limesFree :: LimesFree s p t n m a -> Limes s p t n m a
+limesFree (LimesFree _ l) = l
+
+--------------------------------------------------------------------------------
+-- KernelSliceFromSomeFreeTip -
+
+-- | predicate for a kernel with a start point of its diagram given by the slice index and
+-- a free universal tip.
+--
+-- __Property__ Let @'KernelSliceFromSomeFreeTip' k' i ker@ be in
+-- @'KernelSliceFromSomeFreeTip' __n__ __c__@, then holds:
+--
+-- (1) @'slicePoint' i '==' s@ where @'DiagramParallelLR' s _ _ = 'diagram' ker@.
+--
+-- (2) @'slicePoint' k' '==' 'tip' ('universalCone' ker)@.
+data KernelSliceFromSomeFreeTip n i c where
+  KernelSliceFromSomeFreeTip :: (Attestable k', Sliced (Free k') c)
+    => Free k' c -> i c -> Kernel n c -> KernelSliceFromSomeFreeTip n i c
+
+instance (Oriented c, Sliced i c) => Show (KernelSliceFromSomeFreeTip n i c) where
+  show (KernelSliceFromSomeFreeTip k i ker)
+    = "KernelSliceFromSomeFreeTip[" ++ show1 k ++ "," ++ show1 i ++ "] ("
+    ++ show ker ++ ")" 
+
+instance
+  ( Distributive c, Sliced i c
+  , XStandardEligibleConeKernel n c
+  , XStandardEligibleConeFactorKernel n c
+  , Typeable n
+  )
+  => Validable (KernelSliceFromSomeFreeTip n i c) where
+  valid (KernelSliceFromSomeFreeTip k' i ker) = Label "KernelSliceFromSomeFreeTip" :<=>:
+    And [ valid1 k'
+        , valid ker
+        , Label "1" :<=>: let DiagramParallelLR s _ _
+                                = diagrammaticObject $ cone $ universalCone ker
+                           in
+            (slicePoint i == s) :?> Params ["i":=show1 i,"s":= show s]
+        , Label "2" :<=>: (slicePoint k' == tip (universalCone ker))
+            :?> Params ["k'":=show1 k',"ker":=show ker]
+        ]
+
+--------------------------------------------------------------------------------
+-- ksfKernel -
+
+-- | the underlying kernel.
+ksfKernel :: KernelSliceFromSomeFreeTip n i c -> Kernel n c
+ksfKernel (KernelSliceFromSomeFreeTip _ _ ker) = ker
+
+--------------------------------------------------------------------------------
+-- KernelFree -
+
+-- | kernel diagram with free points. 
+type KernelDiagramFree = DiagramFree (Parallel LeftToRight) N2
+
+-- | kernel of a diagram with free points.
+type KernelFree = LimesFree Dst Projective (Parallel LeftToRight) N2
+
+--------------------------------------------------------------------------------
+-- CokernelFree -
+
+-- | cokernel diagrams with free points.
+type CokernelDiagramFree = DiagramFree (Parallel RightToLeft) N2
+
+--------------------------------------------------------------------------------
+-- PullbackFree -
+
+-- | pullback diagram with free points.
+type PullbackDiagramFree n c = DiagramFree (Star To) (n+1) n c
+
+-- | pullback of a diagram with free points.
+type PullbackFree n c = LimesFree Mlt Projective (Star To) (n+1) n c
+
+--------------------------------------------------------------------------------
+-- CokernelLiftableFree -
+
+-- | predicate for a liftable cokernel.
+--
+-- __Property__ Let @'CokernelLiftableFree' c l@ be in @'CokernelLiftableFree' __c__@ for a
+-- 'Distributive' structure @__c__@, then holds:
+-- For any @k@ in @'Any' __k__@ holds:
+-- @'cokernelFactor' ('universalCone' c) '==' 'liftBase' (l k)@.
+data CokernelLiftableFree c
+  = CokernelLiftableFree (Cokernel N1 c) (forall (k :: N') . Any k -> Liftable Injective (Free k) c)
+
+instance Oriented c => Show (CokernelLiftableFree c) where
+  show (CokernelLiftableFree c _) = join ["CokernelLiftableFree (", show c, ")"]
+
+instance
+  ( Distributive c
+  , XStandardEligibleConeCokernel1 c
+  , XStandardEligibleConeFactorCokernel1 c
+  , XStandardOrtOrientation c
+  )
+  => Validable (CokernelLiftableFree c) where
+  valid (CokernelLiftableFree c l) = Label "CokernelLiftable" :<=>:
+    And [ Label "c" :<=>: valid c
+        , Forall xk (\(SomeNatural k) -> vldLftFree k cf (l k))  
+        ]
+    where xk = amap1 someNatural $ xNB 0 30
+          cf = cokernelFactor $ universalCone c
+          
+          vldLftFree :: (Distributive c, XStandardOrtOrientation c)
+            => Any k -> c -> Liftable Injective (Free k) c -> Statement
+          vldLftFree k cf lk 
+            = And [ Label "l k" :<=>: valid lk
+                  , (cf == lftbBase lk)
+                    :?> Params [ "k":=show k
+                               , "cokernelFactor (universalCone c)":=show cf
+                               , "l k":=show lk
+                               ]
+                  ]
+
+--------------------------------------------------------------------------------
+-- clfCokernel -
+
+-- | the underlying cokernel.
+clfCokernel :: CokernelLiftableFree c -> Cokernel N1 c
+clfCokernel (CokernelLiftableFree c _) = c
+
+--------------------------------------------------------------------------------
+-- clfLiftableFree -
+
+-- | the induced liftable.
+clfLiftableFree :: CokernelLiftableFree c -> Any k -> Liftable Injective (Free k) c
+clfLiftableFree (CokernelLiftableFree _ l) = l
+
+--------------------------------------------------------------------------------
+-- ClfCokernels -
+
+-- | predicate for liftable free cokernels where for each cokernel diagram @d@ in
+--   @'CokernelDiagram' __n__ __d__@ ther is an associated @'CokernelLifatbleFree' __d__@ such
+--   that its underlying diagram is equal to @d@.
+newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftableFree d)
+
+-- | the limes of the given diagram.
+clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
+clfLimes (ClfCokernels l) = l
 
 

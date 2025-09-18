@@ -531,6 +531,8 @@ abgFree n = abg 0 ^ (freeN n)
 instance Attestable k => Sliced (Free k) AbHom where
   slicePoint = abgFree
 
+instance SlicedFree AbHom where slicedFree = Struct
+
 --------------------------------------------------------------------------------
 -- abgMaybeFree -
 
