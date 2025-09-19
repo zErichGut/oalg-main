@@ -243,9 +243,9 @@ vldXZeroFactor = Forall xm (\h   -> Forall (xZeroFactor xStandardOrtSite h)
 
 xecCokernelDiagramFreeAbHom
   :: XOrtSite From (Matrix Z)
-  -> DiagramFree (Parallel RightToLeft) N2 N1 AbHom
+  -> CokernelDiagrammatic DiagramFree N1 AbHom
   -> X (CokernelConic Cone DiagramFree N1 AbHom)
-xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>=  return . ConeCokernel d where
+xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCokernel d where
   DiagramParallelRL _ _ (h:|Nil) = diagram d
   hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
                -- eligibel AbHom.
@@ -265,18 +265,35 @@ instance XStandard (DiagramFree (Parallel RightToLeft) N2 N1 AbHom) where
 
 instance NaturalDiagrammaticFree Dst DiagramFree n m
 
-prp :: Statement
-prp = valid abhCokernelsFreeDgmLftFreeG
+relAbhCokernelsFreeDgmLftFreeG :: Statement
+relAbhCokernelsFreeDgmLftFreeG = valid abhCokernelsFreeDgmLftFreeG
 
+xecf :: XGEligibleConeFactor c s p d t n m x -> LimesG c s p d t n m x -> X (Cone s p d t n m x,x)
+xecf (XGEligibleConeFactor xcx) = xcx
+
+ff :: Attestable k => Free k AbHom -> AbGroup -> Bool
+ff = isFree
+
+abgIsFree :: AbGroup -> Bool
+abgIsFree g = case someNatural $ lengthN g of
+  SomeNatural k -> ff (Free k) g
 
 dstCokerDgmFrLft :: Int -> IO ()
-dstCokerDgmFrLft n = putDstr asp n (amap1 (limes abhCokernelsFreeDgmLftFreeG) xdg)
+dstCokerDgmFrLft n = putDstr asp n $ join $ (amap1 (xecf xe . limes abhCokernelsFreeDgmLftFreeG) xdg)
   where
     -- asp (DiagramFree sf _) = [show sf]
-    asp l = [show $ tip $ cone $ universalCone l]
+    asp (c,x) = [ sf (start x), sz x
+                , sf (end f), sz f
+                ]
+      where f = cokernelFactor c
+
+            sf g = if abgIsFree g then "free" else "cycl"
+            sz f = if isZero f then "0" else "f"
+
     xdg = xStandard :: X (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
 
-
+    xe  = xStandardGEligibleConeFactor :: XGEligibleConeFactor
+            ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
 
 {-             
 vldAbhCokernelFree :: Statement
@@ -330,6 +347,52 @@ abhCokernelFreeTo'G hDgm@(SliceDiagramCokernel (SliceTo k h)) = LimesInjective h
 abhCokernelsFreeTo'G :: Attestable k => CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
 abhCokernelsFreeTo'G = LimitsG abhCokernelFreeTo'G
 
+abhCokernelsFreeTo'G' :: Attestable k
+  => q k -> CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
+abhCokernelsFreeTo'G' _ = abhCokernelsFreeTo'G
+
+xecCokernelSliceDiagramAbHom ::
+  Attestable k
+  => XOrtSite From (Matrix Z)
+  -> CokernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
+  -> X (CokernelConic Cone (SliceDiagram (Free k)) N1 AbHom)
+xecCokernelSliceDiagramAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCokernel d where
+  SliceDiagramCokernel (SliceTo _ h) = d
+  hz = amap AbHomFree h
+
+vldXecCokernelSliceDiagramAbHom :: N -> Statement
+vldXecCokernelSliceDiagramAbHom k = case someNatural k of
+  SomeNatural k' -> Forall (xsdg k')
+                      (\d -> Forall (xecCokernelSliceDiagramAbHom xStandardOrtSite d) valid
+                      )
+
+  where
+    xsdg :: Attestable k => q k -> X (SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom)
+    xsdg _ = xStandard
+
+instance Attestable k => XStandardGEligibleCone
+  ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleCone
+   = XGEligibleCone
+        (xecCokernelSliceDiagramAbHom xStandardOrtSite . diagrammaticObject . cone . universalCone)
+
+instance Attestable k => XStandardGEligibleConeFactor
+  ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+
+instance Attestable k => XStandard (SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom) where
+  xStandard = amap1 SliceDiagramCokernel xStandard
+
+instance Attestable k => NaturalDiagrammaticFree Dst (SliceDiagram (Free k)) N2 N1
+
+instance Attestable k => Transformable (s,SldFr) (Sld (Free k)) where
+  tau s = case tauSnd s of Struct -> slicedFree
+  
+instance Attestable k => HomSlicedOriented (Free k) (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
+                                    
+pp :: N -> Statement
+pp k = case someNatural k of SomeNatural k' -> valid $ abhCokernelsFreeTo'G' k'
+
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo' -
 
@@ -354,32 +417,16 @@ abhCokernelFreeTo' sTo = CokernelLiftableFree (LimesInjective hCoker hUniv) hLft
   hLft :: Any k -> Liftable Injective (Free k) AbHom
   hLft = liftFree h'Lft
 
-  
 {-
-abhCokernelFreeTo' (SliceTo k h) = CokernelLiftableFree (LimesInjective hCoker hUniv) lft where
+instance XStandardGEligibleCone Cone Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom
+instance XStandardEligibleConeCokernel N1 AbHom
 
-  h' = amap FreeAbHom (amap AbHomFree h)
-  -- h' has free start and end
-  -- as end h is free it follows that, end h == end h' and
-  -- unitRight abhFreeAdjunction (end h) == one (end h) and hence
-  -- h == h' * unitRight abhFreeAdjunction (start h)
+instance XStandardGEligibleConeFactor Cone Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom
+instance XStandardEligibleConeFactorCokernel N1 AbHom
+instance XStandardEligibleConeCokernel1 AbHom
 
-  h'Dgm = case someNatural (lengthN $ start h') of
-    SomeNatural k' -> DiagramFree ks (cokernelDiagram h') where
-      ks = SomeFree k:|SomeFree (Free k'):|Nil
+instance XStandardEligibleConeFactorCokernel1 AbHom
 
-  CokernelLiftableFree h'Coker lft = abhCokernelFreeDgmLftFree h'Dgm
-  
-  -- as unitRight abhFreeAdjunction (start h) is an epimorphism it follows
-  -- that h and h' have the same cokernelFactor!
-  hCoker = ConeCokernel (cokernelDiagram h) (cokernelFactor $ universalCone h'Coker)
-
-  hUniv (ConeCokernel _ x)
-    = universalFactor h'Coker (ConeCokernel (diagram $ diagrammaticObject $ universalCone h'Coker) x)
-
--}
-
-{-
 xSomeFreeSliceTo :: X (SomeFree AbHom) -> XOrtSite To AbHom -> X (SomeFreeSlice To AbHom)
 xSomeFreeSliceTo xn xos = do
   SomeFree n <- xn
@@ -396,7 +443,9 @@ vldAbhCokernelFreeTo = Forall xst (\(SomeFreeSlice s) -> valid $ abhCokernelFree
     return (SomeFree $ Free n)
     
   xos = xStandardOrtSite
+-}
 
+{-
 --------------------------------------------------------------------------------
 -- abhPullbackFree -
 
