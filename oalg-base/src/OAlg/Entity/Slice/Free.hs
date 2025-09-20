@@ -45,6 +45,9 @@ module OAlg.Entity.Slice.Free
   , HomFree, lftFrMapSMlt, lftFrMapSDst
   , NaturalDiagrammaticFree
 
+    -- * Free Tip
+  , ConicFreeTip(..)
+
     -- * Duality
   , toDualOpFreeDst
 
@@ -53,26 +56,21 @@ module OAlg.Entity.Slice.Free
   , LimesFree(..), limesFree
   , KernelSliceFromSomeFreeTip(..), ksfKernel
 
+    -- * deprecated
+  
     -- ** Kernel
-    -- deprecated
   , KernelFree, KernelDiagramFree
 
     -- ** Liftable Cokernel
-    -- deprecated
   , CokernelDiagramFree
   , CokernelLiftableFree(..)
   , clfCokernel, clfLiftableFree
 
     -- *** Liftable Cokernels
-    -- deprecated
   , clfLimes, ClfCokernels(..)
 
     -- ** Pullback
-    -- deprecated
   , PullbackFree, PullbackDiagramFree
-
-    -- * New
-
 
   , SomeFreeSlice(..)
   
@@ -80,6 +78,7 @@ module OAlg.Entity.Slice.Free
 
 import Control.Monad (join)
 
+import Data.Kind
 import Data.Typeable
 import Data.List ((++))
 
@@ -732,7 +731,62 @@ instance
   valid = prpConeLiftable 12
 
 
+--------------------------------------------------------------------------------
+-- ConicFreeTip -
 
+-- | predicate for a 'Conic' object with a free 'tip'.
+--
+-- __Property__ Let @c@ be in @'ConicFreeTip' __c s p d t n m x__@, then holds:
+--
+-- (1) @'slicePoint' k '==' 'tip' ('cone' c)@.
+data ConicFreeTip c s
+       (p :: Perspective)
+       (d :: DiagramType -> N' -> N' -> Type -> Type)
+       (t :: DiagramType)
+       (n :: N') (m :: N') x where
+  ConicFreeTip :: (Attestable k, Sliced (Free k) x)
+    => Free k x -> c s p d t n m x
+    -> ConicFreeTip c s p d t n m x
+
+instance Conic c => Conic (ConicFreeTip c) where
+  cone (ConicFreeTip _ c) = cone c
+
+deriving instance Show (c s p d t n m x) => Show (ConicFreeTip c s p d t n m x)
+
+--------------------------------------------------------------------------------
+-- prpConicFreeTip -
+
+relConicFreeTip ::
+  ( Conic c
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
+  )
+  => ConicFreeTip c s p d t n m x -> Statement
+relConicFreeTip (ConicFreeTip k c)
+  = And [ valid k
+        , valid c
+        , (slicePoint k == tip (cone c))
+            :?> Params [ "k":= show k
+                       , "c":= show c
+                       ]
+        ]
+
+-- | validity according to 'ConicFreeTip'.
+prpConicFreeTip ::
+  ( Conic c
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
+  )
+  => ConicFreeTip c s p d t n m x -> Statement
+prpConicFreeTip c = Prp "ConicFreeTip" :<=>: relConicFreeTip c
+
+instance
+  ( Conic c
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
+  )
+  => Validable (ConicFreeTip c s p d t n m x) where
+  valid = prpConicFreeTip
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
