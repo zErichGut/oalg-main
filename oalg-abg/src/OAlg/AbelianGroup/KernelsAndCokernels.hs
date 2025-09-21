@@ -473,19 +473,26 @@ instance XStandard (DiagramFree (Star To) (S n) n AbHom)
                => X (DiagramFree (Star To) (S n) n AbHom)
           xdgf = xStandard
           
-relAbhPullbacksFreeG ::
+relAbhPullbacksFreeGN ::
   ( Attestable n
   , XStandard (DiagramFree (Star To) (S n) n AbHom)
   )=> Any n -> Statement
-relAbhPullbacksFreeG n = valid (abhPullbacksFreeG' n)
+relAbhPullbacksFreeGN = valid . abhPullbacksFreeG'
 
-
-
-
-{-
-relAbhPullbacksFreeG n = case someNatural (pred n) of
-  SomeNatural n' -> valid (abhPullbacksFreeG' (SW n'))
--}
+relAbhPullbacksFreeG :: Statement
+relAbhPullbacksFreeG = Forall xPlbs id where
+  xPlbs = xOneOf [ relAbhPullbacksFreeGN (attest :: Any N0)
+                 , relAbhPullbacksFreeGN (attest :: Any N1)
+                 , relAbhPullbacksFreeGN (attest :: Any N2)
+                 , relAbhPullbacksFreeGN (attest :: Any N3)
+                 , relAbhPullbacksFreeGN (attest :: Any N4)
+                 , relAbhPullbacksFreeGN (attest :: Any N5)
+                 , relAbhPullbacksFreeGN (attest :: Any N6)
+                 , relAbhPullbacksFreeGN (attest :: Any N7)
+                 , relAbhPullbacksFreeGN (attest :: Any N8)
+                 , relAbhPullbacksFreeGN (attest :: Any N9)
+                 , relAbhPullbacksFreeGN (attest :: Any N10)
+                 ]
 {-
 --------------------------------------------------------------------------------
 -- abhPullbackFree -
@@ -523,7 +530,8 @@ plbDgmFree d = DiagramFree (amap1 (someFree . lengthN) $ dgPoints d) (dgMap Free
 vldAbhPullbackFree :: Statement
 vldAbhPullbackFree = Forall xd (valid . limesFree . abhPullbackFree) where
   xd = amap1 plbDgmFree (xStandard :: X (PullbackDiagram N3 (Matrix Z)))
-  
+-}
+
 --------------------------------------------------------------------------------
 -- abhSplitCy -
 
@@ -569,6 +577,87 @@ abhFreeFromSplitCy (SliceFrom k h)
 --------------------------------------------------------------------------------
 -- abhKernelFreeFromCy -
 
+-- | free kernel where the end point is equal to some cyclic group to some order.
+--
+-- __Property__ Let @s = 'SliceDiagramKernel ('SliceFrom' _ h)@ where
+-- @'end' h '==' abg n '^' r@ for some @n@, @r@ in 'N', then 
+-- @'abhKernelFreeFromCyG' s@ is 'valid'.
+abhKernelFreeFromCyG :: Attestable k
+  => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom -- Slice From (Free k) AbHom
+  -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
+  = hKer $ fromWord $ dimwrd $ abgDim $ end h where
+
+  freeTip :: Kernel N1 AbHom -> SomeFree AbHom
+  freeTip k = case someNatural n of
+    SomeNatural n' -> SomeFree (Free n')
+    where n = lengthN $ tip $ universalCone k
+  -- h == 0
+
+  hKer [] = LimesProjective (cft k) cftUniv where
+    LimesProjective zCn zUniv = kernelZero s (orientation h)
+    
+    cft k = ConicFreeTip k (ConeKernel s (kernelFactor zCn))
+    
+    cftUniv (ConeKernel d x) = zUniv (ConeKernel (diagram d) x)
+{-
+  hKer [(ZMod 0,_)] = case freeTip ker of
+    SomeFree k' -> LimesFree k' kery
+    where ker = lmPrjMapDst adj $ limes zmxKernels $ dgMap l (kernelDiagram h)
+          adj = abhFreeAdjunction
+          Adjunction l _ _ _ = adj
+
+  hKer [(ZMod 1,_)] = hKer []
+
+  hKer [(ZMod c,_)] = case freeTip ker of
+    SomeFree k' -> LimesFree k' ker
+    where
+      ker = LimesProjective kCone kUniv
+
+      DiagonalForm d _ (ColTrafo t) = zmxDiagonalForm (abhz h)
+      -- d = (rt*>h)<*ct
+    
+      m = lengthN (start h)
+      s = lengthN d
+      r = m >- s
+
+      Inv b bInv = amap GLTGL t
+
+      dm = dim () ^ m
+      kDgm = DiagramParallelLR (start h) (end h) (h:|Nil)
+  
+      k = map f d ++ takeN r (repeat 1)
+      -- 0 < d
+      f d = if d' == 0 then 1 else inj (lcm d' c) // d' where d' = prj (mod0 d c)
+
+      kLim = zabh (b*diagonal dm dm k)
+      kCone = ConeKernel kDgm kLim
+
+      kUniv cn@(ConeKernel _ x) = AbHom $ Matrix (Dim e) (Dim sx) xs'' where
+        -- note: from x valid and eligible follows that
+        -- for all non zero (z,i,j) in x holds: orientation z = cy 0 :> cy 0
+        AbGroup e = end kLim
+        
+        AbGroup sx = tip cn
+        
+        Matrix _ _ xs'  = bInv * abhz x
+        xs'' = crets $ Col $ PSequence $ div' (list nProxy $ etscr xs') (k `zip` [0..])
+  
+        div' :: Ord i => [(Row j Z,i)] -> [(Z,i)] -> [(Row j ZModHom,i)]
+        div' [] _             = []
+        div' ((rw,i):rws') [] = (amap1 fromZ rw,i):div' rws' []
+        div' rws@((rw,i):rws') ((k,i'):kis')
+          | i' < i    = div' rws kis'
+          | otherwise = (amap1 (fromZ . \z -> div z k) rw,i):div' rws' kis' 
+
+  hKer _ = error "faild precondition"
+-}
+
+
+abhKernelsFreeFormCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+abhKernelsFreeFormCyG = LimitsG abhKernelFreeFromCyG
+
+{-
 xFreeFromCy :: Free k AbHom -> X (Slice From (Free k) AbHom)
 xFreeFromCy k@(Free k') = do
   n <- xNB 0 1000
@@ -579,7 +668,9 @@ xFreeFromCy k@(Free k') = do
 pp2 :: Attestable k => Free k AbHom -> Statement
 pp2 k = Forall xs (valid . abhKernelFreeFromCy) where
   xs = xFreeFromCy k
-  
+-}  
+
+{-  
 -- | free kernel where the end point is equal to some cyclic group to some order.
 --
 -- __Property__ Let @s = 'SliceFrom' _ h@ where @'end' h '==' abg n '^' r@ for some
@@ -597,7 +688,7 @@ abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $ abgDim $ end 
   -- h == 0
 
   hKer [(ZMod 0,_)] = case freeTip ker of
-    SomeFree k' -> LimesFree k' ker
+    SomeFree k' -> LimesFree k' kery
     where ker = lmPrjMapDst adj $ limes zmxKernels $ dgMap l (kernelDiagram h)
           adj = abhFreeAdjunction
           Adjunction l _ _ _ = adj
