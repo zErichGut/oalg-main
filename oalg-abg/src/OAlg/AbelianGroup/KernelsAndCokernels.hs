@@ -409,6 +409,85 @@ abhCokernelFreeTo' sTo = CokernelLiftableFree (LimesInjective hCoker hUniv) hLft
 
 
 --------------------------------------------------------------------------------
+-- abhPullbackFreeG -
+
+abhPullbackFreeG :: PullbackDiagrammatic DiagramFree n AbHom
+  -> PullbackG (ConicFreeTip Cone) DiagramFree n AbHom
+abhPullbackFreeG d@(DiagramFree _ d') = LimesProjective pCn pUniv where
+  -- if d = DiagramFree _ d' is valid, then r (l d') == d' for the right
+  -- and left adjoint of abhFreeAdjunction. Furthermore the tip of p is free!
+  freeTip :: PullbackCone n AbHom -> SomeFree AbHom
+  freeTip p = case someNatural n of
+    SomeNatural n' -> SomeFree (Free n')
+    where n = lengthN $ tip $ p
+
+  LimesProjective pCn' pUniv' = lmPrjMap adj $ limes zmxPullbacks $ dgMap l d' where
+    adj = abhFreeAdjunction
+    Adjunction l _ _ _ = adj
+
+
+  pCn = case freeTip pCn' of
+    SomeFree k -> ConicFreeTip k (ConeProjective d (tip pCn') (shell pCn'))
+    
+  pUniv (ConeProjective d t x) = pUniv' (ConeProjective (diagram d) t x)
+
+
+--------------------------------------------------------------------------------
+-- abhPullbacksFreeG -
+
+abhPullbacksFreeG :: PullbacksG (ConicFreeTip Cone) DiagramFree n AbHom
+abhPullbacksFreeG = LimitsG abhPullbackFreeG
+
+abhPullbacksFreeG' :: q n -> PullbacksG (ConicFreeTip Cone) DiagramFree n AbHom
+abhPullbacksFreeG' _ = abhPullbacksFreeG
+
+instance XStandardGEligibleConeFactor
+           (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom where 
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+instance XStandardGEligibleCone
+           (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom where
+  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
+    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
+    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
+
+instance XStandard (DiagramFree (Star To) N1 N0 AbHom) where
+  xStandard = do
+    s <- amap1 (pmap FreeAbHom) (xDimZ xStandardOrtSite)
+    case someNatural $ lengthN s of
+      SomeNatural k -> return (DiagramFree (SomeFree (Free k):|Nil) (DiagramSink s Nil))
+    
+    where xDimZ :: XOrtSite To (Matrix Z) -> X (Dim Z ())
+          xDimZ = xosPoint
+
+instance XStandard (DiagramFree (Star To) (S n) n AbHom)
+  => XStandard (DiagramFree (Star To) (S (S n)) (S n) AbHom) where
+  xStandard = do
+    DiagramFree (sk:|ks) (DiagramSink s hs) <- xdgf
+    h <- amap1 (amap FreeAbHom) $ xosEnd xStandardOrtSite (dim () ^ lengthN s)
+    case someNatural $ lengthN $ start h of
+      SomeNatural k' -> return (DiagramFree (sk:|k:|ks) (DiagramSink s (h:|hs))) where
+        k = SomeFree (Free k')
+
+    where xdgf :: XStandard (DiagramFree (Star To) (S n) n AbHom)
+               => X (DiagramFree (Star To) (S n) n AbHom)
+          xdgf = xStandard
+          
+relAbhPullbacksFreeG ::
+  ( Attestable n
+  , XStandard (DiagramFree (Star To) (S n) n AbHom)
+  )=> Any n -> Statement
+relAbhPullbacksFreeG n = valid (abhPullbacksFreeG' n)
+
+
+
+
+{-
+relAbhPullbacksFreeG n = case someNatural (pred n) of
+  SomeNatural n' -> valid (abhPullbacksFreeG' (SW n'))
+-}
+{-
+--------------------------------------------------------------------------------
 -- abhPullbackFree -
 
 -- | the pullback with a free tip of its universal cone for the given free pullback diagram.
@@ -429,7 +508,11 @@ abhPullbackFree (DiagramFree _ d') = case freeTip p of
     p = lmPrjMap adj $ limes zmxPullbacks $ dgMap l d' where
       adj = abhFreeAdjunction
       Adjunction l _ _ _ = adj
+-}
 
+
+
+{-
 someFree :: N -> SomeFree AbHom
 someFree n = case someNatural n of
   SomeNatural n' -> SomeFree (Free n')
@@ -437,7 +520,6 @@ someFree n = case someNatural n of
 plbDgmFree :: PullbackDiagram n (Matrix Z) -> PullbackDiagramFree n AbHom
 plbDgmFree d = DiagramFree (amap1 (someFree . lengthN) $ dgPoints d) (dgMap FreeAbHom d)
 
-{-
 vldAbhPullbackFree :: Statement
 vldAbhPullbackFree = Forall xd (valid . limesFree . abhPullbackFree) where
   xd = amap1 plbDgmFree (xStandard :: X (PullbackDiagram N3 (Matrix Z)))
