@@ -558,6 +558,7 @@ abhSplitCy (AbHom m@(Matrix r _ _))
 --------------------------------------------------------------------------------
 -- abhFreeFromSplitCy -
 
+{-
 -- | splits an abelian homomorphism @h@ into some finite list @hs@ where each
 --  @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
 --  @h'@ /cover/ @h@.
@@ -573,6 +574,26 @@ abhSplitCy (AbHom m@(Matrix r _ _))
 abhFreeFromSplitCy :: Slice From (Free k) AbHom -> SomeFinList (Slice From (Free k) AbHom)
 abhFreeFromSplitCy (SliceFrom k h)
   = someFinList $ amap1 (SliceFrom k) $ abhSplitCy h 
+-}
+
+-- | splits an abelian homomorphism @h@ into some finite list @hs@ where each
+--  @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
+--  @h'@ /cover/ @h@.
+--
+-- __Properties__ Let @s = 'SliceDiagramKernel ('SliceFrom' _ h)@ be in
+-- @'KernelDiagrammatic' ('SliceDiagram' ('Free' __k__)) 'AbHom'@
+-- and @hs = 'abhFreeFromSplitCyG' s@, then holds:
+--
+-- (1) For all @'SliceDiagramKernel' ('SliceFrom' _ h')@ in @hs@ exists a @n@, @r@ in 'N' such that
+-- @'end' h' '==' 'abg' n '^' r@.
+--
+-- (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h v'*' x '==' 0@ if
+-- and only if @h' v'*' x '==' 0@ for all @'SliceDiagramKernel' ('SliceFrom' _ h')@ in @hs@.
+abhFreeFromSplitCyG
+  :: KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
+  -> SomeFinList (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
+abhFreeFromSplitCyG s@(SliceDiagramKernel (SliceFrom k h))
+  = someFinList $ amap1 (SliceDiagramKernel . SliceFrom k) $ abhSplitCy h
 
 --------------------------------------------------------------------------------
 -- abhKernelFreeFromCy -
@@ -651,12 +672,10 @@ abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
           | i' < i    = div' rws kis'
           | otherwise = (amap1 (fromZ . \z -> div z k) rw,i):div' rws' kis' 
 
-  hKer _ = error "faild precondition"
-
+  hKer _ = throw $ ImplementationError "faild precondition"
 
 abhKernelsFreeFromCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromCyG = LimitsG abhKernelFreeFromCyG
-
 
 xFreeFromCy :: Attestable k => Free k AbHom -> X (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
 xFreeFromCy k@(Free k') = do
@@ -677,10 +696,11 @@ instance XStandardGEligibleConeFactor
            (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom where
   xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
                                 
-
 pp2 :: Attestable k => Any k -> Statement
-pp2 k = Forall xs (valid . limes abhKernelsFreeFromCyG) where
-  xs = xFreeFromCy (Free k)
+pp2 k = prpLimitsG
+          xStandardGEligibleCone xStandardGEligibleConeFactor
+          (xFreeFromCy (Free k))
+          abhKernelsFreeFromCyG
 
 
 {-  
@@ -750,10 +770,67 @@ abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $ abgDim $ end 
           | otherwise = (amap1 (fromZ . \z -> div z k) rw,i):div' rws' kis' 
 
   hKer _ = error "faild precondition"
+-}
+
 
 --------------------------------------------------------------------------------
 -- abhKernelFreeFrom -
 
+-- | the kernel of a free site from.
+--
+-- @
+--          h
+--      a ------> b
+--      
+-- @ where @a@ is free of some order @k@.
+abhKernelFreeFromG :: Attestable k
+  => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
+  -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+abhKernelFreeFromG s = ker s $ amap1 (limes abhKernelsFreeFromCyG) $ abhFreeFromSplitCyG s where
+  
+  ker :: Attestable k
+    => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
+    -> SomeFinList (KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom)
+    -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+  ker = error "nyi"
+
+{-
+abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) where
+
+  plbDgm :: Attestable k
+    => Free k AbHom -> FinList n (KernelFree N1 AbHom) -> PullbackDiagramFree n AbHom
+  plbDgm k kers = DiagramFree ks dgm where
+    ks = SomeFree k :| amap1 (\(LimesFree k' _) -> SomeFree k') kers
+    dgm = DiagramSink (slicePoint k)
+      $ amap1 (kernelFactor . universalCone . limesFree)
+      $ kers
+  
+  ker :: Attestable k
+    => Slice From (Free k) AbHom -> SomeFinList (KernelFree N1 AbHom)
+    -> KernelFree N1 AbHom
+  ker s@(SliceFrom k _) (SomeFinList kers) = ker' s kers (abhPullbackFree $ plbDgm k kers)
+
+  ker'
+    :: Slice From (Free k) AbHom
+    -> FinList n (KernelFree N1 AbHom)
+    -> PullbackFree n AbHom
+    -> KernelFree N1 AbHom
+  ker' (SliceFrom _ h) kers (LimesFree kt plb)
+    = LimesFree kt (LimesProjective hKer hUniv) where
+    
+    hDgm = kernelDiagram h
+    hKer = ConeKernel hDgm (F.head $ shell $ universalCone plb)
+    
+    hUniv (ConeKernel _ x) = universalFactor plb plbCone where
+      plbCone = ConeProjective (diagram plb) (start x) cs
+      cs = x:|amap1
+        (\(LimesFree _ ker)
+         -> universalFactor ker (ConeKernel (diagram ker) x)
+          -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
+        ) kers
+-}
+
+{-
 xFreeFrom :: Free k AbHom -> X (Slice From (Free k) AbHom)
 xFreeFrom k@(Free k') = do
   h <- xh (abg 0 ^ (lengthN k'))
@@ -762,7 +839,9 @@ xFreeFrom k@(Free k') = do
 
 pp3 :: Attestable k => Free k AbHom -> Statement
 pp3 k = Forall xs valid where xs = xFreeFrom k
+-}
 
+{-
 -- | the kernel of a free site from.
 --
 -- @
@@ -808,7 +887,9 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
          -> universalFactor ker (ConeKernel (diagram ker) x)
           -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
         ) kers
+-}
 
+{-
 --------------------------------------------------------------------------------
 -- abhKernel -
 
