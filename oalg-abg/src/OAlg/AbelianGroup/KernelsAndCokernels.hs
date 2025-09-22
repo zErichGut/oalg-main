@@ -592,7 +592,7 @@ abhFreeFromSplitCy (SliceFrom k h)
 abhFreeFromSplitCyG
   :: KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
   -> SomeFinList (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
-abhFreeFromSplitCyG s@(SliceDiagramKernel (SliceFrom k h))
+abhFreeFromSplitCyG (SliceDiagramKernel (SliceFrom k h))
   = someFinList $ amap1 (SliceDiagramKernel . SliceFrom k) $ abhSplitCy h
 
 --------------------------------------------------------------------------------
@@ -776,7 +776,7 @@ abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $ abgDim $ end 
 --------------------------------------------------------------------------------
 -- abhKernelFreeFrom -
 
--- | the kernel of a free site from.
+-- | the kernel of a @h@ with free 'start'.
 --
 -- @
 --          h
@@ -787,48 +787,44 @@ abhKernelFreeFromG :: Attestable k
   => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
   -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelFreeFromG s = ker s $ amap1 (limes abhKernelsFreeFromCyG) $ abhFreeFromSplitCyG s where
+
+  tipSomeFree :: KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom -> SomeFree AbHom
+  tipSomeFree ker = case universalCone ker of ConicFreeTip k _ -> SomeFree k
+  
+  plbDgm :: Attestable k
+    => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
+    -> FinList n (KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom)
+    -> PullbackDiagrammatic DiagramFree n AbHom
+  plbDgm (SliceDiagramKernel (SliceFrom k _)) kers = DiagramFree ks dgm where
+    ks  = SomeFree k :| amap1 tipSomeFree kers
+    dgm = DiagramSink (slicePoint k) $ amap1 (kernelFactor . cone . universalCone) kers
   
   ker :: Attestable k
     => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
     -> SomeFinList (KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom)
     -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
-  ker = error "nyi"
+  ker s (SomeFinList kers) = ker' s kers (limes abhPullbacksFreeG $ plbDgm s kers)
 
-{-
-abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) where
+  ker' :: KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
+       -> FinList n (KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom)
+       -> PullbackG (ConicFreeTip Cone) DiagramFree n AbHom
+       -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+  ker' s kers (LimesProjective (ConicFreeTip k pCn) pUniv) = LimesProjective kCn kUniv where
+    kCn = ConicFreeTip k (ConeKernel s (F.head $ shell $ cone pCn))
+    kUniv (ConeKernel _ x) = pUniv (ConeProjective pDgm pTip pShell) where
+      pDgm   = diagrammaticObject pCn
+      pTip   = start x
+      pShell = x :| amap1 (pLft x) kers
 
-  plbDgm :: Attestable k
-    => Free k AbHom -> FinList n (KernelFree N1 AbHom) -> PullbackDiagramFree n AbHom
-  plbDgm k kers = DiagramFree ks dgm where
-    ks = SomeFree k :| amap1 (\(LimesFree k' _) -> SomeFree k') kers
-    dgm = DiagramSink (slicePoint k)
-      $ amap1 (kernelFactor . universalCone . limesFree)
-      $ kers
-  
-  ker :: Attestable k
-    => Slice From (Free k) AbHom -> SomeFinList (KernelFree N1 AbHom)
-    -> KernelFree N1 AbHom
-  ker s@(SliceFrom k _) (SomeFinList kers) = ker' s kers (abhPullbackFree $ plbDgm k kers)
+      pLft :: AbHom
+         -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+         -> AbHom
+      pLft x ker = universalFactor ker (ConeKernel d x) where
+        -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
+        d = diagrammaticObject $ cone $ universalCone ker
 
-  ker'
-    :: Slice From (Free k) AbHom
-    -> FinList n (KernelFree N1 AbHom)
-    -> PullbackFree n AbHom
-    -> KernelFree N1 AbHom
-  ker' (SliceFrom _ h) kers (LimesFree kt plb)
-    = LimesFree kt (LimesProjective hKer hUniv) where
-    
-    hDgm = kernelDiagram h
-    hKer = ConeKernel hDgm (F.head $ shell $ universalCone plb)
-    
-    hUniv (ConeKernel _ x) = universalFactor plb plbCone where
-      plbCone = ConeProjective (diagram plb) (start x) cs
-      cs = x:|amap1
-        (\(LimesFree _ ker)
-         -> universalFactor ker (ConeKernel (diagram ker) x)
-          -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
-        ) kers
--}
+abhKernelsFreeFromG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+abhKernelsFreeFromG = LimitsG abhKernelFreeFromG
 
 {-
 xFreeFrom :: Free k AbHom -> X (Slice From (Free k) AbHom)
