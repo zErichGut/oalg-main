@@ -588,38 +588,39 @@ abhKernelFreeFromCyG :: Attestable k
 abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
   = hKer $ fromWord $ dimwrd $ abgDim $ end h where
 
-  freeTip :: Kernel N1 AbHom -> SomeFree AbHom
-  freeTip k = case someNatural n of
-    SomeNatural n' -> SomeFree (Free n')
-    where n = lengthN $ tip $ universalCone k
+  freeTip :: KernelCone N1 AbHom -> SomeFree AbHom
+  freeTip c = case someNatural $ lengthN $ tip c of SomeNatural k -> SomeFree (Free k)
+    
   -- h == 0
-
   hKer [] = LimesProjective (cft k) cftUniv where
-    LimesProjective zCn zUniv = kernelZero s (orientation h)
+    LimesProjective kCone kUniv = kernelZero s (orientation h)
     
-    cft k = ConicFreeTip k (ConeKernel s (kernelFactor zCn))
+    cft k = ConicFreeTip k (ConeKernel s (kernelFactor kCone))
     
-    cftUniv (ConeKernel d x) = zUniv (ConeKernel (diagram d) x)
-{-
-  hKer [(ZMod 0,_)] = case freeTip ker of
-    SomeFree k' -> LimesFree k' kery
-    where ker = lmPrjMapDst adj $ limes zmxKernels $ dgMap l (kernelDiagram h)
-          adj = abhFreeAdjunction
-          Adjunction l _ _ _ = adj
+    cftUniv (ConeKernel d x) = kUniv (ConeKernel (diagram d) x)
+
+  hKer [(ZMod 0,_)] = case freeTip kCone of
+    SomeFree k' -> LimesProjective (cft k') cftUniv where
+      cft k = ConicFreeTip k (ConeKernel s (kernelFactor kCone))
+      cftUniv (ConeKernel s x) = kUniv (ConeKernel (diagram s) x)
+    where
+      LimesProjective kCone kUniv = lmPrjMapDst adj $ limes zmxKernels $ dgMap l (diagram s) where
+        adj = abhFreeAdjunction
+        Adjunction l _ _ _ = adj
 
   hKer [(ZMod 1,_)] = hKer []
 
-  hKer [(ZMod c,_)] = case freeTip ker of
-    SomeFree k' -> LimesFree k' ker
+  hKer [(ZMod c,_)] = case freeTip kCone of
+    SomeFree k' -> LimesProjective (cft k') cftUniv where
+      cft k = ConicFreeTip k (ConeKernel s (kernelFactor kCone)) 
+      cftUniv (ConeKernel s x) = kUniv (ConeKernel (diagram s) x)
+      
     where
-      ker = LimesProjective kCone kUniv
-
       DiagonalForm d _ (ColTrafo t) = zmxDiagonalForm (abhz h)
       -- d = (rt*>h)<*ct
     
       m = lengthN (start h)
-      s = lengthN d
-      r = m >- s
+      r = m >- lengthN d
 
       Inv b bInv = amap GLTGL t
 
@@ -651,24 +652,36 @@ abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
           | otherwise = (amap1 (fromZ . \z -> div z k) rw,i):div' rws' kis' 
 
   hKer _ = error "faild precondition"
--}
 
 
-abhKernelsFreeFormCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
-abhKernelsFreeFormCyG = LimitsG abhKernelFreeFromCyG
+abhKernelsFreeFromCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+abhKernelsFreeFromCyG = LimitsG abhKernelFreeFromCyG
 
-{-
-xFreeFromCy :: Free k AbHom -> X (Slice From (Free k) AbHom)
+
+xFreeFromCy :: Attestable k => Free k AbHom -> X (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
 xFreeFromCy k@(Free k') = do
   n <- xNB 0 1000
   r <- xNB 0 10
   h <- xAbHom 0.3 (abg 0 ^ (lengthN k') :> abg n ^ r)
-  return (SliceFrom k h)
+  return (SliceDiagramKernel (SliceFrom k h))
 
-pp2 :: Attestable k => Free k AbHom -> Statement
-pp2 k = Forall xs (valid . abhKernelFreeFromCy) where
-  xs = xFreeFromCy k
--}  
+instance XStandardGEligibleCone
+           (ConicFreeTip Cone) Dst Projective
+           (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
+    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
+    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
+
+instance XStandardGEligibleConeFactor
+           (ConicFreeTip Cone) Dst Projective
+           (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+                                
+
+pp2 :: Attestable k => Any k -> Statement
+pp2 k = Forall xs (valid . limes abhKernelsFreeFromCyG) where
+  xs = xFreeFromCy (Free k)
+
 
 {-  
 -- | free kernel where the end point is equal to some cyclic group to some order.
