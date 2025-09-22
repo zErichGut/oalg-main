@@ -826,16 +826,21 @@ abhKernelFreeFromG s = ker s $ amap1 (limes abhKernelsFreeFromCyG) $ abhFreeFrom
 abhKernelsFreeFromG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromG = LimitsG abhKernelFreeFromG
 
-{-
-xFreeFrom :: Free k AbHom -> X (Slice From (Free k) AbHom)
-xFreeFrom k@(Free k') = do
-  h <- xh (abg 0 ^ (lengthN k'))
-  return (SliceFrom k h)
+abhKernelsFreeFromG' :: Attestable k
+  => q k -> KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
+abhKernelsFreeFromG' _ = abhKernelsFreeFromG
+
+
+xFreeFrom :: Attestable k
+  =>  Any k -> X (SliceDiagram (Free k) (Parallel LeftToRight) N2 N1 AbHom)
+xFreeFrom k = do
+  h <- xh (abg 0 ^ (lengthN k))
+  return (SliceDiagramKernel (SliceFrom (Free k) h))
   where XStart _ xh = xStandardOrtSite :: XOrtSite From AbHom 
 
-pp3 :: Attestable k => Free k AbHom -> Statement
-pp3 k = Forall xs valid where xs = xFreeFrom k
--}
+pp3 :: Attestable k => Any k -> Statement
+pp3 k = prpLimitsG xStandardGEligibleCone xStandardGEligibleConeFactor (xFreeFrom k)
+                   (abhKernelsFreeFromG' k)
 
 {-
 -- | the kernel of a free site from.
