@@ -1041,31 +1041,34 @@ instance XStandardGEligibleConeFactor
 pp4 :: Statement
 pp4 = valid abhKernels
 
-{-
 --------------------------------------------------------------------------------
--- AbHom - SliceCokernelTo -
+-- limesCone -
 
-instance Attestable k => SliceCokernelTo (Free k) AbHom where
-  sliceCokernelTo = clfCokernel . abhCokernelFreeTo'
-  -- do not change this definition, otherwise the liftable of abhCokernelLiftable has
-  -- to be adapted.
-  
+-- | the underlying limes according to 'Cone' , given by a diagrammatic object of @__d t n m x__@.
+limesCone :: Conic c => LimitsG c s p d t n m x -> d t n m x -> LimesG Cone s p d t n m x
+limesCone lG d = case limes lG d of
+  LimesProjective cCn cUniv -> LimesProjective (cone cCn) cUniv
+  LimesInjective cCn cUniv  -> LimesInjective (cone cCn) cUniv
+
 --------------------------------------------------------------------------------
--- AbHom - SliceKernelFrom -
+-- limitsCone -
 
-instance Attestable k => SliceKernelFrom (Free k) AbHom where
-  sliceKernelFrom = limesFree . abhKernelFreeFrom
+-- | the underlying limits according to 'Cone'.
+limitsCone :: Conic c => LimitsG c s p d t n m x -> LimitsG Cone s p d t n m x
+limitsCone = LimitsG . limesCone
 
 --------------------------------------------------------------------------------
 -- abhSliceFreeAdjunction -
 
 -- | the cokernel-kernel adjunction for a given @'Free' __k__@. 
 abhSliceFreeAdjunction :: Attestable k
-  => Free k AbHom
-  -> Adjunction (SliceCokernelKernel (Free k) AbHom)
+  => Any k
+  -> Adjunction (SliceAdjunction (Free k) Cone AbHom)
        (SliceFactor From (Free k) AbHom)
        (SliceFactor To (Free k) AbHom)
-abhSliceFreeAdjunction = slcAdjunction
+abhSliceFreeAdjunction k = slcAdjunction slcCoker slcKer (Free k) where
+  slcCoker = limitsCone $ abhCokernelsFreeTo'G' k
+  slcKer   = limitsCone $ abhKernelsFreeFromG' k
 
 
 --------------------------------------------------------------------------------
@@ -1095,7 +1098,63 @@ abhSliceFreeAdjunction = slcAdjunction
 --     v     h     v    w'    v
 --     s --------> e ------> c' = cCokerLft
 -- @
-abhCokernelLftFree :: CokernelDiagram N1 AbHom -> CokernelLiftableFree AbHom
+abhCokernelLftFreeG :: CokernelDiagram N1 AbHom
+  -> CokernelG ConeLiftable Diagram N1 AbHom
+abhCokernelLftFreeG d@(DiagramParallelRL _ _ (h:|Nil))
+  = let fp = finitePresentation abgFinPres in case (fp $ start h,fp $ end h) of
+  (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
+    , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
+    ) -> LimesInjective w'CnLft w'Univ where
+
+    ----------------------------------------
+    -- liftable cokernel cone of w' -
+    w'CnLft = ConeCokernelLiftable w'Cn (LiftableFree w'Lft)
+
+    ----------------------------------------
+    -- constructing c -
+    SliceFrom _ h' = lq (SliceFrom ns' (h*p))
+    h'SliceTo      = SliceTo ne' h'
+    q'SliceTo      = SliceTo ne' q'
+
+    cSum       = limes (slfLimitsInjective abhSums)
+                   (DiagramDiscrete (h'SliceTo:|q'SliceTo:|Nil))
+    cSliceTo   = tip $ cone $ universalCone cSum
+
+    ----------------------------------------
+    -- evaluating c' -
+    cCokerLft = limes abhCokernelsFreeTo'G (SliceDiagramCokernel cSliceTo)
+    c'        = cokernelFactor $ universalCone cCokerLft
+
+    ----------------------------------------
+    -- evaluating w' -
+    w' = universalFactor q'Coker (ConeCokernel (diagrammaticObject $ cone $ universalCone q'Coker) c')
+    w'Cn = ConeCokernel d w'
+
+    w'Lft :: Any k -> Liftable Injective (Free k) AbHom
+    w'Lft k = case ats k of
+      Ats -> LiftableInjective w' w'SlcFromLft where
+        w'SlcFromLft f = SliceFrom nk (q*f') where
+          SliceFrom nk f' = lift (liftFree (cnLiftable $ universalCone cCokerLft) k) f
+
+    ----------------------------------------
+    -- universal property w' -
+    w'Univ (ConeCokernel _ x) = universalFactor cCokerLft cCone where
+      cCone = ConeCokernel (diagrammaticObject $ cone $ universalCone cCokerLft) (x*q)
+
+
+abhCokernelsLftFreeG :: CokernelsG ConeLiftable Diagram N1 AbHom
+abhCokernelsLftFreeG = LimitsG abhCokernelLftFreeG
+
+instance XStandardGEligibleCone
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  
+instance XStandardGEligibleConeFactor
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+
+pp5 :: Statement
+pp5 = valid abhCokernelsLftFreeG
+
+{-
 abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
   = let fp = finitePresentation abgFinPres in case (fp $ start h,fp $ end h) of
   (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
