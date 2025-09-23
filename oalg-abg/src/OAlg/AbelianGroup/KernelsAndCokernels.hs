@@ -18,12 +18,11 @@
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
-{-    
     -- * Kernels
     abhKernels
 
     -- * Cokernels
-  , abhCokernels, abhCokersLftFree
+  , abhCokernels, abhCokernelsLftFreeG
   
     -- * Smith Normal
   , isoSmithNormal
@@ -32,7 +31,6 @@ module OAlg.AbelianGroup.KernelsAndCokernels
   , abhSliceFreeAdjunction
 
     -- * X
--}    
   )
   where
 
@@ -1142,17 +1140,6 @@ abhCokernelLftFreeG d@(DiagramParallelRL _ _ (h:|Nil))
       cCone = ConeCokernel (diagrammaticObject $ cone $ universalCone cCokerLft) (x*q)
 
 
-abhCokernelsLftFreeG :: CokernelsG ConeLiftable Diagram N1 AbHom
-abhCokernelsLftFreeG = LimitsG abhCokernelLftFreeG
-
-instance XStandardGEligibleCone
-           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
-  
-instance XStandardGEligibleConeFactor
-           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
-
-pp5 :: Statement
-pp5 = valid abhCokernelsLftFreeG
 
 {-
 abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
@@ -1192,27 +1179,47 @@ abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
       Ats -> LiftableFrom w' w'SlcFromLft where
         w'SlcFromLft f = SliceFrom nk (q*f') where
           SliceFrom nk f' = lift (clfLiftableFree cCokerLft k) f
+-}
 
 --------------------------------------------------------------------------------
 -- abhCokersLftFree -
 
 -- | liftable free cokernels.
+abhCokernelsLftFreeG :: CokernelsG ConeLiftable Diagram N1 AbHom
+abhCokernelsLftFreeG = LimitsG abhCokernelLftFreeG
+
+instance XStandardGEligibleCone
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
+    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
+    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
+  
+instance XStandardGEligibleConeFactor
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+
+instance NaturalDiagrammaticFree Dst Diagram N2 N1
+
+pp5 :: Statement
+pp5 = valid abhCokernelsLftFreeG
+
+{-
 abhCokersLftFree :: ClfCokernels N1 AbHom
 abhCokersLftFree = ClfCokernels abhCokernelLftFree
-
+-}
 --------------------------------------------------------------------------------
 -- abhCokernel -
 
 -- | cokernel for a given additive homomorphism.
 abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
-abhCokernel = clfCokernel . abhCokernelLftFree
+abhCokernel = limesCone abhCokernelsLftFreeG
 
 --------------------------------------------------------------------------------
 -- abhCokernels -
 
 -- | cokernels for 'AbHom'. 
 abhCokernels :: Cokernels N1 AbHom
-abhCokernels = Limits abhCokernel
+abhCokernels = limitsCone abhCokernelsLftFreeG
 
 --------------------------------------------------------------------------------
 -- isoSmithNormal -
@@ -1228,6 +1235,6 @@ isoSmithNormal :: AbGroup -> Inv AbHom
 isoSmithNormal g = Inv h h' where
   c  = limes abhCokernels (cokernelDiagram (zero (one ():>g)))
   h  = cokernelFactor $ universalCone c
-  h' = universalFactor c (ConeCokernel (diagram c) (one g))
+  h' = universalFactor c (ConeCokernel (diagrammaticObject $ cone $ universalCone c) (one g))
 
--}
+
