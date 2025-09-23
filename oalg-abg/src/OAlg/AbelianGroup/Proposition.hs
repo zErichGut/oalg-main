@@ -41,7 +41,7 @@ prpAbelianGroups = Prp "AbelianGroups"
   :<=>: And [ prpAbHom
             , Label "isoSmithNormal" :<=>: Forall xStandard (valid . isoSmithNormal)
             , Label "kernels" :<=>: valid abhKernels
-            , Label "cokernels liftable" :<=>: (valid $ clfLimes abhCokersLftFree)
+            , Label "cokernels liftable" :<=>: (valid abhCokernelsLftFreeG)
             , Label "splitable" :<=>: Forall (xAbhSomeFreeSlice 100) (valid . abhSplit)
             , prpMatrixZLiftable
             ]

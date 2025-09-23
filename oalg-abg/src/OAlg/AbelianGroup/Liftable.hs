@@ -61,36 +61,6 @@ import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.Free.SmithNormalForm
 import OAlg.AbelianGroup.Euclid
 
---------------------------------------------------------------------------------
--- abhCokerLft -
-
--- | the associated liftable, i.e. every cokernel in 'AbHom' has the @'Liftable' 'From'@ property.
---
--- __Property__ Let @coker@ be in @'Cokernel' 'N1' 'AbHom@, than holds:
---
--- (1) @c '==' l@ where @c = 'cokernelFactor' ('universalCone' coker)@ and
--- @'LiftableFrom' c _ = 'abhCokerLft' coker@.
---
--- @
---         c         a
---   * <------- * <------*
---    ^         ^
---     \       /
---   f  \     / f' 
---       \   /
---        \ /
---         *
--- @
---
--- where @c@ is the cokernel of @a@ and @f'@ the lifted @f@. 
-abhCokerLft :: Cokernel N1 AbHom -> Liftable Injective (Free n) AbHom
-abhCokerLft coker = LiftableInjective c l where
-  c = cokernelFactor $ universalCone coker
-  l :: Slice From (Free n) AbHom -> Slice From (Free n) AbHom
-  l f | end c /= end (slice f) = throw NotLiftable
-      | otherwise              = error "nyi"
-
-
 {-
 --------------------------------------------------------------------------------
 -- abhLift -
