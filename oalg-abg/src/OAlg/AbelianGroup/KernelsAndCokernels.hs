@@ -890,7 +890,7 @@ abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) w
         ) kers
 -}
 
-{-
+
 --------------------------------------------------------------------------------
 -- abhKernel -
 
@@ -928,31 +928,66 @@ abhKernel d = hKer d (finitePresentation abgFinPres $ start h) where
   hKer
     d@(DiagramParallelLR _ _ (h:|Nil))
     g@(GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) ns' _ _ _ _)
-    = hKer' d g (abhKernelFreeFrom (SliceFrom ns' (h*p)))
+    = hKer' d g (limes abhKernelsFreeFromG (SliceDiagramKernel (SliceFrom ns' (h*p))))
 
   hKer'
     :: KernelDiagram N1 AbHom
     -> FinitePresentation To Free AbHom
-    -> KernelFree N1 AbHom
+    -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
     -> Kernel N1 AbHom
   hKer'
     d
     g@(GeneratorTo (DiagramChainTo _ (_:|p':|Nil)) ns' ns'' _ _ _)
-    hpKerFree@(LimesFree nr' hpKer)
+    hpKerFree@(LimesProjective (ConicFreeTip nr' _) _)
+
     = hKer'' d g hpKerFree k'p'Plb where
 
-    k'p'Plb = abhPullbackFree
+    k'p'Plb = limes abhPullbacksFreeG
       (DiagramFree (SomeFree ns':|SomeFree nr':|SomeFree ns'':|Nil) k'p'PlbDgm)
     k'p'PlbDgm = DiagramSink (end k') (k':|p':|Nil)
 
-    k' = kernelFactor $ universalCone hpKer
+    k' = kernelFactor $ universalCone hpKerFree
     
   hKer''
     :: KernelDiagram N1 AbHom
     -> FinitePresentation To Free AbHom
-    -> KernelFree N1 AbHom
-    -> PullbackFree N2 AbHom
+    -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom -- KernelFree N1 AbHom
+    -> PullbackG (ConicFreeTip Cone) DiagramFree N2 AbHom -- PullbackFree N2 AbHom
     -> Kernel N1 AbHom
+  hKer''
+    d
+    (GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) _ _ _ _ lp)
+    hpKer@(LimesProjective (ConicFreeTip nr' _) _)     -- (LimesFree nr' hpKer)
+    k'p'Plb@(LimesProjective (ConicFreeTip nr'' _) _)  -- (LimesFree nr'' k'p'Plb)
+    = LimesProjective hKer hUniv where
+
+    _:|q':|_   = shell $ cone $ universalCone k'p'Plb
+    q'CokerDgm = cokernelDiagram q' 
+    q'Coker    = limes abhCokernelsFreeDgmLftFreeG
+      ( DiagramFree
+         (SomeFree nr':|SomeFree nr'':|Nil)
+         q'CokerDgm
+      )
+      
+    hKer = ConeKernel d hKerFactor where
+      hKerFactor = universalFactor q'Coker (ConeCokernel q'CokerDgmFree (p*k'))
+      k' = kernelFactor $ universalCone hpKer
+      q'CokerDgmFree = diagrammaticObject $ cone $ universalCone q'Coker
+      
+    hUniv (ConeKernel d' x) = case finitePresentation abgFinPres $ start x of
+      GeneratorTo (DiagramChainTo _ (t:|_)) nv' _ t'Coker _ _
+        | not (d == d') -> error "cone not eligible" -- throw $ ConeNotEligible $ show cn
+        | otherwise     -> universalFactor t'Coker t'Cone where
+                
+        t'Cone = ConeCokernel (diagrammaticObject $ cone $ universalCone t'Coker) (q*u')
+        q  = cokernelFactor $ universalCone q'Coker
+        u' = universalFactor hpKer x'Cone
+
+        x'Cone = ConeKernel (diagrammaticObject $ cone $ universalCone hpKer) x'
+        SliceFrom _ x' = lp (SliceFrom nv' (x*t))
+
+
+{-    
   hKer''
     d
     (GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) _ _ _ _ lp)
@@ -983,6 +1018,7 @@ abhKernel d = hKer d (finitePresentation abgFinPres $ start h) where
 
         x'Cone = ConeKernel (diagram hpKer) x'
         SliceFrom _ x' = lp (SliceFrom nv' (x*t))
+-}
 
 
 --------------------------------------------------------------------------------
@@ -990,8 +1026,22 @@ abhKernel d = hKer d (finitePresentation abgFinPres $ start h) where
 
 -- | kernels for 'AbHom'. 
 abhKernels :: Kernels N1 AbHom
-abhKernels = Limits abhKernel
+abhKernels = LimitsG abhKernel
 
+instance XStandardGEligibleCone Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
+    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
+    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
+  
+instance XStandardGEligibleConeFactor
+           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+
+pp4 :: Statement
+pp4 = valid abhKernels
+
+{-
 --------------------------------------------------------------------------------
 -- AbHom - SliceCokernelTo -
 
