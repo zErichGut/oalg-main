@@ -261,16 +261,16 @@ xecInjOrtSiteFrom ::
 xecInjOrtSiteFrom xosFrom = xec where
   xec' = xecPrjOrtSiteTo (coXOrtSite xosFrom)
   Contravariant2 i = toDualOpMlt
-  SDualBi (Left1 (XGEligibleCone xec)) = xecMapS (inv2 i) (SDualBi (Right1 (XGEligibleCone xec')))
+  SDualBi (Left1 (XEligibleConeG xec)) = xecMapS (inv2 i) (SDualBi (Right1 (XEligibleConeG xec')))
 
 xecOrtSiteChain ::
   (  Multiplicative x
   , s ~ Mlt
   , NaturalConicBi (IsoO Mlt Op) c Mlt Injective d (Chain t) (n+1) n
   )
-  => XOrtSite r x -> XGEligibleCone c s (ToPerspective r) d (Chain t) (n+1) n x
-xecOrtSiteChain xe@(XEnd _ _)   = XGEligibleCone (xecPrjOrtSiteTo xe)
-xecOrtSiteChain xs@(XStart _ _) = XGEligibleCone (xecInjOrtSiteFrom xs)
+  => XOrtSite r x -> XEligibleConeG c s (ToPerspective r) d (Chain t) (n+1) n x
+xecOrtSiteChain xe@(XEnd _ _)   = XEligibleConeG (xecPrjOrtSiteTo xe)
+xecOrtSiteChain xs@(XStart _ _) = XEligibleConeG (xecInjOrtSiteFrom xs)
 
 --------------------------------------------------------------------------------
 -- prpMinimaAndMaxima -
@@ -285,17 +285,17 @@ prpMinimaAndMaxima n = case someNatural n of
                         ]
     where
       maxTo     = maximaTo' n' (Proxy :: Proxy OS)
-      xecMaxTo  = xGEligibleConeOrnt xStandard
-      xecfMaxTo = xGEligibleConeFactorOrnt xStandard
+      xecMaxTo  = xEligibleConeGOrnt xStandard
+      xecfMaxTo = xEligibleConeFactorGOrnt xStandard
 
       maxFm     = maximaFrom' n' (Proxy :: Proxy OS)
-      xecMaxFm  = xGEligibleConeOrnt xStandard
-      xecfMaxFm = xGEligibleConeFactorOrnt xStandard
+      xecMaxFm  = xEligibleConeGOrnt xStandard
+      xecfMaxFm = xEligibleConeFactorGOrnt xStandard
 
       Contravariant2 i = toDualOpMlt
       SDualBi (Left1 maxFm') = amapG i (SDualBi (Right1 maxFm))
-      xecMaxFm'  = coXGEligibleCone xecMaxFm
-      xecfMaxFm' = coXGEligibleConeFactor xecfMaxFm
+      xecMaxFm'  = coXEligibleConeG xecMaxFm
+      xecfMaxFm' = coXEligibleConeFactorG xecfMaxFm
 
       maxToN     = maximaTo' n' (Proxy :: Proxy N)
       xecMaxToN  = xecOrtSiteChain (xoFrom $ xoTtl $ xNB 0 100)

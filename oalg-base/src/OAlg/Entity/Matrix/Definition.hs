@@ -925,23 +925,23 @@ dstXStdMatrixZ :: Int -> (Matrix Z -> String) -> IO ()
 dstXStdMatrixZ n f = getOmega >>= putDistribution n (amap1 f xStandard)
 
 --------------------------------------------------------------------------------
--- XStandardGEligibleCone -
+-- XStandardEligibleConeG -
 
 instance
   ( Conic c
   , Diagrammatic d
   )
-  => XStandardGEligibleCone c Mlt p d Discrete n m (Matrix Z) where
-  xStandardGEligibleCone = xecDiscrete xStandardOrtOrientation
+  => XStandardEligibleConeG c Mlt p d Discrete n m (Matrix Z) where
+  xStandardEligibleConeG = xecDiscrete xStandardOrtOrientation
 
 --------------------------------------------------------------------------------
--- XStandardGEligibleConeFactor -
+-- XStandardEligibleConeFactorG -
 
 instance Conic c
-  => XStandardGEligibleConeFactor c Mlt Projective d Discrete n m (Matrix Z) where
-  xStandardGEligibleConeFactor = xecfOrtSite (xoTo xStandardOrtOrientation)
+  => XStandardEligibleConeFactorG c Mlt Projective d Discrete n m (Matrix Z) where
+  xStandardEligibleConeFactorG = xecfOrtSite (xoTo xStandardOrtOrientation)
 
 instance Conic c
-  => XStandardGEligibleConeFactor c Mlt Injective d Discrete n m (Matrix Z) where
-  xStandardGEligibleConeFactor = xecfOrtSite (xoFrom xStandardOrtOrientation)
+  => XStandardEligibleConeFactorG c Mlt Injective d Discrete n m (Matrix Z) where
+  xStandardEligibleConeFactorG = xecfOrtSite (xoFrom xStandardOrtOrientation)
 

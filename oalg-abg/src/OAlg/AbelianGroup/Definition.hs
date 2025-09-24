@@ -1234,20 +1234,20 @@ instance XStandardOrtOrientation AbHom where
       xAbHom (inj n * q) o
       
     
-instance XStandardGEligibleCone Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
-  xStandardGEligibleCone = xecfEligibleCone xStandardGEligibleConeFactor
+instance XStandardEligibleConeG Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
   
-instance XStandardGEligibleConeFactor
+instance XStandardEligibleConeFactorG
            Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+  xStandardEligibleConeFactorG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
 
-instance XStandardGEligibleCone
+instance XStandardEligibleConeG
            ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleCone = xecfEligibleCone xStandardGEligibleConeFactor
+  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
   
-instance XStandardGEligibleConeFactor
+instance XStandardEligibleConeFactorG
            ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+  xStandardEligibleConeFactorG = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
 --------------------------------------------------------------------------------
 -- AbHom - XStandard -

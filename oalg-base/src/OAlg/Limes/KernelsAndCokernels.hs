@@ -356,28 +356,28 @@ prpIsCokernel coker fs k = Prp "IsCokernel" :<=>: relIsKernel ker fs' k' where
 -- XStandardEligibleConeKernel -
 
 -- | helper class to avoid undecidable instances.
-class XStandardGEligibleCone Cone Dst Projective Diagram (Parallel LeftToRight) N2 n x
+class XStandardEligibleConeG Cone Dst Projective Diagram (Parallel LeftToRight) N2 n x
   => XStandardEligibleConeKernel n x
 
 --------------------------------------------------------------------------------
 -- XStandardEligibleConeFactorKernel -
 
 -- | helper class to avoid undecidable instances.
-class XStandardGEligibleConeFactor Cone Dst Projective Diagram (Parallel LeftToRight) N2 n x
+class XStandardEligibleConeFactorG Cone Dst Projective Diagram (Parallel LeftToRight) N2 n x
   => XStandardEligibleConeFactorKernel n x
 
 --------------------------------------------------------------------------------
 -- XStandardEligibleConeCokernel -
 
 -- | helper class to avoid undecidable instances.
-class XStandardGEligibleCone Cone Dst Injective Diagram (Parallel RightToLeft) N2 n x
+class XStandardEligibleConeG Cone Dst Injective Diagram (Parallel RightToLeft) N2 n x
   => XStandardEligibleConeCokernel n x
 
 --------------------------------------------------------------------------------
 -- XStandardEligibleConeFactorCokernel -
 
 -- | helper class to avoid undecidable instances.
-class XStandardGEligibleConeFactor Cone Dst Injective Diagram (Parallel RightToLeft) N2 n x
+class XStandardEligibleConeFactorG Cone Dst Injective Diagram (Parallel RightToLeft) N2 n x
   => XStandardEligibleConeFactorCokernel n x
 
 --------------------------------------------------------------------------------

@@ -222,13 +222,13 @@ xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCoke
                -- eligibel AbHom.
 
 -- | random variable for eligible cones.
-xecAbhCokernelsFreeDgmLftFreeG :: XGEligibleCone
+xecAbhCokernelsFreeDgmLftFreeG :: XEligibleConeG
   ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
 xecAbhCokernelsFreeDgmLftFreeG
-  = XGEligibleCone (xecCokernelDiagramFreeAbHom xStandardOrtSite . universalDiagram)
+  = XEligibleConeG (xecCokernelDiagramFreeAbHom xStandardOrtSite . universalDiagram)
 
 -- | random variable for eligible cone factors.
-xecfAbhCokernelsFreeDgmLftFreeG :: XGEligibleConeFactor
+xecfAbhCokernelsFreeDgmLftFreeG :: XEligibleConeFactorG
   ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
 xecfAbhCokernelsFreeDgmLftFreeG = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
@@ -346,13 +346,13 @@ vldXecCokernelSliceDiagramAbHom k = case someNatural k of
     xsdg _ = xdgAbhCokernelsFreeTo'G
 
 -- | random variable for eligible cones.
-xecAbhCokernelsFreeTo'G :: XGEligibleCone
+xecAbhCokernelsFreeTo'G :: XEligibleConeG
   ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom
 xecAbhCokernelsFreeTo'G
-  = XGEligibleCone (xecCokernelSliceDiagramAbHom xStandardOrtSite . universalDiagram)
+  = XEligibleConeG (xecCokernelSliceDiagramAbHom xStandardOrtSite . universalDiagram)
 
 -- | random variable for eligible cone factors.
-xecfAbhCokernelsFreeTo'G :: XGEligibleConeFactor
+xecfAbhCokernelsFreeTo'G :: XEligibleConeFactorG
   ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom
 xecfAbhCokernelsFreeTo'G = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
@@ -407,12 +407,12 @@ abhPullbacksFreeG' _ = abhPullbacksFreeG
 -- prpPullbacksFreeG -
 
 -- | random variable for eligible cone factors.
-xecfAbhPullbacksFreeG :: XGEligibleConeFactor
+xecfAbhPullbacksFreeG :: XEligibleConeFactorG
            (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom
 xecfAbhPullbacksFreeG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
 
 -- | random variable for eligible cones.
-xecAbhPullbacksFreeG :: XGEligibleCone
+xecAbhPullbacksFreeG :: XEligibleConeG
            (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom
 xecAbhPullbacksFreeG = xecfEligibleCone xecfAbhPullbacksFreeG
 
@@ -576,12 +576,12 @@ abhKernelsFreeFromCyG = LimitsG abhKernelFreeFromCyG
 -- prpAbhKernelsFreeFromCyG -
 
 -- | random variable for eligible cone factors.
-xecfAbhKernelsFreeFromCyG :: XGEligibleConeFactor
+xecfAbhKernelsFreeFromCyG :: XEligibleConeFactorG
   (ConicFreeTip Cone) Dst Projective (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom
 xecfAbhKernelsFreeFromCyG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
 
 -- | random variable for eligible cones.
-xecAbhKernelsFreeFromCyG :: XGEligibleCone
+xecAbhKernelsFreeFromCyG :: XEligibleConeG
   (ConicFreeTip Cone) Dst Projective (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom
 xecAbhKernelsFreeFromCyG = xecfEligibleCone xecfAbhKernelsFreeFromCyG
 
