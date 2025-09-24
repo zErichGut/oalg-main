@@ -36,6 +36,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
 import Control.Monad
 
+import Data.Typeable
 import Data.List (map,(++),repeat,zip)
 
 import OAlg.Prelude hiding ((//))
@@ -165,6 +166,7 @@ abhCokernelsFreeDgmLftFreeG = LimitsG abhCokernelFreeDgmLftFreeG
 --------------------------------------------------------------------------------
 -- xCokernelDiagramFree -
 
+-- | random variable for cokernel diagrams of 'DiagramFree'.
 xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagrammatic DiagramFree N1 AbHom)
 xCokernelDiagramFree xm = do
   m <- xm
@@ -215,8 +217,9 @@ vldXZeroFactor = Forall xm (\h   -> Forall (xZeroFactor xStandardOrtSite h)
   where xm = xoArrow xodZ (dim () ^ 10 :> dim () ^ 8)
 
 --------------------------------------------------------------------------------
--- xecCokernelLftFreeAbHom -
+-- prpAbhCokernelsFreeDgmLftFreeG -
 
+-- | random variable for cokernel cones with the given diagram as its 'diagrammaticObject'. 
 xecCokernelDiagramFreeAbHom
   :: XOrtSite From (Matrix Z)
   -> CokernelDiagrammatic DiagramFree N1 AbHom
@@ -226,18 +229,22 @@ xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCoke
   hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
                -- eligibel AbHom.
 
+-- | random variable for eligible cones.
 xecAbhCokernelsFreeDgmLftFreeG :: XGEligibleCone
   ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
 xecAbhCokernelsFreeDgmLftFreeG
   = XGEligibleCone (xecCokernelDiagramFreeAbHom xStandardOrtSite . universalDiagram)
 
+-- | random variable for eligible cone factors.
 xecfAbhCokernelsFreeDgmLftFreeG :: XGEligibleConeFactor
   ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
 xecfAbhCokernelsFreeDgmLftFreeG = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
+-- | random variable for diagrams.
 xdgAbhCokernelsFreeDgmLftFreeG :: X (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
 xdgAbhCokernelsFreeDgmLftFreeG = xCokernelDiagramFree xStandard
-  
+
+-- | validation for 'abhCokernelsFreeDgmLftFreeG'.
 prpAbhCokernelsFreeDgmLftFreeG :: Statement
 prpAbhCokernelsFreeDgmLftFreeG
   = prpLimitsG
@@ -247,12 +254,14 @@ prpAbhCokernelsFreeDgmLftFreeG
       abhCokernelsFreeDgmLftFreeG
 
 
+-- | is 'True' iff the givne abelian group is free.
 abgIsFree :: AbGroup -> Bool
 abgIsFree g = case someNatural $ lengthN g of SomeNatural k -> isFree' (Free k) g
   where
     isFree' :: Attestable k => Free k AbHom -> AbGroup -> Bool
     isFree' = isFree
 
+-- | distribution of 'xecfAbhCokernelsFreeDgmLftFreeG'.
 dstCokerDgmFrLft :: Int -> IO ()
 dstCokerDgmFrLft n = putDstr asp n $ join $ (amap1 (xecf xe . limes abhCokernelsFreeDgmLftFreeG) xdg)
   where
@@ -312,12 +321,20 @@ abhCokernelFreeTo'G hDgm@(SliceDiagramCokernel (SliceTo k h)) = LimesInjective h
 abhCokernelsFreeTo'G :: Attestable k => CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
 abhCokernelsFreeTo'G = LimitsG abhCokernelFreeTo'G
 
+-- | the generalized injective limits for @'SliceDiagram' ('Free' __k__)@,
+-- given by a proxy @__q k__@ and 'abhCokernelFreeTo'G'.
 abhCokernelsFreeTo'G' :: Attestable k
   => q k -> CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
 abhCokernelsFreeTo'G' _ = abhCokernelsFreeTo'G
 
+--------------------------------------------------------------------------------
+-- prpAbhCokernelsFreeTo'G -
 
-{-
+-- | random variable for diagrams.
+xdgAbhCokernelsFreeTo'G :: Attestable k => X (SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom)
+xdgAbhCokernelsFreeTo'G = amap1 SliceDiagramCokernel xStandard
+
+-- | random variable for cokernel cones with the given diagram as its 'diagrammaticObject'. 
 xecCokernelSliceDiagramAbHom ::
   Attestable k
   => XOrtSite From (Matrix Z)
@@ -327,6 +344,7 @@ xecCokernelSliceDiagramAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCok
   SliceDiagramCokernel (SliceTo _ h) = d
   hz = amap AbHomFree h
 
+-- | validation for 'xecCokernelSliceDiagramAbHom'.
 vldXecCokernelSliceDiagramAbHom :: N -> Statement
 vldXecCokernelSliceDiagramAbHom k = case someNatural k of
   SomeNatural k' -> Forall (xsdg k')
@@ -335,60 +353,34 @@ vldXecCokernelSliceDiagramAbHom k = case someNatural k of
 
   where
     xsdg :: Attestable k => q k -> X (SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom)
-    xsdg _ = xStandard
+    xsdg _ = xdgAbhCokernelsFreeTo'G
 
-instance Attestable k => XStandardGEligibleCone
-  ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleCone
-   = XGEligibleCone
-        (xecCokernelSliceDiagramAbHom xStandardOrtSite . diagrammaticObject . cone . universalCone)
+-- | random variable for eligible cones.
+xecAbhCokernelsFreeTo'G :: Attestable k => XGEligibleCone
+  ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom
+xecAbhCokernelsFreeTo'G
+  = XGEligibleCone (xecCokernelSliceDiagramAbHom xStandardOrtSite . universalDiagram)
 
-instance Attestable k => XStandardGEligibleConeFactor
-  ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+-- | random variable for eligible cone factors.
+xecfAbhCokernelsFreeTo'G :: Attestable k => XGEligibleConeFactor
+  ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom
+xecfAbhCokernelsFreeTo'G = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
-instance Attestable k => XStandard (SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom) where
-  xStandard = amap1 SliceDiagramCokernel xStandard
+-- | validity of 'abhCokernelsFreeTo'G' for the given dimension. 
+prpAbhCokernelsFreeTo'G :: N -> Statement
+prpAbhCokernelsFreeTo'G k = case someNatural k of
+  SomeNatural k' -> prpLimitsG
+                      xecAbhCokernelsFreeTo'G
+                      xecfAbhCokernelsFreeTo'G
+                      xdgAbhCokernelsFreeTo'G
+                      (abhCokernelsFreeTo'G' k')
 
-instance Attestable k => NaturalDiagrammaticFree Dst (SliceDiagram (Free k)) N2 N1
-
-instance Attestable k => Transformable (s,SldFr) (Sld (Free k)) where
-  tau s = case tauSnd s of Struct -> slicedFree
-  
-instance Attestable k => HomSlicedOriented (Free k) (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
-                                    
-relabhCokernelsFreeTo'G :: N -> Statement
-relabhCokernelsFreeTo'G k = case someNatural k of SomeNatural k' -> valid $ abhCokernelsFreeTo'G' k'
-
---------------------------------------------------------------------------------
--- abhCokernelFreeTo' -
-{-
--- | the cokernel of a free site to.
---
---  __Properties__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
--- @cf = 'abhCokernelFreeTo'' s@, then holds: Let @c = 'clfCokernel' cf@ in 
---
--- (1) @'diagram' c '==' 'cokernelDiagram' h@.
---
--- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
-abhCokernelFreeTo' :: Attestable k => Slice To (Free k) AbHom -> CokernelLiftableFree AbHom
-abhCokernelFreeTo' sTo = CokernelLiftableFree (LimesInjective hCoker hUniv) hLft where
-  sDgmTo = SliceDiagramCokernel sTo
-  LimesInjective h'Coker h'Univ = limes abhCokernelsFreeTo'G sDgmTo
-  ConeCokernelLiftable _ h'Lft = h'Coker
-  
-  hCoker = ConeCokernel (diagram sDgmTo) (cokernelFactor h'Coker)
-  
-  hUniv (ConeCokernel _ x) = h'Univ (ConeCokernel sDgmTo x)
-
-  hLft :: Any k -> Liftable Injective (Free k) AbHom
-  hLft = liftFree h'Lft
--}
 
 
 --------------------------------------------------------------------------------
 -- abhPullbackFreeG -
 
+-- | pullback of a free diagram having a free 'tip'
 abhPullbackFreeG :: PullbackDiagrammatic DiagramFree n AbHom
   -> PullbackG (ConicFreeTip Cone) DiagramFree n AbHom
 abhPullbackFreeG d@(DiagramFree _ d') = LimesProjective pCn pUniv where
@@ -413,102 +405,50 @@ abhPullbackFreeG d@(DiagramFree _ d') = LimesProjective pCn pUniv where
 --------------------------------------------------------------------------------
 -- abhPullbacksFreeG -
 
+-- | pullbacks of free diagrams having free 'tip's.
 abhPullbacksFreeG :: PullbacksG (ConicFreeTip Cone) DiagramFree n AbHom
 abhPullbacksFreeG = LimitsG abhPullbackFreeG
 
+-- | pullbacks of free diagrams according to the proxy type @__q n__@.
 abhPullbacksFreeG' :: q n -> PullbacksG (ConicFreeTip Cone) DiagramFree n AbHom
 abhPullbacksFreeG' _ = abhPullbacksFreeG
 
-instance XStandardGEligibleConeFactor
-           (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom where 
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
-
-instance XStandardGEligibleCone
-           (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom where
-  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
-    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
-    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
-
-instance XStandard (DiagramFree (Star To) N1 N0 AbHom) where
-  xStandard = do
-    s <- amap1 (pmap FreeAbHom) (xDimZ xStandardOrtSite)
-    case someNatural $ lengthN s of
-      SomeNatural k -> return (DiagramFree (SomeFree (Free k):|Nil) (DiagramSink s Nil))
-    
-    where xDimZ :: XOrtSite To (Matrix Z) -> X (Dim Z ())
-          xDimZ = xosPoint
-
-instance XStandard (DiagramFree (Star To) (S n) n AbHom)
-  => XStandard (DiagramFree (Star To) (S (S n)) (S n) AbHom) where
-  xStandard = do
-    DiagramFree (sk:|ks) (DiagramSink s hs) <- xdgf
-    h <- amap1 (amap FreeAbHom) $ xosEnd xStandardOrtSite (dim () ^ lengthN s)
-    case someNatural $ lengthN $ start h of
-      SomeNatural k' -> return (DiagramFree (sk:|k:|ks) (DiagramSink s (h:|hs))) where
-        k = SomeFree (Free k')
-
-    where xdgf :: XStandard (DiagramFree (Star To) (S n) n AbHom)
-               => X (DiagramFree (Star To) (S n) n AbHom)
-          xdgf = xStandard
-          
-relAbhPullbacksFreeGN ::
-  ( Attestable n
-  , XStandard (DiagramFree (Star To) (S n) n AbHom)
-  )=> Any n -> Statement
-relAbhPullbacksFreeGN = valid . abhPullbacksFreeG'
-
-relAbhPullbacksFreeG :: Statement
-relAbhPullbacksFreeG = Forall xPlbs id where
-  xPlbs = xOneOf [ relAbhPullbacksFreeGN (attest :: Any N0)
-                 , relAbhPullbacksFreeGN (attest :: Any N1)
-                 , relAbhPullbacksFreeGN (attest :: Any N2)
-                 , relAbhPullbacksFreeGN (attest :: Any N3)
-                 , relAbhPullbacksFreeGN (attest :: Any N4)
-                 , relAbhPullbacksFreeGN (attest :: Any N5)
-                 , relAbhPullbacksFreeGN (attest :: Any N6)
-                 , relAbhPullbacksFreeGN (attest :: Any N7)
-                 , relAbhPullbacksFreeGN (attest :: Any N8)
-                 , relAbhPullbacksFreeGN (attest :: Any N9)
-                 , relAbhPullbacksFreeGN (attest :: Any N10)
-                 ]
-{-
 --------------------------------------------------------------------------------
--- abhPullbackFree -
+-- prpPullbacksFreeG -
 
--- | the pullback with a free tip of its universal cone for the given free pullback diagram.
---
---  __Property__ Let @d = 'DiagramFree' _ d'@ be in @'PullbackDiagramFree' __n__ 'AbHom'@,
---  then holds: @'diagram' ('limesFree' p) = d'@ where @p = 'abhPullbackFree' d@.
-abhPullbackFree :: PullbackDiagramFree n AbHom -> PullbackFree n AbHom
-abhPullbackFree (DiagramFree _ d') = case freeTip p of
-  SomeFree k -> LimesFree k p
+-- | random variable for eligible cone factors.
+xecfAbhPullbacksFreeG :: XGEligibleConeFactor
+           (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom
+xecfAbhPullbacksFreeG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+-- | random variable for eligible cones.
+xecAbhPullbacksFreeG :: XGEligibleCone
+           (ConicFreeTip Cone) Mlt Projective DiagramFree (Star To) (S n) n AbHom
+xecAbhPullbacksFreeG = xecfEligibleCone xecfAbhPullbacksFreeG
+
+-- | random variable for free pullback diagrams.
+xdgAbhPullbacksFreeG :: Any n -> X (DiagramFree (Star To) (n+1) n AbHom)
+xdgAbhPullbacksFreeG n
+  = amap1 toDiagramFree $ xDiagram Refl (XDiagramSink n (xStandardOrtSite :: XOrtSite To (Matrix Z)))
   where
-    -- if d = DiagramFree _ d' is valid, then the r (l d') == d' for the right
-    -- and left adjoint of abhFreeAdjunction. Furthermore the tip of p is free!
-    freeTip :: Pullback n AbHom -> SomeFree AbHom
-    freeTip p = case someNatural n of
-      SomeNatural n' -> SomeFree (Free n')
-      where n = lengthN $ tip $ universalCone p
+    toDiagramFree :: Diagram (Star To) (n+1) n (Matrix Z) -> DiagramFree (Star To) (n+1) n AbHom
+    toDiagramFree zDgm = DiagramFree (amap1 sfrAbg $ dgPoints zDgm) (dgMap FreeAbHom zDgm)
 
-    p = lmPrjMap adj $ limes zmxPullbacks $ dgMap l d' where
-      adj = abhFreeAdjunction
-      Adjunction l _ _ _ = adj
--}
+    sfrAbg :: Dim Z () -> SomeFree AbHom
+    sfrAbg d = case someNatural $ lengthN $ d of SomeNatural d' -> SomeFree (Free d')
 
-
-
-{-
-someFree :: N -> SomeFree AbHom
-someFree n = case someNatural n of
-  SomeNatural n' -> SomeFree (Free n')
-
-plbDgmFree :: PullbackDiagram n (Matrix Z) -> PullbackDiagramFree n AbHom
-plbDgmFree d = DiagramFree (amap1 (someFree . lengthN) $ dgPoints d) (dgMap FreeAbHom d)
-
-vldAbhPullbackFree :: Statement
-vldAbhPullbackFree = Forall xd (valid . limesFree . abhPullbackFree) where
-  xd = amap1 plbDgmFree (xStandard :: X (PullbackDiagram N3 (Matrix Z)))
--}
+-- | validity of 'abhPullbacksFreeG' for a pullback diagram with the given number of arrows.
+prpAbhPullbacksFreeGN :: N -> Statement
+prpAbhPullbacksFreeGN n = case someNatural n of
+  SomeNatural n' -> prpLimitsG
+    xecAbhPullbacksFreeG
+    xecfAbhPullbacksFreeG
+    (xdgAbhPullbacksFreeG n')
+    abhPullbacksFreeG
+    
+-- | validity of 'abhPullbacksFreeG'.
+prpAbhPullbacksFreeG :: Statement
+prpAbhPullbacksFreeG = Forall (xNB 0 10) prpAbhPullbacksFreeGN
 
 --------------------------------------------------------------------------------
 -- abhSplitCy -
@@ -535,24 +475,6 @@ abhSplitCy (AbHom m@(Matrix r _ _))
   
 --------------------------------------------------------------------------------
 -- abhFreeFromSplitCy -
-
-{-
--- | splits an abelian homomorphism @h@ into some finite list @hs@ where each
---  @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
---  @h'@ /cover/ @h@.
---
--- __Properties__ Let @s = 'SliceFrom' _ h@ be in @'Slice' 'From' ('Free' __k__) 'AbHom'@
--- and @hs = 'abhFreeFromSplitCy' s@, then holds:
---
--- (1) For all @'SliceFrom' _ h'@ in @hs@ exists a @n@, @r@ in 'N' such that
--- @'end' h' '==' 'abg' n '^' r@.
---
--- (2) For all @x@ in 'AbHom' with @'end' x '==' 'start' h@ holds: @h v'*' x '==' 0@ if
--- and only if @h' v'*' x '==' 0@ for all @'SliceFrom' _ h'@ in @hs@.
-abhFreeFromSplitCy :: Slice From (Free k) AbHom -> SomeFinList (Slice From (Free k) AbHom)
-abhFreeFromSplitCy (SliceFrom k h)
-  = someFinList $ amap1 (SliceFrom k) $ abhSplitCy h 
--}
 
 -- | splits an abelian homomorphism @h@ into some finite list @hs@ where each
 --  @h'@ in @hs@ has as end point a cyclic group to the power of some order such that all
@@ -652,9 +574,14 @@ abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
 
   hKer _ = throw $ ImplementationError "faild precondition"
 
+--------------------------------------------------------------------------------
+-- abhKernelsFreeFromCyG -
+
+-- | free kernels where the end point is equal to some cyclic group to some order.
 abhKernelsFreeFromCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromCyG = LimitsG abhKernelFreeFromCyG
 
+{-
 xFreeFromCy :: Attestable k => Free k AbHom -> X (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
 xFreeFromCy k@(Free k') = do
   n <- xNB 0 1000

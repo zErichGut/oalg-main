@@ -230,6 +230,11 @@ instance TransformableObjectClass (Dst,SldFr) (HomDisj Dst Op (HomEmpty Dst))
 instance FunctorialOriented (Sub (Mlt,SldFr) (HomDisjEmpty Mlt Op))
 instance FunctorialOriented (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
 
+instance Attestable k => Transformable (s,SldFr) (Sld (Free k)) where
+  tau s = case tauSnd s of Struct -> slicedFree
+  
+instance Attestable k => HomSlicedOriented (Free k) (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
+
 --------------------------------------------------------------------------------
 -- lftFrSub -
 

@@ -77,6 +77,7 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 import OAlg.Entity.Slice.Definition
 import OAlg.Entity.Slice.Sliced
+import OAlg.Entity.Slice.Free
 
 --------------------------------------------------------------------------------
 -- SliceDiagram -
@@ -92,6 +93,8 @@ deriving instance Eq (SliceDiagram i t n m x)
 instance Validable (SliceDiagram i t n m x) where
   valid (SliceDiagramKernel f)  = valid f
   valid (SliceDiagramCokernel t) = valid t
+
+instance Attestable k => NaturalDiagrammaticFree Dst (SliceDiagram (Free k)) N2 N1
 
 --------------------------------------------------------------------------------
 -- sdgMapCov -
