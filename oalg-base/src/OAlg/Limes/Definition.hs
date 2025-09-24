@@ -13,7 +13,7 @@ module OAlg.Limes.Definition
   (
     -- * Limes
     Limes, LimesG(..)
-  , universalCone, universalFactor
+  , universalCone, universalFactor, universalDiagram
   , eligibleCone, eligibleFactor
   , lmDiagramTypeRefl
   

@@ -20,7 +20,7 @@ module OAlg.Limes.Definition.Core
   (
     -- * Limes
     Limes, LimesG(..)
-  , universalCone, universalFactor
+  , universalCone, universalFactor, universalDiagram
   , eligibleCone, eligibleFactor
   , lmDiagramTypeRefl
 
@@ -111,17 +111,24 @@ universalFactor (LimesProjective _ f) = f
 universalFactor (LimesInjective  _ f) = f
 
 --------------------------------------------------------------------------------
+-- universalDiagram -
+
+-- | the diagrammatic object given by the universal cone of the 'LimesG'.
+universalDiagram :: Conic c => LimesG c s p d t n m x -> d t n m x
+universalDiagram = diagrammaticObject . cone . universalCone
+
+--------------------------------------------------------------------------------
 -- eligibleCone -
 
 -- | eligibility of a 'Cone' according to the given 'LimesG'.
 eligibleCone :: (Conic c, Eq (d t n m x)) => LimesG c s p d t n m x -> Cone s p d t n m x -> Bool
-eligibleCone l c = (diagrammaticObject $ cone $ universalCone l) == diagrammaticObject c
+eligibleCone l c = universalDiagram l == diagrammaticObject c
 
 --------------------------------------------------------------------------------
 -- cnEligibleFactorDgm -
 
 -- | eligibility of a factor according to the given 'Cones' over 'Diagram's,
-cnEligibleFactorDgm :: Cone s p Diagram t n m x -> Cone s p Diagram t n m x -> x ->  Bool
+cnEligibleFactorDgm :: Cone s p Diagram t n m x -> Cone s p Diagram t n m x -> x -> Bool
 cnEligibleFactorDgm (ConeProjective _ a as) (ConeProjective _ b bs) x
   = orientation x == b:>a && comPrj x as bs where
     comPrj :: Multiplicative x => x -> FinList n x -> FinList n x -> Bool

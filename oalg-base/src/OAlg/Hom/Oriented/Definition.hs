@@ -22,6 +22,7 @@
 -- definition of homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Definition
   (
+
     -- * Covariant
     HomOriented
 
@@ -39,6 +40,7 @@ module OAlg.Hom.Oriented.Definition
   
     -- * Iso
   , toDualOpOrt
+
   )
   where
 
@@ -129,6 +131,11 @@ instance
 
 instance HomOrientedDisjunctive h => HomOriented (Variant2 Covariant h)
 
+instance
+  ( Transformable s Ort
+  , HomOrientedDisjunctive h
+  )
+  => HomOrientedDisjunctive (Sub s h)
 
 --------------------------------------------------------------------------------
 -- DualisableOriented -

@@ -431,7 +431,7 @@ instance
   ( Oriented x
   , XStandardEligibleCone s p t n m x
   , XStandardEligibleConeFactor s p t n m x
-  , Typeable s, Typeable p, Typeable t, Typeable n, Typeable m
+  , Typeable t, Typeable n, Typeable m
   )
   => Validable (LimesSlicedTip i s p t n m x) where
   valid (LimesSlicedTip i l) = Label "LimesSlicedTip" :<=>:

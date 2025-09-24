@@ -13,6 +13,7 @@ module OAlg.Limes.Limits
   (
     -- * Limits
     limes, LimitsG(..), Limits
+  , limesCone, limitsCone
 
     -- * Constructions
   , lmsMltPrjOrnt, lmsMltInjOrnt

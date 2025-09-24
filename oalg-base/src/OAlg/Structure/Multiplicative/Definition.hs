@@ -394,6 +394,7 @@ instance Transformable Mlt Typ where tau Struct = Struct
 instance Transformable Mlt Ent where tau Struct = Struct
 instance Transformable Mlt Ort where tau Struct = Struct
 instance TransformableG Op Mlt Mlt where tauG Struct = Struct
+instance TransformableG Op (Mlt,t) Mlt where tauG = tauG . tauFst
 instance TransformableOp Mlt
 instance TransformableGRefl Op Mlt
 

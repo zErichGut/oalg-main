@@ -1,4 +1,6 @@
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeOperators #-}
@@ -21,17 +23,18 @@ module OAlg.Limes.Definition.Proposition
     prpLimes, prpLimesFactorExist, prpLimesFactorUnique
 
     -- * X
-  , XGEligibleCone(..)
-  , XStandardGEligibleCone(..), XStandardEligibleCone
-  , xGEligibleConeOrnt, coXGEligibleCone
+  , XEligibleConeG(..), xec
+  , XStandardEligibleConeG(..), XStandardEligibleCone
+  , xEligibleConeGOrnt, coXEligibleConeG
   , xecMapS, xecMapCnt
   , xecDiscrete
   
-  , XGEligibleConeFactor(..)
-  , XStandardGEligibleConeFactor(..), XStandardEligibleConeFactor
-  , xGEligibleConeFactorOrnt, coXGEligibleConeFactor
+  , XEligibleConeFactorG(..), xecf
+  , XStandardEligibleConeFactorG(..), XStandardEligibleConeFactor
+  , xEligibleConeFactorGOrnt, coXEligibleConeFactorG
   , xecfOrtSite
-
+  , xecfEligibleCone
+  
   ) where
 
 import Control.Monad
@@ -58,30 +61,23 @@ import OAlg.Limes.Definition.Core
 import OAlg.Limes.Definition.Duality()
 
 --------------------------------------------------------------------------------
--- XGEligibleCone -
+-- XEligibleConeG -
 
 -- | random variable for eligible cones for a given limes.
-data XGEligibleCone c s p d t n m x
-  = XGEligibleCone (LimesG c s p d t n m x -> X (Cone s p d t n m x))
+data XEligibleConeG c s p d t n m x
+  = XEligibleConeG (LimesG c s p d t n m x -> X (Cone s p d t n m x))
 
 --------------------------------------------------------------------------------
--- XStandardGEligibleCone -
+-- xec -
 
--- | standard random variable for eligible cones.
-class XStandardGEligibleCone c s p d t n m x where
-  xStandardGEligibleCone :: XGEligibleCone c s p d t n m x
-
---------------------------------------------------------------------------------
--- XStandardEligibleCone -
-
--- | helper class to avoid undecidable instances.
-class XStandardGEligibleCone Cone s p Diagram t n m x
-  => XStandardEligibleCone s p t n m x
+-- | random variable of eligible cones.
+xec :: XEligibleConeG c s p d t n m x -> LimesG c s p d t n m x -> X (Cone s p d t n m x)
+xec (XEligibleConeG x) = x
 
 --------------------------------------------------------------------------------
--- Duality - XGEligibleCone -
+-- Duality - XEligibleConeG -
 
-type instance Dual1 (XGEligibleCone c s p d t n m) = XGEligibleCone c s (Dual p) d (Dual t) n m
+type instance Dual1 (XEligibleConeG c s p d t n m) = XEligibleConeG c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
 -- xecMapCov -
@@ -89,8 +85,8 @@ type instance Dual1 (XGEligibleCone c s p d t n m) = XGEligibleCone c s (Dual p)
 -- | mapping according to a covariant isomorphism.
 xecMapCov :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
-  -> XGEligibleCone c s p d t n m x -> XGEligibleCone c s p d t n m y
-xecMapCov (Covariant2 i) (XGEligibleCone xec) = XGEligibleCone xec' where
+  -> XEligibleConeG c s p d t n m x -> XEligibleConeG c s p d t n m y
+xecMapCov (Covariant2 i) (XEligibleConeG xec) = XEligibleConeG xec' where
   xec' l' = xc' where
     SDualBi (Right1 l) = amapG (inv2 i) (SDualBi (Right1 l'))
 
@@ -104,8 +100,8 @@ xecMapCov (Covariant2 i) (XGEligibleCone xec) = XGEligibleCone xec' where
 -- | mapping according to a contravariant isomorphism.
 xecMapCnt :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
-  -> XGEligibleCone c s p d t n m x -> Dual1 (XGEligibleCone c s p d t n m) y
-xecMapCnt (Contravariant2 i) (XGEligibleCone xec) = XGEligibleCone xec' where
+  -> XEligibleConeG c s p d t n m x -> Dual1 (XEligibleConeG c s p d t n m) y
+xecMapCnt (Contravariant2 i) (XEligibleConeG xec) = XEligibleConeG xec' where
   xec' l' = xc' where
     SDualBi (Left1 l) = amapG (inv2 i) (SDualBi (Right1 l'))
 
@@ -118,24 +114,24 @@ xecMapCnt (Contravariant2 i) (XGEligibleCone xec) = XGEligibleCone xec' where
 
 xecMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y
-  -> SDualBi (XGEligibleCone c s p d t n m) x -> SDualBi (XGEligibleCone c s p d t n m) y
+  -> SDualBi (XEligibleConeG c s p d t n m) x -> SDualBi (XEligibleConeG c s p d t n m) y
 xecMapS = vmapBi xecMapCov xecMapCov xecMapCnt xecMapCnt 
 
 --------------------------------------------------------------------------------
--- coXGEligibleCone -
+-- coXEligibleConeG -
 
 -- | random variable for eligible cones over 'Op'.
-coXGEligibleCone ::
+coXEligibleConeG ::
   ( Multiplicative x
   , NaturalConicBi (Inv2 (HomDisjEmpty s Op)) c s p d t n m
   , s ~ Mlt
   )
-  => XGEligibleCone c s p d t n m x
-  -> XGEligibleCone c s (Dual p) d (Dual t) n m (Op x)
-coXGEligibleCone = xecMapCnt toDualOpMlt
+  => XEligibleConeG c s p d t n m x
+  -> XEligibleConeG c s (Dual p) d (Dual t) n m (Op x)
+coXEligibleConeG = xecMapCnt toDualOpMlt
 
 --------------------------------------------------------------------------------
--- xGEligibleConeOrnt -
+-- xEligibleConeGOrnt -
 
 -- | random variable of eligible 'Cone's over 'Orientation'.
 xecOrnt ::
@@ -153,20 +149,20 @@ xecOrnt xx (LimesInjective u _)
   ConeCokernel d _    -> xCnInjDstOrnt xx (return d)
   
 -- | random variable of eligible 'Cone's over 'Orientation'.
-xGEligibleConeOrnt ::
+xEligibleConeGOrnt ::
   ( Conic c
   , Diagrammatic d
   )
-  => X x -> XGEligibleCone c s p d t n m (Orientation x)
-xGEligibleConeOrnt = XGEligibleCone . xecOrnt
+  => X x -> XEligibleConeG c s p d t n m (Orientation x)
+xEligibleConeGOrnt = XEligibleConeG . xecOrnt
 
 instance
   ( Conic c
   , Diagrammatic d
   , XStandard x
   )
-  => XStandardGEligibleCone c s p d t n m (Orientation x) where
-  xStandardGEligibleCone = xGEligibleConeOrnt xStandard
+  => XStandardEligibleConeG c s p d t n m (Orientation x) where
+  xStandardEligibleConeG = xEligibleConeGOrnt xStandard
 
 --------------------------------------------------------------------------------
 -- xecDiscrete -
@@ -177,8 +173,8 @@ xecDiscrete ::
   , Conic c
   , Diagrammatic d
   )
-  => XOrtOrientation x -> XGEligibleCone c s p d Discrete n m x
-xecDiscrete xo = XGEligibleCone $ xec xo where
+  => XOrtOrientation x -> XEligibleConeG c s p d Discrete n m x
+xecDiscrete xo = XEligibleConeG $ xec xo where
 
   xArwsPrj :: XOrtOrientation x -> Point x -> FinList n (Point x) -> X (FinList n x)
   xArwsPrj xo s = xListF . amap1 (\p -> xoArrow xo (s:>p))
@@ -204,36 +200,31 @@ xecDiscrete xo = XGEligibleCone $ xec xo where
       ConeInjective d _ _ -> xArwsInj xo t (dgPoints $ diagram d) >>= return . ConeInjective d t
 
 --------------------------------------------------------------------------------
--- XGEligibleConeFactor -
+-- XEligibleConeFactorG -
 
 -- | random variable for eligible cones together with a eligible factor for a given limes.
-data XGEligibleConeFactor c s p d t n m x
-  = XGEligibleConeFactor (LimesG c s p d t n m x -> X (Cone s p d t n m x, x))
+data XEligibleConeFactorG c s p d t n m x
+  = XEligibleConeFactorG (LimesG c s p d t n m x -> X (Cone s p d t n m x, x))
 
-type instance Dual1 (XGEligibleConeFactor c s p d t n m)
-  = XGEligibleConeFactor c s (Dual p) d (Dual t) n m
-  
---------------------------------------------------------------------------------
--- XStandardGEligibleConeFactor -
-
--- | standard random variable for eligible cone factors.
-class XStandardGEligibleConeFactor c s p d t n m x where
-  xStandardGEligibleConeFactor :: XGEligibleConeFactor c s p d t n m x
+type instance Dual1 (XEligibleConeFactorG c s p d t n m)
+  = XEligibleConeFactorG c s (Dual p) d (Dual t) n m
 
 --------------------------------------------------------------------------------
--- XStandardEligibleCone -
+-- xecf -
 
--- | helper class to avoid undecidable instances.
-class XStandardGEligibleConeFactor Cone s p Diagram t n m x => XStandardEligibleConeFactor s p t n m x
+-- | random variable of eligible cone factors.
+xecf :: XEligibleConeFactorG c s p d t n m x -> LimesG c s p d t n m x -> X (Cone s p d t n m x,x)
+xecf (XEligibleConeFactorG xcx) = xcx
+
 
 --------------------------------------------------------------------------------
 -- xecfMapCov -
 
 xecfMapCov :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
-  -> XGEligibleConeFactor c s p d t n m x
-  -> XGEligibleConeFactor c s p d t n m y
-xecfMapCov (Covariant2 i) (XGEligibleConeFactor xecf) = XGEligibleConeFactor xecf' where
+  -> XEligibleConeFactorG c s p d t n m x
+  -> XEligibleConeFactorG c s p d t n m y
+xecfMapCov (Covariant2 i) (XEligibleConeFactorG xecf) = XEligibleConeFactorG xecf' where
   xecf' l' = xcf' where
     SDualBi (Right1 l) = amapF (inv2 i) (SDualBi (Right1 l'))
 
@@ -246,9 +237,9 @@ xecfMapCov (Covariant2 i) (XGEligibleConeFactor xecf) = XGEligibleConeFactor xec
 
 xecfMapCnt :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
-  -> XGEligibleConeFactor c s p d t n m x
-  -> Dual1 (XGEligibleConeFactor c s p d t n m) y
-xecfMapCnt (Contravariant2 i) (XGEligibleConeFactor xecf) = XGEligibleConeFactor xecf' where
+  -> XEligibleConeFactorG c s p d t n m x
+  -> Dual1 (XEligibleConeFactorG c s p d t n m) y
+xecfMapCnt (Contravariant2 i) (XEligibleConeFactorG xecf) = XEligibleConeFactorG xecf' where
   xecf' l' = xcf' where
     SDualBi (Left1 l) = amapF (inv2 i) (SDualBi (Right1 l'))
 
@@ -261,23 +252,23 @@ xecfMapCnt (Contravariant2 i) (XGEligibleConeFactor xecf) = XGEligibleConeFactor
 
 xecfMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y
-  -> SDualBi (XGEligibleConeFactor c s p d t n m) x -> SDualBi (XGEligibleConeFactor c s p d t n m) y
+  -> SDualBi (XEligibleConeFactorG c s p d t n m) x -> SDualBi (XEligibleConeFactorG c s p d t n m) y
 xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt 
 
 --------------------------------------------------------------------------------
--- coXGEligibleConeFactor -
+-- coXEligibleConeFactorG -
 
-coXGEligibleConeFactor ::
+coXEligibleConeFactorG ::
   ( Multiplicative x
   , NaturalConicBi (Inv2 (HomDisjEmpty s Op)) c s p d t n m
   , s ~ Mlt
   )
-  => XGEligibleConeFactor c s p d t n m x
-  -> XGEligibleConeFactor c s (Dual p) d (Dual t) n m (Op x)
-coXGEligibleConeFactor = xecfMapCnt toDualOpMlt
+  => XEligibleConeFactorG c s p d t n m x
+  -> XEligibleConeFactorG c s (Dual p) d (Dual t) n m (Op x)
+coXEligibleConeFactorG = xecfMapCnt toDualOpMlt
 
 --------------------------------------------------------------------------------
--- xGEligibleConeFactorOrnt -
+-- xEligibleConeFactorGOrnt -
 
 -- | gets a eligible factor for the given 'LimesG' and 'Cone'.
 elgFactorOrnt :: Conic c
@@ -290,13 +281,13 @@ elgFactorOrnt l c = case cone $ universalCone l of
   ConeCokernel _ k     -> end k :> tip c
 
 -- | random variable of eligible factors over 'Orienteation'.
-xGEligibleConeFactorOrnt ::
+xEligibleConeFactorGOrnt ::
   ( Conic c
   , Diagrammatic d
   )
-  => X x -> XGEligibleConeFactor c s p d t n m (Orientation x)
-xGEligibleConeFactorOrnt xx = XGEligibleConeFactor xef where
-  XGEligibleCone xec = xGEligibleConeOrnt xx
+  => X x -> XEligibleConeFactorG c s p d t n m (Orientation x)
+xEligibleConeFactorGOrnt xx = XEligibleConeFactorG xef where
+  XEligibleConeG xec = xEligibleConeGOrnt xx
   xef l = amap1 (\c -> (c,elgFactorOrnt l c)) $ xec l
 
 instance
@@ -304,8 +295,8 @@ instance
   , Diagrammatic d
   , XStandard x
   )
-  => XStandardGEligibleConeFactor c s p d t n m (Orientation x) where
-  xStandardGEligibleConeFactor = xGEligibleConeFactorOrnt xStandard
+  => XStandardEligibleConeFactorG c s p d t n m (Orientation x) where
+  xStandardEligibleConeFactorG = xEligibleConeFactorGOrnt xStandard
 
 --------------------------------------------------------------------------------
 -- xecfOrtSite -
@@ -329,9 +320,43 @@ xecfInjOrtSiteFrom (XStart _ xs) l = amap1 (cn u) $ xs $ tip u where
   cn (ConeCokernel d a) f     = (ConeCokernel d (f*a),f)
 
 xecfOrtSite :: Conic c
-  => XOrtSite r x -> XGEligibleConeFactor c s (ToPerspective r) d t n m x
-xecfOrtSite xe@(XEnd _ _)   = XGEligibleConeFactor (xecfPrjOrtSiteTo xe)
-xecfOrtSite xs@(XStart _ _) = XGEligibleConeFactor (xecfInjOrtSiteFrom xs)
+  => XOrtSite r x -> XEligibleConeFactorG c s (ToPerspective r) d t n m x
+xecfOrtSite xe@(XEnd _ _)   = XEligibleConeFactorG (xecfPrjOrtSiteTo xe)
+xecfOrtSite xs@(XStart _ _) = XEligibleConeFactorG (xecfInjOrtSiteFrom xs)
+
+--------------------------------------------------------------------------------
+-- xecfEligibleCone -
+
+-- | the induced random variable for eligible cones.
+xecfEligibleCone :: XEligibleConeFactorG c s p d t n m x -> XEligibleConeG c s p d t n m x
+xecfEligibleCone (XEligibleConeFactorG xecf) = XEligibleConeG (amap1 fst . xecf)
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeFactorG -
+
+-- | standard random variable for eligible cone factors.
+class XStandardEligibleConeFactorG c s p d t n m x where
+  xStandardEligibleConeFactorG :: XEligibleConeFactorG c s p d t n m x
+  
+--------------------------------------------------------------------------------
+-- XStandardEligibleCone -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeFactorG Cone s p Diagram t n m x => XStandardEligibleConeFactor s p t n m x
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeG -
+
+-- | standard random variable for eligible cones.
+class XStandardEligibleConeG c s p d t n m x where
+  xStandardEligibleConeG :: XEligibleConeG c s p d t n m x
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleCone -
+
+-- | helper class to avoid undecidable instances.
+class XStandardEligibleConeG Cone s p Diagram t n m x
+  => XStandardEligibleCone s p t n m x
 
 --------------------------------------------------------------------------------
 -- prpLimesFactorExist -
@@ -345,9 +370,9 @@ prpLimesFactorExist ::
   , Entity (d t n m x)
   , Entity x
   )
-  => XGEligibleCone c s p d t n m x
+  => XEligibleConeG c s p d t n m x
   -> LimesG c s p d t n m x -> Statement
-prpLimesFactorExist (XGEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
+prpLimesFactorExist (XEligibleConeG xec) l = Prp "LimesFactorExists" :<=>:
   Forall (xec l)
     (\c -> eligibleCone l c :?> Params ["c":=show c]
            -- actually the random variable should produce eligible cones!!
@@ -369,13 +394,12 @@ prpLimesFactorExist (XGEligibleCone xec) l = Prp "LimesFactorExists" :<=>:
 -- and 'Cone'.
 prpLimesFactorUnique ::
   ( Conic c, Diagrammatic d
-  , Show (d t n m x)
-  , Eq (d t n m x)
+  , Entity (d t n m x)
   , Entity x
   )
-  => XGEligibleConeFactor c s p d t n m x
+  => XEligibleConeFactorG c s p d t n m x
   -> LimesG c s p d t n m x -> Statement
-prpLimesFactorUnique (XGEligibleConeFactor xef) l = Prp "LimesFactorUnique" :<=>:
+prpLimesFactorUnique (XEligibleConeFactorG xef) l = Prp "LimesFactorUnique" :<=>:
   Forall (xef l)
     (\(c,x) -> And [ eligibleCone l c :?> Params []
                    , eligibleFactor l c x :?> Params []
@@ -396,8 +420,8 @@ prpLimes ::
   , Entity (d t n m x)
   , Entity x
   )
-  => XGEligibleCone c s p d t n m x
-  -> XGEligibleConeFactor c s p d t n m x
+  => XEligibleConeG c s p d t n m x
+  -> XEligibleConeFactorG c s p d t n m x
   -> LimesG c s p d t n m x -> Statement
 prpLimes xec xef l = Prp "Limes" :<=>:
   And [ valid (universalCone l)
@@ -410,11 +434,13 @@ prpLimes xec xef l = Prp "Limes" :<=>:
 
 instance
   ( Conic c, Diagrammatic d
-  , XStandardGEligibleCone c s p d t n m x
-  , XStandardGEligibleConeFactor c s p d t n m x
-  , Entity (c s p d t n m x)
+  , XStandardEligibleConeG c s p d t n m x
+  , XStandardEligibleConeFactorG c s p d t n m x
+  , Show (c s p d t n m x)
+  , Validable (c s p d t n m x)
   , Entity (d t n m x)
   , Entity x
   )
   => Validable (LimesG c s p d t n m x) where
-  valid = prpLimes xStandardGEligibleCone xStandardGEligibleConeFactor
+  valid = prpLimes xStandardEligibleConeG xStandardEligibleConeFactorG
+

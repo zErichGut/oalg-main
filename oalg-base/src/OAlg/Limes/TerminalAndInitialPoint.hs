@@ -320,12 +320,12 @@ prpTerminalAndInitialPoint = Prp "TerminalAndInitialPoint" :<=>:
       , prpLimitsG xecT' xecfT' xStandard tps' -- initials
       ]
   where
-    xecT   = xGEligibleConeOrnt xStandard
-    xecfT  = xGEligibleConeFactorOrnt xStandard 
+    xecT   = xEligibleConeGOrnt xStandard
+    xecfT  = xEligibleConeFactorGOrnt xStandard 
     tps    = trmsOrnt T
 
-    xecT'  = coXGEligibleCone xecT
-    xecfT' = coXGEligibleConeFactor xecfT
+    xecT'  = coXEligibleConeG xecT
+    xecfT' = coXEligibleConeFactorG xecfT
     tps'   = coTerminals tps
 
 

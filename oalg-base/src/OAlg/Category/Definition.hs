@@ -20,10 +20,10 @@
 -- categories of morphisms. We adapted the concept of categories form 'Control.Category.Category' to
 -- better cover our needs.
 module OAlg.Category.Definition
-  ( 
+  (
     -- * Category
     Category(..), cOne'
-  , Sub(..), cOneSub, sub, subG
+  , Sub(..), cOneSub, sub, sub', subG
   , Op2(..)
 
     -- | __Some basic definitions in the category @('->')@__
@@ -34,6 +34,7 @@ module OAlg.Category.Definition
 
     -- * Cayleyan
   , Cayleyan2(..), Inv2(..), inv2
+  , inv2Forget
   
     -- * Morphism
   , Morphism(..)
@@ -62,7 +63,7 @@ module OAlg.Category.Definition
   , TransformableGObjectClass
   , TransformableGObjectClassDomain
   , TransformableGObjectClassRange
-  
+
   )
   where
 
@@ -319,9 +320,6 @@ instance Category c => Category (Op2 c) where
   cOne s = Op2 (cOne s)
   Op2 f . Op2 g = Op2 (g . f)
 
-instance Cayleyan2 c => Cayleyan2 (Op2 c) where
-  invert2 (Op2 f) = Op2 (invert2 f)
-  
 --------------------------------------------------------------------------------
 -- FunctorG -
 
@@ -354,7 +352,8 @@ instance Transformable s Type => TransformableObjectClass s (->)
 --------------------------------------------------------------------------------
 -- Sub -
 
--- | sub category of @__c__@ according to the 'ObjectClass' @__s__@.
+-- | sub category of @__c__@ according to the 'ObjectClass' @__s__@, whereas maintaining the
+-- applicative behavior of @__c__@.
 data Sub s c x y where
   Sub :: (Structure s x, Structure s y) => c x y -> Sub s c x y 
 
@@ -362,11 +361,13 @@ instance Morphism (Sub s c) where
   type ObjectClass (Sub s c) = s
   homomorphous (Sub _) = Struct :>: Struct
 
+instance ApplicativeG f h (->) => ApplicativeG f (Sub t h) (->) where amapG (Sub h) = amapG h
+instance (FunctorialG f c (->), TransformableObjectClass s c) => FunctorialG f (Sub s c) (->)
+
 --------------------------------------------------------------------------------
 -- cOneSub -
 
--- | the 'cOne' of @'Sub' __s c__@
-cOneSub :: (Category c, t ~ ObjectClass c) => Struct s x -> Struct t x  -> Sub s c x x
+cOneSub :: (Category c, t ~ ObjectClass c) => Struct s x -> Struct t x -> Sub s c x x
 cOneSub Struct = Sub . cOne
 
 instance (Category c, TransformableObjectClass s c) => Category (Sub s c) where
@@ -390,18 +391,31 @@ sub h = sub' (tauHom (homomorphous h)) h
 subG' :: ApplicativeG d a b => Homomorphous t (d x) (d y) -> a x y -> Sub t b (d x) (d y)
 subG' (Struct:>:Struct) h = Sub (amapG h)
 
+
 subG :: (ApplicativeG d a b, TransformableG d s t)
   => Sub s a x y -> Sub t b (d x) (d y)
-subG a'@(Sub a) = subG' (tauHomG (homomorphous a')) a 
+subG a'@(Sub a) = subG' (tauHomG (homomorphous a')) a
+-- subG a'@(Sub a) = subG' (tauG (tauFst (domain a')) :>: tauG (tauFst (range a'))) a 
+
 
 instance (ApplicativeG d a b, TransformableG d s t)
   => ApplicativeG d (Sub s a) (Sub t b) where
   amapG = subG
 
+
 instance ( FunctorialG d a b
-         , TransformableG d s t, TransformableObjectClass s a, TransformableObjectClass t b
+         , TransformableObjectClass s a, TransformableObjectClass t b
+         , TransformableG d s t
          )
   => FunctorialG d (Sub s a) (Sub t b)
+
+--------------------------------------------------------------------------------
+-- TransformableGObjectClass -
+
+-- | helper class to avoid undecided instances.
+class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectClass t a b
+
+instance TransformableGObjectClass t a (->)
 
 --------------------------------------------------------------------------------
 -- Cayleyan2 -
@@ -415,6 +429,9 @@ instance ( FunctorialG d a b
 class (Category c, Eq2 c) => Cayleyan2 c where
   invert2 :: c x y -> c y x
 
+instance Cayleyan2 c => Cayleyan2 (Op2 c) where
+  invert2 (Op2 f) = Op2 (invert2 f)
+  
 --------------------------------------------------------------------------------
 -- Cayleyan2 - Instance -
 
@@ -454,6 +471,13 @@ instance (Category c, Eq2 c) => Cayleyan2 (Inv2 c) where
 -- | the inverse.
 inv2 :: Inv2 c x y -> Inv2 c y x
 inv2 (Inv2 f g) = Inv2 g f
+
+--------------------------------------------------------------------------------
+-- inv2Forget -
+
+-- | forgetting the restriction to 'Sub'.
+inv2Forget :: Inv2 (Sub s h) x y -> Inv2 h x y
+inv2Forget (Inv2 (Sub t) (Sub f)) = Inv2 t f
 
 --------------------------------------------------------------------------------
 -- Either2 - Morphism -
@@ -519,14 +543,6 @@ instance TransformableGObjectClassRange d t c => TransformableGObjectClass d (Fo
 class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 
 --------------------------------------------------------------------------------
--- TransformableGObjectClass -
-
--- | helper class to avoid undecided instances.
-class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectClass t a b
-
-instance TransformableGObjectClass t a (->)
-
---------------------------------------------------------------------------------
 -- TransformableGObjectClassDomain -
 
 -- | helper class to avoid undecided instances.
@@ -540,4 +556,6 @@ class TransformableG d (ObjectClass a) t => TransformableGObjectClassDomain d a 
 class TransformableG d s (ObjectClass c) => TransformableGObjectClassRange d s c
 
 instance TransformableGObjectClassRange d s (->)
+
+
 

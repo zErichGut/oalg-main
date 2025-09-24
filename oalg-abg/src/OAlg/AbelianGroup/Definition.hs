@@ -531,6 +531,8 @@ abgFree n = abg 0 ^ (freeN n)
 instance Attestable k => Sliced (Free k) AbHom where
   slicePoint = abgFree
 
+instance SlicedFree AbHom where slicedFree = Struct
+
 --------------------------------------------------------------------------------
 -- abgMaybeFree -
 
@@ -1232,6 +1234,20 @@ instance XStandardOrtOrientation AbHom where
       xAbHom (inj n * q) o
       
     
+instance XStandardEligibleConeG Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
+  
+instance XStandardEligibleConeFactorG
+           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardEligibleConeFactorG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+instance XStandardEligibleConeG
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
+  
+instance XStandardEligibleConeFactorG
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardEligibleConeFactorG = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
 --------------------------------------------------------------------------------
 -- AbHom - XStandard -
@@ -1293,5 +1309,6 @@ xAbhSomeFreeSlice nMax = do
   case someNatural n of
     SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
   where z1 = abg 0
+
 
 

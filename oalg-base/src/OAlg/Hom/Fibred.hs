@@ -73,6 +73,8 @@ instance (HomFibred h, Disjunctive2 h)  => HomFibred (Variant2 v h)
 
 instance HomFibred h => HomFibred (Inv2 h)
 
+instance (Transformable s Fbr, HomFibred h) => HomFibred (Sub s h)
+
 --------------------------------------------------------------------------------
 -- DualisableFibred -
 

@@ -20,6 +20,7 @@ module OAlg.Limes.Limits.Core
   (
     -- * Limits
     limes, LimitsG(..), Limits
+  , limesCone, limitsCone
 
     -- * Constructions
   , lmsMltPrjOrnt, lmsMltInjOrnt
@@ -59,6 +60,22 @@ type Limits s p = LimitsG Cone s p Diagram
 -- | the limes over the given diagram.
 limes :: LimitsG c s p d t n m x -> d t n m x -> LimesG c s p d t n m x
 limes (LimitsG l) = l
+
+--------------------------------------------------------------------------------
+-- limesCone -
+
+-- | the underlying limes according to 'Cone' , given by a diagrammatic object of @__d t n m x__@.
+limesCone :: Conic c => LimitsG c s p d t n m x -> d t n m x -> LimesG Cone s p d t n m x
+limesCone lG d = case limes lG d of
+  LimesProjective cCn cUniv -> LimesProjective (cone cCn) cUniv
+  LimesInjective cCn cUniv  -> LimesInjective (cone cCn) cUniv
+
+--------------------------------------------------------------------------------
+-- limitsCone -
+
+-- | the underlying limits according to 'Cone'.
+limitsCone :: Conic c => LimitsG c s p d t n m x -> LimitsG Cone s p d t n m x
+limitsCone = LimitsG . limesCone
 
 --------------------------------------------------------------------------------
 -- lmsMltPrjOrnt -
