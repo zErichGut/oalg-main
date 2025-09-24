@@ -18,7 +18,6 @@
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
-{-    
     -- * Kernels
     abhKernels
 
@@ -30,7 +29,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Adjunction
   , abhSliceFreeAdjunction
--}
+
   )
   where
 
@@ -40,9 +39,6 @@ import Data.Typeable
 import Data.List (map,(++),repeat,zip)
 
 import OAlg.Prelude hiding ((//))
-
-import OAlg.Category.NaturalTransformable
-import OAlg.Category.SDuality
 
 import OAlg.Data.Canonical
 import OAlg.Data.FinitelyPresentable
@@ -69,7 +65,6 @@ import OAlg.Entity.Diagram
 import OAlg.Entity.Sequence
 import OAlg.Entity.Matrix as M
 import OAlg.Entity.Slice
-import OAlg.Entity.Slice.Free
 import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Product (fromWord)
 
@@ -77,9 +72,6 @@ import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
 import OAlg.AbelianGroup.Free
-
-import OAlg.Hom.Definition
-import OAlg.Hom.Oriented
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFreeG -
@@ -335,9 +327,7 @@ xdgAbhCokernelsFreeTo'G :: Attestable k => X (SliceDiagram (Free k) (Parallel Ri
 xdgAbhCokernelsFreeTo'G = amap1 SliceDiagramCokernel xStandard
 
 -- | random variable for cokernel cones with the given diagram as its 'diagrammaticObject'. 
-xecCokernelSliceDiagramAbHom ::
-  Attestable k
-  => XOrtSite From (Matrix Z)
+xecCokernelSliceDiagramAbHom :: XOrtSite From (Matrix Z)
   -> CokernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
   -> X (CokernelConic Cone (SliceDiagram (Free k)) N1 AbHom)
 xecCokernelSliceDiagramAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCokernel d where
@@ -356,13 +346,13 @@ vldXecCokernelSliceDiagramAbHom k = case someNatural k of
     xsdg _ = xdgAbhCokernelsFreeTo'G
 
 -- | random variable for eligible cones.
-xecAbhCokernelsFreeTo'G :: Attestable k => XGEligibleCone
+xecAbhCokernelsFreeTo'G :: XGEligibleCone
   ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom
 xecAbhCokernelsFreeTo'G
   = XGEligibleCone (xecCokernelSliceDiagramAbHom xStandardOrtSite . universalDiagram)
 
 -- | random variable for eligible cone factors.
-xecfAbhCokernelsFreeTo'G :: Attestable k => XGEligibleConeFactor
+xecfAbhCokernelsFreeTo'G :: XGEligibleConeFactor
   ConeLiftable Dst Injective (SliceDiagram (Free k)) (Parallel RightToLeft) N2 N1 AbHom
 xecfAbhCokernelsFreeTo'G = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
@@ -577,105 +567,47 @@ abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
 --------------------------------------------------------------------------------
 -- abhKernelsFreeFromCyG -
 
--- | free kernels where the end point is equal to some cyclic group to some order.
+-- | kernels of a free sliced kernel diagrams with end point equal to a product of a cyclic group
+-- to some exponten.
 abhKernelsFreeFromCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromCyG = LimitsG abhKernelFreeFromCyG
 
-{-
-xFreeFromCy :: Attestable k => Free k AbHom -> X (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
-xFreeFromCy k@(Free k') = do
+--------------------------------------------------------------------------------
+-- prpAbhKernelsFreeFromCyG -
+
+-- | random variable for eligible cone factors.
+xecfAbhKernelsFreeFromCyG :: XGEligibleConeFactor
+  (ConicFreeTip Cone) Dst Projective (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom
+xecfAbhKernelsFreeFromCyG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+-- | random variable for eligible cones.
+xecAbhKernelsFreeFromCyG :: XGEligibleCone
+  (ConicFreeTip Cone) Dst Projective (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom
+xecAbhKernelsFreeFromCyG = xecfEligibleCone xecfAbhKernelsFreeFromCyG
+
+-- | random variable for free sliced kernel diagrams with end point equal to a product of a cyclic group
+-- to some exponten.
+xdgAbhKernelsFreeFromCyG :: Attestable k
+  => Any k -> X (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
+xdgAbhKernelsFreeFromCyG k = do
   n <- xNB 0 1000
   r <- xNB 0 10
-  h <- xAbHom 0.3 (abg 0 ^ (lengthN k') :> abg n ^ r)
-  return (SliceDiagramKernel (SliceFrom k h))
+  h <- xAbHom 0.3 (abg 0 ^ lengthN k :> abg n ^ r)
+  return (SliceDiagramKernel (SliceFrom (Free k) h))
 
-instance XStandardGEligibleCone
-           (ConicFreeTip Cone) Dst Projective
-           (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom where
-  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
-    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
-    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
-
-instance XStandardGEligibleConeFactor
-           (ConicFreeTip Cone) Dst Projective
-           (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
-                                
-pp2 :: Attestable k => Any k -> Statement
-pp2 k = prpLimitsG
-          xStandardGEligibleCone xStandardGEligibleConeFactor
-          (xFreeFromCy (Free k))
-          abhKernelsFreeFromCyG
-
-
-{-  
--- | free kernel where the end point is equal to some cyclic group to some order.
---
--- __Property__ Let @s = 'SliceFrom' _ h@ where @'end' h '==' abg n '^' r@ for some
--- @n@, @r@ in 'N', then holds:
--- @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@ where @ker = 'abhKernelFreeFromCy' s@.
-abhKernelFreeFromCy :: Attestable k => Slice From (Free k) AbHom -> KernelFree N1 AbHom
-abhKernelFreeFromCy s@(SliceFrom k h) = hKer $ fromWord $ dimwrd $ abgDim $ end h where
-
-  freeTip :: Kernel N1 AbHom -> SomeFree AbHom
-  freeTip k = case someNatural n of
-    SomeNatural n' -> SomeFree (Free n')
-    where n = lengthN $ tip $ universalCone k
-
-  hKer [] = LimesFree k (kernelZero s (orientation h))
-  -- h == 0
-
-  hKer [(ZMod 0,_)] = case freeTip ker of
-    SomeFree k' -> LimesFree k' kery
-    where ker = lmPrjMapDst adj $ limes zmxKernels $ dgMap l (kernelDiagram h)
-          adj = abhFreeAdjunction
-          Adjunction l _ _ _ = adj
-
-  hKer [(ZMod 1,_)] = hKer []
-
-  hKer [(ZMod c,_)] = case freeTip ker of
-    SomeFree k' -> LimesFree k' ker
-    where
-      ker = LimesProjective kCone kUniv
-
-      DiagonalForm d _ (ColTrafo t) = zmxDiagonalForm (abhz h)
-      -- d = (rt*>h)<*ct
-    
-      m = lengthN (start h)
-      s = lengthN d
-      r = m >- s
-
-      Inv b bInv = amap GLTGL t
-
-      dm = dim () ^ m
-      kDgm = DiagramParallelLR (start h) (end h) (h:|Nil)
-  
-      k = map f d ++ takeN r (repeat 1)
-      -- 0 < d
-      f d = if d' == 0 then 1 else inj (lcm d' c) // d' where d' = prj (mod0 d c)
-
-      kLim = zabh (b*diagonal dm dm k)
-      kCone = ConeKernel kDgm kLim
-
-      kUniv cn@(ConeKernel _ x) = AbHom $ Matrix (Dim e) (Dim sx) xs'' where
-        -- note: from x valid and eligible follows that
-        -- for all non zero (z,i,j) in x holds: orientation z = cy 0 :> cy 0
-        AbGroup e = end kLim
-        
-        AbGroup sx = tip cn
-        
-        Matrix _ _ xs'  = bInv * abhz x
-        xs'' = crets $ Col $ PSequence $ div' (list nProxy $ etscr xs') (k `zip` [0..])
-  
-        div' :: Ord i => [(Row j Z,i)] -> [(Z,i)] -> [(Row j ZModHom,i)]
-        div' [] _             = []
-        div' ((rw,i):rws') [] = (amap1 fromZ rw,i):div' rws' []
-        div' rws@((rw,i):rws') ((k,i'):kis')
-          | i' < i    = div' rws kis'
-          | otherwise = (amap1 (fromZ . \z -> div z k) rw,i):div' rws' kis' 
-
-  hKer _ = error "faild precondition"
--}
+-- | validity of 'abhKernelsFreeFromCyG' for a kernel slice diagram with the given dimension for its
+-- free slice.
+prpAbhKernelsFreeFromCyGN :: N -> Statement
+prpAbhKernelsFreeFromCyGN k = case someNatural k of
+  SomeNatural k' -> prpLimitsG
+                      xecAbhKernelsFreeFromCyG
+                      xecfAbhKernelsFreeFromCyG
+                      (xdgAbhKernelsFreeFromCyG k')
+                      abhKernelsFreeFromCyG
+                      
+-- | validity of 'abhKernelsFreeFromCyG'.
+prpAbhKernelsFreeFromCyG :: Statement
+prpAbhKernelsFreeFromCyG = Forall (xNB 0 14) prpAbhKernelsFreeFromCyGN
 
 
 --------------------------------------------------------------------------------
@@ -728,6 +660,10 @@ abhKernelFreeFromG s = ker s $ amap1 (limes abhKernelsFreeFromCyG) $ abhFreeFrom
         -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
         d = diagrammaticObject $ cone $ universalCone ker
 
+--------------------------------------------------------------------------------
+-- abhKernelsFreeFromG -
+
+-- | kernels with a free tip of free sliced diagrams.
 abhKernelsFreeFromG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromG = LimitsG abhKernelFreeFromG
 
@@ -735,66 +671,29 @@ abhKernelsFreeFromG' :: Attestable k
   => q k -> KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromG' _ = abhKernelsFreeFromG
 
+--------------------------------------------------------------------------------
+-- prpAbhKernelsFreeFromG -
 
-xFreeFrom :: Attestable k
+-- | random variable for free sliced kernel diagrams.
+xdgKernelsFreeFromG :: Attestable k
   =>  Any k -> X (SliceDiagram (Free k) (Parallel LeftToRight) N2 N1 AbHom)
-xFreeFrom k = do
+xdgKernelsFreeFromG k = do
   h <- xh (abg 0 ^ (lengthN k))
   return (SliceDiagramKernel (SliceFrom (Free k) h))
   where XStart _ xh = xStandardOrtSite :: XOrtSite From AbHom 
 
-pp3 :: Attestable k => Any k -> Statement
-pp3 k = prpLimitsG xStandardGEligibleCone xStandardGEligibleConeFactor (xFreeFrom k)
-                   (abhKernelsFreeFromG' k)
+-- | validity of 'prpAbhKernelsFreeFromG' for the given dimenson of the free sliced kenrel diagrams.
+prpAbhKernelsFreeFromGN :: N -> Statement
+prpAbhKernelsFreeFromGN k = case someNatural k of
+  SomeNatural k' -> prpLimitsG
+                      xecAbhKernelsFreeFromCyG
+                      xecfAbhKernelsFreeFromCyG
+                      (xdgKernelsFreeFromG k')
+                      abhKernelsFreeFromG
 
-{-
--- | the kernel of a free site from.
---
--- @
---          h
---      a ------> b
---      
--- @ where @a@ is free of some order @k@.
---
--- __Property__ Let @s = 'SliceFrom' _ h@ be in @'Slice' 'From' ('Free' __k__)@ and
--- @ker = 'abhKernelFreeFrom' s@, then holds:
--- @'diagram' ('limesFree' ker) '==' 'kernelDiagram' h@.
-abhKernelFreeFrom :: Attestable k => Slice From (Free k) AbHom -> KernelFree N1 AbHom
-abhKernelFreeFrom s = ker s (amap1 abhKernelFreeFromCy $ abhFreeFromSplitCy s) where
-
-  plbDgm :: Attestable k
-    => Free k AbHom -> FinList n (KernelFree N1 AbHom) -> PullbackDiagramFree n AbHom
-  plbDgm k kers = DiagramFree ks dgm where
-    ks = SomeFree k :| amap1 (\(LimesFree k' _) -> SomeFree k') kers
-    dgm = DiagramSink (slicePoint k)
-      $ amap1 (kernelFactor . universalCone . limesFree)
-      $ kers
-  
-  ker :: Attestable k
-    => Slice From (Free k) AbHom -> SomeFinList (KernelFree N1 AbHom)
-    -> KernelFree N1 AbHom
-  ker s@(SliceFrom k _) (SomeFinList kers) = ker' s kers (abhPullbackFree $ plbDgm k kers)
-
-  ker'
-    :: Slice From (Free k) AbHom
-    -> FinList n (KernelFree N1 AbHom)
-    -> PullbackFree n AbHom
-    -> KernelFree N1 AbHom
-  ker' (SliceFrom _ h) kers (LimesFree kt plb)
-    = LimesFree kt (LimesProjective hKer hUniv) where
-    
-    hDgm = kernelDiagram h
-    hKer = ConeKernel hDgm (F.head $ shell $ universalCone plb)
-    
-    hUniv (ConeKernel _ x) = universalFactor plb plbCone where
-      plbCone = ConeProjective (diagram plb) (start x) cs
-      cs = x:|amap1
-        (\(LimesFree _ ker)
-         -> universalFactor ker (ConeKernel (diagram ker) x)
-          -- the cone is eligible because of the property (2) of abhFreeFromSplitCy
-        ) kers
--}
-
+-- | validity of 'prpAbhKernelsFreeFromG'.
+prpAbhKernelsFreeFromG :: Statement
+prpAbhKernelsFreeFromG = Forall (xNB 0 15) prpAbhKernelsFreeFromGN
 
 --------------------------------------------------------------------------------
 -- abhKernel -
@@ -891,41 +790,6 @@ abhKernel d = hKer d (finitePresentation abgFinPres $ start h) where
         x'Cone = ConeKernel (diagrammaticObject $ cone $ universalCone hpKer) x'
         SliceFrom _ x' = lp (SliceFrom nv' (x*t))
 
-
-{-    
-  hKer''
-    d
-    (GeneratorTo (DiagramChainTo _ (p:|_:|Nil)) _ _ _ _ lp)
-    (LimesFree nr' hpKer)
-    (LimesFree nr'' k'p'Plb)
-    = LimesProjective hKer hUniv where
-
-    _:|q':|_   = shell $ universalCone k'p'Plb
-    q'CokerDgm = cokernelDiagram q' 
-    q'Coker    = clfCokernel $ abhCokernelFreeDgmLftFree
-      ( DiagramFree
-         (SomeFree nr':|SomeFree nr'':|Nil)
-         q'CokerDgm
-      )
-      
-    hKer = ConeKernel d hKerFactor where
-      hKerFactor = universalFactor q'Coker (ConeCokernel q'CokerDgm (p*k'))
-      k' = kernelFactor $ universalCone hpKer
-    
-    hUniv cn@(ConeKernel _ x) = case finitePresentation abgFinPres $ start x of
-      GeneratorTo (DiagramChainTo _ (t:|_)) nv' _ t'Coker _ _
-        | not (d == cnDiagram cn) -> throw $ ConeNotEligible $ show cn
-        | otherwise               -> universalFactor t'Coker t'Cone where
-                
-        t'Cone = ConeCokernel (diagram t'Coker) (q*u')
-        q  = cokernelFactor $ universalCone q'Coker
-        u' = universalFactor hpKer x'Cone
-
-        x'Cone = ConeKernel (diagram hpKer) x'
-        SliceFrom _ x' = lp (SliceFrom nv' (x*t))
--}
-
-
 --------------------------------------------------------------------------------
 -- abhKernels -
 
@@ -933,18 +797,12 @@ abhKernel d = hKer d (finitePresentation abgFinPres $ start h) where
 abhKernels :: Kernels N1 AbHom
 abhKernels = LimitsG abhKernel
 
-instance XStandardGEligibleCone Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
-  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
-    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
-    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
-  
-instance XStandardGEligibleConeFactor
-           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+--------------------------------------------------------------------------------
+-- prpAbhKernels -
 
-
-pp4 :: Statement
-pp4 = valid abhKernels
+-- | validity for 'abhKernels'
+prpAbhKernels :: Statement
+prpAbhKernels = Prp "AbhKernels" :<=>: valid abhKernels
 
 --------------------------------------------------------------------------------
 -- abhSliceFreeAdjunction -
@@ -958,7 +816,6 @@ abhSliceFreeAdjunction :: Attestable k
 abhSliceFreeAdjunction k = slcAdjunction slcCoker slcKer (Free k) where
   slcCoker = limitsCone $ abhCokernelsFreeTo'G' k
   slcKer   = limitsCone $ abhKernelsFreeFromG' k
-
 
 --------------------------------------------------------------------------------
 -- abhCokernelLftFree -
@@ -1031,47 +888,6 @@ abhCokernelLftFreeG d@(DiagramParallelRL _ _ (h:|Nil))
       cCone = ConeCokernel (diagrammaticObject $ cone $ universalCone cCokerLft) (x*q)
 
 
-
-{-
-abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
-  = let fp = finitePresentation abgFinPres in case (fp $ start h,fp $ end h) of
-  (   GeneratorTo (DiagramChainTo _ (p:|_)) ns' _ _ _ _
-    , GeneratorTo (DiagramChainTo _ (q:|q':|Nil)) ne' _ q'Coker _ lq
-    ) -> CokernelLiftableFree (LimesInjective w'Cn w'Univ) w'Lft where
-
-    ----------------------------------------
-    -- constructing c -
-    SliceFrom _ h' = lq (SliceFrom ns' (h*p))
-    h'SliceTo      = SliceTo ne' h'
-    q'SliceTo      = SliceTo ne' q'
-
-    cSum       = limes (slfLimitsInjective abhSums)
-                   (DiagramDiscrete (h'SliceTo:|q'SliceTo:|Nil))
-    cSliceTo   = tip $ universalCone cSum
-
-    ----------------------------------------
-    -- evaluating c' -
-    cCokerLft = abhCokernelFreeTo' cSliceTo
-    cCoker    = clfCokernel cCokerLft
-    c'        = cokernelFactor $ universalCone cCoker
-
-    ----------------------------------------
-    -- evaluating w' -
-    w' = universalFactor q'Coker (ConeCokernel (diagram q'Coker) c')
-    w'Cn = ConeCokernel d w'
-
-    ----------------------------------------
-    -- universal property w' -
-    w'Univ (ConeCokernel _ x) = universalFactor cCoker cCone where
-      cCone = ConeCokernel (diagram cCoker) (x*q)
-
-    w'Lft :: Any k -> Liftable From (Free k) AbHom
-    w'Lft k = case ats k of
-      Ats -> LiftableFrom w' w'SlcFromLft where
-        w'SlcFromLft f = SliceFrom nk (q*f') where
-          SliceFrom nk f' = lift (clfLiftableFree cCokerLft k) f
--}
-
 --------------------------------------------------------------------------------
 -- abhCokersLftFree -
 
@@ -1079,25 +895,13 @@ abhCokernelLftFree d@(DiagramParallelRL _ _ (h:|Nil))
 abhCokernelsLftFreeG :: CokernelsG ConeLiftable Diagram N1 AbHom
 abhCokernelsLftFreeG = LimitsG abhCokernelLftFreeG
 
-instance XStandardGEligibleCone
-           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleCone = xec xStandardGEligibleConeFactor where
-    xec :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
-    xec (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
-  
-instance XStandardGEligibleConeFactor
-           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+--------------------------------------------------------------------------------
+-- prpAbhCokernelsLftFreeG -
 
-instance NaturalDiagrammaticFree Dst Diagram N2 N1
+-- | validity of 'abhCokernelsLftFreeG'.
+prpAbhCokernelsLftFreeG :: Statement
+prpAbhCokernelsLftFreeG = Prp "AbhCokernelsLftFreeG" :<=>: valid abhCokernelsLftFreeG
 
-pp5 :: Statement
-pp5 = valid abhCokernelsLftFreeG
-
-{-
-abhCokersLftFree :: ClfCokernels N1 AbHom
-abhCokersLftFree = ClfCokernels abhCokernelLftFree
--}
 --------------------------------------------------------------------------------
 -- abhCokernel -
 
@@ -1128,5 +932,3 @@ isoSmithNormal g = Inv h h' where
   h  = cokernelFactor $ universalCone c
   h' = universalFactor c (ConeCokernel (diagrammaticObject $ cone $ universalCone c) (one g))
 
-
--}

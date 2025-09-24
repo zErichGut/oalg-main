@@ -724,6 +724,7 @@ class
   => NaturalDiagrammaticFree s d n m
 
 instance NaturalDiagrammaticFree Dst DiagramFree n m
+instance NaturalDiagrammaticFree Dst Diagram n m
 
 instance
   ( Show (d (Parallel LeftToRight) n m x), Show (d (Parallel LeftToRight) n m (Op x))

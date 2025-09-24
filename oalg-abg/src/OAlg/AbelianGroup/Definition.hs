@@ -1234,6 +1234,20 @@ instance XStandardOrtOrientation AbHom where
       xAbHom (inj n * q) o
       
     
+instance XStandardGEligibleCone Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardGEligibleCone = xecfEligibleCone xStandardGEligibleConeFactor
+  
+instance XStandardGEligibleConeFactor
+           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+instance XStandardGEligibleCone
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleCone = xecfEligibleCone xStandardGEligibleConeFactor
+  
+instance XStandardGEligibleConeFactor
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
 --------------------------------------------------------------------------------
 -- AbHom - XStandard -
@@ -1295,5 +1309,6 @@ xAbhSomeFreeSlice nMax = do
   case someNatural n of
     SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
   where z1 = abg 0
+
 
 
