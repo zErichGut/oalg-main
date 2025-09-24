@@ -23,16 +23,17 @@ module OAlg.Limes.Definition.Proposition
     prpLimes, prpLimesFactorExist, prpLimesFactorUnique
 
     -- * X
-  , XGEligibleCone(..)
+  , XGEligibleCone(..), xec
   , XStandardGEligibleCone(..), XStandardEligibleCone
   , xGEligibleConeOrnt, coXGEligibleCone
   , xecMapS, xecMapCnt
   , xecDiscrete
   
-  , XGEligibleConeFactor(..)
+  , XGEligibleConeFactor(..), xecf
   , XStandardGEligibleConeFactor(..), XStandardEligibleConeFactor
   , xGEligibleConeFactorOrnt, coXGEligibleConeFactor
   , xecfOrtSite
+  , xecfEligibleCone
   
   ) where
 
@@ -67,18 +68,11 @@ data XGEligibleCone c s p d t n m x
   = XGEligibleCone (LimesG c s p d t n m x -> X (Cone s p d t n m x))
 
 --------------------------------------------------------------------------------
--- XStandardGEligibleCone -
+-- xec -
 
--- | standard random variable for eligible cones.
-class XStandardGEligibleCone c s p d t n m x where
-  xStandardGEligibleCone :: XGEligibleCone c s p d t n m x
-
---------------------------------------------------------------------------------
--- XStandardEligibleCone -
-
--- | helper class to avoid undecidable instances.
-class XStandardGEligibleCone Cone s p Diagram t n m x
-  => XStandardEligibleCone s p t n m x
+-- | random variable of eligible cones.
+xec :: XGEligibleCone c s p d t n m x -> LimesG c s p d t n m x -> X (Cone s p d t n m x)
+xec (XGEligibleCone x) = x
 
 --------------------------------------------------------------------------------
 -- Duality - XGEligibleCone -
@@ -214,19 +208,14 @@ data XGEligibleConeFactor c s p d t n m x
 
 type instance Dual1 (XGEligibleConeFactor c s p d t n m)
   = XGEligibleConeFactor c s (Dual p) d (Dual t) n m
-  
---------------------------------------------------------------------------------
--- XStandardGEligibleConeFactor -
-
--- | standard random variable for eligible cone factors.
-class XStandardGEligibleConeFactor c s p d t n m x where
-  xStandardGEligibleConeFactor :: XGEligibleConeFactor c s p d t n m x
 
 --------------------------------------------------------------------------------
--- XStandardEligibleCone -
+-- xecf -
 
--- | helper class to avoid undecidable instances.
-class XStandardGEligibleConeFactor Cone s p Diagram t n m x => XStandardEligibleConeFactor s p t n m x
+-- | random variable of eligible cone factors.
+xecf :: XGEligibleConeFactor c s p d t n m x -> LimesG c s p d t n m x -> X (Cone s p d t n m x,x)
+xecf (XGEligibleConeFactor xcx) = xcx
+
 
 --------------------------------------------------------------------------------
 -- xecfMapCov -
@@ -334,6 +323,40 @@ xecfOrtSite :: Conic c
   => XOrtSite r x -> XGEligibleConeFactor c s (ToPerspective r) d t n m x
 xecfOrtSite xe@(XEnd _ _)   = XGEligibleConeFactor (xecfPrjOrtSiteTo xe)
 xecfOrtSite xs@(XStart _ _) = XGEligibleConeFactor (xecfInjOrtSiteFrom xs)
+
+--------------------------------------------------------------------------------
+-- xecfEligibleCone -
+
+-- | the induced random variable for eligible cones.
+xecfEligibleCone :: XGEligibleConeFactor c s p d t n m x -> XGEligibleCone c s p d t n m x
+xecfEligibleCone (XGEligibleConeFactor xecf) = XGEligibleCone (amap1 fst . xecf)
+
+--------------------------------------------------------------------------------
+-- XStandardGEligibleConeFactor -
+
+-- | standard random variable for eligible cone factors.
+class XStandardGEligibleConeFactor c s p d t n m x where
+  xStandardGEligibleConeFactor :: XGEligibleConeFactor c s p d t n m x
+  
+--------------------------------------------------------------------------------
+-- XStandardEligibleCone -
+
+-- | helper class to avoid undecidable instances.
+class XStandardGEligibleConeFactor Cone s p Diagram t n m x => XStandardEligibleConeFactor s p t n m x
+
+--------------------------------------------------------------------------------
+-- XStandardGEligibleCone -
+
+-- | standard random variable for eligible cones.
+class XStandardGEligibleCone c s p d t n m x where
+  xStandardGEligibleCone :: XGEligibleCone c s p d t n m x
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleCone -
+
+-- | helper class to avoid undecidable instances.
+class XStandardGEligibleCone Cone s p Diagram t n m x
+  => XStandardEligibleCone s p t n m x
 
 --------------------------------------------------------------------------------
 -- prpLimesFactorExist -

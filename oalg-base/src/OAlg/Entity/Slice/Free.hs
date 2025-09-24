@@ -718,6 +718,8 @@ class
   )
   => NaturalDiagrammaticFree s d n m
 
+instance NaturalDiagrammaticFree Dst DiagramFree n m
+
 instance
   ( Show (d (Parallel LeftToRight) n m x), Show (d (Parallel LeftToRight) n m (Op x))
   , Validable (d (Parallel LeftToRight) n m x), Validable (d (Parallel LeftToRight) n m (Op x))

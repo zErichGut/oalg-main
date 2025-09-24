@@ -18,6 +18,7 @@
 -- 'Kernels' and 'Cokernels' for homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
+{-    
     -- * Kernels
     abhKernels
 
@@ -29,8 +30,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Adjunction
   , abhSliceFreeAdjunction
-
-    -- * X
+-}
   )
   where
 
@@ -163,31 +163,7 @@ abhCokernelsFreeDgmLftFreeG :: CokernelsG ConeLiftable DiagramFree N1 AbHom
 abhCokernelsFreeDgmLftFreeG = LimitsG abhCokernelFreeDgmLftFreeG
 
 --------------------------------------------------------------------------------
--- abhCokernelFreeDgmLftFree -
-
-{-
--- | a liftable cokernel of a free cokernel diagram.
---
---  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
--- @cf = 'abhCokernelFreeDgmLftFree' d@, then holds: Let @c = 'clfCokernel' cf@ in
---
--- (1) @'diagram' c '==' d@.
---
--- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
-abhCokernelFreeDgmLftFree :: CokernelDiagramFree N1 AbHom -> CokernelLiftableFree AbHom
-abhCokernelFreeDgmLftFree d
-  = CokernelLiftableFree (LimesInjective (ConeCokernel d' coker) univ') lftAny'
-  where
-    LimesInjective c@(ConeCokernelLiftable (ConeCokernel _ coker) _) univ
-      = limes abhCokernelsFreeDgmLftFreeG d
-
-    DiagramFree dims d' = d
-    
-    univ' (ConeCokernel d f) = univ (ConeCokernel (DiagramFree dims d) f)
-
-    lftAny' :: Any k -> Liftable Injective (Free k) AbHom
-    lftAny' = liftFree $ cnLiftable c
--}
+-- xCokernelDiagramFree -
 
 xCokernelDiagramFree :: X (Matrix Z) -> X (CokernelDiagrammatic DiagramFree N1 AbHom)
 xCokernelDiagramFree xm = do
@@ -250,26 +226,26 @@ xecCokernelDiagramFreeAbHom xFrom d = xZeroFactor xFrom hz >>= return . ConeCoke
   hz = abhz h  -- as d is DiagramFree holds: h == zabh (abhz h) and as such xZeroFactor gets a
                -- eligibel AbHom.
 
-instance XStandardGEligibleCone
-           ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleCone
-    = XGEligibleCone
-        (xecCokernelDiagramFreeAbHom xStandardOrtSite . diagrammaticObject . cone . universalCone)
+xecAbhCokernelsFreeDgmLftFreeG :: XGEligibleCone
+  ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
+xecAbhCokernelsFreeDgmLftFreeG
+  = XGEligibleCone (xecCokernelDiagramFreeAbHom xStandardOrtSite . universalDiagram)
 
-instance XStandardGEligibleConeFactor
-           ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom where
-  xStandardGEligibleConeFactor = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+xecfAbhCokernelsFreeDgmLftFreeG :: XGEligibleConeFactor
+  ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
+xecfAbhCokernelsFreeDgmLftFreeG = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
+
+xdgAbhCokernelsFreeDgmLftFreeG :: X (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+xdgAbhCokernelsFreeDgmLftFreeG = xCokernelDiagramFree xStandard
   
-instance XStandard (DiagramFree (Parallel RightToLeft) N2 N1 AbHom) where
-  xStandard = xCokernelDiagramFree xStandard
+prpAbhCokernelsFreeDgmLftFreeG :: Statement
+prpAbhCokernelsFreeDgmLftFreeG
+  = prpLimitsG
+      xecAbhCokernelsFreeDgmLftFreeG
+      xecfAbhCokernelsFreeDgmLftFreeG
+      xdgAbhCokernelsFreeDgmLftFreeG
+      abhCokernelsFreeDgmLftFreeG
 
-instance NaturalDiagrammaticFree Dst DiagramFree n m
-
-relAbhCokernelsFreeDgmLftFreeG :: Statement
-relAbhCokernelsFreeDgmLftFreeG = valid abhCokernelsFreeDgmLftFreeG
-
-xecf :: XGEligibleConeFactor c s p d t n m x -> LimesG c s p d t n m x -> X (Cone s p d t n m x,x)
-xecf (XGEligibleConeFactor xcx) = xcx
 
 abgIsFree :: AbGroup -> Bool
 abgIsFree g = case someNatural $ lengthN g of SomeNatural k -> isFree' (Free k) g
@@ -288,10 +264,9 @@ dstCokerDgmFrLft n = putDstr asp n $ join $ (amap1 (xecf xe . limes abhCokernels
             sf g = if abgIsFree g then "free" else "cycl"
             sz f = if isZero f then "0" else "f"
 
-    xdg = xStandard :: X (DiagramFree (Parallel RightToLeft) N2 N1 AbHom)
+    xdg = xdgAbhCokernelsFreeDgmLftFreeG
 
-    xe  = xStandardGEligibleConeFactor :: XGEligibleConeFactor
-            ConeLiftable Dst Injective DiagramFree (Parallel RightToLeft) N2 N1 AbHom
+    xe  = xecfAbhCokernelsFreeDgmLftFreeG
 
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo'G -
@@ -329,6 +304,9 @@ abhCokernelFreeTo'G hDgm@(SliceDiagramCokernel (SliceTo k h)) = LimesInjective h
   
   hUniv (ConeCokernel _ x) = h'Univ (ConeCokernel h'Dgm x)
 
+--------------------------------------------------------------------------------
+-- abhCokernelsFreeTo'G -
+
 -- | the generalized injective limits for @'SliceDiagram' ('Free' __k__)@,
 -- given by 'abhCokernelFreeTo'G'.
 abhCokernelsFreeTo'G :: Attestable k => CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
@@ -338,6 +316,8 @@ abhCokernelsFreeTo'G' :: Attestable k
   => q k -> CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
 abhCokernelsFreeTo'G' _ = abhCokernelsFreeTo'G
 
+
+{-
 xecCokernelSliceDiagramAbHom ::
   Attestable k
   => XOrtSite From (Matrix Z)
@@ -1040,22 +1020,6 @@ pp4 :: Statement
 pp4 = valid abhKernels
 
 --------------------------------------------------------------------------------
--- limesCone -
-
--- | the underlying limes according to 'Cone' , given by a diagrammatic object of @__d t n m x__@.
-limesCone :: Conic c => LimitsG c s p d t n m x -> d t n m x -> LimesG Cone s p d t n m x
-limesCone lG d = case limes lG d of
-  LimesProjective cCn cUniv -> LimesProjective (cone cCn) cUniv
-  LimesInjective cCn cUniv  -> LimesInjective (cone cCn) cUniv
-
---------------------------------------------------------------------------------
--- limitsCone -
-
--- | the underlying limits according to 'Cone'.
-limitsCone :: Conic c => LimitsG c s p d t n m x -> LimitsG Cone s p d t n m x
-limitsCone = LimitsG . limesCone
-
---------------------------------------------------------------------------------
 -- abhSliceFreeAdjunction -
 
 -- | the cokernel-kernel adjunction for a given @'Free' __k__@. 
@@ -1238,3 +1202,4 @@ isoSmithNormal g = Inv h h' where
   h' = universalFactor c (ConeCokernel (diagrammaticObject $ cone $ universalCone c) (one g))
 
 
+-}
