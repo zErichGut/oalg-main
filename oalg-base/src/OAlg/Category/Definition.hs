@@ -52,10 +52,6 @@ module OAlg.Category.Definition
   , Functorial1, Functor1(..)
   , FunctorialG, FunctorG(..)
   
-
-    -- * Forget
-  , Forget(..)
-
     -- * Transformables
   , TransformableObjectClass 
 
@@ -492,37 +488,6 @@ instance (Morphism f, Morphism g, ObjectClass f ~ ObjectClass g)
 
   range (Left2 f) = range f
   range (Right2 g) = range g
-
---------------------------------------------------------------------------------
--- Forget -
-
--- | forgets the 'ObjectClass' of __@m@__ and sets it to __@t@__, under the condition
---   that the 'ObjectClass' of __@m@__ is 'Transformable' to __@t@__.
-data Forget t m x y where
-  Forget :: Transformable (ObjectClass m) t => m x y -> Forget t m x y
-
-instance Show2 m => Show2 (Forget t m) where
-  show2 (Forget m) = "Forget[" ++ show2 m ++ "]"
-  
-instance Show2 m => Show (Forget t m x y) where
-  show = show2
-
-instance Eq2 m => Eq2 (Forget t m) where
-  eq2 (Forget f) (Forget g) = eq2 f g
-
-instance Eq2 m => Eq (Forget t m x y) where
-  (==) = eq2
-  
-instance Morphism m => Morphism (Forget t m) where
-  type ObjectClass (Forget t m) = t
-  homomorphous (Forget m) = tauHom (homomorphous m)
-
-instance ApplicativeG d m c => ApplicativeG d (Forget t m) c where
-  amapG (Forget h) = amapG h
-
-instance Transformable t Typ => TransformableObjectClassTyp (Forget t h)
-
-instance TransformableGObjectClassRange d t c => TransformableGObjectClass d (Forget t h) c
 
 --------------------------------------------------------------------------------
 -- TransformableObjectClassTyp -

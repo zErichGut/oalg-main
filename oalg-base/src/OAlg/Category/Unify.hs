@@ -91,10 +91,16 @@ instance (Morphism m, TransformableObjectClassTyp m, Typeable m, Eq2 m)
     Just Refl -> eq2 f g
     Nothing   -> False
 
-    where tx  = domain (Forget f)
-          tx' = domain (Forget g)
-          ty  = range (Forget f)
-          ty' = range (Forget g)
+    where tx  = domain (subTyp f)
+          tx' = domain (subTyp g)
+          ty  = range (subTyp f)
+          ty' = range (subTyp g)
+
+          subTypStruct :: Struct Typ x -> Struct Typ y -> m x y -> Sub Typ m x y
+          subTypStruct Struct Struct = Sub
+          
+          subTyp :: (Morphism m, Transformable (ObjectClass m) Typ) => m x y -> Sub Typ m x y
+          subTyp m = subTypStruct (tau $ domain m) (tau $ range m) m 
 
 
 instance Validable2 m => Validable (SomeMorphism m) where

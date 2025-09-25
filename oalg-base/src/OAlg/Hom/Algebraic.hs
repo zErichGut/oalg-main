@@ -30,16 +30,10 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
-import OAlg.Structure.Oriented.Definition hiding (Path(..))
-import OAlg.Structure.Multiplicative.Definition
-import OAlg.Structure.Fibred.Definition
-import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Distributive.Definition
-import OAlg.Structure.Vectorial.Definition
 import OAlg.Structure.Algebraic.Definition
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.FibredOriented
 import OAlg.Hom.Distributive
@@ -53,7 +47,6 @@ import OAlg.Hom.Vectorial
 class (HomDistributive h, HomVectorial k h, Transformable (ObjectClass h) (Alg k))
   => HomAlgebraic k h
 
-
 instance HomAlgebraic k h => HomAlgebraic k (Path h)
 
 --------------------------------------------------------------------------------
@@ -65,30 +58,8 @@ class ( HomDistributiveDisjunctive h, HomVectorial k h, Transformable (ObjectCla
 
 instance ( HomAlgebraic k h
          , DualisableFibredOriented s o, DualisableMultiplicative s o
-         , DualisableVectorial k s o, DualisableFibredOriented s o
+         , DualisableVectorial k s o
          , Transformable s Dst, Transformable s (Alg k)
          )
   => HomAlgebraicDisjunctive k (HomDisj s o h)
-
-{-
---------------------------------------------------------------------------------
--- Hom -
-
-type instance Hom (Alg k) h = HomAlgebraic k h
-
---------------------------------------------------------------------------------
--- IdHom - Hom -
-
-instance ( TransformableOrt (s k), TransformableOp (s k), TransformableTyp (s k)
-         , TransformableMlt (s k)
-         , TransformableFbr (s k), TransformableAdd (s k)
-         , TransformableFbrOrt (s k)
-         , TransformableDst (s k)
-         , TransformableVec k s
-         , TransformableAlg k s
-         )
-
-  => HomAlgebraic k (IdHom (s k))
--}  
-
 

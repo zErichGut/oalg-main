@@ -244,12 +244,6 @@ instance (Validable2 f, Validable2 g) => Validable2 (Either2 f g) where
   valid2 (Left2 f)  = valid2 f
   valid2 (Right2 g) = valid2 g
 
-instance Validable2 m => Validable2 (Forget t m) where
-  valid2 (Forget m) = valid2 m
-
-instance Validable2 m => Validable (Forget t m x y) where
-  valid = valid2
-
 instance Validable2 (Struct2 m)
 
 instance Validable2 h => Validable2 (Op2 h) where valid2 (Op2 h) = valid2 h
