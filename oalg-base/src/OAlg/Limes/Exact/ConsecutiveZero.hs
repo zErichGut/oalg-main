@@ -2,26 +2,25 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.Limes.Exact.ConsZero
+-- Module      : OAlg.Limes.Exact.ConsecutiveZero
 -- Description : chain diagrams with consecutive zero-able arrows. 
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- Chain diagrams with consecutive zero-able arrows. 
-module OAlg.Limes.Exact.ConsZero
+-- chain diagrams with consecutive zero-able arrows. 
+module OAlg.Limes.Exact.ConsecutiveZero
   (
 {-
     -- * Consecutive Zero
-    ConsZero(..), cnzDiagram, cnzPoints, cnzArrows
+    ConsecutiveZero(..), cnzDiagram, cnzPoints, cnzArrows
   , cnzHead, cnzTail
   , cnzMap
 
@@ -40,115 +39,131 @@ module OAlg.Limes.Exact.ConsZero
   , xSomeConsZeroTrafoOrnt, SomeConsZeroTrafo(..)
 -}
   ) where
-{-
-import Control.Monad
-import Control.Applicative ((<|>))
 
-import Data.Typeable
+-- import Control.Monad
+-- import Control.Applicative ((<|>))
+
+-- import Data.Typeable
 
 import OAlg.Prelude
 
-import OAlg.Structure.Exception
+import OAlg.Category.SDuality
+
+import OAlg.Data.Variant
+import OAlg.Data.Either
+
+-- import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
-import OAlg.Structure.Fibred
+-- import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
-import OAlg.Structure.Vectorial
-import OAlg.Structure.Algebraic
+-- import OAlg.Structure.Vectorial
+-- import OAlg.Structure.Algebraic
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
-import OAlg.Hom.Definition
-import OAlg.Hom.Distributive ()
+-- import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
+import OAlg.Hom.Distributive
 
-import OAlg.Entity.Slice.Definition
-import OAlg.Entity.Slice.Sliced
+-- import OAlg.Entity.Slice.Definition
+-- import OAlg.Entity.Slice.Sliced
 
-import OAlg.Limes.Cone
-import OAlg.Limes.KernelsAndCokernels
-import OAlg.Limes.Limits
--}
-{-
-data DiagramP f t n m x where
-  DiagramP :: Point (f t x) ~ Point x => Diagram t n m (f t x) -> DiagramP f t n m x
+-- import OAlg.Limes.Cone
+-- import OAlg.Limes.KernelsAndCokernels
+-- import OAlg.Limes.Limits
 
-class DiagrammaticProdicate f where
-  ff :: f (t :: DiagramType) x -> x
-
-instance DiagrammaticProdicate f => Diagrammatic (DiagramP f) where
-  diagram (DiagramP dp) = case dp of
-    DiagramChainTo p aps -> DiagramChainTo p (amap1 ff aps)
--}
-
-{-
-data SomeSlice i t x where
-  SomeSlice :: (Attestable n, Sliced (i n) x) => Slice t (i n) x -> SomeSlice i t x
-
-ssSlice :: SomeSlice i t x -> x
-ssSlice (SomeSlice s) = slice s
-
-data SomeSliceConsZero i t n x where
-  SomeSliceFromConsZero
-    :: Diagram (Chain To) (n+1) n (SomeSlice i From x)
-    -> SomeSliceConsZero i From n x
-  SomeSliceToConsZero
-    :: Diagram (Chain From) (n+1) n (SomeSlice i To x)
-    -> SomeSliceConsZero i To n x
-    
-data SomeSliceDiagram i t n m x where
-  SomeSliceFromDiagram :: SomeSlice i From x -> SomeSliceDiagram i (Parallel LeftToRight) N2 N1 x
-  SomeSliceToDiagram   :: SomeSlice i To x -> SomeSliceDiagram i (Parallel RightToLeft) N2 N1 x
-
-instance Diagrammatic (SomeSliceDiagram i) where
-  diagram (SomeSliceFromDiagram (SomeSlice s)) = DiagramParallelLR l r (x:|Nil) where
-    x      = slice s
-    l :> r = orientation x
-  diagram (SomeSliceToDiagram (SomeSlice s))   = DiagramParallelRL l r (x:|Nil) where
-    x      = slice s
-    r :> l = orientation x
-
-data SomeSliceCone i s p d t n m x where
-  SomeSliceFromCone :: Distributive x
-    => SomeSliceConsZero i From N2 x
-    -> SomeSliceCone i Dst Projective (SomeSliceDiagram i) (Parallel LeftToRight) N2 N1 x
-  SomeSliceToCone :: Distributive x
-    => SomeSliceConsZero i To N2 x
-    -> SomeSliceCone i Dst Injective (SomeSliceDiagram i) (Parallel RightToLeft) N2 N1 x
-
-instance Conic (SomeSliceCone i) where
-  cone (SomeSliceFromCone (SomeSliceFromConsZero (DiagramChainTo _ (x:|k:|Nil))))
-    = ConeKernel (SomeSliceFromDiagram x) (ssSlice k)
-
-  cone (SomeSliceToCone (SomeSliceToConsZero (DiagramChainFrom _ (x:|c:|Nil))))
-    = ConeCokernel (SomeSliceToDiagram x) (ssSlice c)
-
-type SomeSliceKernel i  = KernelG (SomeSliceCone i) (SomeSliceDiagram i) N1
-type SomeSliceKernels i = KernelsG (SomeSliceCone i) (SomeSliceDiagram i) N1
-
-ff :: SomeSliceKernels i x -> SomeSliceDiagram i (Parallel LeftToRight) N2 N1 x -> SomeSliceKernel i x
-ff = limes
--}
-
-{-
 --------------------------------------------------------------------------------
--- ConsZero -
+-- ConsecutiveZero -
 
 -- | chain diagrams with consecutive zero-able arrows.
 --
--- __Properties__ Let @'Zero' c@ be in @'Zero' __t__ __n__ __d__@ for a 'Distributive' structure
--- @__d__@, then holds:
+-- __Properties__ Let @'ConsecutiveZero' c@ be in @'ConsecutiveZero' ('Chain' __t__) __m+1 m x@
+-- for a  'Distributive' structure @__x__@, then holds:
 --
 -- (1) If @c@ matches @'DiagramChainTo' _ ds@ then holds:
 -- @d '*' d'@ is 'zero' for all @..d':|'d'..@ in @ds@.
 --
 -- (2) If @c@ matches @'DiagramChainFrom' _ ds@ then holds:
 -- @d' '*' d@ is 'zero' for all @..d':|'d'..@ in @ds@.
-newtype ConsZero t n d = ConsZero (Diagram (Chain t) (n+3) (n+2) d)
-  deriving (Show,Eq)
+data ConsecutiveZero t n m x where
+  ConsecutiveZero :: Diagram (Chain t) (m+1) m x -> ConsecutiveZero (Chain t) (m+1) m x
+  
+deriving instance (Show x, ShowPoint x) => Show (ConsecutiveZero t n m x)
+deriving instance (Eq x, EqPoint x) => Eq (ConsecutiveZero t n m x)
 
+instance Diagrammatic ConsecutiveZero where
+  diagram (ConsecutiveZero c) = c
+
+--------------------------------------------------------------------------------
+-- cnzMapCov -
+
+cnzMapCov :: HomDistributiveDisjunctive h
+  => Variant2 Covariant h x y -> ConsecutiveZero t n m x -> ConsecutiveZero t n m y
+cnzMapCov h (ConsecutiveZero c) = ConsecutiveZero (dgMapCov h c)
+
+--------------------------------------------------------------------------------
+-- cnzMapCnt -
+
+cnzMapCnt :: HomDistributiveDisjunctive h
+  => Variant2 Contravariant h x y -> ConsecutiveZero t n m x -> ConsecutiveZero (Dual t) n m y
+cnzMapCnt h (ConsecutiveZero c) = ConsecutiveZero (dgMapCnt h c)
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (ConsecutiveZero t n m) = ConsecutiveZero (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- cnzMapS -
+
+cnzMapS :: (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
+  => h x y -> SDualBi (ConsecutiveZero t n m) x -> SDualBi (ConsecutiveZero t n m) y
+cnzMapS = vmapBi cnzMapCov cnzMapCov cnzMapCnt cnzMapCnt
+
+--------------------------------------------------------------------------------
+-- Functorial -
+
+instance (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
+  => ApplicativeG (SDualBi (ConsecutiveZero t n m)) h (->) where
+  amapG = cnzMapS
+
+instance
+  ( HomDistributiveDisjunctive h, t ~ Dual (Dual t)
+  , FunctorialOriented h
+  )
+  => FunctorialG (SDualBi (ConsecutiveZero t n m)) h (->)
+
+--------------------------------------------------------------------------------
+-- prpConsecutiveZero -
+-- | validity according to 'ConsecutiveZero' for @'Chain' 'To'@.
+relConsecutiveZeroChainTo :: Distributive x => ConsecutiveZero (Chain To) n m x -> Statement
+relConsecutiveZeroChainTo (ConsecutiveZero c@(DiagramChainTo _ ds)) = And [valid c, vldCnz 0 ds] where
+  
+  vldCnz :: Distributive x => N -> FinList n x -> Statement
+  vldCnz _ Nil         = SValid
+  vldCnz _ (_:|Nil)    = SValid
+  vldCnz i (d:|d':|ds) = And [ isZero (d * d') :?> Params ["i":=show i, "d":=show d, "d'":=show d']
+                             , vldCnz (succ i) (d':|ds)
+                             ] 
+-- | validity according to 'ConsecutiveZero'.
+relConsecutiveZero :: Distributive x => ConsecutiveZero t n m x -> Statement
+relConsecutiveZero c@(ConsecutiveZero (DiagramChainTo _ _))   = relConsecutiveZeroChainTo c
+relConsecutiveZero c@(ConsecutiveZero (DiagramChainFrom _ _)) = relConsecutiveZeroChainTo c' where
+  Contravariant2 i = toDualOpDst
+  SDualBi (Left1 c') = amapG i (SDualBi (Right1 c))
+
+-- | validity according to 'ConsecutiveZero'.
+prpConsecutiveZero :: Distributive x => ConsecutiveZero t n m x -> Statement
+prpConsecutiveZero c = Prp "ConsecutiveZero" :<=>: relConsecutiveZero c
+
+instance Distributive x => Validable (ConsecutiveZero t n m x) where
+  valid = prpConsecutiveZero
+  
+{-
 --------------------------------------------------------------------------------
 -- ConsZero - Duality -
 
