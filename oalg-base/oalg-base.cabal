@@ -166,7 +166,7 @@ library
       OAlg.Limes.Definition.Duality
       OAlg.Limes.Definition.Proposition
       OAlg.Limes.EqualizersAndCoequalizers
-      OAlg.Limes.Exact.ConsZero
+      OAlg.Limes.Exact.ConsecutiveZero
       OAlg.Limes.Exact.Deviation
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
