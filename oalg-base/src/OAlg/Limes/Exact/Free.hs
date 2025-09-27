@@ -47,7 +47,7 @@ import OAlg.Limes.Exact.ConsecutiveZero
 
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
-
+{-
 --------------------------------------------------------------------------------
 -- ConsecutiveZeroFree -
 
@@ -120,3 +120,4 @@ varianceFree kers cokers cfTo = VarianceFree (Variance trf ker coker) fsTop fsBo
   fb' = case universalCone ker of ConicFreeTip ft _ -> SomeFree ft
   
   coker = case fb' of SomeFree k' -> limes cokers (SomeFreeSliceCokernel (SliceTo k' w'))
+-}

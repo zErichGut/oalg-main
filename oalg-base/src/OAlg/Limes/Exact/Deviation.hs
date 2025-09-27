@@ -21,6 +21,9 @@
 module OAlg.Limes.Exact.Deviation
   (
 
+    -- * Variance
+    Variance(..)-- , variances, variance
+  -- , vrcTop, vrcBottom
 {-
     -- * Deviation
     Deviation, deviations, deviation
@@ -28,9 +31,6 @@ module OAlg.Limes.Exact.Deviation
     -- * Deviation Trafo
   , DeviationTrafo, deviationTrafos, deviationTrafo
 
-    -- * Variance
-  , Variance(..), variances, variance
-  , vrcTop, vrcBottom
 
     -- ** Duality
   , coVariance, coVarianceInv, vrcFromOpOp
@@ -99,15 +99,15 @@ import OAlg.Data.Symbol
 --     by @ker i@ and @d (i+1)@.
 --
 -- @
---            d i          d (i+1)               
--- c :  a <------------ b <------------ c 
---                      ^              || 
---                      |              || 
---                      | ker i        || one
---                      |              || 
---                      ^              || 
---      a'<<----------- b'<------------ c 
---           coker i        d' (i+1)
+--                d i          d (i+1)               
+-- c :  ... a <------------ b <------------ c ...
+--                          ^              || 
+--                          |              || 
+--                          | ker i        || one
+--                          |              || 
+--                          ^              || 
+--          a'<<----------- b'<------------ c 
+--               coker i        d' (i+1)
 -- @
 --
 -- (2) If @t@ matches @'ConsecutiveZero' ('DiagramChainFrom' _ _)@ then holds (see diagram below):
@@ -118,15 +118,15 @@ import OAlg.Data.Symbol
 --     by @coker i@ and @d (i+1)@.
 --
 -- @
---            d i          d (i+1)               
--- c :  a ------------> b ------------> c 
---                      v              || 
---                      |              || 
---                      | coker i      || one
---                      v              || 
---                      v              || 
---      a'>>----------> b'------------> c 
---           ker i          d' (i+1)
+--                d i          d (i+1)               
+-- c :  ... a ------------> b ------------> c ...
+--                          v              || 
+--                          |              || 
+--                          | coker i      || one
+--                          v              || 
+--                          v              || 
+--          a'>>----------> b'------------> c 
+--               ker i          d' (i+1)
 -- @
 data Variance t k c d n x where
   Variance
@@ -224,23 +224,20 @@ vrcTail (Variance c vs) = Variance (cnzTail c) (tail vs)
 
 relVarianceTo ::
   ( Distributive x
-  , Typeable d
-  , Conic k, Conic c
+  
+    -- d
   , Diagrammatic d
+  , Typeable d
+  , Entity (d (Parallel LeftToRight) N2 N1 x)
+  , Entity (d (Parallel RightToLeft) N2 N1 x)
 
     -- k
-  , Show (d (Parallel LeftToRight) N2 N1 x)
-  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Eq (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , Conic k
+  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
 
     -- c
-  , Show (d (Parallel RightToLeft) N2 N1 x)
-  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , Eq (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Conic c
+  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
   
   )
   => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
@@ -269,36 +266,26 @@ relVarianceTo xeck xecfk xecc xecfc i
 
 relVariance ::
   ( Distributive x
+
+    -- d
   , Typeable d
+  , Entity (d (Parallel LeftToRight) N2 N1 x)
+  , Entity (d (Parallel RightToLeft) N2 N1 x)  
+  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
 
     -- k
-  , Show (d (Parallel LeftToRight) N2 N1 x), Show (d (Parallel LeftToRight) N2 N1 (Op x))
-  , Show (d (Parallel RightToLeft) N2 N1 (Op x))
-  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Eq (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-
-    -- c
-  , Show (d (Parallel RightToLeft) N2 N1 x)
-  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , Show (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))
-  , Show (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
-  
-  , Eq (d (Parallel RightToLeft) N2 N1 x)
-  , Eq (d (Parallel LeftToRight) N2 N1 (Op x))
-  , Eq (d (Parallel RightToLeft) N2 N1 (Op x))
-  
-  , Validable (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (d (Parallel LeftToRight) N2 N1 (Op x))
-  , Validable (d (Parallel RightToLeft) N2 N1 (Op x))
-  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , Validable (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))
-  , Validable (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
-  
+  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
   , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
+  
+  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
   , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
+  
+    -- c
+  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
   , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
+
+  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
   , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
   
   )
@@ -322,34 +309,69 @@ relVariance xeck xecfk xecc xecfc v@(Variance (ConsecutiveZero (DiagramChainFrom
   SDualBi (Left1 xecfc') = xecfMapS i (SDualBi (Right1 xecfk))
   
 
-{-
-relVarianceToN ::
+prpVariance ::
   ( Distributive x
-  , Typeable n, Typeable d
-  , Conic k, Conic c
-  , Diagrammatic d
+
+    -- d
+  , Typeable d
+  , Entity (d (Parallel LeftToRight) N2 N1 x)
+  , Entity (d (Parallel RightToLeft) N2 N1 x)  
+  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
 
     -- k
-  , Show (d (Parallel LeftToRight) N2 N1 x)
-  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Eq (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-
+  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
+  
+  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
+  , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
+  
     -- c
-  , Show (d (Parallel RightToLeft) N2 N1 x)
-  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , Eq (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
+
+  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
+  , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
   
   )
   => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
-  -> N -> Variance To k c d n x -> Statement
--}  
+  -> Variance t k c d n x -> Statement
+prpVariance xeck xecfk xecc xecfc v = Prp "Variance"
+  :<=>: relVariance xeck xecfk xecc xecfc v
+
+{-
+instance
+  ( Distributive x
+
+    -- d
+  , Typeable d
+  , Entity (d (Parallel LeftToRight) N2 N1 x)
+  , Entity (d (Parallel RightToLeft) N2 N1 x)  
+  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
+
+    -- k
+  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
+  
+  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
+  , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
+  
+    -- c
+  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
+
+  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
+  , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
+  
+  )
+  => Validable (Variance t k c d n x) where
+  valid = prpVariance xStandrdEligibleConeG xStandrdEligibleConeFactorG
+                      xStandrdEligibleConeG xStandrdEligibleConeFactorG
+-}                      
 {-
 --------------------------------------------------------------------------------
 -- Variance -

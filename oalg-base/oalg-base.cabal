@@ -168,6 +168,7 @@ library
       OAlg.Limes.EqualizersAndCoequalizers
       OAlg.Limes.Exact.ConsecutiveZero
       OAlg.Limes.Exact.Deviation
+      OAlg.Limes.Exact.Free
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
       OAlg.Limes.Limits.Core
