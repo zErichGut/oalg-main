@@ -12,6 +12,7 @@
 module OAlg.Limes.Cone
   ( module Def
   , module Cnc
+  , module Dlt
   , module Str
   , module Prs
   ) where
@@ -19,4 +20,5 @@ module OAlg.Limes.Cone
 import OAlg.Limes.Cone.Definition as Def
 import OAlg.Limes.Cone.Structure as Str
 import OAlg.Limes.Cone.Conic as Cnc
+import OAlg.Limes.Cone.Duality as Dlt
 import OAlg.Limes.Perspective as Prs

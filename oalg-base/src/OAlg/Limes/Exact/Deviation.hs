@@ -10,8 +10,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 
--- {-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Limes.Exact.Deviation
 -- Description : measuring the deviation of exactness.
@@ -22,6 +20,7 @@
 -- measuring the deviation exactness.
 module OAlg.Limes.Exact.Deviation
   (
+    Variance(..)
 {-
     -- * Deviation
     Deviation, deviations, deviation
@@ -44,15 +43,17 @@ module OAlg.Limes.Exact.Deviation
   , coVarianceTrafo, coVarianceTrafoInv, vrctFromOpOp
 -}
     -- * Proposition
-    prpDeviationOrntSymbol
+  , prpDeviationOrntSymbol
 
   ) where
 
-import OAlg.Prelude
-
-{-
 import Data.Typeable
 
+import OAlg.Prelude
+
+import OAlg.Category.SDuality
+
+import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -62,12 +63,15 @@ import OAlg.Structure.Distributive
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
+import OAlg.Entity.Slice
+
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
-import OAlg.Limes.Exact.ConsZero
+import OAlg.Limes.Exact.ConsecutiveZero
 
 
 import OAlg.Data.Symbol
@@ -76,75 +80,193 @@ import OAlg.Data.Symbol
 -- Variance -
 
 -- | measuring the 'deviation' of two consecutive zero-able arrows of being exact accordind to
--- the 'variance' of a 'ConsZero'.
+-- the 'variance' of a 'ConsecutiveZero'.
 --
--- __Properties__ Let @'Variance' t ker coker@ be in @t'Variance' __t__ __d__@ for a 'Distributive'
--- structure @__d__@, then holds:
+-- __Properties__ Let @'Variance' t ker coker@ be in @t'Variance' __t k c d n x__@ for a 'Distributive'
+-- structure @__x__@, then holds:
 --
 -- (1) If @'end' t@ matches @'ConsZero' ('DiagramChainTo' _ _)@ then holds (see diagram below):
 --
---      (1) @ker@ is the kernel of @v@.
+--      (1) @ker@ is a kernel of @v@.
 --
---      (2) @t1@ is the factor of the universal cone of @ker@.
+--      (2) @t 1@ is the factor of the universal cone of @ker@.
 --
---      (3) @t2@ is 'one'.
+--      (3) @t i@ is 'one' for @2 '<=' i@,
 --
---      (4) @w'@ is the universal factor of @w '*' t2@.
+--      (4) @w'@ is the universal factor given by @w@.
 --
---      (5) @coker@ is the cokernel of @w'@.
+--      (5) @coker@ is a cokernel of @w'@.
 --
 --      (6) @v'@ is the factor of the universal cone of @coker@.
 --
---      (7) @t0@ is the universal arrow of @v '*' t1@ and hence 'zero'.
+--      (7) @t 0@ is the universal factor given by @v '*' t 1@ and hence 'zero'.
 --
 -- @
---                                  v              w
--- top:      end t         a <------------ b <------------ c
---             ^           ^               ^              ||
---             |           |               |              ||
---           t |           | t0 = 0        | t1 = ker v   || t2 = one c
---             |           |               |              ||
---             |           |               ^              ||
--- bottom:  start t        a'<<----------- b'<------------ c
+--                                  v              w               
+-- top:      end t         a <------------ b <------------ c <------------ d ...
+--             ^           ^               ^              ||              ||
+--             |           |               |              ||              ||
+--           t |           | t 0 = 0       | t 1 = ker v  || t 2 = one c  || t 3 = one d ...
+--             |           |               |              ||              ||
+--             |           |               ^              ||              || 
+-- bottom:  start t        a'<<----------- b'<------------ c <------------ d ...
 --                           v' = coker w'         w'
 -- @
 --
 -- (2) If @'start' t@ matches @'ConsZero' ('DiagramChainFrom' _ _)@ then holds (see diagram below):
 --
---      (1) @coker@ is the cokernel of @v@.
+--      (1) @coker@ is a cokernel of @v@.
 --
---      (2) @t1@ is the factor of the universal cone of @coker@.
+--      (2) @t 1@ is the factor of the universal cone of @coker@.
 --
---      (3) @t2@ is 'one'.
+--      (3) @t i@ is 'one' for @2 '<=' i@,
 --
---      (4) @w'@ is the universal factor of @t2 '*' w@.
+--      (4) @w'@ is the universal factor given by of @w@.
 --
---      (5) @ker@ is the kernel of @w'@.
+--      (5) @ker@ is a kernel of @w'@.
 --
 --      (6) @v'@ is the factor of the universal cone of @ker@.
 --
---      (7) @t0@ is the universal arrow of @t1 '*' v@ and hence 'zero'.
+--      (7) @t 0@ is the universal factor given by @t 1 '*' v@ and hence 'zero'.
 --
 -- @
 --                                  v              w
--- top:      sart t        a ------------> b ------------> c
---             |           |               |              ||
---             |           |               |              ||
---           t |           | t0 = 0        | t1 = coker v || t2 = one c
---             |           |               v              ||
---             v           v               v              ||
--- bottom:   end t         a'>-----------> b'------------> c
+-- top:      sart t        a ------------> b ------------> c ------------> d ...
+--             |           |               |              ||              ||
+--             |           |               |              ||              ||
+--           t |           | t0 = 0        | t1 = coker v || t2 = one c   || t3 = one d ...
+--             |           |               v              ||              ||
+--             v           v               v              ||              ||
+-- bottom:   end t         a'>-----------> b'------------> c ------------> d ...
 --                           v' = ker w'         w'
 -- @
-data Variance t k c d where
+data Variance t k c d n x where
   Variance
-    :: ConsZeroTrafo t N0 d
-    -> GenericKernel k N1 d -> GenericCokernel c N1 d
-    -> Variance t k c d
--}
+    :: ConsecutiveZeroTrafo t n x
+    -> KernelG k d N1 x
+    -> CokernelG c d N1 x
+    -> Variance t k c d n x
 
+--------------------------------------------------------------------------------
+-- vrcMapCov -
 
+vrcMapCov ::
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Covariant (Inv2 h) x y -> Variance t k c d n x -> Variance t k c d n y
+vrcMapCov i (Variance t ker coker) = Variance t' ker' coker' where
+  t'     = cnztMapCov i t
+  ker'   = lmMapCov i ker
+  coker' = lmMapCov i coker
 
+--------------------------------------------------------------------------------
+-- vrcMapCnt -
+
+vrcMapCnt ::
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Contravariant (Inv2 h) x y -> Variance t k c d n x -> Variance (Dual t) c k d n y
+vrcMapCnt i (Variance t ker coker) = Variance t' ker' coker' where
+  t'     = cnztMapCnt i t
+  ker'   = lmMapCnt i coker
+  coker' = lmMapCnt i ker
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (Variance t k c d n) = Variance (Dual t) c k d n
+
+--------------------------------------------------------------------------------
+-- vrcMapS -
+
+vrcMapS :: 
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
+  , t ~ Dual (Dual t)
+  )
+  => Inv2 h x y -> SDualBi (Variance t k c d n) x  -> SDualBi (Variance t k c d n) y
+vrcMapS = vmapBi vrcMapCov vrcMapCov vrcMapCnt vrcMapCnt
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
+  , t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (Variance t k c d n)) (Inv2 h) (->) where
+  amapG = vrcMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (Variance t k c d n)) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
+-- prpVariance -
+
+relVarianceTo ::
+  ( Distributive x
+  , Typeable n, Typeable d
+  , Conic k, Conic c
+  , Diagrammatic d
+
+    -- k
+  , Show (d (Parallel LeftToRight) N2 N1 x)
+  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , Eq (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+
+    -- c
+  , Show (d (Parallel RightToLeft) N2 N1 x)
+  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Eq (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  
+  )
+  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> Variance To k c d n x -> Statement
+relVarianceTo xeck xecfk xecc xecfc
+  (Variance t@(ConsecutiveZeroTrafo (DiagramTrafo (DiagramChainTo _ _) _ _)) ker coker)
+  = And [ valid t
+        , Label "ker"   :<=>: prpLimes xeck xecfk ker
+        , Label "coker" :<=>: prpLimes xecc xecfc coker
+        , Label "1" :<=>: (kernelDiagram v == diagram (universalDiagram ker))
+                            :?> Params ["v":=show v, "ker":=show ker]
+        ] where
+  
+  ConsecutiveZeroTrafo
+    (DiagramTrafo
+      (DiagramChainTo _ _)         -- bottom
+      (DiagramChainTo _ (v:|w:|_)) -- top
+      (t0:|t1:|ts)
+    ) = t
 {-
 --------------------------------------------------------------------------------
 -- Variance - Duality -

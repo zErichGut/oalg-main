@@ -57,7 +57,7 @@ import OAlg.Limes.KernelsAndCokernels
 
 -- | predicate for splitable slices.
 --
---  __Propterties__ Let @__d__@ be 'Oriented' and @'Sliced' (__ i__ __k__) __d__@ for all
+--  __Propterties__ Let @__d__@ be 'Oriented' and @'Sliced' (__ i k__) __d__@ for all
 --  @__k__@, then holds:
 --
 --  (1) Let @'Splitable' splt@ be in @'Splitable' 'From' __i__ __d__@ then holds:
@@ -76,7 +76,6 @@ newtype Splitable s i d
 split :: (Attestable k, Sliced (i k) d)
   => Splitable s i d -> Slice s (i k) d -> FinList k (Slice s (i N1) d)
 split (Splitable s) = s
-
 
 --------------------------------------------------------------------------------
 -- FinitePresentation -
@@ -101,7 +100,7 @@ split (Splitable s) = s
 --
 -- (3) @'KenrelSliceFromSomeFreeTip' k'' k' ker@ is 'valid'.
 --
--- (4) For all @h@ in @'Slice' 'From' (__i__ __k__) a@ with
+-- (4) For all @h@ in @'Slice' 'From' (__i k__) a@ with
 -- @'end' h '==' p@ holds:
 --
 --     (1) @lft h@ is 'valid'.
