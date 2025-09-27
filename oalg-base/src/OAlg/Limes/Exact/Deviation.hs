@@ -20,7 +20,7 @@
 -- measuring the deviation exactness.
 module OAlg.Limes.Exact.Deviation
   (
-    Variance(..)
+
 {-
     -- * Deviation
     Deviation, deviations, deviation
@@ -41,18 +41,20 @@ module OAlg.Limes.Exact.Deviation
 
     -- ** Duality
   , coVarianceTrafo, coVarianceTrafoInv, vrctFromOpOp
--}
+
     -- * Proposition
   , prpDeviationOrntSymbol
-
+-}
   ) where
 
 import Data.Typeable
+import Data.List as L ((++))
 
 import OAlg.Prelude
 
 import OAlg.Category.SDuality
 
+import OAlg.Data.Either
 import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
@@ -62,9 +64,10 @@ import OAlg.Structure.Distributive
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
-import OAlg.Entity.FinList
+import OAlg.Entity.FinList as F
 import OAlg.Entity.Slice
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
@@ -76,6 +79,278 @@ import OAlg.Limes.Exact.ConsecutiveZero
 
 import OAlg.Data.Symbol
 
+
+--------------------------------------------------------------------------------
+-- Variance -
+
+-- | measuring the 'deviation' of a consecutive zero-able chain of being exact accordind to
+-- the 'variance'.
+--
+-- __Properties__ Let @'Variance' c vs@ be in @t'Variance' __t k c d n x__@ for a 'Distributive'
+-- structure @__x__@, then
+-- for all @(ker 0, coker 0), (ker 1, coker 1) .. (ker i,coker i) .. (ker n,coker n)@ in @vs@,
+-- and @d 0, d 1 .. d i, d (i+1) .. d (n+1)@ in @'cnzArrows' t@ holds:
+--
+-- (1) If @t@ matches @'ConsecutiveZero' ('DiagramChainTo' _ _)@ then holds (see diagram below):
+--
+--     (1) @ker i@ is a kernel of @d i@.
+--
+--     (2) @coker i@ is a cokernel of @d' (i+1)@, where @d' (i+1)@ is the universal factor given
+--     by @ker i@ and @d (i+1)@.
+--
+-- @
+--            d i          d (i+1)               
+-- c :  a <------------ b <------------ c 
+--                      ^              || 
+--                      |              || 
+--                      | ker i        || one
+--                      |              || 
+--                      ^              || 
+--      a'<<----------- b'<------------ c 
+--           coker i        d' (i+1)
+-- @
+--
+-- (2) If @t@ matches @'ConsecutiveZero' ('DiagramChainFrom' _ _)@ then holds (see diagram below):
+--
+--     (1) @coker i@ is a cokernel of @d i@.
+--
+--     (2) @ker i@ is a kernel of @d' (i+1)@, where @d' (i+1)@ is the universal factor given
+--     by @coker i@ and @d (i+1)@.
+--
+-- @
+--            d i          d (i+1)               
+-- c :  a ------------> b ------------> c 
+--                      v              || 
+--                      |              || 
+--                      | coker i      || one
+--                      v              || 
+--                      v              || 
+--      a'>>----------> b'------------> c 
+--           ker i          d' (i+1)
+-- @
+data Variance t k c d n x where
+  Variance
+    :: ConsecutiveZero t n x
+    -> FinList (n+1) (KernelG k d N1 x, CokernelG c d N1 x)
+    -> Variance t k c d n x
+
+--------------------------------------------------------------------------------
+-- vrcMapCov -
+
+vrcMapCov ::
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Covariant (Inv2 h) x y -> Variance t k c d n x -> Variance t k c d n y
+vrcMapCov i (Variance c vs) = Variance c' vs' where
+  c'  = cnzMapCov i c
+  vs' = amap1 (\(ker,coker) -> (lmMapCov i ker, lmMapCov i coker)) vs
+
+--------------------------------------------------------------------------------
+-- vrcMapCnt -
+
+vrcMapCnt ::
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Contravariant (Inv2 h) x y -> Variance t k c d n x -> Variance (Dual t) c k d n y
+vrcMapCnt i (Variance c vs) = Variance c' vs' where
+  c'  = cnzMapCnt i c
+  vs' = amap1 (\(ker,coker) -> (lmMapCnt i coker, lmMapCnt i ker)) vs
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (Variance t k c d n) = Variance (Dual t) c k d n
+
+--------------------------------------------------------------------------------
+-- vrcMapS -
+
+vrcMapS :: 
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConicBi (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConicBi (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , t ~ Dual (Dual t)
+  )
+  => Inv2 h x y -> SDualBi (Variance t k c d n) x  -> SDualBi (Variance t k c d n) y
+vrcMapS = vmapBi vrcMapCov vrcMapCov vrcMapCnt vrcMapCnt
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , t ~ Dual (Dual t)
+
+  )
+  => ApplicativeG (SDualBi (Variance t k c d n)) (Inv2 h) (->) where
+  amapG = vrcMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (Variance t k c d n)) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
+-- vrcHead -
+
+vrcHead :: Distributive x => Variance t k c d n x -> Variance t k c d N0 x
+vrcHead (Variance c vs) = Variance (cnzHead c) (head vs:|Nil)
+
+--------------------------------------------------------------------------------
+-- vrcTail -
+
+vrcTail :: Distributive x => Variance t k c d (n+1) x -> Variance t k c d n x
+vrcTail (Variance c vs) = Variance (cnzTail c) (tail vs)
+
+--------------------------------------------------------------------------------
+-- prpVariance -
+
+relVarianceTo ::
+  ( Distributive x
+  , Typeable d
+  , Conic k, Conic c
+  , Diagrammatic d
+
+    -- k
+  , Show (d (Parallel LeftToRight) N2 N1 x)
+  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , Eq (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+
+    -- c
+  , Show (d (Parallel RightToLeft) N2 N1 x)
+  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Eq (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  
+  )
+  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> N -> Variance To k c d n x -> Statement
+relVarianceTo xeck xecfk xecc xecfc i
+  v@(Variance c@(ConsecutiveZero (DiagramChainTo _ (f:|g:|ds))) ((ker,coker):|_))
+  = And [ valid c
+        , Label "ker"   :<=>: prpLimes xeck xecfk ker
+        , Label "coker" :<=>: prpLimes xecc xecfc coker        
+        , Label "1" :<=>: (kernelDiagram f == diagram (universalDiagram ker))
+                            :?> Params [("d " L.++ show i):=show f, ("ker" L.++ show i):=show ker]
+        , Label "2" :<=>: (cokernelDiagram g' == diagram (universalDiagram coker))
+                            :?> Params [ ("d' " L.++ show i'):=show g'
+                                       , ("coker" L.++ show i):=show coker
+                                       ]
+        , case ds of
+            Nil    -> SValid
+            _ :| _ -> relVarianceTo xeck xecfk xecc xecfc i' (vrcTail v)
+                        
+
+        ] where g' = universalFactor ker (ConeKernel (universalDiagram ker) g)
+                i' = succ i
+
+relVariance ::
+  ( Distributive x
+  , Typeable d
+
+    -- k
+  , Show (d (Parallel LeftToRight) N2 N1 x), Show (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Show (d (Parallel RightToLeft) N2 N1 (Op x))
+  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , Eq (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+
+    -- c
+  , Show (d (Parallel RightToLeft) N2 N1 x)
+  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Show (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))
+  , Show (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
+  
+  , Eq (d (Parallel RightToLeft) N2 N1 x)
+  , Eq (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Eq (d (Parallel RightToLeft) N2 N1 (Op x))
+  
+  , Validable (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Validable (d (Parallel RightToLeft) N2 N1 (Op x))
+  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Validable (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))
+  , Validable (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
+  
+  , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
+  
+  )
+  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> Variance t k c d n x -> Statement
+relVariance xeck xecfk xecc xecfc v@(Variance (ConsecutiveZero (DiagramChainTo _ _)) _)
+  = relVarianceTo xeck xecfk xecc xecfc 0 v
+
+relVariance xeck xecfk xecc xecfc v@(Variance (ConsecutiveZero (DiagramChainFrom _ _)) _)
+  = relVarianceTo xeck' xecfk' xecc' xecfc' 0 v' where
+  Contravariant2 i       = toDualOpDst
+  
+  SDualBi (Left1 v')     = vrcMapS i (SDualBi (Right1 v))
+  
+  SDualBi (Left1 xeck')  = xecMapS i (SDualBi (Right1 xecc))
+  SDualBi (Left1 xecc')  = xecMapS i (SDualBi (Right1 xeck))
+  SDualBi (Left1 xecfk') = xecfMapS i (SDualBi (Right1 xecfc))
+  SDualBi (Left1 xecfc') = xecfMapS i (SDualBi (Right1 xecfk))
+  
+
+{-
+relVarianceToN ::
+  ( Distributive x
+  , Typeable n, Typeable d
+  , Conic k, Conic c
+  , Diagrammatic d
+
+    -- k
+  , Show (d (Parallel LeftToRight) N2 N1 x)
+  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+  , Eq (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (d (Parallel LeftToRight) N2 N1 x)
+  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
+
+    -- c
+  , Show (d (Parallel RightToLeft) N2 N1 x)
+  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Eq (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (d (Parallel RightToLeft) N2 N1 x)
+  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  
+  )
+  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> N -> Variance To k c d n x -> Statement
+-}  
+{-
 --------------------------------------------------------------------------------
 -- Variance -
 
@@ -91,15 +366,15 @@ import OAlg.Data.Symbol
 --
 --      (2) @t 1@ is the factor of the universal cone of @ker@.
 --
---      (3) @t i@ is 'one' for @2 '<=' i@,
+--      (3) @w'@ is the universal factor given by @w@.
 --
---      (4) @w'@ is the universal factor given by @w@.
+--      (4) @coker@ is a cokernel of @w'@.
 --
---      (5) @coker@ is a cokernel of @w'@.
+--      (5) @v'@ is the factor of the universal cone of @coker@.
 --
---      (6) @v'@ is the factor of the universal cone of @coker@.
+--      (6) @t 0@ is the universal factor given by @v '*' t 1@ and hence 'zero'.
 --
---      (7) @t 0@ is the universal factor given by @v '*' t 1@ and hence 'zero'.
+--      (7) @t i@ is 'one' for @2 '<=' i@,
 --
 -- @
 --                                  v              w               
@@ -119,15 +394,15 @@ import OAlg.Data.Symbol
 --
 --      (2) @t 1@ is the factor of the universal cone of @coker@.
 --
---      (3) @t i@ is 'one' for @2 '<=' i@,
+--      (3) @w'@ is the universal factor given by of @w@.
 --
---      (4) @w'@ is the universal factor given by of @w@.
+--      (4) @ker@ is a kernel of @w'@.
 --
---      (5) @ker@ is a kernel of @w'@.
+--      (5) @v'@ is the factor of the universal cone of @ker@.
 --
---      (6) @v'@ is the factor of the universal cone of @ker@.
+--      (6) @t 0@ is the universal factor given by @t 1 '*' v@ and hence 'zero'.
 --
---      (7) @t 0@ is the universal factor given by @t 1 '*' v@ and hence 'zero'.
+--      (7) @t i@ is 'one' for @2 '<=' i@,
 --
 -- @
 --                                  v              w
@@ -146,82 +421,6 @@ data Variance t k c d n x where
     -> KernelG k d N1 x
     -> CokernelG c d N1 x
     -> Variance t k c d n x
-
---------------------------------------------------------------------------------
--- vrcMapCov -
-
-vrcMapCov ::
-  ( HomDistributiveDisjunctive h
-  , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  )
-  => Variant2 Covariant (Inv2 h) x y -> Variance t k c d n x -> Variance t k c d n y
-vrcMapCov i (Variance t ker coker) = Variance t' ker' coker' where
-  t'     = cnztMapCov i t
-  ker'   = lmMapCov i ker
-  coker' = lmMapCov i coker
-
---------------------------------------------------------------------------------
--- vrcMapCnt -
-
-vrcMapCnt ::
-  ( HomDistributiveDisjunctive h
-  , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  )
-  => Variant2 Contravariant (Inv2 h) x y -> Variance t k c d n x -> Variance (Dual t) c k d n y
-vrcMapCnt i (Variance t ker coker) = Variance t' ker' coker' where
-  t'     = cnztMapCnt i t
-  ker'   = lmMapCnt i coker
-  coker' = lmMapCnt i ker
-
---------------------------------------------------------------------------------
--- Duality -
-
-type instance Dual1 (Variance t k c d n) = Variance (Dual t) c k d n
-
---------------------------------------------------------------------------------
--- vrcMapS -
-
-vrcMapS :: 
-  ( HomDistributiveDisjunctive h
-  , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
-  , t ~ Dual (Dual t)
-  )
-  => Inv2 h x y -> SDualBi (Variance t k c d n) x  -> SDualBi (Variance t k c d n) y
-vrcMapS = vmapBi vrcMapCov vrcMapCov vrcMapCnt vrcMapCnt
-
---------------------------------------------------------------------------------
--- FunctorialG -
-
-instance
-  ( HomDistributiveDisjunctive h
-  , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
-  , t ~ Dual (Dual t)
-  )
-  => ApplicativeG (SDualBi (Variance t k c d n)) (Inv2 h) (->) where
-  amapG = vrcMapS
-
-instance
-  ( HomDistributiveDisjunctive h
-  , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
-  , t ~ Dual (Dual t)
-  )
-  => FunctorialG (SDualBi (Variance t k c d n)) (Inv2 h) (->)
 
 --------------------------------------------------------------------------------
 -- prpVariance -
@@ -259,115 +458,21 @@ relVarianceTo xeck xecfk xecc xecfc
         , Label "coker" :<=>: prpLimes xecc xecfc coker
         , Label "1" :<=>: (kernelDiagram v == diagram (universalDiagram ker))
                             :?> Params ["v":=show v, "ker":=show ker]
+        , Label "2" :<=>: (t1 == kernelFactor (universalCone ker))
+                            :?> Params ["t 1":=show t1, "ker":=show ker]
+        , Label "3" :<=>: (w' == universalFactor ker (ConeKernel (universalDiagram ker) w))
+                            :?> Params ["w":=show w, "w'":=show w', "ker":=show ker]
         ] where
   
   ConsecutiveZeroTrafo
     (DiagramTrafo
-      (DiagramChainTo _ _)         -- bottom
-      (DiagramChainTo _ (v:|w:|_)) -- top
+      (DiagramChainTo _ (v':|w':|_)) -- bottom
+      (DiagramChainTo _ (v :|w :|_)) -- top
       (t0:|t1:|ts)
     ) = t
-{-
---------------------------------------------------------------------------------
--- Variance - Duality -
 
-type instance Dual (Variance t k c d) = Variance (Dual t) c k (Op d)
-
-{-
-coVariance :: (Distributive d, OpDualisable k Dst, OpDualisable c Dst)
-  => OpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1)
-  -> OpDuality c Dst (GenericCokernel c N1) (GenericKernel c N1)
-  -> Variance t k c d -> Dual (Variance t k c d)
-coVariance kOp cOp (Variance t k c) = Variance (coConsZeroTrafo t) c' k' where
-  k' = opdToOp ConeStructDst kOp k
-  c' = opdToOp ConeStructDst cOp c
-
-
-coVariance :: (Distributive d, Dualisable1 Dst k, Dualisable1 Dst c)
-  => Variance t k c d -> Dual (Variance t k c d)
-coVariance (Variance t k c) = Variance (coConsZeroTrafo t) k' c'  where
-  k' = toDual1 (sDst c) c
-  c' = toDual1 (sDst k) k
-
-  sDst :: Distributive d => p d -> Struct Dst d
-  sDst _ = Struct
-
-
-
-vrcFromOpOp :: (Distributive d, Reflexive1 Dst k, Reflexive1 Dst c)
-  => Variance t k c (Op (Op d)) -> Variance t k c d
-vrcFromOpOp (Variance t k c) = Variance t' k' c' where
-  t' = cnztFromOpOp t
-  k' = fromOpOp1 (sDst k) k
-  c' = fromOpOp1 (sDst c) c
-
-  sDst :: Distributive d => p (Op (Op d)) -> Struct Dst d
-  sDst _ = Struct
-
-
-coVarianceInv :: ( Distributive d
-                 , Reflexive1 Dst k, Reflexive1 Dst c
-                 , Dualisable1 Dst (Dual c), Dualisable1 Dst (Dual k)
-                 , Dual (Dual k) ~ k, Dual (Dual c) ~ c
-                 )
-  => Dual (Dual t) :~: t -> Dual (Variance t k c d) -> Variance t k c d
-coVarianceInv Refl = vrcFromOpOp . coVariance
 -}
-
-class OpDualityKernel k where
-  opdKernel :: OpDuality k Dst (GenericKernel k N1) (GenericCokernel k N1)
-
-instance OpDualityKernel Limes where opdKernel = krnLimesDuality
-  
-class OpDualityCokernel c where
-  opdCokernel :: OpDuality c Dst (GenericCokernel c N1) (GenericKernel c N1)
-
-instance OpDualityCokernel Limes where opdCokernel = cokrnLimesDuality
-  
---------------------------------------------------------------------------------
--- Variance - Validable -
-
-instance ( Distributive d, Universal k, Universal c
-         , Validable (GenericKernel k N1 d), Validable (GenericCokernel c N1 d)
-         , OpDualisable k Dst, OpDualisable c Dst
-         , OpDualityKernel k, OpDualityCokernel c
-         )
-  => Validable (Variance t k c d) where
-  valid v@(Variance t k c) = Label "Variance" :<=>:
-    And [ valid t
-        , valid k
-        , valid c
-        , case t of
-            ConsZeroTrafo _ (ConsZero (DiagramChainTo _ _)) _
-              -> Label "To" :<=>: vldVarianceTo v
-            ConsZeroTrafo (ConsZero (DiagramChainFrom _ _)) _ _
-              -> Label "From" :<=>:  vldVarianceTo $ coVariance opdKernel opdCokernel v
-        ]
-    where
-      
-      vldVarianceTo :: (Distributive d, Universal k, Universal c) => Variance To k c d -> Statement
-      vldVarianceTo (Variance t@(ConsZeroTrafo _ _ ts) ker coker)
-        = And [ Label "1" :<=>: (v == uKer) :?> Params ["v":=show v]
-              , Label "2" :<=>: (t1 == fKer) :?> Params ["t1":=show t1]
-              , Label "3" :<=>: isOne t2 :?> Params ["t2":=show t2]
-              , Label "4" :<=>: (w' == uw) :?> Params ["w'":=show w']
-              , Label "5" :<=>: (w' == uCoker) :?> Params ["w'":=show w']
-              , Label "6" :<=>: (v' == fCoker) :?> Params ["v'":=show v']
-              , Label "7" :<=>: (t0 == uv' && isZero t0) :?> Params ["t0":=show t0]
-              ]
-        where
-          ConsZero (DiagramChainTo _ (v:|w:|Nil))   = end t
-          ConsZero (DiagramChainTo _ (v':|w':|Nil)) = start t
-          t0:|t1:|t2:|Nil = ts
-
-          ConeKernel dKer@(DiagramParallelLR _ _ (uKer:|Nil)) fKer = universalCone ker
-          ConeCokernel dCoker@(DiagramParallelRL _ _ (uCoker:|Nil)) fCoker
-            = universalCone coker
-
-          uw  = universalFactor ker (ConeKernel dKer (w * t2))
-
-          uv' = universalFactor coker (ConeCokernel dCoker (v * t1))
-
+{-
 --------------------------------------------------------------------------------
 -- vrcTop -
 

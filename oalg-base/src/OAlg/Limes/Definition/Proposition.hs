@@ -24,16 +24,17 @@ module OAlg.Limes.Definition.Proposition
 
     -- * X
   , XEligibleConeG(..), xec
-  , XStandardEligibleConeG(..), XStandardEligibleCone
+  , xecMapS, xecMapCov, xecMapCnt
   , xEligibleConeGOrnt, coXEligibleConeG
-  , xecMapS, xecMapCnt
   , xecDiscrete
+  , XStandardEligibleConeG(..), XStandardEligibleCone
   
   , XEligibleConeFactorG(..), xecf
-  , XStandardEligibleConeFactorG(..), XStandardEligibleConeFactor
+  , xecfMapS, xecfMapCov, xecfMapCnt
   , xEligibleConeFactorGOrnt, coXEligibleConeFactorG
   , xecfOrtSite
   , xecfEligibleCone
+  , XStandardEligibleConeFactorG(..), XStandardEligibleConeFactor
   
   ) where
 
