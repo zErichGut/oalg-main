@@ -21,8 +21,11 @@
 module OAlg.Limes.Exact.Deviation
   (
 
+    -- * Deviation
+    deviation, deviations, Deviation
+
     -- * Variance
-    Variance(..)
+  , Variance(..)
   , vrcMapS, vrcMapCov, vrcMapCnt
   , vrcHead, vrcTail
 
@@ -35,8 +38,6 @@ module OAlg.Limes.Exact.Deviation
     -- , variances, variance
   -- , vrcTop, vrcBottom
 {-
-    -- * Deviation
-    Deviation, deviations, deviation
 
     -- * Deviation Trafo
   , DeviationTrafo, deviationTrafos, deviationTrafo
@@ -442,6 +443,47 @@ vrcConsZeroTrafo v@(Variance (ConsecutiveZero (DiagramChainFrom _ _)) _) = t whe
   SDualBi (Right1 t) = amapG (inv2 i) (SDualBi (Left1 t'))
 
 
+--------------------------------------------------------------------------------
+-- deviation -
+
+-- | the 'deviation' of being exact, i.e. the 'Point' @a'@ in the diagram of 'Variance'.
+deviation ::
+  ( Distributive x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , Typeable t, Typeable n
+  )
+  => Variance t k c d n x -> Point x
+deviation v = case orientation $ vrcConsZeroTrafo v of
+  ConsecutiveZero (DiagramChainTo a' _) :> _   -> a'
+  _ :> ConsecutiveZero (DiagramChainFrom a' _) -> a'
+
+--------------------------------------------------------------------------------
+-- Deviation -
+
+-- | measuring the deviations.
+type Deviation n = Diagram Discrete n N0
+
+--------------------------------------------------------------------------------
+-- deviations -
+
+-- | the induced 'Deviation's.
+deviations :: 
+  ( Distributive x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , Typeable t, Attestable n
+  )
+  => Variance t k c d n x -> Deviation (n+1) x
+deviations v = DiagramDiscrete (dvs attest v) where
+
+  dvs ::
+    ( Distributive x
+    , NaturalKernelCokernel (IsoO Dst Op) k c d
+    , Typeable t, Attestable n
+    )
+    => Any n -> Variance t k c d n x -> FinList (n+1) (Point x)
+  dvs n v = deviation v :| case n of
+    W0   -> Nil
+    SW n -> case ats n of Ats -> dvs n (vrcTail v)
 
 {-
 --------------------------------------------------------------------------------
