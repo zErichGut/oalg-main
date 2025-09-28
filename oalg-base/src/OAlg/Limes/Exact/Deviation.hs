@@ -22,7 +22,17 @@ module OAlg.Limes.Exact.Deviation
   (
 
     -- * Variance
-    Variance(..)-- , variances, variance
+    Variance(..)
+  , vrcMapS, vrcMapCov, vrcMapCnt
+  , vrcHead, vrcTail
+
+  , vrcConsZeroTrafo
+
+  , NaturalKernelCokernel
+  , EntityDiagrammatic
+  , ObjectKernelCokernel
+
+    -- , variances, variance
   -- , vrcTop, vrcBottom
 {-
     -- * Deviation
@@ -41,10 +51,13 @@ module OAlg.Limes.Exact.Deviation
 
     -- ** Duality
   , coVarianceTrafo, coVarianceTrafoInv, vrctFromOpOp
-
-    -- * Proposition
-  , prpDeviationOrntSymbol
 -}
+  
+    -- * Proposition
+
+  , prpVariance  
+  -- , prpDeviationOrntSymbol
+
   ) where
 
 import Data.Typeable
@@ -181,15 +194,23 @@ vrcMapS ::
 vrcMapS = vmapBi vrcMapCov vrcMapCov vrcMapCnt vrcMapCnt
 
 --------------------------------------------------------------------------------
+-- NaturalKernelCokernel -
+
+-- | natural conics for kernels and cokenrels.
+type NaturalKernelCokernel h k c d =
+  ( NaturalConic h k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic h k Dst Injective d (Parallel RightToLeft) N2 N1
+  , NaturalConic h c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic h c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+    
+--------------------------------------------------------------------------------
 -- FunctorialG -
 
 instance
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalKernelCokernel (Inv2 h) k c d
   , t ~ Dual (Dual t)
 
   )
@@ -199,10 +220,7 @@ instance
 instance
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h
-  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConic (Inv2 h) k Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
-  , NaturalConic (Inv2 h) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalKernelCokernel (Inv2 h) k c d
   , t ~ Dual (Dual t)
   )
   => FunctorialG (SDualBi (Variance t k c d n)) (Inv2 h) (->)
@@ -219,6 +237,28 @@ vrcHead (Variance c vs) = Variance (cnzHead c) (head vs:|Nil)
 vrcTail :: Distributive x => Variance t k c d (n+1) x -> Variance t k c d n x
 vrcTail (Variance c vs) = Variance (cnzTail c) (tail vs)
 
+--------------------------------------------------------------------------------
+-- ObjectKernelCokernel -
+
+type ObjectKernelCokernel k c d x =
+  ( Diagrammatic d
+  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)  
+  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
+  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
+  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
+  )
+
+--------------------------------------------------------------------------------
+-- EntityDiagrammatic -
+
+type EntityDiagrammatic d x =
+  ( Typeable d
+  , Entity (d (Parallel LeftToRight) N2 N1 x)
+  , Entity (d (Parallel RightToLeft) N2 N1 x)  
+  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
+  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
+  )
+  
 --------------------------------------------------------------------------------
 -- prpVariance -
 
@@ -266,28 +306,9 @@ relVarianceTo xeck xecfk xecc xecfc i
 
 relVariance ::
   ( Distributive x
-
-    -- d
-  , Typeable d
-  , Entity (d (Parallel LeftToRight) N2 N1 x)
-  , Entity (d (Parallel RightToLeft) N2 N1 x)  
-  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
-  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
-
-    -- k
-  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
-  
-  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
-  , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
-  
-    -- c
-  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
-
-  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
-  , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
-  
+  , EntityDiagrammatic d x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , ObjectKernelCokernel k c d x
   )
   => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
@@ -311,28 +332,9 @@ relVariance xeck xecfk xecc xecfc v@(Variance (ConsecutiveZero (DiagramChainFrom
 
 prpVariance ::
   ( Distributive x
-
-    -- d
-  , Typeable d
-  , Entity (d (Parallel LeftToRight) N2 N1 x)
-  , Entity (d (Parallel RightToLeft) N2 N1 x)  
-  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
-  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
-
-    -- k
-  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
-  
-  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
-  , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
-  
-    -- c
-  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
-
-  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
-  , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
-  
+  , EntityDiagrammatic d x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , ObjectKernelCokernel k c d x
   )
   => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
@@ -372,6 +374,75 @@ instance
   valid = prpVariance xStandrdEligibleConeG xStandrdEligibleConeFactorG
                       xStandrdEligibleConeG xStandrdEligibleConeFactorG
 -}                      
+
+--------------------------------------------------------------------------------
+-- vrcConsZeroTrafo -
+
+vrcConsZeroTrafoTo ::
+  ( Distributive x
+  , Conic c, Conic k
+  )
+  => Variance To k c d n x -> ConsecutiveZeroTrafo To n x
+vrcConsZeroTrafoTo (Variance (ConsecutiveZero top@(DiagramChainTo a (_:|w:|ds))) ((ker,coker):|_))
+  = ConsecutiveZeroTrafo (DiagramTrafo bot top ts) where
+  bot = DiagramChainTo a' (v':|w':|ds)
+  a'  = end v'
+  v'  = cokernelFactor $ universalCone coker
+  w'  = universalFactor ker (ConeKernel (universalDiagram ker) w)
+  
+  ts = zero (a':>a):| kernelFactor (universalCone ker) :| amap1 (one . start) (w:|ds)
+  
+
+-- | the induce transformation of consecutive zero-able chains.
+--
+-- __Property__ Let @v = 'Variance' c vs@ be in @'Variance' __t k c d n x__@, then holds:
+--
+-- (1) If @c@ matches @'ConsecutiveZero' ('DiagramChainTo _ _)@ then holds:
+--
+--     (1) @'end' ('vrcConsZeroTrafo' v) '==' c@.
+--
+--     (2) @ti@ is given by the diagram below.
+--
+-- @
+--                                 v              w               
+-- top:      end t         a <------------ b <------------ c <------------ d ...
+--             ^           ^               ^              ||              ||
+--             |           |               |              ||              ||
+--           t |           | t0 = 0        | t1 = ker0 v  || t2 = one c   || t3 = one d ...
+--             |           |               |              ||              ||
+--             |           |               ^              ||              || 
+-- bottom:  start t        a'<<----------- b'<------------ c <------------ d ...
+--                           v' = coker0 w'        w' 
+-- @
+--
+-- (2) If @c@ matches @'ConsecutiveZero' ('DiagramChainFrom' _ _)@ then holds:
+--
+--     (1) @'start' ('vrcConsZeroTrafo' v) '==' c@.
+--
+--     (2) @t i@ is given by the diagram below.
+--
+-- @
+--                                  v               w
+-- top:      sart t        a ------------> b -------------> c ------------> d ...
+--             |           |               |               ||              ||
+--             |           |               |               ||              ||
+--           t |           | t0 = 0        | t1 = coker0 v || t2 = one c   || t3 = one d ...
+--             |           |               v               ||              ||
+--             v           v               v               ||              ||
+-- bottom:   end t         a'>-----------> b'-------------> c ------------> d ...
+--                           v' = ker0 w'          w'
+-- @
+vrcConsZeroTrafo :: (Distributive x, NaturalKernelCokernel (IsoO Dst Op) k c d)
+  => Variance t k c d n x -> ConsecutiveZeroTrafo t n x
+vrcConsZeroTrafo v@(Variance (ConsecutiveZero (DiagramChainTo _ _)) _)   = vrcConsZeroTrafoTo v
+vrcConsZeroTrafo v@(Variance (ConsecutiveZero (DiagramChainFrom _ _)) _) = t where
+  Contravariant2 i   = toDualOpDst
+  SDualBi (Left1 v') = amapG i (SDualBi (Right1 v))
+  t'                 = vrcConsZeroTrafo v'
+  SDualBi (Right1 t) = amapG (inv2 i) (SDualBi (Left1 t'))
+
+
+
 {-
 --------------------------------------------------------------------------------
 -- Variance -
