@@ -10,12 +10,12 @@
 
 -- |
 -- Module      : OAlg.Limes.Exact.ConsecutiveZero
--- Description : chain diagrams with consecutive zero-able arrows. 
+-- Description : chain diagrams with consecutive zero arrows. 
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- chain diagrams with consecutive zero-able arrows. 
+-- chain diagrams with consecutive zero arrows. 
 module OAlg.Limes.Exact.ConsecutiveZero
   (
     -- * Consecutive Zero
@@ -64,7 +64,7 @@ import OAlg.Hom.Distributive
 --------------------------------------------------------------------------------
 -- ConsecutiveZero -
 
--- | chain diagrams with consecutive zero-able arrows.
+-- | chain diagrams with consecutive zero arrows.
 --
 -- __Properties__ Let @'ConsecutiveZero' c@ be in @'ConsecutiveZero' __t n x__@
 -- for a  'Distributive' structure @__x__@, then holds:
@@ -192,12 +192,12 @@ cnzTail c@(ConsecutiveZero (DiagramChainFrom _ _))   = c'' where
 --------------------------------------------------------------------------------
 -- ConsecutiveZeroTrafo -
 
--- | diagram transformation between two consecutive zero-able chains.
+-- | diagram transformation between two consecutive zero chains.
 --
 -- __Property__ Let @'ConsecutiveZeroTrafo' t@ be in @'ConsecutiveZeroTraf' __t n x__@ within a
 -- 'Distributive' structure @__x__@, then holds
 --
--- (1) @'start' t@ and @'end' t@ are consecutive zero-able chains.
+-- (1) @'start' t@ and @'end' t@ are consecutive zero chains.
 --
 newtype ConsecutiveZeroTrafo t n x
   = ConsecutiveZeroTrafo (DiagramTrafo (Chain t) (n+3) (n+2) x)

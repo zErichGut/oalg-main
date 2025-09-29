@@ -79,7 +79,6 @@ import OAlg.Structure.Distributive
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
-import OAlg.Entity.Slice
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Distributive
@@ -331,6 +330,7 @@ relVariance xeck xecfk xecc xecfc v@(Variance (ConsecutiveZero (DiagramChainFrom
   SDualBi (Left1 xecfc') = xecfMapS i (SDualBi (Right1 xecfk))
   
 
+-- | validity according to 'Variance'.
 prpVariance ::
   ( Distributive x
   , EntityDiagrammatic d x
@@ -345,36 +345,55 @@ prpVariance ::
 prpVariance xeck xecfk xecc xecfc v = Prp "Variance"
   :<=>: relVariance xeck xecfk xecc xecfc v
 
-{-
+
 instance
   ( Distributive x
-
-    -- d
-  , Typeable d
-  , Entity (d (Parallel LeftToRight) N2 N1 x)
-  , Entity (d (Parallel RightToLeft) N2 N1 x)  
-  , Entity (d (Parallel LeftToRight) N2 N1 (Op x))
-  , Entity (d (Parallel RightToLeft) N2 N1 (Op x))
-
-    -- k
-  , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , NaturalConic (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
-  
-  , Object (k Dst Injective d (Parallel RightToLeft) N2 N1 (Op x))
-  , NaturalConic (IsoO Dst Op) k Dst Injective d (Parallel RightToLeft) N2 N1
-  
-    -- c
-  , Object (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , NaturalConic (IsoO Dst Op) c Dst Injective d (Parallel RightToLeft) N2 N1
-
-  , Object (c Dst Projective d (Parallel LeftToRight) N2 N1 (Op x))  
-  , NaturalConic (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
-  
+  , XStandardEligibleConeKernel N1 x
+  , XStandardEligibleConeFactorKernel N1 x
+  , XStandardEligibleConeCokernel N1 x
+  , XStandardEligibleConeFactorCokernel N1 x
   )
-  => Validable (Variance t k c d n x) where
-  valid = prpVariance xStandrdEligibleConeG xStandrdEligibleConeFactorG
-                      xStandrdEligibleConeG xStandrdEligibleConeFactorG
--}                      
+  => Validable (Variance t Cone Cone Diagram n x) where
+  valid = prpVariance xStandardEligibleConeG xStandardEligibleConeFactorG
+                      xStandardEligibleConeG xStandardEligibleConeFactorG
+
+--------------------------------------------------------------------------------
+-- variance -
+
+varianceTo :: Distributive x
+  => Kernels N1 x -> Cokernels N1 x
+  -> ConsecutiveZero To n x -> Variance To Cone Cone Diagram n x
+varianceTo ker coker c = Variance c (kcs ker coker c) where
+
+  kc :: Distributive x
+    => Kernels N1 x -> Cokernels N1 x
+    -> ConsecutiveZero To n x -> (Kernel N1 x,Cokernel N1 x)
+  kc ks cs (ConsecutiveZero (DiagramChainTo _ (v:|w:|_))) = (k,c) where
+    k  = limes ks (kernelDiagram v)
+    w' = universalFactor k (ConeKernel (universalDiagram k) w)
+    c  = limes cs (cokernelDiagram w')
+
+  kcs :: Distributive x
+    => Kernels N1 x -> Cokernels N1 x
+    -> ConsecutiveZero To n x -> FinList (n+1) (Kernel N1 x,Cokernel N1 x)
+  kcs ks cs c@(ConsecutiveZero (DiagramChainTo _ (_:|_:|ds)))
+    = kc ks cs c :| case ds of
+        Nil     -> Nil
+        _ :| _  -> kcs ks cs (cnzTail c)
+
+-- | the variance according to 'Kernels' and 'Cokernels'.
+variance :: Distributive x
+  => Kernels N1 x -> Cokernels N1 x
+  -> ConsecutiveZero t n x -> Variance t Cone Cone Diagram n x
+variance ks cs c@(ConsecutiveZero (DiagramChainTo _ _))   = varianceTo ks cs c
+variance ks cs c@(ConsecutiveZero (DiagramChainFrom _ _)) = v where
+  Contravariant2 i = toDualOpDst
+  SDualBi (Left1 c')  = amapG i (SDualBi (Right1 c))
+  SDualBi (Left1 ks') = amapG i (SDualBi (Right1 cs))
+  SDualBi (Left1 cs') = amapG i (SDualBi (Right1 ks))
+
+  v' = varianceTo ks' cs' c'
+  SDualBi (Right1 v) = amapG (inv2 i) (SDualBi (Left1 v'))
 
 --------------------------------------------------------------------------------
 -- vrcConsZeroTrafo -
@@ -442,6 +461,60 @@ vrcConsZeroTrafo v@(Variance (ConsecutiveZero (DiagramChainFrom _ _)) _) = t whe
   t'                 = vrcConsZeroTrafo v'
   SDualBi (Right1 t) = amapG (inv2 i) (SDualBi (Left1 t'))
 
+--------------------------------------------------------------------------------
+-- VarianceTrafo -
+
+-- | transformation between variances.
+--
+-- __Property__ Let @t@ be in @'VarianceTrafo' __t k c d n x__@, the holds:
+--
+-- (1) the induced transformation @'vrctConsZeroTrafo' t@ is 'valid'.
+data VarianceTrafo t k c d n x
+  = VarianceTrafo (Variance t k c d n x) (Variance t k c d n x) (FinList (n+3) x)
+
+--------------------------------------------------------------------------------
+-- vrctConsZeroTrafo -
+
+-- | the induce transformation between consecutive zero chains.
+vrctConsZeroTrafo :: VarianceTrafo t k c d n x -> ConsecutiveZeroTrafo t n x
+vrctConsZeroTrafo (VarianceTrafo a b fs) = ConsecutiveZeroTrafo t where
+  Variance (ConsecutiveZero a') _ = a
+  Variance (ConsecutiveZero b') _ = b
+  t = DiagramTrafo a' b' fs
+
+--------------------------------------------------------------------------------
+-- prpVarianceTrafo -
+
+prpVarianceTrafo ::
+  ( Distributive x
+  , EntityDiagrammatic d x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , ObjectKernelCokernel k c d x
+  , Typeable t, Typeable n
+  )
+  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
+  -> VarianceTrafo t k c d n x -> Statement
+prpVarianceTrafo xeck xecfk xecc xecfc t@(VarianceTrafo a b _) = Prp "VarianceTrafo" :<=>:
+  And [ Label "start" :<=>: prpVariance xeck xecfk xecc xecfc a
+      , Label "end" :<=>: prpVariance xeck xecfk xecc xecfc b
+      , Label "trafo" :<=>: valid (vrctConsZeroTrafo t)
+      ]
+
+instance
+  ( Distributive x
+  , XStandardEligibleConeKernel N1 x
+  , XStandardEligibleConeFactorKernel N1 x
+  , XStandardEligibleConeCokernel N1 x
+  , XStandardEligibleConeFactorCokernel N1 x
+  , Typeable t, Typeable n
+  )
+  => Validable (VarianceTrafo t Cone Cone Diagram n x) where
+  valid = prpVarianceTrafo xStandardEligibleConeG xStandardEligibleConeFactorG
+                           xStandardEligibleConeG xStandardEligibleConeFactorG
+
 
 --------------------------------------------------------------------------------
 -- deviation -
@@ -484,6 +557,19 @@ deviations v = DiagramDiscrete (dvs attest v) where
   dvs n v = deviation v :| case n of
     W0   -> Nil
     SW n -> case ats n of Ats -> dvs n (vrcTail v)
+
+--------------------------------------------------------------------------------
+-- DeviationTrafo -
+
+-- | transormation between 'Deviation's.
+type DeviationTrafo n = DiagramTrafo Discrete n N0
+
+--------------------------------------------------------------------------------
+-- deviationTrafo -
+
+-- | the induced transformation between 'Deviation's.
+deviationTrafo :: VarianceTrafo t k c d n x -> DeviationTrafo n x
+deviationTrafo = error "nyi"
 
 {-
 --------------------------------------------------------------------------------
@@ -883,12 +969,10 @@ prpDeviationTrafos kers cokers t = Prp "DeviationTrafos" :<=>:
 
 -- | validity of some properties for @__d__ ~ 'Orientation' 'Symbol'@.
 prpDeviationOrntSymbol :: Statement
-prpDeviationOrntSymbol = SValid
-{-
 prpDeviationOrntSymbol = Prp "Deviation" :<=>:
-  And [ Forall (xSomeConsZeroTrafoOrnt 20)
-          (\(SomeConsZeroTrafo t) -> prpDeviationTrafos kers cokers t)
+  And [ Forall (xSomeConsecutiveZeroTrafoOrnt 20)
+          (\(SomeConsecutiveZeroTrafo t) -> valid (variance kers cokers (start t)))
       ]
   where kers   = kernelsOrnt X
         cokers = cokernelsOrnt Y
--}
+
