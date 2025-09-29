@@ -148,6 +148,13 @@ data Variance t k c d n x where
     -> Variance t k c d n x
 
 --------------------------------------------------------------------------------
+-- vrcSite -
+
+-- | proof that the site is either 'From' or 'To'.
+vrcSite :: Variance t k c d n x -> Either (t :~: From) (t :~: To)
+vrcSite (Variance c _) = cnzSite c
+
+--------------------------------------------------------------------------------
 -- vrcMapCov -
 
 vrcMapCov ::
@@ -473,6 +480,13 @@ data VarianceTrafo t k c d n x
   = VarianceTrafo (Variance t k c d n x) (Variance t k c d n x) (FinList (n+3) x)
 
 --------------------------------------------------------------------------------
+-- vrctSite -
+
+-- | proof that the site is either 'From' or 'To'.
+vrctSite :: VarianceTrafo t k c d n x -> Either (t :~: From) (t :~: To)
+vrctSite (VarianceTrafo v _ _) = vrcSite v
+
+--------------------------------------------------------------------------------
 -- vrctConsZeroTrafo -
 
 -- | the induce transformation between consecutive zero chains.
@@ -515,7 +529,77 @@ instance
   valid = prpVarianceTrafo xStandardEligibleConeG xStandardEligibleConeFactorG
                            xStandardEligibleConeG xStandardEligibleConeFactorG
 
+--------------------------------------------------------------------------------
+-- vrctMapCov -
 
+vrctMapCov ::
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h  
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Covariant (Inv2 h) x y -> VarianceTrafo t k c d n x -> VarianceTrafo t k c d n y
+vrctMapCov h (VarianceTrafo a b fs) = VarianceTrafo a' b' fs' where
+  a'  = vrcMapCov h a
+  b'  = vrcMapCov h b
+  fs' = amap1 (amap h) fs
+
+--------------------------------------------------------------------------------
+-- vrctMapCnt -
+
+vrctMapCnt ::
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h  
+  , NaturalConic (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConic (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  )
+  => Variant2 Contravariant (Inv2 h) x y
+  -> VarianceTrafo t k c d n x -> VarianceTrafo (Dual t) c k d n y
+vrctMapCnt h (VarianceTrafo a b fs) = VarianceTrafo b' a' fs' where
+  a'  = vrcMapCnt h a
+  b'  = vrcMapCnt h b
+  fs' = amap1 (amap h) fs
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (VarianceTrafo t k c d n) = VarianceTrafo (Dual t) c k d n
+
+--------------------------------------------------------------------------------
+-- vrctMapS -
+
+vrctMapS :: 
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h  
+  , NaturalConicBi (Inv2 h) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConicBi (Inv2 h) c Dst Injective d (Parallel RightToLeft) N2 N1
+  , t ~ Dual (Dual t)
+  )
+  => Inv2 h x y -> SDualBi (VarianceTrafo t k c d n) x -> SDualBi (VarianceTrafo t k c d n) y
+vrctMapS = vmapBi vrctMapCov vrctMapCov vrctMapCnt vrctMapCnt
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalKernelCokernel (Inv2 h) k c d
+  , t ~ Dual (Dual t)
+
+  )
+  => ApplicativeG (SDualBi (VarianceTrafo t k c d n)) (Inv2 h) (->) where
+  amapG = vrctMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , CategoryDisjunctive h
+  , NaturalKernelCokernel (Inv2 h) k c d
+  , t ~ Dual (Dual t)
+
+  )
+  => FunctorialG (SDualBi (VarianceTrafo t k c d n)) (Inv2 h) (->)
+  
 --------------------------------------------------------------------------------
 -- deviation -
 
@@ -568,8 +652,55 @@ type DeviationTrafo n = DiagramTrafo Discrete n N0
 -- deviationTrafo -
 
 -- | the induced transformation between 'Deviation's.
-deviationTrafo :: VarianceTrafo t k c d n x -> DeviationTrafo n x
-deviationTrafo = error "nyi"
+deviationTrafoTo ::
+  ( Distributive x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , Attestable n
+  )
+  => VarianceTrafo To k c d n x -> DeviationTrafo (n+1) x
+deviationTrafoTo (VarianceTrafo a b fs) = DiagramTrafo a' b' fs' where
+  a'  = deviations a
+  b'  = deviations b
+  fs' = trfs a b fs
+
+  trf ::
+    ( Distributive x
+    , Conic k, Conic c
+    )
+    => Variance To k c d n x -> Variance To k c d n x -> x -> x
+  trf a b f = f'' where
+    Variance (ConsecutiveZero (DiagramChainTo _ _)) ((aKer,aCoker):|_) = a
+    Variance (ConsecutiveZero (DiagramChainTo _ _)) ((bKer,bCoker):|_) = b
+
+    f' = universalFactor bKer (ConeKernel (universalDiagram bKer) (f*ak)) where
+      ak = kernelFactor (universalCone aKer)
+    f'' = universalFactor aCoker (ConeCokernel (universalDiagram aCoker) (bc*f')) where
+      bc = cokernelFactor (universalCone bCoker)
+
+  trfs :: 
+    ( Distributive x
+    , Conic k, Conic c
+    )
+    => Variance To k c d n x -> Variance To k c d n x -> FinList (n+3) x -> FinList (n+1) x
+  trfs a b (_:|f:|fs) = trf a b f :| case a of
+    Variance _ (_:|Nil)  -> Nil
+    Variance _ (_:|_:|_) -> trfs (vrcTail a) (vrcTail b) (f:|fs)
+
+-- | the induced transformation between 'Deviation's.
+deviationTrafo ::
+  ( Distributive x
+  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , Attestable n
+  )
+  => VarianceTrafo t k c d n x -> DeviationTrafo (n+1) x
+deviationTrafo h = case vrctSite h of
+  Right Refl -> deviationTrafoTo h
+  Left Refl  -> dh where
+    Contravariant2 i = toDualOpDst
+
+    SDualBi (Left1 hOp) = amapG i (SDualBi (Right1 h))
+    dhOp                = deviationTrafo hOp
+    SDualBi (Right1 dh) = amapG (inv2 i) (SDualBi (Left1 dhOp))
 
 {-
 --------------------------------------------------------------------------------

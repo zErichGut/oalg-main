@@ -19,12 +19,13 @@
 module OAlg.Limes.Exact.ConsecutiveZero
   (
     -- * Consecutive Zero
-    ConsecutiveZero(..), cnzDiagram, cnzPoints, cnzArrows
+    ConsecutiveZero(..), cnzSite
+  , cnzDiagram, cnzPoints, cnzArrows
   , cnzHead, cnzTail
   , cnzMapS, cnzMapCov, cnzMapCnt
 
     -- * Transformation
-  , ConsecutiveZeroTrafo(..)
+  , ConsecutiveZeroTrafo(..), cnztSite
   , cnztHead, cnztTail
   , cnztMapS, cnztMapCov, cnztMapCnt 
 
@@ -77,6 +78,15 @@ import OAlg.Hom.Distributive
 newtype ConsecutiveZero t n x = ConsecutiveZero (Diagram (Chain t) (n+3) (n+2) x)
   deriving (Show,Eq)
 
+--------------------------------------------------------------------------------
+-- cnzSite -
+
+-- | proof that the site is either 'From' or 'To'.
+cnzSite :: ConsecutiveZero t n x -> Either (t :~: From) (t :~: To)
+cnzSite (ConsecutiveZero d) = case d of
+  DiagramChainFrom _ _ -> Left Refl
+  DiagramChainTo _ _   -> Right Refl
+  
 --------------------------------------------------------------------------------
 -- cnzDiagram -
 
@@ -203,6 +213,15 @@ newtype ConsecutiveZeroTrafo t n x
   = ConsecutiveZeroTrafo (DiagramTrafo (Chain t) (n+3) (n+2) x)
   deriving (Show,Eq)
 
+--------------------------------------------------------------------------------
+-- cnztSite -
+
+-- | proof that the site is either 'From' or 'To'.
+cnztSite :: ConsecutiveZeroTrafo t n x -> Either (t :~: From) (t :~: To)
+cnztSite (ConsecutiveZeroTrafo (DiagramTrafo d _ _)) = case d of
+  DiagramChainFrom _ _ -> Left Refl
+  DiagramChainTo _ _   -> Right Refl
+  
 {-
 --------------------------------------------------------------------------------
 -- cnztTrafos -
