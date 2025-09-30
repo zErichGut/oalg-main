@@ -26,12 +26,12 @@ module OAlg.Entity.Slice.Free
 
     -- * Free
     Free(..), free', freeN, castFree, isFree
-  , SomeFree(..), sfrMap
+  , SomeFree(..), sfrPoint, sfrMap
 
     -- * Sliced Free
   , SlicedFree(..), SldFr, HomOrientedSlicedFree
   , prpHomOrientedSlicedFree
-
+  , SomeFreeSlice(..)
   
     -- * Diagram Free
   , DiagramFree(..),dgfDiagram
@@ -51,10 +51,13 @@ module OAlg.Entity.Slice.Free
     -- * Duality
   , toDualOpFreeDst
 
+
     -- * Limes
     -- deprecated
-  , LimesFree(..), limesFree
+    
+  -- , LimesFree(..), limesFree
   , KernelSliceFromSomeFreeTip(..), ksfKernel
+{-
 
     -- * deprecated
   
@@ -72,8 +75,7 @@ module OAlg.Entity.Slice.Free
     -- ** Pullback
   , PullbackFree, PullbackDiagramFree
 
-  , SomeFreeSlice(..)
-  
+-}  
   ) where
 
 import Control.Monad (join)
@@ -177,6 +179,13 @@ instance Eq (SomeFree c) where
 
 instance Validable (SomeFree c) where
   valid (SomeFree k) = Label "SomeFree" :<=>: valid k
+
+--------------------------------------------------------------------------------
+-- sfrPoint -
+
+-- | the given slice point.
+sfrPoint :: SomeFree x -> Point x
+sfrPoint (SomeFree f) = slicePoint f
 
 --------------------------------------------------------------------------------
 -- SliceFree -
@@ -796,9 +805,6 @@ instance
   => Validable (ConicFreeTip c s p d t n m x) where
   valid = prpConicFreeTip
 
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- deprecated -
 
 --------------------------------------------------------------------------------
 -- SomeFreeSlice -
@@ -812,6 +818,10 @@ deriving instance Show c => Show (SomeFreeSlice s c)
 
 instance Validable (SomeFreeSlice s c) where
   valid (SomeFreeSlice s) = Label "SomeFreeSlice" :<=>: valid s
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- deprecated -
 
 --------------------------------------------------------------------------------
 -- XStandardSomeFreeSliceFrom -
@@ -898,6 +908,7 @@ instance
 ksfKernel :: KernelSliceFromSomeFreeTip n i c -> Kernel n c
 ksfKernel (KernelSliceFromSomeFreeTip _ _ ker) = ker
 
+{-
 --------------------------------------------------------------------------------
 -- KernelFree -
 
@@ -987,5 +998,5 @@ newtype ClfCokernels n d = ClfCokernels (CokernelDiagram n d -> CokernelLiftable
 -- | the limes of the given diagram.
 clfLimes :: ClfCokernels n d -> CokernelDiagram n d -> CokernelLiftableFree d
 clfLimes (ClfCokernels l) = l
-
+-}
 

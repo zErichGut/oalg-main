@@ -21,7 +21,8 @@
 module OAlg.Entity.Definition
   (
     -- * Entity
-    Entity, Ent, EntOrd
+    Entity, Object
+  , Ent, EntOrd
 
     -- * Entity1
   , Entity1
@@ -50,10 +51,16 @@ import OAlg.Data.Validable
 import OAlg.Structure.Definition
 
 --------------------------------------------------------------------------------
+-- Object -
+
+-- | object.
+type Object x = (Show x, Validable x)
+
+--------------------------------------------------------------------------------
 -- Entity -
 
 -- | entity.
-type Entity a = (Show a, Eq a, Validable a, Typeable a)
+type Entity a = (Object a, Eq a, Typeable a)
 
 --------------------------------------------------------------------------------
 -- Ent -

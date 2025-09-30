@@ -19,7 +19,7 @@
 module OAlg.AbelianGroup.KernelsAndCokernels
   (
     -- * Kernels
-    abhKernels
+    abhKernels, abhKernelsFreeFromG, abhKernelsFreeFromG'
 
     -- * Cokernels
   , abhCokernels, abhCokernelsLftFreeG
@@ -86,7 +86,7 @@ import OAlg.AbelianGroup.Free
 --
 -- (2) @'tip' c@ is smith normal (see t'AbGroup').
 abhCokernelFreeDgmLftFreeG
-  :: CokernelDiagramFree N1 AbHom -> CokernelG ConeLiftable DiagramFree N1 AbHom
+  :: CokernelDiagrammatic DiagramFree N1 AbHom -> CokernelG ConeLiftable DiagramFree N1 AbHom
 abhCokernelFreeDgmLftFreeG d@(DiagramFree _ (DiagramParallelRL _ _ (h:|Nil)))
   = LimesInjective (ConeCokernelLiftable (ConeCokernel d coker) (LiftableFree lftAny)) univ where
 

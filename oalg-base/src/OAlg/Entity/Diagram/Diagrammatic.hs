@@ -16,7 +16,8 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- Objects with a naturally underlying 'Diagram'.
+-- objects with a naturally underlying 'Diagram'. They serve to generalize the concept of
+-- limits according to a diagram (see "OAlg.Limes.Limits").
 module OAlg.Entity.Diagram.Diagrammatic
   (
     -- * Diagrammatic
