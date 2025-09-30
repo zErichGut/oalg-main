@@ -22,15 +22,19 @@ module OAlg.Limes.Exact.ConsecutiveZero
     ConsecutiveZero(..), cnzSite
   , cnzDiagram, cnzPoints, cnzArrows
   , cnzHead, cnzTail
+
+    -- ** Duality
   , cnzMapS, cnzMapCov, cnzMapCnt
 
-    -- * Transformation
-  , ConsecutiveZeroTrafo(..), cnztSite
-  , cnztHead, cnztTail
-  , cnztMapS, cnztMapCov, cnztMapCnt 
+    -- * Consecutive Zero Hom
+  , ConsecutiveZeroHom(..), cnzHomSite, cnzHomArrows
+  , cnzHomHead, cnzHomTail
+
+    -- ** Duality
+  , cnzHomMapS, cnzHomMapCov, cnzHomMapCnt 
 
     -- * X
-  , xSomeConsecutiveZeroTrafoOrnt, SomeConsecutiveZeroTrafo(..)
+  , xSomeConsecutiveZeroHomOrnt, SomeConsecutiveZeroHom(..)
 
   ) where
 
@@ -165,7 +169,7 @@ relConsecutiveZero :: Distributive x => ConsecutiveZero t n x -> Statement
 relConsecutiveZero c@(ConsecutiveZero (DiagramChainTo _ _))   = relConsecutiveZeroTo c
 relConsecutiveZero c@(ConsecutiveZero (DiagramChainFrom _ _)) = relConsecutiveZeroTo c' where
   Contravariant2 i = toDualOpDst
-  SDualBi (Left1 c') = amapG i (SDualBi (Right1 c))
+  SDualBi (Left1 c') = amapF i (SDualBi (Right1 c))
 
 -- | validity according to 'ConsecutiveZero'.
 prpConsecutiveZero :: Distributive x => ConsecutiveZero t n x -> Statement
@@ -183,8 +187,8 @@ cnzHead (ConsecutiveZero (DiagramChainTo e (d:|d':|_)))
   = ConsecutiveZero (DiagramChainTo e (d:|d':|Nil))
 cnzHead c@(ConsecutiveZero (DiagramChainFrom _ _)) = c'' where
   Contravariant2 i     = toDualOpDst
-  SDualBi (Left1 c')   = amapG i (SDualBi (Right1 c))
-  SDualBi (Right1 c'') = amapG (inv2 i) (SDualBi (Left1 $ cnzHead c'))
+  SDualBi (Left1 c')   = amapF i (SDualBi (Right1 c))
+  SDualBi (Right1 c'') = amapF (inv2 i) (SDualBi (Left1 $ cnzHead c'))
   
 --------------------------------------------------------------------------------
 -- cnzTail -
@@ -195,185 +199,176 @@ cnzTail (ConsecutiveZero (DiagramChainTo _ (a:|as))) = ConsecutiveZero (DiagramC
                                                                                        -- a is dropped
 cnzTail c@(ConsecutiveZero (DiagramChainFrom _ _))   = c'' where
   Contravariant2 i    = toDualOpDst
-  SDualBi (Left1 c')   = amapG i (SDualBi (Right1 c))
-  SDualBi (Right1 c'') = amapG (inv2 i) (SDualBi (Left1 $ cnzTail c'))
+  SDualBi (Left1 c')   = amapF i (SDualBi (Right1 c))
+  SDualBi (Right1 c'') = amapF (inv2 i) (SDualBi (Left1 $ cnzTail c'))
   
 
 --------------------------------------------------------------------------------
--- ConsecutiveZeroTrafo -
+-- ConsecutiveZeroHom -
 
--- | diagram transformation between two consecutive zero chains.
+-- | homomorphism between two consecutive zero chains.
 --
--- __Property__ Let @'ConsecutiveZeroTrafo' t@ be in @'ConsecutiveZeroTraf' __t n x__@ within a
+-- __Property__ Let @'ConsecutiveZeroHom' t@ be in @'ConsecutiveZeroTraf' __t n x__@ within a
 -- 'Distributive' structure @__x__@, then holds
 --
 -- (1) @'start' t@ and @'end' t@ are consecutive zero chains.
 --
-newtype ConsecutiveZeroTrafo t n x
-  = ConsecutiveZeroTrafo (DiagramTrafo (Chain t) (n+3) (n+2) x)
+newtype ConsecutiveZeroHom t n x
+  = ConsecutiveZeroHom (DiagramTrafo (Chain t) (n+3) (n+2) x)
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
--- cnztSite -
+-- cnzHomSite -
 
 -- | proof that the site is either 'From' or 'To'.
-cnztSite :: ConsecutiveZeroTrafo t n x -> Either (t :~: From) (t :~: To)
-cnztSite (ConsecutiveZeroTrafo (DiagramTrafo d _ _)) = case d of
+cnzHomSite :: ConsecutiveZeroHom t n x -> Either (t :~: From) (t :~: To)
+cnzHomSite (ConsecutiveZeroHom (DiagramTrafo d _ _)) = case d of
   DiagramChainFrom _ _ -> Left Refl
   DiagramChainTo _ _   -> Right Refl
   
-{-
 --------------------------------------------------------------------------------
--- cnztTrafos -
+-- cnzHomMapCov -
 
--- | the transformations.
-cnztTrafos :: ConsecutiveZeroTrafo t n d -> FinList (n+3) d
-cnztTrafos (ConsecutiveZeroTrafo _ _ fs) = fs
-
---------------------------------------------------------------------------------
--- cnztDiagramTrafo -
-
--- | the underlying 'DiagramTrafo'.
-cnztDiagramTrafo :: ConsecutiveZeroTrafo t n d -> DiagramTrafo (Chain t) (n+3) (n+2) d
-cnztDiagramTrafo (ConsecutiveZeroTrafo a b fs) = DiagramTrafo (cnzDiagram a) (cnzDiagram b) fs
--}
+cnzHomMapCov :: HomDistributiveDisjunctive h
+  => Variant2 Covariant h x y -> ConsecutiveZeroHom t n x -> ConsecutiveZeroHom t n y
+cnzHomMapCov h (ConsecutiveZeroHom t) = ConsecutiveZeroHom (dgtMapCov h t)
 
 --------------------------------------------------------------------------------
--- cnztMapCov -
+-- cnzHomMapCnt -
 
-cnztMapCov :: HomDistributiveDisjunctive h
-  => Variant2 Covariant h x y -> ConsecutiveZeroTrafo t n x -> ConsecutiveZeroTrafo t n y
-cnztMapCov h (ConsecutiveZeroTrafo t) = ConsecutiveZeroTrafo (dgtMapCov h t)
-
---------------------------------------------------------------------------------
--- cnztMapCnt -
-
-cnztMapCnt :: HomDistributiveDisjunctive h
-  => Variant2 Contravariant h x y -> ConsecutiveZeroTrafo t n x -> ConsecutiveZeroTrafo (Dual t) n y
-cnztMapCnt h (ConsecutiveZeroTrafo t) = ConsecutiveZeroTrafo (dgtMapCnt h t)
+cnzHomMapCnt :: HomDistributiveDisjunctive h
+  => Variant2 Contravariant h x y -> ConsecutiveZeroHom t n x -> ConsecutiveZeroHom (Dual t) n y
+cnzHomMapCnt h (ConsecutiveZeroHom t) = ConsecutiveZeroHom (dgtMapCnt h t)
 
 --------------------------------------------------------------------------------
 -- Duality -
 
-type instance Dual1 (ConsecutiveZeroTrafo t n) = ConsecutiveZeroTrafo (Dual t) n
+type instance Dual1 (ConsecutiveZeroHom t n) = ConsecutiveZeroHom (Dual t) n
 
 --------------------------------------------------------------------------------
--- cnztMapS -
+-- cnzHomMapS -
 
-cnztMapS :: (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
-  => h x y -> SDualBi (ConsecutiveZeroTrafo t n) x -> SDualBi (ConsecutiveZeroTrafo t n) y
-cnztMapS = vmapBi cnztMapCov cnztMapCov cnztMapCnt cnztMapCnt
+cnzHomMapS :: (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
+  => h x y -> SDualBi (ConsecutiveZeroHom t n) x -> SDualBi (ConsecutiveZeroHom t n) y
+cnzHomMapS = vmapBi cnzHomMapCov cnzHomMapCov cnzHomMapCnt cnzHomMapCnt
 
 --------------------------------------------------------------------------------
 -- Functorial -
 
 instance (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
-  => ApplicativeG (SDualBi (ConsecutiveZeroTrafo t n)) h (->) where
-  amapG = cnztMapS
+  => ApplicativeG (SDualBi (ConsecutiveZeroHom t n)) h (->) where
+  amapG = cnzHomMapS
   
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
-  => FunctorialG (SDualBi (ConsecutiveZeroTrafo t n)) h (->)
+  => FunctorialG (SDualBi (ConsecutiveZeroHom t n)) h (->)
 
 --------------------------------------------------------------------------------
 -- Validable -
 
-instance (Distributive x, Typeable t, Typeable n) => Validable (ConsecutiveZeroTrafo t n x) where
-  valid (ConsecutiveZeroTrafo t) = Label "ConsecutiveZeroTrafo" :<=>:
+instance (Distributive x, Typeable t, Typeable n) => Validable (ConsecutiveZeroHom t n x) where
+  valid (ConsecutiveZeroHom t) = Label "ConsecutiveZeroHom" :<=>:
     And [ valid t
         , Label "start" :<=>: valid (ConsecutiveZero $ start t)
         , Label "end" :<=>: valid (ConsecutiveZero $ end t)
         ]
     
 --------------------------------------------------------------------------------
--- ConsecutiveZeroTrafo - Algebraic -
+-- ConsecutiveZeroHom - Algebraic -
 
-type instance Point (ConsecutiveZeroTrafo t n x) = ConsecutiveZero t n x
+type instance Point (ConsecutiveZeroHom t n x) = ConsecutiveZero t n x
 
-instance (Show x, ShowPoint x) => ShowPoint (ConsecutiveZeroTrafo t n x)
-instance (Eq x, EqPoint x) => EqPoint (ConsecutiveZeroTrafo t n x)
-instance Distributive x => ValidablePoint (ConsecutiveZeroTrafo t n x)
-instance (Typeable x, Typeable t, Typeable n) => TypeablePoint (ConsecutiveZeroTrafo t n x)
+instance (Show x, ShowPoint x) => ShowPoint (ConsecutiveZeroHom t n x)
+instance (Eq x, EqPoint x) => EqPoint (ConsecutiveZeroHom t n x)
+instance Distributive x => ValidablePoint (ConsecutiveZeroHom t n x)
+instance (Typeable x, Typeable t, Typeable n) => TypeablePoint (ConsecutiveZeroHom t n x)
 
-instance (Distributive x, Typeable t, Typeable n) => Oriented (ConsecutiveZeroTrafo t n x) where
-  orientation (ConsecutiveZeroTrafo t) = ConsecutiveZero a :> ConsecutiveZero b where
+instance (Distributive x, Typeable t, Typeable n) => Oriented (ConsecutiveZeroHom t n x) where
+  orientation (ConsecutiveZeroHom t) = ConsecutiveZero a :> ConsecutiveZero b where
     a :> b = orientation t
 
-instance (Distributive x, Typeable t, Typeable n) => Multiplicative (ConsecutiveZeroTrafo t n x) where
-  one (ConsecutiveZero c) = ConsecutiveZeroTrafo $ one c
-  ConsecutiveZeroTrafo f * ConsecutiveZeroTrafo g = ConsecutiveZeroTrafo (f*g)
-  npower (ConsecutiveZeroTrafo f) n = ConsecutiveZeroTrafo (npower f n)
+instance (Distributive x, Typeable t, Typeable n) => Multiplicative (ConsecutiveZeroHom t n x) where
+  one (ConsecutiveZero c) = ConsecutiveZeroHom $ one c
+  ConsecutiveZeroHom f * ConsecutiveZeroHom g = ConsecutiveZeroHom (f*g)
+  npower (ConsecutiveZeroHom f) n = ConsecutiveZeroHom (npower f n)
   
-type instance Root (ConsecutiveZeroTrafo t n x) = Orientation (ConsecutiveZero t n x)
+type instance Root (ConsecutiveZeroHom t n x) = Orientation (ConsecutiveZero t n x)
 
-instance (Show x, ShowPoint x) => ShowRoot (ConsecutiveZeroTrafo t n x)
-instance (Eq x, EqPoint x) => EqRoot (ConsecutiveZeroTrafo t n x)
-instance Distributive x => ValidableRoot (ConsecutiveZeroTrafo t n x)
-instance (Typeable x, Typeable t, Typeable n) => TypeableRoot (ConsecutiveZeroTrafo t n x)
+instance (Show x, ShowPoint x) => ShowRoot (ConsecutiveZeroHom t n x)
+instance (Eq x, EqPoint x) => EqRoot (ConsecutiveZeroHom t n x)
+instance Distributive x => ValidableRoot (ConsecutiveZeroHom t n x)
+instance (Typeable x, Typeable t, Typeable n) => TypeableRoot (ConsecutiveZeroHom t n x)
 
-instance (Distributive x, Typeable t, Typeable n) => Fibred (ConsecutiveZeroTrafo t n x)
+instance (Distributive x, Typeable t, Typeable n) => Fibred (ConsecutiveZeroHom t n x)
   
-instance (Distributive x, Typeable t, Typeable n) => FibredOriented (ConsecutiveZeroTrafo t n x)
+instance (Distributive x, Typeable t, Typeable n) => FibredOriented (ConsecutiveZeroHom t n x)
 
-instance (Distributive x, Typeable t, Typeable n) => Additive (ConsecutiveZeroTrafo t n x) where
-  zero (ConsecutiveZero a :> ConsecutiveZero b) = ConsecutiveZeroTrafo $ zero (a :> b)
-  ConsecutiveZeroTrafo f + ConsecutiveZeroTrafo g = ConsecutiveZeroTrafo (f+g)
-  ntimes n (ConsecutiveZeroTrafo t) = ConsecutiveZeroTrafo (ntimes n t)
+instance (Distributive x, Typeable t, Typeable n) => Additive (ConsecutiveZeroHom t n x) where
+  zero (ConsecutiveZero a :> ConsecutiveZero b) = ConsecutiveZeroHom $ zero (a :> b)
+  ConsecutiveZeroHom f + ConsecutiveZeroHom g = ConsecutiveZeroHom (f+g)
+  ntimes n (ConsecutiveZeroHom t) = ConsecutiveZeroHom (ntimes n t)
   
 instance (Distributive x, Abelian x, Typeable t, Typeable n)
-  => Abelian (ConsecutiveZeroTrafo t n x) where
-  negate (ConsecutiveZeroTrafo t) = ConsecutiveZeroTrafo $ negate t
-  ConsecutiveZeroTrafo f - ConsecutiveZeroTrafo g = ConsecutiveZeroTrafo (f-g)
-  ztimes n (ConsecutiveZeroTrafo t) = ConsecutiveZeroTrafo (ztimes n t)
+  => Abelian (ConsecutiveZeroHom t n x) where
+  negate (ConsecutiveZeroHom t) = ConsecutiveZeroHom $ negate t
+  ConsecutiveZeroHom f - ConsecutiveZeroHom g = ConsecutiveZeroHom (f-g)
+  ztimes n (ConsecutiveZeroHom t) = ConsecutiveZeroHom (ztimes n t)
   
-instance (Distributive x, Typeable t, Typeable n) => Distributive (ConsecutiveZeroTrafo t n x)
+instance (Distributive x, Typeable t, Typeable n) => Distributive (ConsecutiveZeroHom t n x)
 
-instance (Algebraic x, Typeable t, Typeable n) => Vectorial (ConsecutiveZeroTrafo t n x) where
-  type Scalar (ConsecutiveZeroTrafo t n x) = Scalar x
-  x ! ConsecutiveZeroTrafo t = ConsecutiveZeroTrafo (x!t)
+instance (Algebraic x, Typeable t, Typeable n) => Vectorial (ConsecutiveZeroHom t n x) where
+  type Scalar (ConsecutiveZeroHom t n x) = Scalar x
+  x ! ConsecutiveZeroHom t = ConsecutiveZeroHom (x!t)
 
-instance (Algebraic x, Typeable t, Typeable n) => Algebraic (ConsecutiveZeroTrafo t n x)
+instance (Algebraic x, Typeable t, Typeable n) => Algebraic (ConsecutiveZeroHom t n x)
 
 --------------------------------------------------------------------------------
--- cnztHead -
+-- cnzHomHead -
 
--- | the first two arrows of the given 'ConsecutiveZeroTrafo'.
-cnztHead :: Distributive x => ConsecutiveZeroTrafo t n x -> ConsecutiveZeroTrafo t N0 x
-cnztHead (ConsecutiveZeroTrafo (DiagramTrafo a b (f0:|f1:|f2:|_)))
-  = ConsecutiveZeroTrafo (DiagramTrafo a' b' (f0:|f1:|f2:|Nil)) where
+-- | the first two arrows of the given 'ConsecutiveZeroHom'.
+cnzHomHead :: Distributive x => ConsecutiveZeroHom t n x -> ConsecutiveZeroHom t N0 x
+cnzHomHead (ConsecutiveZeroHom (DiagramTrafo a b (f0:|f1:|f2:|_)))
+  = ConsecutiveZeroHom (DiagramTrafo a' b' (f0:|f1:|f2:|Nil)) where
   ConsecutiveZero a' = cnzHead $ ConsecutiveZero a
   ConsecutiveZero b' = cnzHead $ ConsecutiveZero b
   
 --------------------------------------------------------------------------------
--- cnztTail -
+-- cnzHomTail -
 
 -- | dropping the first arrow.
-cnztTail :: Distributive x => ConsecutiveZeroTrafo t (n+1) x -> ConsecutiveZeroTrafo t n x
-cnztTail (ConsecutiveZeroTrafo (DiagramTrafo a b fs))
-  = ConsecutiveZeroTrafo (DiagramTrafo a' b' (tail fs)) where
+cnzHomTail :: Distributive x => ConsecutiveZeroHom t (n+1) x -> ConsecutiveZeroHom t n x
+cnzHomTail (ConsecutiveZeroHom (DiagramTrafo a b fs))
+  = ConsecutiveZeroHom (DiagramTrafo a' b' (tail fs)) where
   ConsecutiveZero a' = cnzTail $ ConsecutiveZero a
   ConsecutiveZero b' = cnzTail $ ConsecutiveZero b
+
+--------------------------------------------------------------------------------
+-- cnzHomArrows -
+
+-- | the underlying arrows.
+cnzHomArrows :: ConsecutiveZeroHom t n x -> FinList (n+3) x
+cnzHomArrows (ConsecutiveZeroHom (DiagramTrafo _ _ fs)) = fs
+
+--------------------------------------------------------------------------------
+-- SomeConsecutiveZeroHom -
+
+-- | some 'ConsecutiveZeroHom'.
+data SomeConsecutiveZeroHom x where
+  SomeConsecutiveZeroHom :: (Typeable t, Attestable n)
+    => ConsecutiveZeroHom t n x -> SomeConsecutiveZeroHom x
+
+instance Distributive x => Validable (SomeConsecutiveZeroHom x) where
+  valid (SomeConsecutiveZeroHom t) = Label "SomeConsecutiveZeroHom" :<=>: valid t
   
 --------------------------------------------------------------------------------
--- SomeConsecutiveZeroTrafo -
+-- xSomeConsecutiveZeroHomOrnt -
 
--- | some 'ConsecutiveZeroTrafo'.
-data SomeConsecutiveZeroTrafo x where
-  SomeConsecutiveZeroTrafo :: (Typeable t, Typeable n)
-    => ConsecutiveZeroTrafo t n x -> SomeConsecutiveZeroTrafo x
-
-instance Distributive x => Validable (SomeConsecutiveZeroTrafo x) where
-  valid (SomeConsecutiveZeroTrafo t) = Label "SomeConsecutiveZeroTrafo" :<=>: valid t
-  
---------------------------------------------------------------------------------
--- xSomeConsecutiveZeroTrafoOrnt -
-
--- | random variable for @'ConsecutiveZeroTrafo' __t n__ 'OS'@ with a maximal @__n__@ of the given one.
-xSomeConsecutiveZeroTrafoOrnt :: N -> X (SomeConsecutiveZeroTrafo OS)
-xSomeConsecutiveZeroTrafoOrnt n = xscnztTo n <|> xscnztFrom n where
+-- | random variable for @'ConsecutiveZeroHom' __t n__ 'OS'@ with a maximal @__n__@ of the given one.
+xSomeConsecutiveZeroHomOrnt :: N -> X (SomeConsecutiveZeroHom OS)
+xSomeConsecutiveZeroHomOrnt n = xscnzHomTo n <|> xscnzHomFrom n where
 
   xTo :: Any n -> X (Diagram (Chain To) (n+3) (n+2) OS)
   xTo n = xDiagram Refl $ XDiagramChainTo (SW $ SW n) xStandardOrtSite
@@ -381,34 +376,34 @@ xSomeConsecutiveZeroTrafoOrnt n = xscnztTo n <|> xscnztFrom n where
   xFrom :: Any n -> X (Diagram (Chain From) (n+3) (n+2) OS)
   xFrom n = xDiagram Refl $ XDiagramChainFrom (SW $ SW n) xStandardOrtSite
   
-  xcnztTo :: Any n -> X (ConsecutiveZeroTrafo To n OS)
-  xcnztTo n = do
+  xcnzHomTo :: Any n -> X (ConsecutiveZeroHom To n OS)
+  xcnzHomTo n = do
     a <- xTo n
     b <- xTo n
-    return $ ConsecutiveZeroTrafo
+    return $ ConsecutiveZeroHom
            $ DiagramTrafo a b
            $ amap1 (uncurry (:>))
            $ (dgPoints a `zip` dgPoints b) 
 
-  xcnztFrom :: Any n -> X (ConsecutiveZeroTrafo From n OS)
-  xcnztFrom n = do
+  xcnzHomFrom :: Any n -> X (ConsecutiveZeroHom From n OS)
+  xcnzHomFrom n = do
     a <- xFrom n
     b <- xFrom n
-    return $ ConsecutiveZeroTrafo
+    return $ ConsecutiveZeroHom
            $ DiagramTrafo a b
            $ amap1 (uncurry (:>))
            $ (dgPoints a `zip` dgPoints b) 
   
-  xscnztTo :: N -> X (SomeConsecutiveZeroTrafo OS)
-  xscnztTo n = do
+  xscnzHomTo :: N -> X (SomeConsecutiveZeroHom OS)
+  xscnzHomTo n = do
     SomeNatural n' <- amap1 someNatural $ xNB 0 n
-    t              <- xcnztTo n'
-    return $ SomeConsecutiveZeroTrafo t
+    t              <- xcnzHomTo n'
+    return $ SomeConsecutiveZeroHom t
 
-  xscnztFrom :: N -> X (SomeConsecutiveZeroTrafo OS)
-  xscnztFrom n = do
+  xscnzHomFrom :: N -> X (SomeConsecutiveZeroHom OS)
+  xscnzHomFrom n = do
     SomeNatural n' <- amap1 someNatural $ xNB 0 n
-    t              <- xcnztFrom n'
-    return $ SomeConsecutiveZeroTrafo t
+    t              <- xcnzHomFrom n'
+    return $ SomeConsecutiveZeroHom t
   
 
