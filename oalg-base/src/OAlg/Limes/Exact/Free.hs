@@ -2,7 +2,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -20,34 +20,46 @@
 -- deviation for free chains-
 module OAlg.Limes.Exact.Free
   (
+    -- * Variance
+    varianceFreeTo, VarianceFreeLiftable
+    
+    -- * Free Consecutive Zero
+  , ConsecutiveZeroFree(..)
+  
+    -- ** Duality
+  , cnzFreeMapS, cnzFreeMapCov, cnzFreeMapCnt
+  
+    -- * Proposition
+  , prpConsecutiveZeroFree
   ) where
 
 import OAlg.Prelude
 
-import Data.Typeable
+import OAlg.Category.SDuality
 
+import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 
-
 import OAlg.Entity.Slice
+
+import OAlg.Hom.Oriented
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
-import OAlg.Limes.Exact.ConsecutiveZero
 
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
-{-
+
+
 --------------------------------------------------------------------------------
 -- ConsecutiveZeroFree -
 
@@ -55,69 +67,131 @@ import OAlg.Limes.Exact.Deviation
 --
 -- __Property__ Let @'ConsecutiveZeroFree' c fs@ be in @'ConsecutiveZeroFree' __t n x__@, then holds:
 --
--- (1) @'sfrPoint' f '==' p@ for all @(f,p)@ in @'zip fs ('tail' '$' 'cnzPoints')@.
+-- (1) @'sfrPoint' f '==' p@ for all @(f,p)@ in @fs '`zip`' 'tail' ('cnzPoints' c)@.
 data ConsecutiveZeroFree t n x where
   ConsecutiveZeroFree
     :: ConsecutiveZero t n x
     -> FinList (n+2) (SomeFree x)
     -> ConsecutiveZeroFree t n x
 
---------------------------------------------------------------------------------
--- SomeFreeSliceDiagram -
-
--- | some free slice for kernel and cokernel diagrams.
-data SomeFreeSliceDiagram t n m x where
-  SomeFreeSliceKernel
-    :: (Attestable k, Sliced (Free k) x)
-    => Slice From (Free k) x
-    -> SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1 x
-  SomeFreeSliceCokernel
-    :: (Attestable k, Sliced (Free k) x)
-    => Slice To (Free k) x
-    -> SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1 x
-
-instance Diagrammatic SomeFreeSliceDiagram where
-  diagram (SomeFreeSliceKernel (SliceFrom _ x)) = DiagramParallelLR (start x) (end x) (x:|Nil)
-  diagram (SomeFreeSliceCokernel (SliceTo _ x)) = DiagramParallelRL (end x) (start x) (x:|Nil)
+deriving instance (Show x, ShowPoint x) => Show (ConsecutiveZeroFree t n x)
+deriving instance (Eq x, EqPoint x) => Eq (ConsecutiveZeroFree t n x)
 
 --------------------------------------------------------------------------------
--- VarianceFree -
+-- prpConsecutiveZeroFree -
 
--- | variance where the tail of the points for the top and bottom chain are free.
---
--- __Property__ Let @'VarianceFree' v t b@ be in @'VarianceFree' __t k c d n x__@, then holds:
---
--- (1) @'ConsecutiveZeroFree' ('vrcTop' v) t@ is 'valid'.
---
--- (2) @'ConsecutiveZeroFree' ('vrcBottom' v) b@ is 'valid'.
-data VarianceFree t k c d n x where
-  VarianceFree
-    :: Variance t k c d n x
-    -> FinList (n+2) (SomeFree x)  -- top 
-    -> FinList (n+2) (SomeFree x)  -- bottom
-    -> VarianceFree t k c d n x
-    
+relConsecutiveZeroFree :: Distributive x => ConsecutiveZeroFree t n x -> Statement
+relConsecutiveZeroFree (ConsecutiveZeroFree c fs)
+  = And [ valid c
+        , valid fs
+        , Label "1" :<=>: vld 1 fs (tail $ cnzPoints c)
+        ]
+  where
+
+    vld :: Distributive x => N -> FinList n (SomeFree x) -> FinList n (Point x) -> Statement
+    vld _ Nil _ = SValid
+    vld i (f:|fs) (p:|ps)
+      = And [ (sfrPoint f == p) :?> Params ["i":=show i, "f":=show f, "p":=show p]
+            , vld (succ i) fs ps
+            ]
+
+-- | validity according to 'ConsecutiveZeroFree'.
+prpConsecutiveZeroFree :: Distributive x => ConsecutiveZeroFree t n x -> Statement
+prpConsecutiveZeroFree cf = Prp "ConsecutiveZeroFree" :<=>: relConsecutiveZeroFree cf
+ 
+instance Distributive x => Validable (ConsecutiveZeroFree t n x) where
+  valid = prpConsecutiveZeroFree
+  
 --------------------------------------------------------------------------------
--- varianceFree -
+-- cnzFreeMapCov -
 
-varianceFree :: (Distributive x)
-   => KernelsG (ConicFreeTip Cone) SomeFreeSliceDiagram N1 x
-   -> CokernelsG ConeLiftable SomeFreeSliceDiagram N1 x
-   -> ConsecutiveZeroFree To n x
-   -> VarianceFree To (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram n x
-varianceFree kers cokers cfTo = VarianceFree (Variance trf ker coker) fsTop fsBot where
-  trf = error "nyi"
-
-  fsBot = error "nyi"
-
-  ConsecutiveZeroFree (ConsecutiveZero (DiagramChainTo a (v:|w:|_))) fsTop@(fb:|_) = cfTo
+cnzFreeMapCov ::
+  ( HomDistributiveDisjunctive h
+  , HomOrientedSlicedFree h
+  )
+  => Variant2 Covariant h x y -> ConsecutiveZeroFree t n x -> ConsecutiveZeroFree t n y
+cnzFreeMapCov h (ConsecutiveZeroFree c fs) = ConsecutiveZeroFree c' fs' where
+  c'  = cnzMapCov h c
+  fs' = amap1 (sfrMap h) fs
   
-  ker = case fb of SomeFree k -> limes kers (SomeFreeSliceKernel (SliceFrom k v))
-  
-  w'  = universalFactor ker (ConeKernel (universalDiagram ker) w)
-  -- as top is consecutive zero, w' is well defined
+--------------------------------------------------------------------------------
+-- cnzFreeMapCnt -
 
-  fb' = case universalCone ker of ConicFreeTip ft _ -> SomeFree ft
-  
-  coker = case fb' of SomeFree k' -> limes cokers (SomeFreeSliceCokernel (SliceTo k' w'))
--}
+cnzFreeMapCnt ::
+  ( HomDistributiveDisjunctive h
+  , HomOrientedSlicedFree h
+  )
+  => Variant2 Contravariant h x y -> ConsecutiveZeroFree t n x -> ConsecutiveZeroFree (Dual t) n y
+cnzFreeMapCnt h (ConsecutiveZeroFree c fs) = ConsecutiveZeroFree c' fs' where
+  c'  = cnzMapCnt h c
+  fs' = amap1 (sfrMap h) fs
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (ConsecutiveZeroFree t n) = ConsecutiveZeroFree (Dual t) n
+
+--------------------------------------------------------------------------------
+-- cnzFreeMapS -
+
+cnzFreeMapS ::
+  ( HomDistributiveDisjunctive h
+  , HomOrientedSlicedFree h
+  , t ~ Dual (Dual t)
+  )
+  => h x y -> SDualBi (ConsecutiveZeroFree t n) x -> SDualBi (ConsecutiveZeroFree t n ) y
+cnzFreeMapS = vmapBi cnzFreeMapCov cnzFreeMapCov cnzFreeMapCnt cnzFreeMapCnt
+
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+instance
+  ( HomDistributiveDisjunctive h
+  , HomOrientedSlicedFree h
+  , t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConsecutiveZeroFree t n)) h (->) where
+  amapG = cnzFreeMapS
+
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConsecutiveZeroFree t n)) h (->)
+
+--------------------------------------------------------------------------------
+-- VarianceFreeLiftable -
+
+type VarianceFreeLiftable t = VarianceG t (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram
+
+--------------------------------------------------------------------------------
+-- varianceFreeTo -
+
+-- | variance according to 'KernelsSomeFreeFreeTip' and 'CokernelsLiftableSomeFree'. 
+varianceFreeTo :: Distributive x
+  => KernelsSomeFreeFreeTip x
+  -> CokernelsLiftableSomeFree x
+  -> ConsecutiveZeroFree To n x -> VarianceFreeLiftable To n x
+varianceFreeTo kers cokers (ConsecutiveZeroFree c fs) = VarianceG c (kcs kers cokers c fs) where
+
+  kc :: Distributive x
+    => KernelsG (ConicFreeTip Cone) SomeFreeSliceDiagram N1 x
+    -> CokernelsG ConeLiftable SomeFreeSliceDiagram N1 x
+    -> ConsecutiveZero To n x -> SomeFree x
+    -> (KernelSomeFreeFreeTip x,CokernelLiftableSomeFree x)
+  kc kers cokers (ConsecutiveZero (DiagramChainTo _ (v:|w:|_))) (SomeFree f) = (k,c) where
+    k  = limes kers (SomeFreeSliceKernel (SliceFrom f v))
+    w' = universalFactor k (ConeKernel (universalDiagram k) w)
+    c  = case universalCone k of
+      ConicFreeTip f' _ -> limes cokers (SomeFreeSliceCokernel (SliceTo f' w'))
+
+  kcs :: Distributive x
+    => KernelsG (ConicFreeTip Cone) SomeFreeSliceDiagram N1 x
+    -> CokernelsG ConeLiftable SomeFreeSliceDiagram N1 x
+    -> ConsecutiveZero To n x -> FinList (n+2) (SomeFree x)
+    -> FinList (n+1) (KernelSomeFreeFreeTip x,CokernelLiftableSomeFree x)
+  kcs kers cokers c (f:|fs) = kc kers cokers c f :| case fs of
+    _ :| Nil    -> Nil
+    _ :| _ :| _ -> kcs kers cokers (cnzTail c) fs 

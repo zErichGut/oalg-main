@@ -23,6 +23,7 @@ module OAlg.AbelianGroup.KernelsAndCokernels
 
     -- * Cokernels
   , abhCokernels, abhCokernelsLftFreeG
+  , abhCokernelsLftSomeFree
   
     -- * Smith Normal
   , isoSmithNormal
@@ -366,6 +367,26 @@ prpAbhCokernelsFreeTo'G k = case someNatural k of
                       (abhCokernelsFreeTo'G' k')
 
 
+--------------------------------------------------------------------------------
+-- abhCokernelsLftSomeFree -
+
+-- | liftable cokernel for some free slice cokernel diagram.
+abhCokernelLftSomeFree ::
+  CokernelDiagrammatic SomeFreeSliceDiagram N1 AbHom -> CokernelLiftableSomeFree AbHom
+abhCokernelLftSomeFree d@(SomeFreeSliceCokernel to) = LimesInjective cnLft univLft where
+  cokerLft'@(LimesInjective cnLft' univLft') = abhCokernelFreeTo'G (SliceDiagramCokernel to)
+  cnLft = ConeCokernelLiftable cn lft where
+    cn  = ConeCokernel d (cokernelFactor $ cnLft')
+    lft = cnLiftable cnLft'
+    
+  univLft (ConeCokernel _ x) = univLft' (ConeCokernel (universalDiagram cokerLft') x)
+
+--------------------------------------------------------------------------------
+-- abhCokernelsLftSomeFree -
+
+-- | liftable cokernels for some free slice cokernel diagram.
+abhCokernelsLftSomeFree :: CokernelsLiftableSomeFree AbHom
+abhCokernelsLftSomeFree = LimitsG abhCokernelLftSomeFree
 
 --------------------------------------------------------------------------------
 -- abhPullbackFreeG -

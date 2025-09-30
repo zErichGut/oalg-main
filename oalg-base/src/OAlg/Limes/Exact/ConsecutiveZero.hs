@@ -258,7 +258,7 @@ cnzHomMapS = vmapBi cnzHomMapCov cnzHomMapCov cnzHomMapCnt cnzHomMapCnt
 instance (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
   => ApplicativeG (SDualBi (ConsecutiveZeroHom t n)) h (->) where
   amapG = cnzHomMapS
-  
+
 instance
   ( HomDistributiveDisjunctive h
   , FunctorialOriented h
