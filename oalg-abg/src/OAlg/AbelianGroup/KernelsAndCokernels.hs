@@ -10,7 +10,7 @@
 
 -- |
 -- Module      : OAlg.AbelianGroup.KernelsAndCokernels
--- Description : kernels and cokernels for homomorphisms between finitely generated abelian groups
+-- Description : kernels and cokernels.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
@@ -20,10 +20,11 @@ module OAlg.AbelianGroup.KernelsAndCokernels
   (
     -- * Kernels
     abhKernels, abhKernelsFreeFromG, abhKernelsFreeFromG'
+  , abhKernelsSomeFreeFreeTip
 
     -- * Cokernels
   , abhCokernels, abhCokernelsLftFreeG
-  , abhCokernelsLftSomeFree
+  , abhCokernelsLiftableSomeFree
   
     -- * Smith Normal
   , isoSmithNormal
@@ -368,25 +369,27 @@ prpAbhCokernelsFreeTo'G k = case someNatural k of
 
 
 --------------------------------------------------------------------------------
--- abhCokernelsLftSomeFree -
+-- abhCokernelsLiftableSomeFree -
 
--- | liftable cokernel for some free slice cokernel diagram.
-abhCokernelLftSomeFree ::
+-- | liftable cokernel for some free slice 'To' diagram.
+abhCokernelLiftableSomeFree ::
   CokernelDiagrammatic SomeFreeSliceDiagram N1 AbHom -> CokernelLiftableSomeFree AbHom
-abhCokernelLftSomeFree d@(SomeFreeSliceCokernel to) = LimesInjective cnLft univLft where
-  cokerLft'@(LimesInjective cnLft' univLft') = abhCokernelFreeTo'G (SliceDiagramCokernel to)
+abhCokernelLiftableSomeFree d@(SomeFreeSliceCokernel to) = LimesInjective cnLft univLft where
+  d' = SliceDiagramCokernel to
+  LimesInjective cnLft' univLft' = limes abhCokernelsFreeTo'G d'
+  
   cnLft = ConeCokernelLiftable cn lft where
     cn  = ConeCokernel d (cokernelFactor $ cnLft')
     lft = cnLiftable cnLft'
     
-  univLft (ConeCokernel _ x) = univLft' (ConeCokernel (universalDiagram cokerLft') x)
+  univLft (ConeCokernel _ x) = univLft' (ConeCokernel d' x)
 
 --------------------------------------------------------------------------------
--- abhCokernelsLftSomeFree -
+-- abhCokernelsLiftableSomeFree -
 
--- | liftable cokernels for some free slice cokernel diagram.
-abhCokernelsLftSomeFree :: CokernelsLiftableSomeFree AbHom
-abhCokernelsLftSomeFree = LimitsG abhCokernelLftSomeFree
+-- | liftable cokernels for some free slice 'To' diagram.
+abhCokernelsLiftableSomeFree :: CokernelsLiftableSomeFree AbHom
+abhCokernelsLiftableSomeFree = LimitsG abhCokernelLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- abhPullbackFreeG -
@@ -646,6 +649,7 @@ abhKernelFreeFromG :: Attestable k
   -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelFreeFromG s = ker s $ amap1 (limes abhKernelsFreeFromCyG) $ abhFreeFromSplitCyG s where
 
+-- | liftable cokernel for some free slice cokernel diagram.
   tipSomeFree :: KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom -> SomeFree AbHom
   tipSomeFree ker = case universalCone ker of ConicFreeTip k _ -> SomeFree k
   
@@ -715,6 +719,31 @@ prpAbhKernelsFreeFromGN k = case someNatural k of
 -- | validity of 'prpAbhKernelsFreeFromG'.
 prpAbhKernelsFreeFromG :: Statement
 prpAbhKernelsFreeFromG = Forall (xNB 0 15) prpAbhKernelsFreeFromGN
+
+--------------------------------------------------------------------------------
+-- abhKernelSomeFreeFreeTip -
+
+-- | kernel with some free tip for some free slice 'From' diagram.
+abhKernelSomeFreeFreeTip :: KernelDiagrammatic SomeFreeSliceDiagram N1 AbHom
+  -> KernelSomeFreeFreeTip AbHom
+abhKernelSomeFreeFreeTip d@(SomeFreeSliceKernel frm) = LimesProjective cnFrT univFrT where
+  d' = SliceDiagramKernel frm
+  LimesProjective cnFrT' univFrT' = limes abhKernelsFreeFromG d'
+  
+  cnFrT = case cnFrT' of
+    ConicFreeTip k cn' -> ConicFreeTip k cn where
+      cn = ConeKernel d (kernelFactor cn')
+    
+  univFrT (ConeKernel _ x) = univFrT' (ConeKernel d' x)
+
+--------------------------------------------------------------------------------
+-- abhKernelsSomeFreeFreeTip -
+
+-- | kernels with some free tip for some free slice 'From' diagram, which states that
+-- the 'start' of a kernel of a homomorphism with a finitely free generated 'start' is also finitely
+-- free generated in 'AbHom'.
+abhKernelsSomeFreeFreeTip :: KernelsSomeFreeFreeTip AbHom
+abhKernelsSomeFreeFreeTip = LimitsG abhKernelSomeFreeFreeTip
 
 --------------------------------------------------------------------------------
 -- abhKernel -
