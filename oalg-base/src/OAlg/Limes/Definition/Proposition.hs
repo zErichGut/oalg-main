@@ -221,6 +221,7 @@ xecf (XEligibleConeFactorG xcx) = xcx
 --------------------------------------------------------------------------------
 -- xecfMapCov -
 
+-- | covariant mapping of 'XEligibleConeFactorG'
 xecfMapCov :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> XEligibleConeFactorG c s p d t n m x
@@ -236,10 +237,11 @@ xecfMapCov (Covariant2 i) (XEligibleConeFactorG xecf) = XEligibleConeFactorG xec
 --------------------------------------------------------------------------------
 -- xecfMapCnt -
 
+-- | contravariant mapping of 'XEligibleConeFactorG'
 xecfMapCnt :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> XEligibleConeFactorG c s p d t n m x
-  -> Dual1 (XEligibleConeFactorG c s p d t n m) y
+  -> XEligibleConeFactorG c s (Dual p) d (Dual t) n m y
 xecfMapCnt (Contravariant2 i) (XEligibleConeFactorG xecf) = XEligibleConeFactorG xecf' where
   xecf' l' = xcf' where
     SDualBi (Left1 l) = amapF (inv2 i) (SDualBi (Right1 l'))
@@ -251,14 +253,17 @@ xecfMapCnt (Contravariant2 i) (XEligibleConeFactorG xecf) = XEligibleConeFactorG
 --------------------------------------------------------------------------------
 -- xecfMapS -
 
+-- | mapping of 'XEligibleConeFactorG'
 xecfMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y
-  -> SDualBi (XEligibleConeFactorG c s p d t n m) x -> SDualBi (XEligibleConeFactorG c s p d t n m) y
+  -> SDualBi (XEligibleConeFactorG c s p d t n m) x
+  -> SDualBi (XEligibleConeFactorG c s p d t n m) y
 xecfMapS = vmapBi xecfMapCov xecfMapCov xecfMapCnt xecfMapCnt 
 
 --------------------------------------------------------------------------------
 -- coXEligibleConeFactorG -
 
+-- | the co-object of 'XEligibleConeFactorG' accordint to 'Op'.
 coXEligibleConeFactorG ::
   ( Multiplicative x
   , NaturalConicBi (Inv2 (HomDisjEmpty s Op)) c s p d t n m
@@ -320,6 +325,7 @@ xecfInjOrtSiteFrom (XStart _ xs) l = amap1 (cn u) $ xs $ tip u where
   cn (ConeInjective d _ as) f = (ConeInjective d (end f) (amap1 (f*) as),f)
   cn (ConeCokernel d a) f     = (ConeCokernel d (f*a),f)
 
+-- | the random variable 'XEligibleConeFactorG' given be 'XOrtSite'.
 xecfOrtSite :: Conic c
   => XOrtSite r x -> XEligibleConeFactorG c s (ToPerspective r) d t n m x
 xecfOrtSite xe@(XEnd _ _)   = XEligibleConeFactorG (xecfPrjOrtSiteTo xe)

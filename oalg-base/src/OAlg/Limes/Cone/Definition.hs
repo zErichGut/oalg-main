@@ -288,12 +288,14 @@ instance ( Oriented a, Diagrammatic d, Entity (d (Parallel t) N2 m a)
 --------------------------------------------------------------------------------
 -- cnPrjOrnt -
 
--- | the projective cone on 'Orientation' with the underlying given diagram and tip with the given
--- point. 
+-- | the multiplicatve projective cone on 'Orientation' with the underlying given diagram and tip
+-- with the given point. 
 cnPrjOrnt :: (Diagrammatic d, Entity p)
   => p -> d t n m (Orientation p) -> Cone Mlt Projective d t n m (Orientation p)
 cnPrjOrnt p d = ConeProjective d p (amap1 (p:>) $ dgPoints $ diagram d)
 
+-- | the distributive projective cone on 'Orientation' with the underlying given diagram and tip
+-- with the given point. 
 cnPrjDstOrnt :: (Diagrammatic d, Entity p, t ~ Parallel LeftToRight, n ~ N2)
   => p -> d t n m (Orientation p) -> Cone Dst Projective d t n m (Orientation p)
 cnPrjDstOrnt t d = ConeKernel d (t:>p) where DiagramParallelLR p _ _ = diagram d
@@ -301,12 +303,14 @@ cnPrjDstOrnt t d = ConeKernel d (t:>p) where DiagramParallelLR p _ _ = diagram d
 --------------------------------------------------------------------------------
 -- cnInjOrnt -
 
--- | the injective cone on 'Orientation' with the underlying given diagram and tip with the given
--- point. 
+-- | the multiplicative injective cone on 'Orientation' with the underlying given diagram and tip
+-- with the given point. 
 cnInjOrnt :: (Diagrammatic d, Entity p)
   => p -> d t n m (Orientation p) -> Cone Mlt Injective d t n m (Orientation p)
 cnInjOrnt p d = ConeInjective d p (amap1 (:>p) $ dgPoints $ diagram d)
 
+-- | the distributive injective cone on 'Orientation' with the underlying given diagram and tip
+-- with the given point. 
 cnInjDstOrnt :: (Diagrammatic d, Entity p, t ~ Parallel RightToLeft, n ~ N2)
   => p -> d t n m (Orientation p) -> Cone Dst Injective d t n m (Orientation p)
 cnInjDstOrnt t d = ConeCokernel d (p:>t) where DiagramParallelRL p _ _ = diagram d

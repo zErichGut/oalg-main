@@ -115,6 +115,7 @@ cnzPoints = dgPoints . cnzDiagram
 --------------------------------------------------------------------------------
 -- cnzMapCov -
 
+-- | covariant mapping of 'ConsecutiveZero'.
 cnzMapCov :: HomDistributiveDisjunctive h
   => Variant2 Covariant h x y -> ConsecutiveZero t n x -> ConsecutiveZero t n y
 cnzMapCov h (ConsecutiveZero c) = ConsecutiveZero (dgMapCov h c)
@@ -122,6 +123,7 @@ cnzMapCov h (ConsecutiveZero c) = ConsecutiveZero (dgMapCov h c)
 --------------------------------------------------------------------------------
 -- cnzMapCnt -
 
+-- | contravariant mapping of 'ConsecutiveZero'.
 cnzMapCnt :: HomDistributiveDisjunctive h
   => Variant2 Contravariant h x y -> ConsecutiveZero t n x -> ConsecutiveZero (Dual t) n y
 cnzMapCnt h (ConsecutiveZero c) = ConsecutiveZero (dgMapCnt h c)
@@ -134,6 +136,7 @@ type instance Dual1 (ConsecutiveZero t n) = ConsecutiveZero (Dual t) n
 --------------------------------------------------------------------------------
 -- cnzMapS -
 
+-- | mapping of 'ConsecutiveZero'.
 cnzMapS :: (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
   => h x y -> SDualBi (ConsecutiveZero t n) x -> SDualBi (ConsecutiveZero t n) y
 cnzMapS = vmapBi cnzMapCov cnzMapCov cnzMapCnt cnzMapCnt
@@ -229,6 +232,7 @@ cnzHomSite (ConsecutiveZeroHom (DiagramTrafo d _ _)) = case d of
 --------------------------------------------------------------------------------
 -- cnzHomMapCov -
 
+-- | covariant mapping of 'ConsecutiveZeroHom'.
 cnzHomMapCov :: HomDistributiveDisjunctive h
   => Variant2 Covariant h x y -> ConsecutiveZeroHom t n x -> ConsecutiveZeroHom t n y
 cnzHomMapCov h (ConsecutiveZeroHom t) = ConsecutiveZeroHom (dgtMapCov h t)
@@ -236,6 +240,7 @@ cnzHomMapCov h (ConsecutiveZeroHom t) = ConsecutiveZeroHom (dgtMapCov h t)
 --------------------------------------------------------------------------------
 -- cnzHomMapCnt -
 
+-- | contravariant mapping of 'ConsecutiveZeroHom'.
 cnzHomMapCnt :: HomDistributiveDisjunctive h
   => Variant2 Contravariant h x y -> ConsecutiveZeroHom t n x -> ConsecutiveZeroHom (Dual t) n y
 cnzHomMapCnt h (ConsecutiveZeroHom t) = ConsecutiveZeroHom (dgtMapCnt h t)
@@ -248,6 +253,7 @@ type instance Dual1 (ConsecutiveZeroHom t n) = ConsecutiveZeroHom (Dual t) n
 --------------------------------------------------------------------------------
 -- cnzHomMapS -
 
+-- | mapping of 'ConsecutiveZeroHom'.
 cnzHomMapS :: (HomDistributiveDisjunctive h, t ~ Dual (Dual t))
   => h x y -> SDualBi (ConsecutiveZeroHom t n) x -> SDualBi (ConsecutiveZeroHom t n) y
 cnzHomMapS = vmapBi cnzHomMapCov cnzHomMapCov cnzHomMapCnt cnzHomMapCnt

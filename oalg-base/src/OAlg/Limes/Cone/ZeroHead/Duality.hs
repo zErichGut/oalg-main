@@ -82,6 +82,7 @@ czMapDstCov ::
   => Variant2 Covariant h x y -> ConeZeroHead Dst p d t n m x -> ConeZeroHead Dst p d t n m y
 czMapDstCov h = czMapDstCovStruct (tau (range h)) h
 
+-- | covariant mapping of 'ConeZeroHead'
 czMapCov ::
   ( HomDistributiveDisjunctive h
   , NaturalDiagrammatic h d t n m
@@ -127,6 +128,7 @@ czMapDstCnt ::
   -> ConeZeroHead Dst p d t n m x -> Dual1 (ConeZeroHead Dst p d t n m) y  
 czMapDstCnt h = czMapDstCntStruct (tau (range h)) h
 
+-- | contravariant mapping of 'ConeZeroHead'
 czMapCnt ::
   ( HomDistributiveDisjunctive h
   , NaturalDiagrammatic h d t n m
@@ -138,7 +140,8 @@ czMapCnt h cz@(ConeZeroHead c) = case c of
   ConeInjective _ _ _         -> czMapMltCnt h cz
   ConeKernel _ _              -> czMapDstCnt h cz
   ConeCokernel _ _            -> czMapDstCnt h cz
-  
+
+-- | mapping of 'ConeZeroHead'  
 czMapS ::
   ( HomDistributiveDisjunctive h
   , NaturalDiagrammatic h d t n m

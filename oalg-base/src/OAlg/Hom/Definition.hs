@@ -138,6 +138,7 @@ homDisj h = Covariant2 (HomDisj h') where Covariant2 h' = sCov h
 --------------------------------------------------------------------------------
 -- HomDisjEmpty -
 
+-- | 'HomDisj' for 'HomEmpty'.
 type HomDisjEmpty s o = HomDisj s o (HomEmpty s)
 
 instance TransformableGObjectClassDomain Id (HomDisj OrtX Op (HomEmpty OrtX)) EqEOrt
@@ -164,6 +165,7 @@ isoHomDisj s = Contravariant2 (Inv2 t f) where
 --------------------------------------------------------------------------------
 -- isoHomDisj' -
 
+-- | contravariant isomorphism for @'HomDisj' __s o h x__ (__o x__)@ given by the proxy type.
 isoHomDisj' :: (Morphism h, TransformableGRefl o s)
   => q h -> Struct s x -> Variant2 Contravariant (IsoHomDisj s o h) x (o x)
 isoHomDisj' _ = isoHomDisj

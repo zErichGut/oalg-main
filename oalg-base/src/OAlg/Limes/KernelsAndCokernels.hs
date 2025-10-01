@@ -213,6 +213,7 @@ kernels krn1 = LimitsG (krn krn1) where
     _:|Nil  -> limes krn1 d
     _:|_:|_ -> limes (kernels1 krn1) d
 
+-- | promoting kernels according to the given proxy type.
 kernels' :: Distributive x => q n -> Kernels N1 x -> Kernels n x
 kernels' _ = kernels
 
@@ -293,6 +294,7 @@ cokernels ck1 = cks where
   ks                   = kernels k1
   SDualBi (Right1 cks) = amapF (inv2 i) (SDualBi (Left1 ks))
 
+-- | promoting cokernels according to the given proxy type.
 cokernels' :: Distributive x => q n -> Cokernels N1 x -> Cokernels n x
 cokernels' _ = cokernels
 

@@ -242,6 +242,7 @@ type DualisableGDiscrete p o c d n
 --------------------------------------------------------------------------------
 -- coProductsG -
 
+-- | the co-object of 'ProductsG'.
 coProductsG ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
@@ -253,6 +254,7 @@ coProductsG ps = ss where
 
   SDualBi (Left1 ss) = amapF i (SDualBi (Right1 ps))
 
+-- | the co-object of 'Products'.
 coProducts ::
   ( Multiplicative x
   , TransformableGRefl o Mlt

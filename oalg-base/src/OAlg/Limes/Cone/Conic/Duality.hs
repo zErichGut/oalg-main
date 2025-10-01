@@ -145,6 +145,7 @@ instance
 --------------------------------------------------------------------------------
 -- NaturalConicBi -
 
+-- | natrual conic for @__p__@, @__t__@ and also @'Dual' __p__@, @'Dual' __t__@.
 type NaturalConicBi h c s p d t n m =
   ( NaturalConic h c s p d t n m
   , NaturalConic h c s (Dual p) d (Dual t) n m

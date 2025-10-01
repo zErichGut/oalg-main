@@ -46,6 +46,7 @@ type instance Dual1 (LimesG c s p d t n m) = LimesG c s (Dual p) d (Dual t) n m
 --------------------------------------------------------------------------------
 -- lmMapCov -
 
+-- | covariant mapping of 'LimesG'
 lmMapCov :: NaturalConic (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> LimesG c s p d t n m x -> LimesG c s p d t n m y
@@ -61,11 +62,12 @@ lmMapCov (Covariant2 i) (LimesInjective uc uf)
     SDualBi (Right1 (ConeG c)) = amapF (inv2 i) (SDualBi (Right1 (ConeG c')))
 
 --------------------------------------------------------------------------------
--- lmMapCnt
+-- lmMapCnt -
 
+-- | contravariant mapping of 'LimesG'
 lmMapCnt :: NaturalConic (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
-  -> LimesG c s p d t n m x -> Dual1 (LimesG c s p d t n m) y
+  -> LimesG c s p d t n m x -> LimesG c s (Dual p) d (Dual t) n m y
 lmMapCnt (Contravariant2 i) (LimesProjective uc uf)
   = LimesInjective uc' uf' where
   SDualBi (Left1 (ConeG uc')) = amapF i (SDualBi (Right1 (ConeG uc)))
@@ -82,6 +84,7 @@ lmMapCnt (Contravariant2 i) (LimesInjective uc uf)
 --------------------------------------------------------------------------------
 -- lmMapS -
 
+-- | mapping of 'LimesG'
 lmMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y -> SDualBi (LimesG c s p d t n m) x -> SDualBi (LimesG c s p d t n m) y
 lmMapS = vmapBi lmMapCov lmMapCov lmMapCnt lmMapCnt

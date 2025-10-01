@@ -507,6 +507,7 @@ coEntriesInv (Entries xs') = Entries
 --------------------------------------------------------------------------------
 -- etsMapCov -
 
+-- | covariant mapping of 'Entries'.
 etsMapCov :: HomDistributiveDisjunctive h
   => Variant2 Covariant h x y -> Entries i j x -> Entries i j y
 etsMapCov (Covariant2 h) (Entries xs) = case tauDst (range h) of
@@ -515,6 +516,7 @@ etsMapCov (Covariant2 h) (Entries xs) = case tauDst (range h) of
 --------------------------------------------------------------------------------
 -- etsMapCnt -
 
+-- | contravariant mapping of 'Entries'.
 etsMapCnt :: (HomDistributiveDisjunctive h, Ord i, Ord j)
   => Variant2 Contravariant h x y -> Entries i j x -> Entries j i y
 etsMapCnt (Contravariant2 h) (Entries xs) = case tauDst $ range h of

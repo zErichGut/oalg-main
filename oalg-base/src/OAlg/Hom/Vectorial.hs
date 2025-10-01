@@ -99,6 +99,7 @@ relDualisableVectorial :: DualisableVectorial k s o
 relDualisableVectorial q s Struct Struct k x
   = (toDualStk q s (k ! x) == k ! toDualStk q s x) :?> Params ["k":=show k, "x":=show x]
 
+-- | validity according to 'DualisableVectorial'.
 prpDualisableVectorial :: DualisableVectorial k s o
   => q o -> Struct s x -> k -> x -> Statement
 prpDualisableVectorial q s k x = Prp "DualisableVectorial"
@@ -107,6 +108,8 @@ prpDualisableVectorial q s k x = Prp "DualisableVectorial"
 --------------------------------------------------------------------------------
 -- VecX -
 
+-- | type index for @__k__@-'Vectorial' structures @__x__@ having also standard random variables for
+-- @__k__@ and @__x__@.
 data VecX k
 
 type instance Structure (VecX k) x
@@ -149,6 +152,7 @@ relHomDisjOpVecZ :: X (SomeMorphism (HomDisjEmpty (VecX Z) Op)) -> Statement
 relHomDisjOpVecZ xsh = Forall xsh
   (\(SomeMorphism h) -> relHomDisjOpVecZStruct (tauHom (homomorphous h)) h)
 
+-- | validity of 'HomDisjEmpty' __('Vec' 'Z') 'Op'@ according to 'HomVectorial'. 
 prpHomDisjOpVecZ :: Statement
 prpHomDisjOpVecZ = Prp "HomDisjOpVecZ" :<=>: relHomDisjOpVecZ xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty (VecX Z) Op))

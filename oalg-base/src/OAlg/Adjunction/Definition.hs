@@ -241,6 +241,7 @@ adjHomDisj (Adjunction l r u v) = Adjunction (homDisj l) (homDisj r) u v
 --------------------------------------------------------------------------------
 -- adjMapCnt -
 
+-- | contravariant mapping of 'Adjunction'.
 adjMapCnt :: FunctorialOriented h
   => Variant2 Contravariant (Inv2 h) x x'
   -> Variant2 Contravariant (Inv2 h) y y'
@@ -266,6 +267,7 @@ coAdjunctionStruct ::
   -> Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) (o y) (o x)
 coAdjunctionStruct (sx:>:sy) adj = adjMapCnt (isoHomDisj sx) (isoHomDisj sy) (adjHomDisj adj)
 
+-- | the co-'Adjunction' according to 'Op'.
 coAdjunctionOp :: HomMultiplicative h
   => Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj Mlt Op h)) (Op y) (Op x)
 coAdjunctionOp a = coAdjunctionStruct (adjHomMlt a) a 

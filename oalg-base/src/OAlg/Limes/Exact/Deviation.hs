@@ -158,6 +158,7 @@ vrcSite (VarianceG c _) = cnzSite c
 --------------------------------------------------------------------------------
 -- vrcMapCov -
 
+-- | covariant mapping of 'VarianceG'.
 vrcMapCov ::
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h
@@ -172,6 +173,7 @@ vrcMapCov i (VarianceG c vs) = VarianceG c' vs' where
 --------------------------------------------------------------------------------
 -- vrcMapCnt -
 
+-- | contravariant mapping of 'VarianceG'.
 vrcMapCnt ::
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h
@@ -191,6 +193,7 @@ type instance Dual1 (VarianceG t k c d n) = VarianceG (Dual t) c k d n
 --------------------------------------------------------------------------------
 -- vrcMapS -
 
+-- | mapping of 'VarianceG'.
 vrcMapS :: 
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h
@@ -236,18 +239,21 @@ instance
 --------------------------------------------------------------------------------
 -- vrcHead -
 
+-- | the head.
 vrcHead :: Distributive x => VarianceG t k c d n x -> VarianceG t k c d N0 x
 vrcHead (VarianceG c vs) = VarianceG (cnzHead c) (head vs:|Nil)
 
 --------------------------------------------------------------------------------
 -- vrcTail -
 
+-- | the tail.
 vrcTail :: Distributive x => VarianceG t k c d (n+1) x -> VarianceG t k c d n x
 vrcTail (VarianceG c vs) = VarianceG (cnzTail c) (tail vs)
 
 --------------------------------------------------------------------------------
 -- ObjectKernelCokernel -
 
+-- | kernels and cokernels admitting 'Object'
 type ObjectKernelCokernel k c d x =
   ( Diagrammatic d
   , Object (k Dst Projective d (Parallel LeftToRight) N2 N1 x)  
@@ -259,6 +265,7 @@ type ObjectKernelCokernel k c d x =
 --------------------------------------------------------------------------------
 -- EntityDiagrammatic -
 
+-- | diagrammatic object admitting 'Entity'.
 type EntityDiagrammatic d x =
   ( Typeable d
   , Entity (d (Parallel LeftToRight) N2 N1 x)
@@ -407,6 +414,7 @@ variance ks cs c@(ConsecutiveZero (DiagramChainFrom _ _)) = v where
 --------------------------------------------------------------------------------
 -- vrcConsZeroHom -
 
+-- | the induced @'ConsecutiveZeroHom' __'To'__@.
 vrcConsZeroHomTo ::
   ( Distributive x
   , Conic c, Conic k
@@ -507,6 +515,7 @@ vrcHomConsZeroHom (VarianceGHom a b fs) = ConsecutiveZeroHom t where
 --------------------------------------------------------------------------------
 -- prpVarianceGHom -
 
+-- | validity according to 'VarianceGHom'.
 prpVarianceGHom ::
   ( Distributive x
   , EntityDiagrammatic d x
@@ -540,6 +549,7 @@ instance
 --------------------------------------------------------------------------------
 -- vrcHomMapCov -
 
+-- | covariant mapping of 'VarianceGHom'.
 vrcHomMapCov ::
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h  
@@ -555,6 +565,7 @@ vrcHomMapCov h (VarianceGHom a b fs) = VarianceGHom a' b' fs' where
 --------------------------------------------------------------------------------
 -- vrcHomMapCnt -
 
+-- | contravariant mapping of 'VarianceGHom'.
 vrcHomMapCnt ::
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h  
@@ -576,6 +587,7 @@ type instance Dual1 (VarianceGHom t k c d n) = VarianceGHom (Dual t) c k d n
 --------------------------------------------------------------------------------
 -- vrcHomMapS -
 
+-- | mapping of 'VarianceGHom'.
 vrcHomMapS :: 
   ( HomDistributiveDisjunctive h
   , CategoryDisjunctive h  
@@ -611,6 +623,8 @@ instance
 --------------------------------------------------------------------------------
 -- varianceHom --
 
+-- | constructing a 'VarianceGHom' by a 'ConsecutiveZeroHom' according to the given 'Kernels' and
+-- 'Cokernels'.
 varianceHom :: (Distributive x, Typeable t, Attestable n)
   => Kernels N1 x -> Cokernels N1 x
   -> ConsecutiveZeroHom t n x -> VarianceHom t n x

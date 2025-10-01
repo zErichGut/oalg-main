@@ -46,6 +46,7 @@ type instance Dual1 (LimitsG c s p d t n m) = LimitsG c s (Dual p) d (Dual t) n 
 --------------------------------------------------------------------------------
 -- lmsMapCov -
 
+-- | covariant mapping for 'LimitsG'.
 lmsMapCov :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Covariant (Inv2 h) x y
   -> LimitsG c s p d t n m x -> LimitsG c s p d t n m y
@@ -57,6 +58,7 @@ lmsMapCov (Covariant2 i) (LimitsG u) = LimitsG u' where
 --------------------------------------------------------------------------------
 -- lmsMapCnt -
 
+-- | contravariant mapping for 'LimitsG'.
 lmsMapCnt :: NaturalConicBi (Inv2 h) c s p d t n m
   => Variant2 Contravariant (Inv2 h) x y
   -> LimitsG c s p d t n m x -> Dual1 (LimitsG c s p d t n m) y
@@ -68,6 +70,7 @@ lmsMapCnt (Contravariant2 i) (LimitsG u) = LimitsG u' where
 --------------------------------------------------------------------------------
 -- lmsMapS -
 
+-- | mapping for 'LimitsG'.
 lmsMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y -> SDualBi (LimitsG c s p d t n m) x -> SDualBi (LimitsG c s p d t n m) y
 lmsMapS = vmapBi lmsMapCov lmsMapCov lmsMapCnt lmsMapCnt

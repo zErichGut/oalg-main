@@ -165,6 +165,7 @@ type DualisableGChain p t o c d n
 --------------------------------------------------------------------------------
 -- coMinimumTo -
 
+-- | the co-object of 'MinimumG'.
 coMinimumGTo ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
@@ -178,6 +179,7 @@ coMinimumGTo min = max where
 --------------------------------------------------------------------------------
 -- coMinimaTo -
 
+-- | the co-object of 'MinimaG'.
 coMinimaGTo ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
@@ -191,6 +193,7 @@ coMinimaGTo min = max where
 --------------------------------------------------------------------------------
 -- coMinimaFrom -
 
+-- | the co-object of 'MinimaG'.
 coMinimaGFrom ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
@@ -204,6 +207,7 @@ coMinimaGFrom min = max where
 --------------------------------------------------------------------------------
 -- coMaximaFrom -
 
+-- | the co-object of 'MaximaG'.
 coMaximaGFrom ::
   ( Multiplicative x
   , TransformableGRefl o Mlt
@@ -217,12 +221,13 @@ coMaximaGFrom min = max where
 --------------------------------------------------------------------------------
 -- maxima -
 
+-- | maxima according to @'Chain' 'To'@.
 maximaTo :: Multiplicative x => Maxima To n x
 maximaTo = maxs where
   Contravariant2 i = toDualOpMlt
   SDualBi (Left1 maxs) = amapF (inv2 i) (SDualBi (Right1 minimaFrom)) 
 
-
+-- | maxima according to @'Chain' 'From'@.
 maximaFrom :: Multiplicative x => Maxima From n x
 maximaFrom = maxs where
   Contravariant2 i = toDualOpMlt

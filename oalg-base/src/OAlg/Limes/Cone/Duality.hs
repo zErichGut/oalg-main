@@ -96,6 +96,7 @@ cnMapDstCov (Covariant2 h) c = case tauDst (range h) of
     ConeCokernel d a        -> ConeCokernel d' (amapf h a) where
       SDualBi (Right1 (DiagramG d')) = amapF h (SDualBi (Right1 (DiagramG d)))
 
+-- | covariant mapping of 'Cone'.
 cnMapCov ::
   ( HomD s h
   , NaturalDiagrammatic h d t n m
@@ -185,7 +186,7 @@ cnMapCnt h c = case c of
 
 --------------------------------------------------------------------------------
 -- cnMapS -
-
+-- | mapping of 'Cone'.
 cnMapS ::
   ( HomD s h
   , NaturalDiagrammatic h d t n m

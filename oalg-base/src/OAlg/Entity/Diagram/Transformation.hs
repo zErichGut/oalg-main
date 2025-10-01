@@ -93,12 +93,14 @@ dgts (DiagramTrafo _ _ fs) = fs
 --------------------------------------------------------------------------------
 -- dgtTypeRefl -
 
+-- | reflexivity of @__t__@ for a diagram trafo.
 dgtTypeRefl :: DiagramTrafo t n m a -> Dual (Dual t) :~: t
 dgtTypeRefl (DiagramTrafo a _ _) = dgTypeRefl a
 
 --------------------------------------------------------------------------------
 -- dgtMapCov -
 
+-- | covariant mapping of 'DiagramTrafo'.
 dgtMapCov :: HomMultiplicativeDisjunctive h
   => Variant2 Covariant h a b -> DiagramTrafo t n m a -> DiagramTrafo t n m b
 dgtMapCov h (DiagramTrafo a b ts)
@@ -107,6 +109,7 @@ dgtMapCov h (DiagramTrafo a b ts)
 --------------------------------------------------------------------------------
 -- dgtMapCnt -
 
+-- | contravariant mapping of 'DiagramTrafo'.
 dgtMapCnt :: HomMultiplicativeDisjunctive h
   => Variant2 Contravariant h a b -> DiagramTrafo t n m a -> DiagramTrafo (Dual t) n m b
 dgtMapCnt h (DiagramTrafo a b ts)
@@ -114,6 +117,7 @@ dgtMapCnt h (DiagramTrafo a b ts)
 
 --------------------------------------------------------------------------------
 -- Duality -
+
 type instance Dual1 (DiagramTrafo t n m) = DiagramTrafo (Dual t) n m
 
 instance (Show a, ShowPoint a) => ShowDual1 (DiagramTrafo t n m) a
@@ -122,6 +126,7 @@ instance (Eq a, EqPoint a) => EqDual1 (DiagramTrafo t n m) a
 --------------------------------------------------------------------------------
 -- dgtMapS -
 
+-- | mapping of 'DiagramTrafo'
 dgtMapS :: (HomMultiplicativeDisjunctive h, t ~ Dual (Dual t))
   => h x y -> SDualBi (DiagramTrafo t n m) x -> SDualBi (DiagramTrafo t n m) y
 dgtMapS = vmapBi dgtMapCov dgtMapCov dgtMapCnt dgtMapCnt

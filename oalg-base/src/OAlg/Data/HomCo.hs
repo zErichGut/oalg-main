@@ -53,6 +53,7 @@ import OAlg.Data.Variant
 --------------------------------------------------------------------------------
 -- MorCo -
 
+-- | morphism to and from the co-cobject.
 data MorCo m s o x y where
   ToCo   :: (Structure s x, TransformableG m s s, TransformableG o s s)
          => MorCo m s o (o (m x)) (m (o x))
@@ -73,9 +74,9 @@ mcoStruct FromCo = Struct
 --------------------------------------------------------------------------------
 -- tauCo -
 
+-- | propagating the @__s__@ structure on @__x__@ to its co-object.
 tauCo :: (TransformableG m s s, TransformableG o s s) => Struct s x -> Struct s (m (o x))
 tauCo = tauO . tauO
-
 
 instance Morphism (MorCo m s o) where
   type ObjectClass (MorCo m s o) = s
@@ -85,6 +86,7 @@ instance Morphism (MorCo m s o) where
 --------------------------------------------------------------------------------
 -- toCo -
 
+-- | to the co-object.
 toCo :: (TransformableG m s s, TransformableG o s s)
   => Struct s x -> MorCo m s o (o (m x)) (m (o x))
 toCo Struct = ToCo
@@ -92,6 +94,7 @@ toCo Struct = ToCo
 --------------------------------------------------------------------------------
 -- fromCo -
 
+-- | from the co-cobject.
 fromCo :: (TransformableG m s s, TransformableG o s s)
   => Struct s x -> MorCo m s o (m (o x)) (o (m x))
 fromCo Struct = FromCo
@@ -99,11 +102,17 @@ fromCo Struct = FromCo
 --------------------------------------------------------------------------------
 -- PathCo -
 
+-- | path of 'SMorphism' over 'MorCo'.
 newtype PathCo m s o x y = PathCo (Path (SMorphism s s o (MorCo m s o)) x y)
   deriving (Show)
 
 instance Show2 (PathCo m s o)
 
+-- | reducing a path according to the rules:
+--
+-- (1) @'SCov' 'ToCo' ':.' 'SCov' 'FromCo' ':.' p'@ reduces to @p'@.
+--
+-- (2) @'SCov' 'FromCo' ':.' 'SCov' 'ToCo' ':.' p'@ reduces to @p'@.
 rdcCoToFromCo :: PathCo m s o x y -> Rdc (PathCo m s o x y)
 rdcCoToFromCo (PathCo p) = case p of
   SCov ToCo :. SCov FromCo :. p' -> reducesTo (PathCo p')    >>= rdcCoToFromCo
@@ -112,9 +121,11 @@ rdcCoToFromCo (PathCo p) = case p of
                                 >>= \(PathCo p'') -> return (PathCo (p' :. p''))
   _                              -> return (PathCo p)
 
+-- | reducing a 'PathCo' according to 'rdcPathSMorphism'.
 rdcCoToFromDual :: PathCo m s o x y -> Rdc (PathCo m s o x y)
 rdcCoToFromDual (PathCo p) = rdcPathSMorphism p >>= return . PathCo
 
+-- | applying the rules of 'rdcCoToFromCo' and 'rdcCoToFromDual'.
 rdcPathCo :: PathCo m s o x y -> Rdc (PathCo m s o x y)
 rdcPathCo = rdcCoToFromCo >>>= rdcCoToFromDual
 
@@ -123,6 +134,7 @@ instance Reducible (PathCo m s o x y) where reduce = reduceWith rdcPathCo
 --------------------------------------------------------------------------------
 -- HomCo -
 
+-- | homomorphism for applications of objects @__m__@ over @__x__@.
 newtype HomCo m s o x y = HomCo (PathCo m s o x y)
   deriving (Show)
 
