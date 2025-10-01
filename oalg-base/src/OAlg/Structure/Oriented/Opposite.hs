@@ -96,6 +96,7 @@ fromOp (Op x) = x
 --------------------------------------------------------------------------------
 -- toOpG -
 
+-- | the induced mapping. 
 toOpG :: (x -> y) -> Op x -> Op y
 toOpG f (Op x) = Op (f x)
 

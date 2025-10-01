@@ -76,14 +76,16 @@ trafoToId f = Id . f
 --------------------------------------------------------------------------------
 -- toIdG -
 
+-- | the induced mapping.
 toIdG :: (x -> y) -> Id x -> Id y
 toIdG f (Id x) = Id (f x)
 
 --------------------------------------------------------------------------------
 -- fromIdG -
 
+-- | the induced mapping.
 fromIdG :: (Id x -> Id y) -> x -> y
-fromIdG i = fromId . i . Id 
+fromIdG f = fromId . f . Id 
 
 --------------------------------------------------------------------------------
 -- apIdType-

@@ -90,15 +90,14 @@ instance Multiplicative Variant where
 --------------------------------------------------------------------------------
 -- Disjunctive -
 
--- type Disjunctive :: forall k . k -> Constraint
-
--- | object having two variants.
+-- | object having an associated variant.
 class Disjunctive x where
   variant :: x -> Variant
 
 --------------------------------------------------------------------------------
 -- Disjunctive2 -
 
+-- | two parameterized object having a associated variant.
 class Disjunctive2 h where
   variant2 :: h x y -> Variant
   default variant2 :: Disjunctive (h x y) => h x y -> Variant
@@ -114,6 +113,7 @@ instance Disjunctive2 h => Disjunctive (Path h x y) where
 --------------------------------------------------------------------------------
 -- Variant2 -
 
+-- | concept of co- and contravariant for two parameterized types.
 data Variant2 v h x y where
   Covariant2     :: h x y -> Variant2 Covariant h x y
   Contravariant2 :: h x y -> Variant2 Contravariant h x y
@@ -151,6 +151,7 @@ instance Disjunctive2 h => Disjunctive2 (Sub s h) where variant2 (Sub h) = varia
 --------------------------------------------------------------------------------
 -- toVariant2 -
 
+-- | mapping to 'Variant2' for a @'Disjunctive2' __h__@.
 toVariant2 :: Disjunctive2 h
   => h x y -> Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y
 toVariant2 h = case variant2 h of

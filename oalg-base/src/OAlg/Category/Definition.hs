@@ -223,9 +223,10 @@ instance Morphism (->) where
 
 --------------------------------------------------------------------------------
 -- Category -
+
 infixr 9 .
 
-  -- | category of morphisms.
+-- | category of morphisms.
 --
 --   __Properties__ Let __@c@__ be a type instance of the class 'Category', then
 --   holds:
@@ -363,6 +364,7 @@ instance (FunctorialG f c (->), TransformableObjectClass s c) => FunctorialG f (
 --------------------------------------------------------------------------------
 -- cOneSub -
 
+-- | restricting 'cOne'.
 cOneSub :: (Category c, t ~ ObjectClass c) => Struct s x -> Struct t x -> Sub s c x x
 cOneSub Struct = Sub . cOne
 
@@ -387,17 +389,14 @@ sub h = sub' (tauHom (homomorphous h)) h
 subG' :: ApplicativeG d a b => Homomorphous t (d x) (d y) -> a x y -> Sub t b (d x) (d y)
 subG' (Struct:>:Struct) h = Sub (amapG h)
 
-
+-- | the induced embedding.
 subG :: (ApplicativeG d a b, TransformableG d s t)
   => Sub s a x y -> Sub t b (d x) (d y)
 subG a'@(Sub a) = subG' (tauHomG (homomorphous a')) a
--- subG a'@(Sub a) = subG' (tauG (tauFst (domain a')) :>: tauG (tauFst (range a'))) a 
-
 
 instance (ApplicativeG d a b, TransformableG d s t)
   => ApplicativeG d (Sub s a) (Sub t b) where
   amapG = subG
-
 
 instance ( FunctorialG d a b
          , TransformableObjectClass s a, TransformableObjectClass t b

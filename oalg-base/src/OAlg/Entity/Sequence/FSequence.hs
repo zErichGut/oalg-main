@@ -159,6 +159,7 @@ fsqT (FSequenceLazy _ t)   = t
 --------------------------------------------------------------------------------
 -- fsqIsEmpty -
 
+-- | testing the first entry of being empty.
 fsqIsEmpty :: (DefaultValue d i x, Eq x) => FSequence s d i x -> Bool
 fsqIsEmpty f = psqIsEmpty xis where FSequenceForm _ xis = form f
 

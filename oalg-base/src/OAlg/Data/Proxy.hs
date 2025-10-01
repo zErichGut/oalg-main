@@ -21,7 +21,10 @@ module OAlg.Data.Proxy
 
 import Data.Proxy as Prx
 
+-- | two parameterized proxy.
 data Proxy2 a b = Proxy2 deriving (Read,Show,Eq,Ord)
+
+-- | three parameterized proxy.
 data Proxy3 a b c = Proxy3 deriving (Read,Show,Eq,Ord) 
   
 

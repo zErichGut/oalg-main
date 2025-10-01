@@ -122,7 +122,7 @@ instance Eq2 (Struct2 m)
 --------------------------------------------------------------------------------
 -- Typ -
 
--- | 'Typeable' structures.
+-- | type index for 'Typeable' structures.
 data Typ
 
 type instance Structure Typ x = Typeable x
@@ -149,7 +149,7 @@ tauType _ = Struct
 --------------------------------------------------------------------------------
 -- Ord' -
 
--- | type for ordered structures.
+-- | type index for ordered structures.
 data Ord'
 
 type instance Structure Ord' x = Ord x
@@ -157,7 +157,7 @@ type instance Structure Ord' x = Ord x
 --------------------------------------------------------------------------------
 -- Bol -
 
--- | type representing 'Boolean' structures.
+-- | type index for 'Boolean' structures.
 data Bol
 
 type instance Structure Bol x = Boolean x
@@ -248,7 +248,7 @@ instance Transformable s Typ => TestEquality (Struct s) where
 --------------------------------------------------------------------------------
 -- SubStruct -
 
--- | parameterized sub structures.
+-- | type index for parameterized sub structures.
 data SubStruct t s
 
 type instance Structure (SubStruct t s) x = Structure t x
@@ -257,12 +257,15 @@ instance Transformable t (SubStruct t s) where tau Struct = Struct
 
 --------------------------------------------------------------------------------
 -- tauSubStruct -
+
+-- | transforming a sub structure to its base.
 tauSubStruct :: Struct (SubStruct t s) x -> Struct t x
 tauSubStruct Struct = Struct
 
 --------------------------------------------------------------------------------
 -- tauGSubStruct -
 
+-- | generalized transformation of a sub structure.
 tauGSubStruct :: TransformableG t u v => Struct (SubStruct u s) x -> Struct v (t x)
 tauGSubStruct u = tauG (tauSubStruct u)
 

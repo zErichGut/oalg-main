@@ -266,6 +266,7 @@ coXMltInv = xMltFromOpOp . coXMlt
 --------------------------------------------------------------------------------
 -- MltX -
 
+-- | index for 'Multiplicative' structures with a 'XStandardMlt'.
 data MltX
 
 type instance Structure MltX x = (Multiplicative x, XStandardMlt x)

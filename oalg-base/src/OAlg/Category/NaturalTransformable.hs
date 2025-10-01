@@ -156,6 +156,7 @@ data SomeNaturalApplication a f g where
 --------------------------------------------------------------------------------
 -- prpNaturalTransformable -
 
+-- | validity according to 'NaturalTransformable' for some applications.
 relNaturalTransformable :: (Show2 a, Eq (g y), Show (f x))
   => NaturalTransformation a (->) f g -> a x y -> f x -> Statement
 relNaturalTransformable n@NaturalTransformation a f

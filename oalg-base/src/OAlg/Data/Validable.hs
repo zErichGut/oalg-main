@@ -104,6 +104,7 @@ type instance Structure XStd x = (XStandard x)
 --------------------------------------------------------------------------------
 -- xStd -
 
+-- | the associated standard random variable.
 xStdStruct :: Struct XStd x -> X x
 xStdStruct Struct = xStandard
 

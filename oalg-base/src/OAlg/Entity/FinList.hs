@@ -212,6 +212,8 @@ instance ApplicativeG SomeFinList (->) (->)  where
 -- someFinList -
 
 -- | the associated finite list.
+--
+-- __Note__ If the input list is infinite then 'someFinList' dose not terminate.
 someFinList :: [a] -> SomeFinList a
 someFinList [] = SomeFinList Nil
 someFinList (a:as) = case someFinList as of
@@ -220,6 +222,12 @@ someFinList (a:as) = case someFinList as of
 --------------------------------------------------------------------------------
 -- maybeFinList -
 
+-- | list as a finite list according to @__n__@.
+--
+-- __Property__ Let @xs@ be in @[__a__]@ and @n@ in @'Any' __n__@, then holds:
+--
+-- (1) If @'lengthN' n '<=' 'length' xs@ then @'maybeFinList' n xs@ matches @'Just' xs'@ with
+-- @'toList' xs' '==' xs@.
 maybeFinList :: Any n -> [a] -> Maybe (FinList n a)
 maybeFinList W0 _          = Just (Nil)
 maybeFinList _ []          = Nothing

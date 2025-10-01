@@ -58,6 +58,7 @@ import OAlg.Structure.FibredOriented
 --------------------------------------------------------------------------------
 -- tauO -
 
+-- | propagating the @__s__@ structure to @__o__@.
 tauO :: Transformable1 o s => Struct s x -> Struct s (o x)
 tauO = tauG
 

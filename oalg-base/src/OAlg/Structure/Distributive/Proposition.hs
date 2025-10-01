@@ -370,6 +370,7 @@ xoDst xo xf xt = XDst xrsl xsl xrsr xsr where
 --------------------------------------------------------------------------------
 -- DstX -
 
+-- | type index for 'Distributive' structures admitting 'XStandardOrtOrientation'.
 data DstX
 
 type instance Structure DstX x = (Distributive x, XStandardOrtOrientation x)

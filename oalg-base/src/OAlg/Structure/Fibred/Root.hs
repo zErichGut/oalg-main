@@ -76,11 +76,13 @@ class XStandard (Root f) => XStandardRoot f
 --------------------------------------------------------------------------------
 -- EntityRoot -
 
+-- | 'Root's as 'Entity's.
 type EntityRoot x = (ShowRoot x, EqRoot x, ValidableRoot x, TypeableRoot x)
 
 --------------------------------------------------------------------------------
 -- TotalRoot -
 
+-- | 'Root's admitting total operations.
 type TotalRoot = SingletonRoot
 
 --------------------------------------------------------------------------------
@@ -154,6 +156,7 @@ instance XStandard p => XStandardRoot (Orientation p)
 --------------------------------------------------------------------------------
 -- Rt -
 
+-- | wraper for 'Root's.
 newtype Rt x = Rt (Root x)
 
 type instance Root (Rt x) = Root x
@@ -168,12 +171,14 @@ instance ApplicativeG Rt h c => ApplicativeG Rt (Inv2 h) c where
 --------------------------------------------------------------------------------
 -- idRt -
 
+-- | casting a 'Root'.
 idRt :: Root x ~ Root y => Rt x -> Rt y
 idRt (Rt r) = Rt r
 
 --------------------------------------------------------------------------------
 -- amapRt -
 
+-- | the induced mapping.
 amapRt :: (Root x -> Root y) -> Rt x -> Rt y
 amapRt r (Rt x) = Rt (r x)
 
@@ -187,23 +192,26 @@ fromRtG f r = r' where Rt r' = f (Rt r)
 --------------------------------------------------------------------------------
 -- ApplicativeRoot -
 
+-- | application on 'Root's.
 type ApplicativeRoot h = ApplicativeG Rt h (->)
 
 --------------------------------------------------------------------------------
 -- rmap -
 
+-- | the induced mapping of 'Root's.
 rmap :: ApplicativeRoot h => h x y -> Root x -> Root y
 rmap h = fromRtG (amapG h)
 
 --------------------------------------------------------------------------------
 -- FunctorialRoot -
 
+-- | functorials for 'Root'.
 type FunctorialRoot h = FunctorialG Rt h (->)
 
 --------------------------------------------------------------------------------
 -- R -
 
--- | adjoining the root @()@.
+-- | adjoining the total root @()@ to @__x__@.
 newtype R x = R x deriving (Show,Eq,Ord,Validable)
 
 type instance Root (R x) = ()

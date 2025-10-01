@@ -31,7 +31,6 @@ import OAlg.Structure.Oriented
 import OAlg.Entity.Natural as N hiding ((++))
 
 import OAlg.Entity.Diagram.Definition
-import OAlg.Entity.Diagram.Diagrammatic
 
 --------------------------------------------------------------------------------
 -- prpDiagramOrntSymbol -

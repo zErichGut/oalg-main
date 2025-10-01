@@ -192,6 +192,7 @@ instance FunctorialG Pnt h c => FunctorialG Pnt (Inv2 h) c
 ---------------------------------------------------------------------
 -- idPnt -
 
+-- | casting a 'Point'.
 idPnt :: Point x ~ Point y => Pnt x -> Pnt y
 idPnt (Pnt p) = Pnt p  
 
@@ -253,6 +254,7 @@ pmapf = pmap
 --------------------------------------------------------------------------------
 -- FunctorialPoint -
 
+-- | functorial application for 'Pnt'.
 type FunctorialPoint h = FunctorialG Pnt h (->)
 
 --------------------------------------------------------------------------------

@@ -43,9 +43,6 @@ import OAlg.Data.Show
 import OAlg.Data.Dualisable
 import OAlg.Data.Number
 import OAlg.Data.Boolean
-import OAlg.Data.Constructable
-import OAlg.Data.Reducible
-import OAlg.Data.Statement
 
 --------------------------------------------------------------------------------
 -- Path -
