@@ -162,6 +162,7 @@ toDualOpMlt = toDualO Struct
 --------------------------------------------------------------------------------
 -- relMapMltOne -
 
+-- | validity that 'one' maps to 'one' according to the given mapplings.
 relMapMltOne :: Struct Mlt x -> Struct Mlt y
   -> (x -> y) -> (Point x -> Point y) -> X (Point x) -> Statement
 relMapMltOne Struct Struct mArw mPnt xp = Forall xp
@@ -170,10 +171,12 @@ relMapMltOne Struct Struct mArw mPnt xp = Forall xp
 --------------------------------------------------------------------------------
 -- relMapMlt -
 
+-- | validity of '*' as covariant operation according to the given mapping. 
 relMapMltCov :: Struct Mlt x -> Struct Mlt y -> (x -> y) -> X (Mltp2 x) -> Statement
 relMapMltCov Struct Struct mArw xmp = Label "Cov" :<=>: Forall xmp
   (\(Mltp2 f g) -> (mArw (f * g) == mArw f * mArw g) :?> Params ["f":=show f,"g":=show g])
 
+-- | validity of '*' as contravariant operation according to the given mapping. 
 relMapMltCnt :: Struct Mlt x -> Struct Mlt y -> (x -> y) -> X (Mltp2 x) -> Statement
 relMapMltCnt Struct Struct mArw xmp = Label "Cnt" :<=>: Forall xmp
   (\(Mltp2 f g) -> (mArw (f * g) == mArw g * mArw f) :?> Params ["f":=show f,"g":=show g])
@@ -202,17 +205,20 @@ prpDualisableMultiplicativeMlt q s xmp = Prp "DualisableMultiplicativeMlt" :<=>:
 --------------------------------------------------------------------------------
 -- XHomMlt -
 
+-- | random variable for testing multiplicative homomorphisms.
 data XHomMlt x = XHomMlt (X (Point x)) (X (Mltp2 x))
 
 --------------------------------------------------------------------------------
 -- xMltXHomMlt -
 
+-- | the underlying 'XMomMlt'.
 xMltHomMlt :: XMlt x -> XHomMlt x
 xMltHomMlt (XMlt _ xp _ _ xm2 _) = XHomMlt xp xm2
 
 --------------------------------------------------------------------------------
 -- xosHomMlt -
 
+-- | the 'XHomMlt' given by a @'XOrtSite' __d__@
 xosHomMlt :: Multiplicative x => XOrtSite d x -> XHomMlt x
 xosHomMlt xos = XHomMlt (xosPoint xos) (xMltp2 xos)
 
@@ -242,6 +248,7 @@ prpHomMultiplicativeDisjunctive h (XHomMlt xp xm2) = Prp "HomDisjunctiveMultipli
 --------------------------------------------------------------------------------
 -- homDisjOpMlt -
 
+-- | embedding a multiplicative homomorphism into a covariant @'HomDisj' __Mlt Op__@.
 homDisjOpMlt :: HomMultiplicative h
   => h x y -> Variant2 Covariant (HomDisj Mlt Op h) x y
 homDisjOpMlt = homDisj
@@ -258,6 +265,7 @@ prpHomMultiplicative h xhMlt = Prp "HomMultiplicative"
 --------------------------------------------------------------------------------
 -- prpHomDisjMultiplicative -
 
+-- | validity according to 'HomMultiplicativeDisjunctive'.
 prpHomDisjMultiplicative :: (HomMultiplicative h, DualisableMultiplicative s o)
   => Struct MltX x -> HomDisj s o h x y -> Statement
 prpHomDisjMultiplicative Struct h = prpHomMultiplicativeDisjunctive h (xMltHomMlt xStandardMlt)
@@ -265,6 +273,7 @@ prpHomDisjMultiplicative Struct h = prpHomMultiplicativeDisjunctive h (xMltHomMl
 --------------------------------------------------------------------------------
 -- xsoMltX -
 
+-- | random variable for some 'Multiplicative' object classes .
 xsoMltX :: s ~ MltX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
 xsoMltX = xOneOf [ SomeObjectClass (Struct :: Struct MltX OS)
                  , SomeObjectClass (Struct :: Struct MltX N)

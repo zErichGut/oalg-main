@@ -34,6 +34,7 @@ module OAlg.Entity.Diagram.Diagrammatic
     -- * Duality
   , NaturalDiagrammaticBi
 
+  , prpNaturalDiagrammatic
 {-  
     -- * Proposition
   , prpDiagrammatic
@@ -201,62 +202,20 @@ data NaturalDiagrammaticW h d t n m where
   NaturalDiagrammaticW :: NaturalDiagrammatic h d t n m
     => NaturalDiagrammaticW h d t n m
 
-{-
---------------------------------------------------------------------------------
--- NaturalDiagrammaticDual -
-
--- | helper class to avoid undecidable instances.
-class NaturalDiagrammatic h d (Dual t) n m => NaturalDiagrammaticDual h d t n m
-
-instance
-  ( CategoryDisjunctive h
-  , HomOrientedDisjunctive h
-  , FunctorialOriented h
-  , t ~ Dual (Dual t)
-  )
-  => NaturalDiagrammaticDual h Diagram t n m
--}
-
 --------------------------------------------------------------------------------
 -- NaturalDiagrammaticBi -
 
+-- | natural diagrammatic for @__t__@ and @'Dual' __t__@.
 type NaturalDiagrammaticBi h d t n m =
   ( NaturalDiagrammatic h d t n m
   , NaturalDiagrammatic h d (Dual t) n m
   )
 
-{-
+
 --------------------------------------------------------------------------------
--- prpHomOrientedDisjunctiveS -
+-- prpNaturalDiagrammatic -
 
-relHomOrientedDisjunctiveS ::
-  ( HomOrientedDisjunctive h
-  , ApplicativeG (SDualBi (Diagram t n m)) h (->)
-  , t ~ Dual (Dual t)
-  , Show2 h)
-  => Homomorphous Ort x y -> h x y -> SDualBi (Diagram t n m) x -> Statement
-relHomOrientedDisjunctiveS (Struct :>: Struct) h d
-  = (amapG h d == dgMapS h d) :?> Params ["h":=show2 h, "d":=show d]
-
--- | validity of a disjunctive homomorphism on oriented structures acting
--- soundly on @'SDualit' ('Diagram' __t n m__)@ according to 'dgMapS'.
-prpHomOrientedDisjunctiveS ::
-  ( HomOrientedDisjunctive h
-  , ApplicativeG (SDualBi (Diagram t n m)) h (->)
-  , t ~ Dual (Dual t)
-  , Show2 h)
-  => h x y -> SDualBi (Diagram t n m) x -> Statement
-prpHomOrientedDisjunctiveS h d = Prp "HomOrientedDisjunctiveS"
-  :<=>: relHomOrientedDisjunctiveS (tauHom (homomorphous h)) h d
-
-relNaturalDiagrammatic ::
-  ( NaturalDiagrammatic h d t n m
-  , Show2 h
-  )
-  => q h d t n m -> h x y -> SDualBi (Diagram t n m) x -> Statement
-relNaturalDiagrammatic _ = prpHomOrientedDisjunctiveS
--}
-
+-- | validity according to 'NatrualDiagrammatic'.
 prpNaturalDiagrammatic :: NaturalDiagrammatic h d t n m
   => q h d t n m
   -> X (SomeNaturalApplication h (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m)))
@@ -328,7 +287,6 @@ xdChainTo ::
   -> X (SomeNaturalApplication h
          (SDualBi (DiagramG Diagram t n m)) (SDualBi (DiagramG Diagram t n m)))
 xdChainTo m h = xdChainToStruct m (homomorphous h) h
-
 
 xsaChainTo ::(n ~ m+1, t ~ Chain To)
   => Any m

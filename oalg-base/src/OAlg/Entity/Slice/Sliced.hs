@@ -93,12 +93,14 @@ instance Sliced Proxy OS where
 --------------------------------------------------------------------------------
 -- sliceIndex -
 
+-- | the slice index according to the proxy type.
 sliceIndex :: Sliced i x => q i x -> i x
 sliceIndex _ = unit1
 
 --------------------------------------------------------------------------------
 -- Sld -
 
+-- | type index for 'Sliced' structures.
 data Sld (i :: Type -> Type)
 
 type instance Structure (Sld i) x = Sliced i x
@@ -223,24 +225,29 @@ instance
 --------------------------------------------------------------------------------
 -- toDualOpOrtSld -
 
+-- | contravariant isomorphism on 'Sliced' 'Oriented' structures. 
 toDualOpOrtSld :: Sliced i x => Variant2 Contravariant (IsoO (Ort,Sld i) Op) x (Op x)
 toDualOpOrtSld = toDualO Struct
 
+-- | contravariant isomorphism on 'Sliced' 'Oriented' structures according to the proxy type.
 toDualOpOrtSld' :: Sliced i x => q i -> Variant2 Contravariant (IsoO (Ort, Sld i) Op) x (Op x)
 toDualOpOrtSld' _ = toDualOpOrtSld
 
 --------------------------------------------------------------------------------
 -- HomSlicedMultiplicative -
 
+-- | disjunctive multiplicative homomorphism respecting the slice structure.
 type HomSlicedMultiplicative i h = (HomSlicedOriented i h, HomMultiplicativeDisjunctive h)
 
 --------------------------------------------------------------------------------
 -- toDualOpMltSld -
 
+-- | contravariant isomorphism on 'Sliced' 'Multiplicative' structures. 
 toDualOpMltSld :: (Sliced i x, Multiplicative x)
   => Variant2 Contravariant (IsoO (Mlt,Sld i) Op) x (Op x)
 toDualOpMltSld = toDualO Struct
 
+-- | contravariant isomorphism on 'Sliced' 'Multiplicative' structures according to the proxy type.
 toDualOpMltSld' :: (Sliced i x, Multiplicative x)
   => q i -> Variant2 Contravariant (IsoO (Mlt,Sld i) Op) x (Op x)
 toDualOpMltSld' _ = toDualOpMltSld
@@ -248,12 +255,15 @@ toDualOpMltSld' _ = toDualOpMltSld
 --------------------------------------------------------------------------------
 -- HomSlicedDistributive -
 
+-- | disjunctive distributive homomorphism respecting the slice structure.
 type HomSlicedDistributive i h = (HomSlicedOriented i h, HomDistributiveDisjunctive h)
 
+-- | contravariant isomorphism on 'Sliced' 'Distributive' structures. 
 toDualOpDstSld :: (Sliced i x, Distributive x)
   => Variant2 Contravariant (IsoO (Dst,Sld i) Op) x (Op x)
 toDualOpDstSld = toDualO Struct
 
+-- | contravariant isomorphism on 'Sliced' 'Distributive' structures according to the proxy type.
 toDualOpDstSld' :: (Sliced i x, Distributive x)
   => q i -> Variant2 Contravariant (IsoO (Dst,Sld i) Op) x (Op x)
 toDualOpDstSld' _  = toDualOpDstSld

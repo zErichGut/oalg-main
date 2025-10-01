@@ -220,6 +220,7 @@ relHomDisjOpAdd :: X (SomeMorphism (HomDisjEmpty AddX Op)) -> Statement
 relHomDisjOpAdd xsh = Forall xsh
   (\(SomeMorphism h) -> relHomAddAddX (tauHom (homomorphous h)) h)
 
+-- | validity of @'HomDisjEmpty' __'Add' 'Op'__@ according to 'HomAdditve'.
 prpHomDisjOpAdd :: Statement
 prpHomDisjOpAdd = Prp "HomDisjOpAdd" :<=>: relHomDisjOpAdd xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty AddX Op))

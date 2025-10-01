@@ -258,6 +258,7 @@ dgMap h d                  =  case d of
 --------------------------------------------------------------------------------
 -- dgMapCov -
 
+-- | mapping of a diagramm via a 'Covaraint' homomorphism on 'Oriented' structures.
 dgMapCov :: HomOrientedDisjunctive h
   => Variant2 Covariant h x y -> Diagram t n m x -> Diagram t n m y
 dgMapCov = dgMap
@@ -688,6 +689,7 @@ instance Oriented a => Validable (SomeDiagram a) where
 --------------------------------------------------------------------------------
 -- sdgMap -
 
+-- | mapping of some diagram.
 sdgMap :: (HomOriented h, DualisableOriented s o)
   => HomDisj s o h x y -> SomeDiagram x -> SomeDiagram y
 sdgMap h (SomeDiagram d)   = case dgTypeRefl d of

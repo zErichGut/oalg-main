@@ -40,6 +40,7 @@ import OAlg.Hom.Distributive
 --------------------------------------------------------------------------------
 -- Ornt -
 
+-- | homomorphisms to 'Orientation'.
 data Ornt s x y where
   Ornt    :: (Structure s m, Structure s (Orientation (Point m)))
           => Ornt s m (Orientation (Point m))

@@ -63,8 +63,6 @@ module OAlg.Entity.Slice.Free
 
   ) where
 
-import Control.Monad (join)
-
 import Data.Kind
 import Data.Typeable
 import Data.List ((++))

@@ -135,6 +135,7 @@ relHomFbrOrtStruct :: (HomFibredOriented h, Show2 h)
 relHomFbrOrtStruct (Struct :>: Struct) h r
   = (rmap h r == omap h r) :?> Params ["h":=show2 h,"r":=show r]
 
+-- | validity accordint to 'HomFibredOriented'.
 prpHomFbrOrt :: (HomFibredOriented h, Show2 h)
   => h x y -> Root x -> Statement
 prpHomFbrOrt h r = Prp "HomFbrOrt"
@@ -176,6 +177,7 @@ relDualisableFibredOrientedStk :: DualisableFibredOriented s o
 relDualisableFibredOrientedStk q s Struct Struct x
   = (toDualStk q s x == toDualArw q s x) :?> Params ["x":=show x]
 
+-- | validity according to 'DualisableFibredOriented'.
 prpDualisableFibredOrientedStk :: DualisableFibredOriented s o
   => q o -> Struct s x -> x -> Statement
 prpDualisableFibredOrientedStk q s x = Prp "DualisableFibredOriented" :<=>:
@@ -193,6 +195,7 @@ relHomDisjOpFbrOrt :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op)) -> Statement
 relHomDisjOpFbrOrt xsh = Forall xsh
   (\(SomeMorphism h) -> relHomFbrOrtDisjFbrOrtX (tauHom (homomorphous h)) h)
 
+-- | validity of @'HomDisjEmpty' __FbrOrt Op__@ according to 'HomFibredOrientedDisjunctive'.
 prpHomDisjOpFbrOrt :: Statement
 prpHomDisjOpFbrOrt = Prp "HomDisjOpFbrOrt" :<=>: relHomDisjOpFbrOrt xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))

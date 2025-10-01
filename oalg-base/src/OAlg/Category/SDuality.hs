@@ -156,6 +156,11 @@ smpPathForget p = case p of
 --------------------------------------------------------------------------------
 -- rdcPathSMorphism -
 
+-- | reducing a path of 'SMorphism' according to the rules:
+--
+-- (1) @'SFromDual' ':.' 'SToDual' ':.' p'@ reduces to @p'@.
+--
+-- (2) @'SToDual' ':.' 'SFromDual' ':.' p'@ reduces to @p'@.
 rdcPathSMorphism :: PathSMorphism r s o h x y -> Rdc (PathSMorphism r s o h x y)
 rdcPathSMorphism p = case p of
   SFromDual :. SToDual :. p' -> reducesTo p' >>= rdcPathSMorphism
@@ -232,6 +237,7 @@ sCov h = Covariant2 $ make (SCov h :. IdPath (tau (domain h)))
 --------------------------------------------------------------------------------
 -- sForget -
 
+-- | casting a @__s__@ morphism to a @__t__@ morphism.
 sForget :: (Morphism h, Transformable (ObjectClass h) t, Transformable s t)
   => SHom r s o h x y -> SHom r t o h x y
 sForget (SHom p) = SHom (smpPathForget p)
@@ -512,6 +518,7 @@ xSctSomeCmpb2 n xo xf = xNB 0 n >>= \n' -> xfg >>= xSctAdjDual n' where
 --------------------------------------------------------------------------------
 -- xSctSomeMrph -
 
+-- | random variable for some 'SHom's between the given object classes.
 xSctSomeMrph :: (Morphism h, Transformable (ObjectClass h) s, Transformable1 o s)
   => N -> X (SomeObjectClass (SHom r s o h)) -> X (SomeMorphism (SHom r s o h))
 xSctSomeMrph n xo = amap1 (\(SomeCmpb2 f g) -> SomeMorphism (f . g)) $ xSctSomeCmpb2 n xo XEmpty

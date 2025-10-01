@@ -35,7 +35,6 @@ import OAlg.Data.Either
 import OAlg.Entity.Diagram
 
 import OAlg.Limes.Cone
-import OAlg.Limes.Definition
 
 import OAlg.Limes.Limits.Core
 
