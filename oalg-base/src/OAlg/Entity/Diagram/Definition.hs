@@ -17,13 +17,82 @@
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- definition of 'Diagram's on 'Oriented' structures.
+--
+-- __Duality__#Duality# Each diagram admits a co-diagram just by /reversing/ the arrows and leaving
+-- the points untouched. In the following it will be demonstrated how to work - respectively -
+-- how to switch between a diagram and its co-diagram and how this duality-concept is
+-- implemented.
+--
+-- Let @d@ be a diagram in @'Diagram' __t n m x__@ over a 'Oriented' structure @__x__@. To get
+-- the co-diagram @d'@ of @d@ just use the code:
+--
+-- @
+-- Contravariant2 i   = toDualOpOrt
+-- SDualBi (Left1 d') = amapF i (SDualBi (Right1 d))
+-- @
+--
+-- where 'toDualOpOrt' is the duality operator with type @'IsoO' 'Ort' 'Op' __x__ ('Op' __x__)@
+-- which can be applied to 'SDualBi'.
+--
+-- And to get the diagram @d@ of a given co-diagram @d'@ just use the code:
+--
+-- @
+-- Contravariant2 i   = toDualOpOrt
+-- SDualBi (Right1 d) = amapF (inv2 i) (SDualBi (Left1 d'))
+-- @
+--
+-- where @'inv2' i@ is the inverse of @i@. As the application of @'IsoO' 'Ort' 'Op'@ on 'SDualBi'
+-- is functorial, the two mappings @'amapF' i@ and @'amapF' ('inv2' i)@ are inverse to each other.
+--
+-- To implement this behavior, follow the following steps:
+--
+-- First implement two functions on @'Diagram' __t n m x__@, where the one maps it to
+-- @'Diagram' __t n m y__@ according to a covariant homomorphism on 'Oriented' structures
+-- (see 'dgMapCov') and the other maps it to @'Diagram' ('Dual' t) n m y@ (see 'dgMapCnt').
+-- 
+-- Now define the duality on the types according
+--
+-- @
+-- type instance Dual1 (Diagram t n m) = Diagram (Dual t) n m
+-- @
+--
+-- With this definitions you can implement the mapping 'dgMapS' on 'SDualBi' by
+--
+-- @
+-- dgMapS = vmapBi dgMapCov dgMapCov dgMapCnt dgMapCnt
+-- @
+--
+-- where 'vmapBi' implements the duality mapping on 'SDualBi'.
+--
+-- Finally on can declare the
+--
+-- @
+-- instance (HomDisjunctiveOriented h, t ~ Dual (Dual t))
+--   => ApplicativeG (SDualBi (Diagram t n m)) h (->) where
+--   amapG = dgMapS
+-- @
+--
+-- and because of the given implementation of 'dgMapCov', 'dgMapCnt' and the property of 'vmapBi'
+-- on can declare: 
+--
+-- @
+-- instance
+--   ( HomOrientedDisjunctive h
+--   , FunctorialOriented h
+--   , t ~ Dual (Dual t)
+--   )
+--   => FunctorialG (SDualBi (Diagram t n m)) h (->)
+-- @
 module OAlg.Entity.Diagram.Definition
   (
     -- * Diagram
     Diagram(..), DiagramType(..), rt'
   , dgType, dgTypeRefl, dgPoints, dgCenter, dgArrows
-  , dgMapS, dgMapCov, dgMapCnt, dgMap
   , dgQuiver
+  
+    -- * Duality
+  , dgMapS, dgMapCov, dgMapCnt, dgMap
+
 
      -- ** Chain
   , chnToStart, chnFromStart

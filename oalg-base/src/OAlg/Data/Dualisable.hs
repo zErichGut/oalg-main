@@ -10,8 +10,12 @@
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
+--
+-- defining the type of the co-object according to the kind of a given object.
 -- 
--- data admitting a kind of duality.
+-- Special care has been taken for objects of parameterized types over
+-- a structured type (see "OAlg.Entity.Diagram.Definition#Duality" which serves as a boiler
+-- plate for all dualities implemented here).
 module OAlg.Data.Dualisable
   ( -- * Dual
     Dual, Dual1
@@ -43,13 +47,13 @@ import Data.Kind
 --------------------------------------------------------------------------------
 -- Dual -
 
--- | the associated dual kind.
+-- | the kind of the co-object according to the kind of given object.
 type family Dual (x :: k) :: k
 
 --------------------------------------------------------------------------------
 -- Dual1 -
 
--- | the associated parameterized dual kind.
+-- | the parameterized kind of the co-object according to the parameterized kind of a given object.
 type family Dual1 (c :: k -> Type) :: k -> Type
 
 --------------------------------------------------------------------------------
