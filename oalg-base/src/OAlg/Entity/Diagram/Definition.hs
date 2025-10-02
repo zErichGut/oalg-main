@@ -269,7 +269,7 @@ dgMapCov = dgMap
 -- | mapping of a diagram via a 'Contravariant' homomorphism on 'Oriented' structures.
 --
 -- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
--- @'Contravariant2' h@ in @'SVariant' 'Contravariant' __h a b__@ with
+-- @'Contravariant2' h@ in @'Variant2' 'Contravariant' __h a b__@ with
 -- @'HomOrientedDisjunctive' __s o h__@, then holds:
 --
 -- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.

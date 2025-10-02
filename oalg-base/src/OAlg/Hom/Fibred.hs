@@ -169,7 +169,7 @@ relHomDisjOpFbr :: (HomFibred h, Show2 h, Transformable s FbrOrtX, DualisableFib
 relHomDisjOpFbr xsh = Forall xsh
   (\(SomeMorphism h) -> relHomFbrFbrOrtX (tauHom (homomorphous h)) h)
 
--- | validity of @'HomDisjEmpty __FbrOrt Op__@ according to 'HomFibred'.
+-- | validity of @'HomDisjEmpty' 'FbrOrt' 'Op'@ according to 'HomFibred'.
 prpHomDisjOpFbr :: Statement
 prpHomDisjOpFbr = Prp "HomDisjOpFbr" :<=>: relHomDisjOpFbr xsh where
   xsh :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))

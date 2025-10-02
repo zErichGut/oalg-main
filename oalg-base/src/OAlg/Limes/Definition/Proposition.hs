@@ -287,7 +287,7 @@ elgFactorOrnt l c = case cone $ universalCone l of
   ConeKernel _ k       -> tip c :> start k
   ConeCokernel _ k     -> end k :> tip c
 
--- | random variable of eligible factors over 'Orienteation'.
+-- | random variable of eligible factors over 'Orientation'.
 xEligibleConeFactorGOrnt ::
   ( Conic c
   , Diagrammatic d

@@ -423,7 +423,7 @@ sfsdMapCovStruct Struct h (SomeFreeSliceKernel (SliceFrom (Free k) f))
 sfsdMapCovStruct Struct h (SomeFreeSliceCokernel (SliceTo (Free k) f))
   = case slicedFree' h k of Struct -> SomeFreeSliceCokernel (SliceTo (Free k) (amap h f))
 
--- | covariant mapping of 'SomeFreeSlicedDiagram'.
+-- | covariant mapping of 'SomeFreeSliceDiagram'.
 sfsdMapCov ::HomOrientedSlicedFree h
   => Variant2 Covariant h x y
   -> SomeFreeSliceDiagram t n m x -> SomeFreeSliceDiagram t n m y
@@ -440,7 +440,7 @@ sfsdMapCntStruct Struct h (SomeFreeSliceKernel (SliceFrom (Free k) f))
 sfsdMapCntStruct Struct h (SomeFreeSliceCokernel (SliceTo (Free k) f))
   = case slicedFree' h k of Struct -> SomeFreeSliceKernel (SliceFrom (Free k) (amap h f))
 
--- | contravariant mapping of 'SomeFreeSlicedDiagram'.
+-- | contravariant mapping of 'SomeFreeSliceDiagram'.
 sfsdMapCnt ::HomOrientedSlicedFree h
   => Variant2 Contravariant h x y
   -> SomeFreeSliceDiagram t n m x -> SomeFreeSliceDiagram (Dual t) n m y
@@ -454,7 +454,7 @@ type instance Dual1 (SomeFreeSliceDiagram t n m) = SomeFreeSliceDiagram (Dual t)
 --------------------------------------------------------------------------------
 -- sfsdMapS -
 
--- | mapping of 'SomeFreeSlicedDiagram'.
+-- | mapping of 'SomeFreeSliceDiagram'.
 sfsdMapS :: (HomOrientedSlicedFree h, t ~ Dual (Dual t))
   => h x y -> SDualBi (SomeFreeSliceDiagram t n m) x -> SDualBi (SomeFreeSliceDiagram t n m) y
 sfsdMapS = vmapBi sfsdMapCov sfsdMapCov sfsdMapCnt sfsdMapCnt 
@@ -629,11 +629,11 @@ instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomF
 --
 -- __Property__ Let @cl@ be in @'ConeLiftable' __s p d t n m x__@, then holds:
 --
--- (1) If @cl@ matches @'ConeKernelLiftableFree' c ('LiftableFree' l)@, then
+-- (1) If @cl@ matches @'ConeKernelLiftable' c ('LiftableFree' l)@, then
 -- for any @k@ in @'Any' __k__@ holds:
 -- @'lftbBase' (l k)' '==' 'kernelFactor' c@.
 --
--- (2) If @cl@ matches @'ConeCokernelLiftableFree' c ('LiftableFree' l)@, then
+-- (2) If @cl@ matches @'ConeCokernelLiftable' c ('LiftableFree' l)@, then
 -- for any @k@ in @'Any' __k__@ holds:
 -- @'lftbBase' (l k)' '==' 'cokernelFactor' c@.
 data ConeLiftable s p d t n m x where

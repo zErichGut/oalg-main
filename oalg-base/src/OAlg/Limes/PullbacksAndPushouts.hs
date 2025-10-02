@@ -73,7 +73,7 @@ import OAlg.Limes.EqualizersAndCoequalizers
 --------------------------------------------------------------------------------
 -- Pullbacks -
 
--- | 'Diagrammmatic' object for a pullback.
+-- | 'Diagrammatic' object for a pullback.
 type PullbackDiagrammatic d (n :: N') = d (Star To) (n+1) n :: Type -> Type
 
 -- | 'Diagram' for a pullback.
@@ -225,7 +225,7 @@ pullbacksOrnt = lmsMltPrjOrnt
 --------------------------------------------------------------------------------
 -- Pushouts -
 
--- | 'Diagrammmatic' object for a pushout.
+-- | 'Diagrammatic' object for a pushout.
 type PushoutDiagrammatic d (n :: N') = d (Star From) (n+1) n :: Type -> Type
 
 -- | 'Diagram' for a pushout.

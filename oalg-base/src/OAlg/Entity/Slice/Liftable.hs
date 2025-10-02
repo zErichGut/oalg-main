@@ -96,7 +96,7 @@ instance Exception LiftableException where
 
 -- | liftable slices.
 --
--- __Property__ Let @l@ be in @'Liftable' __p i x__@ for an @__i__@-sliced 'Mulitiplicative'
+-- __Property__ Let @l@ be in @'Liftable' __p i x__@ for an @__i__@-sliced 'Multiplicative'
 -- structure @__x__@, then holds:
 --
 -- (1) If @l@ matches @'LiftableProjective' x lft@, then holds:
@@ -111,9 +111,9 @@ instance Exception LiftableException where
 --
 --         (2) @'start' ('slice' t') '==' 'end' x@,
 --
---         (3) @'slice' t '==' 'slice' t' '*' x@.
+--         (3) @'slice' t '==' 'slice' t' 'OAlg.Structure.Multiplicative.Definition.*' x@.
 --
--- (2) If @l@ matches @'LiftableIjective' x lft@, then holds:
+-- (2) If @l@ matches @'LiftableInjective' x lft@, then holds:
 -- For all @f@ in @'Slice' 'From' __i x__@ holds:
 --
 --     (1) If @'end' x '/=' 'end' ('slice' f)@ then the evaluation of @lft f@ ends up in a
@@ -125,7 +125,7 @@ instance Exception LiftableException where
 --
 --         (2) @'end' ('slice' f') '==' 'start' x@.
 --
---         (3) @'slice' f '==' x '*' 'slice' f'@.
+--         (3) @'slice' f '==' x 'OAlg.Structure.Multiplicative.Definition.*' 'slice' f'@.
 --
 data Liftable p i x where
   LiftableProjective :: Sliced i x => x -> (Slice To i x -> Slice To i x) -> Liftable Projective i x

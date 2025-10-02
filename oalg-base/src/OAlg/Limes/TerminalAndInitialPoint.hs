@@ -15,7 +15,7 @@
 -- Maintainer  : zerich.gut@gmail.com
 -- 
 -- terminal and initial point within a 'Multiplicative' structure, i.e. limits of
--- @'Diagram' 'OAlg.Entity.Diagram.Definition.Empty'@.
+-- @'Diagram' 'Empty'@.
 module OAlg.Limes.TerminalAndInitialPoint
   (
     -- * Terminal

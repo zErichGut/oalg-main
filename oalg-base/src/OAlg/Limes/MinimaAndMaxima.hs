@@ -95,7 +95,7 @@ type Minima t n = MinimaG Cone Diagram t n
 --------------------------------------------------------------------------------
 -- minima -
 
--- | generic minima according to @'Chain' 'To'@.
+-- | generic minima according to @'OAlg.Entity.Diagram.Definition.Chain' 'To'@.
 minimaGTo ::
   ( Multiplicative x
   , Diagrammatic d
@@ -158,7 +158,7 @@ type Maxima t n = MaximaG Cone Diagram t n
 --------------------------------------------------------------------------------
 -- DualisableGChain -
 
--- | type for dualisable generic limits of 'Conic'' objects over t'Chain' 'Diagrammatic' objects.
+-- | type for dualisable generic limits of 'Conic' objects over t'Chain' 'Diagrammatic' objects.
 type DualisableGChain p t o c d n
   = NaturalConicBi (IsoO Mlt o) c Mlt p d (Chain t) (n+1) n
 

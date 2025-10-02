@@ -37,7 +37,7 @@ import OAlg.Limes.ProductsAndSums
 import OAlg.Limes.EqualizersAndCoequalizers
 import OAlg.Limes.PullbacksAndPushouts
 import OAlg.Limes.KernelsAndCokernels
--- import OAlg.Limes.Exact.Deviation
+import OAlg.Limes.Exact.Deviation
 
 --------------------------------------------------------------------------------
 -- prpLimitsOrntSymbol -
@@ -72,7 +72,7 @@ prpLimitsOrntSymbol n' = Prp "LimesOrntSymbol" :<=>: Label (show n') :<=>:
              , Label "KernelsAndCokernels" :<=>:
                  valid (cokernels' n (cokernelsOrnt I))
 
-          -- , Label "Deviation" :<=>: prpDeviationOrntSymbol
+             , Label "Deviation" :<=>: prpDeviationOrntSymbol
              ]
 
 

@@ -276,7 +276,7 @@ fsqMakeStrict f = FSequenceStrict d (psqTree xis) where
 --------------------------------------------------------------------------------
 -- fsqMakeLazy -
 
--- | makes a 'FSequnce' with a lazy behavior.
+-- | makes a 'FSequence' with a lazy behavior.
 fsqMakeLazy :: FSequenceForm d i x -> FSequence Lazy d i x
 fsqMakeLazy (FSequenceForm d xis) = FSequenceLazy d (psqTree xis)
 
@@ -347,7 +347,7 @@ instance Additive a => DefaultValue (DefaultZeroValue a) i a where
 --------------------------------------------------------------------------------
 -- relHomogenRoot -
 
--- | relation for validating a 'FSequnce' such that the 'root' of every element of the sequence
+-- | relation for validating a 'FSequence' such that the 'root' of every element of the sequence
 -- is equal to the 'root' of the default value according to the index.
 relHomogenRoot :: (DefaultValue d i x, Fibred x, Show i) => FSequence s d i x -> Statement
 relHomogenRoot f = case fsqT f of

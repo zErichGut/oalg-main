@@ -19,7 +19,8 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- duality of a 'Limes' over a 'Diagrammatic' object yielding a 'Conic' object.
+-- duality of a 'Limes' over a 'OAlg.Entity.Diagram.Diagrammatic.Diagrammatic' object yielding
+-- a 'Conic' object.
 module OAlg.Limes.Definition.Duality
   (
     -- * Mapping

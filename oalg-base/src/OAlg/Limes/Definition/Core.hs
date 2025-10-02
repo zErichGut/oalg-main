@@ -127,7 +127,7 @@ eligibleCone l c = universalDiagram l == diagrammaticObject c
 --------------------------------------------------------------------------------
 -- cnEligibleFactorDgm -
 
--- | eligibility of a factor according to the given 'Cones' over 'Diagram's,
+-- | eligibility of a factor according to the given 'Cone' over 'Diagram's,
 cnEligibleFactorDgm :: Cone s p Diagram t n m x -> Cone s p Diagram t n m x -> x -> Bool
 cnEligibleFactorDgm (ConeProjective _ a as) (ConeProjective _ b bs) x
   = orientation x == b:>a && comPrj x as bs where
@@ -157,11 +157,11 @@ cnEligibleFactorDgm a@(ConeCokernel d _) b x = case dgTypeRefl d of
 --------------------------------------------------------------------------------
 -- cnEligibleFactor -
 
--- | eligibility of a factor according to the given 'Cones' over 'Diagrammatic' objects,
+-- | eligibility of a factor according to the given 'Cone' over 'Diagrammatic' objects,
 --
 -- __Property__ Let @x@ be in @__x__@ and
 -- @a@, @b@ in @'Cone' __s p d t n m x__@ with
--- @'diagrammaticObject' a '==' 'diagrammaticObjet' b@, then holds:
+-- @'diagrammaticObject' a '==' 'diagrammaticObject' b@, then holds:
 -- 
 -- (1) If @__p__@ is equal to __'Projective'__ then holds:
 -- @'cnEligibleFactor' a b x@ is 'True' if and only if

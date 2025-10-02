@@ -270,7 +270,7 @@ sFromDualStruct :: Struct s x -> Struct s (o x)
   -> Variant2 Contravariant (SHom r s o h) (o x) x
 sFromDualStruct Struct s'@Struct = Contravariant2 $ make (SFromDual :. IdPath s')
 
--- | 'SFromDual' as a 'Contravaraint' morphism in 'SHom'.
+-- | 'SFromDual' as a 'Contravariant' morphism in 'SHom'.
 sFromDual :: Transformable1 o s
   => Struct s x -> Variant2 Contravariant (SHom r s o h) (o x) x
 sFromDual s = sFromDualStruct s (tau1 s)
@@ -366,7 +366,7 @@ smpPathMapSDualBi h
 --------------------------------------------------------------------------------
 -- smapBi -
 
--- | application of 'SHom' on 'SDuality'
+-- | application of 'SHom' on 'SDualBi'
 --
 -- __Properties__ Let @'Morphism' __h__@, @'ApplicativeG' __d h__ (->)@,
 -- @'ApplicativeG' ('Dual1' __d__) __h__ (->)@, @'DualisableGBi' __r__ (->) __o d__@
@@ -505,7 +505,7 @@ xSctAdjDual n fg = xOneOfX [ amap1 adjToDual $ xSctAdjDual (pred n) fg
 -- xSctSomeCmpb2 -
 
 -- | random variable for some composable morphism in @'SHom' __s o h__@ where 'cOne' and @h@ are
--- adjoined with maximal @n@ times 'SToDual' or 'FromDual' or @'SFromDual' '.' 'SToDual'@
+-- adjoined with maximal @n@ times 'SToDual' or 'SFromDual' or @'SFromDual' '.' 'SToDual'@
 --
 -- [Pre] Not both input random variables are empty.
 --

@@ -98,7 +98,7 @@ split (Splitable s) = s
 --
 -- (2) @ker@ is the kernel of @g@ with @g'@ as the shell factor of its universal cone.
 --
--- (3) @'KenrelSliceFromSomeFreeTip' k'' k' ker@ is 'valid'.
+-- (3) @'KernelSliceFromSomeFreeTip' k'' k' ker@ is 'valid'.
 --
 -- (4) For all @h@ in @'Slice' 'From' (__i k__) a@ with
 -- @'end' h '==' p@ holds:
@@ -120,7 +120,7 @@ split (Splitable s) = s
 --          h
 -- @
 --
--- __Property 2__ Let @'EmbeddingTo' d k' k'' ker coker lft@ be in
+-- __Property 2__ Let @'EmbeddingFrom' d k' k'' ker coker lft@ be in
 -- -- @'FinitePresentation' 'To' __i__ __a__@ then holds the dual of the property 1 above.
 data FinitePresentation s i a where
   GeneratorTo

@@ -90,15 +90,18 @@ import OAlg.Limes.Cone.Structure
 --
 -- __Note__
 --
--- (1) Let @'Hom' __s__ __h__@ - where @__s__@ is either 'Mlt' or 'Dst' -
--- and @'NaturalDiagrammatic' __h d t n m__@, then holds
+-- (1) Let @'OAlg.Hom.Multiplicative.HomMultiplicativeDisjunctive' __h__@ and
+-- @'NaturalDiagrammatic' __h d t n m__@,then holds:
 -- @'NaturalTransformable' __h__ (->) ('DiagramG' __d t n m__) ('Diagram' __t n m__)@
 -- (as required by the definition of @'NaturalDiagrammatic' __h d t n m__@)
 -- and
--- @'NaturalTransformable' __h__ (->) ('Cone' __s p d t n m__) ('DiagramG' __d t n m__)@
+-- @'NaturalTransformable' __h__ (->) ('Cone' 'Mlt' __p d t n m__) ('DiagramG' __d t n m__)@
 -- (see comment in source code of its instance declaration and the property of 'dmap')
 -- and therefore this establish a natural
--- transformation according to @__h__@ from @'Cone' __s p d t n m__@ to @'Diagram' __t n m__@.
+-- transformation according to @__h__@ from @'Cone' 'Mlt' __p d t n m__@ to @'Diagram' __t n m__@.
+--
+-- (2) The same holds for @'OAlg.Hom.Multiplicative.HomMultiplicativeDisjunctive' __h__@ and
+-- @'Cone' 'Dst' __p d t n m__@.
 data Cone s (p :: Perspective) d (t :: DiagramType) (n :: N') (m :: N') a where
   ConeProjective :: Multiplicative a
     => d t n m a -> Point a -> FinList n a -> Cone Mlt Projective d t n m a
@@ -206,10 +209,10 @@ tip c = case c of
 -- 'Oriented' structure then holds:
 --
 -- (1) If __@p@__ is equal to __'Projective'__ then holds:
--- @'fmap' 'end' ('shell' c) '==' 'cnPoints' c@.
+-- @'amap' 'end' ('shell' c) '==' 'cnPoints' c@.
 --
 -- (2) If __@p@__ is equal to __'Injective'__ then holds:
--- @'fmap' 'start' ('shell' c) '==' 'cnPoints' c@.
+-- @'amap' 'start' ('shell' c) '==' 'cnPoints' c@.
 shell :: Diagrammatic d => Cone s p d t n m a -> FinList n a
 shell (ConeProjective _ _ as) = as
 shell (ConeInjective _ _ as)  = as
@@ -219,13 +222,13 @@ shell (ConeCokernel d k)      = k:|zero (q :> end k):|Nil where DiagramParallelR
 --------------------------------------------------------------------------------
 -- cnPoints -
 
--- | the points of the underlying diagram, i.e. @'dgPoints' '.' 'cnDiagram'@. 
+-- | the points of the underlying diagram.
 cnPoints :: (Diagrammatic d, Oriented a) => Cone s p d t n m a -> FinList n (Point a)
 cnPoints = dgPoints . diagrammaticObject . coneDiagram
 
 --------------------------------------------------------------------------------
 -- cnArrows -
 
--- | the arrows of the underlying diagram, i.e. @'dgArrows' '.' 'cnDiagram'@.
+-- | the arrows of the underlying diagram.
 cnArrows :: Diagrammatic d => Cone s p d t n m a -> FinList m a
 cnArrows = dgArrows . diagrammaticObject . coneDiagram
