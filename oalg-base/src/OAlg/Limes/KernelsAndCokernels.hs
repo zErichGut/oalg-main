@@ -259,6 +259,7 @@ type Cokernels n = CokernelsG Cone Diagram n
 --------------------------------------------------------------------------------
 -- coKernelsG -
 
+-- | to co-object of kernels.
 coKernelsG ::
   ( Distributive x
   , TransformableGRefl o Dst

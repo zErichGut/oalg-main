@@ -133,6 +133,7 @@ type instance Dual1 (SliceDiagram i t n m) = SliceDiagram i (Dual t) n m
 --------------------------------------------------------------------------------
 -- sdgMapS -
 
+-- | mapping a slice diagram.
 sdgMapS :: (HomSlicedOriented i h, t ~ Dual (Dual t))
   => h x y -> SDualBi (SliceDiagram i t n m) x -> SDualBi (SliceDiagram i t n m) y
 sdgMapS = vmapBi sdgMapCov sdgMapCov sdgMapCnt sdgMapCnt
@@ -268,6 +269,8 @@ instance Validable2 (SliceAdjunction c k i d)
 --------------------------------------------------------------------------------
 -- sliceKernel -
 
+-- | the slice factor 'To' according to the given slice kernels and a slice 'From'. It is
+-- the base for 'SliceKernel'.
 sliceKernel ::
   ( Distributive d
   , Sliced i d
@@ -288,6 +291,8 @@ sliceKernel ks (SliceFactor a@(SliceFrom k _) b _)
 --------------------------------------------------------------------------------
 -- sliceCokernel -
 
+-- | the slice factor 'From' according to the given slice cokernels and a slice 'To'. It is
+-- the base for 'SliceCokernel'.
 sliceCokernel ::
   ( Distributive d
   , Sliced i d

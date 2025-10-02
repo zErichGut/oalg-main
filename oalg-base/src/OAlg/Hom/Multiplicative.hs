@@ -1,5 +1,4 @@
 
-
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
@@ -211,7 +210,7 @@ data XHomMlt x = XHomMlt (X (Point x)) (X (Mltp2 x))
 --------------------------------------------------------------------------------
 -- xMltXHomMlt -
 
--- | the underlying 'XMomMlt'.
+-- | the underlying 'XHomMlt'.
 xMltHomMlt :: XMlt x -> XHomMlt x
 xMltHomMlt (XMlt _ xp _ _ xm2 _) = XHomMlt xp xm2
 

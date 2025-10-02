@@ -147,6 +147,7 @@ lftMapCovStruct Struct (Covariant2 i) (LiftableInjective x xLft) = LiftableInjec
   y    = amap i x
   yLft = slMapCov (Covariant2 i) . xLft . slMapCov (Covariant2 $ inv2 i)
 
+-- | covariant mapping of 'Liftable'.
 lftMapCov :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
   => Variant2 Covariant (Inv2 h) x y -> Liftable p i x -> Liftable p i y
 lftMapCov h = lftMapCovStruct (tau (range h)) h
@@ -163,6 +164,7 @@ lftMapCntStruct Struct (Contravariant2 i) (LiftableInjective x xLft) = LiftableP
   y    = amap i x
   yLft = slMapCnt (Contravariant2 i) . xLft . slMapCnt (Contravariant2 $ inv2 i)
 
+-- | contravariant mapping of 'Liftable'.
 lftMapCnt :: (CategoryDisjunctive h, HomSlicedMultiplicative i h)
   => Variant2 Contravariant (Inv2 h) x y -> Liftable p i x -> Liftable (Dual p) i y
 lftMapCnt h = lftMapCntStruct (tau (range h)) h
@@ -175,6 +177,7 @@ type instance Dual1 (Liftable p i) = Liftable (Dual p) i
 --------------------------------------------------------------------------------
 -- lftMapS -
 
+-- | mapping of 'Liftable'.
 lftMapS :: (CategoryDisjunctive h, HomSlicedMultiplicative i h, p ~ Dual (Dual p))
   => Inv2 h x y -> SDualBi (Liftable p i) x -> SDualBi (Liftable p i) y
 lftMapS = vmapBi lftMapCov lftMapCov lftMapCnt lftMapCnt
@@ -220,6 +223,7 @@ relLiftableProjective i xo (LiftableProjective x lft)
                       , (1,xoPoint xo >>= xoArrow xo . (:>ip))
                       ]
 
+-- | validity accroding to 'Liftable'.
 relLiftable :: Multiplicative x => XOrtOrientation x -> Liftable p i x -> Statement
 relLiftable xo l = case l of
   LiftableProjective _ _ -> relLiftableProjective unit1 xo l
@@ -293,6 +297,7 @@ lftcMapCovStruct Struct (Covariant2 i) c@(LiftableCokernelCone k _)
     SDualBi (Right1 k')                         = amapG i (SDualBi (Right1 k))
     SDualBi (Right1 (LiftableInjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
 
+-- | covariant mapping of 'LiftableCone'.
 lftcMapCov :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
   => Variant2 Covariant (Inv2 h) x y
   -> LiftableCone i s p d t n m x -> LiftableCone i s p d t n m y
@@ -314,6 +319,7 @@ lftcMapCntStruct Struct (Contravariant2 i) c@(LiftableCokernelCone k _)
     SDualBi (Left1 k')                          = amapG i (SDualBi (Right1 k))
     SDualBi (Left1 (LiftableProjective _ lft')) = amapG i (SDualBi (Right1 $ lftcLiftable c))
 
+-- | contravariant mapping of 'LiftableCone'.
 lftcMapCnt :: (CategoryDisjunctive h, HomSlicedDistributive i h, FunctorialOriented h)
   => Variant2 Contravariant (Inv2 h) x y
   -> LiftableCone i s p d t n m x -> LiftableCone i s (Dual p) d (Dual t) n m y
@@ -327,6 +333,7 @@ type instance Dual1 (LiftableCone i s p d t n m) = LiftableCone i s (Dual p) d (
 --------------------------------------------------------------------------------
 -- lftcMapS -
 
+-- | mapping of 'LiftableCone'.
 lftcMapS ::
   ( CategoryDisjunctive h
   , HomSlicedDistributive i h
@@ -376,13 +383,14 @@ type LiftableCokernels i = CokernelsG (LiftableCone i) Diagram N1
 --------------------------------------------------------------------------------
 -- lftlKernel -
 
--- | the liftable property of 'LiftableKernel'.
+-- | the liftable property for 'LiftableKernel'.
 lftlKernel :: Sliced i x => LiftableKernel i x -> Slice To i x -> Slice To i x
 lftlKernel = lift . lftcLiftable . universalCone
 
 --------------------------------------------------------------------------------
 -- lftlCokernel -
 
+-- | the liftable property for 'LiftableCokernel'.
 lftlCokernel :: Sliced i x => LiftableCokernel i x -> Slice From i x -> Slice From i x
 lftlCokernel = lift . lftcLiftable . universalCone
 

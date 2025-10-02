@@ -105,6 +105,7 @@ instance Distributive x => Validable (ConsecutiveZeroFree t n x) where
 --------------------------------------------------------------------------------
 -- cnzFreeMapCov -
 
+-- | covairaint mapping of 'ConsecutiveZeroFree'.
 cnzFreeMapCov ::
   ( HomDistributiveDisjunctive h
   , HomOrientedSlicedFree h
@@ -117,6 +118,7 @@ cnzFreeMapCov h (ConsecutiveZeroFree c fs) = ConsecutiveZeroFree c' fs' where
 --------------------------------------------------------------------------------
 -- cnzFreeMapCnt -
 
+-- | contravaraint mapping of 'ConsecutiveZeroFree'.
 cnzFreeMapCnt ::
   ( HomDistributiveDisjunctive h
   , HomOrientedSlicedFree h
@@ -134,6 +136,7 @@ type instance Dual1 (ConsecutiveZeroFree t n) = ConsecutiveZeroFree (Dual t) n
 --------------------------------------------------------------------------------
 -- cnzFreeMapS -
 
+-- | mapping of 'ConsecutiveZeroFree'.
 cnzFreeMapS ::
   ( HomDistributiveDisjunctive h
   , HomOrientedSlicedFree h
@@ -164,6 +167,8 @@ instance
 --------------------------------------------------------------------------------
 -- VarianceFreeLiftable -
 
+-- | variance according to the conic objects @'ConicFreeTip' 'Cone'@, 'ConeLiftable' over the
+-- diagrammatic object 'SomeFreeSliceDiagram'.
 type VarianceFreeLiftable t = VarianceG t (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram
 
 --------------------------------------------------------------------------------

@@ -177,18 +177,21 @@ sfrPoint (SomeFree f) = slicePoint f
 class SlicedFree x where
   slicedFree :: Attestable k => Struct (Sld (Free k)) x
 
+-- | attest for @__k__@-free sliced structures according to the given proxy type.
 slicedFree' :: (SlicedFree x, Attestable k) => q x -> Any k -> Struct (Sld (Free k)) x
 slicedFree' _ _ = slicedFree
 
 --------------------------------------------------------------------------------
 -- tauSldFrTuple -
 
+-- | decorating the @__s__@ structure with @__k__@ sliced free.
 tauSldFrTuple :: (SlicedFree x, Attestable k) => Struct s x -> Struct (s,Sld (Free k)) x
 tauSldFrTuple s = tauTuple s slicedFree
 
 --------------------------------------------------------------------------------
 -- tauSldFreeOp -
 
+-- | propagating to 'Op'
 tauSldFreeOp :: Struct (Sld (Free k)) x -> Struct (Sld (Free k)) (Op x)
 tauSldFreeOp Struct = Struct 
 
@@ -230,6 +233,7 @@ instance Attestable k => HomSlicedOriented (Free k) (Sub (Dst,SldFr) (HomDisjEmp
 --------------------------------------------------------------------------------
 -- lftFrSub -
 
+-- | embedding of @'IsoO' __s__ 'Op'@.
 lftFrSub :: q k
    -> Struct (s,Sld (Free k)) x -> Struct (s,Sld (Free k)) y
    -> Variant2 v (IsoO s Op) x y
@@ -309,6 +313,7 @@ prpHomOrientedSlicedFree h k = Prp "HomOrientedSlicedFree" :<=>: relHomOrientedS
 sfrMapStruct :: Struct SldFr y -> Variant2 v h x y -> SomeFree x -> SomeFree y
 sfrMapStruct Struct h (SomeFree (Free k)) = case slicedFree' h k of Struct -> SomeFree (Free k)
 
+-- | mapping of 'SomeFree'.
 sfrMap :: HomOrientedSlicedFree h => Variant2 v h x y -> SomeFree x -> SomeFree y
 sfrMap h@(Covariant2 hCov)     = sfrMapStruct (tau $ range hCov) h
 sfrMap h@(Contravariant2 hCnt) = sfrMapStruct (tau $ range hCnt) h
@@ -316,6 +321,7 @@ sfrMap h@(Contravariant2 hCnt) = sfrMapStruct (tau $ range hCnt) h
 --------------------------------------------------------------------------------
 -- dgfMapCov -
 
+-- | covariant mapping of 'DiagramFree'.
 dgfMapCov :: HomOrientedSlicedFree h
   => Variant2 Covariant h x y -> DiagramFree t n m x -> DiagramFree t n m y
 dgfMapCov h (DiagramFree fs d) = DiagramFree fs' d' where
@@ -325,6 +331,7 @@ dgfMapCov h (DiagramFree fs d) = DiagramFree fs' d' where
 --------------------------------------------------------------------------------
 -- dgfMapCnt -
 
+-- | contravariant mapping of 'DiagramFree'.
 dgfMapCnt :: HomOrientedSlicedFree h
   => Variant2 Contravariant h x y -> DiagramFree t n m x -> DiagramFree (Dual t) n m y
 dgfMapCnt h (DiagramFree fs d) = DiagramFree fs' d' where
@@ -339,6 +346,7 @@ type instance Dual1 (DiagramFree t n m) = DiagramFree (Dual t) n m
 --------------------------------------------------------------------------------
 -- dgfMapS -
 
+-- | mapping of 'DiagramFree'.
 dgfMapS :: (HomOrientedSlicedFree h, t ~ Dual (Dual t))
   => h x y -> SDualBi (DiagramFree t n m) x -> SDualBi (DiagramFree t n m) y
 dgfMapS = vmapBi dgfMapCov dgfMapCov dgfMapCnt dgfMapCnt
@@ -415,6 +423,7 @@ sfsdMapCovStruct Struct h (SomeFreeSliceKernel (SliceFrom (Free k) f))
 sfsdMapCovStruct Struct h (SomeFreeSliceCokernel (SliceTo (Free k) f))
   = case slicedFree' h k of Struct -> SomeFreeSliceCokernel (SliceTo (Free k) (amap h f))
 
+-- | covariant mapping of 'SomeFreeSlicedDiagram'.
 sfsdMapCov ::HomOrientedSlicedFree h
   => Variant2 Covariant h x y
   -> SomeFreeSliceDiagram t n m x -> SomeFreeSliceDiagram t n m y
@@ -431,6 +440,7 @@ sfsdMapCntStruct Struct h (SomeFreeSliceKernel (SliceFrom (Free k) f))
 sfsdMapCntStruct Struct h (SomeFreeSliceCokernel (SliceTo (Free k) f))
   = case slicedFree' h k of Struct -> SomeFreeSliceKernel (SliceFrom (Free k) (amap h f))
 
+-- | contravariant mapping of 'SomeFreeSlicedDiagram'.
 sfsdMapCnt ::HomOrientedSlicedFree h
   => Variant2 Contravariant h x y
   -> SomeFreeSliceDiagram t n m x -> SomeFreeSliceDiagram (Dual t) n m y
@@ -444,6 +454,7 @@ type instance Dual1 (SomeFreeSliceDiagram t n m) = SomeFreeSliceDiagram (Dual t)
 --------------------------------------------------------------------------------
 -- sfsdMapS -
 
+-- | mapping of 'SomeFreeSlicedDiagram'.
 sfsdMapS :: (HomOrientedSlicedFree h, t ~ Dual (Dual t))
   => h x y -> SDualBi (SomeFreeSliceDiagram t n m) x -> SDualBi (SomeFreeSliceDiagram t n m) y
 sfsdMapS = vmapBi sfsdMapCov sfsdMapCov sfsdMapCnt sfsdMapCnt 
@@ -544,7 +555,8 @@ lftFrMapIsoOpDstCnt i lf = LiftableFree (lftFrMapIsoOpCntStruct (domain i) (rang
 --------------------------------------------------------------------------------
 -- HomFree -
 
-type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
+-- | homomorphism between free sliced structures.
+type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
 
 instance Transformable (s,SldFr) SldFr where tau = tauSnd
 
@@ -560,19 +572,23 @@ instance HomOrientedSlicedFree (Inv2 (HomFree Dst))
 --------------------------------------------------------------------------------
 -- lftFrMapCov -
 
+-- | covariant mapping of 'LiftableFree'.
 lftFrMapMltCov :: Variant2 Covariant (Inv2 (HomFree Mlt)) x y -> LiftableFree p x -> LiftableFree p y
 lftFrMapMltCov (Covariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
   (Struct,Struct) -> lftFrMapIsoOpMltCov (Covariant2 (inv2Forget i))
 
+-- | covariant mapping of 'LiftableFree'.
 lftFrMapDstCov :: Variant2 Covariant (Inv2 (HomFree Dst)) x y -> LiftableFree p x -> LiftableFree p y
 lftFrMapDstCov (Covariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
   (Struct,Struct) -> lftFrMapIsoOpDstCov (Covariant2 (inv2Forget i))
 
+-- | contravariant mapping of 'LiftableFree'.
 lftFrMapMltCnt :: Variant2 Contravariant (Inv2 (HomFree Mlt)) x y
   -> LiftableFree p x -> LiftableFree (Dual p) y
 lftFrMapMltCnt (Contravariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
   (Struct,Struct) -> lftFrMapIsoOpMltCnt (Contravariant2 (inv2Forget i))
 
+-- | contravariant mapping of 'LiftableFree'.
 lftFrMapDstCnt :: Variant2 Contravariant (Inv2 (HomFree Dst)) x y
   -> LiftableFree p x -> LiftableFree (Dual p) y
 lftFrMapDstCnt (Contravariant2 i) = case (tauSnd (domain i),tauSnd (range i)) of
@@ -586,10 +602,12 @@ type instance Dual1 (LiftableFree p) = LiftableFree (Dual p)
 --------------------------------------------------------------------------------
 -- lftFrMapS -
 
+-- | mapping of 'LiftableFree'.
 lftFrMapSMlt :: p ~ Dual (Dual p)
   => Inv2 (HomFree Mlt) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
 lftFrMapSMlt = vmapBi lftFrMapMltCov lftFrMapMltCov lftFrMapMltCnt lftFrMapMltCnt
 
+-- | mapping of 'LiftableFree'.
 lftFrMapSDst :: p ~ Dual (Dual p)
   => Inv2 (HomFree Dst) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
 lftFrMapSDst = vmapBi lftFrMapDstCov lftFrMapDstCov lftFrMapDstCnt lftFrMapDstCnt
@@ -648,6 +666,7 @@ cnLiftable (ConeCokernelLiftable _ lft) = lft
 --------------------------------------------------------------------------------
 -- cnlMapCov -
 
+-- | covariant mapping of 'ConeLiftable'.
 cnlMapCov ::
   ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
   , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
@@ -664,6 +683,7 @@ cnlMapCov (Covariant2 i) (ConeCokernelLiftable k l) = ConeCokernelLiftable k' l'
 --------------------------------------------------------------------------------
 -- cnlMapCnt -
 
+-- | contravariant mapping of 'ConeLiftable'.
 cnlMapCnt ::
   ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
   , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
@@ -685,6 +705,7 @@ type instance Dual1 (ConeLiftable s p d t n m) = ConeLiftable s (Dual p) d (Dual
 --------------------------------------------------------------------------------
 -- cnlMapS -
 
+-- | mapping of 'ConeLiftable'.
 cnlMapS ::
   ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
   , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
@@ -715,12 +736,16 @@ instance
 --------------------------------------------------------------------------------
 -- CokernelLiftableSomeFree -
 
-type CokernelsLiftableSomeFree = CokernelsG ConeLiftable SomeFreeSliceDiagram N1
+-- | liftable cokernels for some free slice diagram
 type CokernelLiftableSomeFree  = CokernelG ConeLiftable SomeFreeSliceDiagram N1
+
+-- | liftable cokernels for some free slice diagram
+type CokernelsLiftableSomeFree = CokernelsG ConeLiftable SomeFreeSliceDiagram N1
 
 --------------------------------------------------------------------------------
 -- toDualOpFree -
 
+-- | to dual operator.
 toDualOpFreeDst :: (Distributive x, SlicedFree x)
   => Variant2 Contravariant (Inv2 (HomFree Dst)) x (Op x)
 toDualOpFreeDst = Contravariant2 (Inv2 (Sub t) (Sub f)) where
@@ -834,9 +859,11 @@ deriving instance Show (c s p d t n m x) => Show (ConicFreeTip c s p d t n m x)
 --------------------------------------------------------------------------------
 -- KernelSomeFreeFreeTip -
 
-type KernelsSomeFreeFreeTip = KernelsG (ConicFreeTip Cone) SomeFreeSliceDiagram N1
+-- | kernel with a free 'tip'.
 type KernelSomeFreeFreeTip  = KernelG (ConicFreeTip Cone) SomeFreeSliceDiagram N1
 
+-- | kernels with a free 'tip'.
+type KernelsSomeFreeFreeTip = KernelsG (ConicFreeTip Cone) SomeFreeSliceDiagram N1
 
 --------------------------------------------------------------------------------
 -- prpConicFreeTip -
@@ -888,49 +915,6 @@ instance Validable (SomeFreeSlice s c) where
   valid (SomeFreeSlice s) = Label "SomeFreeSlice" :<=>: valid s
 
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- deprecated -
-
---------------------------------------------------------------------------------
--- XStandardSomeFreeSliceFrom -
-
-class XStandardSomeFreeSliceFrom c where
-  xStandardSomeFreeSliceFrom :: X (SomeFreeSlice From c)
-  
---------------------------------------------------------------------------------
--- LimesFree -
-
--- | predicate for a limes with a /free/ tip of its universal cone.
---
--- __Property__ Let @'LimesFree' k l@ be in
--- @'LimesFree' __s__ __p__ __t__ __n__ __m__ __a__@ and
--- then holds: @'slicePoint' k '==' t@ where @t = 'tip' ('universalCone' l)@. 
-data LimesFree s p t n m a where
-  LimesFree :: (Attestable k, Sliced (Free k) a)
-    => Free k a -> Limes s p t n m a -> LimesFree s p t n m a
-
-deriving instance Oriented a => Show (LimesFree s p t n m a)
-
-instance ( Distributive a
-         , XStandardEligibleCone Dst p t n m a
-         , XStandardEligibleConeFactor Dst p t n m a
-         , Typeable t, Typeable n, Typeable m
-         )
-  => Validable (LimesFree Dst p t n m a) where
-  valid (LimesFree k l) = Label "LimesFree" :<=>:
-    And [ valid k
-        , valid l
-        , (slicePoint k == t):?>Params["(k,t)":=show (k,t)]  
-        ] where t = tip $ universalCone l
-
---------------------------------------------------------------------------------
--- limesFree -
-
--- | the underlying free limes.
-limesFree :: LimesFree s p t n m a -> Limes s p t n m a
-limesFree (LimesFree _ l) = l
-
---------------------------------------------------------------------------------
 -- KernelSliceFromSomeFreeTip -
 
 -- | predicate for a kernel with a start point of its diagram given by the slice index and
@@ -968,3 +952,4 @@ instance
         , Label "2" :<=>: (slicePoint k' == tip (universalCone ker))
             :?> Params ["k'":=show1 k',"ker":=show ker]
         ]
+

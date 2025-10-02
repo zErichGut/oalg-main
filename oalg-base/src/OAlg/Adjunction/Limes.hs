@@ -234,6 +234,7 @@ lmInjMapDstGStruct sy xOp@(Contravariant2 ixOp) yOp@(Contravariant2 iyOp) adj yL
   xLmPrj'                 = lmPrjMapDstGStruct (tauO sy) adj' yLmPrj'
   SDualBi (Right1 xLmInj) = amapG (inv2 ixOp) (SDualBi (Left1 xLmPrj'))
 
+-- | mapping an injective limes according to a given 'Adjunction'.
 lmInjMapDst :: HomDistributive h
   => Adjunction h d c -> Limes Dst Injective t n m c -> Limes Dst Injective t n m d
 lmInjMapDst adj l = case lmDiagramTypeRefl l of

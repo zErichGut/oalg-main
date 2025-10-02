@@ -220,6 +220,7 @@ relHomAdd xsm = Forall xsm (\(SomeMorphism h) -> relHomAddStruct (domain h) h)
 --------------------------------------------------------------------------------
 -- prpHomCoMatrixOp -
 
+-- | validity of 'HomCo'.
 prpHomCoMatrixOp :: Statement
 prpHomCoMatrixOp = Prp "HomCoMatrixOp" :<=>:
   And [ prpHomCoMatrixOpFunctorial xseId xscG

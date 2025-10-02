@@ -84,7 +84,7 @@ class (Category c, Transformable r (ObjectClass c)) => ReflexiveG r c o d where
 -- (3) @'fromDualG'' q r '.=.' v '.' 'toDualG'' q r'@.
 --
 -- where @q@ is any proxy in @__q c o d__@, @r' = 'tau1' r@ , @r'' = 'tau1' r'@,
--- @'Inv2' u v = 'relfG'' q r@ and @'Inv2' _ v' = 'reflG'' q r'@.
+-- @'Inv2' u v = 'reflG'' q r@ and @'Inv2' _ v' = 'reflG'' q r'@.
 --
 -- __Note__ The properties above imply that @'toDualG' r@ and @'fromDualG' r@ are inverse
 -- in @__c__@ for all @__x__@ and @r@ in @'Struct' __r x__@ and hence establish a duality

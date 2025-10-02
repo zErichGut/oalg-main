@@ -268,7 +268,7 @@ fsqxs xis = psqxs xis' where FSequenceForm _ xis' = fsqForm xis
 --------------------------------------------------------------------------------
 -- fsqMakeStrict -
 
--- | makes a 'FSequnce' with a strict behavior.
+-- | makes a 'FSequence' with a strict behavior.
 fsqMakeStrict :: (DefaultValue d i x, Eq x) => FSequenceForm d i x -> FSequence Strict d i x
 fsqMakeStrict f = FSequenceStrict d (psqTree xis) where
   FSequenceForm d xis = rdcFSequenceForm f
@@ -347,7 +347,7 @@ instance Additive a => DefaultValue (DefaultZeroValue a) i a where
 --------------------------------------------------------------------------------
 -- relHomogenRoot -
 
--- | relation for validating a 'Fsequnce' such that the 'root' of every element of the sequence
+-- | relation for validating a 'FSequnce' such that the 'root' of every element of the sequence
 -- is equal to the 'root' of the default value according to the index.
 relHomogenRoot :: (DefaultValue d i x, Fibred x, Show i) => FSequence s d i x -> Statement
 relHomogenRoot f = case fsqT f of

@@ -399,13 +399,14 @@ mtxMapCovStruct Struct h (Matrix rw cl xs) = Matrix rw' cl' ys where
   cl' = dimMap (pmap h) cl
   ys  = etsMapCov h xs
 
--- | mapping of a matrix.
+-- | covariant mapping of 'Matrix'.
 mtxMapCov :: HomDistributiveDisjunctive h => Variant2 Covariant h x y -> Matrix x -> Matrix y
 mtxMapCov h = mtxMapCovStruct (tau $ range h) h
 
 --------------------------------------------------------------------------------
 -- mtxMap -
 
+-- | mapping of 'Matrix'.
 mtxMap :: HomDistributive h => h x y -> Matrix x -> Matrix y
 mtxMap h = mtxMapCov (homDisjOpDst h)
 
@@ -420,6 +421,7 @@ mtxMapCntStruct Struct h (Matrix rw cl xs) = Matrix cl' rw' ys where
   rw' = dimMap (pmap h) rw
   ys  = etsMapCnt h xs
 
+-- | contravaraint mapping of 'Matrix'.
 mtxMapCnt :: HomDistributiveDisjunctive h
   => Variant2 Contravariant h x y -> Matrix x -> Matrix y
 mtxMapCnt h = mtxMapCntStruct (tau $ range h) h 
@@ -432,6 +434,7 @@ type instance Dual1 Matrix = Matrix
 --------------------------------------------------------------------------------
 -- mtxMapS -
 
+-- | mapping of 'Matrix'.
 mtxMapS :: HomDistributiveDisjunctive h
   => h x y -> SDualBi Matrix x -> SDualBi Matrix y
 mtxMapS = vmapBi mtxMapCov mtxMapCov mtxMapCnt mtxMapCnt

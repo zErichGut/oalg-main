@@ -179,7 +179,7 @@ instance Reducible (PathSMorphism r s o h x y) where
 -- __Property__ Let @h@ be in @'SHom __r s o h x y__@ with
 -- @'Morphism' __h__@, @'ApplicativeG' __d h c__@, @'DualisableG' __r c o d__@, then holds:
 --
--- (1) @'amapG' h '.=.' 'amapG' ('stcForget' h)@
+-- (1) @'amapG' h '.=.' 'amapG' ('sForget' h)@
 -- where @'Transformable' __s t__@, @'Transformable' ('ObjectClass' __h__) __t__@
 -- @'Transformable' __s r__, @'TransformableGObjectClassRange' __d s c__@ and
 -- @'Transformable' __t r__, @'TransformableGObjectClassRange' __d t c__@.
@@ -251,7 +251,7 @@ sToDualStruct :: Struct s x -> Struct s (o x)
   -> Variant2 Contravariant (SHom r s o h) x (o x)
 sToDualStruct s@Struct Struct = Contravariant2 $ make (SToDual :. IdPath s)
 
--- | 'SToDual' as a 'Contravaraint' morphism in 'SHom'.
+-- | 'SToDual' as a 'Contravariant' morphism in 'SHom'.
 sToDual :: Transformable1 o s
   => Struct s x -> Variant2 Contravariant (SHom r s o h) x (o x)
 sToDual s = sToDualStruct s (tau1 s)
@@ -366,7 +366,7 @@ smpPathMapSDualBi h
 --------------------------------------------------------------------------------
 -- smapBi -
 
--- | application of 'SHom' on 'SDaulity'
+-- | application of 'SHom' on 'SDuality'
 --
 -- __Properties__ Let @'Morphism' __h__@, @'ApplicativeG' __d h__ (->)@,
 -- @'ApplicativeG' ('Dual1' __d__) __h__ (->)@, @'DualisableGBi' __r__ (->) __o d__@
@@ -376,16 +376,16 @@ smpPathMapSDualBi h
 --
 -- (2) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
 --
---     (1) If @'variante2' h '==' 'Covariant'@, then for all @d@ in @__d x__@ holds:
+--     (1) If @'variant2' h '==' 'Covariant'@, then for all @d@ in @__d x__@ holds:
 --     @'smapBi' h ('SDualBi' ('Right1' d)) '==' 'SDualBi' ('Right1' d')@ where @d' = 'amapG' h d@.
 --
---     (2) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
+--     (2) If @'variant2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
 --     @'smapBi' h ('SDualBi' ('Left1' d')) '==' 'SDualBi' ('Left1' d)@ where @d = 'amapG' h d'@.
 --
---     (3) If @'variante2' h '==' 'Contravariant'@, then for all @d@ in @__d x__@ holds:
+--     (3) If @'variant2' h '==' 'Contravariant'@, then for all @d@ in @__d x__@ holds:
 --     @'smapBi' h ('SDualBi' ('Right1' d)) '==' 'SDualBi' ('Left1' d')@.
 --
---     (4) If @'variante2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
+--     (4) If @'variant2' h '==' 'Covariant'@, then for all @d'@ in @'Dual1' __d x__@ holds:
 --     @'smapBi' h ('SDualBi' ('Left1' d')) '==' 'SDualBi' ('Right1' d)@.
 smapBi ::
   ( Morphism h
@@ -473,7 +473,8 @@ xSctAdjOne (SomeMorphism f)
 --------------------------------------------------------------------------------
 -- xSctAdjDual -
 
--- | adjoining @n@-times 'ToDua' to the left or 'SFromDual' to the right or @'SFromDual' '.' 'SToDual'@
+-- | adjoining @n@-times 'SToDual' to the left or 'SFromDual' to the right or
+-- @'SFromDual' '.' 'SToDual'@
 -- in the middle.
 xSctAdjDual :: (Morphism h, Transformable1 o s)
   => N -> SomeCmpb2 (SHom r s o h) -> X (SomeCmpb2 (SHom r s o h))
@@ -504,7 +505,7 @@ xSctAdjDual n fg = xOneOfX [ amap1 adjToDual $ xSctAdjDual (pred n) fg
 -- xSctSomeCmpb2 -
 
 -- | random variable for some composable morphism in @'SHom' __s o h__@ where 'cOne' and @h@ are
--- adjoined with maximal @n@ times 'ToDual' or 'FromDual' or @'FromDual' '.' 'ToDual'@
+-- adjoined with maximal @n@ times 'SToDual' or 'FromDual' or @'SFromDual' '.' 'SToDual'@
 --
 -- [Pre] Not both input random variables are empty.
 --

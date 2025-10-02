@@ -215,7 +215,7 @@ type NaturalDiagrammaticBi h d t n m =
 --------------------------------------------------------------------------------
 -- prpNaturalDiagrammatic -
 
--- | validity according to 'NatrualDiagrammatic'.
+-- | validity according to 'NaturalDiagrammatic'.
 prpNaturalDiagrammatic :: NaturalDiagrammatic h d t n m
   => q h d t n m
   -> X (SomeNaturalApplication h (SDualBi (DiagramG d t n m)) (SDualBi (DiagramG Diagram t n m)))

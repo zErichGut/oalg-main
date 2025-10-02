@@ -174,7 +174,8 @@ ssycfs s x = Vector (psqCompose (PSequence $ lcs $ ssylc x) (PSequence $ listN s
 --
 -- __Property__ Let @s = s 0 '<' s 1 '<' ..@ be in @'Set' __a__@ and
 -- @r@ be in @'Vector' __r__@ then holds:
--- @'cfsssy' s r '==' 'cf' r 0 '!' 'sy' (s 0) '+' 'cf' r  1 '!' 'sy' (s 1) '+' ..@.
+--
+-- (1) @'cfsssy' s r '==' 'cf' r 0 '!' 'sy' (s 0) '+' 'cf' r  1 '!' 'sy' (s 1) '+' ..@.
 cfsssy :: (Semiring r, Commutative r, Entity a, Ord a) => Set a -> Vector r -> SumSymbol r a
 cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) -> (i,a)) $ listN s)
                              -- :: PSequence i r    :: PSeqeunce a i
@@ -201,6 +202,7 @@ vecAppl m v = crvec (mtxColRow m `etsMlt` vecrc v) where
 --------------------------------------------------------------------------------
 -- HomSymbol -
 
+-- | homomorphisms 'Vector' and symbolic sums 'SumSymbol'.
 data HomSymbol r x y where
   HomSymbol :: (Entity x, Ord x, Entity y, Ord y)
     => PSequence x (LinearCombination r y) -> HomSymbol r (SumSymbol r x) (SumSymbol r y)

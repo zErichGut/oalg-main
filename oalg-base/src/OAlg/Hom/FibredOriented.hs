@@ -20,7 +20,7 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- definition of homomorphisms between 'FibreOriented' structures.
+-- definition of homomorphisms between 'FibredOriented' structures.
 module OAlg.Hom.FibredOriented
   ( -- * Disjunctive
     HomFibredOrientedDisjunctive, DualisableFibredOriented
@@ -163,7 +163,7 @@ relDualisableFibredOrientedRt :: DualisableFibredOriented s o
 relDualisableFibredOrientedRt q s Struct Struct r
   = (toDualRt q s r == toDualOrt q s r) :?> Params ["r":=show r]
 
--- | validity according to 'DualisableFibredOrientd'.
+-- | validity according to 'DualisableFibredOriented'.
 prpDualisableFibredOrientedRt :: DualisableFibredOriented s o
   => q o -> Struct s x -> Root x -> Statement
 prpDualisableFibredOrientedRt q s r = Prp "DualisableFibredOrientedRt" :<=>:

@@ -559,7 +559,7 @@ instance M.Functor (PTree i) where fmap = ptrMap
 --------------------------------------------------------------------------------
 -- prpTreeFilter -
 
--- | validates the function 'pspTreeFilter'
+-- | validates the function 'ptrFilter'.
 prpPTreeFilter :: N -> Statement
 prpPTreeFilter n = Prp ("PTreeFilter " ++ show n) :<=>:
   Forall xps (\pxs -> (  (filter (p . fst) $ psqxs pxs)

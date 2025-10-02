@@ -75,10 +75,10 @@ import OAlg.Hom.Distributive
 -- for a  'Distributive' structure @__x__@, then holds:
 --
 -- (1) If @c@ matches @'DiagramChainTo' _ ds@ then holds:
--- @d '*' d'@ is 'zero' for all @..d':|'d'..@ in @ds@.
+-- @d 'OAlg.Structure.Multiplicative.*' d'@ is 'zero' for all @..d':|'d'..@ in @ds@.
 --
 -- (2) If @c@ matches @'DiagramChainFrom' _ ds@ then holds:
--- @d' '*' d@ is 'zero' for all @..d':|'d'..@ in @ds@.
+-- @d' 'OAlg.Structure.Multiplicative.*' d@ is 'zero' for all @..d':|'d'..@ in @ds@.
 newtype ConsecutiveZero t n x = ConsecutiveZero (Diagram (Chain t) (n+3) (n+2) x)
   deriving (Show,Eq)
 
@@ -211,7 +211,7 @@ cnzTail c@(ConsecutiveZero (DiagramChainFrom _ _))   = c'' where
 
 -- | homomorphism between two consecutive zero chains.
 --
--- __Property__ Let @'ConsecutiveZeroHom' t@ be in @'ConsecutiveZeroTraf' __t n x__@ within a
+-- __Property__ Let @'ConsecutiveZeroHom' t@ be in @'ConsecutiveZeroHom' __t n x__@ within a
 -- 'Distributive' structure @__x__@, then holds
 --
 -- (1) @'start' t@ and @'end' t@ are consecutive zero chains.

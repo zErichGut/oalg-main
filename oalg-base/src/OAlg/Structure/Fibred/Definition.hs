@@ -62,7 +62,8 @@ import OAlg.Structure.Fibred.Root as Rt
 --
 --  __Note__
 --
--- (1) On should accept the @default@ for 'root' only for 'FibredOriented' structures!
+-- (1) On should accept the @default@ for 'root' only if one intens to implement a
+-- 'OAlg.Structure.FibredOriented.FibredOriented' structure!
 --
 -- (2) For 'OAlg.Structure.Distributive.Definition.Distributive' structures the only thing to be
 -- implemented is the 'Root' type and should be defined as @'Root' d = 'Orientation' p@ where-- @p = 'Point' d@ (see the default implementation of 'root').

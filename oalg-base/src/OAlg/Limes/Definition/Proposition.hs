@@ -113,6 +113,7 @@ xecMapCnt (Contravariant2 i) (XEligibleConeG xec) = XEligibleConeG xec' where
 --------------------------------------------------------------------------------
 -- xecMapS -
 
+-- | mapping of a 'XEligibleConeG'.
 xecMapS :: NaturalConicBi (Inv2 h) c s p d t n m
   => Inv2 h x y
   -> SDualBi (XEligibleConeG c s p d t n m) x -> SDualBi (XEligibleConeG c s p d t n m) y

@@ -31,7 +31,8 @@ import OAlg.Hom.Vectorial
 --------------------------------------------------------------------------------
 -- prpHomDisjOp -
 
--- | validity of @'HomDisj' __s__ 'Op'@ as homomorphisms between @__s__@-structured types.
+-- | validity of @'OAlg.Hom.Definition.HomDisj' __s__ 'OAlg.Structure.Oriented.Opposite.Op'@ as
+-- homomorphisms between @__s__@-structured types.
 prpHomDisjOp :: Statement
 prpHomDisjOp = Prp "HomDisjOp" :<=>:
   And [ prpHomDisjOpOrt

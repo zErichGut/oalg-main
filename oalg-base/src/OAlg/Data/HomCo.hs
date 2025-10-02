@@ -214,9 +214,9 @@ instance
 -- __Properties__ Let @'FunctorialHomCo' __d s m o c__@, then for all @__x__@
 -- and @s@ in @'Struct' __s x__@ holds:
 --
--- (1) @'amapG' ('fromCo' s) '.'  'amapG' ('toCo' s) '.=.' 'cOneDOF' f s@.
+-- (1) @'amapG' ('fromCo' s) '.'  'amapG' ('toCo' s) '.=.' 'cOneDOM' f s@.
 --
--- (2) @'amapG' ('toCo' s) '.' 'amapG' ('fromCo' s)  '.=.' 'cOneDCo' f s@.
+-- (2) @'amapG' ('toCo' s) '.' 'amapG' ('fromCo' s)  '.=.' 'cOneDMO' f s@.
 --
 -- where @f@ is anay proxy in @__q d s m o c__@.
 class

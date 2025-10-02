@@ -190,6 +190,7 @@ embedding (EmbeddingFrom (DiagramChainFrom _ (i:|_)) k' _ _ _ _)
 --------------------------------------------------------------------------------
 -- finitePresentation -
 
+-- | the finite presentation of a given point and according to a finitaly presentable structure.
 finitePresentation :: FinitelyPresentable s i a -> Point a -> FinitePresentation s i a
 finitePresentation (FinitelyPresentable f) = f
 
@@ -258,7 +259,3 @@ instance
         ]
 
        where DiagramChainTo p (g:|g':|Nil) = d
-
-
-
-

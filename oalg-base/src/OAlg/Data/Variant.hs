@@ -191,7 +191,7 @@ instance Morphism h => Morphism (Variant2 v h) where
 --  __Properties__ Let @'CategoryDisjunctive' __c__@, then holds:
 --
 -- (1) For all @__x__@ and @s@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
--- @'variant2' ('cOne' s) '==' 'Covariante'@.
+-- @'variant2' ('cOne' s) '==' 'Covariant'@.
 --
 -- (2) For all @__x__@, @__y__@, @__z__@, @f@ in @__c y z__@ and @g@ in @__c x y__@ holds:
 -- @'variant2' (f '.' g) '==' 'variant2' f '*' 'variant2' g@.

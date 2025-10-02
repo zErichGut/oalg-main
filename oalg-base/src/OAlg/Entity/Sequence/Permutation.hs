@@ -146,8 +146,8 @@ pmfOprPsq xjs (PermutationForm jis) = PSequence (sortSnd xis ++ xis') where
 -- | @'pmfOprPsq' xs p@ applies the permutation form @p@ - from right - to the list
 -- @xs@, which is given by 'pmfOprPsq' applied to @'PSequence' (xs `'zip` [0..])@.
 --
--- __Note__ If @'It' ('lengthN') '<=' u@ - where @(_,u) = 'span' p@ - then no
--- exception will be thrown, but the 'lengthN' of the resulting list may be smaller!
+-- __Note__ If @'It' ('lengthN' xs) '<=' u@ - where @(_,u) = 'OAlg.Entity.Sequence.Definition.span' p@
+-- - then no exception will be thrown, but the 'lengthN' of the resulting list may be smaller!
 pmfOprLst :: [x] -> PermutationForm N -> [x]
 pmfOprLst xs p = prj (xs' `pmfOprPsq` p) where
   xs' = (inj :: [x] -> PSequence N x) xs

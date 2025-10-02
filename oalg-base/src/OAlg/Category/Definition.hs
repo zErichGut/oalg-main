@@ -232,11 +232,13 @@ infixr 9 .
 --   holds:
 --
 --  (1) #Cat1#For all types __@x@__, __@y@__ and @f@ in __@c@__ __@x@__ __@y@__ holds:
---      @'cOne' ('range' f) '.' f = f@ and @f '.' 'cOne' ('domain' f) = f@.
+--      @'cOne' ('range' f) '.' f 'OAlg.Data.EqualExtensional..=.' f@ and
+--      @f '.' 'cOne' ('domain' f) 'OAlg.Data.EqualExtensional..=.' f@.
 --
 --  (1) #Cat2#For all types __@w@__, __@x@__, __@y@__, __@z@__
 --      and @f@ in __@c@__ __@x@__ __@w@__, @g@ in __@c@__ __@y@__ __@x@__,
---      @h@ in __@c@__ __@z@__ __@y@__ holds: @f '.' (g '.' h) = (f '.' g) '.' h@. 
+--      @h@ in __@c@__ __@z@__ __@y@__ holds:
+--      @f '.' (g '.' h) 'OAlg.Data.EqualExtensional..=.' (f '.' g) '.' h@. 
 class Morphism c => Category c where
   -- | the identity morphism for an eligible __@x@__.
   cOne :: Struct (ObjectClass c) x -> c x x
@@ -269,10 +271,11 @@ instance Category (->) where
 --   __Properties__ Let @'FunctorialG' __f a b__@, the holdst: 
 --
 --   (1) For all @__x__@ and  @s@ in @'Struct' ('ObjectClass' __a__) __x__@ holds:
---   @'amapG' ('cOne' s) '.=.' 'cOne' ('tauG' s)@.
+--   @'amapG' ('cOne' s) 'OAlg.Data.EqualExtensional..=.' 'cOne' ('tauG' s)@.
 --
 --   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
---   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amapG' (f '.' g) '.=.' 'amapG' f '.' 'amapG' g@. 
+--   @g@ in __@c@__ __@x@__ __@y@__ holds:
+--   @'amapG' (f '.' g) 'OAlg.Data.EqualExtensional..=.' 'amapG' f '.' 'amapG' g@. 
 class ( Category a, Category b, ApplicativeG t a b
       , TransformableG t (ObjectClass a) (ObjectClass b)
       ) => FunctorialG t a b
@@ -419,7 +422,8 @@ instance TransformableGObjectClass t a (->)
 --
 --  __Property__ Let __@c@__ be a type instance of 'Cayleyan2', then holds:
 --  For all types __@x@__, __@y@__ and @f@ in __@c@__ __@x@__ __@y@__ holds:
---  @('invert2' f '.' f) == 'cOne' ('domain' f)@ and
+--
+--  (1) @('invert2' f '.' f) == 'cOne' ('domain' f)@ and
 --  @(f '.' 'invert2' f) == 'cOne' ('range' f)@ where @(==) = 'eq2'@.
 class (Category c, Eq2 c) => Cayleyan2 c where
   invert2 :: c x y -> c y x
@@ -438,12 +442,12 @@ instance Cayleyan2 (Homomorphous m) where
 
 -- | predicate for invertible morphisms within a category @__c__@.
 --
--- __Property__ Let @'Inv2' f f'@ be in @'Inv2' __c__ __x__ __y__@ for a @'Categroy' __c__@ with
+-- __Property__ Let @'Inv2' f f'@ be in @'Inv2' __c__ __x__ __y__@ for a @'Category' __c__@ with
 -- @'Eq2' __c__@, then holds:
 --
--- (1) @f' '.' f '==' 'cOne' ('domain' f)@.
+-- (1) @f' '.' f 'OAlg.Data.EqualExtensional..=.' 'cOne' ('domain' f)@.
 --
--- (2) @f '.' f' '==' 'cOne' ('range' f)@.
+-- (2) @f '.' f' 'OAlg.Data.EqualExtensional..=.' 'cOne' ('range' f)@.
 data Inv2 c x y = Inv2 (c x y) (c y x) deriving (Show, Eq)
 
 instance Eq2 c => Eq2 (Inv2 c) where
@@ -520,6 +524,3 @@ class TransformableG d (ObjectClass a) t => TransformableGObjectClassDomain d a 
 class TransformableG d s (ObjectClass c) => TransformableGObjectClassRange d s c
 
 instance TransformableGObjectClassRange d s (->)
-
-
-

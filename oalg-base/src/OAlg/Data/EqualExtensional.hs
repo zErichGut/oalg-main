@@ -30,7 +30,7 @@ import OAlg.Data.Statement.Definition
 
 infix 4 .=.
 
--- | extensional equality.
+-- | extensional equality for two parameterized types.
 --
 -- __Properties__ Let @'EqExt' __c__@ then for all @__x__@, @__y__@ holds:
 --
@@ -39,9 +39,10 @@ infix 4 .=.
 -- (2) For all @f@, @g@ in @__c x y__@ holdst: If @f '.=.' g@ then holds
 -- @g '.=.' f@.
 --
--- (3) For all @f@, @g@ and @h@ in @__c x y__@ holds: If @f '.=.' g@ and @g .=:' h@ then
+-- (3) For all @f@, @g@ and @h@ in @__c x y__@ holds: If @f '.=.' g@ and @g '.=.' h@ then
 -- @f '.=.' h@.
 class EqExt c where
+  -- | equality statement of two objects.
   (.=.) :: c x y -> c x y -> Statement
   default (.=.) :: Eq2 c => c x y -> c x y -> Statement
   f .=. g = eq2 f g :?> Params []

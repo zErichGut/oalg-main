@@ -45,8 +45,9 @@ infix 5 :>
 -- | orientation given by the start point as its first component and the end point as its
 --   second.
 --
---  __Property__ For all @o@ in __@'Orientation' p@__ holds:
---  @o '==' 'start' o ':>' 'end' o@.
+--  __Property__ For all @o@ in @'Orientation' __p__@ holds:
+--  @o '==' 'OAlg.Structure.Oriented.Definition.start' o
+--     ':>' 'OAlg.Structure.Oriented.Definition.end' o@.
 --
 --  __Note__ As 'Orientation's are instances of almost all algebraic structures
 --  defined here, they serve as a /proof/ that this structures are instanceable.

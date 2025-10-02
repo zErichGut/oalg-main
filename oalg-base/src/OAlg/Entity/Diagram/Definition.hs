@@ -232,7 +232,7 @@ instance (Eq a, EqPoint a) => EqDual1 (Diagram t n m) a
 -- | mapping of a diagram via a 'Covariant' homomorphism on 'Oriented' structures.
 --
 -- __Properties__ Let @d@ be in @'Diagram __t n m a__@ and
--- @'Covariant2' h@ in @'SVariant' 'Covariant' __h a b__@ with
+-- @'Covariant2' h@ in @'Variant2' 'Covariant' __h a b__@ with
 -- @'HomOrientedDisjunctive' __s o h__@, then holds:
 --
 -- (1) @'dgArrows' ('dgMapCov' q h d) '==' 'amap1' ('amap' h) ('dgArrows' d)@.
@@ -258,7 +258,7 @@ dgMap h d                  =  case d of
 --------------------------------------------------------------------------------
 -- dgMapCov -
 
--- | mapping of a diagramm via a 'Covaraint' homomorphism on 'Oriented' structures.
+-- | mapping of a diagramm via a 'Covariant' homomorphism on 'Oriented' structures.
 dgMapCov :: HomOrientedDisjunctive h
   => Variant2 Covariant h x y -> Diagram t n m x -> Diagram t n m y
 dgMapCov = dgMap

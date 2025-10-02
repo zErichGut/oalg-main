@@ -114,7 +114,7 @@ omapDisj h = case variant2 h of
 --     (2) @'end' ',' 'amap' h '.=.' 'pmap' h '.' 'start'@.
 --
 -- __Note__ The above property is equivalent to
--- @'orienation' '.' 'amap' h '.=.' 'omapDisj' h '.' 'orientation'@. 
+-- @'orientation' '.' 'amap' h '.=.' 'omapDisj' h '.' 'orientation'@. 
 class ( Morphism h, Applicative h, ApplicativePoint h
       , Transformable (ObjectClass h) Ort
       , Disjunctive2 h
