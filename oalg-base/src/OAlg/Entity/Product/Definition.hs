@@ -39,6 +39,7 @@
 -- True
 module OAlg.Entity.Product.Definition
   (
+
     -- * Product
     Product(), prLength, prFactor, prFactors, prwrd
   , nProduct, zProduct
@@ -64,7 +65,8 @@ module OAlg.Entity.Product.Definition
 
   where
 
-import Control.Monad
+import Control.Monad as M
+
 import Control.Exception
 
 import Data.List ((++),repeat,map,groupBy,zip)
@@ -141,7 +143,7 @@ instance (Oriented a, Number r) => Validable (ProductForm r a) where
       pf :^ r -> vld pf && valid r
       a :* b  -> vld a && vld b
     
-instance (Oriented a, Number r) => Entity (ProductForm r a)
+-- instance (Oriented a, Number r) => Entity (ProductForm r a)
 
 pf :: Int -> Char -> ProductForm r (Orientation Char)
 pf 0 c = One c
@@ -150,8 +152,14 @@ pf i c = P (c:>c) :* pf (i-1) c
 --------------------------------------------------------------------------------
 -- ProductForm - Oriented -
 
+type instance Point (ProductForm r a) = Point a
+
+instance ShowPoint a => ShowPoint (ProductForm r a)
+instance EqPoint a => EqPoint (ProductForm r a)
+instance ValidablePoint a => ValidablePoint (ProductForm r a)
+instance TypeablePoint a => TypeablePoint (ProductForm r a)
+
 instance (Oriented a, Number r) => Oriented (ProductForm r a) where
-  type Point (ProductForm r a) = Point a
   orientation pf = case pf of
     One p    -> one p
     P a      -> orientation a
@@ -220,7 +228,6 @@ prfopl' n op p x = fst $ prfopl op' p (x,0) where
   op' t (x,i) = if i `mod` n == 0
     then x' `seq` (x',0) else (x',i+1) where x' = t `op` x
 
-
 --------------------------------------------------------------------------------
 -- prfopr -
 
@@ -248,7 +255,6 @@ prfopr' :: N -> (x -> t -> x) -> x -> ProductForm N t -> x
 prfopr' n op x p = fst $ prfopr op' (x,0) p where
   op' (x,i) t = if i `mod` n == 0
     then x' `seq` (x',0) else (x',i+1) where x' = x `op` t
-
 
 --------------------------------------------------------------------------------
 -- prfLength -
@@ -280,8 +286,10 @@ prfDepth p = case p of
 -- Word -
 
 -- | list of symbols in @__a__@ together with an exponent in @__r__@.
-newtype Word r a = Word [(a,r)] deriving (Show,Eq,Validable,Functor)
+newtype Word r a = Word [(a,r)] deriving (Show,Eq,Validable,M.Functor)
 
+instance ApplicativeG (Word r) (->) (->) where amapG = M.fmap
+  
 --------------------------------------------------------------------------------
 -- fromWord -
 
@@ -427,8 +435,6 @@ prfReductionWith :: (Oriented a, Integral r)
   => (Word r a -> Rdc (Word r a)) -> ProductForm r a -> Rdc (ProductForm r a)
 prfReductionWith rel pf = (rel $ prfwrd pf) >>= wrdPrfGroup >>= return . wrdprf (end pf)
 
-    
-
 --------------------------------------------------------------------------------
 -- prfFactors -
 
@@ -455,7 +461,6 @@ prfReduce = prfReduceWith return
 
 instance (Oriented a, Integral r) => Reducible (ProductForm r a) where
   reduce = prfReduce
-
 
 --------------------------------------------------------------------------------
 -- Product -
@@ -513,10 +518,16 @@ instance Oriented a => Projectible (Path a) (Product N a) where
 ----------------------------------------
 -- Product - Structure -
 
-instance (Oriented a, Integral r) => Entity (Product r a)
+-- instance (Oriented a, Integral r) => Entity (Product r a)
+
+type instance Point (Product r a) = Point a
+
+instance ShowPoint a => ShowPoint (Product r a)
+instance EqPoint a => EqPoint (Product r a)
+instance ValidablePoint a => ValidablePoint (Product r a)
+instance TypeablePoint a => TypeablePoint (Product r a)
 
 instance (Oriented a, Integral r) => Oriented (Product r a) where
-  type Point (Product r a) = Point a
   orientation = restrict orientation
 
 instance (Oriented a, Integral r) => Multiplicative (Product r a) where
@@ -600,7 +611,6 @@ prdMapTotal f (Product p) = make $ f' p where
   f' (x :^ r) = f' x :^ r
   f' (x :* y) = f' x :* f' y
   
-
 --------------------------------------------------------------------------------
 -- prfMapTotal -
 
@@ -616,8 +626,7 @@ prfMapTotal f pf = case pf of
 ----------------------------------------
 -- nProductForm -
 
-
-nProductFormOrt :: (Hom Ort h, Multiplicative x)
+nProductFormOrt :: (HomOriented h, Multiplicative x)
   => Struct Ort a -> h a x -> ProductForm N a -> x
 -- nProductFormOrt Struct f = prd npower (pmap f) (f$)
 nProductFormOrt Struct h = prd h where
@@ -629,12 +638,12 @@ nProductFormOrt Struct h = prd h where
     
 -- | mapping a product form with exponents in t'N' into a 'Multiplicative' structure
 -- applying a homomorphism between 'Oriented' structures.
-nProductForm :: (Hom Ort h, Multiplicative x)
+nProductForm :: (HomOriented h, Multiplicative x)
   => h a x -> ProductForm N a -> x
 nProductForm f = nProductFormOrt (tau $ domain f) f
 
 
-nProductOrt :: (Hom Ort h, Multiplicative x)
+nProductOrt :: (HomOriented h, Multiplicative x)
   => Struct Ort a -> h a x -> Product N a -> x
 nProductOrt Struct = restrict . nProductForm
 
@@ -643,14 +652,14 @@ nProductOrt Struct = restrict . nProductForm
 
 -- | mapping a product with exponents in t'N' into a 'Multiplicative' structure
 --   applying a homomorphism between 'Oriented' structures.
-nProduct :: (Hom Ort h, Multiplicative x)
+nProduct :: (HomOriented h, Multiplicative x)
   => h a x -> Product N a -> x
 nProduct h = nProductOrt (tau $ domain h) h 
 
 --------------------------------------------------------------------------------
 -- zProductForm -
 
-zProductFormOrt :: (Hom Ort h , Cayleyan x)
+zProductFormOrt :: (HomOriented h , Cayleyan x)
   => Struct Ort a -> h a x -> ProductForm Z a -> x
 zProductFormOrt Struct h = prd h where
   prd h f = case f of
@@ -662,22 +671,21 @@ zProductFormOrt Struct h = prd h where
 
 -- | mapping a product form with exponents in 'Z' into a 'Cayleyan' structure
 -- applying a homomorphism between 'Oriented' structures.
-zProductForm :: (Hom Ort h , Cayleyan x)
+zProductForm :: (HomOriented h , Cayleyan x)
                  => h a x -> ProductForm Z a -> x
 zProductForm f = zProductFormOrt (tau $ domain f) f
 
 --------------------------------------------------------------------------------
 -- zProduct -
-zProductOrt :: (Hom Ort h, Cayleyan x)
+zProductOrt :: (HomOriented h, Cayleyan x)
   => Struct Ort a -> h a x -> Product Z a -> x
 zProductOrt Struct = restrict . zProductForm
 
 -- | mapping a product with exponents in 'Z' into a 'Cayleyan' structure
 --   applying a homomorphism between 'Oriented' structures.
-zProduct :: (Hom Ort h, Cayleyan x)
+zProduct :: (HomOriented h, Cayleyan x)
   => h a x -> Product Z a -> x
 zProduct h = zProductOrt (tau $ domain h) h
-
 
 --------------------------------------------------------------------------------
 -- prFromOp -
@@ -688,4 +696,5 @@ zProduct h = zProductOrt (tau $ domain h) h
 -- map 'prFromOp' is a __contravariant__ homomorphisms between 'Multiplicative' structures.
 prFromOp :: Product r (Op a) -> Product r a
 prFromOp (Product f) = Product (prfFromOp f)
+
 

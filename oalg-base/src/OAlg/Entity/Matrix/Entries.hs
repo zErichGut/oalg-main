@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Entries
@@ -23,6 +23,9 @@ module OAlg.Entity.Matrix.Entries
     Entries(..), etsxs, etsEmpty, etsAdd, etsMlt, etsJoin
   , etscr, etsrc, crets, rcets
   , etsElimZeros
+
+    -- ** Mapping
+  , etsMapCov, etsMapCnt
 
     -- * Row
   , Row(..), rowxs, rowEmpty, rowIsEmpty, rowHead, rowTail
@@ -42,13 +45,16 @@ module OAlg.Entity.Matrix.Entries
  
   ) where
 
-import Control.Monad
+import Control.Monad as M
 
 import Data.Foldable
 import Data.List (map,sortBy,filter,(++))
 
 import OAlg.Prelude
 
+import OAlg.Data.Variant
+
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
@@ -57,12 +63,13 @@ import OAlg.Structure.Operational
 
 import OAlg.Entity.Sequence
 
+import OAlg.Hom.Distributive
 
 --------------------------------------------------------------------------------
 -- Row -
 
 -- | viewing a partial sequence as a row.
-newtype Row j x = Row (PSequence j x) deriving (Eq,Validable,Entity,Functor,LengthN)
+newtype Row j x = Row (PSequence j x) deriving (Eq,Validable,M.Functor,LengthN)
 
 instance (Show x,Show j) => Show (Row j x) where
   show (Row (PSequence xs)) = "Row " ++ show xs
@@ -77,6 +84,8 @@ instance (Entity x, Entity j, Ord j) => TotalOpr (Permutation j) (Row j x)
 
 instance (Entity x, Entity j, Ord j) => PermutableSequence (Row j) j x where
   permuteBy f c w (Row xs) = (Row xs',p) where (xs',p) = permuteBy f c w xs
+
+instance ApplicativeG (Row i) (->) (->) where amapG = M.fmap
 
 --------------------------------------------------------------------------------
 -- rowxs -
@@ -216,7 +225,7 @@ rowScale (<*) j s rw
 -- Col - 
 
 -- | viewing a partial sequence as a column.
-newtype Col i x = Col (PSequence i x) deriving (Eq,Validable,Entity,Functor,LengthN)
+newtype Col i x = Col (PSequence i x) deriving (Eq,Validable,M.Functor,LengthN)
 
 instance (Show x,Show i) => Show (Col i x) where
   show (Col (PSequence xs)) = "Col " ++ show xs
@@ -231,6 +240,9 @@ instance (Entity x, Entity i, Ord i) => TotalOpr (Permutation i) (Col i x)
 
 instance (Entity x, Entity i, Ord i) => PermutableSequence (Col i) i x where
   permuteBy f c w (Col xs) = (Col xs',p) where (xs',p) = permuteBy f c w xs
+
+instance ApplicativeG (Col i) (->) (->) where
+  amapG = M.fmap
 
 --------------------------------------------------------------------------------
 -- colxs -
@@ -403,10 +415,12 @@ coColRowInv = error "nyi"
 
 -- | two dimensional partial sequence.
 newtype Entries i j x = Entries (PSequence (i,j) x)
-  deriving (Eq,Ord,Validable,Entity,Functor,LengthN)
+  deriving (Eq,Ord,Validable,M.Functor,LengthN)
 
 instance (Show x, Show i, Show j) => Show (Entries i j x) where
   show ets = "Entries" ++ (show $ etsxs ets)  
+
+instance ApplicativeG (Entries i j) (->) (->) where amapG = M.fmap
 
 --------------------------------------------------------------------------------
 -- etsxs -
@@ -469,7 +483,7 @@ instance (Transposable x, Ord n) => Transposable (Entries n n x) where
                          $ psqxs $ xs
                          
 --------------------------------------------------------------------------------
--- Entrie - Duality -
+-- Entries - Duality -
 
 type instance Dual (Entries i j x) = Entries j i (Op x)
 
@@ -489,6 +503,29 @@ coEntriesInv (Entries xs') = Entries
                            $ sortBy (fcompare snd)
                            $ map (\(Op x,(j,i)) -> (x,(i,j)))
                            $ (\(PSequence xs) -> xs) $ xs'
+
+--------------------------------------------------------------------------------
+-- etsMapCov -
+
+-- | covariant mapping of 'Entries'.
+etsMapCov :: HomDistributiveDisjunctive h
+  => Variant2 Covariant h x y -> Entries i j x -> Entries i j y
+etsMapCov (Covariant2 h) (Entries xs) = case tauDst (range h) of
+  Struct -> etsElimZeros $ Entries $ amap1 (amap h) xs
+
+--------------------------------------------------------------------------------
+-- etsMapCnt -
+
+-- | contravariant mapping of 'Entries'.
+etsMapCnt :: (HomDistributiveDisjunctive h, Ord i, Ord j)
+  => Variant2 Contravariant h x y -> Entries i j x -> Entries j i y
+etsMapCnt (Contravariant2 h) (Entries xs) = case tauDst $ range h of
+  Struct -> etsElimZeros
+          $ Entries
+          $ PSequence
+          $ sortBy (fcompare snd)
+          $ map (\(x,(i,j)) -> (amap h x,(j,i)))
+          $ psqxs $ xs
 
 --------------------------------------------------------------------------------
 -- etscr -

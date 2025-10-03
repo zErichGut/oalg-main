@@ -35,13 +35,11 @@ module OAlg.Entity.Matrix.Definition
   , diagonal, diagonal'
 
     -- * Duality
-  , coMatrix, coMatrixInv, mtxFromOpOp
-
-    -- * Homomorphisms
-  , isoCoMatrixDst
+  , mtxMapS, mtxMapCov, mtxMapCnt
+  , isoCoMatrixOp
 
     -- * X
-  , XStandardOrientationMatrix(..)
+  -- , XStandardOrientationMatrix(..)
   , xMatrix, xMatrixTtl
 
     -- ** Direction
@@ -57,9 +55,12 @@ import Data.List (map,repeat,zip,span)
 
 import OAlg.Prelude
 
-import OAlg.Category.Path as P
+import OAlg.Category.Dualisable
+import OAlg.Category.SDuality
+
 import OAlg.Data.Singleton
 import OAlg.Data.Canonical
+import OAlg.Data.HomCo
 
 import OAlg.Data.Constructable
 
@@ -67,6 +68,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
@@ -74,19 +76,24 @@ import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Number
 
+import OAlg.Entity.Diagram
 import OAlg.Entity.Product
 import OAlg.Entity.Sequence hiding (span)
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
-import OAlg.Hom.Definition
 
 import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Entries
 
+import OAlg.Limes.Cone.Conic
+import OAlg.Limes.Perspective
+import OAlg.Limes.Definition.Proposition
 
 --------------------------------------------------------------------------------
 -- Matrix -
@@ -168,7 +175,7 @@ instance (Additive x, FibredOriented x) => Validable (Matrix x) where
                 :?> Params ["xij":=show xij]
             ]
               
-instance (Additive x, FibredOriented x) => Entity (Matrix x)
+-- instance (Additive x, FibredOriented x) => Entity (Matrix x)
 
 --------------------------------------------------------------------------------
 -- mtxColRow -
@@ -187,13 +194,24 @@ mtxRowCol (Matrix _ _ xs) = etsrc xs
 --------------------------------------------------------------------------------
 -- Matrix - Distributive -
 
+type instance Point (Matrix x) = Dim' x
+
+instance Oriented x => ShowPoint (Matrix x)
+instance Oriented x => EqPoint (Matrix x)
+instance Oriented x => ValidablePoint (Matrix x)
+instance (Typeable x, TypeablePoint x) => TypeablePoint (Matrix x)
+
 instance (Additive x, FibredOriented x) => Oriented (Matrix x) where
-  type Point (Matrix x) = Dim' x
   orientation (Matrix rw cl _) = cl :> rw
 
+type instance Root (Matrix x) = Orientation (Dim' x)
 
-instance (Additive x, FibredOriented x) => Fibred (Matrix x) where
-  type Root (Matrix x) = Orientation (Dim' x)
+instance Oriented x => ShowRoot (Matrix x)
+instance Oriented x => EqRoot (Matrix x)
+instance Oriented x => ValidableRoot (Matrix x)
+instance (Typeable x, TypeablePoint x) => TypeableRoot (Matrix x)
+
+instance (Additive x, FibredOriented x) => Fibred (Matrix x)
 
 instance (Additive x, FibredOriented x) => FibredOriented (Matrix x)
 
@@ -230,6 +248,9 @@ instance Distributive x => Multiplicative (Matrix x) where
 
 instance Distributive x => Distributive (Matrix x)
 
+instance TransformableG Matrix Dst Dst where tauG Struct = Struct
+instance TransformableGRefl Matrix Dst
+
 instance Algebraic x => Algebraic (Matrix x)
 
 --------------------------------------------------------------------------------
@@ -261,7 +282,6 @@ matrix :: (Additive x, p ~ Point x)
   => Dim x p -> Dim x p -> [(x,N,N)] -> Matrix x
 matrix rw cl xijs = Matrix rw cl xijs' where
   xijs' = etsElimZeros $ Entries $ psequence (+) $ map (\(x,i,j) -> (x,(i,j))) xijs
-
 
 --------------------------------------------------------------------------------
 -- matrixTtl -
@@ -305,7 +325,6 @@ diagonal' r n m xs = matrix n m xs' where
 -- | diagonal matrix with entries starting at the index @0@ (see 'diagonal'').
 diagonal :: Additive x => Dim' x -> Dim' x -> [x] -> Matrix x
 diagonal = diagonal' 0
-
   
 --------------------------------------------------------------------------------
 -- mtxJoinDim -
@@ -370,124 +389,429 @@ mtxGroupRow (Matrix r c xs) = Matrix r' c' xs' where
           xs = Col $ PSequence $ map (\(rw,i') -> (rw,i'>-i)) xs'
 
 --------------------------------------------------------------------------------
--- mtxMap -
+-- mtxMapCov -
 
-mtxMapStruct :: Hom Dst h => Struct Dst y -> h x y -> Matrix x -> Matrix y
-mtxMapStruct Struct h (Matrix rw cl xs) = Matrix rw' cl' ys where
+mtxMapCovStruct :: HomDistributiveDisjunctive h
+  => Struct Dst y
+  -> Variant2 Covariant h x y -> Matrix x -> Matrix y
+mtxMapCovStruct Struct h (Matrix rw cl xs) = Matrix rw' cl' ys where
   rw' = dimMap (pmap h) rw
   cl' = dimMap (pmap h) cl
-  ys = etsElimZeros $ fmap (amap h) xs
+  ys  = etsMapCov h xs
 
-
--- | mapping of a matrix.
-mtxMap :: Hom Dst h => h x y -> Matrix x -> Matrix y
-mtxMap h = mtxMapStruct (tau $ range h) h
-
-instance HomDistributive h => Applicative1 h Matrix where
-  amap1 = mtxMap
+-- | covariant mapping of 'Matrix'.
+mtxMapCov :: HomDistributiveDisjunctive h => Variant2 Covariant h x y -> Matrix x -> Matrix y
+mtxMapCov h = mtxMapCovStruct (tau $ range h) h
 
 --------------------------------------------------------------------------------
--- Matrix - Duality -
+-- mtxMap -
 
-type instance Dual (Matrix x) = Matrix (Op x)
-
--- | the dual matrix, with inverse 'coMatrixInv'.
-coMatrix :: Entity (Point x) => Matrix x -> Dual (Matrix x)
-coMatrix (Matrix rw cl xs) = Matrix cl' rw' xs' where
-  cl' = dimMap id cl
-  rw' = dimMap id rw
-  xs' = coEntries xs
-
--- | from the bidual.
-mtxFromOpOp :: Entity (Point x) => Matrix (Op (Op x)) -> Matrix x
-mtxFromOpOp (Matrix rw cl xs) = Matrix rw' cl' xs' where
-  rw' = dimMap id rw
-  cl' = dimMap id cl
-  xs' = fmap fromOpOp xs
-
--- | from the dual matrix, with inverse 'coMatrix'.
-coMatrixInv :: Entity (Point x) => Dual (Matrix x) -> Matrix x
-coMatrixInv (Matrix rw cl xs) = Matrix cl' rw' xs' where
-  cl' = dimMap id cl
-  rw' = dimMap id rw
-  xs' = coEntriesInv xs
-
-instance EntityPoint x => Dualisable (Matrix x) where
-  toDual   = coMatrix
-  fromDual = coMatrixInv
+-- | mapping of 'Matrix'.
+mtxMap :: HomDistributive h => h x y -> Matrix x -> Matrix y
+mtxMap h = mtxMapCov (homDisjOpDst h)
 
 --------------------------------------------------------------------------------
--- OpMap Matrix s - Hom -
+-- mtxMapCnt -
 
-instance TransformableDst s => Applicative (OpMap Matrix s) where
-  amap h@ToOp1 = coMatrixDst (tau (toOp1Struct h)) where
-    coMatrixDst :: Struct Dst x -> Op (Matrix x) -> Matrix (Op x)
-    coMatrixDst Struct = coMatrix . fromOp
-    
-  amap h@FromOp1 = coMatrixDst (tau (fromOp1Struct h)) where
-    coMatrixDst :: Struct Dst x -> Matrix (Op x) -> Op (Matrix x)
-    coMatrixDst Struct = Op . coMatrixInv
+mtxMapCntStruct :: HomDistributiveDisjunctive h
+  => Struct Dst y
+  -> Variant2 Contravariant h x y -> Matrix x -> Matrix y
+mtxMapCntStruct Struct h (Matrix rw cl xs) = Matrix cl' rw' ys where
+  cl' = dimMap (pmap h) cl
+  rw' = dimMap (pmap h) rw
+  ys  = etsMapCnt h xs
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomOriented (OpMap Matrix s) where
-  pmap h@ToOp1 = coDimDst (tau (toOp1Struct h)) where
-    coDimDst :: Struct Dst x -> Point (Op (Matrix x)) -> Point (Matrix (Op x))
-    coDimDst Struct = dimMap id
-
-  pmap h@FromOp1 = coDimDst (tau (fromOp1Struct h)) where
-    coDimDst :: Struct Dst x -> Point (Matrix (Op x)) -> Point (Op (Matrix x))
-    coDimDst Struct = dimMap id
-                                                               
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomMultiplicative (OpMap Matrix s)
-
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibred (OpMap Matrix s)
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibredOriented (OpMap Matrix s)
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomAdditive (OpMap Matrix s)
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomDistributive (OpMap Matrix s)
+-- | contravaraint mapping of 'Matrix'.
+mtxMapCnt :: HomDistributiveDisjunctive h
+  => Variant2 Contravariant h x y -> Matrix x -> Matrix y
+mtxMapCnt h = mtxMapCntStruct (tau $ range h) h 
 
 --------------------------------------------------------------------------------
--- IsoOpMap - Hom -
+-- Duality -
 
-instance TransformableDst s => Applicative (IsoOpMap Matrix s) where
-  amap = restrict amap
+type instance Dual1 Matrix = Matrix
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomOriented (IsoOpMap Matrix s) where pmap = restrict pmap
+--------------------------------------------------------------------------------
+-- mtxMapS -
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomMultiplicative (IsoOpMap Matrix s)
+-- | mapping of 'Matrix'.
+mtxMapS :: HomDistributiveDisjunctive h
+  => h x y -> SDualBi Matrix x -> SDualBi Matrix y
+mtxMapS = vmapBi mtxMapCov mtxMapCov mtxMapCnt mtxMapCnt
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibred (IsoOpMap Matrix s)
+instance HomDistributiveDisjunctive h => ApplicativeG (SDualBi Matrix) h (->) where
+  amapG = mtxMapS
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomFibredOriented (IsoOpMap Matrix s)
+instance
+  ( HomDistributiveDisjunctive h
+  , FunctorialOriented h
+  ) => FunctorialG (SDualBi Matrix) h (->)
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomAdditive (IsoOpMap Matrix s)
+--------------------------------------------------------------------------------
+-- coMatrixCov -
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => HomDistributive (IsoOpMap Matrix s)
+-- | covariant mapping to its generalized co-matrix.
+coMatrixGCovStruct ::
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o 
+  )
+  => Struct s (Matrix x) -> Struct s x -> o (Matrix x) -> Matrix (o x)
+coMatrixGCovStruct sm s = mtxMapCnt (toDualO s) . amap (inv2 t) where Contravariant2 t = toDualO sm
+
+-- | covariant mapping to its generalized co-matrix.
+coMatrixGCov ::
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> o (Matrix x) -> Matrix (o x)
+coMatrixGCov s = coMatrixGCovStruct (tauG s) s
+
+-- | covariant mapping to its co-matrix.
+coMatrixCov :: Struct Dst x -> Op (Matrix x) -> Matrix (Op x)
+coMatrixCov = coMatrixGCov
+
+--------------------------------------------------------------------------------
+-- coMatrixCovInv -
+
+-- | covariant mapping from its generalized co-matrix.
+coMatrixGInvCovStruct ::
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o
+  )
+  => Struct s (Matrix x) -> Struct s x -> Matrix (o x) -> o (Matrix x)
+coMatrixGInvCovStruct sm s = amap tm . mtxMapCnt (Contravariant2 (inv2 ts))
+  where Contravariant2 tm = toDualO sm
+        Contravariant2 ts = toDualO s
+
+-- | covariant mapping from its generalized co-matrix.
+coMatrixGInvCov ::
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> Matrix (o x) -> o (Matrix x)
+coMatrixGInvCov s = coMatrixGInvCovStruct (tauG s) s
+
+-- | covariant mapping from its co-matrix.
+coMatrixInvCov :: Struct Dst x -> Matrix (Op x) -> Op (Matrix x)
+coMatrixInvCov = coMatrixGInvCov
+
+--------------------------------------------------------------------------------
+-- coMatrixGPnt -
+
+-- | contravariant 'Point'-mapping to its generalized co-matrix.
+coMatrixGPntStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct Dst (o x) -> Struct s x -> Pnt (Matrix x) -> Pnt (Matrix (o x))
+coMatrixGPntStruct so@Struct s (Pnt d) = Pnt $ dimMap (pmap t) d where
+  Contravariant2 t = toDualO' (q so) s
+  q :: Struct Dst (o x) -> Proxy o
+  q _ = Proxy
+
+-- | contravariant 'Point'-mapping to its generalized co-matrix.
+coMatrixGPnt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct s x -> Pnt (Matrix x) -> Pnt (Matrix (o x))
+coMatrixGPnt s = coMatrixGPntStruct (tau $ tauO s) s
   
 --------------------------------------------------------------------------------
--- IsoOpMap - Functorial -
+-- coMatrixGCovPnt -
 
-instance TransformableDst s => Functorial (IsoOpMap Matrix s)
+-- | covariant 'Point'-mapping to its generalized co-matrix.
+coMatrixGCovPntStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct Dst (o x) -> Struct s (Matrix x) -> Struct s x -> Pnt (o (Matrix x)) -> Pnt (Matrix (o x))
+coMatrixGCovPntStruct so sm s = coMatrixGPntStruct so s . amapG (inv2 t) where
+  Contravariant2 t = toDualO' (q so) sm
+  
+  q :: Struct Dst (o x) -> Proxy o
+  q _ = Proxy
 
-instance (TransformableOp s, TransformableDst s, TransformableTyp s)
-  => FunctorialHomOriented (IsoOpMap Matrix s)
+-- | covariant 'Point'-mapping to its generalized co-matrix.
+coMatrixGCovPnt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> Pnt (o (Matrix x)) -> Pnt (Matrix (o x))
+coMatrixGCovPnt s = coMatrixGCovPntStruct (tau $ tauO s) (tauG s) s
 
 --------------------------------------------------------------------------------
--- isoCoMatrixDst -
+-- coMatrixGInvPnt -
 
--- | the contravariant isomorphism from @'Matrix' __x__@ to @'Matrix' ('Op' __x__)@.
-isoCoMatrixDst :: Distributive x => IsoOpMap Matrix Dst (Op (Matrix x)) (Matrix (Op x))
-isoCoMatrixDst = make (ToOp1 :. IdPath Struct)
+-- | contravariant 'Point'-mapping from its generalized co-matrix.
+coMatrixGInvPntStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => q o -> Struct Dst x -> Struct s x -> Pnt (Matrix (o x)) -> Pnt (Matrix x)
+coMatrixGInvPntStruct q Struct s (Pnt d) = Pnt $ dimMap (pmap (inv2 t)) d where
+  Contravariant2 t = toDualO' q s
+
+-- | contravariant 'Point'-mapping from its generalized co-matrix.
+coMatrixGInvPnt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct s x -> Pnt (Matrix (o x)) -> Pnt (Matrix x)
+coMatrixGInvPnt s pmo = coMatrixGInvPntStruct (q pmo) (tau s) s pmo where
+  q :: Pnt (Matrix (o x)) -> Proxy o
+  q _ = Proxy
+
+--------------------------------------------------------------------------------
+-- coMatrixGInvCovPnt -
+
+coMatrixGInvCovPntStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )  
+  => q o -> Struct Dst x -> Struct s (Matrix x)
+  -> Struct s x -> Pnt (Matrix (o x)) -> Pnt (o (Matrix x))
+coMatrixGInvCovPntStruct q sDst sm s = amapG t . coMatrixGInvPntStruct q sDst s where
+  Contravariant2 t = toDualO' q sm 
+
+-- | covariant 'Point'-mapping from its generalized co-matrix.
+coMatrixGInvCovPnt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )  
+  => Struct s x -> Pnt (Matrix (o x)) -> Pnt (o (Matrix x))
+coMatrixGInvCovPnt s pmo = coMatrixGInvCovPntStruct (q pmo) (tau s) (tauG s) s pmo where
+  q :: Pnt (Matrix (o x)) -> Proxy o
+  q _ = Proxy
+
+--------------------------------------------------------------------------------
+-- coMatrixGRt -
+
+coMatrixGRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct Dst (o x) -> Struct s x -> Rt (Matrix x) -> Rt (Matrix (o x))
+coMatrixGRtStruct so@Struct s (Rt (cls:>rws)) = Rt (rws':>cls') where
+  rws' = dimMap (pmap t) rws
+  cls' = dimMap (pmap t) cls
+  
+  Contravariant2 t = toDualO' (q so) s
+  
+  q :: Struct Dst (o x) -> Proxy o
+  q _ = Proxy
+
+--------------------------------------------------------------------------------
+-- coMatrixGCovRt -
+
+coMatrixGCovRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => Struct Dst (o x) -> Struct s (Matrix x) -> Struct s x -> Rt (o (Matrix x)) -> Rt (Matrix (o x))
+coMatrixGCovRtStruct so sm s = coMatrixGRtStruct so s . amapG (inv2 t) where
+  Contravariant2 t = toDualO' (q so) sm  
+  q :: Struct Dst (o x) -> Proxy o
+  q _ = Proxy
+
+coMatrixGCovRt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> Rt (o (Matrix x)) -> Rt (Matrix (o x))
+coMatrixGCovRt s = coMatrixGCovRtStruct (tau $ tauO s) (tauG s) s
+
+--------------------------------------------------------------------------------
+-- coMatrixGInvRt -
+
+coMatrixGInvRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => q o -> Struct Dst x -> Struct s x -> Rt (Matrix (o x)) -> Rt (Matrix x)
+coMatrixGInvRtStruct q Struct s (Rt (cls':>rws')) = Rt (rws:>cls) where
+  rws = dimMap (pmap (inv2 t)) rws'
+  cls = dimMap (pmap (inv2 t)) cls'
+  Contravariant2 t = toDualO' q s
+
+--------------------------------------------------------------------------------
+-- coMatrixGInvCovRt -
+
+coMatrixGInvCovRtStruct ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  )
+  => q o -> Struct Dst x -> Struct s (Matrix x)
+  -> Struct s x -> Rt (Matrix (o x)) -> Rt (o (Matrix x))
+coMatrixGInvCovRtStruct q sDst sm s = amapG t . coMatrixGInvRtStruct q sDst s where
+  Contravariant2 t = toDualO' q sm 
+
+coMatrixGInvCovRt ::
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableG Matrix s s
+  )
+  => Struct s x -> Rt (Matrix (o x)) -> Rt (o (Matrix x))
+coMatrixGInvCovRt s rmo = coMatrixGInvCovRtStruct (q rmo) (tau s) (tauG s) s rmo where
+  q :: Rt (Matrix (o x)) -> Proxy o
+  q _ = Proxy
+
+--------------------------------------------------------------------------------
+-- HomCo -
+
+instance
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => ApplicativeG Id (MorCo Matrix s o) (->) where
+  amapG t@ToCo   = toIdG (coMatrixGCov $ mcoStruct t)
+  amapG f@FromCo = toIdG (coMatrixGInvCov $ mcoStruct f) 
+
+instance
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => ApplicativeMorCo Id Matrix s o (->)
+
+instance
+  ( TransformableDst s
+  , TransformableGRefl o s   
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => FunctorialHomCo Id Matrix s o (->)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )  
+  => ApplicativeG Pnt (MorCo Matrix s o) (->) where
+  amapG t@ToCo   = coMatrixGCovPnt $ mcoStruct t
+  amapG f@FromCo = coMatrixGInvCovPnt $ mcoStruct f
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )  
+  => ApplicativeMorCo Pnt Matrix s o (->)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )  
+  => FunctorialHomCo Pnt Matrix s o (->)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => FunctorialOriented (HomCo Matrix s o)
+  
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomOrientedDisjunctive (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomMultiplicativeDisjunctive (HomCo Matrix s o)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => ApplicativeG Rt (MorCo Matrix s o) (->) where
+  amapG t@ToCo   = coMatrixGCovRt $ mcoStruct t
+  amapG f@FromCo = coMatrixGInvCovRt $ mcoStruct f
+
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => ApplicativeMorCo Rt Matrix s o (->)
+
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  )
+  => FunctorialHomCo Rt Matrix s o (->)
+
+instance   
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => FunctorialFibred (HomCo Matrix s o)
+  
+instance
+  ( TransformableGRefl o s
+  , DualisableDistributive s o
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => HomFibred (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  )
+  => HomFibredOrientedDisjunctive (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomAdditive (HomCo Matrix s o)
+
+instance
+  ( DualisableDistributive s o
+  , TransformableGRefl o s   
+  , TransformableGRefl Matrix s
+  , TransformableDst s
+  ) 
+  => HomDistributiveDisjunctive (HomCo Matrix s o)
+
+--------------------------------------------------------------------------------
+-- isoCoMatrixOp -
+
+-- | contravariant isomorphism between @'Matrix' __x__@ and @'Matrix' ('Op' __x__)@.
+isoCoMatrixOp :: Distributive x
+  => Variant2 Contravariant (IsoCo Matrix Dst Op) (Matrix x) (Matrix (Op x))
+isoCoMatrixOp = isoCo Struct
 
 --------------------------------------------------------------------------------
 -- xMatrixRL -
@@ -518,6 +842,22 @@ xMatrix qMax xx xoDim = XOrtOrientation xoDim xMtx where
     return ((x,i,j):xs)
 
 --------------------------------------------------------------------------------
+-- xoDim -
+
+-- | random variable of orientations of @'Dim'' __x__@.
+xoDim :: Oriented x => N -> N -> XOrtOrientation x -> X (Orientation (Dim' x))
+xoDim l h (XOrtOrientation xo _) = do
+  pcl <- xTakeB l h (amap1 start xo)
+  prw <- xTakeB l h (amap1 end xo)
+  return (productDim pcl :> productDim prw)
+
+instance (Distributive x, XStandardOrtOrientation x) => XStandardOrtOrientation (Matrix x) where
+  xStandardOrtOrientation = xMatrix 1 xo (xoDim 0 5 xo) where xo = xStandardOrtOrientation
+
+instance TransformableG Matrix DstX DstX where tauG Struct = Struct
+instance TransformableGRefl Matrix DstX
+
+--------------------------------------------------------------------------------
 -- xMatrixTtl -
 
 -- | random variable of matrices with the given maximal dimension and the given density.
@@ -534,7 +874,6 @@ xMatrixTtl dimMax qMax xx = xMatrix qMax (xoTtl xx) xoDim where
 xodZ :: XOrtOrientation (Matrix Z)
 xodZ = xMatrixTtl 5 0.9 (xZB (-100) 100)
 
-
 -- | a random variable of t'Z'-bolck-matrices.
 xodZZ :: XOrtOrientation (Matrix (Matrix Z))
 xodZZ = xMatrix 0.7 xodZ xoDim where
@@ -545,18 +884,20 @@ xodZZ = xMatrix 0.7 xodZ xoDim where
     m <- xTakeB 0 dMax xd
     return (productDim n :> productDim m)
 
+{-
 --------------------------------------------------------------------------------
 -- XStandardOrientationMatrix -
 
 -- | standard random variable for the orientations of matrices over @__x__@.
 class XStandardOrientationMatrix x where
   xStandardOrientationMatrix :: X (Orientation (Dim' x))
-  
+-}  
 --------------------------------------------------------------------------------
 -- Matrix - XStandard -
 
 instance XStandardPoint (Matrix Z)
 
+{-
 instance XStandardOrientationMatrix Z where
   xStandardOrientationMatrix = do
     n <- xStandard
@@ -568,7 +909,7 @@ instance ( Additive x, FibredOriented x
          )
   => XStandardOrtOrientation (Matrix x) where
   xStandardOrtOrientation = xMatrix 0.8 xStandardOrtOrientation xStandardOrientationMatrix
-
+-}
 --------------------------------------------------------------------------------
 -- Matrix Z - XStandard -
 
@@ -585,4 +926,25 @@ instance XStandard (Matrix Z) where
   
 dstXStdMatrixZ :: Int -> (Matrix Z -> String) -> IO ()
 dstXStdMatrixZ n f = getOmega >>= putDistribution n (amap1 f xStandard)
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeG -
+
+instance
+  ( Conic c
+  , Diagrammatic d
+  )
+  => XStandardEligibleConeG c Mlt p d Discrete n m (Matrix Z) where
+  xStandardEligibleConeG = xecDiscrete xStandardOrtOrientation
+
+--------------------------------------------------------------------------------
+-- XStandardEligibleConeFactorG -
+
+instance Conic c
+  => XStandardEligibleConeFactorG c Mlt Projective d Discrete n m (Matrix Z) where
+  xStandardEligibleConeFactorG = xecfOrtSite (xoTo xStandardOrtOrientation)
+
+instance Conic c
+  => XStandardEligibleConeFactorG c Mlt Injective d Discrete n m (Matrix Z) where
+  xStandardEligibleConeFactorG = xecfOrtSite (xoFrom xStandardOrtOrientation)
 

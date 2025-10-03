@@ -33,13 +33,14 @@ import Control.Exception
 import OAlg.Prelude
 
 import OAlg.Structure.Exception
-import OAlg.Structure.Oriented.Definition(Orientation(..))
+import OAlg.Structure.Oriented.Orientation
+import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Ring.Definition
 import OAlg.Structure.Number.Definition
-
 
 --------------------------------------------------------------------------------
 -- Vectorial -
@@ -97,10 +98,9 @@ instance Vectorial v => Validable (VectorSheaf v) where
                            , vld r xs
                            ]
 
-instance Vectorial v => Entity (VectorSheaf v)
-
 --------------------------------------------------------------------------------
 -- Instances -
+
 instance Vectorial () where
   type Scalar () = Q
   (!) = qtimes
@@ -190,8 +190,8 @@ instance Transformable (Vec k) Add where tau Struct = Struct
 --------------------------------------------------------------------------------
 -- TransformableVec -
 
--- | transformable to @__k__-'Vectorial'@ structure.
-class ( Transformable (s k) Fbr, Transformable (s k) Add 
+-- | helper class to avoid undecidable instances.
+class ( TransformableAdd (s k)
       , Transformable (s k) (Vec k)
       ) => TransformableVec k s
 

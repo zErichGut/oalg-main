@@ -17,9 +17,12 @@
 --
 -- homomorphisms between finitely generated abelian groups.
 module OAlg.AbelianGroup.Definition
-  ( -- * Abelian Group
+  (
+
+    -- * Abelian Group
     AbGroup(..), abg, isSmithNormal
   , abgDim
+  , abgZero
 
     -- * Homomorphism
   , AbHom(..)
@@ -48,6 +51,7 @@ module OAlg.AbelianGroup.Definition
 
     -- * Proposition
   , prpAbHom
+
   ) where
 
 import Prelude(ceiling)
@@ -56,7 +60,6 @@ import Control.Monad
 import Control.Applicative ((<|>))
 
 import Data.List (foldl,(++),filter,takeWhile,zip)
-import Data.Typeable
 
 import OAlg.Prelude
 
@@ -70,6 +73,7 @@ import OAlg.Category.Path as C
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
@@ -81,6 +85,7 @@ import OAlg.Structure.Operational
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
@@ -91,6 +96,7 @@ import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.ProductsAndSums as L
 import OAlg.Limes.KernelsAndCokernels
+import OAlg.Limes.Exact.ZeroPoint
 
 import OAlg.Adjunction
 
@@ -199,14 +205,19 @@ import OAlg.AbelianGroup.Euclid
 -- >>> end (isoSmithNormal (abg 1))
 -- AbGroup[]
 newtype AbGroup = AbGroup (ProductSymbol ZMod)
-  deriving (Eq,Ord,LengthN,Validable,Entity,Multiplicative)
+  deriving (Eq,Ord,LengthN,Validable,Multiplicative)
 
 instance Show AbGroup where
   show (AbGroup g) = "AbGroup[" ++ psyShow g ++ "]"
     
+type instance Point AbGroup = ()
+instance ShowPoint AbGroup
+instance EqPoint AbGroup
+instance ValidablePoint AbGroup
+instance TypeablePoint AbGroup
+instance SingletonPoint AbGroup
 
 instance Oriented AbGroup where
-  type Point AbGroup = ()
   orientation (AbGroup g) = orientation g
 
 instance Exponential AbGroup where
@@ -240,14 +251,20 @@ isSmithNormal (AbGroup g) = sn (amap1 fst ws) where
   sn [ZMod n]            = (2 <= n) || (n == 0)
   sn _                   = True
 
-
 --------------------------------------------------------------------------------
 -- AbHom -
 
 -- | additive homomorphism between finitely generated abelian groups which are
 -- represented by matrices over 'ZModHom'.
 newtype AbHom = AbHom (Matrix ZModHom)
-  deriving (Show,Eq,Ord,Validable,Entity)
+  deriving (Show,Eq,Ord,Validable)
+
+--------------------------------------------------------------------------------
+-- abgZero -
+
+-- | the zero point for 'AbHom'.
+abgZero :: ZeroPoint AbHom
+abgZero = ZeroPoint (one ())
 
 --------------------------------------------------------------------------------
 -- abgDim -
@@ -293,9 +310,14 @@ zabh (Matrix r c xs) = AbHom (Matrix r' c' xs') where
 
 --------------------------------------------------------------------------------
 -- AbHom - Algebraic -
+type instance Point AbHom = AbGroup
+
+instance ShowPoint AbHom
+instance EqPoint AbHom
+instance ValidablePoint AbHom
+instance TypeablePoint AbHom
 
 instance Oriented AbHom where
-  type Point AbHom = AbGroup
   orientation (AbHom h) = AbGroup s :> AbGroup e where
     Dim s :> Dim e = orientation h
 
@@ -304,8 +326,13 @@ instance Multiplicative AbHom where
   AbHom f * AbHom g = AbHom (f*g)
   npower (AbHom h) n = AbHom (npower h n)
 
-instance Fibred AbHom where
-  type Root AbHom = Orientation AbGroup
+type instance Root AbHom = Orientation AbGroup
+instance ShowRoot AbHom
+instance EqRoot AbHom
+instance ValidableRoot AbHom
+instance TypeableRoot AbHom
+
+instance Fibred AbHom
 
 instance Additive AbHom where
   zero (s :> e) = AbHom (zero (abgDim s :> abgDim e))
@@ -364,8 +391,8 @@ instance Validable (AbHomMap x y) where
 
 instance Validable2 AbHomMap
 
-instance (Typeable x, Typeable y) => Entity (AbHomMap x y)
-instance Entity2 AbHomMap
+-- instance (Typeable x, Typeable y) => Entity (AbHomMap x y)
+-- instance Entity2 AbHomMap
 
 --------------------------------------------------------------------------------
 -- invAbHomMap -
@@ -383,15 +410,18 @@ instance Morphism AbHomMap where
   homomorphous AbHomMatrix = Struct :>: Struct
   homomorphous MatrixAbHom = Struct :>: Struct
 
-instance Applicative AbHomMap where
-  amap AbHomMatrix (AbHom m) = m
-  amap MatrixAbHom m = AbHom m
+
+instance ApplicativeG Id AbHomMap (->) where
+  amapG AbHomMatrix (Id (AbHom m)) = Id m
+  amapG MatrixAbHom (Id m) = Id (AbHom m)
 
 instance TransformableObjectClassTyp AbHomMap
 
-instance HomOriented AbHomMap where
-  pmap AbHomMatrix (AbGroup g) = Dim g
-  pmap MatrixAbHom (Dim g) = AbGroup g
+instance ApplicativeG Pnt AbHomMap (->) where
+  amapG AbHomMatrix (Pnt (AbGroup g)) = Pnt (Dim g)
+  amapG MatrixAbHom (Pnt (Dim g)) = Pnt (AbGroup g)
+
+instance HomOriented AbHomMap
 
 instance HomMultiplicative AbHomMap
 
@@ -406,7 +436,7 @@ type PathAbHomMap = C.Path AbHomMap
 
 -- | isomorphisms between 'AbHom' and @'Matrix' 'ZModHom'@.
 newtype IsoAbHomMap x y = IsoAbHomMap (PathAbHomMap x y)
-  deriving (Show,Show2,Validable,Validable2,Eq,Eq2,Entity,Entity2)
+  deriving (Show,Show2,Validable,Validable2,Eq,Eq2)
 
 --------------------------------------------------------------------------------
 -- IsoAbHomMap - Constructable -
@@ -432,16 +462,11 @@ instance Constructable (IsoAbHomMap x y) where
 --------------------------------------------------------------------------------
 -- abHomMatrix -
 
--- | the induced isomorphism from 'AbHom' to @'Matrix' 'ZModHom'@ with inverse 'matrixAbHom'.
-abHomMatrix :: IsoAbHomMap AbHom (Matrix ZModHom)
-abHomMatrix = IsoAbHomMap (AbHomMatrix :. IdPath Struct)
-
---------------------------------------------------------------------------------
--- matrixAbHom -
-
--- | the induced isomorphism from @'Matrix' 'ZModHom'@ to 'AbHom' with inverse 'abHomMatrix'.
-matrixAbHom :: IsoAbHomMap (Matrix ZModHom) AbHom
-matrixAbHom = IsoAbHomMap (MatrixAbHom :. IdPath Struct)
+-- | the induced isomorphism from 'AbHom' to @'Matrix' 'ZModHom'@.
+abHomMatrix :: Variant2 Covariant (Inv2 IsoAbHomMap) AbHom (Matrix ZModHom)
+abHomMatrix = Covariant2 (Inv2 t f) where
+  t = IsoAbHomMap (AbHomMatrix :. IdPath Struct)
+  f = IsoAbHomMap (MatrixAbHom :. IdPath Struct)
 
 --------------------------------------------------------------------------------
 -- IsoAbHomMap - Cayleyan2 -
@@ -457,36 +482,47 @@ instance Category IsoAbHomMap where
 instance Cayleyan2 IsoAbHomMap where
   invert2 (IsoAbHomMap f) = IsoAbHomMap (reverse id invAbHomMap f) 
 
+instance Disjunctive (IsoAbHomMap x y) where variant = const Covariant
+instance Disjunctive2 IsoAbHomMap
+  
+instance CategoryDisjunctive IsoAbHomMap
+
 --------------------------------------------------------------------------------
 -- IsoAbHomMap - Hom -
 
-instance Applicative IsoAbHomMap where
-  amap = restrict amap
+instance ApplicativeG Id IsoAbHomMap (->) where
+  amapG i = amapG (form i)
 
-instance HomOriented IsoAbHomMap where
-  pmap = restrict pmap
+instance ApplicativeG Pnt IsoAbHomMap (->) where
+  amapG i = amapG (form i)
+  
+instance HomOriented IsoAbHomMap
+instance HomOrientedDisjunctive IsoAbHomMap
 
 instance HomMultiplicative IsoAbHomMap
+instance HomMultiplicativeDisjunctive IsoAbHomMap
 
 --------------------------------------------------------------------------------
 -- IsoAbHomMap - Functorial -
 
-instance Functorial IsoAbHomMap
-instance FunctorialHomOriented IsoAbHomMap
+instance FunctorialG Id IsoAbHomMap (->)
+instance FunctorialG Pnt IsoAbHomMap (->)
+
+instance FunctorialOriented IsoAbHomMap
 
 --------------------------------------------------------------------------------
 -- abhProducts -
 
 -- | products for 'AbHom'.
 abhProducts :: Products n AbHom
-abhProducts = lmsMap matrixAbHom mtxProducts
+abhProducts = lmsMapCov (Covariant2 (inv2 i)) mtxProducts where Covariant2 i = abHomMatrix
 
 --------------------------------------------------------------------------------
 -- abhSums -
 
 -- | sums for 'AbHom'.
 abhSums :: Sums n AbHom
-abhSums = lmsMap matrixAbHom mtxSums
+abhSums = lmsMapCov (Covariant2 (inv2 i)) mtxSums where Covariant2 i = abHomMatrix
 
 --------------------------------------------------------------------------------
 -- abgFree -
@@ -503,6 +539,8 @@ abgFree n = abg 0 ^ (freeN n)
 
 instance Attestable k => Sliced (Free k) AbHom where
   slicePoint = abgFree
+
+instance SlicedFree AbHom where slicedFree = Struct
 
 --------------------------------------------------------------------------------
 -- abgMaybeFree -
@@ -584,8 +622,8 @@ instance Validable (AbHomFree x y) where
 
 instance Validable2 AbHomFree
 
-instance (Typeable x, Typeable y) => Entity (AbHomFree x y)
-instance Entity2 AbHomFree
+-- instance (Typeable x, Typeable y) => Entity (AbHomFree x y)
+-- instance Entity2 AbHomFree
 
 --------------------------------------------------------------------------------
 -- AbHomFree - HomAlgebraic -
@@ -595,8 +633,11 @@ instance Morphism AbHomFree where
   homomorphous AbHomFree = Struct :>: Struct
   homomorphous FreeAbHom = Struct :>: Struct
 
-instance Applicative AbHomFree where
-  amap AbHomFree h@(AbHom (Matrix _ _ xs)) = Matrix n m xs' where
+--------------------------------------------------------------------------------
+-- abhzFree -
+
+abhzFree :: AbHom -> Matrix Z
+abhzFree h@(AbHom (Matrix _ _ xs)) = Matrix n m xs' where
     s :> e = orientation h
     u = dim ()
     n = u ^ abgFrees e
@@ -624,14 +665,22 @@ instance Applicative AbHomFree where
     rwFrees j'' ((ZMod _,j):js') hs@((_,j'):hs') = if j < j'
       then rwFrees j'' js' hs
       else rwFrees j'' js' hs'
-    
-  amap FreeAbHom m = zabh m
 
-instance HomOriented AbHomFree where
-  pmap AbHomFree g = dim () ^ abgFrees g
-  pmap FreeAbHom n = abg 0 ^ lengthN n
+instance ApplicativeG Id AbHomFree (->) where
+  amapG AbHomFree = toIdG abhzFree
+  amapG FreeAbHom = toIdG zabh
 
+instance ApplicativeG Pnt AbHomFree (->) where
+  amapG AbHomFree (Pnt g) = Pnt (dim () ^ abgFrees g)
+  amapG FreeAbHom (Pnt n) = Pnt (abg 0 ^ lengthN n)
+
+instance HomOriented AbHomFree
 instance HomMultiplicative AbHomFree
+
+instance ApplicativeG Rt AbHomFree (->) where
+  amapG h@AbHomFree (Rt x) = Rt (omap h x)
+  amapG h@FreeAbHom (Rt x) = Rt (omap h x)
+
 instance HomFibred AbHomFree
 instance HomFibredOriented AbHomFree
 instance HomAdditive AbHomFree
@@ -662,7 +711,7 @@ abhFreeAdjunction = Adjunction AbHomFree FreeAbHom u one where
 -- | the generator for a finitely generated abelian group.
 --
 -- __Property__ Let @a@ be in 'AbGroup', then holds
--- @a '==' g@ where @'Generator' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
+-- @a '==' g@ where @'GeneratorTo' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
 abgGeneratorTo :: AbGroup -> FinitePresentation To Free AbHom
 abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
   (SomeNatural k',SomeNatural k'') -> GeneratorTo chn (Free k') (Free k'') coker ker lft
@@ -744,6 +793,7 @@ abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
 -- | free finitely presentations for 'AbHom'. 
 abgFinPres :: FinitelyPresentable To Free AbHom
 abgFinPres = FinitelyPresentable abgGeneratorTo
+
 --------------------------------------------------------------------------------
 -- AbElementForm -
 
@@ -766,11 +816,11 @@ instance Show AbElementForm where
 
 -- | elements of an finitely generated abelian group. There 'root' - which is an element of 'AbGroup' -
 --   gives there affiliated group. They are gererated via 'make'.
-newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Show,Eq,Ord,Validable,Entity)
+newtype AbElement = AbElement (Slice From (Free N1) AbHom) deriving (Show,Eq,Ord,Validable)
 
 instance LengthN AbElement where
   lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a
-  
+
 --------------------------------------------------------------------------------
 -- AbElement - Constructable -
 
@@ -824,8 +874,13 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
 --------------------------------------------------------------------------------
 -- AbElement - Abelian -
 
-instance Fibred AbElement where
-  type Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
+type instance Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
+instance ShowRoot AbElement
+instance EqRoot AbElement
+instance ValidableRoot AbElement
+instance TypeableRoot AbElement
+
+instance Fibred AbElement where  
   root (AbElement a) = root a
 
 instance Additive AbElement where
@@ -1188,6 +1243,20 @@ instance XStandardOrtOrientation AbHom where
       xAbHom (inj n * q) o
       
     
+instance XStandardEligibleConeG Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
+  
+instance XStandardEligibleConeFactorG
+           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 AbHom where
+  xStandardEligibleConeFactorG = xecfOrtSite (xStandardOrtSite :: XOrtSite To AbHom)
+
+instance XStandardEligibleConeG
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
+  
+instance XStandardEligibleConeFactorG
+           ConeLiftable Dst Injective Diagram (Parallel RightToLeft) N2 N1 AbHom where
+  xStandardEligibleConeFactorG = xecfOrtSite (xStandardOrtSite :: XOrtSite From AbHom)
 
 --------------------------------------------------------------------------------
 -- AbHom - XStandard -
@@ -1241,6 +1310,8 @@ xMltAbh = xoMlt xN (xStandardOrtOrientation :: XOrtOrientation AbHom)
 
 --------------------------------------------------------------------------------
 -- xAbhSomeFreeSlice -
+
+-- | random variable for some free slice from in 'AbHom'
 xAbhSomeFreeSlice :: N -> X (SomeFreeSlice From AbHom)
 xAbhSomeFreeSlice nMax = do
   n <- xNB 0 nMax
@@ -1250,4 +1321,5 @@ xAbhSomeFreeSlice nMax = do
     SomeNatural sn -> return $ SomeFreeSlice (SliceFrom (Free sn) h)
   where z1 = abg 0
 
-    
+
+

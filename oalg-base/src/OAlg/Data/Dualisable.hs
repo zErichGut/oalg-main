@@ -1,5 +1,5 @@
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DataKinds #-}
@@ -10,11 +10,17 @@
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
+--
+-- defining the type of the co-object according to the kind of a given object.
 -- 
--- data admitting a kind of duality.
+-- Special care has been taken for objects of parameterized types over
+-- a structured type (see "OAlg.Entity.Diagram.Definition#Duality" which serves as a boiler
+-- plate for all dualities implemented here).
 module OAlg.Data.Dualisable
   ( -- * Dual
-    Dual
+    Dual, Dual1
+  , Dl1(..), fromDl1, mapDl1
+  , ShowDual1, EqDual1
 
     -- * Dualisable
   , Dualisable(..), fromDual'
@@ -26,7 +32,7 @@ module OAlg.Data.Dualisable
   , Transposable(..)
 
     -- * Site
-  , Site(..)
+  , Site(..), ToSite
 
     -- * Side
   , Side(..)
@@ -36,11 +42,51 @@ module OAlg.Data.Dualisable
   )
   where
 
+import Data.Kind
+
 --------------------------------------------------------------------------------
 -- Dual -
 
--- | the assigned dual kind.
+-- | the kind of the co-object according to the kind of given object.
 type family Dual (x :: k) :: k
+
+--------------------------------------------------------------------------------
+-- Dual1 -
+
+-- | the parameterized kind of the co-object according to the parameterized kind of a given object.
+type family Dual1 (c :: k -> Type) :: k -> Type
+
+--------------------------------------------------------------------------------
+-- Dl1 -
+
+-- | wrapper for @'Dual1' __d x__@.
+newtype Dl1 d x = Dl1 (Dual1 d x)
+
+--------------------------------------------------------------------------------
+-- ShowDual1 -
+
+-- | helper class to avoid undecidable instances.
+class Show (Dual1 d x) => ShowDual1 d x
+
+--------------------------------------------------------------------------------
+-- EqDual1 -
+
+-- | helper class to avoid undecidable instances.
+class Eq (Dual1 d x) => EqDual1 d x
+
+--------------------------------------------------------------------------------
+-- fromDl1 -
+
+-- | deconstructing 'Dl1'
+fromDl1 :: Dl1 d x -> Dual1 d x
+fromDl1 (Dl1 d) = d
+
+--------------------------------------------------------------------------------
+-- mapDl1 -
+
+-- | mapping 'Dl1'.
+mapDl1 :: (Dual1 d x -> Dual1 d y) -> Dl1 d x -> Dl1 d y
+mapDl1 f (Dl1 x) = Dl1 (f x)
 
 --------------------------------------------------------------------------------
 -- Dualisable -
@@ -83,7 +129,7 @@ fromBidual' _ = fromBidual
 --------------------------------------------------------------------------------
 -- Transposable -
 
--- | transposable types..
+-- | transposable types.
 --
 --   __Property__ Let __@x@__ be a 'Transposable', then holds:
 --  For all @x@ in __@x@__ holds: @'transpose' ('transpose' x) '==' x@.
@@ -102,6 +148,12 @@ type instance Dual To = From
 instance Transposable Site where
   transpose From = To
   transpose To = From
+
+--------------------------------------------------------------------------------
+-- ToSite -
+
+-- | mapping to 'Site'.
+type family ToSite (s :: k) :: Site
 
 --------------------------------------------------------------------------------
 -- Side -

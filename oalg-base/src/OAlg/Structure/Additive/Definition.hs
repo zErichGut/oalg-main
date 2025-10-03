@@ -19,15 +19,19 @@
 module OAlg.Structure.Additive.Definition
   (
     -- * Additive
-    Additive(..), zero', Add, TransformableAdd
+    Additive(..), zero', Add, TransformableAdd, tauAdd
 
     -- * Abelian
   , Abelian(..), isZero, Abl, TransformableAbl
+
+  -- * X
+  , xSheaf, xSheafRoot
   )
   where
 
 import qualified Prelude as A
 
+import Control.Monad
 import Control.Exception
 
 import Data.List(repeat)
@@ -39,8 +43,10 @@ import OAlg.Data.Canonical
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented.Definition
-import OAlg.Structure.Multiplicative.Definition
+import OAlg.Structure.Oriented.Opposite
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.FibredOriented
 
 --------------------------------------------------------------------------------
 -- Additive -
@@ -125,9 +131,14 @@ instance Entity p => Additive (Orientation p) where
         | otherwise = throw NotAddable
   ntimes _ a = a
 
+instance Additive a => Additive (Id a) where
+  zero r = Id (zero r)
+  Id a + Id b = Id (a+b)
+  ntimes n (Id a) = Id (ntimes n a)
+  
 instance (Additive a, FibredOriented a) => Additive (Op a) where
   zero r = Op (zero $ transpose r)
-  Op a + Op b = Op (a + b)
+  Op a + Op b = Op (b + a)
   ntimes n (Op a) = Op (ntimes n a)
 
 --------------------------------------------------------------------------------
@@ -241,10 +252,17 @@ instance Transformable Add Ent where tau Struct = Struct
 instance Transformable Add Fbr where tau Struct = Struct
 
 --------------------------------------------------------------------------------
+-- tauAdd -
+
+-- | 'tau' for 'Add'.
+tauAdd :: Transformable s Add => Struct s x -> Struct Add x
+tauAdd = tau
+
+--------------------------------------------------------------------------------
 -- TransformableAdd -
 
--- | transformable to 'Additive' structure.
-class (Transformable s Fbr, Transformable s Add) => TransformableAdd s
+-- | helper class to avoid undecidable instances.
+class (TransformableFbr s, Transformable s Add) => TransformableAdd s
 
 instance TransformableTyp Add
 instance TransformableFbr Add
@@ -273,4 +291,28 @@ instance TransformableTyp Abl
 instance TransformableFbr Abl
 instance TransformableAdd Abl
 instance TransformableAbl Abl
+
+--------------------------------------------------------------------------------
+-- adjZero -
+
+-- | adjoins a 'zero' stalk for empty 'root's.
+adjZero :: Additive a => XStalk a -> XStalk a
+adjZero (XStalk xr xrs) = XStalk xr xrs' where
+  xrs' r = case xrs r of
+    XEmpty -> return (zero r)
+    xs     -> xs
+
+--------------------------------------------------------------------------------
+-- xSheafRoot -
+
+-- | random variable of sheafs, all based on the given 'root' and with the given length.
+xSheafRoot :: Additive a => XStalk a -> N -> Root a -> X (Sheaf a)
+xSheafRoot xs = xSheafRootMax (adjZero xs)
+
+--------------------------------------------------------------------------------
+-- xSheaf -
+
+-- | random variable of sheafs with the given length.
+xSheaf :: Additive a => XStalk a -> N -> X (Sheaf a)
+xSheaf xs = xSheafMax (adjZero xs)
 

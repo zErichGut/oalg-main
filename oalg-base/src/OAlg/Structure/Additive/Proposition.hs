@@ -61,7 +61,8 @@ import OAlg.Data.Canonical
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
-import OAlg.Structure.Fibred
+import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.FibredOriented
 
 import OAlg.Structure.Additive.Definition
 
@@ -229,6 +230,21 @@ instance Additive a => Validable (XAdd a) where
 class XStandardAdd a where
   xStandardAdd :: XAdd a
 
+instance (FibredOriented x, XStandardAdd x) => XStandardAdd (Op x) where
+  xStandardAdd = XAdd xn xr' xa' xa2' xa3' where
+    XAdd xn xr xa xa2 xa3 = xStandardAdd
+    xr' = xr
+    xa'  = amap1 Op xa
+    xa2' = amap1 (\(Adbl2 a b) -> Adbl2 (Op a) (Op b)) xa2
+    xa3' = amap1 (\(Adbl3 a b c) -> Adbl3 (Op a) (Op b) (Op c)) xa3
+  
+instance XStandardAdd x => XStandardAdd (Id x) where
+  xStandardAdd = XAdd xn xr xa' xa2' xa3' where
+    XAdd xn xr xa xa2 xa3 = xStandardAdd
+    xa'  = amap1 Id xa
+    xa2' = amap1 (\(Adbl2 a b) -> Adbl2 (Id a) (Id b)) xa2
+    xa3' = amap1 (\(Adbl3 a b c) -> Adbl3 (Id a) (Id b) (Id c)) xa3
+  
 --------------------------------------------------------------------------------
 -- prpAdd -
 

@@ -164,9 +164,11 @@ import Data.Time.Clock.TAI
 import Data.List (take,dropWhile,(++),reverse,map)
 
 import OAlg.Category.Definition
+
 import OAlg.Control.Verbose
 import OAlg.Control.HNFData
 
+import OAlg.Data.Identity
 import OAlg.Data.Logical
 import OAlg.Data.Ord
 import OAlg.Data.Statement

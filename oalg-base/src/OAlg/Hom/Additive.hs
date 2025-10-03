@@ -18,26 +18,37 @@
 --
 -- homomorphisms between 'Additive' structures
 module OAlg.Hom.Additive
-  ( -- * Additive
+  (
+    -- * Additive
     HomAdditive
 
+    -- * Duality
+  , DualisableAdditive
+  
     -- * Proposition
-  , prpHomAdd1, prpHomAdd2
+  , prpHomAdditive, prpHomAdd1, prpHomAdd2
+  , prpDualisableAdditiveAdd1, prpDualisableAdditiveAdd2
+  , prpHomDisjOpAdd
   )
   where
 
-import Data.Typeable
+import Data.Kind
 
 import OAlg.Prelude
 
 import OAlg.Category.Path
+import OAlg.Category.Dualisable
+import OAlg.Category.SDuality
+import OAlg.Category.Unify
 
-import OAlg.Structure.Fibred
+import OAlg.Data.Variant
+
 import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Oriented.Definition
 import OAlg.Hom.Fibred
 
 --------------------------------------------------------------------------------
@@ -61,38 +72,65 @@ import OAlg.Hom.Fibred
 class (HomFibred h, Transformable (ObjectClass h) Add) => HomAdditive h
 
 instance HomAdditive h => HomAdditive (Path h)
+instance (TransformableFbr s, TransformableAdd s) => HomAdditive (HomEmpty s)
+instance (HomAdditive h, Disjunctive2 h) => HomAdditive (Variant2 v h)
+
+instance HomAdditive h => HomAdditive (Inv2 h)
+
+instance (TransformableAdd s, HomAdditive h) => HomAdditive (Sub s h)
 
 --------------------------------------------------------------------------------
--- Hom -
+-- DualisableAdditive -
 
-type instance Hom Add h = HomAdditive h
+-- | duality according to @__o__@ on 'Additive'-structures
+--
+-- __Properties__ Let @'DualisableAdditive' __s o___@ then for all @__x__@
+-- and @s@ in @'Struct' __s x__@ holds:
+--
+-- (1) For all @r@ in @'Root' __x__@ holds:
+-- @'toDualStk' q s ('zero' r) '==' 'zero' ('toDualRt' q s r)@,
+--
+-- (2) For all @a@, @b@ in @__x__@ with @'root' a '==' 'root' b@ holds:
+-- @'toDualStk' q s (a '+' b) '==' 'toDualStk' q s a '+' 'toDualStk' q s b@.
+--
+-- where @q@ is any proxy for @__o__@.
+--
+-- __Note__ @'Dualisable' __s__ 'Op'@ holds, because '+' is commutative.
+class (DualisableFibred s o, Transformable s Add) => DualisableAdditive s o
+
+instance ( TransformableType s, TransformableFbrOrt s, TransformableOp s
+         , TransformableAdd s
+         ) => DualisableAdditive s Op
+
+instance (HomAdditive h, DualisableAdditive s o) => HomAdditive (HomDisj s o h)
+
 
 --------------------------------------------------------------------------------
--- IdHom - Hom -
+-- prpDualisableAdditiveAdd1 -
 
-instance (TransformableFbr s, TransformableTyp s, TransformableAdd s) => HomAdditive (IdHom s)
+relDualisableAdditiveAdd1 :: DualisableAdditive s o
+  => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Root x -> Statement
+relDualisableAdditiveAdd1 q s Struct Struct r
+  = (toDualStk q s (zero r) == zero (toDualRt q s r)) :?> Params ["r":=show r]
 
---------------------------------------------------------------------------------
--- IsoOp - Hom -
-
-instance ( TransformableOrt s, TransformableTyp s, TransformableOp s
-         , TransformableFbr s
-         , TransformableFbrOrt s, TransformableAdd s
-         , Typeable s
-         )
-  => HomAdditive (HomOp s)
-
-instance ( TransformableOrt s, TransformableTyp s, TransformableOp s
-         , TransformableFbr s
-         , TransformableFbrOrt s, TransformableAdd s
-         , Typeable s
-         )
-  => HomAdditive (IsoOp s)
+-- | validity according to 'DualisableAdditive', property 1.
+prpDualisableAdditiveAdd1 :: DualisableAdditive s o
+  => q o -> Struct s x -> Root x -> Statement
+prpDualisableAdditiveAdd1 q s r = Prp "DualisableAdditiveAdd1"
+  :<=>: relDualisableAdditiveAdd1 q s (tau s) (tau (tauO s)) r
 
 --------------------------------------------------------------------------------
--- OpHom -
+-- prpDualisableAdditiveAdd2 -
+relDualisableAdditiveAdd2 :: DualisableAdditive s o
+  => q o -> Struct s x -> Struct Add x -> Struct Add (o x) -> Adbl2 x -> Statement
+relDualisableAdditiveAdd2 q s Struct Struct ad@(Adbl2 a b)
+  = (toDualStk q s (a + b) == toDualStk q s a + toDualStk q s b) :?> Params ["ad":=show ad]  
 
-instance (HomAdditive h, HomFibredOriented h) => HomAdditive (OpHom h)
+-- | validity according to 'DualisableAdditive', property 2.
+prpDualisableAdditiveAdd2 :: DualisableAdditive s o
+  => q o -> Struct s x -> Adbl2 x -> Statement
+prpDualisableAdditiveAdd2 q s ad = Prp "DualisableAdditiveAdd2"
+  :<=>: relDualisableAdditiveAdd2 q s (tau s) (tau (tauO s)) ad
 
 --------------------------------------------------------------------------------
 -- prpHomAdd1 -
@@ -119,4 +157,73 @@ relHomAdd2Homomorphous (Struct:>:Struct) f (Adbl2 x y)
 prpHomAdd2 :: (HomAdditive h, Show2 h) => h a b -> Adbl2 a -> Statement
 prpHomAdd2 f xy = Prp "HomAdd2"
   :<=>: relHomAdd2Homomorphous (tauHom (homomorphous f)) f xy
+
+--------------------------------------------------------------------------------
+-- prpHomAdditive -
+
+-- | validity according to 'HomAdditive'.
+prpHomAdditive :: (HomAdditive h, Show2 h) => h x y -> XAdd x -> Statement
+prpHomAdditive h (XAdd _ xr _ xa2 _) = Prp "HomAdditive" :<=>:
+  And [ Forall xr (prpHomAdd1 h)
+      , Forall xa2 (prpHomAdd2 h)
+      ]
+  
+--------------------------------------------------------------------------------
+-- AddX -
+
+data AddX
+
+type instance Structure AddX x = (Additive x, FibredOriented x, XStandardAdd x)
+
+instance Transformable AddX Ort where tau Struct = Struct
+instance TransformableOrt AddX
+
+instance Transformable AddX Fbr where tau Struct = Struct
+instance TransformableFbr AddX
+
+instance Transformable AddX FbrOrt where tau Struct = Struct
+instance TransformableFbrOrt AddX
+
+instance Transformable AddX Add where tau Struct = Struct
+instance TransformableAdd AddX
+
+
+instance TransformableG Op AddX AddX where tauG Struct = Struct
+instance TransformableOp AddX
+
+instance Transformable AddX Typ where tau Struct = Struct
+
+instance Transformable AddX Type where tau _ = Struct
+instance TransformableType AddX
+
+--------------------------------------------------------------------------------
+-- xsoAddX
+
+xsoAddX :: X (SomeObjectClass (SHom AddX AddX Op (HomEmpty AddX)))
+xsoAddX = xOneOf [ SomeObjectClass (Struct :: Struct AddX OS)
+                 , SomeObjectClass (Struct :: Struct AddX N)
+                 -- , SomeObjectClass (Struct :: Struct AddX (Id OS))
+                 ]
+        
+--------------------------------------------------------------------------------
+-- prpHomDisjOpAdd -
+
+relHomAddAddX :: (HomAdditive h, Show2 h)
+  => Homomorphous AddX x y -> h x y -> Statement
+relHomAddAddX (Struct :>: Struct) h
+  = And [ Forall xr (prpHomAdd1 h)
+        , Forall xa2 (prpHomAdd2 h)
+        ]
+  where XAdd _ xr _ xa2 _ = xStandardAdd
+  
+relHomDisjOpAdd :: X (SomeMorphism (HomDisjEmpty AddX Op)) -> Statement
+relHomDisjOpAdd xsh = Forall xsh
+  (\(SomeMorphism h) -> relHomAddAddX (tauHom (homomorphous h)) h)
+
+-- | validity of @'HomDisjEmpty' 'Add' 'Op'@ according to 'HomAdditive'.
+prpHomDisjOpAdd :: Statement
+prpHomDisjOpAdd = Prp "HomDisjOpAdd" :<=>: relHomDisjOpAdd xsh where
+  xsh :: X (SomeMorphism (HomDisjEmpty AddX Op))
+  xsh = amap1 smCmpb2 $ xscmHomDisj xsoAddX XEmpty
+  
 

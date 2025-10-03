@@ -50,7 +50,6 @@ import OAlg.Entity.FinList
 import OAlg.Entity.Diagram
 import OAlg.Entity.Slice
 
-
 import OAlg.Limes.KernelsAndCokernels
 
 --------------------------------------------------------------------------------
@@ -58,7 +57,7 @@ import OAlg.Limes.KernelsAndCokernels
 
 -- | predicate for splitable slices.
 --
---  __Propterties__ Let @__d__@ be 'Oriented' and @'Sliced' (__ i__ __k__) __d__@ for all
+--  __Propterties__ Let @__d__@ be 'Oriented' and @'Sliced' (__ i k__) __d__@ for all
 --  @__k__@, then holds:
 --
 --  (1) Let @'Splitable' splt@ be in @'Splitable' 'From' __i__ __d__@ then holds:
@@ -77,7 +76,6 @@ newtype Splitable s i d
 split :: (Attestable k, Sliced (i k) d)
   => Splitable s i d -> Slice s (i k) d -> FinList k (Slice s (i N1) d)
 split (Splitable s) = s
-
 
 --------------------------------------------------------------------------------
 -- FinitePresentation -
@@ -100,9 +98,9 @@ split (Splitable s) = s
 --
 -- (2) @ker@ is the kernel of @g@ with @g'@ as the shell factor of its universal cone.
 --
--- (3) @'KenrelSliceFromSomeFreeTip' k'' k' ker@ is 'valid'.
+-- (3) @'KernelSliceFromSomeFreeTip' k'' k' ker@ is 'valid'.
 --
--- (4) For all @h@ in @'Slice' 'From' (__i__ __k__) a@ with
+-- (4) For all @h@ in @'Slice' 'From' (__i k__) a@ with
 -- @'end' h '==' p@ holds:
 --
 --     (1) @lft h@ is 'valid'.
@@ -122,7 +120,7 @@ split (Splitable s) = s
 --          h
 -- @
 --
--- __Property 2__ Let @'EmbeddingTo' d k' k'' ker coker lft@ be in
+-- __Property 2__ Let @'EmbeddingFrom' d k' k'' ker coker lft@ be in
 -- -- @'FinitePresentation' 'To' __i__ __a__@ then holds the dual of the property 1 above.
 data FinitePresentation s i a where
   GeneratorTo
@@ -192,6 +190,7 @@ embedding (EmbeddingFrom (DiagramChainFrom _ (i:|_)) k' _ _ _ _)
 --------------------------------------------------------------------------------
 -- finitePresentation -
 
+-- | the finite presentation of a given point and according to a finitaly presentable structure.
 finitePresentation :: FinitelyPresentable s i a -> Point a -> FinitePresentation s i a
 finitePresentation (FinitelyPresentable f) = f
 
@@ -234,9 +233,14 @@ class XStandardSomeFreeSliceFromLiftable a where
 --------------------------------------------------------------------------------
 -- Validable - FinitePresentation To Free a
 
-instance ( Distributive a, XStandardOrtSiteFrom a, XStandardOrtSiteTo a
-         , XStandardSomeFreeSliceFromLiftable a
-         )
+instance
+  ( Distributive a
+  , XStandardEligibleConeCokernel N1 a
+  , XStandardEligibleConeFactorCokernel N1 a
+  , XStandardEligibleConeKernel N1 a
+  , XStandardEligibleConeFactorKernel N1 a
+  , XStandardSomeFreeSliceFromLiftable a
+  )
   => Validable (FinitePresentation To Free a) where
   valid gen@(GeneratorTo d k' k'' coker ker lft) = Label (show $ typeOf gen) :<=>:
     And [ valid (d,k',k'',coker,ker)
@@ -255,7 +259,3 @@ instance ( Distributive a, XStandardOrtSiteFrom a, XStandardOrtSiteTo a
         ]
 
        where DiagramChainTo p (g:|g':|Nil) = d
-
-
-
-

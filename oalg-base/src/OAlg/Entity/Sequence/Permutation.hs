@@ -146,8 +146,8 @@ pmfOprPsq xjs (PermutationForm jis) = PSequence (sortSnd xis ++ xis') where
 -- | @'pmfOprPsq' xs p@ applies the permutation form @p@ - from right - to the list
 -- @xs@, which is given by 'pmfOprPsq' applied to @'PSequence' (xs `'zip` [0..])@.
 --
--- __Note__ If @'It' ('lengthN') '<=' u@ - where @(_,u) = 'span' p@ - then no
--- exception will be thrown, but the 'lengthN' of the resulting list may be smaller!
+-- __Note__ If @'It' ('lengthN' xs) '<=' u@ - where @(_,u) = 'OAlg.Entity.Sequence.Definition.span' p@
+-- - then no exception will be thrown, but the 'lengthN' of the resulting list may be smaller!
 pmfOprLst :: [x] -> PermutationForm N -> [x]
 pmfOprLst xs p = prj (xs' `pmfOprPsq` p) where
   xs' = (inj :: [x] -> PSequence N x) xs
@@ -228,13 +228,19 @@ instance (Entity i, Ord i) => Validable (PermutationForm i) where
         , Label "1" :<=>: (support jis p == image jis p):?>Params ["p":=show p]
         ]
 
-instance (Entity i, Ord i) => Entity (PermutationForm i)
+-- instance (Entity i, Ord i) => Entity (PermutationForm i)
 
 --------------------------------------------------------------------------------
 -- PermutationForm - Oriented -
 
+type instance Point (PermutationForm i) = ()
+
+instance ShowPoint (PermutationForm i)
+instance EqPoint (PermutationForm i)
+instance ValidablePoint (PermutationForm i)
+instance TypeablePoint (PermutationForm i)
+
 instance (Entity i, Ord i) => Oriented (PermutationForm i) where
-  type Point (PermutationForm i) = ()
   orientation = const (():>())
 
 --------------------------------------------------------------------------------
@@ -317,7 +323,7 @@ instance Eq i => Reducible (PermutationForm i) where
 -- >>> takeN 5 $ (([0..] :: [N]) <* (swap 1 2 :: Permutation N)
 -- [0,2,1,3,4]
 newtype Permutation i = Permutation (PermutationForm i)
-  deriving (Show,Eq,Validable,Entity,LengthN)
+  deriving (Show,Eq,Validable,LengthN)
 
 instance Exposable (Permutation i) where
   type Form (Permutation i) = PermutationForm i
@@ -341,15 +347,20 @@ pmt = restrict pmf
 --------------------------------------------------------------------------------
 -- Permutation - Cayleyan -
 
+type instance Point (Permutation i) = ()
+
+instance ShowPoint (Permutation i)
+instance EqPoint (Permutation i)
+instance ValidablePoint (Permutation i)
+instance TypeablePoint (Permutation i)
+instance SingletonPoint (Permutation i)
+
 instance (Entity i, Ord i) => Oriented (Permutation i) where
-  type Point (Permutation i) = ()
   orientation = restrict orientation
 
 instance (Entity i, Ord i) => Multiplicative (Permutation i) where
   one _ = make (PermutationForm psqEmpty)
   Permutation f * Permutation g = make (f `pmfMlt` g)
-
-instance Total (Permutation i)
 
 instance (Entity i, Ord i) => Invertible (Permutation i) where
   tryToInvert (Permutation (PermutationForm (PSequence jis)))

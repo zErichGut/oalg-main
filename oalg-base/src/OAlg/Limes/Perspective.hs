@@ -2,6 +2,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
@@ -13,7 +14,7 @@
 --
 -- concept of 'Projective' and 'Injective'.
 module OAlg.Limes.Perspective
-  ( Perspective(..)
+  ( Perspective(..), ToPerspective
   ) where
 
 import OAlg.Prelude
@@ -26,4 +27,19 @@ data Perspective = Projective | Injective deriving (Show,Eq,Ord,Enum,Bounded)
 
 type instance Dual Projective = Injective
 type instance Dual Injective = Projective
+
+type instance ToSite Projective = To
+type instance ToSite Injective  = From
+
+--------------------------------------------------------------------------------
+-- ToPerspective -
+
+-- | mapping to 'Perspective'-
+type family ToPerspective (t :: k) :: Perspective
+
+
+type instance  ToPerspective To   = Projective
+type instance  ToPerspective From = Injective
+
+
 

@@ -23,6 +23,8 @@ module OAlg.Category.Unify
     -- * Morphism
     SomeMorphism(..), SomeObjectClass(..)
   , SomeMorphismSite(..)
+  , someOne
+  , SomeCmpb3(..), SomeCmpb2(..), smCmpb2
   
     -- * Path
   , SomePath(..), somePath
@@ -33,6 +35,7 @@ module OAlg.Category.Unify
 
     -- * Application
   , SomeApplication(..)
+  , xSomeAppl
 
   )
   where
@@ -46,8 +49,9 @@ import OAlg.Category.Definition
 import OAlg.Structure.Definition
 import OAlg.Category.Path
 
+import OAlg.Data.Identity
+import OAlg.Data.X
 import OAlg.Data.Dualisable
-import OAlg.Data.Opposite
 import OAlg.Data.Validable
 import OAlg.Data.Maybe
 import OAlg.Data.Equal
@@ -55,12 +59,21 @@ import OAlg.Data.Show
 import OAlg.Data.Boolean
 
 import OAlg.Entity.Definition
+
 --------------------------------------------------------------------------------
 -- SomeApplication -
 
 -- | some application.
 data SomeApplication h where
   SomeApplication :: h x y -> x -> SomeApplication h
+
+--------------------------------------------------------------------------------
+-- xSomeAppl -
+
+-- | random variable for some application.
+xSomeAppl :: (Morphism m, Transformable (ObjectClass m) XStd) => m x y -> X (SomeApplication m)
+xSomeAppl m = amap1 (SomeApplication m) (xStd m)
+
 
 --------------------------------------------------------------------------------
 -- SomeMorphism -
@@ -72,23 +85,48 @@ data SomeMorphism m where
 instance Show2 m => Show (SomeMorphism m) where
   show (SomeMorphism f) = "SomeMorphism[" ++ show2 f ++ "]"
 
-
 instance (Morphism m, TransformableObjectClassTyp m, Typeable m, Eq2 m)
   => Eq (SomeMorphism m) where
   SomeMorphism f == SomeMorphism g = case eqlMorphism tx tx' ty ty' f g of
     Just Refl -> eq2 f g
     Nothing   -> False
 
-    where tx  = domain (Forget f)
-          tx' = domain (Forget g)
-          ty  = range (Forget f)
-          ty' = range (Forget g)
+    where tx  = domain (subTyp f)
+          tx' = domain (subTyp g)
+          ty  = range (subTyp f)
+          ty' = range (subTyp g)
+
+          subTypStruct :: Struct Typ x -> Struct Typ y -> m x y -> Sub Typ m x y
+          subTypStruct Struct Struct = Sub
+          
+          subTyp :: (Morphism m, Transformable (ObjectClass m) Typ) => m x y -> Sub Typ m x y
+          subTyp m = subTypStruct (tau $ domain m) (tau $ range m) m 
 
 
 instance Validable2 m => Validable (SomeMorphism m) where
   valid (SomeMorphism f) = valid2 f
 
-instance (Morphism m, TransformableObjectClassTyp m, Entity2 m) => Entity (SomeMorphism m)
+--------------------------------------------------------------------------------
+-- SomeCmpb2 -
+
+-- | some composable morphisms.
+data SomeCmpb2 c where
+  SomeCmpb2 :: c y z -> c x y -> SomeCmpb2 c
+  
+--------------------------------------------------------------------------------
+-- SomeCmpb3 -
+
+-- | some composable morphisms.
+data SomeCmpb3 c where
+  SomeCmpb3 :: c x w -> c y x ->  c z y -> SomeCmpb3 c
+
+--------------------------------------------------------------------------------
+-- smCmpb2 -
+
+-- | composing the two composables.
+smCmpb2 :: Category h => SomeCmpb2 h -> SomeMorphism h
+smCmpb2 (SomeCmpb2 f g) = SomeMorphism (f . g)
+
 
 --------------------------------------------------------------------------------
 -- SomeEntity -
@@ -143,7 +181,12 @@ instance Eq (SomeObjectClass m) where
 instance Validable (SomeObjectClass m) where
   valid (SomeObjectClass o) = valid o
 
-instance Typeable m => Entity (SomeObjectClass m)
+--------------------------------------------------------------------------------
+-- someOne
+
+-- | some 'cOne' for some object class.
+someOne :: Category c => SomeObjectClass c -> SomeMorphism c
+someOne (SomeObjectClass s) = SomeMorphism (cOne s) 
 
 --------------------------------------------------------------------------------
 -- SomePathSite -

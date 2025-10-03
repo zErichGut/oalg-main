@@ -9,8 +9,8 @@
 -- singleton types having exactly one value.
 module OAlg.Data.Singleton
   ( -- ** Singleton
-    Singleton(..)
-  , Singleton1(..)
+    Singleton(..), singleton
+  , Singleton1(..), singleton1
   )
   where
 
@@ -33,6 +33,15 @@ instance Singleton u => Singleton (a -> u) where
   unit = const unit
 
 --------------------------------------------------------------------------------
+-- singleton -
+
+-- | maps all @x@ to 'unit'.
+--
+-- __Note__ Evan undefined values (i.e. bottom) are mapped to 'unit'.
+singleton :: Singleton s => x -> s
+singleton = const unit
+
+--------------------------------------------------------------------------------
 -- Singleton1 -
 
 -- | one parameterized types @__s__@ with exactly one element for each @__x__@ which is
@@ -42,4 +51,13 @@ class Singleton1 s where
 
 instance Singleton1 Proxy where
   unit1 = Proxy
+
+--------------------------------------------------------------------------------
+-- singleton1 -
+
+-- | maps all @x@ to 'unit1'.
+--
+-- __Note__ Evan undefined values (i.e. bottom) are mapped to 'unit1'.
+singleton1 :: Singleton1 s => x -> s y
+singleton1 = const unit1
 

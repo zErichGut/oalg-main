@@ -28,6 +28,8 @@ import Control.Monad
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented.Path
+import OAlg.Structure.Oriented.X
 
 --------------------------------------------------------------------------------
 -- prpOrt0 -

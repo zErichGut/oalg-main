@@ -42,20 +42,6 @@ import OAlg.Entity.Sequence hiding (sy)
 import OAlg.Entity.Sum.Definition
 
 --------------------------------------------------------------------------------
--- R -
-
--- | adjoining the root @()@.
-newtype R a = R a deriving (Show,Eq,Ord,Validable)
-
-instance Entity a => Entity (R a)
-
-instance Entity a => Fibred (R a) where
-  type Root (R a) = ()
-  root _ = ()
-
-instance OrdRoot (R a)
-
---------------------------------------------------------------------------------
 -- SumSymbol -
 
 -- | free sum with symbols in @__a__@.
@@ -87,13 +73,19 @@ ssyShow s = shws $ lcs $ ssylc s where
 instance (Semiring r, Show a) => Show (SumSymbol r a) where
   show s = "SumSymbol[" ++ ssyShow s ++ "]"
 
-instance (Semiring r, Commutative r, Entity a) => Entity (SumSymbol r a)
+-- instance (Semiring r, Commutative r, Entity a) => Entity (SumSymbol r a)
 
 --------------------------------------------------------------------------------
 -- SumSymbol - Fibred - Vectorial -
 
+type instance Root (SumSymbol r a) = ()
+
+instance ShowRoot (SumSymbol r a)
+instance EqRoot (SumSymbol r a)
+instance ValidableRoot (SumSymbol r a)
+instance TypeableRoot (SumSymbol r a)
+
 instance (Semiring r, Commutative r, Entity a) => Fibred (SumSymbol r a) where
-  type Root (SumSymbol r a) = ()
   root _ = ()
 
 instance (Semiring r, Commutative r, Entity a, Ord a) => Vectorial (SumSymbol r a) where

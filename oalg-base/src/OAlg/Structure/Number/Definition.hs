@@ -322,8 +322,6 @@ deriving instance Ord r => Ord (Digits b r)
 instance Validable r => Validable (Digits b r) where
   valid (Digits r n m) = And [valid r,valid n,valid m]
   
-instance (KnownNat b, Entity r) => Entity (Digits b r)
-
 --------------------------------------------------------------------------------
 -- dgsProxy -
 

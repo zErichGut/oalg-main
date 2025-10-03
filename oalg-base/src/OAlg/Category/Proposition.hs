@@ -22,7 +22,7 @@ module OAlg.Category.Proposition
     -- * Category
     prpCategory, XCat(..)
   , prpCategory1
-  , prpCategory2, SomeCmpb3(..)
+  , prpCategory2
 
     -- * Application
   , XAppl
@@ -31,6 +31,8 @@ module OAlg.Category.Proposition
   , prpFunctorial, XFnct(..)
   , prpFunctorial1
   , prpFunctorial2, SomeCmpbAppl(..)
+  , prpFunctorialG
+  , prpFunctorialGType, SomeEntityG(..), SomeCmpb2G(..)
 
     -- * Cayleyan2
   , prpCayleyan2
@@ -42,28 +44,34 @@ module OAlg.Category.Proposition
 
     -- ** Functorial
   , xFnct, xMrphSite, XFnctMrphSite(..)
+
+    -- * Inv2
+  , relInvEq2
   
   )
   where
 
 import Control.Monad
 import Control.Exception
+import Data.Kind
 
-import Data.Proxy
 
 import OAlg.Control.Exception
 
+import OAlg.Category.Applicative
 import OAlg.Category.Definition
 import OAlg.Structure.Definition
 
 import OAlg.Category.Path
 import OAlg.Category.Unify
 
+import OAlg.Data.Identity
+import OAlg.Data.Proxy
+import OAlg.Data.EqualExtensional
 import OAlg.Data.Logical
 import OAlg.Data.X
 import OAlg.Data.Number
 import OAlg.Data.Dualisable
-import OAlg.Data.Opposite
 import OAlg.Data.Statement
 import OAlg.Data.Show
 import OAlg.Data.Equal
@@ -101,13 +109,6 @@ prpCategory1 xsm = Prp "Category1"
                                , (f == (f . cOne (domain f))) :?> prm
                                ]
                    )
-
---------------------------------------------------------------------------------
--- SomeCmpb3 -
-
--- | some composable morphisms.
-data SomeCmpb3 c where
-  SomeCmpb3 :: c x w -> c y x ->  c z y -> SomeCmpb3 c
 
 --------------------------------------------------------------------------------
 -- prpCategory2
@@ -210,6 +211,18 @@ prpCayleyan2 xmp = Prp "Cayleyan2"
                                , ((f . f') == cOne (range f)) :?> prm
                                ]
                    )
+
+--------------------------------------------------------------------------------
+-- relInvEq2 -
+
+-- | validity according to 'Inv2'.
+relInvEq2 :: (Category c, Eq2 c, Show2 c) => Inv2 c x y -> Statement
+relInvEq2 (Inv2 f g)
+  = And [ Label "g . f" :<=>: ((g . f) .=. cOne (domain f)) :?> prms
+        , Label "f . g" :<=>: ((f . g) .=. cOne (domain g)) :?> prms
+        ]
+    where (.=.) = eq2
+          prms  = Params ["f":=show2 f, "g":=show2 g]
 
 --------------------------------------------------------------------------------
 -- XMrphSite -
@@ -376,3 +389,88 @@ xFnct xfd@(XFnctMrphSite xmd xox) = XFnct xse xsca where
         -> Struct Ent z -> Struct Ent x
         -> Struct (ObjectClass c) x -> X (SomeCmpbAppl c)
   xsca' f g xox Struct Struct so = xox so >>= return . SomeCmpbAppl f g 
+
+--------------------------------------------------------------------------------
+-- relFunctorialGOne -
+
+relFunctorialGOne :: (FunctorialG t a b, EqExt b) => q t a b -> Struct (ObjectClass a) x -> Statement
+relFunctorialGOne q s = amapG (cOne' (qa q) s) .=. cOne' (qb q) (tauG' (qt q) s) where
+
+  qa :: forall q (t :: Type -> Type) (a :: Type -> Type -> Type) (b :: Type -> Type -> Type)
+      . q t a b -> Proxy a
+  qa _ = Proxy
+
+  qb :: forall q (t :: Type -> Type) (a :: Type -> Type -> Type) (b :: Type -> Type -> Type)
+      . q t a b -> Proxy b
+  qb _ = Proxy
+
+  qt :: forall q (t :: Type -> Type) (a :: Type -> Type -> Type) (b :: Type -> Type -> Type)
+      . q t a b -> Proxy t
+  qt _ = Proxy
+
+--------------------------------------------------------------------------------
+-- relFunctorialGCmp -
+
+relFunctorialGCmp :: (FunctorialG t a b, EqExt b) => q t a b -> a y z -> a x y -> Statement
+relFunctorialGCmp q f g = amapG' q (f . g) .=. (amapG' q f . amapG' q g)
+
+--------------------------------------------------------------------------------
+-- prpFunctorialG -
+
+-- | validity according to 'FunctorialG'.
+prpFunctorialG :: (FunctorialG t a b, EqExt b)
+  => q t a b -> X (SomeObjectClass a) -> X (SomeCmpb2 a) -> Statement
+prpFunctorialG q xo xfg = Prp "FunctorialG" :<=>:
+  And [ Label "cOne" :<=>: Forall xo (\(SomeObjectClass s) -> relFunctorialGOne q s)
+      , Label "." :<=>: Forall xfg (\(SomeCmpb2 f g) -> relFunctorialGCmp q f g)
+      ] 
+
+--------------------------------------------------------------------------------
+-- relFunctorialGOneType -
+
+relFunctorialGOneType ::
+  ( FunctorialG t a (->)
+  , Entity (t x)
+  )
+  => q a -> Struct (ObjectClass a) x -> t x -> Statement
+relFunctorialGOneType q s tx = (amapG (cOne' q s) tx == tx) :?> Params ["tx":=show tx]
+
+--------------------------------------------------------------------------------
+-- relFunctorialGCmpType -
+
+relFunctorialGCmpType ::
+  ( FunctorialG t a (->)
+  , Entity (t x)
+  , Entity (t z)
+  )
+  => a y z -> a x y -> t x -> Statement
+relFunctorialGCmpType f g tx = (amapG (f . g) tx == amapG f (amapG g tx)) :?> Params ["tx":=show tx]
+
+--------------------------------------------------------------------------------
+-- SomeEntityG -
+
+-- | some object class for @__c__@ with a applicable @__t__@-entity.
+data SomeEntityG t c where
+  SomeEntityG :: Entity (t x) => Struct (ObjectClass c) x -> t x -> SomeEntityG t c
+
+--------------------------------------------------------------------------------
+-- SomeCmpb2G -
+
+-- | some combosables for @__c__@ with a applicable @__t__@-entity.
+data SomeCmpb2G t c where
+  SomeCmpb2G :: (Entity (t x), Entity (t z)) => c y z -> c x y -> t x -> SomeCmpb2G t c
+  
+--------------------------------------------------------------------------------
+-- prpFunctorialGType -
+
+-- | validity acording to represatnable 'FunctorialG's.
+prpFunctorialGType :: FunctorialG t a (->)
+  => X (SomeEntityG t a) -> X (SomeCmpb2G t a) -> Statement
+prpFunctorialGType xse xcpb2 = Prp "FunctorialGType" :<=>:
+  And [ Label "cOne" :<=>: Forall xse (\(SomeEntityG s tx) -> relFunctorialGOneType (qa xse) s tx)
+      , Label "." :<=>: Forall xcpb2 (\(SomeCmpb2G f g tx) -> relFunctorialGCmpType f g tx)
+      ]
+  where
+    qa :: X (SomeEntityG t a) -> Proxy a
+    qa _ = Proxy
+

@@ -8,6 +8,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- |
 -- Module      : OAlg.Hom.Oriented.Proposition
@@ -19,248 +20,152 @@
 -- propositions on homomorphisms between 'Oriented' structures.
 module OAlg.Hom.Oriented.Proposition
   (
-    -- * Proposition
-    prpIdHomOrt, prpHomOpOrt
+    -- * Disjunctive Homomorphism
+    prpHomOrientedDisjunctive
+  , prpHomOriented
 
-  , prpIsoOpOrtCategory, prpIsoOpOrtFunctorial
+    -- * Duality
+  , prpDualisableOriented
 
-    -- * Oriented
-  , prpHomOrt, XHomOrt
-  , prpHomOrt'
-  , prpHomOrt1
-  , relHomOrtHomomorphous
-
-    -- * X
-  , xIsoOpOrtFrom
+    -- * HomDisj
+  , prpHomDisjOpOrt
   )
   where
 
-import Control.Monad
-import Control.Applicative
-
-import Data.Type.Equality
+import Control.Monad hiding (Functor(..))
 
 import OAlg.Prelude
 
-import OAlg.Data.Constructable
-
-import OAlg.Category.Path as C
+import OAlg.Category.Dualisable
+import OAlg.Category.SDuality
 import OAlg.Category.Unify
 
-import OAlg.Data.Symbol
+import OAlg.Data.Proxy
+import OAlg.Data.Either
+import OAlg.Data.Variant
 
-import OAlg.Structure.Oriented as O
-import OAlg.Structure.Multiplicative
+import OAlg.Structure.Oriented
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented.Definition
 
+--------------------------------------------------------------------------------
+-- prpDualisableOriented -
+
+-- | validity according to 'DualisableOriented'.
+relDualisableOriented :: DualisableOriented s o
+  => q o -> Struct s x -> Struct Ort x -> Struct Ort (o x) -> XOrt x -> Statement
+relDualisableOriented q s Struct Struct xx = Forall xx
+    (\x -> And [ Label "1" :<=>: ((start $ tArw x) == (tPnt $ end x)) :?> Params ["x":=show x]
+               , Label "2" :<=>: ((end $ tArw x) == (tPnt $ start x)) :?> Params ["x":=show x]
+               ]
+    )
+  where
+    tArw = toDualArw q s
+    tPnt = toDualPnt q s
+
+-- | validity according to 'DualisableOriented'.
+prpDualisableOriented :: DualisableOriented s o
+  => q o -> Struct s x -> XOrt x -> Statement
+prpDualisableOriented q s xx = Prp "DualisableOriented" :<=>:
+  relDualisableOriented q s (tau s) (tau (tauO s)) xx where
 
 --------------------------------------------------------------------------------
--- XHomOrt -
+-- prpHomDisjOrtVariant -
 
--- | random variable to validate homomorphisms between 'Oriented' structures.
-type XHomOrt h = XAppl h
+relHomDisjOrtCov :: (HomOrientedDisjunctive h, Show2 h)
+  => Homomorphous Ort x y -> Variant2 Covariant h x y  -> x -> Statement
+relHomDisjOrtCov (Struct:>:Struct) (Covariant2 h) x = Label "Covariant" :<=>:
+  And [ Label "1" :<=>: (start (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
+      , Label "2" :<=>: (end (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
+      ]
 
---------------------------------------------------------------------------------
--- prpHomOrt -
+relHomDisjOrtCnt :: (HomOrientedDisjunctive h, Show2 h)
+  => Homomorphous Ort x y -> Variant2 Contravariant h x y  -> x -> Statement
+relHomDisjOrtCnt (Struct:>:Struct) (Contravariant2 h) x = Label "Contravariant" :<=>:
+  And [ Label "1" :<=>: (start (amap h x) == pmap h (end x)) :?> Params ["h":= show2 h, "x":=show x]
+      , Label "2" :<=>: (end (amap h x) == pmap h (start x)) :?> Params ["h":= show2 h, "x":=show x]
+      ]
 
--- | validity of homomorphisms between 'Oriented' for a given value in the domain.
-relHomOrtHomomorphous :: (Hom Ort h, Show2 h)
-  => Homomorphous Ort a b -> h a b -> a -> Statement
-relHomOrtHomomorphous (Struct:>:Struct) f x
-  = And [ (start fx == pmap f (start x)) :?> prms
-        , (end fx == pmap f (end x)) :?> prms
-        ]
-  where prms = Params ["f":=show2 f,"x":=show x]
-        fx = amap f x
+relHomDisjOrtVariant :: (HomOrientedDisjunctive h, Show2 h)
+  => Either2 (Variant2 Contravariant h) (Variant2 Covariant h) x y -> x -> Statement
+relHomDisjOrtVariant h x = case h of
+  Right2 hCov -> relHomDisjOrtCov (tauHom (homomorphous h)) hCov x
+  Left2 hCnt  -> relHomDisjOrtCnt (tauHom (homomorphous h)) hCnt x
 
---------------------------------------------------------------------------------
--- prpHomOrt1 -
-
--- | validity of homomorphisms between 'Oriented' structures based on the given values.
-prpHomOrt1 :: (Hom Ort h, Show2 h) => h a b -> a -> Statement
-prpHomOrt1 f x = Prp "HomOrt1" :<=>: relHomOrtHomomorphous (tauHom (homomorphous f)) f x
-
-
-
--- | validity of homomorphisms between 'Oriented' structures based on the given
--- random variable.
-prpHomOrt :: (Hom Ort h, Show2 h) => XHomOrt h -> Statement
-prpHomOrt xfx = Prp "HomOrt"
-  :<=>: Forall xfx (\(SomeApplication f x)
-                    -> relHomOrtHomomorphous (tauHom (homomorphous f)) f x
-                   )
--- | validity of homomorphisms between 'Oriented' structures based on the given
--- random variable.
-prpHomOrt' :: (Hom Ort h, Show2 h) => h a b -> XOrt a -> Statement
-prpHomOrt' f xa = Label "prpHomOrt'" :<=>:
-  Forall xa (relHomOrtHomomorphous (tauHom (homomorphous f)) f)
-  
---------------------------------------------------------------------------------
--- prpIdHomOrt -
-
--- | validity of @'IdHom' 'Ort'@ to be a family of 'Oriented' homomorphisms between
--- @'Orientation' 'Symbol'@ and t'Z'.
-prpIdHomOrt :: Statement
-prpIdHomOrt = Prp "IdHomOrt"
-  :<=>: prpHomOrt xa where
-  
-    xa :: XHomOrt (IdHom Ort)
-    xa = join $ xOneOf [ xsaIdHomOrnt
-                       , fmap (SomeApplication IdHom) xZ
-                       ]
-
-    xsaIdHomOrnt :: X (SomeApplication (IdHom Ort))
-    xsaIdHomOrnt = fmap (SomeApplication IdHom) $ xOrtOrnt xSymbol
+-- | validity according to property (2) of 'HomOrientedDisjunctive'.
+prpHomDisjOrtVariant :: (HomOrientedDisjunctive h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomDisjOrtVariant xsa = Prp "HomDisjOrtVariant" :<=>: Forall xsa
+  (\(SomeApplication h x) -> relHomDisjOrtVariant (toVariant2 h) x
+  )
 
 --------------------------------------------------------------------------------
--- prpHomOpOrt -
+-- prpHomOrientedDisjunctive -
 
--- | validity of @'HomOp' 'Ort'@ according to 'HomOriented' on @'Orientation' 'Symbol'@.
-prpHomOpOrt :: Statement
-prpHomOpOrt = Prp "HomOpOrt"
-  :<=>: prpHomOrt xa where
-
-    xo = xOrtOrnt xSymbol
-    xs = xStartOrnt xSymbol
-
-    xpth n = xNB 0 n >>= xosPath xs
-    
-    xa :: XHomOrt (HomOp Ort)
-    xa = join $ xOneOf [ fmap (SomeApplication FromOpOp . Op . Op) xo 
-                       , fmap (SomeApplication OpPath . Op) $ xpth 10
-                       , fmap (SomeApplication Opposite . Op) xo
-                       ]
-         
+-- | validity according to 'HomOrientedDisjunctive'.
+prpHomOrientedDisjunctive :: (HomOrientedDisjunctive h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomOrientedDisjunctive xa = Prp "HomOrientedDisjunctive" :<=>: prpHomDisjOrtVariant xa
 
 --------------------------------------------------------------------------------
--- prpIsoOpOrtCategory -
+-- prpHomOriented -
 
--- | validity of @'IsoOp' 'Ort'@ according to 'Category' on @'Orientation' 'Symbol'@.
-prpIsoOpOrtCategory :: Statement
-prpIsoOpOrtCategory = Prp "IsoOpOrtCategory"
-  :<=>: prpCategory (xCat $ xMrphSite xIsoOpOrtFrom)
-
---------------------------------------------------------------------------------
--- prpIsoOpOrtFunctorial -
-
--- | validity of @'IsoOp' 'Ort'@ according 'Functorial'. 
-prpIsoOpOrtFunctorial :: Statement
-prpIsoOpOrtFunctorial = Prp "IsoOpOrtFunctorial"
-  :<=>: prpFunctorial (xFnct xIsoOpOrtFrom)
+-- | validity according to 'HomOriented'.
+prpHomOriented :: (HomOriented h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomOriented xa = Prp "HomOriented" :<=>: prpHomOrientedDisjunctive (amap1 saDisj xa) where
+  saDisj :: HomOriented h => SomeApplication h -> SomeApplication (HomDisj Ort Op h)
+  saDisj (SomeApplication h x) = SomeApplication h' x where Covariant2 h' = homDisj h
 
 --------------------------------------------------------------------------------
--- xIsoOpOrtFrom -
+-- xsoOrtX -
 
--- | random variale of @'IsoOp' 'Ort'@.
-xIsoOpOrtFrom :: XFnctMrphSite From (IsoOp Ort)
-xIsoOpOrtFrom = XFnctMrphSite (XDomain xss xsdm) xox where
-  
-  domOpPath :: Struct Ort (Op (O.Path OS))
-  domOpPath = Struct
-
-  domOpPathInv :: Struct Ort (O.Path (Op OS))
-  domOpPathInv = Struct
-
-  domOpOS :: Struct Ort (Op OS)
-  domOpOS = Struct
-
-  domOpOpOS :: Struct Ort (Op (Op OS))
-  domOpOpOS = Struct
-  
-  domOS :: Struct Ort OS
-  domOS = Struct
-
-  xOS = xOrtOrnt xSymbol
-  
-  xox d =     xdomOS d <|> xdomOpOS d
-          <|> xdomOpPath d <|> xdomOpPathInv d
-          <|> xdomOpOpOS d
-
-  xdomOS :: Struct Ort x -> X x
-  xdomOS d = case testEquality d domOS of
-    Just Refl -> xOS
-    Nothing   -> XEmpty
-
-  xdomOpOS :: Struct Ort x -> X x
-  xdomOpOS d = case testEquality d domOpOS of
-    Just Refl -> fmap Op xOS
-    Nothing   -> XEmpty
-
-  xdomOpPath :: Struct Ort x -> X x
-  xdomOpPath d = case testEquality d domOpPath of
-    Just Refl -> fmap Op (xNB 0 10 >>= xosPath (xStartOrnt xSymbol))
-    Nothing   -> XEmpty
-
-  xdomOpPathInv :: Struct Ort x -> X x
-  xdomOpPathInv d = case testEquality d domOpPathInv of
-    Just Refl -> fmap toDual (xNB 0 10 >>= xosPath (xStartOrnt xSymbol))
-    Nothing   -> XEmpty
-
-  xdomOpOpOS :: Struct Ort x -> X x
-  xdomOpOpOS d = case testEquality d domOpOpOS of
-    Just Refl -> fmap (Op . Op) xOS
-    Nothing   -> XEmpty
-  
-  xss = xOneOf [ SomeObjectClass domOS
-               , SomeObjectClass domOpPath
-               , SomeObjectClass domOpPathInv
-               , SomeObjectClass domOpOS
-               , SomeObjectClass domOpOpOS
+-- | random variable for some object classes for 'OrtX'.
+xsoOrtX :: s ~ OrtX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoOrtX = xOneOf [ SomeObjectClass (Struct :: Struct OrtX OS)
+               , SomeObjectClass (Struct :: Struct OrtX N)
+               , SomeObjectClass (Struct :: Struct OrtX (Op (OS)))
+               , SomeObjectClass (Struct :: Struct OrtX (Id (OS)))
+               , SomeObjectClass (Struct :: Struct OrtX (Id Z))
                ]
 
-  xsdm d =    xsdmFromOpOp d <|> xsdmToOpOp d
-          <|> xsdmOpPath d <|> xsdmOpPathInv d
-          <|> xsdmOpposite d <|> xsdmOppositeInv d
-          
-  xsdmFromOpOp :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
-  xsdmFromOpOp d = case testEquality d domOpOpOS of
-    Just Refl -> return $ SomeMorphismDomain (f d)
-    _         -> XEmpty
+--------------------------------------------------------------------------------
+-- prpHomDisjOpOrt -
 
-  xsdmToOpOp :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
-  xsdmToOpOp d = case testEquality d domOS of
-    Just Refl -> return $ SomeMorphismDomain (f' d)
-    _         -> XEmpty
+-- | validity of @'HomDisjEmpty' 'Ort' 'Op'@ according to 'prpCategoryDisjunctive',
+-- 'prpCategoryDualisable', 'prpFunctorialG' and 'prpHomOrientedDisjunctive'.
+prpHomDisjOpOrt :: Statement
+prpHomDisjOpOrt
+  = And [ prpCategoryDisjunctive xo xfg
+        , prpCategoryDualisable q xo
+        , prpFunctorialG qId' xo' xfg'
+        , prpFunctorialG qPt' xo' xfg'
+        , prpHomOrientedDisjunctive xsa
+        ] where
 
-  xsdmOpPath :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
-  xsdmOpPath d = case testEquality d domOpPath of
-    Just Refl -> return $ SomeMorphismDomain (p d)
-    _         -> XEmpty
+  q    = Proxy2 :: Proxy2 Op (HomDisjEmpty OrtX Op)
+  qId' = FunctorG :: FunctorG Id (Sub OrtX (HomDisjEmpty OrtX Op)) EqualExtOrt
+  qPt' = FunctorG :: FunctorG Pnt (Sub OrtX (HomDisjEmpty OrtX Op)) EqualExtOrt
 
-  xsdmOpPathInv :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
-  xsdmOpPathInv d = case testEquality d domOpPathInv of
-    Just Refl -> return $ SomeMorphismDomain (p' d)
-    _         -> XEmpty
+  
+  xo :: X (SomeObjectClass (HomDisjEmpty OrtX Op))
+  xo = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xsoOrtX
+  
 
-  xsdmOpposite :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
-  xsdmOpposite d = case testEquality d domOpOS of
-    Just Refl -> return $ SomeMorphismDomain (o d)
-    _         -> XEmpty
+  xo' :: X (SomeObjectClass (Sub OrtX (HomDisjEmpty OrtX Op)))
+  xo' = amap1 (\(SomeObjectClass s) -> SomeObjectClass s) xo
 
-  xsdmOppositeInv :: Struct Ort x -> X (SomeMorphismSite From (IsoOp Ort) x)
-  xsdmOppositeInv d = case testEquality d domOS of
-    Just Refl -> return $ SomeMorphismDomain (o' d)
-    _         -> XEmpty
+  xfg :: X (SomeCmpb2 (HomDisjEmpty OrtX Op))
+  xfg = xscmHomDisj xsoOrtX XEmpty
 
+  xfg' :: X (SomeCmpb2 (Sub OrtX (HomDisjEmpty OrtX Op)))
+  xfg' = amap1 (\(SomeCmpb2 f g) -> SomeCmpb2 (sub f) (sub g)) xfg
 
-  f' :: Struct Ort a -> IsoOp Ort a (Op (Op a))
-  f' Struct = invert2 isoFromOpOpOrt
-
-  f :: a ~ OS => Struct Ort (Op (Op a)) -> IsoOp Ort (Op (Op a)) a
-  f Struct = isoFromOpOpOrt
-
-  p :: a ~ OS => Struct Ort (Op (O.Path a)) -> IsoOp Ort (Op (O.Path a)) (O.Path (Op a))
-  p Struct = make (OpPath :. IdPath Struct)
-
-  p' :: a ~ OS => Struct Ort (O.Path (Op a)) -> IsoOp Ort (O.Path (Op a)) (Op (O.Path a))
-  p' Struct = make (OpPathInv :. IdPath Struct)
-
-  o :: a ~ OS => Struct Ort (Op a) -> IsoOp Ort (Op a) a
-  o Struct = make (Opposite :. IdPath Struct)
-
-  o' :: a ~ OS => Struct Ort a -> IsoOp Ort a (Op a)
-  o' Struct = make (OppositeInv :. IdPath Struct)
-
-
+  xsa :: X (SomeApplication (HomDisjEmpty OrtX Op))
+  xsa = join
+      $ amap1
+          (  (\(SomeMorphism m) -> xSomeAppl m)
+           . (\(SomeCmpb2 f g) -> SomeMorphism (f . g))
+          )
+      $ xfg

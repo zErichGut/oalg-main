@@ -20,9 +20,7 @@
 module OAlg.Entity.Diagram.Proposition
   (
     -- * Proposition
-    prpDiagramOrntSymbol
-  , prpCoDiagram
-
+    prpDiagram, prpDiagramOrntSymbol
   )
   where
 
@@ -35,25 +33,23 @@ import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.Diagram.Definition
 
 --------------------------------------------------------------------------------
--- prpCoDiagram -
-
--- | the point list is stable under 'coDiagram'.
-prpCoDiagram :: Oriented a => Diagram t n m a -> Statement
-prpCoDiagram d = Prp "CoDiagram"
-  :<=>: (dgPoints (coDiagram d) == dgPoints d) :?> Params ["d":=show d]
-                  
---------------------------------------------------------------------------------
 -- prpDiagramOrntSymbol -
 
 -- | validity of diagrams on 'OAlg.Data.Symbol.Symbol's.
 prpDiagramOrntSymbol :: Statement
 prpDiagramOrntSymbol = Prp "DiagramOrntSymbol"
-  :<=>: And [ Forall xd valid
-            , Forall xd (\(SomeDiagram d) -> prpCoDiagram d)
-            ] where
-  xd :: X (SomeDiagram OS)
-  xd = xSomeDiagramOrnt xn xStandard
+  :<=>: Forall xd valid where
+    xd :: X (SomeDiagram OS)
+    xd = xSomeDiagramOrnt xn xStandard
 
-  xn = amap1 someNatural $ xNB 0 20
+    xn = amap1 someNatural $ xNB 0 20
 
+--------------------------------------------------------------------------------
+-- prpDiagram -
 
+-- | validity for same statements of diagrams.
+prpDiagram :: Statement
+prpDiagram = Prp "Diagram" :<=>:
+  And [ prpDiagramOrntSymbol
+      -- , prpDiagrammatic 10
+      ]

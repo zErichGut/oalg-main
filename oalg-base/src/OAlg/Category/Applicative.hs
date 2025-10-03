@@ -1,8 +1,11 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GADTs, DefaultSignatures #-}
+{-# LANGUAGE ConstraintKinds #-}
+
 
 -- |
 -- Module      : OAlg.Category.Applicative
@@ -13,48 +16,91 @@
 --
 -- application on values.
 module OAlg.Category.Applicative
-  ( 
+  (
     -- * Applicative
-    Applicative(..), ($)
-  , Applicative1(..)
+    Applicative1, amap1
+
+    -- * Generalized
+  , ApplicativeG(..), amapG'
+  , ApplicationG(..), apType
+  , ApplicativeGDual1, ApplicativeGBi
+
   )
   where
 
-import Control.Monad (Functor(..))
+import Control.Monad (fmap)
 
+import Data.List (map)
+import Data.Maybe
+
+import OAlg.Data.Dualisable
 import OAlg.Data.Either
+import OAlg.Data.X
 
 --------------------------------------------------------------------------------
--- Applicative -
-  
--- | family of types having a representation in @(->)@.
-class Applicative h where
+-- ApplicativeG -
+
+-- | generalized application.
+class ApplicativeG t a b where
   -- | application.
-  amap :: h a b -> a -> b
-
-instance Applicative (->) where
-  amap h = h  
+  amapG :: a x y -> b (t x) (t y)
 
 --------------------------------------------------------------------------------
--- ($)
+-- ApplicativeG - Instances -
+
+instance ApplicativeG X (->) (->)  where amapG = fmap
+instance ApplicativeG [] (->) (->) where amapG = map
+instance ApplicativeG Maybe (->) (->) where amapG = fmap
+
+instance (ApplicativeG t f c, ApplicativeG t g c) => ApplicativeG t (Either2 f g) c where
+  amapG (Left2 f)  = amapG f
+  amapG (Right2 g) = amapG g
   
-infixr 0 $
+--------------------------------------------------------------------------------
+-- amapG' -
 
--- | right associative application on values.
-($) :: Applicative h => h a b -> a -> b
-($) = amap
+-- | prefixing a proxy.
+amapG' :: ApplicativeG t a b => q t a b -> a x y -> b (t x) (t y)
+amapG' _ = amapG
 
-instance (Applicative f, Applicative g) => Applicative (Either2 f g) where
-  amap (Left2 f)  = amap f
-  amap (Right2 g) = amap g
+--------------------------------------------------------------------------------
+-- ApplicationG -
+
+-- | attest of being 'ApplicativeG'.
+data ApplicationG t a b where
+  ApplicationG :: ApplicativeG t a b => ApplicationG t a b
+
+--------------------------------------------------------------------------------
+-- apType -
+
+-- | application to @(->)@ based on @__t__@,
+apType :: ApplicativeG t h (->) => ApplicationG t h (->)
+apType = ApplicationG
 
 --------------------------------------------------------------------------------
 -- Applicative1 -
 
--- | family of types having a representation in @f a -> f b@.
-class Applicative1 h f where
-  -- | application.
-  amap1 :: h a b -> f a -> f b
+-- | representable @__h__@s according to @__f__@.
+type Applicative1 h f = ApplicativeG f h (->)
 
-instance Functor f => Applicative1 (->) f where
-  amap1 = fmap
+--------------------------------------------------------------------------------
+-- amap1 -
+
+-- | representation of @__h__@ in @('->')@ according to @__f__@.
+amap1 :: Applicative1 h f => h x y -> f x -> f y
+amap1 = amapG
+
+--------------------------------------------------------------------------------
+-- ApplicativeGDual1 -
+
+-- | helper class to avoid undecidable instances.
+class ApplicativeG (Dual1 d) h c => ApplicativeGDual1 d h c
+
+--------------------------------------------------------------------------------
+-- ApplicativeGBi -
+
+-- | constraint for bi-applicative.
+type ApplicativeGBi d h c
+  = ( ApplicativeG d h c
+    , ApplicativeGDual1 d h c
+    )

@@ -21,8 +21,6 @@ module OAlg.Entity.Diagram.Quiver
   , coQuiver, coQuiverInv
   ) where
 
-import Data.Typeable
-
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
@@ -60,8 +58,6 @@ instance Validable (Quiver n m) where
             , (e < n) :?> Params ["(j,e,n)":= show (j,e,n)]
             , vld (succ j) n os
             ]
-
-instance (Typeable n, Typeable m) => Entity (Quiver n m)
 
 --------------------------------------------------------------------------------
 -- Duality -

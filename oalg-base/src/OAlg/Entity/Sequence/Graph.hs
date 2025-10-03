@@ -27,7 +27,7 @@ module OAlg.Entity.Sequence.Graph
   , gphset, setgph
   ) where
 
-import Control.Monad hiding (sequence)
+import Control.Monad as M hiding (sequence)
 
 import Data.List (head,map,groupBy)
 
@@ -65,9 +65,9 @@ relGraph (Graph (ix:ixs)) = valid ix && vld (0::N) ix ixs where
 instance (Entity x, Entity i, Ord i) => Validable (Graph i x) where
   valid g = Label "Graph" :<=>: relGraph g
 
-instance (Entity x, Entity i, Ord i) => Entity (Graph i x)
+-- instance (Entity x, Entity i, Ord i) => Entity (Graph i x)
 
-instance Functor (Graph i) where
+instance M.Functor (Graph i) where
   fmap f (Graph ixs) = Graph $ map (\(i,x) -> (i, f x)) ixs
 
 instance Filterable (Graph i) where
@@ -154,6 +154,7 @@ setgph (Set ab) = Graph $ amap1 aggr $ groupBy (~) ab
 --------------------------------------------------------------------------------
 -- gphUnion -
 
+-- | the union of two graphs on sets.
 gphUnion :: (Ord a, Ord b) => Graph a (Set b) -> Graph a (Set b) -> Graph a (Set b)
 gphUnion (Graph xxs) (Graph yys) = Graph $ uni xxs yys where
   uni [] yys = yys
@@ -166,6 +167,7 @@ gphUnion (Graph xxs) (Graph yys) = Graph $ uni xxs yys where
 --------------------------------------------------------------------------------
 -- gphIntersection -
 
+-- | the intersection of two graphs on sets.
 gphIntersection :: (Ord a, Ord b) => Graph a (Set b) -> Graph a (Set b) -> Graph a (Set b)
 gphIntersection (Graph xxs) (Graph yys) = Graph $ intr xxs yys where
   intr ((x,xs):xxs) ((y,ys):yys) = case x `compare` y of
@@ -177,6 +179,7 @@ gphIntersection (Graph xxs) (Graph yys) = Graph $ intr xxs yys where
 --------------------------------------------------------------------------------
 -- ghpDifference -
 
+-- | the difference of two graphs on sets.
 gphDifference :: (Ord a, Ord b) => Graph a (Set b) -> Graph a (Set b) -> Graph a (Set b)
 gphDifference (Graph xxs) (Graph yys) = Graph $ diff xxs yys where
   diff [] _   = []
@@ -189,6 +192,7 @@ gphDifference (Graph xxs) (Graph yys) = Graph $ diff xxs yys where
 --------------------------------------------------------------------------------
 -- isSubGraph -
 
+-- | testing of being a sub graph.
 isSubGraph :: (Ord a, Ord b) => Graph a (Set b) -> Graph a (Set b) -> Bool
 isSubGraph (Graph xxs) (Graph yys) = sub xxs yys where
   sub [] _ = True

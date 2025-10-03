@@ -1,12 +1,12 @@
 
 -- |
 -- Module      : OAlg.Structure.PartiallyOrdered
--- Description : lattices.
+-- Description : partially ordered types.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- 'Lattice's.
+-- partially ordered types.
 module OAlg.Structure.PartiallyOrdered
   ( module Def
   , module Prp

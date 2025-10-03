@@ -145,3 +145,26 @@ Empty2 to EntEmpty2, empty2 to fromEmpty2.
 - Elimination of the idioms 'Embeddable' and 'Forgetful' such that only the Idiom
 'Transformable' and 'Transformable...' are needed.
 - Constraints for Transformation being Vectorial.
+
+## [2.3.0.0] - 2025-02-14
+
+Indroducing generic limits.
+
+### Added
+- The class Uiversal and UniversalApplicative in the module OAlg.Limes.Universal for generic limits.
+
+### Changed
+- HomOp contains only the constructors FromOpOp and ToOpOp and as such IsoOp is generated
+by isoToOpOp ans its inverse isoFromOpOp.
+
+## [3.0.0.0] - 2025-10-03
+
+### Changed
+- Complete revision of the concept of duality (see OAlg.Data.Dualisable)
+- Introduction of generic limits.
+- Introduction of generic applications. (see OAlg.Category.Application)
+- Indroduction of disjunctive homomorphisms.
+
+### Added
+- OAlg.Limes.Exact
+

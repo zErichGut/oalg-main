@@ -29,9 +29,10 @@ module OAlg.Structure.Algebraic.Definition
 
 import OAlg.Prelude
 
-import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Distributive.Definition
 import OAlg.Structure.Vectorial.Definition
@@ -111,16 +112,14 @@ instance Transformable (Alg k) FbrOrt where tau Struct = Struct
 instance Transformable (Alg k) Add where tau Struct = Struct
 instance Transformable (Alg k) Dst where tau Struct = Struct
 instance Transformable (Alg k) (Vec k) where tau Struct = Struct
-instance Transformable1 Op (Alg k) where tau1 Struct = Struct
+instance TransformableG Op (Alg k) (Alg k) where tauG Struct = Struct
 
 --------------------------------------------------------------------------------
 -- TransformableAlg -
 
--- | transformable to @__k__-'Algebraic'@ structure.
-class ( Transformable (s k) Ort, Transformable (s k) Mlt
-      , Transformable (s k) Fbr, Transformable (s k) FbrOrt
-      , Transformable (s k) Add, Transformable (s k) Dst
-      , Transformable (s k) (Vec k)
+-- | helper class to avoid undecidable instances.
+class ( TransformableDst (s k)
+      , TransformableVec k s
       , Transformable (s k) (Alg k)
       ) => TransformableAlg k s
 

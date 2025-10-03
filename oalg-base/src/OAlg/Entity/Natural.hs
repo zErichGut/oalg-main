@@ -36,7 +36,8 @@
 -- obviously not happen for the given definition (we also use the same definition for the
 -- multiplicative structure of 'N'').
 module OAlg.Entity.Natural
-  ( -- * Natrual Numbers
+  (
+    -- * Natrual Numbers
      N'(..), toN', type (+), type (*)
 
     -- * Ordering
@@ -106,27 +107,10 @@ module OAlg.Entity.Natural
 
   , type N0, type N1, type N2, type N3, type N4, type N5
   , type N6, type N7, type N8, type N9, type N10
-{-
-, type N0, w0, type N1, w1, type N2, w2, type N3, w3
-, type N4, w4, type N5, w5, type N6, w6, type N7, w7
-, type N8, w8, type N9, w9, type N10, w10, type N11, w11
-, type N12, w12, type N13, w13, type N14, w14, type N15, w15
-, type N16, w16, type N17, w17, type N18, w18, type N19, w19
-, type N20, w20, type N21, w21, type N22, w22, type N23, w23
-, type N24, w24, type N25, w25, type N26, w26, type N27, w27
-, type N28, w28, type N29, w29, type N30, w30, type N31, w31
-, type N32, w32, type N33, w33, type N34, w34, type N35, w35
-, type N36, w36, type N37, w37, type N38, w38, type N39, w39
-, type N40, w40, type N41, w41, type N42, w42, type N43, w43
-, type N44, w44, type N45, w45, type N46, w46, type N47, w47
-, type N48, w48, type N49, w49, type N50, w50, type N51, w51
-, type N52, w52, type N53, w53, type N54, w54, type N55, w55
-, type N56, w56, type N57, w57, type N58, w58, type N59, w59
-, type N60, w60, type N61, w61, type N62, w62, type N63, w63
--}
 
-    -- * X
+  -- * X
   , xSomeNatural
+
   )
   where
 
@@ -142,6 +126,7 @@ import OAlg.Prelude
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive hiding (prpAdd1,prpAdd2)
 import OAlg.Structure.Distributive
 
@@ -202,6 +187,7 @@ type instance CmpN' (S n) (S m) = CmpN' n m
 
 ----------------------------------------
 -- N' - Enum -
+
 instance Enum N' where
   succ = S
   
@@ -221,13 +207,18 @@ instance Validable N' where
   valid N0    = SValid
   valid (S n) = valid n
 
-instance Entity N'
-
 ----------------------------------------
 -- N' - Structure -
 
+type instance Point N' = ()
+instance ShowPoint N'
+instance EqPoint N'
+instance OrdPoint N'
+instance SingletonPoint N'
+instance ValidablePoint N'
+instance TypeablePoint N'
+instance XStandardPoint N'
 instance Oriented N' where
-  type Point N' = ()
   orientation = const (():>())
 
 instance Multiplicative N' where
@@ -235,8 +226,13 @@ instance Multiplicative N' where
   N0 * _   = N0
   S n * m  = m + n * m -- (1+n)*m = n*m + m
 
-instance Fibred N' where
-  type Root N' = Orientation ()
+type instance Root N' = Orientation ()
+instance ShowRoot N'
+instance EqRoot N'
+instance ValidableRoot N'
+instance SingletonRoot N'
+instance TypeableRoot N'
+instance Fibred N'
 instance FibredOriented N'
 
 instance Additive N' where
@@ -246,7 +242,6 @@ instance Additive N' where
 
 instance Distributive N'
 instance Commutative N'
-instance Total N'
 -- instance Number N'
 
 --------------------------------------------------------------------------------
@@ -430,6 +425,7 @@ toW' n = succ $ toW' (n>-1)
 
 ----------------------------------------
 -- W' - Enum -
+
 instance Enum W' where
   succ (W' w) = W' (SW w)
 
@@ -445,23 +441,31 @@ instance Enum W' where
 instance Validable W' where
   valid (W' w) = valid w
 
-instance Entity W'
-
 ----------------------------------------
 -- W' - Structure -
-
+type instance Point W' = ()
+instance ShowPoint W'
+instance EqPoint W'
+instance OrdPoint W'
+instance SingletonPoint W'
+instance ValidablePoint W'
+instance TypeablePoint W'
 instance Oriented W' where
-  type Point W' = ()
   orientation = const (():>())
+
+type instance Root W' = Orientation ()
+instance ShowRoot W'
+instance EqRoot W'
+instance ValidableRoot W'
+instance SingletonRoot W'
+instance TypeableRoot W'
+instance Fibred W' where
+instance FibredOriented W'
 
 instance Multiplicative W' where
   one () = succ (zero (():>()))
   W' W0 * _     = W' W0
   W' (SW n) * m = m + W' n * m
-
-instance Fibred W' where
-  type Root W' = Orientation ()
-instance FibredOriented W'
 
 instance Additive W' where
   zero (():>()) = W' W0
@@ -470,7 +474,6 @@ instance Additive W' where
   
 instance Distributive W'
 instance Commutative W'
-instance Total W'
 -- instance Number W'
 
 ---------------------------------------------------------------------------------
@@ -1038,6 +1041,8 @@ type N9 = S N8
 
 -- | @10@.
 type N10 = S N9
+
+
 {-
 type N0 = 'N0
 w0 :: W N0

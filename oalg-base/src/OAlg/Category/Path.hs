@@ -26,22 +26,21 @@ module OAlg.Category.Path
   where
 
 
-import Control.Monad (join)
+import Control.Monad 
 
 import Data.Typeable
 import qualified Data.List as L
 
 import OAlg.Category.Definition
 import OAlg.Structure.Definition
-import OAlg.Entity.Definition
 
+import OAlg.Data.Identity
 import OAlg.Data.Logical
 import OAlg.Data.Equal
 import OAlg.Data.Validable
 import OAlg.Data.Maybe
 import OAlg.Data.Show
 import OAlg.Data.Dualisable
-import OAlg.Data.Opposite
 import OAlg.Data.Number
 import OAlg.Data.Boolean
 
@@ -54,6 +53,8 @@ infixr 9 :.
 data Path m x y where
   IdPath :: Struct (ObjectClass m) x -> Path m x x
   (:.)   :: m y z -> Path m x y -> Path m x z
+
+instance TransformableObjectClassTyp m => TransformableObjectClassTyp (Path m)
 
 --------------------------------------------------------------------------------
 -- ($.) -
@@ -160,7 +161,7 @@ instance (Morphism m, TransformableObjectClassTyp m, Eq2 m) => Eq2 (Path m) wher
   eq2 p q = case (p,q) of
     (IdPath Struct,IdPath Struct) -> True
     
-    (f :. p',g :. q') -> case eqlDomain (domain (Forget f)) (domain(Forget g)) f g of
+    (f :. p',g :. q') -> case eqlDomain (tau (domain f)) (tau (domain g)) f g of
       Just Refl       -> eq2 f g && eq2 p' q'
       Nothing         -> False
       
@@ -168,8 +169,6 @@ instance (Morphism m, TransformableObjectClassTyp m, Eq2 m) => Eq2 (Path m) wher
 
 instance Eq2 (Path m) => Eq (Path m x y) where
   (==) = eq2
-
-instance (Morphism h, TransformableObjectClassTyp h, Entity2 h) => Entity2 (Path h)  
 
 --------------------------------------------------------------------------------
 -- Path - Morphism -
@@ -192,14 +191,21 @@ instance Morphism m => Category (Path m) where
 --------------------------------------------------------------------------------
 -- Path - Applicative -
 
-instance Applicative m => Applicative (Path m) where
-  amap (IdPath _) x = x
-  amap (p :. f) x   = amap p (amap f x)
+instance (Category c, ApplicativeG t m c, TransformableGObjectClass t m c)
+  => ApplicativeG t (Path m) c where
+  amapG (IdPath s) = cOne (tauG s)
+  amapG (f :. p)   = amapG f . amapG p
 
 --------------------------------------------------------------------------------
 -- Path - Functorial -
-instance (Applicative m, Morphism m) => Functorial (Path m)
 
+instance TransformableGObjectClass t m c => TransformableGObjectClass t (Path m) c
+
+instance ( Morphism m, Category c, ApplicativeG t m c
+         , TransformableGObjectClass t m c
+         )
+  => FunctorialG t (Path m) c
+  
 --------------------------------------------------------------------------------
 -- Path - Cayleyan2 -
 

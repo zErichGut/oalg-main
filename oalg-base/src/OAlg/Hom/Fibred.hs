@@ -2,145 +2,175 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
--- Module      : OAlg.Hom.Oriented
--- Description : homomorphisms between fibred structures
+-- Module      : OAlg.Hom.Fibred
+-- Description : definition of homomorphisms between fibred structures
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
--- homomorphisms between 'Fibred' structures
+-- definition of homomorphisms between 'Fibred' structures
 module OAlg.Hom.Fibred
-  ( -- * Fibred
-    HomFibred(..), FunctorialHomFibred
+  (
+    -- * Fibred
+    HomFibred, FunctorialFibred
 
-    -- * Fibred Oriented
-  , HomFibredOriented
+    -- * Duality
+  , DualisableFibred
+  , toDualStk, toDualRt
+
+    -- * X
+  , xsoFbrOrtX
 
     -- * Proposition
-  , prpHomFbrOrt
+  , prpHomFbr, prpHomDisjOpFbr
+  , prpHomFibred
   )
   where
-
-import Data.Typeable
 
 import OAlg.Prelude
 
 import OAlg.Category.Path
+import OAlg.Category.Dualisable
+import OAlg.Category.SDuality
+import OAlg.Category.Unify
+
+import OAlg.Data.Variant
 
 import OAlg.Structure.Fibred
-import OAlg.Structure.Oriented.Definition hiding (Path(..))
+import OAlg.Structure.FibredOriented
+import OAlg.Structure.Oriented hiding (Path(..))
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Oriented.Definition
 
 --------------------------------------------------------------------------------
 -- HomFibred -
 
--- | type family of homomorphisms between 'Fibred' structures.
+-- | homomorphisms between 'Fibred' structures.
 --
--- __Property__ Let @h@ be an instance of 'HomFibred' then for all @__a__@, @__b__@ and @f@ in
--- @__h__ __a__ __b__@ and @x@ in @__a__@ holds: @'root' ('amap' f x) '==' 'rmap' f ('root' x)@.
-class ( Morphism h, Applicative h, Transformable (ObjectClass h) Fbr
-      , Transformable (ObjectClass h) Typ
+-- __Property__ Let @'HomFibred' __h__@, then for all @__x__@, @__y__@ and @h@ in
+-- @__h x y__@ holds:
+--
+-- (1) @'root' '.' 'amap' h '.=.' 'rmap' h '.' 'root'@.
+class ( Morphism h, Applicative h, ApplicativeRoot h
+      , Transformable (ObjectClass h) Fbr
       ) => HomFibred h where
-  rmap :: h a b -> Root a -> Root b
 
-  default rmap :: (Transformable (ObjectClass h) FbrOrt, HomOriented h)
-               => h a b -> Root a -> Root b
-  rmap h = rmap' (tauHom (homomorphous h)) h where
 
-    rmap' :: HomOriented h => Homomorphous FbrOrt a b -> h a b -> Root a -> Root b
-    rmap' (Struct :>: Struct) = omap
+instance HomFibred h => HomFibred (Path h)
+instance TransformableFbr s => HomFibred (HomEmpty s)
 
-instance HomFibred h => HomFibred (Path h) where
-  rmap (IdPath _) r = r
-  rmap (f :. pth) r = rmap f $ rmap pth r
+instance (HomFibred h, Disjunctive2 h)  => HomFibred (Variant2 v h)
+
+instance HomFibred h => HomFibred (Inv2 h)
+
+instance (Transformable s Fbr, HomFibred h) => HomFibred (Sub s h)
 
 --------------------------------------------------------------------------------
--- FunctorialHomFibred -
+-- DualisableFibred -
 
--- | functorial application of 'Fibred' homomorphisms.
-class (Category h, Functorial h, HomFibred h) => FunctorialHomFibred h
-
-instance FunctorialHomFibred h => FunctorialHomFibred (Path h)
-
---------------------------------------------------------------------------------
--- Hom -
-
-type instance Hom Fbr h = HomFibred h
-
---------------------------------------------------------------------------------
--- HomFibredOriented -
-
--- | type family of homomorphisms between 'FibredOriented' structures.
+-- | duality according to @__o__@ on 'FibredOriented' structures.
 --
--- __Property__ Let @h@ be an instance of 'HomFibredOriented' then for all @__a__@, @__b__@ and @f@ in
--- @__h__ __a__ __b__@ and @r@ in @'Root' __a__@ holds: @'rmap' f r '==' 'omap' f r@.
-class (HomOriented h , HomFibred h, Transformable (ObjectClass h) FbrOrt)
-  => HomFibredOriented h
+-- __Properties__ Let @'DualisableFibred' __s o__@, then
+-- for all @__x__@ and @s@ in @'Struct' __s x__@ holds:
+--
+-- (1) @'root' '.' 'toDualStk' q s '.=.' 'toDualRt' q s '.' 'root'@.
+--
+-- where @q@ is any proxy for @__o__@.
+class (DualisableG s (->) o Id, DualisableG s (->) o Rt, Transformable s Fbr)
+  => DualisableFibred s o
 
-instance HomFibredOriented h => HomFibredOriented (Path h)
-
---------------------------------------------------------------------------------
--- prpHomFbrOrt -
-
-relHomFbrOrtHomomorphous :: (HomFibredOriented h, Show2 h)
-  => Homomorphous FbrOrt a b -> h a b -> Root a -> Statement
-relHomFbrOrtHomomorphous (Struct :>: Struct) f r
-  = (rmap f r == omap f r) :?> Params ["f":=show2 f,"r":=show r]
-
--- | validity according to 'HomFibredOriented'.
-prpHomFbrOrt :: (HomFibredOriented h, Show2 h) => h a b -> Root a -> Statement
-prpHomFbrOrt f r = Prp "HomFbrOrt"
-  :<=>: relHomFbrOrtHomomorphous (tauHom (homomorphous f)) f r
+instance (TransformableType s, TransformableFbrOrt s, TransformableOp s) => DualisableFibred s Op
 
 --------------------------------------------------------------------------------
--- Hom -
+-- toDualStk -
 
-type instance Hom FbrOrt h = HomFibredOriented h
-
---------------------------------------------------------------------------------
--- IdHom - Hom -
-
-instance (TransformableFbr s, TransformableTyp s) => HomFibred (IdHom s) where
-  rmap IdHom r = r
-  
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s
-         , TransformableFbrOrt s, TransformableTyp s
-         )
-  => HomFibredOriented (IdHom s)
+-- | the dual stalk ginven by @'DualisableFibred' __s o__@ and induced by
+-- @'DualisableG' __s__ (->) __o__ 'Id'@.
+toDualStk :: DualisableFibred s o => q o -> Struct s x -> x -> o x
+toDualStk _ s = fromIdG (toDualG' (d s) s) where
+  d :: DualisableFibred s o => Struct s x -> DualityG s (->) o Id
+  d _ = DualityG
 
 --------------------------------------------------------------------------------
--- IsoOp - Hom -
+-- toDualRt -
 
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
-         )
-  => HomFibred (HomOp s)
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
-         )
-  => HomFibredOriented (HomOp s)
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
-         )
-  => HomFibred (IsoOp s)
-instance ( TransformableOp s, TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
-         , TransformableTyp s, Typeable s
-         )
-  => HomFibredOriented (IsoOp s)
+-- | the dual root ginven by @'DualisableFibred' __s o__@ and induced by
+-- @'DualisableG' __s__ (->) __o__ 'Rt'@.
+toDualRt :: DualisableFibred s o => q o -> Struct s x -> Root x -> Root (o x)
+toDualRt q s = fromRtG (toDualG' (d q s) s) where
+  d :: DualisableFibred s o => q o -> Struct s x -> DualityG s (->) o Rt
+  d _ _ = DualityG
 
 --------------------------------------------------------------------------------
--- OpHom -
+-- HomDisj - HomFibred -
 
-instance HomFibredOriented h => HomFibred (OpHom h)
-instance HomFibredOriented h => HomFibredOriented (OpHom h)
+instance (HomFibred h, DualisableFibred s o) => HomFibred (HomDisj s o h)
 
+--------------------------------------------------------------------------------
+-- Functorialibred -
+
+-- | functorial morphism, i.e. 'Functorial' and 'FunctorialRoot'.
+--
+-- __Note__ It's not mandatory being an homomorphism!
+class (Functorial h, FunctorialRoot h) => FunctorialFibred h
+
+instance (HomFibred h, DualisableFibred s o) => FunctorialFibred (HomDisj s o h)
+
+--------------------------------------------------------------------------------
+-- prpHomFbr -
+
+relHomFbrStruct :: (HomFibred h, Show2 h)
+  => Homomorphous Fbr x y -> h x y -> x -> Statement
+relHomFbrStruct (Struct :>: Struct) h x
+  = (root (amap h x) == rmap h (root x)) :?> Params ["h":=show2 h, "x":=show x]
+
+-- | validity according to 'HomFibred'.
+prpHomFbr :: (HomFibred h, Show2 h) => h x y -> x -> Statement
+prpHomFbr h x = Prp "HomFbr" :<=>: relHomFbrStruct (tauHom (homomorphous h)) h x
+
+--------------------------------------------------------------------------------
+-- prpHomFibred -
+
+-- | validity according to 'HomFibred'.
+prpHomFibred :: (HomFibred h, Show2 h)
+  => X (SomeApplication h) -> Statement
+prpHomFibred xsa = Prp "HomFibred" :<=>: Forall xsa (\(SomeApplication h x) -> prpHomFbr h x)
+
+--------------------------------------------------------------------------------
+-- xsoFbrOrtX -
+
+-- | random variable for some 'FibredOriented' object classes.
+xsoFbrOrtX :: s ~ FbrOrtX => X (SomeObjectClass (SHom s s Op (HomEmpty s)))
+xsoFbrOrtX = xOneOf [ SomeObjectClass (Struct :: Struct FbrOrtX OS)
+                    , SomeObjectClass (Struct :: Struct FbrOrtX (Op OS))
+                    , SomeObjectClass (Struct :: Struct FbrOrtX N)
+                    ]
+
+--------------------------------------------------------------------------------
+-- prpHomDisOpFbr -
+
+relHomFbrFbrOrtX :: (HomFibred h, Show2 h)
+  => Homomorphous FbrOrtX x y -> h x y -> Statement
+relHomFbrFbrOrtX (Struct :>: Struct) h
+  = Forall xStandard (prpHomFbr h)
+
+relHomDisjOpFbr :: (HomFibred h, Show2 h, Transformable s FbrOrtX, DualisableFibred s o)
+  => X (SomeMorphism (HomDisj s o h)) -> Statement
+relHomDisjOpFbr xsh = Forall xsh
+  (\(SomeMorphism h) -> relHomFbrFbrOrtX (tauHom (homomorphous h)) h)
+
+-- | validity of @'HomDisjEmpty' 'FbrOrt' 'Op'@ according to 'HomFibred'.
+prpHomDisjOpFbr :: Statement
+prpHomDisjOpFbr = Prp "HomDisjOpFbr" :<=>: relHomDisjOpFbr xsh where
+  xsh :: X (SomeMorphism (HomDisjEmpty FbrOrtX Op))
+  xsh = amap1 smCmpb2 $ xscmHomDisj xsoFbrOrtX XEmpty

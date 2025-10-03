@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           oalg-base
-version:        2.2.0.0
+version:        3.0.0.0
 synopsis:       Algebraic structures on oriented entities and limits as a tool kit to solve algebraic problems.
 description:    Basic definition of algebraic structures on oriented entities.
                 .
@@ -49,9 +49,12 @@ library
       OAlg.Adjunction.Limes
       OAlg.Category.Applicative
       OAlg.Category.Definition
+      OAlg.Category.Dualisable
       OAlg.Category.Map
+      OAlg.Category.NaturalTransformable
       OAlg.Category.Path
       OAlg.Category.Proposition
+      OAlg.Category.SDuality
       OAlg.Category.Unify
       OAlg.Control.Action
       OAlg.Control.Exception
@@ -67,17 +70,19 @@ library
       OAlg.Data.Dualisable
       OAlg.Data.Either
       OAlg.Data.Equal
+      OAlg.Data.EqualExtensional
       OAlg.Data.Filterable
       OAlg.Data.FinitelyPresentable
-      OAlg.Data.Generator
+      OAlg.Data.HomCo
       OAlg.Data.Identity
       OAlg.Data.Logical
       OAlg.Data.Maybe
       OAlg.Data.Number
-      OAlg.Data.Opposite
       OAlg.Data.Ord
       OAlg.Data.Ornt
+      OAlg.Data.Proxy
       OAlg.Data.Reducible
+      OAlg.Data.Relation
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular
@@ -89,10 +94,12 @@ library
       OAlg.Data.Tree
       OAlg.Data.TypeLits
       OAlg.Data.Validable
+      OAlg.Data.Variant
       OAlg.Data.X
       OAlg.Entity.Definition
       OAlg.Entity.Diagram
       OAlg.Entity.Diagram.Definition
+      OAlg.Entity.Diagram.Diagrammatic
       OAlg.Entity.Diagram.Proposition
       OAlg.Entity.Diagram.Quiver
       OAlg.Entity.Diagram.Transformation
@@ -123,6 +130,8 @@ library
       OAlg.Entity.Slice.Adjunction
       OAlg.Entity.Slice.Definition
       OAlg.Entity.Slice.Free
+      OAlg.Entity.Slice.Liftable
+      OAlg.Entity.Slice.Sliced
       OAlg.Entity.Sum
       OAlg.Entity.Sum.Definition
       OAlg.Entity.Sum.SumSymbol
@@ -132,23 +141,39 @@ library
       OAlg.Hom.Definition
       OAlg.Hom.Distributive
       OAlg.Hom.Fibred
+      OAlg.Hom.FibredOriented
       OAlg.Hom.Multiplicative
-      OAlg.Hom.Multiplicative.Definition
-      OAlg.Hom.Multiplicative.Proposition
       OAlg.Hom.Oriented
       OAlg.Hom.Oriented.Definition
       OAlg.Hom.Oriented.Proposition
       OAlg.Hom.Proposition
       OAlg.Hom.Vectorial
       OAlg.Limes.Cone
+      OAlg.Limes.Cone.Conic
+      OAlg.Limes.Cone.Conic.Core
+      OAlg.Limes.Cone.Conic.Duality
+      OAlg.Limes.Cone.Core
       OAlg.Limes.Cone.Definition
-      OAlg.Limes.Cone.EligibleFactor
+      OAlg.Limes.Cone.Duality
+      OAlg.Limes.Cone.FactorChain
+      OAlg.Limes.Cone.Structure
+      OAlg.Limes.Cone.ZeroHead
+      OAlg.Limes.Cone.ZeroHead.Core
+      OAlg.Limes.Cone.ZeroHead.Duality
       OAlg.Limes.Definition
+      OAlg.Limes.Definition.Core
+      OAlg.Limes.Definition.Duality
+      OAlg.Limes.Definition.Proposition
       OAlg.Limes.EqualizersAndCoequalizers
-      OAlg.Limes.Exact.ConsZero
+      OAlg.Limes.Exact.ConsecutiveZero
       OAlg.Limes.Exact.Deviation
+      OAlg.Limes.Exact.Free
+      OAlg.Limes.Exact.ZeroPoint
       OAlg.Limes.KernelsAndCokernels
       OAlg.Limes.Limits
+      OAlg.Limes.Limits.Core
+      OAlg.Limes.Limits.Duality
+      OAlg.Limes.Limits.Proposition
       OAlg.Limes.MinimaAndMaxima
       OAlg.Limes.Perspective
       OAlg.Limes.ProductsAndSums
@@ -172,6 +197,8 @@ library
       OAlg.Structure.Fibred
       OAlg.Structure.Fibred.Definition
       OAlg.Structure.Fibred.Proposition
+      OAlg.Structure.Fibred.Root
+      OAlg.Structure.FibredOriented
       OAlg.Structure.Lattice
       OAlg.Structure.Lattice.Definition
       OAlg.Structure.Lattice.Proposition
@@ -183,7 +210,12 @@ library
       OAlg.Structure.Operational
       OAlg.Structure.Oriented
       OAlg.Structure.Oriented.Definition
+      OAlg.Structure.Oriented.Opposite
+      OAlg.Structure.Oriented.Orientation
+      OAlg.Structure.Oriented.Path
+      OAlg.Structure.Oriented.Point
       OAlg.Structure.Oriented.Proposition
+      OAlg.Structure.Oriented.X
       OAlg.Structure.PartiallyOrdered
       OAlg.Structure.PartiallyOrdered.Definition
       OAlg.Structure.PartiallyOrdered.Proposition

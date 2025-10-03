@@ -19,6 +19,7 @@ module OAlg.Category.Map
   )
   where
 
+import OAlg.Category.Applicative
 import OAlg.Category.Definition
 import OAlg.Structure.Definition
 
@@ -37,7 +38,7 @@ instance Category (Map s) where
   cOne Struct = Map id
   Map f . Map g = Map (f . g)
 
-instance Applicative1 (Map s) [] where
-  amap1 (Map f) xs = amap1 f xs
+instance ApplicativeG [] (Map s) (->) where
+  amapG (Map f) xs = amap1 f xs
 
-instance Functorial1 (Map s) []
+instance FunctorialG [] (Map s) (->)

@@ -1,12 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , FlexibleInstances
-  , GADTs
-  , MultiParamTypeClasses
-  , StandaloneDeriving
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Vector
@@ -17,7 +15,8 @@
 --
 -- 'Vector's with coefficients, lying in a 'Semiring'.
 module OAlg.Entity.Matrix.Vector
-  ( -- * Vector
+  (
+    -- * Vector
     Vector(..), vecpsq, cf, cfsssy, ssycfs, vecrc, vecAppl
 
     -- * Hom
@@ -31,6 +30,7 @@ module OAlg.Entity.Matrix.Vector
 
     -- * X
   , xVecN
+
   ) where
 
 import Control.Monad
@@ -43,7 +43,6 @@ import Data.Foldable
 import OAlg.Prelude
 
 import OAlg.Data.Singleton
--- import OAlg.Data.Ord
 
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
@@ -60,7 +59,6 @@ import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Entries
 import OAlg.Entity.Matrix.Definition
 
-import OAlg.Hom.Definition
 import OAlg.Hom.Fibred
 import OAlg.Hom.Additive
 import OAlg.Hom.Vectorial
@@ -119,13 +117,19 @@ instance Semiring r => Validable (Vector r) where
             , (not $ isZero $ fst ri) :?> Params ["(r,i)":=show ri]
             ]
 
-instance Semiring r => Entity (Vector r)
+-- instance Semiring r => Entity (Vector r)
 
 --------------------------------------------------------------------------------
 -- Vector - Euclidean -
 
+type instance Root (Vector r) = ()
+
+instance ShowRoot (Vector r)
+instance EqRoot (Vector r)
+instance ValidableRoot (Vector r)
+instance TypeableRoot (Vector r)
+
 instance Semiring r => Fibred (Vector r) where
-  type Root (Vector r) = ()
   root _ = ()
 
 instance Semiring r => Additive (Vector r) where
@@ -170,7 +174,8 @@ ssycfs s x = Vector (psqCompose (PSequence $ lcs $ ssylc x) (PSequence $ listN s
 --
 -- __Property__ Let @s = s 0 '<' s 1 '<' ..@ be in @'Set' __a__@ and
 -- @r@ be in @'Vector' __r__@ then holds:
--- @'cfsssy' s r '==' 'cf' r 0 '!' 'sy' (s 0) '+' 'cf' r  1 '!' 'sy' (s 1) '+' ..@.
+--
+-- (1) @'cfsssy' s r '==' 'cf' r 0 '!' 'sy' (s 0) '+' 'cf' r  1 '!' 'sy' (s 1) '+' ..@.
 cfsssy :: (Semiring r, Commutative r, Entity a, Ord a) => Set a -> Vector r -> SumSymbol r a
 cfsssy s v = sumSymbol $ psqxs $ psqCompose (vecpsq v) (PSequence $ map (\(a,i) -> (i,a)) $ listN s)
                              -- :: PSequence i r    :: PSeqeunce a i
@@ -197,6 +202,7 @@ vecAppl m v = crvec (mtxColRow m `etsMlt` vecrc v) where
 --------------------------------------------------------------------------------
 -- HomSymbol -
 
+-- | homomorphisms 'Vector' and symbolic sums 'SumSymbol'.
 data HomSymbol r x y where
   HomSymbol :: (Entity x, Ord x, Entity y, Ord y)
     => PSequence x (LinearCombination r y) -> HomSymbol r (SumSymbol r x) (SumSymbol r y)
@@ -221,20 +227,22 @@ instance Semiring r => Validable (HomSymbol r x y) where
     HomMatrix m   -> Label "HomMatrix" :<=>: valid m
 instance Semiring r => Validable2 (HomSymbol r)
 
-instance (Semiring r, Typeable x, Typeable y) => Entity (HomSymbol r x y)
-instance Semiring r => Entity2 (HomSymbol r)
+-- instance (Semiring r, Typeable x, Typeable y) => Entity (HomSymbol r x y)
+-- instance Semiring r => Entity2 (HomSymbol r)
+
 
 --------------------------------------------------------------------------------
 -- HomSymbol - HomVectorial -
 
-instance (Semiring r, Commutative r) => Applicative (HomSymbol r) where
-  amap (HomSymbol lcs) s = ssySum f s where
+instance (Semiring r, Commutative r) => ApplicativeG Id (HomSymbol r) (->) where
+  amapG (HomSymbol lcs) (Id s) = Id $ ssySum f s where
     f x = case lcs ?? x of
       Just lc -> lc
-      Nothing -> LinearCombination []
-  amap (Cfs xs) s = ssycfs xs s
-  amap (Ssy xs) v = cfsssy xs v
-  amap (HomMatrix m) v = vecAppl m v
+      Nothing -> LinearCombination []      
+  amapG (Cfs xs) (Id s) = Id $ ssycfs xs s
+  amapG (Ssy xs) (Id v) = Id $ cfsssy xs v
+  amapG (HomMatrix m) (Id v) = Id $ vecAppl m v
+
 
 instance (Semiring r, Commutative r) => Morphism (HomSymbol r) where
   type ObjectClass (HomSymbol r) = Vec r
@@ -243,13 +251,15 @@ instance (Semiring r, Commutative r) => Morphism (HomSymbol r) where
     Cfs _       -> Struct :>: Struct
     Ssy _       -> Struct :>: Struct
     HomMatrix _ -> Struct :>: Struct
-  
+
+instance ApplicativeG Rt (HomSymbol r) (->) where
+  amapG (HomSymbol _) = amapRt (const ())
+  amapG (Cfs _)       = amapRt (const ())
+  amapG (Ssy _)       = amapRt (const ())
+  amapG (HomMatrix _) = amapRt (const ())
 
 instance (Semiring r, Commutative r) => HomFibred (HomSymbol r) where
-  rmap (HomSymbol _) = const ()
-  rmap (Cfs _)       = const ()
-  rmap (Ssy _)       = const ()
-  rmap (HomMatrix _) = const ()
+
 
 instance (Semiring r, Commutative r) => HomAdditive (HomSymbol r)
 
@@ -271,7 +281,7 @@ instance (Semiring r, Commutative r) => HomVectorial r (HomSymbol r)
 -- 'LinearCombination' of @h '$' x@ is representable in @ys@, then @'Representable' h xs ys@ is
 -- 'valid'.
 data Representable r h x y where
-  Representable :: (Hom (Vec r) h, Entity x, Ord x, Entity y, Ord y)
+  Representable :: (HomVectorial r h, Entity x, Ord x, Entity y, Ord y)
     => h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y
     -> Representable r h (SumSymbol r x) (SumSymbol r y)
 
@@ -283,12 +293,12 @@ instance Validable (Representable r h x y) where
   valid (Representable h xs ys) = Label "Representable"
     :<=>: vldsVec (tauHom (homomorphous h)) h xs ys where
 
-    vldsVec :: (Hom (Vec r) h, Entity x, Ord x, Ord y)
+    vldsVec :: (HomVectorial r h, Entity x, Ord x, Ord y)
       => Homomorphous (Vec r) (SumSymbol r x) (SumSymbol r y)
       -> h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y -> Statement
     vldsVec (Struct :>: _) h xs ys = vlds h (listN xs) ys
 
-    vlds :: (Semiring r, Commutative r, Hom (Vec r) h, Entity x, Ord x, Ord y)
+    vlds :: (Semiring r, Commutative r, HomVectorial r h, Entity x, Ord x, Ord y)
       => h (SumSymbol r x) (SumSymbol r y) -> [(x,N)] -> Set y -> Statement
     vlds _ [] _           = SValid
     vlds h ((x,j):xjs) ys = vld j (ssylc $ h $ sy x) ys && vlds h xjs ys
@@ -301,7 +311,7 @@ instance Validable (Representable r h x y) where
 --------------------------------------------------------------------------------
 -- repMatrix -
 
-repMatricVec :: (Hom (Vec r) h, Entity x, Ord x, Ord y)
+repMatricVec :: (HomVectorial r h, Entity x, Ord x, Ord y)
   => Homomorphous (Vec r) (SumSymbol r x) (SumSymbol r y)
   -> h (SumSymbol r x) (SumSymbol r y) -> Set x -> Set y -> Matrix r
 repMatricVec (Struct :>: Struct) h xs ys = Matrix r c ets where
@@ -403,3 +413,4 @@ prpRepMatrixZ n m = Forall xrv (uncurry prpRepMatrix) where
   c   = dim () ^ m
   r   = dim () ^ n
   xv  = xVecN m (xZB (-100) 100) 
+

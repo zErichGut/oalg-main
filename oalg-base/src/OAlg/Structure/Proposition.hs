@@ -25,6 +25,7 @@ import OAlg.Structure.Lattice
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 
@@ -85,6 +86,32 @@ prpStructureOS = Prp "StructureOS" :<=>:
       ]
 
 --------------------------------------------------------------------------------
+-- prpStructureOp -
+
+prpStructureOp :: Statement
+prpStructureOp = Prp "StructureOp" :<=>:
+  And [ prpOrt (xStandard :: XOrt (Op OS))
+      , prpMlt (xStandardMlt :: XMlt (Op OS))
+      , prpFbr (xStandard :: XFbr (Op OS))
+      , prpFbrOrt (xStandard :: XFbrOrt (Op OS))
+      , prpAdd (xStandardAdd :: XAdd (Op OS))
+      , prpDst (xStandardDst :: XDst (Op OS))
+      ]
+
+--------------------------------------------------------------------------------
+-- prpStructureId -
+
+prpStructureId :: Statement
+prpStructureId = Prp "StructureId" :<=>:
+  And [ prpOrt (xStandard :: XOrt (Id OS))
+      , prpMlt (xStandardMlt :: XMlt (Id OS))
+      , prpFbr (xStandard :: XFbr (Id OS))
+      , prpFbrOrt (xStandard :: XFbrOrt (Id OS))
+      , prpAdd (xStandardAdd :: XAdd (Id OS))
+      , prpDst (xStandardDst :: XDst (Id OS))
+      ]
+
+--------------------------------------------------------------------------------
 -- prpStructure -
 
 -- | validity of some structures.
@@ -95,4 +122,6 @@ prpStructure = Prp "Structure" :<=>:
       , prpStructureZ
       , prpStructureQ
       , prpStructureOS
+      , prpStructureOp
+      , prpStructureId
       ]

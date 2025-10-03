@@ -21,7 +21,7 @@
 module OAlg.Structure.Multiplicative.Definition
   (
     -- * Multiplicative
-    Multiplicative(..), one', isOne, Mlt, TransformableMlt
+    Multiplicative(..), one', isOne, Mlt, TransformableMlt, tauMlt
 
     -- * Transposable
   , TransposableMultiplicative
@@ -46,6 +46,7 @@ import qualified Prelude as A
 import Control.Monad
 import Control.Exception
 
+import Data.Kind
 import Data.List(repeat)
 import Data.Foldable
 
@@ -161,6 +162,12 @@ instance Multiplicative c => Multiplicative (Op c) where
   one = Op . one
   Op f * Op g = Op (g * f)
   npower (Op f) n = Op (npower f n)
+
+instance Multiplicative c => Multiplicative (Id c) where
+  one = Id . one
+  Id f * Id g = Id (f * g)
+  npower (Id f) n = Id (npower f n)
+
 
 --------------------------------------------------------------------------------
 -- one' -
@@ -347,10 +354,12 @@ instance Multiplicative c => Validable (Inv c) where
         ]
     where prms = Params ["f":=show f,"f'":=show f']
 
-instance Multiplicative c => Entity (Inv c)
-
+type instance Point (Inv c) = Point c
+instance ShowPoint c => ShowPoint (Inv c)
+instance EqPoint c => EqPoint (Inv c)
+instance ValidablePoint c => ValidablePoint (Inv c)
+instance TypeablePoint c => TypeablePoint (Inv c)
 instance Multiplicative c => Oriented (Inv c) where
-  type Point (Inv c) = Point c
   orientation (Inv f _) = orientation f
 
 instance Multiplicative c => Multiplicative (Inv c) where
@@ -384,14 +393,26 @@ type instance Structure Mlt x = Multiplicative x
 instance Transformable Mlt Typ where tau Struct = Struct
 instance Transformable Mlt Ent where tau Struct = Struct
 instance Transformable Mlt Ort where tau Struct = Struct
-instance Transformable1 Op Mlt where tau1 Struct = Struct
+instance TransformableG Op Mlt Mlt where tauG Struct = Struct
+instance TransformableG Op (Mlt,t) Mlt where tauG = tauG . tauFst
 instance TransformableOp Mlt
+instance TransformableGRefl Op Mlt
+
+instance Transformable Mlt Type where tau _ = Struct
+instance TransformableType Mlt
+
+--------------------------------------------------------------------------------
+-- tauMlt -
+
+-- | 'tau' for 'Mlt'.
+tauMlt :: Transformable s Mlt => Struct s x -> Struct Mlt x
+tauMlt = tau
 
 --------------------------------------------------------------------------------
 -- TransformableMlt -
 
--- | transformable to 'Multiplicative' structure.
-class (Transformable s Ort, Transformable s Mlt) => TransformableMlt s
+-- | helper class to avoid undecidable instances.
+class (TransformableOrt s, Transformable s Mlt) => TransformableMlt s
 
 instance TransformableTyp Mlt
 instance TransformableOrt Mlt

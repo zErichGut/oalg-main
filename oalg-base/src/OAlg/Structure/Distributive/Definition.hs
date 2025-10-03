@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Distributive.Definition
@@ -16,18 +17,22 @@
 -- distributive structures, i.e. multiplicative structures with a suitable additive structure.
 module OAlg.Structure.Distributive.Definition
   ( -- * Distributive
-    Distributive, Dst, TransformableDst
+    Distributive, Dst, TransformableDst, tauDst
 
     -- * Transposable
   , TransposableDistributive
   )
   where
 
+import Data.Kind
+
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Fibred.Definition
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive.Definition
 
 --------------------------------------------------------------------------------
@@ -65,6 +70,7 @@ instance Distributive Z
 instance Distributive Q
 instance Entity p => Distributive (Orientation p)
 instance Distributive d => Distributive (Op d)
+instance Distributive d => Distributive (Id d)
 
 --------------------------------------------------------------------------------
 -- Transposable -
@@ -84,6 +90,7 @@ instance Entity p => TransposableDistributive (Orientation p)
 instance TransposableDistributive N
 instance TransposableDistributive Z
 instance TransposableDistributive Q
+
 --------------------------------------------------------------------------------
 -- Dst -
   
@@ -92,6 +99,9 @@ data Dst
 
 type instance Structure Dst x = Distributive x
 
+instance Transformable Dst Type where tau _ = Struct
+instance TransformableType Dst
+
 instance Transformable Dst Typ where tau Struct = Struct
 instance Transformable Dst Ent where tau Struct = Struct
 instance Transformable Dst Ort where tau Struct = Struct
@@ -99,16 +109,25 @@ instance Transformable Dst Mlt where tau Struct = Struct
 instance Transformable Dst Fbr where tau Struct = Struct
 instance Transformable Dst FbrOrt where tau Struct = Struct
 instance Transformable Dst Add where tau Struct = Struct
-instance Transformable1 Op Dst where tau1 Struct = Struct
+instance TransformableG Op Dst Dst where tauG Struct = Struct
+instance TransformableG Op (Dst,t) Dst where tauG = tauG . tauFst
 instance TransformableOp Dst
+instance TransformableGRefl Op Dst
+
+--------------------------------------------------------------------------------
+-- tauDst -
+
+-- | 'tau' for 'Dst'.
+tauDst :: Transformable s Dst => Struct s x -> Struct Dst x
+tauDst = tau
 
 --------------------------------------------------------------------------------
 -- TransformableDst -
 
--- | transformable to 'Distributive' structure.
-class ( Transformable s Ort, Transformable s Mlt
-      , Transformable s Fbr, Transformable s Add
-      , Transformable s FbrOrt
+-- | helper class to avoid undecidable instances.
+class ( TransformableFbrOrt s
+      , TransformableMlt s
+      , TransformableAdd s
       , Transformable s Dst
       ) => TransformableDst s
 

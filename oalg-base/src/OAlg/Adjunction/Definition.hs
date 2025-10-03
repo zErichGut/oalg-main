@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Adjunction.Definition
@@ -19,19 +20,24 @@
 module OAlg.Adjunction.Definition
   (
     -- * Adjunction
-    Adjunction(..), unitr, unitl, adjl, adjr, adjHomMlt
+    Adjunction(..), unitr, unitl, adjl, adjr
+  , adjHomMlt, adjHomDst
+  , adjHomDisj
 
-    -- * Dual
-  , coAdjunction
+    -- * Map
+  , adjMapCnt
+  , coAdjunctionOp
 
     -- * Proposition
   , prpAdjunction, prpAdjunctionRight, prpAdjunctionLeft
+
   ) where
 
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
 
 import OAlg.Hom
 
@@ -39,8 +45,8 @@ import OAlg.Hom
 -- Adjunction -
 
 -- | adjunction between two multiplicative structures @__d__@ and @__c__@ according
---   two given multiplicative homomorphisms @l :: __h__ __c__ __d__@ and
---   @r :: __h__ __d__ __c__@.  
+--   two given multiplicative homomorphisms @l :: __h c d__@ and
+--   @r :: __h d c__@.  
 --
 -- @
 --              l
@@ -50,7 +56,7 @@ import OAlg.Hom
 --              r
 -- @
 --
---  __Property__ Let @'Adjunction' l r u v@ be in @'Adjunction' __h__ __d__ __c__@ where
+--  __Property__ Let @'Adjunction' l r u v@ be in @'Adjunction' __h d c__@ where
 --  @__h__@ is a 'Mlt'-homomorphism,
 --  then holds:
 --
@@ -215,18 +221,57 @@ adjHomMlt :: Hom Mlt h => Adjunction h d c -> Homomorphous Mlt d c
 adjHomMlt (Adjunction _ r _ _) = tauHom (homomorphous r)
 
 --------------------------------------------------------------------------------
--- Adjunction - Duality -
+-- adjHomDst -
 
-type instance Dual (Adjunction h d c) = Adjunction (OpHom h) (Op c) (Op d)
+-- | attest of being 'Distributive' homomorphous.
+adjHomDst :: HomDistributive h => Adjunction h d c -> Homomorphous Dst d c
+adjHomDst (Adjunction _ r _ _) = tauHom (homomorphous r)
 
+--------------------------------------------------------------------------------
+-- adjHomDisj -
 
--- | the dual adjunction.
-coAdjunction :: Hom Mlt h => Adjunction h d c -> Dual (Adjunction h d c)
-coAdjunction (Adjunction l r u v)
-  = Adjunction (OpHom r) (OpHom l) (coUnit v) (coUnit u) where
+-- | the induce adjunction.
+adjHomDisj ::
+  ( HomMultiplicative h
+  , Transformable (ObjectClass h) s
+  )
+  => Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) x y
+adjHomDisj (Adjunction l r u v) = Adjunction (homDisj l) (homDisj r) u v
 
-  coUnit :: (Point x -> x) -> Point (Op x) -> Op x
-  coUnit u = Op . u
+--------------------------------------------------------------------------------
+-- adjMapCnt -
+
+-- | contravariant mapping of 'Adjunction'.
+adjMapCnt :: FunctorialOriented h
+  => Variant2 Contravariant (Inv2 h) x x'
+  -> Variant2 Contravariant (Inv2 h) y y'
+  -> Adjunction (Variant2 Covariant h) x y -> Adjunction (Variant2 Covariant h) y' x'
+adjMapCnt (Contravariant2 (Inv2 tx fx)) (Contravariant2 (Inv2 ty fy))
+  (Adjunction (Covariant2 l) (Covariant2 r) u v) = Adjunction l' r' u' v' where
+
+  l' = Covariant2 (ty . r . fx) 
+  r' = Covariant2 (tx . l . fy)
+  u' = amapf tx . v . pmapf fx
+  v' = amapf ty . u . pmapf fy
+
+--------------------------------------------------------------------------------
+-- coAdjunction -
+
+coAdjunctionStruct ::
+  ( HomMultiplicative h
+  , Transformable (ObjectClass h) s
+  , TransformableGRefl o s
+  , DualisableMultiplicative s o
+  )
+  => Homomorphous s x y
+  -> Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj s o h)) (o y) (o x)
+coAdjunctionStruct (sx:>:sy) adj = adjMapCnt (isoHomDisj sx) (isoHomDisj sy) (adjHomDisj adj)
+
+-- | the co-'Adjunction' according to 'Op'.
+coAdjunctionOp :: HomMultiplicative h
+  => Adjunction h x y -> Adjunction (Variant2 Covariant (HomDisj Mlt Op h)) (Op y) (Op x)
+coAdjunctionOp a = coAdjunctionStruct (adjHomMlt a) a 
+
 
 --------------------------------------------------------------------------------
 -- relAdjunctionRightUnit -
@@ -271,7 +316,7 @@ prpAdjunctionRight adj@(Adjunction _ r _ _) x f = Prp "AdjunctionRight" :<=>:
 -- | validity of the unit on the left side.
 prpAdjunctionLeft :: (Hom Mlt h, Show2 h) => Adjunction h d c -> Point d -> d -> Statement
 prpAdjunctionLeft adj y g = Prp "AdjucntionLeft" :<=>:
-  prpAdjunctionRight (coAdjunction adj) y (Op g)
+  prpAdjunctionRight (coAdjunctionOp adj) y (Op g)
 
 --------------------------------------------------------------------------------
 -- prpAjunction -

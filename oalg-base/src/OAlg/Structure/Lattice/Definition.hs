@@ -23,6 +23,7 @@ module OAlg.Structure.Lattice.Definition
 
 import OAlg.Prelude
 
+import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.PartiallyOrdered.Definition
 
 --------------------------------------------------------------------------------

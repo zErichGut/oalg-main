@@ -8,6 +8,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Category.Definition
@@ -19,9 +20,11 @@
 -- categories of morphisms. We adapted the concept of categories form 'Control.Category.Category' to
 -- better cover our needs.
 module OAlg.Category.Definition
-  ( 
+  (
     -- * Category
     Category(..), cOne'
+  , Sub(..), cOneSub, sub, sub', subG
+  , Op2(..)
 
     -- | __Some basic definitions in the category @('->')@__
   , id
@@ -30,31 +33,37 @@ module OAlg.Category.Definition
   , curry3, uncurry3
 
     -- * Cayleyan
-  , Cayleyan2(..)
+  , Cayleyan2(..), Inv2(..), inv2
+  , inv2Forget
   
     -- * Morphism
   , Morphism(..)
-  , Homomorphous(..), tauHom, tau1Hom
-  , eqlDomain, eqlRange
+  , Homomorphous(..), tauHom, tauHomG, tau1Hom
+  , eqlDomain, eqlRange, eqlEndo
   , eqlMorphism
   -- , toOp2Struct
 
     -- * Applicative
-  , Applicative(..), ($)
-  , Applicative1(..)
+  , ApplicativeG(..)
+  , Applicative1, amap1
   
     -- * Functorial
-  , Functorial
-  , Functorial1
-
-    -- * Forget
-  , Forget(..)
-
-    -- * Transformables
-  , TransformableObjectClassTyp
+  , amapF
+  , Functorial1, Functor1(..)
+  , FunctorialG, FunctorG(..)
   
+    -- * Transformables
+  , TransformableObjectClass 
+
+  , TransformableObjectClassTyp
+  , TransformableGObjectClass
+  , TransformableGObjectClassDomain
+  , TransformableGObjectClassRange
+
   )
   where
+
+import Data.Bool
 
 import Data.Type.Equality
 import Data.Typeable
@@ -65,7 +74,6 @@ import Data.List ((++))
 import OAlg.Data.Show
 import OAlg.Data.Equal
 
-import OAlg.Data.Opposite
 import OAlg.Data.Either
 
 import OAlg.Category.Applicative
@@ -139,6 +147,13 @@ eqlMorphism :: Typeable m
 eqlMorphism Struct Struct Struct Struct _ _ = eqT
 
 --------------------------------------------------------------------------------
+-- eqlEndo -
+
+-- | maybe endomorphism.
+eqlEndo :: Struct Typ x -> Struct Typ y -> h x y -> Maybe (x :~: y)
+eqlEndo Struct Struct _ = eqT
+
+--------------------------------------------------------------------------------
 -- Homomorphous -
 
 infix 5 :>:
@@ -156,6 +171,13 @@ instance Eq2 (Homomorphous m)
 -- | transforming homomorphous structural attests. 
 tauHom :: Transformable s t => Homomorphous s x y -> Homomorphous t x y
 tauHom (d :>: r) = tau d :>: tau r
+
+--------------------------------------------------------------------------------
+-- tauHomG -
+
+-- | transforming homomorphous structural attests.
+tauHomG :: TransformableG t u v => Homomorphous u x y -> Homomorphous v (t x) (t y)
+tauHomG (d :>: r) = tauG d :>: tauG r
 
 --------------------------------------------------------------------------------
 -- tau1Hom -
@@ -191,17 +213,6 @@ class Morphism m where
   range  :: m x y -> Struct (ObjectClass m) y
   range m = r where _ :>: r = homomorphous m
 
---------------------------------------------------------------------------------
--- toOp2Struct -
-
--- | transforming a 'Struct' where __@p@__ serves only as a proxy for __@m@__ and will not
---   be evaluated.
-toOp2Struct :: p m -> Struct (ObjectClass m) x -> Struct (ObjectClass (Op2 m)) x
-toOp2Struct _ = id
-
---------------------------------------------------------------------------------
--- Morphism - Instance -
-
 instance Morphism (Homomorphous s) where
   type ObjectClass (Homomorphous s) = s
   homomorphous = id
@@ -210,25 +221,24 @@ instance Morphism (->) where
   type ObjectClass (->) = Type
   homomorphous _ = Struct :>: Struct
 
-instance Morphism h => Morphism (Op2 h) where
-  type ObjectClass (Op2 h) = ObjectClass h
-  domain (Op2 h) = range h
-  range (Op2 h) = domain h
-  
 --------------------------------------------------------------------------------
 -- Category -
+
 infixr 9 .
+
 -- | category of morphisms.
 --
 --   __Properties__ Let __@c@__ be a type instance of the class 'Category', then
 --   holds:
 --
 --  (1) #Cat1#For all types __@x@__, __@y@__ and @f@ in __@c@__ __@x@__ __@y@__ holds:
---      @'cOne' ('range' f) '.' f = f@ and @f '.' 'cOne' ('domain' f) = f@.
+--      @'cOne' ('range' f) '.' f 'OAlg.Data.EqualExtensional..=.' f@ and
+--      @f '.' 'cOne' ('domain' f) 'OAlg.Data.EqualExtensional..=.' f@.
 --
 --  (1) #Cat2#For all types __@w@__, __@x@__, __@y@__, __@z@__
 --      and @f@ in __@c@__ __@x@__ __@w@__, @g@ in __@c@__ __@y@__ __@x@__,
---      @h@ in __@c@__ __@z@__ __@y@__ holds: @f '.' (g '.' h) = (f '.' g) '.' h@. 
+--      @h@ in __@c@__ __@z@__ __@y@__ holds:
+--      @f '.' (g '.' h) 'OAlg.Data.EqualExtensional..=.' (f '.' g) '.' h@. 
 class Morphism c => Category c where
   -- | the identity morphism for an eligible __@x@__.
   cOne :: Struct (ObjectClass c) x -> c x x
@@ -237,12 +247,7 @@ class Morphism c => Category c where
 --------------------------------------------------------------------------------
 -- cOne' -
 
--- | the 'cOne' to a given @'Struct' ('ObjectClass' __c__)@. The type @__p c__@ serves only as
---   proxy and 'cOne'' is lazy in it.
---
---   __Note__ As 'ObjectClass' may be a non-injective type family,
---   the type checker needs some times a little bit more information
---   to pic the right 'cOne'.
+-- | prefixing a proxy.
 cOne' :: Category c => p c -> Struct (ObjectClass c) x -> c x x
 cOne' _ = cOne
 
@@ -257,39 +262,158 @@ instance Category (->) where
   cOne Struct = \x -> x
   f . g = \x -> f (g x)
 
+--------------------------------------------------------------------------------
+-- FunctorialG -
+
+-- | functorials from @'Category' __a__@ to @'Category' __b__@ according to the
+-- type function @__t__@.
+--
+--   __Properties__ Let @'FunctorialG' __f a b__@, the holdst: 
+--
+--   (1) For all @__x__@ and  @s@ in @'Struct' ('ObjectClass' __a__) __x__@ holds:
+--   @'amapG' ('cOne' s) 'OAlg.Data.EqualExtensional..=.' 'cOne' ('tauG' s)@.
+--
+--   (1) For all __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
+--   @g@ in __@c@__ __@x@__ __@y@__ holds:
+--   @'amapG' (f '.' g) 'OAlg.Data.EqualExtensional..=.' 'amapG' f '.' 'amapG' g@. 
+class ( Category a, Category b, ApplicativeG t a b
+      , TransformableG t (ObjectClass a) (ObjectClass b)
+      ) => FunctorialG t a b
+
+--------------------------------------------------------------------------------
+-- amapF -
+
+-- | functorial application.
+amapF :: FunctorialG t a b => a x y -> b (t x) (t y)
+amapF = amapG
+
+--------------------------------------------------------------------------------
+-- Op2 -
+
+-- | Predicat for the opposite of a two parametrized type @__h__@ where
+--   the two parameters @__x__@ and @__y__@ are switched
+newtype Op2 h x y = Op2 (h y x)
+
+instance Show2 h => Show2 (Op2 h) where
+  show2 (Op2 h) = "Op2[" ++ show2 h ++ "]"
+
+instance Eq2 h => Eq2 (Op2 h) where
+  eq2 (Op2 f) (Op2 g) = eq2 f g 
+
+--------------------------------------------------------------------------------
+-- toOp2Struct -
+
+-- | transforming a 'Struct' where __@p@__ serves only as a proxy for __@m@__ and will not
+--   be evaluated.
+toOp2Struct :: p m -> Struct (ObjectClass m) x -> Struct (ObjectClass (Op2 m)) x
+toOp2Struct _ = id
+
+--------------------------------------------------------------------------------
+-- Op2 - Instance -
+
+instance Morphism h => Morphism (Op2 h) where
+  type ObjectClass (Op2 h) = ObjectClass h
+  domain (Op2 h) = range h
+  range (Op2 h) = domain h
+  
 instance Category c => Category (Op2 c) where
   cOne s = Op2 (cOne s)
   Op2 f . Op2 g = Op2 (g . f)
-  
+
 --------------------------------------------------------------------------------
--- Functorial -
+-- FunctorG -
 
--- | representable categories, i.e. covariant functors from an 'Applicative' category
---   __c__ to @('->')@.
---
---   __Properties__ Let __@c@__ be a type instance of the class 'Functorial' then holds:
---
---   (1) #Fnc1#For all types __@x@__ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
---   @'amap' ('cOne' d) = 'id'@.
---
---   (1) #Fnc2#For all types __@x@__, __@y@__, __@z@__ and @f@ in __@c@__ __@y@__ __@z@__,
---   @g@ in __@c@__ __@x@__ __@y@__ holds: @'amap' (f '.' g) = 'amap' f '.' 'amap' g@. 
-class (Applicative c, Category c) => Functorial c
-
+-- | attest of being 'FunctorialG'.
+data FunctorG t a b where
+  FunctorG :: FunctorialG t a b => FunctorG t a b
+  
 --------------------------------------------------------------------------------
 -- Functorial1 -
 
--- | representable categories, i.e. covariant functors from an 'Applicative1' category @__c__@ to
--- @('->')@.
---
--- __Properties__ Let the pair @(__c__,__f__)@ be a type instance of 'Functorial1', then holds:
---
--- (1) For all types @__x___@ and @d@ in @'Struct' ('ObjectClass' __c__) __x__@ holds:
--- @'amap1' ('cOne' d) = 'id'@.
---
--- (2) For all types @__x__@, @__y__@, @__z__@, @f@ in @__c__ __y__ __z__@ and
--- @g@ in @__c__ __x__ __y__@ holds: @'amap1' (f '.' g) = 'amap1' f '.' 'amap1' g@.
-class (Category c, Applicative1 c f) => Functorial1 c f 
+-- | functorials form @__c__@ to @('->')@ according to @__f__@.
+type Functorial1 c f = FunctorialG f c (->)
+
+--------------------------------------------------------------------------------
+-- Functor1 -
+
+-- | attest of being 'Functorial1' for the 'Category' __c__ to the 'Category' @('->')@ according
+-- to @__f__@.
+data Functor1 c f where
+  Functor1 :: Functorial1 c f => Functor1 c f
+
+--------------------------------------------------------------------------------
+-- TransformableObjectClass -
+
+-- | helper class to avoid undecided instances.
+class Transformable s (ObjectClass c) => TransformableObjectClass s c
+
+instance Transformable s Type => TransformableObjectClass s (->)
+
+--------------------------------------------------------------------------------
+-- Sub -
+
+-- | sub category of @__c__@ according to the 'ObjectClass' @__s__@, whereas maintaining the
+-- applicative behavior of @__c__@.
+data Sub s c x y where
+  Sub :: (Structure s x, Structure s y) => c x y -> Sub s c x y 
+
+instance Morphism (Sub s c) where
+  type ObjectClass (Sub s c) = s
+  homomorphous (Sub _) = Struct :>: Struct
+
+instance ApplicativeG f h (->) => ApplicativeG f (Sub t h) (->) where amapG (Sub h) = amapG h
+instance (FunctorialG f c (->), TransformableObjectClass s c) => FunctorialG f (Sub s c) (->)
+
+--------------------------------------------------------------------------------
+-- cOneSub -
+
+-- | restricting 'cOne'.
+cOneSub :: (Category c, t ~ ObjectClass c) => Struct s x -> Struct t x -> Sub s c x x
+cOneSub Struct = Sub . cOne
+
+instance (Category c, TransformableObjectClass s c) => Category (Sub s c) where
+  cOne s = cOneSub s (tau s)
+  Sub f . Sub g = Sub (f . g)
+
+--------------------------------------------------------------------------------
+-- sub -
+
+-- | restricting a morphism.
+sub' :: Homomorphous s x y -> h x y -> Sub s h x y
+sub' (Struct:>:Struct) = Sub
+
+-- | restricting a morphism.
+sub :: (Morphism h, Transformable (ObjectClass h) s) => h x y -> Sub s h x y
+sub h = sub' (tauHom (homomorphous h)) h
+
+--------------------------------------------------------------------------------
+-- subG -
+
+subG' :: ApplicativeG d a b => Homomorphous t (d x) (d y) -> a x y -> Sub t b (d x) (d y)
+subG' (Struct:>:Struct) h = Sub (amapG h)
+
+-- | the induced embedding.
+subG :: (ApplicativeG d a b, TransformableG d s t)
+  => Sub s a x y -> Sub t b (d x) (d y)
+subG a'@(Sub a) = subG' (tauHomG (homomorphous a')) a
+
+instance (ApplicativeG d a b, TransformableG d s t)
+  => ApplicativeG d (Sub s a) (Sub t b) where
+  amapG = subG
+
+instance ( FunctorialG d a b
+         , TransformableObjectClass s a, TransformableObjectClass t b
+         , TransformableG d s t
+         )
+  => FunctorialG d (Sub s a) (Sub t b)
+
+--------------------------------------------------------------------------------
+-- TransformableGObjectClass -
+
+-- | helper class to avoid undecided instances.
+class TransformableG t (ObjectClass a) (ObjectClass b) => TransformableGObjectClass t a b
+
+instance TransformableGObjectClass t a (->)
 
 --------------------------------------------------------------------------------
 -- Cayleyan2 -
@@ -298,20 +422,62 @@ class (Category c, Applicative1 c f) => Functorial1 c f
 --
 --  __Property__ Let __@c@__ be a type instance of 'Cayleyan2', then holds:
 --  For all types __@x@__, __@y@__ and @f@ in __@c@__ __@x@__ __@y@__ holds:
---  @('invert2' f '.' f) == 'cOne' ('domain' f)@ and
+--
+--  (1) @('invert2' f '.' f) == 'cOne' ('domain' f)@ and
 --  @(f '.' 'invert2' f) == 'cOne' ('range' f)@ where @(==) = 'eq2'@.
 class (Category c, Eq2 c) => Cayleyan2 c where
   invert2 :: c x y -> c y x
 
+instance Cayleyan2 c => Cayleyan2 (Op2 c) where
+  invert2 (Op2 f) = Op2 (invert2 f)
+  
 --------------------------------------------------------------------------------
 -- Cayleyan2 - Instance -
 
 instance Cayleyan2 (Homomorphous m) where
   invert2 (d :>: r) = r :>: d  
 
-instance Cayleyan2 c => Cayleyan2 (Op2 c) where
-  invert2 (Op2 f) = Op2 (invert2 f)
+--------------------------------------------------------------------------------
+-- Inv2 -
+
+-- | predicate for invertible morphisms within a category @__c__@.
+--
+-- __Property__ Let @'Inv2' f f'@ be in @'Inv2' __c__ __x__ __y__@ for a @'Category' __c__@ with
+-- @'Eq2' __c__@, then holds:
+--
+-- (1) @f' '.' f 'OAlg.Data.EqualExtensional..=.' 'cOne' ('domain' f)@.
+--
+-- (2) @f '.' f' 'OAlg.Data.EqualExtensional..=.' 'cOne' ('range' f)@.
+data Inv2 c x y = Inv2 (c x y) (c y x) deriving (Show, Eq)
+
+instance Eq2 c => Eq2 (Inv2 c) where
+  eq2 (Inv2 f g) (Inv2 f' g') = eq2 f f' && eq2 g g'
   
+instance Morphism c => Morphism (Inv2 c) where
+  type ObjectClass (Inv2 c) = ObjectClass c
+  homomorphous (Inv2 f _) = homomorphous f
+
+instance Category c => Category (Inv2 c) where
+  cOne s = Inv2 o o where o = cOne s
+  Inv2 f g . Inv2 f' g' = Inv2 (f . f') (g' . g)
+
+instance (Category c, Eq2 c) => Cayleyan2 (Inv2 c) where
+  invert2 = inv2
+
+--------------------------------------------------------------------------------
+-- inv2 -
+
+-- | the inverse.
+inv2 :: Inv2 c x y -> Inv2 c y x
+inv2 (Inv2 f g) = Inv2 g f
+
+--------------------------------------------------------------------------------
+-- inv2Forget -
+
+-- | forgetting the restriction to 'Sub'.
+inv2Forget :: Inv2 (Sub s h) x y -> Inv2 h x y
+inv2Forget (Inv2 (Sub t) (Sub f)) = Inv2 t f
+
 --------------------------------------------------------------------------------
 -- Either2 - Morphism -
 
@@ -327,35 +493,7 @@ instance (Morphism f, Morphism g, ObjectClass f ~ ObjectClass g)
   range (Right2 g) = range g
 
 --------------------------------------------------------------------------------
--- Forget -
-
--- | forgets the 'ObjectClass' of __@m@__ and sets it to __@t@__, under the condition
---   that the 'ObjectClass' of __@m@__ is 'Transformable' to __@t@__.
-data Forget t m x y where
-  Forget :: Transformable (ObjectClass m) t => m x y -> Forget t m x y
-
-instance Show2 m => Show2 (Forget t m) where
-  show2 (Forget m) = "Forget[" ++ show2 m ++ "]"
-  
-instance Show2 m => Show (Forget t m x y) where
-  show = show2
-
-instance Eq2 m => Eq2 (Forget t m) where
-  eq2 (Forget f) (Forget g) = eq2 f g
-
-instance Eq2 m => Eq (Forget t m x y) where
-  (==) = eq2
-  
-instance Morphism m => Morphism (Forget t m) where
-  type ObjectClass (Forget t m) = t
-
-  homomorphous (Forget m) = tauHom (homomorphous m)
-
-instance Applicative m => Applicative (Forget t m) where
-  amap (Forget h) = amap h
-
---------------------------------------------------------------------------------
---
+-- TransformableObjectClassTyp -
 
 -- | helper class to avoid undecided instances.
 --
@@ -372,3 +510,17 @@ instance Applicative m => Applicative (Forget t m) where
 -- @instance (..,'TransformableObjectClassTyp' m),..) => C m@ which will solve the problem!
 class Transformable (ObjectClass m) Typ => TransformableObjectClassTyp m
 
+--------------------------------------------------------------------------------
+-- TransformableGObjectClassDomain -
+
+-- | helper class to avoid undecided instances.
+class TransformableG d (ObjectClass a) t => TransformableGObjectClassDomain d a t
+
+
+--------------------------------------------------------------------------------
+-- TransformableGObjectClassRange -
+
+-- | helper class to avoid undecided instances.
+class TransformableG d s (ObjectClass c) => TransformableGObjectClassRange d s c
+
+instance TransformableGObjectClassRange d s (->)

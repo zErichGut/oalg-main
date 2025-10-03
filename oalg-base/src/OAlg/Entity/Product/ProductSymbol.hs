@@ -24,9 +24,6 @@ module OAlg.Entity.Product.ProductSymbol
   , productSymbol, psyLength, psyFactor
   , psyMap
   
-    -- * U
-  , U(..), fromU
-
     -- * X
   , xProductSymbol
   ) where
@@ -49,28 +46,6 @@ import OAlg.Structure.Exponential
 import OAlg.Entity.Product.Definition
 import OAlg.Entity.Sequence.Definition
 import OAlg.Entity.Sequence.Set
-
---------------------------------------------------------------------------------
--- U -
-
--- | adjoins the point @()@ to an entity.
---
---  __Note__ Serves to build sums or products over symbols in @__x__@.
-newtype U x = U x deriving (Eq,Ord,Show,Functor,Validable,Foldable)
-
-instance Entity x => Entity (U x)
-
-instance Entity x => Oriented (U x) where
-  type Point (U x) = ()
-  orientation = const (():>())
-
-instance OrdPoint (U x)
-
-instance Total (U a)
-
--- | deconstructor.
-fromU :: U x -> x
-fromU (U x) = x
 
 --------------------------------------------------------------------------------
 -- ProductSymbol -
@@ -122,7 +97,7 @@ fromU (U x) = x
 --
 -- (2) Possibly infinite complete sequences are represented by @[__x__]@.  
 newtype ProductSymbol x = ProductSymbol (Product N (U x))
-  deriving (Eq,Ord,Validable,Entity,Multiplicative,Foldable,LengthN)
+  deriving (Eq,Ord,Validable,Multiplicative,Foldable,LengthN)
 
 -- | showing as a product of symbols.
 psyShow :: Entity x => ProductSymbol x -> String
@@ -131,12 +106,16 @@ psyShow (ProductSymbol xs) = shws $ map (\(U p,n) -> (p,n)) $ fromWord $ prwrd x
   shw (p,1) = show p
   shw (p,n) = show p ++ "^" ++ show n
 
-
 instance Entity x => Show (ProductSymbol x) where
   show p = "ProductSymbol[" ++ psyShow p ++ "]"
 
+type instance Point (ProductSymbol x) = ()
+instance ShowPoint (ProductSymbol x)
+instance EqPoint (ProductSymbol x)
+instance ValidablePoint (ProductSymbol x)
+instance TypeablePoint (ProductSymbol x)
+
 instance Entity x => Oriented (ProductSymbol x) where
-  type Point (ProductSymbol x) = ()
   orientation = const (():>())
 
 instance Entity x => Exponential (ProductSymbol x) where
@@ -158,7 +137,7 @@ instance Entity x => Projectible (ProductSymbol x) [x] where
 
 instance Entity x => Projectible (ProductSymbol x) (Word N x) where
   prj = ProductSymbol . prj  . amap1 U
-  
+
 --------------------------------------------------------------------------------
 -- nProxy -
 
@@ -271,3 +250,4 @@ xProductSymbol n xx = do
   n' <- xNB 0 n
   xs <- xTakeN n' xx
   return $ productSymbol xs
+

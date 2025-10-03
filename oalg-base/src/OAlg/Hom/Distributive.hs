@@ -3,8 +3,9 @@
 
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 
 -- |
 -- Module      : OAlg.Hom.Distributive
@@ -15,100 +16,102 @@
 --
 -- homomorphisms between 'Distributive' structure.
 module OAlg.Hom.Distributive
-  ( -- * Distributive
-    HomDistributive, IsoDistributive
+  (
+    -- * Distributive
+    HomDistributive, homDisjOpDst
+  , HomDistributiveDisjunctive
+  , DualisableDistributive
 
     -- * Iso
-  , isoFromOpOpDst
+  , toDualOpDst
   )
   where
-
-import Data.Typeable
 
 import OAlg.Prelude
 
 import OAlg.Category.Path
 
-import OAlg.Data.Constructable
+import OAlg.Data.Variant
 
-import OAlg.Structure.Oriented.Definition hiding (Path(..))
-import OAlg.Structure.Multiplicative.Definition
-import OAlg.Structure.Fibred.Definition
-import OAlg.Structure.Additive.Definition
-import OAlg.Structure.Distributive.Definition
+import OAlg.Structure.Oriented hiding (Path(..))
+import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
-import OAlg.Hom.Oriented.Definition
-import OAlg.Hom.Multiplicative.Definition
-import OAlg.Hom.Fibred
+import OAlg.Hom.Multiplicative
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 
 --------------------------------------------------------------------------------
 -- HomDistributive -
 
--- | type family of homomorphisms between 'Distributive' structures.
-class ( HomMultiplicative h, HomAdditive h
-      , HomFibredOriented h, Transformable (ObjectClass h) Dst 
-      )
+-- | covariant homomorphisms between 'Distributive' structures.
+class (HomFibredOriented h, HomMultiplicative h, HomAdditive h, Transformable (ObjectClass h) Dst)
   => HomDistributive h
 
 instance HomDistributive h => HomDistributive (Path h)
-
---------------------------------------------------------------------------------
--- Hom -
+instance
+  ( TransformableOrt s, TransformableFbr s, TransformableFbrOrt s
+  , TransformableMlt s, TransformableAdd s, TransformableDst s
+  )
+  => HomDistributive (HomEmpty s)
 
 type instance Hom Dst h = HomDistributive h
 
---------------------------------------------------------------------------------
--- IsoDistributive -
-
--- | isomorphisms between 'Distributive' structures.
-type IsoDistributive h = ( FunctorialHomOriented h, Cayleyan2 h
-                         , HomDistributive h
-                         )
+instance HomDistributive h => HomDistributive (Inv2 h)
 
 --------------------------------------------------------------------------------
--- HomDistributive - Instance -
+-- DualisableDistributive -
 
-instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
-         , TransformableMlt s
-         , TransformableFbr s, TransformableAdd s
-         , TransformableFbrOrt s
-         , TransformableDst s
-         )
-  => HomDistributive (IdHom s)
+-- | duality according to @__o__@ on 'Distributive' structures.
+type DualisableDistributive s o
+  = ( DualisableFibredOriented s o, DualisableMultiplicative s o, DualisableAdditive s o
+    , Transformable s Dst
+    )
+  
+--------------------------------------------------------------------------------
+--  HomDistrubutiveDisjunctive -
+
+-- | disjunctive homomorphisms between 'Distributive' structures.
+class ( HomFibredOrientedDisjunctive h, HomMultiplicativeDisjunctive h, HomAdditive h
+      , Transformable (ObjectClass h) Dst
+      )
+  => HomDistributiveDisjunctive h
+
+instance (HomDistributive h, DualisableDistributive s o)
+  => HomDistributiveDisjunctive (HomDisj s o h)
+
+instance HomDistributiveDisjunctive h => HomDistributive (Variant2 Covariant h)
+
+type instance HomD Dst h = HomDistributiveDisjunctive h
+
+instance
+  ( CategoryDisjunctive h
+  , HomDistributiveDisjunctive h
+  )
+  => HomDistributiveDisjunctive (Inv2 h)
+
+instance
+  ( TransformableDst s
+  , HomDistributiveDisjunctive h
+  )
+  => HomDistributiveDisjunctive (Sub s h)
+  
+--------------------------------------------------------------------------------
+-- homDisjOpDst -
+
+-- | canonical embedding of 'HomDistributive' to @'HomDisj' 'Dst' 'Op'@.
+homDisjOpDst :: HomDistributive h => h x y -> Variant2 Covariant (HomDisj Dst Op h) x y
+homDisjOpDst = homDisj
 
 --------------------------------------------------------------------------------
--- IsoOp - Hom -
+-- toDualOpDst -
 
-instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
-         , TransformableMlt s
-         , TransformableFbr s, TransformableAdd s
-         , TransformableFbrOrt s
-         , TransformableDst s
-         , Typeable s
-         )
-  => HomDistributive (HomOp s)
-
-
-instance ( TransformableOrt s, TransformableOp s, TransformableTyp s
-         , TransformableMlt s
-         , TransformableFbr s, TransformableAdd s
-         , TransformableFbrOrt s
-         , TransformableDst s
-         , Typeable s
-         )
-  => HomDistributive (IsoOp s)
-
---------------------------------------------------------------------------------
--- isoFromOpOpDst -
-
--- | the induced isomorphism of 'Distributive' structures given by 'FromOpOp'.
-isoFromOpOpDst :: Distributive a => IsoOp Dst (Op (Op a)) a
-isoFromOpOpDst = make (FromOpOp :. IdPath Struct)
-
---------------------------------------------------------------------------------
--- OpHom -
-
-instance HomDistributive h => HomDistributive (OpHom h)
+-- | the canonical 'Contravariant' isomorphism on 'Distributive' structures
+-- between @__x__@ and @'Op' __x__@.
+toDualOpDst :: Distributive x => Variant2 Contravariant (IsoO Dst Op) x (Op x)
+toDualOpDst = toDualO Struct
 

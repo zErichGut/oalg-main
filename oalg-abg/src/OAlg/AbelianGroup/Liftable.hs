@@ -16,7 +16,8 @@
 --
 -- lifting of abelian homomorphisms.
 module OAlg.AbelianGroup.Liftable
-  ( -- * Lifting
+  (
+    -- * Lifting
     zMatrixLift
 
     -- * Proposition
@@ -26,6 +27,7 @@ module OAlg.AbelianGroup.Liftable
 
     -- * X
   , xLiftable
+
   ) where
 
 import Control.Monad
@@ -35,7 +37,6 @@ import Data.Foldable (foldr)
 
 import OAlg.Prelude
 
-import OAlg.Data.FinitelyPresentable
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Oriented
@@ -43,105 +44,12 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Number
 import OAlg.Structure.Exponential
 
-import OAlg.Entity.Slice
-import OAlg.Entity.Natural hiding ((++))
-import OAlg.Entity.FinList hiding (zip,(++))
-import OAlg.Entity.Diagram
+import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence.PSequence
 
-import OAlg.Limes.Definition
-import OAlg.Limes.KernelsAndCokernels
-
-import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.Free.SmithNormalForm
 import OAlg.AbelianGroup.Euclid
-
---------------------------------------------------------------------------------
--- abhCokerLft -
-
--- | the associated liftable, i.e. every cokernel in 'AbHom' has the @'Liftable' 'From'@ property.
---
--- __Property__ Let @coker@ be in @'Cokernel' 'N1' 'AbHom@, than holds:
---
--- (1) @c '==' l@ where @c = 'cokernelFactor' ('universalCone' coker)@ and
--- @'LiftableFrom' c _ = 'abhCokerLft' coker@.
---
--- @
---         c         a
---   * <------- * <------*
---    ^         ^
---     \       /
---   f  \     / f' 
---       \   /
---        \ /
---         *
--- @
---
--- where @c@ is the cokernel of @a@ and @f'@ the lifted @f@. 
-abhCokerLft :: Attestable n => Cokernel N1 AbHom -> Liftable From (Free n) AbHom
-abhCokerLft coker = LiftableFrom c l where
-  c = cokernelFactor $ universalCone coker
-  l :: Slice From (Free n) AbHom -> Slice From (Free n) AbHom
-  l f | end c /= end (slice f) = throw NotLiftable
-      | otherwise              = error "nyi"
-
-
-{-
---------------------------------------------------------------------------------
--- abhLift -
-
--- | tries to solve the equation @a '*' x '==' y@, where @'end' y '==' 'end' a@ and @'start' y@ is
--- free of some dimension @__k__@.
---
--- __Property__ Let @a@ be a abelian homomorphisms and @y@ a @'Slice' 'From' ('Free' __k__) 'AbHom'@
--- then holds:
---
--- (1) If @'end' ('slice' y)@ is not equal to @'end' a@ then a 'NotLiftable'-exception will be
--- thrown.
---
--- (2) If @'end' ('slice' y)@ is equal to @'end' a@ and there exists an @x@ in 'AbHom' such that
--- @a '*' 'slice' x '==' 'slice' y@ then the result of @'abhLift' a y@ is @'Just' x@ otherwise it
--- will be 'Nothing'.
-abhLift :: AbHom -> Slice From (Free k) AbHom -> Maybe (Slice From (Free k) AbHom)
-abhLift = error "nyi"
-{-
-  this implementation dos not hold the spezification!!!!!!
-  try it with the proposition prpAbhLift
-
-abhLift a y@(SliceFrom k _)
-  | end a /= end (slice y) = throw NotLiftable "end missmatch"
-  | otherwise = case (abgGeneratorTo (start a), abgGeneratorTo (end a)) of
-      (   GeneratorTo (DiagramChainTo _ (p:|_)) n _ _ _ _
-        , GeneratorTo _ _ _ _ _ lq
-        ) -> amap1 ((SliceFrom k) . (p*) . zabh) $ zMatrixLift (abhz a') (abhz y') where
-
-        a' = lq (SliceFrom n (a*p))
-        y' = lq y
--}
---------------------------------------------------------------------------------
--- prpAbhLift -
-
-prpAbhLift :: Statement
-prpAbhLift = Prp "AbhLift" :<=>:
-  Forall ay (\(a,k,y) -> case k of
-    SomeNatural k' -> let Just x = abhLift a (SliceFrom (Free k') y) in
-      (a * slice x == y) :?> Params ["a":=show a,"y":=show y,"slice x":=show (slice x)]
-            )
-  where ay = do
-          s  <- xStandard
-          e  <- xStandard
-          a  <- xAbHom 0.8 (s:>e)
-          k' <- xNB 0 10
-          case finitePresentation abgFinPres s of
-            GeneratorTo (DiagramChainTo _ (p:|_)) (Free n) _ _ _ _
-              -> let d = dim ()
-                     XOrtOrientation _ xMatrixZ = xodZ
-                     n' = lengthN n
-                  in do
-                    x <- xMatrixZ (d^k' :> d^n')
-                    let x' = p * zabh x in return (a,someNatural k',a * x')
--}
 
 --------------------------------------------------------------------------------
 -- zMatrixLift -
@@ -202,14 +110,12 @@ zMatrixLift a y
   lftCol [] (_:_) = Nothing
   lftCol _ _      = Just []
 
-
 --------------------------------------------------------------------------------
 -- xLiftable -
 
 -- | random variable for liftable samples.
 xLiftable :: Multiplicative c => XOrtSite To c -> X (c,c)
 xLiftable xTo = amap1 lft $ xMltp2 xTo where lft (Mltp2 a x) = (a,a*x)
-  
 
 --------------------------------------------------------------------------------
 -- prpMatrixZJustLiftable -
@@ -263,10 +169,11 @@ prpMatrixZMaybeLiftable xz = Prp "MatrixZMaybeLiftable" :<=>: Forall ay test whe
 --------------------------------------------------------------------------------
 -- prpMatrixZLiftable -
 
--- | validity of 'zLift'.
+-- | validity of 'zMatrixLift'.
 prpMatrixZLiftable :: Statement
 prpMatrixZLiftable = Prp "MatrixZLiftable" :<=>:
   And [ prpMatrixZJustLiftable xStandardOrtSite
       , prpMatrixZMaybeLiftable (xZB (-1000) 1000)
       ]
+
 

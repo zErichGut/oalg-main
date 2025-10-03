@@ -20,7 +20,7 @@ module OAlg.Structure.Distributive.Proposition
   (
 
     -- * Distributive
-    prpDst, XDst(..)
+    prpDst, XDst(..), DstX
   , prpDst1, prpDst2, prpDst3, prpDst4
   , DstRootSide(..), DstSide(..)
 
@@ -44,6 +44,8 @@ module OAlg.Structure.Distributive.Proposition
 
 import Control.Monad
 
+import Data.Kind
+
 import OAlg.Prelude
 
 import OAlg.Data.Singleton
@@ -51,6 +53,7 @@ import OAlg.Data.Singleton
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive.Definition
 
@@ -86,7 +89,6 @@ instance Distributive d => Dualisable (DstRootSide RightSide d) where
 instance Distributive d => Validable (DstRootSide s d) where
   valid (LDstRoot r f)    = valid (r,f) && (start r .==. end f )
   valid rd@(RDstRoot _ _) = valid (toDual rd)
-
 
 --------------------------------------------------------------------------------
 -- prpDst1 -
@@ -178,6 +180,38 @@ data XDst d = XDst (X (DstRootSide LeftSide d))  (X (DstSide LeftSide d))
 -- | standard random variable for 'Distributive' structures.
 class XStandardDst d where
   xStandardDst :: XDst d
+
+instance (FibredOriented x, XStandardDst x) => XStandardDst (Op x) where
+  xStandardDst = XDst xdrl' xdl' xdrr' xdr' where
+    XDst xdrl xdl xdrr xdr = xStandardDst
+    xdrl' = do
+      RDstRoot f r <- xdrr
+      return (LDstRoot (opposite r) (Op f))
+    xdl'  = do
+      RDst f (a,b) <- xdr
+      return (LDst (Op a,Op b) (Op f))
+    xdrr' = do
+      LDstRoot r f <- xdrl
+      return (RDstRoot (Op f) (opposite r))
+    xdr'   = do
+      LDst (a,b) f <- xdl
+      return (RDst (Op f) (Op a,Op b))
+
+instance XStandardDst x => XStandardDst (Id x) where
+  xStandardDst = XDst xdrl' xdl' xdrr' xdr' where
+    XDst xdrl xdl xdrr xdr = xStandardDst
+    xdrl' = do
+      LDstRoot r f <- xdrl
+      return (LDstRoot r (Id f))
+    xdl'  = do
+      LDst (a,b) f <- xdl
+      return (LDst (Id a,Id b) (Id f))
+    xdrr' = do
+      RDstRoot f r <- xdrr
+      return (RDstRoot (Id f) r)
+    xdr'  = do
+      RDst f (a,b) <- xdr
+      return (RDst (Id f) (Id a, Id b))
   
 --------------------------------------------------------------------------------
 -- prpDst -
@@ -332,3 +366,40 @@ xoDst xo xf xt = XDst xrsl xsl xrsr xsr where
   xsl = xoDstSideL xo xt
   xrsr = xoDstRootSideR xo xf
   xsr = xoDstSideR xo xf
+
+--------------------------------------------------------------------------------
+-- DstX -
+
+-- | type index for 'Distributive' structures admitting 'XStandardOrtOrientation'.
+data DstX
+
+type instance Structure DstX x = (Distributive x, XStandardOrtOrientation x)
+
+instance Transformable DstX Typ where tau Struct = Struct
+
+instance Transformable DstX Type where tau _ = Struct
+instance TransformableType DstX
+
+instance Transformable DstX Ort where tau Struct = Struct
+instance TransformableOrt DstX
+
+instance Transformable DstX Mlt where tau Struct = Struct
+instance TransformableMlt DstX
+
+instance Transformable DstX Fbr where tau Struct = Struct
+instance TransformableFbr DstX
+
+instance Transformable DstX Add where tau Struct = Struct
+instance TransformableAdd DstX
+
+instance Transformable DstX FbrOrt where tau Struct = Struct
+instance TransformableFbrOrt DstX
+
+instance Transformable DstX Dst where tau Struct = Struct
+instance TransformableDst DstX
+
+instance TransformableG Op DstX DstX where tauG Struct = Struct
+instance TransformableGRefl Op DstX
+instance TransformableOp DstX
+
+

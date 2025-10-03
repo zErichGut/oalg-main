@@ -33,11 +33,14 @@ module OAlg.Entity.FinList
 
     -- ** Induction
   , inductionS, FinList'(..)
+
+    -- * X
+  , xListF
   )
 
   where
 
-import Control.Monad
+import Control.Monad as M
 
 import Data.Typeable
 import Data.Foldable
@@ -67,17 +70,15 @@ deriving instance Ord x => Ord (FinList n x)
 instance Show a => Show (FinList n a) where
   show xs = "[|" L.++ (join $ tween "," $ amap1 show $ toList xs) L.++ "|]"
 
-instance Functor (FinList n) where
-  fmap _ Nil     = Nil
-  fmap f (a:|as) = f a :| fmap f as
+instance ApplicativeG (FinList n) (->) (->) where
+  amapG _ Nil     = Nil
+  amapG f (a:|as) = f a :| amapG f as
 
 instance Validable a => Validable (FinList n a) where
   valid as = vld 0 as where
     vld :: Validable a => N -> FinList n a -> Statement
     vld _ Nil = SValid
     vld i (a:|as) = (Label (show i) :<=>: valid a) && vld (succ i) as
-
-instance (Typeable n, Entity a) => Entity (FinList n a)
 
 --------------------------------------------------------------------------------
 -- toW -
@@ -127,7 +128,7 @@ zip (a:|as) (b:|bs) = (a,b):|zip as bs
 
 -- | zips three sequences of the same length. 
 zip3 :: FinList n a -> FinList n b -> FinList n c -> FinList n (a,b,c)
-zip3 as bs cs = fmap (\((a,b),c) -> (a,b,c)) ((as `zip` bs) `zip` cs)
+zip3 as bs cs = amap1 (\((a,b),c) -> (a,b,c)) ((as `zip` bs) `zip` cs)
 
 --------------------------------------------------------------------------------
 -- (|:) -
@@ -154,7 +155,7 @@ Nil ++ bs     = bs
 -- | the product of two finite lists.
 (**) :: FinList n a -> FinList m b -> FinList (n * m) (a,b)
 Nil ** _ = Nil
-(a :| as) ** bs = fmap (a,) bs ++ (as ** bs)
+(a :| as) ** bs = amap1 (a,) bs ++ (as ** bs)
 
 --------------------------------------------------------------------------------
 -- repeat -
@@ -203,14 +204,16 @@ deriving instance Show a => Show (SomeFinList a)
 instance Validable a => Validable (SomeFinList a) where
   valid (SomeFinList xs) = valid xs
 
-instance Functor SomeFinList where
-  fmap f (SomeFinList xs) = SomeFinList (fmap f xs)
+instance ApplicativeG SomeFinList (->) (->)  where
+  amapG f (SomeFinList xs) = SomeFinList (amapG f xs)
   
 
 --------------------------------------------------------------------------------
 -- someFinList -
 
 -- | the associated finite list.
+--
+-- __Note__ If the input list is infinite then 'someFinList' dose not terminate.
 someFinList :: [a] -> SomeFinList a
 someFinList [] = SomeFinList Nil
 someFinList (a:as) = case someFinList as of
@@ -219,6 +222,12 @@ someFinList (a:as) = case someFinList as of
 --------------------------------------------------------------------------------
 -- maybeFinList -
 
+-- | list as a finite list according to @__n__@.
+--
+-- __Property__ Let @xs@ be in @[__a__]@ and @n@ in @'Any' __n__@, then holds:
+--
+-- (1) If @'lengthN' n '<=' 'length' xs@ then @'maybeFinList' n xs@ matches @'Just' xs'@ with
+-- @'toList' xs' '==' xs@.
 maybeFinList :: Any n -> [a] -> Maybe (FinList n a)
 maybeFinList W0 _          = Just (Nil)
 maybeFinList _ []          = Nothing
@@ -231,6 +240,17 @@ infixr 5 <++>
 -- | concatenation.
 (<++>) :: SomeFinList x -> SomeFinList x -> SomeFinList x
 SomeFinList xs <++> SomeFinList ys = SomeFinList (xs ++ ys)
+
+--------------------------------------------------------------------------------
+-- xListF -
+
+-- | random variable for a finite list of random variables.
+xListF :: FinList n (X x) -> X (FinList n x)
+xListF Nil = return Nil
+xListF (xx:|xxs) = do
+  x  <- xx
+  xListF xxs >>= return . (x:|)
+
 
 
 {-

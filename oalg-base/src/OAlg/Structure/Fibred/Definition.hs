@@ -7,7 +7,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 -- |
 -- Module      : OAlg.Structure.Fibred.Definition
@@ -21,32 +22,37 @@
 module OAlg.Structure.Fibred.Definition
   (
     -- * Fibred
-    Fibred(..), Fbr, TransformableFbr
-
-    -- * Fibred Oriented
-  , FibredOriented, FbrOrt, TransformableFbrOrt
-
-    -- * Spezial classes
-  , OrdRoot, TotalRoot
+    Fibred(..)
+  , Fbr, TransformableFbr, tauFbr
+  , module Rt
 
     -- * Sheaf
   , Sheaf(..)
+
+    -- * X
+  , XFbr, xoFbr
+  , xFbrOrnt
+     -- ** Stalk
+  , XStalk(..), xRoot, xSheafRootMax, xSheafMax
+  , xStalkOrnt  
   )
   where
 
+import Control.Monad
 import Control.Exception
 
-import Data.List((++),map)
+import Data.List((++))
 import Data.Foldable
 
 import OAlg.Prelude
 
 import OAlg.Data.Canonical
-import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
-import OAlg.Structure.Oriented.Definition
-import OAlg.Structure.Multiplicative.Definition
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
+
+import OAlg.Structure.Fibred.Root as Rt
 
 --------------------------------------------------------------------------------
 -- Fibred -
@@ -56,84 +62,29 @@ import OAlg.Structure.Multiplicative.Definition
 --
 --  __Note__
 --
--- (1) On should accept the @default@ for 'root' only for 'FibredOriented' structures!
+-- (1) On should accept the @default@ for 'root' only if one intens to implement a
+-- 'OAlg.Structure.FibredOriented.FibredOriented' structure!
 --
 -- (2) For 'OAlg.Structure.Distributive.Definition.Distributive' structures the only thing to be
 -- implemented is the 'Root' type and should be defined as @'Root' d = 'Orientation' p@ where-- @p = 'Point' d@ (see the default implementation of 'root').
-class (Entity f, Entity (Root f)) => Fibred f where
-  -- | the type of roots.
-  type Root f
-
+class (Entity f, EntityRoot f) => Fibred f where
   -- | the 'root' of a stalk in @f@.
   root :: f -> Root f
-  -- default root :: FibredOriented f => f -> Root f
   default root :: (Root f ~ Orientation (Point f), Oriented f) => f -> Root f
   root = orientation
 
 --------------------------------------------------------------------------------
--- FibredOriented -
-
-
--- | 'Fibred' and 'Oriented' structure with matching 'root' and 'orientation'.
---
---   __Property__ Let __@d@__ be a 'FibredOriented' structure, then holds:
---   For all @s@ in __@d@__ holds: @'root' s '==' 'orientation' s@.
---
---   __Note__ 'FibredOriented' structures are required for
---  'OAlg.Structure.Distributive.Distributive' structures.
-class (Fibred d, Oriented d, Root d ~ Orientation (Point d)) => FibredOriented d
-
-data FOr
-type instance Structure FOr x = FibredOriented x
-
---------------------------------------------------------------------------------
 -- Fibred - Instance -
 
-instance Fibred () where
-  type Root () = Orientation ()
-instance FibredOriented ()
-
-instance Fibred Int where
-  type Root Int = Orientation ()
-instance FibredOriented Int
-
-instance Fibred Integer where
-  type Root Integer = Orientation ()
-instance FibredOriented Integer
-
-instance Fibred N where
-  type Root N = Orientation ()
-instance FibredOriented N
-
-instance Fibred Z where
-  type Root Z = Orientation ()
-instance FibredOriented Z
-
-instance Fibred Q where
-  type Root Q = Orientation ()
-instance FibredOriented Q
-
-instance Entity p => Fibred (Orientation p) where
-  type Root (Orientation p) = Orientation p
-instance Entity p => FibredOriented (Orientation p)
-
-instance FibredOriented f => Fibred (Op f) where
-  type Root (Op f) = Orientation (Point f)
-instance FibredOriented f => FibredOriented (Op f)
-
---------------------------------------------------------------------------------
--- OrdRoot -
-
--- | type where the associated root type is ordered.
---
---  __Note__ Helper class to circumvent undecidable instances.
-class Ord (Root f) => OrdRoot f
-
---------------------------------------------------------------------------------
--- TotalRoot -
-
--- | type where the associated root type is a singleton.
-class Singleton (Root f) => TotalRoot f
+instance Fibred ()
+instance Fibred Int
+instance Fibred Integer
+instance Fibred N
+instance Fibred Z
+instance Fibred Q
+instance Entity p => Fibred (Orientation p)
+instance Fibred x => Fibred (Id x) where root (Id x) = root x
+instance Entity a => Fibred (R a) where  root _ = ()
 
 --------------------------------------------------------------------------------
 -- Sheaf -
@@ -154,8 +105,8 @@ class Singleton (Root f) => TotalRoot f
 -- are equipped with a 'Multiplicative' structure.
 data Sheaf f = Sheaf (Root f) [f]
 
-deriving instance Fibred f => Show (Sheaf f)
-deriving instance Fibred f => Eq (Sheaf f)
+deriving instance (Show f, ShowRoot f) => Show (Sheaf f)
+deriving instance (Eq f, EqRoot f) => Eq (Sheaf f)
 
 instance Foldable Sheaf where
   foldr op b (Sheaf _ fs) = foldr op b fs
@@ -165,14 +116,21 @@ instance Fibred f => Validable (Sheaf f) where
     vld _ []     = SValid 
     vld r (f:fs) = valid f && (root f .==. r) && vld r fs
 
-instance Fibred f => Entity (Sheaf f)
-
+type instance Root (Sheaf f) = Root f
+instance ShowRoot f => ShowRoot (Sheaf f)
+instance EqRoot f => EqRoot (Sheaf f)
+instance ValidableRoot f => ValidableRoot (Sheaf f)
+instance TypeableRoot f => TypeableRoot (Sheaf f)
 instance Fibred f => Fibred (Sheaf f) where
-  type Root (Sheaf f) = Root f
   root (Sheaf r _) = r
 
+
+type instance Point (Sheaf f) = Root f
+instance ShowRoot f => ShowPoint (Sheaf f)
+instance EqRoot f => EqPoint (Sheaf f)
+instance ValidableRoot f => ValidablePoint (Sheaf f)
+instance TypeableRoot f => TypeablePoint (Sheaf f)
 instance Fibred f => Oriented (Sheaf f) where
-  type Point (Sheaf f) = Root f
   orientation s = root s :> root s
 
 -- | @'Data.List.(++)'@ is not commutative!
@@ -182,10 +140,6 @@ instance Fibred f => Multiplicative (Sheaf f) where
                           | otherwise = throw NotMultiplicable
 
 type instance Dual (Sheaf f) = Sheaf (Op f)
-
-instance FibredOriented f => Dualisable (Sheaf f) where
-  toDual (Sheaf r fs)     = Sheaf (transpose r) (map Op fs)
-  fromDual (Sheaf r' fs') = Sheaf (transpose r') (map fromOp fs')
 
 instance Fibred f => Embeddable f (Sheaf f) where
   inj a = Sheaf (root a) [a]
@@ -201,39 +155,84 @@ type instance Structure Fbr x = Fibred x
 instance Transformable Fbr Typ where tau Struct = Struct
 instance Transformable Fbr Ent where tau Struct = Struct
 
+--------------------------------------------------------------------------------
+-- tauFbr -
+
+-- | 'tau' for 'Fbr'.
+tauFbr :: Transformable s Fbr => Struct s x -> Struct Fbr x
+tauFbr = tau
 
 --------------------------------------------------------------------------------
 -- TransformableFbr -
 
--- | transformable to 'Fibred' structure.
+-- | helper class to avoid undecidable instances.
 class Transformable s Fbr => TransformableFbr s
 
 instance TransformableTyp Fbr
 instance TransformableFbr Fbr
 
 --------------------------------------------------------------------------------
--- FbrOrt -
-  
--- | type representing the class of 'FibredOriented' structures.
-data FbrOrt
+-- XFbr -
 
-type instance Structure FbrOrt x = FibredOriented x
-
-instance Transformable FbrOrt Typ where tau Struct = Struct
-instance Transformable FbrOrt Ent where tau Struct = Struct
-instance Transformable FbrOrt Fbr where tau Struct = Struct
-instance Transformable FbrOrt Ort where tau Struct = Struct
+-- | random variable for validating 'Fibred' structures.
+type XFbr = X
 
 --------------------------------------------------------------------------------
--- TransformableFbrOrt -
+-- XStalk -
 
--- | transformable to 'FibredOriented' structure.
-class ( Transformable s Fbr, Transformable s Ort
-      , Transformable s FbrOrt
-      ) => TransformableFbrOrt s
+-- | random variable for stalks.
+data XStalk x = XStalk (X (Root x)) (Root x -> X x)
 
-instance TransformableTyp FbrOrt
-instance TransformableOrt FbrOrt
-instance TransformableFbr FbrOrt
-instance TransformableFbrOrt FbrOrt
+--------------------------------------------------------------------------------
+-- xRoot -
+
+-- | the underlying random variable of 'root's.
+xRoot :: XStalk x -> X (Root x)
+xRoot (XStalk xr _) = xr
+
+--------------------------------------------------------------------------------
+-- xSheafRootMax -
+
+-- | random variable of sheafs in a 'Fibred' structure all rooted in the given root and
+-- with a length of either 0 - for empty 'root's - or with the given length.
+xSheafRootMax :: Fibred f => XStalk f -> N -> Root f -> X (Sheaf f)
+xSheafRootMax (XStalk _ xrs) n r = case xrs r of
+  XEmpty -> return $ one r
+  xs     -> shf xs n (one r) where
+    shf _ 0 ss  = return ss
+    shf xs n ss = do
+      s <- xs
+      shf xs (pred n) (inj s * ss)
+      
+    inj s = Sheaf (root s) [s]
+
+
+--------------------------------------------------------------------------------
+-- xSheafMax -
+
+-- | random variable of sheafs, based on the underlying random variable of roots, with
+-- a length of either 0 - for empty 'root's - or with the given length.
+xSheafMax :: Fibred f => XStalk f -> N -> X (Sheaf f)
+xSheafMax xs@(XStalk xr _) n = xr >>= xSheafRootMax xs n 
+
+--------------------------------------------------------------------------------
+-- xFbrOrnt -
+
+-- | random variable for the 'Fibred' structure of @'Orientation' p@.
+xFbrOrnt :: X p -> XFbr (Orientation p)
+xFbrOrnt xp = fmap (uncurry (:>)) $ xTupple2 xp xp
+
+---------------------------------------------------------------------------------
+-- xStalkOrnt -
+
+-- | random variable of 'XStalk' on @'Orientation' __p__@.
+xStalkOrnt :: X p -> XStalk (Orientation p)
+xStalkOrnt xp = XStalk (xFbrOrnt xp) return
+
+--------------------------------------------------------------------------------
+-- xoFbr -
+
+-- | the associated random variable for validating 'Fibred' structures.
+xoFbr :: XOrtOrientation f -> XFbr f
+xoFbr = xoOrt
 
