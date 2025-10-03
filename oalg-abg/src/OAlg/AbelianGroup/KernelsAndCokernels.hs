@@ -77,15 +77,7 @@ import OAlg.AbelianGroup.Free
 --------------------------------------------------------------------------------
 -- abhCokernelFreeDgmLftFreeG -
 
--- | a liftable cokernel of a free cokernel diagram.
---
---  __Properties__ Let @d@ be in @'CokernelDiagrammatic' 'DiagramFree' 'N1' 'AbHom'@ and
--- @cf = 'abhCokernelFreeDgmLftFreeG' d@, then holds:
--- Let @c = 'cone' '$' 'universalCone' cf@ in
---
--- (1) @'diagrammaticObject' c '==' d@.
---
--- (2) @'tip' c@ is smith normal (see t'AbGroup').
+-- | liftable cokernel of a free diagram.
 abhCokernelFreeDgmLftFreeG
   :: CokernelDiagrammatic DiagramFree N1 AbHom -> CokernelG ConeLiftable DiagramFree N1 AbHom
 abhCokernelFreeDgmLftFreeG d@(DiagramFree _ (DiagramParallelRL _ _ (h:|Nil)))
@@ -152,7 +144,7 @@ abhCokernelFreeDgmLftFreeG d@(DiagramFree _ (DiagramParallelRL _ _ (h:|Nil)))
 --------------------------------------------------------------------------------
 -- abhCokernelsFreeDgmLftFreeG -
 
--- | the generalized injective limits for 'DiagramFree' , given by 'abhCokernelFreeDgmLftFreeG'.
+-- | liftable cokernels of free diagrams.
 abhCokernelsFreeDgmLftFreeG :: CokernelsG ConeLiftable DiagramFree N1 AbHom
 abhCokernelsFreeDgmLftFreeG = LimitsG abhCokernelFreeDgmLftFreeG
 
@@ -274,14 +266,7 @@ dstCokerDgmFrLft n = putDstr asp n $ join $ (amap1 (xecf xe . limes abhCokernels
 --------------------------------------------------------------------------------
 -- abhCokernelFreeTo'G -
 
--- | the cokernel of a free site to.
---
---  __Properties__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
--- @cf = 'abhCokernelFreeTo'G' s@, then holds: Let @c = 'clfCokernel' cf@ in 
---
--- (1) @'diagram' c '==' 'cokernelDiagram' h@.
---
--- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
+-- | liftable cokernel for free sliced 'To' diagrams.
 abhCokernelFreeTo'G :: Attestable k
   => SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom
   -> CokernelG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
@@ -309,13 +294,11 @@ abhCokernelFreeTo'G hDgm@(SliceDiagramCokernel (SliceTo k h)) = LimesInjective h
 --------------------------------------------------------------------------------
 -- abhCokernelsFreeTo'G -
 
--- | the generalized injective limits for @'SliceDiagram' ('Free' __k__)@,
--- given by 'abhCokernelFreeTo'G'.
+-- | generalized liftable cokernels for free sliced 'To' diagrams.
 abhCokernelsFreeTo'G :: Attestable k => CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
 abhCokernelsFreeTo'G = LimitsG abhCokernelFreeTo'G
 
--- | the generalized injective limits for @'SliceDiagram' ('Free' __k__)@,
--- given by a proxy @__q k__@ and 'abhCokernelFreeTo'G'.
+-- | generalized liftable cokernels for free sliced 'To' diagrams given by a proxy type.
 abhCokernelsFreeTo'G' :: Attestable k
   => q k -> CokernelsG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
 abhCokernelsFreeTo'G' _ = abhCokernelsFreeTo'G
@@ -370,9 +353,9 @@ prpAbhCokernelsFreeTo'G k = case someNatural k of
 --------------------------------------------------------------------------------
 -- abhCokernelsLiftableSomeFree -
 
--- | liftable cokernel for some free slice 'To' diagram.
-abhCokernelLiftableSomeFree ::
-  CokernelDiagrammatic SomeFreeSliceDiagram N1 AbHom -> CokernelLiftableSomeFree AbHom
+-- | liftable cokernel for free sliced 'To' diagram.
+abhCokernelLiftableSomeFree :: CokernelDiagrammatic SomeFreeSliceDiagram N1 AbHom
+  -> CokernelG ConeLiftable SomeFreeSliceDiagram N1 AbHom
 abhCokernelLiftableSomeFree d@(SomeFreeSliceCokernel to) = LimesInjective cnLft univLft where
   d' = SliceDiagramCokernel to
   LimesInjective cnLft' univLft' = limes abhCokernelsFreeTo'G d'
@@ -386,14 +369,14 @@ abhCokernelLiftableSomeFree d@(SomeFreeSliceCokernel to) = LimesInjective cnLft 
 --------------------------------------------------------------------------------
 -- abhCokernelsLiftableSomeFree -
 
--- | liftable cokernels for some free slice 'To' diagram.
-abhCokernelsLiftableSomeFree :: CokernelsLiftableSomeFree AbHom
+-- | liftable cokernels for free sliced 'To' diagrams.
+abhCokernelsLiftableSomeFree :: CokernelsG ConeLiftable SomeFreeSliceDiagram N1 AbHom
 abhCokernelsLiftableSomeFree = LimitsG abhCokernelLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- abhPullbackFreeG -
 
--- | pullback of a free diagram having a free 'tip'
+-- | pullback of a free diagram having a free 'tip'.
 abhPullbackFreeG :: PullbackDiagrammatic DiagramFree n AbHom
   -> PullbackG (ConicFreeTip Cone) DiagramFree n AbHom
 abhPullbackFreeG d@(DiagramFree _ d') = LimesProjective pCn pUniv where
@@ -422,7 +405,7 @@ abhPullbackFreeG d@(DiagramFree _ d') = LimesProjective pCn pUniv where
 abhPullbacksFreeG :: PullbacksG (ConicFreeTip Cone) DiagramFree n AbHom
 abhPullbacksFreeG = LimitsG abhPullbackFreeG
 
--- | pullbacks of free diagrams according to the proxy type @__q n__@.
+-- | pullbacks of free diagrams according to the given proxy type.
 abhPullbacksFreeG' :: q n -> PullbacksG (ConicFreeTip Cone) DiagramFree n AbHom
 abhPullbacksFreeG' _ = abhPullbacksFreeG
 
@@ -511,13 +494,13 @@ abhFreeFromSplitCyG (SliceDiagramKernel (SliceFrom k h))
 --------------------------------------------------------------------------------
 -- abhKernelFreeFromCy -
 
--- | free kernel where the end point is equal to some cyclic group to some order.
+-- | kernel of free sliced 'From' diagram where the end point is equal to a product of a cyclic group.
 --
 -- __Property__ Let @s = 'SliceDiagramKernel ('SliceFrom' _ h)@ where
 -- @'end' h '==' abg n '^' r@ for some @n@, @r@ in 'N', then 
 -- @'abhKernelFreeFromCyG' s@ is 'valid'.
 abhKernelFreeFromCyG :: Attestable k
-  => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom -- Slice From (Free k) AbHom
+  => KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom
   -> KernelG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
   = hKer $ fromWord $ dimwrd $ abgDim $ end h where
@@ -590,8 +573,7 @@ abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
 --------------------------------------------------------------------------------
 -- abhKernelsFreeFromCyG -
 
--- | kernels of a free sliced kernel diagrams with end point equal to a product of a cyclic group
--- to some exponten.
+-- | kernels of free sliced 'From' diagrams with end point equal to a product of a cyclic group.
 abhKernelsFreeFromCyG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromCyG = LimitsG abhKernelFreeFromCyG
 
@@ -608,8 +590,8 @@ xecAbhKernelsFreeFromCyG :: XEligibleConeG
   (ConicFreeTip Cone) Dst Projective (SliceDiagram (Free k)) (Parallel LeftToRight) N2 N1 AbHom
 xecAbhKernelsFreeFromCyG = xecfEligibleCone xecfAbhKernelsFreeFromCyG
 
--- | random variable for free sliced kernel diagrams with end point equal to a product of a cyclic group
--- to some exponten.
+-- | random variable for free sliced kernel diagrams with end point equal to a product of a
+-- cyclic group to some exponten.
 xdgAbhKernelsFreeFromCyG :: Attestable k
   => Any k -> X (KernelDiagrammatic (SliceDiagram (Free k)) N1 AbHom)
 xdgAbhKernelsFreeFromCyG k = do
@@ -691,6 +673,7 @@ abhKernelFreeFromG s = ker s $ amap1 (limes abhKernelsFreeFromCyG) $ abhFreeFrom
 abhKernelsFreeFromG :: Attestable k => KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromG = LimitsG abhKernelFreeFromG
 
+-- | kernels with a free tip of free sliced diagrams according to the given proxy type.
 abhKernelsFreeFromG' :: Attestable k
   => q k -> KernelsG (ConicFreeTip Cone) (SliceDiagram (Free k)) N1 AbHom
 abhKernelsFreeFromG' _ = abhKernelsFreeFromG
@@ -698,7 +681,7 @@ abhKernelsFreeFromG' _ = abhKernelsFreeFromG
 --------------------------------------------------------------------------------
 -- prpAbhKernelsFreeFromG -
 
--- | random variable for free sliced kernel diagrams.
+-- | random variable for free slice 'From' diagrams.
 xdgKernelsFreeFromG :: Attestable k
   =>  Any k -> X (SliceDiagram (Free k) (Parallel LeftToRight) N2 N1 AbHom)
 xdgKernelsFreeFromG k = do
@@ -722,7 +705,7 @@ prpAbhKernelsFreeFromG = Forall (xNB 0 15) prpAbhKernelsFreeFromGN
 --------------------------------------------------------------------------------
 -- abhKernelSomeFreeFreeTip -
 
--- | kernel with some free tip for some free slice 'From' diagram.
+-- | kernel with a free tip for a free sliced 'From' diagram.
 abhKernelSomeFreeFreeTip :: KernelDiagrammatic SomeFreeSliceDiagram N1 AbHom
   -> KernelSomeFreeFreeTip AbHom
 abhKernelSomeFreeFreeTip d@(SomeFreeSliceKernel frm) = LimesProjective cnFrT univFrT where
@@ -738,9 +721,7 @@ abhKernelSomeFreeFreeTip d@(SomeFreeSliceKernel frm) = LimesProjective cnFrT uni
 --------------------------------------------------------------------------------
 -- abhKernelsSomeFreeFreeTip -
 
--- | kernels with some free tip for some free slice 'From' diagram, which states that
--- the 'start' of a kernel of a homomorphism with a finitely free generated 'start' is also finitely
--- free generated in 'AbHom'.
+-- | kernels with a free tip for free sliced 'From' diagrams.
 abhKernelsSomeFreeFreeTip :: KernelsSomeFreeFreeTip AbHom
 abhKernelsSomeFreeFreeTip = LimitsG abhKernelSomeFreeFreeTip
 
@@ -756,7 +737,7 @@ abhKernelsSomeFreeFreeTip = LimitsG abhKernelSomeFreeFreeTip
 --
 -- (2) @'tip' ('universalCone' ker)@ is smith normal.
 --
--- The construction follows the diagram below by using 'abgGeneratorTo':
+-- The construction follows the diagram below by using 'abgFinPres':
 --
 -- @
 --         k''         
@@ -870,14 +851,7 @@ abhSliceFreeAdjunction k = slcAdjunction slcCoker slcKer (Free k) where
 -- abhCokernelLftFree -
 
 
--- | a liftable cokernel of a cokernel diagram.
---
---  __Properties__ Let @h@ be in @'CokernelDiagram' 'N1' 'AbHom'@ and
--- @cf = 'abhCokernelLftFree' h@, then holds: Let @c = 'clfCokernel' cf@ in
---
--- (1) @'diagram' c '==' h@.
---
--- (2) @'tip' ('universalCone' c)@ is smith normal (see t'AbGroup').
+-- | liftable cokernel for a homomomorphism @h@.
 --
 -- @
 --           w          
@@ -891,7 +865,7 @@ abhSliceFreeAdjunction k = slcAdjunction slcCoker slcKer (Free k) where
 --  p  |         q |          | u'
 --     |           |          |
 --     v     h     v    w'    v
---     s --------> e ------> c' = cCokerLft
+--     s --------> e -------> c' = liftable cokernel
 -- @
 abhCokernelLftFreeG :: CokernelDiagram N1 AbHom
   -> CokernelG ConeLiftable Diagram N1 AbHom
@@ -940,7 +914,7 @@ abhCokernelLftFreeG d@(DiagramParallelRL _ _ (h:|Nil))
 --------------------------------------------------------------------------------
 -- abhCokersLftFree -
 
--- | liftable free cokernels.
+-- | liftable cokernels.
 abhCokernelsLftFreeG :: CokernelsG ConeLiftable Diagram N1 AbHom
 abhCokernelsLftFreeG = LimitsG abhCokernelLftFreeG
 
@@ -954,14 +928,14 @@ prpAbhCokernelsLftFreeG = Prp "AbhCokernelsLftFreeG" :<=>: valid abhCokernelsLft
 --------------------------------------------------------------------------------
 -- abhCokernel -
 
--- | cokernel for a given additive homomorphism.
+-- | cokernel.
 abhCokernel :: CokernelDiagram N1 AbHom -> Cokernel N1 AbHom
 abhCokernel = limesCone abhCokernelsLftFreeG
 
 --------------------------------------------------------------------------------
 -- abhCokernels -
 
--- | cokernels for 'AbHom'. 
+-- | cokernels.
 abhCokernels :: Cokernels N1 AbHom
 abhCokernels = limitsCone abhCokernelsLftFreeG
 

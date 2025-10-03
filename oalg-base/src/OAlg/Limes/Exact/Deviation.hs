@@ -63,7 +63,6 @@ module OAlg.Limes.Exact.Deviation
 
 import Data.Typeable
 import Data.List as L ((++))
-import Data.Foldable (toList)
 
 import OAlg.Prelude
 
@@ -681,6 +680,12 @@ deviations v = DiagramDiscrete (dvs attest v) where
     SW n -> case ats n of Ats -> dvs n (vrcTail v)
 
 --------------------------------------------------------------------------------
+-- DeviationHom -
+
+-- | transormation between 'Deviation's.
+type DeviationHom n = DiagramTrafo Discrete n N0
+
+--------------------------------------------------------------------------------
 -- isExactVariance -
 
 -- | testing of being exact, i.e. the 'deviations' are all 'ZeroPoint's.
@@ -691,7 +696,9 @@ isExactVariance ::
   , Typeable t, Attestable n
   )
   => VarianceG t k c d n x -> Bool
-isExactVariance v = and $ amap1 (isZeroPoint v) $ toList $ dgPoints $ deviations v
+isExactVariance v = isZeroPoint (q v) $ deviations v where
+  q :: VarianceG t k c d n x -> Proxy (DeviationHom (n+1) x)
+  q _ = Proxy
 
 --------------------------------------------------------------------------------
 -- isExact -
@@ -700,12 +707,6 @@ isExactVariance v = and $ amap1 (isZeroPoint v) $ toList $ dgPoints $ deviations
 isExact :: (Distributive x, Typeable t, Attestable n)
   => Kernels N1 x -> Cokernels N1 x -> ConsecutiveZero t n x -> Bool
 isExact kers cokers = isExactVariance . variance kers cokers
-
---------------------------------------------------------------------------------
--- DeviationHom -
-
--- | transormation between 'Deviation's.
-type DeviationHom n = DiagramTrafo Discrete n N0
 
 --------------------------------------------------------------------------------
 -- dvZeroPoint -
@@ -717,6 +718,7 @@ dvZeroPoint (ZeroPoint z) n = ZeroPoint $ DiagramDiscrete $ repeat n z
 -- | zero point for @'DeviationHom' __n x__@ according to the given proxy type.
 dvZeroPoint' :: Attestable n => q n -> ZeroPoint x -> ZeroPoint (DeviationHom n x)
 dvZeroPoint' _ z = dvZeroPoint z attest
+
 --------------------------------------------------------------------------------
 -- deviationHom -
 
