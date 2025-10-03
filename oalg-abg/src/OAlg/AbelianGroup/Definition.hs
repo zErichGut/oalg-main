@@ -22,6 +22,7 @@ module OAlg.AbelianGroup.Definition
     -- * Abelian Group
     AbGroup(..), abg, isSmithNormal
   , abgDim
+  , abgZero
 
     -- * Homomorphism
   , AbHom(..)
@@ -95,6 +96,7 @@ import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.ProductsAndSums as L
 import OAlg.Limes.KernelsAndCokernels
+import OAlg.Limes.Exact.ZeroPoint
 
 import OAlg.Adjunction
 
@@ -256,6 +258,13 @@ isSmithNormal (AbGroup g) = sn (amap1 fst ws) where
 -- represented by matrices over 'ZModHom'.
 newtype AbHom = AbHom (Matrix ZModHom)
   deriving (Show,Eq,Ord,Validable)
+
+--------------------------------------------------------------------------------
+-- abgZero -
+
+-- | the zero point for 'AbHom'.
+abgZero :: ZeroPoint AbHom
+abgZero = ZeroPoint (one ())
 
 --------------------------------------------------------------------------------
 -- abgDim -
@@ -453,7 +462,7 @@ instance Constructable (IsoAbHomMap x y) where
 --------------------------------------------------------------------------------
 -- abHomMatrix -
 
--- | the induced isomorphism from 'AbHom' to @'Matrix' 'ZModHom'@ with inverse 'matrixAbHom'.
+-- | the induced isomorphism from 'AbHom' to @'Matrix' 'ZModHom'@.
 abHomMatrix :: Variant2 Covariant (Inv2 IsoAbHomMap) AbHom (Matrix ZModHom)
 abHomMatrix = Covariant2 (Inv2 t f) where
   t = IsoAbHomMap (AbHomMatrix :. IdPath Struct)
@@ -702,7 +711,7 @@ abhFreeAdjunction = Adjunction AbHomFree FreeAbHom u one where
 -- | the generator for a finitely generated abelian group.
 --
 -- __Property__ Let @a@ be in 'AbGroup', then holds
--- @a '==' g@ where @'Generator' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
+-- @a '==' g@ where @'GeneratorTo' ('DiagramChainTo' g _) _ _ _ _ = 'abgGeneratorTo' a@.  
 abgGeneratorTo :: AbGroup -> FinitePresentation To Free AbHom
 abgGeneratorTo g@(AbGroup pg) = case (someNatural ng',someNatural ng'') of
   (SomeNatural k',SomeNatural k'') -> GeneratorTo chn (Free k') (Free k'') coker ker lft
@@ -1301,6 +1310,8 @@ xMltAbh = xoMlt xN (xStandardOrtOrientation :: XOrtOrientation AbHom)
 
 --------------------------------------------------------------------------------
 -- xAbhSomeFreeSlice -
+
+-- | random variable for some free slice from in 'AbHom'
 xAbhSomeFreeSlice :: N -> X (SomeFreeSlice From AbHom)
 xAbhSomeFreeSlice nMax = do
   n <- xNB 0 nMax

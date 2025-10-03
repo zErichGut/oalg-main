@@ -169,7 +169,7 @@ prpMatrixZMaybeLiftable xz = Prp "MatrixZMaybeLiftable" :<=>: Forall ay test whe
 --------------------------------------------------------------------------------
 -- prpMatrixZLiftable -
 
--- | validity of 'zLift'.
+-- | validity of 'zMatrixLift'.
 prpMatrixZLiftable :: Statement
 prpMatrixZLiftable = Prp "MatrixZLiftable" :<=>:
   And [ prpMatrixZJustLiftable xStandardOrtSite

@@ -1,11 +1,10 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies, TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
@@ -80,7 +79,7 @@ import OAlg.AbelianGroup.Free
 
 -- | a liftable cokernel of a free cokernel diagram.
 --
---  __Properties__ Let @d@ be in @'CokernelDiagramFree' 'N1' 'AbHom'@ and
+--  __Properties__ Let @d@ be in @'CokernelDiagrammatic' 'DiagramFree' 'N1' 'AbHom'@ and
 -- @cf = 'abhCokernelFreeDgmLftFreeG' d@, then holds:
 -- Let @c = 'cone' '$' 'universalCone' cf@ in
 --
@@ -177,7 +176,8 @@ xCokernelDiagramFree xm = do
 --------------------------------------------------------------------------------
 -- xZeroFactor -
 
--- | @'xZeroFactor' xTo h@ gives a factor @f@ with @f'*''zabh' h@ is 'zero'.
+-- | @'xZeroFactor' xTo h@ gives a factor @f@ with
+-- @f v'*' 'zabh' h@ is 'zero'.
 xZeroFactor :: XOrtSite From (Matrix Z) -> Matrix Z -> X AbHom
 xZeroFactor xFrom h = do
   f <- xosStart xFrom (end h)
@@ -277,7 +277,7 @@ dstCokerDgmFrLft n = putDstr asp n $ join $ (amap1 (xecf xe . limes abhCokernels
 -- | the cokernel of a free site to.
 --
 --  __Properties__ Let @s = 'SliceTo' _ h@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ and
--- @cf = 'abhCokernelFreeTo'' s@, then holds: Let @c = 'clfCokernel' cf@ in 
+-- @cf = 'abhCokernelFreeTo'G' s@, then holds: Let @c = 'clfCokernel' cf@ in 
 --
 -- (1) @'diagram' c '==' 'cokernelDiagram' h@.
 --
@@ -285,7 +285,6 @@ dstCokerDgmFrLft n = putDstr asp n $ join $ (amap1 (xecf xe . limes abhCokernels
 abhCokernelFreeTo'G :: Attestable k
   => SliceDiagram (Free k) (Parallel RightToLeft) N2 N1 AbHom
   -> CokernelG ConeLiftable (SliceDiagram (Free k)) N1 AbHom
-  -- => Slice To (Free k) AbHom -> CokernelG ConeLiftable (Slice To (Free k)) N1 AbHom
 abhCokernelFreeTo'G hDgm@(SliceDiagramCokernel (SliceTo k h)) = LimesInjective hCoker hUniv where
   
   h' = amap FreeAbHom (amap AbHomFree h)

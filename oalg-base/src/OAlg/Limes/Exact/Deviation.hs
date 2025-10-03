@@ -20,15 +20,17 @@
 -- measuring the deviation exactness.
 module OAlg.Limes.Exact.Deviation
   (
-
     -- * Deviation
     deviation, deviations, Deviation
+  , dvZeroPoint, dvZeroPoint'
 
     -- * Deviation Hom
   , deviationHom, DeviationHom
   
     -- * Variance
   , variance, VarianceG(..), Variance
+  , isExact, isExactVariance
+
   , vrcConsZeroHom
 
   , vrcSite
@@ -61,6 +63,7 @@ module OAlg.Limes.Exact.Deviation
 
 import Data.Typeable
 import Data.List as L ((++))
+import Data.Foldable (toList)
 
 import OAlg.Prelude
 
@@ -85,7 +88,9 @@ import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
+
 import OAlg.Limes.Exact.ConsecutiveZero
+import OAlg.Limes.Exact.ZeroPoint
 
 import OAlg.Data.Symbol
 
@@ -676,11 +681,42 @@ deviations v = DiagramDiscrete (dvs attest v) where
     SW n -> case ats n of Ats -> dvs n (vrcTail v)
 
 --------------------------------------------------------------------------------
+-- isExactVariance -
+
+-- | testing of being exact, i.e. the 'deviations' are all 'ZeroPoint's.
+isExactVariance ::
+  ( Distributive x
+  , NaturalConicBi (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConicBi (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , Typeable t, Attestable n
+  )
+  => VarianceG t k c d n x -> Bool
+isExactVariance v = and $ amap1 (isZeroPoint v) $ toList $ dgPoints $ deviations v
+
+--------------------------------------------------------------------------------
+-- isExact -
+
+-- | testing of being exact, i.e. the 'deviations' of its 'variance' are all 'ZeroPoint's.
+isExact :: (Distributive x, Typeable t, Attestable n)
+  => Kernels N1 x -> Cokernels N1 x -> ConsecutiveZero t n x -> Bool
+isExact kers cokers = isExactVariance . variance kers cokers
+
+--------------------------------------------------------------------------------
 -- DeviationHom -
 
 -- | transormation between 'Deviation's.
 type DeviationHom n = DiagramTrafo Discrete n N0
 
+--------------------------------------------------------------------------------
+-- dvZeroPoint -
+
+-- | zero point for @'DeviationHom' __n x__@.
+dvZeroPoint :: ZeroPoint x -> Any n -> ZeroPoint (DeviationHom n x)
+dvZeroPoint (ZeroPoint z) n = ZeroPoint $ DiagramDiscrete $ repeat n z 
+
+-- | zero point for @'DeviationHom' __n x__@ according to the given proxy type.
+dvZeroPoint' :: Attestable n => q n -> ZeroPoint x -> ZeroPoint (DeviationHom n x)
+dvZeroPoint' _ z = dvZeroPoint z attest
 --------------------------------------------------------------------------------
 -- deviationHom -
 
