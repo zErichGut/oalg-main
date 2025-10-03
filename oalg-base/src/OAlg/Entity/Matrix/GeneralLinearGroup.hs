@@ -342,7 +342,7 @@ rdcPower f z         = let n = prj z :: N in case f of
 -- rdcTransformations -
 
 -- | reducing transformations.
-rdcTransformations :: Word Z (Transformation x) -> Rdc (Word Z (Transformation x))
+rdcTransformations :: Eq x => Word Z (Transformation x) -> Rdc (Word Z (Transformation x))
 rdcTransformations (Word fs) = rdcTrafos fs >>= return . Word where
   rdcTrafos fs = case fs of
     (_,0):fs' -> reducesTo fs' >>= rdcTrafos
