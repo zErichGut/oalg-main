@@ -160,7 +160,11 @@ by isoToOpOp ans its inverse isoFromOpOp.
 ## [3.0.0.0] - 2025-09-10
 
 ### Changed
-- Complete revision of the concept of duality (see OAlg.Category.SDuality)
+- Complete revision of the concept of duality (see OAlg.Data.Dualisable)
 - Introduction of generic limits.
 - Introduction of generic applications. (see OAlg.Category.Application)
 - Indroduction of disjunctive homomorphisms.
+
+### Added
+- OAlg.Limes.Exact
+

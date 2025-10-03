@@ -17,7 +17,7 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- deviation for free chains-
+-- deviation for free chains.
 module OAlg.Limes.Exact.Free
   (
     -- * Variance
