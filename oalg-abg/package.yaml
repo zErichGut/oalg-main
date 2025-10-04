@@ -35,7 +35,7 @@ description:
 
 dependencies:
 - base >= 4.17 && < 5
-- oalg-base >= 3.0
+- oalg-base >= 3.0 && < 4
 
 ghc-options:
 - -Wall

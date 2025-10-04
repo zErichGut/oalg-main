@@ -1,5 +1,5 @@
 name:                oalg-top
-version:             1.0.0.3
+version:             1.1.0.0
 github:              "zErichGut/oalg-top"
 license:             BSD3
 author:              "Erich.Gut"
@@ -23,8 +23,8 @@ description:         Please see the README on GitHub at <https://github.com/zEri
 dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6
-- oalg-base >= 2.2
-- oalg-abg >= 1.7
+- oalg-base >= 3
+- oalg-abg >= 2
 
 ghc-options:
 - -Wall
@@ -38,6 +38,7 @@ ghc-options:
 - -Wredundant-constraints
 - -Wno-name-shadowing
 - -Wno-unused-top-binds
+- -Wno-x-partial
 
 library:
   source-dirs: src

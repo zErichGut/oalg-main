@@ -1,17 +1,15 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies
-           , TypeOperators
-           , MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , GeneralizedNewtypeDeriving
-           , GADTs
-           , StandaloneDeriving
-           , TupleSections
-           , DefaultSignatures
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : OAlg.Homology.Simplical
@@ -23,7 +21,6 @@
 -- Simplices and there faces.
 module OAlg.Homology.Simplical
   (
-
     -- * Simplical
     Simplical(..), Smpl, faces', gphFaces
   , spxAdjDim
@@ -34,7 +31,7 @@ module OAlg.Homology.Simplical
 
     -- * Asc
   , Asc(..), isAsc, ascxs, asc
-
+  
   ) where
 
 import Control.Monad (join)
@@ -200,12 +197,10 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
 
 -- | transforming simplices over @__x__@ to simplices over @__y__@.
 --
--- __Property__ Let @__s__ __x__ __y__@ be an instance of
--- 
--- @'SimplicalTransformable' __s__ __x__ __y__@, then holds:
+-- __Property__ Let @'SimplicalTransformable' __s x y__@, then holds:
 --
 -- (1) @'vertices' ('amap1' f s) '==' 'amap1' f ('vertices' s)@ for all
--- @f@ in @'Map' 'Ord'' __x__ __y__@ and @s@ in @__s__ __x__@.
+-- @f@ in @'Map' 'Ord'' __x y__@ and @s@ in @__s x__@.
 class (Functorial1 (Map EntOrd) s, Simplical s x, Simplical s y)
   => SimplicalTransformable s x y 
 
@@ -228,13 +223,12 @@ prpSimplicalTransformable xf xsx = Prp "SimplicalTransformable" :<=>:
             vf = vertices sy
             fv = amap1 f $ vertices sx
 
-
 --------------------------------------------------------------------------------
 -- Asc -
 
 -- | ascending list with elements in @__x__@.
 --
--- __Property__ Let @'Asc' xs@ be in @'Asc' __x__@, then holds:
+-- __Property__ Let @v'Asc' xs@ be in @t'Asc' __x__@, then holds:
 -- For all @..x':'y..@ in @xs@ holds: @x '<=' y@.
 newtype Asc x = Asc [x] deriving (Show,Eq,Ord,Foldable,LengthN)
 
@@ -248,8 +242,6 @@ instance (Validable x, Ord x, Show x) => Validable (Asc x) where
                               , (x <= y) :?> Params ["i":=show i, "x":=show x, "y":=show y]
                               , vldAsc (succ i) y xs
                               ]
-
-instance (Entity x, Ord x) => Entity (Asc x)
 
 --------------------------------------------------------------------------------
 -- ascxs -
@@ -276,6 +268,7 @@ isAsc _         = True
 --------------------------------------------------------------------------------
 -- ascCombinations -
 
+-- | all possible combinations to a given dimension.
 ascCombinations :: Set x -> [(Z,Set (Asc x))]
 ascCombinations (Set xs) = cbs xs where
   cbs []     = (-1,Set [Asc []]) : es 0
@@ -302,17 +295,17 @@ ascCombinations (Set xs) = cbs xs where
 --------------------------------------------------------------------------------
 -- Asc - Simplical -
 
-instance Applicative1 (Map Ord') Asc where
-  amap1 (Map f) (Asc xs) = asc $ amap1 f xs
+instance ApplicativeG Asc (Map Ord') (->) where
+  amapG (Map f) (Asc xs) = asc $ amap1 f xs
 
-instance Applicative1 (Map EntOrd) Asc where
-  amap1 (Map f) (Asc xs) = asc $ amap1 f xs
+instance ApplicativeG Asc (Map EntOrd) (->) where
+  amapG (Map f) (Asc xs) = asc $ amap1 f xs
 
-instance Functorial1 (Map Ord') Asc
-instance Functorial1 (Map EntOrd) Asc
+instance FunctorialG Asc (Map Ord') (->)
+instance FunctorialG Asc (Map EntOrd) (->)
 
-instance Transformable1 Asc Ord' where tau1 Struct = Struct
-instance Transformable1 Asc EntOrd where tau1 Struct = Struct
+instance TransformableG Asc Ord' Ord' where tauG Struct = Struct
+instance TransformableG Asc EntOrd EntOrd where tauG Struct = Struct
 
 instance Eq x => PartiallyOrdered (Asc x) where
   Asc xs <<= Asc ys = xs <<= ys

@@ -1,18 +1,17 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , TypeOperators
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , DataKinds
-  , TupleSections
-  , RankNTypes
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE RankNTypes #-}
+
 
 -- |
 -- Module      : OAlg.Homology.Complex
@@ -24,7 +23,6 @@
 -- Definition of complexes of sets.
 module OAlg.Homology.Complex
   (
-
     -- * Complex of Set Simplices
     Complex(..), cpxElem, complex
   , cpxVertices, cpxSimplices, cpxGenerators
@@ -68,6 +66,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial
@@ -133,8 +132,6 @@ instance (Entity x, Ord x) => Validable (Complex x) where
         = Label "3" :<=>: let fs = faces' sv in
             (fs <<= su) :?> Params ["faces' sv // su" := show (fs // su)]
 
-
-instance (Entity x, Ord x) => Entity (Complex x)
 
 --------------------------------------------------------------------------------
 -- cpxSimplices -
@@ -387,8 +384,6 @@ instance Validable (ComplexMap s a b) where
               , vldFaithfulAsc f ss
               ] 
 
-instance (Typeable s, Typeable a, Typeable b) => Entity (ComplexMap s a b)
-
 --------------------------------------------------------------------------------
 -- MultiplicativeComplexMap -
 
@@ -419,9 +414,6 @@ newtype Cards r n = Cards (Diagram Discrete (n+3) N0 (Orientation N))
 instance Validable (Cards r n) where
   valid (Cards d) = Label "Cards" :<=>: valid d
 
-instance (Typeable r, Typeable n) => Entity (Cards r n)
-
-
 --------------------------------------------------------------------------------
 -- cpxCards -
 
@@ -437,33 +429,42 @@ cpxCards n (Complex (Graph zs))
 --------------------------------------------------------------------------------
 -- CardsTrafo -
 
-newtype CardsTrafo r n = CardsTrafo (Transformation Discrete (n+3) N0 (Orientation N))
+newtype CardsTrafo r n = CardsTrafo (DiagramTrafo Discrete (n+3) N0 (Orientation N))
   deriving (Show,Eq)
 
 instance Validable (CardsTrafo r n) where
   valid (CardsTrafo t) = Label "CardsTrafo" :<=>: valid t
 
-instance (Typeable r, Typeable n) => Entity (CardsTrafo r n)
-
 --------------------------------------------------------------------------------
 -- crdsTrafo -
 
-crdsTrafo :: CardsTrafo r n -> Transformation Discrete (n+3) N0 (Orientation N)
+-- | the underlying transformation of diagrams.
+crdsTrafo :: CardsTrafo r n -> DiagramTrafo Discrete (n+3) N0 (Orientation N)
 crdsTrafo (CardsTrafo t) = t
 
 --------------------------------------------------------------------------------
 -- CardsTrafo - Algebraic -
 
+type instance Point (CardsTrafo r n) = Cards r n
+instance ShowPoint (CardsTrafo r n)
+instance EqPoint (CardsTrafo r n)
+instance ValidablePoint (CardsTrafo r n)
+instance (Typeable r, Typeable n) => TypeablePoint (CardsTrafo r n)
+
 instance (Typeable r, Typeable n) => Oriented (CardsTrafo r n) where
-  type Point (CardsTrafo r n) = Cards r n
-  orientation (CardsTrafo (Transformation a b _)) = Cards a :> Cards b
+  orientation (CardsTrafo (DiagramTrafo a b _)) = Cards a :> Cards b
 
 instance (Typeable r, Typeable n) => Multiplicative (CardsTrafo r n) where
   one (Cards a) = CardsTrafo (one a)
   CardsTrafo f * CardsTrafo g = CardsTrafo (f*g)
 
-instance (Typeable r, Typeable n) => Fibred (CardsTrafo r n) where
-  type Root (CardsTrafo r n) = Orientation (Cards r n)
+type instance Root (CardsTrafo r n) = Orientation (Cards r n)
+instance ShowRoot (CardsTrafo r n)
+instance EqRoot (CardsTrafo r n)
+instance ValidableRoot (CardsTrafo r n)
+instance (Typeable r, Typeable n) => TypeableRoot (CardsTrafo r n)
+
+instance (Typeable r, Typeable n) => Fibred (CardsTrafo r n)
 
 instance (Typeable r, Typeable n) => FibredOriented (CardsTrafo r n)
 
@@ -478,7 +479,6 @@ instance (Typeable r, Typeable n) => Abelian (CardsTrafo r n) where
   a - b | root a == root b = a
         | otherwise        = throw NotAddable
 
-
 instance (Semiring r, Commutative r, Typeable n) => Vectorial (CardsTrafo r n) where
   type Scalar (CardsTrafo r n) = r
   (!) _ = id 
@@ -491,8 +491,9 @@ instance (Semiring r, Commutative r, Typeable n) => Algebraic (CardsTrafo r n)
 -- cpmCards -
 
 cpmCards :: Any n -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo r n
-cpmCards d m = CardsTrafo $ Transformation cd cr ts where
+cpmCards d m = CardsTrafo $ DiagramTrafo cd cr ts where
   Cards cd = cpxCards d (cpmDomain m)
   Cards cr = cpxCards d (cpmRange m)
   ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)
+
 

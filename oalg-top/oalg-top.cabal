@@ -1,11 +1,11 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.1.
 --
 -- see: https://github.com/sol/hpack
 
 name:           oalg-top
-version:        1.0.0.3
+version:        1.1.0.0
 description:    Please see the README on GitHub at <https://github.com/zErichGut/oalg-top#readme>
 homepage:       https://github.com/zErichGut/oalg-top#readme
 bug-reports:    https://github.com/zErichGut/oalg-top/issues
@@ -37,12 +37,12 @@ library
       Paths_oalg_top
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds -Wno-x-partial
   build-depends:
       base >=4.7 && <5
     , containers >=0.6
-    , oalg-abg >=1.7
-    , oalg-base >=2.2
+    , oalg-abg >=2
+    , oalg-base >=3
   default-language: Haskell2010
 
 test-suite oalg-top-test
@@ -52,11 +52,11 @@ test-suite oalg-top-test
       Paths_oalg_top
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds -Wno-x-partial -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , containers >=0.6
-    , oalg-abg >=1.7
-    , oalg-base >=2.2
+    , oalg-abg >=2
+    , oalg-base >=3
     , oalg-top
   default-language: Haskell2010
