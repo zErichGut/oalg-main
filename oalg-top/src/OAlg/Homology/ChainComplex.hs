@@ -1,18 +1,16 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , TypeOperators
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , GeneralizedNewtypeDeriving
-  , DataKinds
-  , RankNTypes
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- |
 -- Module      : OAlg.Homology.ChainComplex
@@ -24,13 +22,12 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
-
     -- * Chain Complex
     chainComplex, Regular(..), ChainComplex
   , ccpRepMatrix, ccpCards
 
     -- * Chain Complex Trafo
-  , chainComplexTrafo, ChainComplexTrafo
+  , chainComplexHom, ChainComplexHom
   , ccptRepMatrix, ccptCards
 
   ) where
@@ -61,7 +58,9 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Matrix hiding (Transformation(..))
 
-import OAlg.Limes.Exact.ConsZero
+import OAlg.Hom.Distributive
+
+import OAlg.Limes.Exact.ConsecutiveZero
 
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainOperator as C
@@ -120,17 +119,17 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 -- ChainComplex -
 
 -- | chain complex.
-type ChainComplex = ConsZero To
+type ChainComplex = ConsecutiveZero To
 
 --------------------------------------------------------------------------------
 -- chainComplex -
 
--- | the chain complex of the boundary operators, where in the 'Regualr' case the first operator
--- is addapted to @'zero'@ with an empy 'end'.
+-- | the chain complex of the boundary operators, where in the v'Regular' case the first operator
+-- is addapted to @'zero'@ with an empty 'end'.
 chainComplex :: (Ring r, Commutative r, Ord r)
   => Struct (Smpl s) x -> Regular -> Any n -> Complex x
   -> ChainComplex n (ChainOperator r s)
-chainComplex Struct r n c = ConsZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
+chainComplex Struct r n c = ConsecutiveZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
 
   toBndOpr :: (Ring r, Commutative r, Ord r, Simplical s x)
     => FinList (n+1) (Set (s x)) -> FinList n (ChainOperator r s)
@@ -167,7 +166,7 @@ bndZLst = chainComplex
 
 ccpRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
   => ChainComplex n (ChainOperator r s) -> ChainComplex n (Matrix r)
-ccpRepMatrix = cnzMap ChoprRepMatrix
+ccpRepMatrix = cnzMapCov (homDisjOpDst ChoprRepMatrix)
 
 --------------------------------------------------------------------------------
 -- ccpCards -
@@ -175,16 +174,16 @@ ccpRepMatrix = cnzMap ChoprRepMatrix
 -- | the cardinalities of the consecutive 'SimplexSet's of the given chain complex.
 ccpCards :: (Ring r, Commutative r, Ord r, Typeable s)
   => ChainComplex n (ChainOperator r s) -> Cards r n
-ccpCards c = Cards $ DiagramDiscrete $ cnzPoints $ cnzMap choprCardsOrnt c
+ccpCards c = Cards $ DiagramDiscrete $ cnzPoints $ cnzMapCov (homDisjOpDst choprCardsOrnt) c
 
 --------------------------------------------------------------------------------
--- ChainComplexTrafo -
+-- ChainComplexHom -
 
 -- | transformation between chain complexes.
-type ChainComplexTrafo = ConsZeroTrafo To
+type ChainComplexHom = ConsecutiveZeroHom To
 
 --------------------------------------------------------------------------------
--- chainComplexTrafo -
+-- chainComplexHom -
 
 eqSetType :: (Typeable x, Typeable x', Typeable y, Typeable y')
   => Map EntOrd x y -> Set (s x') -> Set (s y') -> Maybe (x :~: x',y :~: y')
@@ -201,34 +200,35 @@ eqSetType f sx sy = do
     eqRng _ _ = eqT
 
 -- | the transformation of chain complexes.
-chainComplexTrafo :: (Ring r, Commutative r, Ord r)
+chainComplexHom :: (Ring r, Commutative r, Ord r)
   => Struct2 (Hmlg s) x y -> Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> ChainComplexTrafo n (ChainOperator r s)
-chainComplexTrafo Struct2 r n f = ConsZeroTrafo a b fs where
-  a  = chainComplex Struct r n (cpmDomain f)
-  b  = chainComplex Struct r n (cpmRange f)
-  fs = amap1 (uncurry $ toChnMap $ cpmMap f) $ cnzPoints a `F.zip` cnzPoints b
+  -> ChainComplexHom n (ChainOperator r s)
+chainComplexHom Struct2 r n f = ConsecutiveZeroHom $ DiagramTrafo  a b fs where
+  ConsecutiveZero a  = chainComplex Struct r n (cpmDomain f)
+  ConsecutiveZero b  = chainComplex Struct r n (cpmRange f)
+  fs = amap1 (uncurry $ toChnMap $ cpmMap f) $ dgPoints a `F.zip` dgPoints b
 
   toChnMap :: (Ring r, Commutative r, Ord r, Homological s x y)
     => Map EntOrd x y -> SimplexSet s -> SimplexSet s -> ChainOperator r s
   toChnMap f (SimplexSet sx) (SimplexSet sy) = case eqSetType f sx sy of
     Just (Refl,Refl) -> chopr (Representable (ChainMap f) sx sy)
-    Nothing          -> throw $ ImplementationError "chainComplexTrafo.toChnMap"
+    Nothing          -> throw $ ImplementationError "chainComplexHom.toChnMap"
 
 --------------------------------------------------------------------------------
 -- ccptRepMatrix -
 
 ccptRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
-  => ChainComplexTrafo n (ChainOperator r s) -> ChainComplexTrafo n (Matrix r)
-ccptRepMatrix = cnztMap ChoprRepMatrix
+  => ChainComplexHom n (ChainOperator r s) -> ChainComplexHom n (Matrix r)
+ccptRepMatrix = cnzHomMapCov (homDisjOpDst ChoprRepMatrix)
 
 --------------------------------------------------------------------------------
 -- ccptCards -
 
 ccptCards :: (Ring r, Commutative r, Ord r, Typeable s)
-  => ChainComplexTrafo n (ChainOperator r s) -> CardsTrafo r n
-ccptCards t = CardsTrafo $ Transformation a b fs where
-  ConsZeroTrafo ca cb fs = cnztMap choprCardsOrnt t
-  a  = DiagramDiscrete $ cnzPoints ca
-  b  = DiagramDiscrete $ cnzPoints cb
+  => ChainComplexHom n (ChainOperator r s) -> CardsTrafo r n
+ccptCards t = CardsTrafo $ DiagramTrafo a b fs where
+  ConsecutiveZeroHom (DiagramTrafo a' b' fs) = cnzHomMapCov (homDisjOpDst choprCardsOrnt) t
+  a  = DiagramDiscrete $ dgPoints a'
+  b  = DiagramDiscrete $ dgPoints b'
+
 

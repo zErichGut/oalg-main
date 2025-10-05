@@ -12,7 +12,6 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RankNTypes #-}
 
-
 -- |
 -- Module      : OAlg.Homology.Complex
 -- Description : definition of complexes of sets.
@@ -87,7 +86,7 @@ import OAlg.Homology.Simplical
 
 -- | complex of set-simplices over a vertex type @__x__@.
 --
--- __Properties__ Let @c = 'Complex' g@ be in @'SetComlex' __x__@, then holds:
+-- __Properties__ Let @c = v'Complex' g@ be in @t'Comlex' __x__@, then holds:
 --
 -- (1) 'empty' is in @g@.
 --

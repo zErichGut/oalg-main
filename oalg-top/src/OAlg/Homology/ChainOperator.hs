@@ -1,16 +1,15 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies
-           , TypeOperators
-           , MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , GADTs
-           , StandaloneDeriving
-           , GeneralizedNewtypeDeriving
-           , DataKinds
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
 
 
 -- |
@@ -39,6 +38,7 @@ module OAlg.Homology.ChainOperator
 
     -- * Chain
   , Chain, ch, chZ, boundary, chainMap
+
   ) where
 
 import Control.Monad
@@ -61,6 +61,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented hiding (Path)
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Multiplicative
@@ -72,6 +73,7 @@ import OAlg.Structure.Exponential
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
 import OAlg.Hom.Fibred
+import OAlg.Hom.FibredOriented
 import OAlg.Hom.Additive
 import OAlg.Hom.Distributive
 import OAlg.Hom.Vectorial
@@ -97,13 +99,14 @@ type Chain r s x = SumSymbol r (s x)
 ch :: (Ring r, Commutative r, Simplical s x) => s x -> Chain r s x
 ch = sy
 
--- | a simplces as a 'Z'-chain.
+-- | a simplex as a 'Z'-chain.
 chZ :: Simplical s x => s x -> Chain Z s x
 chZ = ch
 
 --------------------------------------------------------------------------------
 -- rAlt -
 
+-- | infinite list of alternating @['rOne', -'rOne','rOne'...]@. 
 rAlt :: Ring r => [r]
 rAlt = za rOne where za i = i:za (negate i)
 
@@ -147,18 +150,17 @@ instance (Ring r, Commutative r) => Morphism (ChainOperatorAtom r s) where
   homomorphous Boundary     = Struct :>: Struct
   homomorphous (ChainMap _) = Struct :>: Struct
 
-instance (Ring r, Commutative r) => Applicative (ChainOperatorAtom r s) where
-  amap Boundary     = boundary
-  amap (ChainMap f) = chainMap f
+instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorAtom r s) (->) where
+  amapG Boundary     = toIdG boundary
+  amapG (ChainMap f) = toIdG (chainMap f)
 
-instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s) where
-  rmap Boundary     = const ()
-  rmap (ChainMap _) = const ()
+instance Ring r => ApplicativeG Rt (ChainOperatorAtom r s) (->) where
+  amapG Boundary     = amapRt (const ())
+  amapG (ChainMap _) = amapRt (const ())
 
+instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s)
 instance (Ring r, Commutative r) => HomAdditive (ChainOperatorAtom r s)
-
 instance (Ring r, Commutative r) => HomVectorial r (ChainOperatorAtom r s)
-
 
 --------------------------------------------------------------------------------
 -- ChainOpreratorPath -
@@ -188,9 +190,9 @@ instance Reducible (Path (ChainOperatorAtom r s) x y) where
 newtype ChainOperatorRep r s x y
   = ChainOperatorRep (Representable r (ChainOperatorPath r s) x y)
 
-instance (Ring r, Commutative r) => Applicative (ChainOperatorRep r s) where
-  amap (ChainOperatorRep (Representable f sx _)) s = amap f $ cfsssy sx $ ssycfs sx s
-  
+instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorRep r s) (->) where
+  amapG (ChainOperatorRep (Representable f sx _)) (Id s) = Id $ amap f $ cfsssy sx $ ssycfs sx s
+
 --------------------------------------------------------------------------------
 -- chorDomain -
 
@@ -245,15 +247,20 @@ instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
 instance Ring r => Validable (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
   valid (ChainOperatorRep r) = Label "ChainOperatorRep" :<=>: valid r
 
-instance (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => Entity (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-
 --------------------------------------------------------------------------------
 -- ChainOperatorRep r s - Fibred -
 
+type instance Root (ChainOperatorRep r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
+
+instance (Simplical s x, Simplical s y) => ShowRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y) => EqRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y)
+  => ValidableRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y)
+  => TypeableRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+
 instance (Ring r, Commutative r, Simplical s x, Simplical s y)
   => Fibred (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
-  type Root (ChainOperatorRep r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
   root r = (chorDomain r, chorRange r)
 
 instance (Ring r, Simplical s x, Simplical s y)
@@ -331,9 +338,9 @@ data ChainOperatorRepSum r s x y where
     => Sum r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
     -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
 
-instance (Ring r, Commutative r) => Applicative (ChainOperatorRepSum r s) where
-  amap (ChainOperatorRepSum f) = smfChorsAppl $ form f
-  
+instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorRepSum r s) (->) where
+  amapG (ChainOperatorRepSum f) = toIdG $ smfChorsAppl $ form f
+
 --------------------------------------------------------------------------------
 -- ChainOperatorRepSum - Constructable -
 
@@ -371,15 +378,22 @@ instance (Ring r, Commutative r)
   => Validable (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
   valid (ChainOperatorRepSum r) = Label "ChainOperatorRepSum" :<=>: valid r
 
-instance (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => Entity (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
-
 --------------------------------------------------------------------------------
 -- ChainOperatorRepSum - Verctorial -
 
+type instance Root (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
+
+instance (Simplical s x, Simplical s y)
+  => ShowRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y)
+  => EqRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y)
+  => ValidableRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y)
+  => TypeableRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+
 instance (Ring r, Commutative r, Simplical s x, Simplical s y)
   => Fibred (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
-  type Root (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
   root (ChainOperatorRepSum r) = root r
 
 instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
@@ -542,8 +556,6 @@ instance (Ring r, Commutative r) => Eq (ChainOperator r s) where
 instance (Ring r, Commutative r) => Validable (ChainOperator r s) where
   valid (ChainOperator f) = Label "ChainOperator" :<=>: valid f
 
-instance (Ring r, Commutative r, Typeable s) => Entity (ChainOperator r s)
-
 --------------------------------------------------------------------------------
 -- SimplexSet -
 
@@ -563,19 +575,28 @@ instance Eq (SimplexSet s) where
 instance Validable (SimplexSet s) where
   valid (SimplexSet sx) = Label "SimplexSet" :<=>: valid sx
 
-instance Typeable s => Entity (SimplexSet s)
-
 instance LengthN (SimplexSet s) where lengthN (SimplexSet sx) = lengthN sx
 
 --------------------------------------------------------------------------------
 -- ChainOperator - Algebraic -
 
+type instance Point (ChainOperator r s) = SimplexSet s
+
+instance ShowPoint (ChainOperator r s)
+instance EqPoint (ChainOperator r s)
+instance ValidablePoint (ChainOperator r s)
+instance Typeable s => TypeablePoint (ChainOperator r s)
+
 instance (Ring r, Commutative r, Typeable s) => Oriented (ChainOperator r s) where
-  type Point (ChainOperator r s) = SimplexSet s
   orientation (ChainOperator f) = SimplexSet sx :> SimplexSet sy where (sx,sy) = root f
 
-instance (Ring r, Commutative r, Typeable s) => Fibred (ChainOperator r s) where
-  type Root (ChainOperator r s) = Orientation (SimplexSet s)
+type instance Root (ChainOperator r s) = Orientation (SimplexSet s)
+instance ShowRoot (ChainOperator r s)
+instance EqRoot (ChainOperator r s)
+instance ValidableRoot (ChainOperator r s)
+instance Typeable s => TypeableRoot (ChainOperator r s)
+
+instance (Ring r, Commutative r, Typeable s) => Fibred (ChainOperator r s)
 
 instance (Ring r, Commutative r, Ord r, Typeable s) => Additive (ChainOperator r s) where
   zero (SimplexSet sx :> SimplexSet sy) = ChainOperator $ zero (sx,sy)
@@ -632,9 +653,6 @@ instance Validable (ChoprRepMatrix r s x y) where
   valid r = Label "ChoprRepMatrix" :<=>: case r of ChoprRepMatrix -> SValid
 instance Validable2 (ChoprRepMatrix r s)
 
-instance (Typeable r, Typeable s, Typeable x, Typeable y) => Entity (ChoprRepMatrix r s x y)
-instance (Typeable r, Typeable s) => Entity2 (ChoprRepMatrix r s)
-
 --------------------------------------------------------------------------------
 -- ChoprRepMatrix - HomAlgebraic -
 
@@ -643,12 +661,17 @@ instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
   type ObjectClass (ChoprRepMatrix r s) = Alg r
   homomorphous ChoprRepMatrix = Struct :>: Struct
 
+instance (AlgebraicSemiring r, Ring r) => ApplicativeG Id (ChoprRepMatrix r s) (->) where
+  amapG ChoprRepMatrix = toIdG choprRepMatrix
 
-instance (AlgebraicSemiring r, Ring r) => Applicative (ChoprRepMatrix r s) where
-  amap ChoprRepMatrix = choprRepMatrix
+instance (AlgebraicSemiring r, Ring r) => ApplicativeG Pnt (ChoprRepMatrix r s) (->) where
+  amapG ChoprRepMatrix (Pnt (SimplexSet sx)) = Pnt (dim unit ^ lengthN sx)
+
+instance (AlgebraicSemiring r, Ring r)
+  => ApplicativeG Rt (ChoprRepMatrix r s) (->) where
+  amapG o@ChoprRepMatrix = amapRt (omap o)
 
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprRepMatrix r s) where
-  pmap ChoprRepMatrix (SimplexSet sx) = dim unit ^ lengthN sx
 
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomMultiplicative (ChoprRepMatrix r s)
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibred (ChoprRepMatrix r s)
@@ -674,3 +697,4 @@ choprCardsOrnt = OrntMap lengthN :. ornt :. IdPath Struct where
 choprCards ::  (Ring r, Commutative r, Ord r, Typeable s)
   => ChainOperator r s -> Orientation N
 choprCards = amap choprCardsOrnt
+
