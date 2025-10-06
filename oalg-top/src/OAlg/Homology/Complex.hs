@@ -43,7 +43,7 @@ module OAlg.Homology.Complex
 
     -- * Cardinalities
   , cpxCards, Cards(..)
-  , cpmCards, CardsTrafo(..), crdsTrafo
+  , cpmCardsHom, CardsHom(..), crdsHomTrafo
 
   ) where
 
@@ -426,71 +426,71 @@ cpxCards n (Complex (Graph zs))
   crds _ _             = throw $ ImplementationError "cpxCares.crds"
 
 --------------------------------------------------------------------------------
--- CardsTrafo -
+-- CardsHom -
 
-newtype CardsTrafo r n = CardsTrafo (DiagramTrafo Discrete (n+3) N0 (Orientation N))
+newtype CardsHom r n = CardsHom (DiagramTrafo Discrete (n+3) N0 (Orientation N))
   deriving (Show,Eq)
 
-instance Validable (CardsTrafo r n) where
-  valid (CardsTrafo t) = Label "CardsTrafo" :<=>: valid t
+instance Validable (CardsHom r n) where
+  valid (CardsHom t) = Label "CardsHom" :<=>: valid t
 
 --------------------------------------------------------------------------------
--- crdsTrafo -
+-- crdsHomTrafo -
 
 -- | the underlying transformation of diagrams.
-crdsTrafo :: CardsTrafo r n -> DiagramTrafo Discrete (n+3) N0 (Orientation N)
-crdsTrafo (CardsTrafo t) = t
+crdsHomTrafo :: CardsHom r n -> DiagramTrafo Discrete (n+3) N0 (Orientation N)
+crdsHomTrafo (CardsHom t) = t
 
 --------------------------------------------------------------------------------
--- CardsTrafo - Algebraic -
+-- CardsHom - Algebraic -
 
-type instance Point (CardsTrafo r n) = Cards r n
-instance ShowPoint (CardsTrafo r n)
-instance EqPoint (CardsTrafo r n)
-instance ValidablePoint (CardsTrafo r n)
-instance (Typeable r, Typeable n) => TypeablePoint (CardsTrafo r n)
+type instance Point (CardsHom r n) = Cards r n
+instance ShowPoint (CardsHom r n)
+instance EqPoint (CardsHom r n)
+instance ValidablePoint (CardsHom r n)
+instance (Typeable r, Typeable n) => TypeablePoint (CardsHom r n)
 
-instance (Typeable r, Typeable n) => Oriented (CardsTrafo r n) where
-  orientation (CardsTrafo (DiagramTrafo a b _)) = Cards a :> Cards b
+instance (Typeable r, Typeable n) => Oriented (CardsHom r n) where
+  orientation (CardsHom (DiagramTrafo a b _)) = Cards a :> Cards b
 
-instance (Typeable r, Typeable n) => Multiplicative (CardsTrafo r n) where
-  one (Cards a) = CardsTrafo (one a)
-  CardsTrafo f * CardsTrafo g = CardsTrafo (f*g)
+instance (Typeable r, Typeable n) => Multiplicative (CardsHom r n) where
+  one (Cards a) = CardsHom (one a)
+  CardsHom f * CardsHom g = CardsHom (f*g)
 
-type instance Root (CardsTrafo r n) = Orientation (Cards r n)
-instance ShowRoot (CardsTrafo r n)
-instance EqRoot (CardsTrafo r n)
-instance ValidableRoot (CardsTrafo r n)
-instance (Typeable r, Typeable n) => TypeableRoot (CardsTrafo r n)
+type instance Root (CardsHom r n) = Orientation (Cards r n)
+instance ShowRoot (CardsHom r n)
+instance EqRoot (CardsHom r n)
+instance ValidableRoot (CardsHom r n)
+instance (Typeable r, Typeable n) => TypeableRoot (CardsHom r n)
 
-instance (Typeable r, Typeable n) => Fibred (CardsTrafo r n)
+instance (Typeable r, Typeable n) => Fibred (CardsHom r n)
 
-instance (Typeable r, Typeable n) => FibredOriented (CardsTrafo r n)
+instance (Typeable r, Typeable n) => FibredOriented (CardsHom r n)
 
--- Note: all CardsTrafo are zero!
-instance (Typeable r, Typeable n) => Additive (CardsTrafo r n) where
-  zero (Cards a :> Cards b) = CardsTrafo $ zero (a :> b)
+-- Note: all CardsHom are zero!
+instance (Typeable r, Typeable n) => Additive (CardsHom r n) where
+  zero (Cards a :> Cards b) = CardsHom $ zero (a :> b)
   a + b | root a == root b = a
         | otherwise        = throw NotAddable
 
-instance (Typeable r, Typeable n) => Abelian (CardsTrafo r n) where
+instance (Typeable r, Typeable n) => Abelian (CardsHom r n) where
   negate = id
   a - b | root a == root b = a
         | otherwise        = throw NotAddable
 
-instance (Semiring r, Commutative r, Typeable n) => Vectorial (CardsTrafo r n) where
-  type Scalar (CardsTrafo r n) = r
+instance (Semiring r, Commutative r, Typeable n) => Vectorial (CardsHom r n) where
+  type Scalar (CardsHom r n) = r
   (!) _ = id 
 
-instance (Typeable r, Typeable n) => Distributive (CardsTrafo r n)
+instance (Typeable r, Typeable n) => Distributive (CardsHom r n)
 
-instance (Semiring r, Commutative r, Typeable n) => Algebraic (CardsTrafo r n)
+instance (Semiring r, Commutative r, Typeable n) => Algebraic (CardsHom r n)
 
 --------------------------------------------------------------------------------
--- cpmCards -
+-- cpmCardsHom -
 
-cpmCards :: Any n -> ComplexMap s (Complex x) (Complex y) -> CardsTrafo r n
-cpmCards d m = CardsTrafo $ DiagramTrafo cd cr ts where
+cpmCardsHom :: Any n -> ComplexMap s (Complex x) (Complex y) -> CardsHom r n
+cpmCardsHom d m = CardsHom $ DiagramTrafo cd cr ts where
   Cards cd = cpxCards d (cpmDomain m)
   Cards cr = cpxCards d (cpmRange m)
   ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)

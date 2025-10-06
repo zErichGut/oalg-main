@@ -28,7 +28,9 @@ module OAlg.Homology.ChainComplex
 
     -- * Chain Complex Trafo
   , chainComplexHom, ChainComplexHom
-  , ccptRepMatrix, ccptCards
+  , ccpHomRepMatrix, ccpHomCardsHom
+
+  , bndZSet
 
   ) where
 
@@ -65,7 +67,6 @@ import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainOperator as C
 import OAlg.Homology.Simplical
-
 
 --------------------------------------------------------------------------------
 -- toFinList3 -
@@ -150,16 +151,16 @@ chainComplex Struct r n c = ConsecutiveZero $ toDgm r $ toBndOpr $ amap1 snd $ c
     -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
   zeroEmptyEnd d = zero (fst $ root d,empty) 
 
-{-
+
 bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
-bndZSet = chainComplex
+bndZSet = chainComplex Struct
 
 bndZAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
-bndZAsc = chainComplex
+bndZAsc = chainComplex Struct
 
 bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
-bndZLst = chainComplex
--}
+bndZLst = chainComplex Struct
+
 
 --------------------------------------------------------------------------------
 -- ccpRepMatrix -
@@ -215,18 +216,18 @@ chainComplexHom Struct2 r n f = ConsecutiveZeroHom $ DiagramTrafo  a b fs where
     Nothing          -> throw $ ImplementationError "chainComplexHom.toChnMap"
 
 --------------------------------------------------------------------------------
--- ccptRepMatrix -
+-- ccpHomRepMatrix -
 
-ccptRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+ccpHomRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
   => ChainComplexHom n (ChainOperator r s) -> ChainComplexHom n (Matrix r)
-ccptRepMatrix = cnzHomMapCov (homDisjOpDst ChoprRepMatrix)
+ccpHomRepMatrix = cnzHomMapCov (homDisjOpDst ChoprRepMatrix)
 
 --------------------------------------------------------------------------------
--- ccptCards -
+-- ccpHomCardsHom -
 
-ccptCards :: (Ring r, Commutative r, Ord r, Typeable s)
-  => ChainComplexHom n (ChainOperator r s) -> CardsTrafo r n
-ccptCards t = CardsTrafo $ DiagramTrafo a b fs where
+ccpHomCardsHom :: (Ring r, Commutative r, Ord r, Typeable s)
+  => ChainComplexHom n (ChainOperator r s) -> CardsHom r n
+ccpHomCardsHom t = CardsHom $ DiagramTrafo a b fs where
   ConsecutiveZeroHom (DiagramTrafo a' b' fs) = cnzHomMapCov (homDisjOpDst choprCardsOrnt) t
   a  = DiagramDiscrete $ dgPoints a'
   b  = DiagramDiscrete $ dgPoints b'

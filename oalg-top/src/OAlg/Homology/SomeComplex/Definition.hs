@@ -1,17 +1,16 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , TypeOperators
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , DataKinds
-  , TupleSections
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TupleSections #-}
+
 
 -- |
 -- Module      : OAlg.Homology.SomeComplex.Definition
@@ -43,12 +42,8 @@ import OAlg.Structure.Multiplicative
 
 import OAlg.Hom.Distributive ()
 
--- import OAlg.Entity.Diagram
--- import OAlg.Entity.FinList as F hiding ((++),repeat)
 import OAlg.Entity.Natural
--- import OAlg.Structure.PartiallyOrdered
 
--- import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 
 --------------------------------------------------------------------------------
@@ -72,8 +67,6 @@ instance Eq SomeComplex where
 
 instance Validable SomeComplex where
   valid (SomeComplex c) = Label "SomeComplex" :<=>: valid c
-
-instance Entity SomeComplex
 
 --------------------------------------------------------------------------------
 -- SomeComplexMap -
@@ -113,13 +106,16 @@ instance Eq (SomeComplexMap s) where
 instance Validable (SomeComplexMap s) where
   valid (SomeComplexMap f) = Label "SomeComplexMap" :<=>: valid f
 
-instance Typeable s => Entity (SomeComplexMap s)
-
 --------------------------------------------------------------------------------
 -- SomeComplexMap - Multiplicative -
 
+type instance Point (SomeComplexMap s) = SomeComplex
+instance ShowPoint (SomeComplexMap s)
+instance EqPoint (SomeComplexMap s)
+instance ValidablePoint (SomeComplexMap s)
+instance TypeablePoint (SomeComplexMap s)
+
 instance Typeable s => Oriented (SomeComplexMap s) where
-  type Point (SomeComplexMap s) = SomeComplex
   orientation (SomeComplexMap f) = case cpmForget f of
     ComplexMapNgl _ _ (Map _) -> (SomeComplex $ cpmDomain f) :> (SomeComplex $ cpmRange f)
 
@@ -146,5 +142,5 @@ scpxCards d (SomeComplex c) = cpxCards d c
 --------------------------------------------------------------------------------
 -- scpmCards -
 
-scpmCards :: Any n -> SomeComplexMap s -> CardsTrafo r n
-scpmCards d (SomeComplexMap f) = cpmCards d f
+scpmCards :: Any n -> SomeComplexMap s -> CardsHom r n
+scpmCards d (SomeComplexMap f) = cpmCardsHom d f
