@@ -20,6 +20,7 @@
 -- measuring the deviation exactness.
 module OAlg.Limes.Exact.Deviation
   (
+
     -- * Deviation
     deviation, deviations, Deviation
   , deviationTo, deviationsTo
@@ -327,20 +328,24 @@ relVarianceGTo xeck xecfk xecc xecfc i
 relVarianceG ::
   ( Distributive x
   , EntityDiagrammatic d x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , NaturalKernelCokernel (IsoO s Op) k c d
   , ObjectKernelCokernel k c d x
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s
   )
-  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  => Struct s x
+  -> XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> VarianceG t k c d n x -> Statement
-relVarianceG xeck xecfk xecc xecfc v@(VarianceG (ConsecutiveZero (DiagramChainTo _ _)) _)
+relVarianceG _ xeck xecfk xecc xecfc v@(VarianceG (ConsecutiveZero (DiagramChainTo _ _)) _)
   = relVarianceGTo xeck xecfk xecc xecfc 0 v
-
-relVarianceG xeck xecfk xecc xecfc v@(VarianceG (ConsecutiveZero (DiagramChainFrom _ _)) _)
+relVarianceG s xeck xecfk xecc xecfc v@(VarianceG (ConsecutiveZero (DiagramChainFrom _ _)) _)
   = relVarianceGTo xeck' xecfk' xecc' xecfc' 0 v' where
-  Contravariant2 i       = toDualOpDst
+  Contravariant2 i       = toDualO' (Proxy :: Proxy Op) s
   
   SDualBi (Left1 v')     = vrcMapS i (SDualBi (Right1 v))
   
@@ -354,16 +359,21 @@ relVarianceG xeck xecfk xecc xecfc v@(VarianceG (ConsecutiveZero (DiagramChainFr
 prpVarianceG ::
   ( Distributive x
   , EntityDiagrammatic d x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , NaturalKernelCokernel (IsoO s Op) k c d
   , ObjectKernelCokernel k c d x
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s
   )
-  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  => Struct s x
+  -> XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> VarianceG t k c d n x -> Statement
-prpVarianceG xeck xecfk xecc xecfc v = Prp "VarianceG"
-  :<=>: relVarianceG xeck xecfk xecc xecfc v
+prpVarianceG s xeck xecfk xecc xecfc v = Prp "VarianceG"
+  :<=>: relVarianceG s xeck xecfk xecc xecfc v
 
 
 instance
@@ -374,8 +384,9 @@ instance
   , XStandardEligibleConeFactorCokernel N1 x
   )
   => Validable (VarianceG t Cone Cone Diagram n x) where
-  valid = prpVarianceG xStandardEligibleConeG xStandardEligibleConeFactorG
-                      xStandardEligibleConeG xStandardEligibleConeFactorG
+  valid = prpVarianceG (Struct :: Distributive x => Struct Dst x)
+            xStandardEligibleConeG xStandardEligibleConeFactorG
+            xStandardEligibleConeG xStandardEligibleConeFactorG
 
 --------------------------------------------------------------------------------
 -- variance -
@@ -471,13 +482,19 @@ vrcConsZeroHomTo (VarianceG (ConsecutiveZero top@(DiagramChainTo a (_:|w:|ds))) 
 -- bottom:   end t         a'>-----------> b'-------------> c ------------> d ...
 --                           v' = ker0 w'          w'
 -- @
-vrcConsZeroHom :: (Distributive x, NaturalKernelCokernel (IsoO Dst Op) k c d)
-  => VarianceG t k c d n x -> ConsecutiveZeroHom t n x
-vrcConsZeroHom v@(VarianceG (ConsecutiveZero (DiagramChainTo _ _)) _)   = vrcConsZeroHomTo v
-vrcConsZeroHom v@(VarianceG (ConsecutiveZero (DiagramChainFrom _ _)) _) = t where
-  Contravariant2 i   = toDualOpDst
+vrcConsZeroHom ::
+  ( Distributive x, NaturalKernelCokernel (IsoO s Op) k c d
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s
+  )
+  => Struct s x -> VarianceG t k c d n x -> ConsecutiveZeroHom t n x
+vrcConsZeroHom _ v@(VarianceG (ConsecutiveZero (DiagramChainTo _ _)) _)   = vrcConsZeroHomTo v
+vrcConsZeroHom s v@(VarianceG (ConsecutiveZero (DiagramChainFrom _ _)) _) = t where
+  Contravariant2 i   = toDualO' (Proxy :: Proxy Op) s
   SDualBi (Left1 v') = amapF i (SDualBi (Right1 v))
-  t'                 = vrcConsZeroHom v'
+  t'                 = vrcConsZeroHomTo v'
   SDualBi (Right1 t) = amapF (inv2 i) (SDualBi (Left1 t'))
 
 --------------------------------------------------------------------------------
@@ -521,18 +538,22 @@ vrcHomConsZeroHom (VarianceGHom a b fs) = ConsecutiveZeroHom t where
 prpVarianceGHom ::
   ( Distributive x
   , EntityDiagrammatic d x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , NaturalKernelCokernel (IsoO s Op) k c d
   , ObjectKernelCokernel k c d x
   , Typeable t, Typeable n
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s
   )
-  => XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
+  => Struct s x -> XEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
   -> XEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> XEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
   -> VarianceGHom t k c d n x -> Statement
-prpVarianceGHom xeck xecfk xecc xecfc t@(VarianceGHom a b _) = Prp "VarianceGHom" :<=>:
-  And [ Label "start" :<=>: prpVarianceG xeck xecfk xecc xecfc a
-      , Label "end" :<=>: prpVarianceG xeck xecfk xecc xecfc b
+prpVarianceGHom s xeck xecfk xecc xecfc t@(VarianceGHom a b _) = Prp "VarianceGHom" :<=>:
+  And [ Label "start" :<=>: prpVarianceG s xeck xecfk xecc xecfc a
+      , Label "end" :<=>: prpVarianceG s xeck xecfk xecc xecfc b
       , Label "trafo" :<=>: valid (vrcHomConsZeroHom t)
       ]
 
@@ -545,8 +566,9 @@ instance
   , Typeable t, Typeable n
   )
   => Validable (VarianceGHom t Cone Cone Diagram n x) where
-  valid = prpVarianceGHom xStandardEligibleConeG xStandardEligibleConeFactorG
-                           xStandardEligibleConeG xStandardEligibleConeFactorG
+  valid = prpVarianceGHom (Struct :: Distributive x => Struct Dst x)
+            xStandardEligibleConeG xStandardEligibleConeFactorG
+            xStandardEligibleConeG xStandardEligibleConeFactorG
 
 --------------------------------------------------------------------------------
 -- vrcHomMapCov -
@@ -654,12 +676,15 @@ deviationTo v = case orientation $ vrcConsZeroHomTo v of
 
 -- | the deviation of being exact, i.e. the 'Point' @a'@ in the diagram of 'VarianceG'.
 deviation ::
-  ( Distributive x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  ( Distributive x, NaturalKernelCokernel (IsoO s Op) k c d
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s
   , Typeable t, Typeable n
   )
-  => VarianceG t k c d n x -> Point x
-deviation v = case orientation $ vrcConsZeroHom v of
+  => Struct s x -> VarianceG t k c d n x -> Point x
+deviation s v = case orientation $ vrcConsZeroHom s v of
   ConsecutiveZero (DiagramChainTo a' _) :> _   -> a'
   _ :> ConsecutiveZero (DiagramChainFrom a' _) -> a'
 
@@ -697,21 +722,29 @@ deviationsTo v = DiagramDiscrete (dvs attest v) where
 -- | the induced 'Deviation's.
 deviations :: 
   ( Distributive x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , NaturalKernelCokernel (IsoO s Op) k c d
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s
   , Typeable t, Attestable n
   )
-  => VarianceG t k c d n x -> Deviation (n+1) x
-deviations v = DiagramDiscrete (dvs attest v) where
+  => Struct s x -> VarianceG t k c d n x -> Deviation (n+1) x
+deviations s v = DiagramDiscrete (dvs s attest v) where
 
   dvs ::
     ( Distributive x
-    , NaturalKernelCokernel (IsoO Dst Op) k c d
+    , NaturalKernelCokernel (IsoO s Op) k c d
+    , TransformableGRefl Op s
+    , TransformableDst s
+    , TransformableType s
+    , TransformableOp s
     , Typeable t, Attestable n
     )
-    => Any n -> VarianceG t k c d n x -> FinList (n+1) (Point x)
-  dvs n v = deviation v :| case n of
+    => Struct s x -> Any n -> VarianceG t k c d n x -> FinList (n+1) (Point x)
+  dvs s n v = deviation s v :| case n of
     W0   -> Nil
-    SW n -> case ats n of Ats -> dvs n (vrcTail v)
+    SW n -> case ats n of Ats -> dvs s n (vrcTail v)
 
 --------------------------------------------------------------------------------
 -- DeviationHom -
@@ -725,12 +758,16 @@ type DeviationHom n = DiagramTrafo Discrete n N0
 -- | testing of being exact, i.e. the 'deviations' are all 'ZeroPoint's.
 isExactVariance ::
   ( Distributive x
-  , NaturalConicBi (IsoO Dst Op) k Dst Projective d (Parallel LeftToRight) N2 N1
-  , NaturalConicBi (IsoO Dst Op) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConicBi (IsoO s Op) k Dst Projective d (Parallel LeftToRight) N2 N1
+  , NaturalConicBi (IsoO s Op) c Dst Projective d (Parallel LeftToRight) N2 N1
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s  
   , Typeable t, Attestable n
   )
-  => VarianceG t k c d n x -> Bool
-isExactVariance v = isZeroPoint (q v) $ deviations v where
+  => Struct s x -> VarianceG t k c d n x -> Bool
+isExactVariance s v = isZeroPoint (q v) $ deviations s v where
   q :: VarianceG t k c d n x -> Proxy (DeviationHom (n+1) x)
   q _ = Proxy
 
@@ -740,7 +777,7 @@ isExactVariance v = isZeroPoint (q v) $ deviations v where
 -- | testing of being exact, i.e. the 'deviations' of its 'variance' are all 'ZeroPoint's.
 isExact :: (Distributive x, Typeable t, Attestable n)
   => Kernels N1 x -> Cokernels N1 x -> ConsecutiveZero t n x -> Bool
-isExact kers cokers = isExactVariance . variance kers cokers
+isExact kers cokers = isExactVariance (Struct :: Distributive x => Struct Dst x) . variance kers cokers
 
 --------------------------------------------------------------------------------
 -- dvZeroPoint -
@@ -759,13 +796,17 @@ dvZeroPoint' _ z = dvZeroPoint z attest
 -- | the induced homomorphism between 'Deviation's.
 deviationHomTo ::
   ( Distributive x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , NaturalKernelCokernel (IsoO s Op) k c d
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s  
   , Attestable n
   )
-  => VarianceGHom To k c d n x -> DeviationHom (n+1) x
-deviationHomTo (VarianceGHom a b fs) = DiagramTrafo a' b' fs' where
-  a'  = deviations a
-  b'  = deviations b
+  => Struct s x -> VarianceGHom To k c d n x -> DeviationHom (n+1) x
+deviationHomTo s (VarianceGHom a b fs) = DiagramTrafo a' b' fs' where
+  a'  = deviations s a
+  b'  = deviations s b
   fs' = trfs a b fs
 
   trf ::
@@ -794,17 +835,21 @@ deviationHomTo (VarianceGHom a b fs) = DiagramTrafo a' b' fs' where
 -- | the induced homomorphism between 'Deviation's.
 deviationHom ::
   ( Distributive x
-  , NaturalKernelCokernel (IsoO Dst Op) k c d
+  , NaturalKernelCokernel (IsoO s Op) k c d
+  , TransformableGRefl Op s
+  , TransformableDst s
+  , TransformableType s
+  , TransformableOp s    
   , Attestable n
   )
-  => VarianceGHom t k c d n x -> DeviationHom (n+1) x
-deviationHom h = case vrcHomSite h of
-  Right Refl -> deviationHomTo h
+  => Struct s x -> VarianceGHom t k c d n x -> DeviationHom (n+1) x
+deviationHom s h = case vrcHomSite h of
+  Right Refl -> deviationHomTo s h
   Left Refl  -> dh where
-    Contravariant2 i = toDualOpDst
+    Contravariant2 i = toDualO' (Proxy :: Proxy Op) s
 
     SDualBi (Left1 hOp) = amapF i (SDualBi (Right1 h))
-    dhOp                = deviationHom hOp
+    dhOp                = deviationHomTo (tauOp s) hOp
     SDualBi (Right1 dh) = amapF (inv2 i) (SDualBi (Left1 dhOp))
 
 --------------------------------------------------------------------------------
@@ -815,9 +860,11 @@ prpDeviationOrntSymbol :: Statement
 prpDeviationOrntSymbol = Prp "Deviation" :<=>:
   And [ Forall (xSomeConsecutiveZeroHomOrnt 20)
           (\(SomeConsecutiveZeroHom t)
-           -> valid (deviationHom $ varianceHom kers cokers t)
+           -> valid (deviationHom s $ varianceHom kers cokers t)
           )
       ]
   where kers   = kernelsOrnt X
         cokers = cokernelsOrnt Y
+        s      = Struct :: Struct Dst OS
+
 

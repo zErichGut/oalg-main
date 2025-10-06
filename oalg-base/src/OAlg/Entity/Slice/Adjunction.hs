@@ -100,13 +100,13 @@ instance Attestable k => NaturalDiagrammaticFree Dst (SliceDiagram (Free k)) N2 
 -- sdgMapCov -
 
 -- | mapping a slice diagram according to a covariant homomorphism.
-sdgMapCovStruct :: HomSlicedOriented i h
+sdgMapCovStruct :: HomOrientedSliced i h
   => Struct (Sld i) y -> Variant2 Covariant h x y -> SliceDiagram i t n m x -> SliceDiagram i t n m y
 sdgMapCovStruct Struct h (SliceDiagramKernel d)   = SliceDiagramKernel $ slMapCov h d
 sdgMapCovStruct Struct h (SliceDiagramCokernel d) = SliceDiagramCokernel $ slMapCov h d
 
 -- | mapping a slice diagram according to a covariant homomorphism.
-sdgMapCov :: HomSlicedOriented i h
+sdgMapCov :: HomOrientedSliced i h
   => Variant2 Covariant h x y -> SliceDiagram i t n m x -> SliceDiagram i t n m y
 sdgMapCov h = sdgMapCovStruct (tau (range h)) h
 
@@ -114,14 +114,14 @@ sdgMapCov h = sdgMapCovStruct (tau (range h)) h
 -- sdgMapCnt -
 
 -- | mapping a slice diagram according to a contravariant homomorphism.
-sdgMapCntStruct :: HomSlicedOriented i h
+sdgMapCntStruct :: HomOrientedSliced i h
   => Struct (Sld i) y
   -> Variant2 Contravariant h x y -> SliceDiagram i t n m x -> SliceDiagram i (Dual t) n m y
 sdgMapCntStruct Struct h (SliceDiagramKernel d)   = SliceDiagramCokernel $ slMapCnt h d
 sdgMapCntStruct Struct h (SliceDiagramCokernel d) = SliceDiagramKernel $ slMapCnt h d
 
 -- | mapping a slice diagram according to a contravariant homomorphism.
-sdgMapCnt :: HomSlicedOriented i h
+sdgMapCnt :: HomOrientedSliced i h
   => Variant2 Contravariant h x y -> SliceDiagram i t n m x -> SliceDiagram i (Dual t) n m y
 sdgMapCnt h = sdgMapCntStruct (tau (range h)) h
 
@@ -134,7 +134,7 @@ type instance Dual1 (SliceDiagram i t n m) = SliceDiagram i (Dual t) n m
 -- sdgMapS -
 
 -- | mapping a slice diagram.
-sdgMapS :: (HomSlicedOriented i h, t ~ Dual (Dual t))
+sdgMapS :: (HomOrientedSliced i h, t ~ Dual (Dual t))
   => h x y -> SDualBi (SliceDiagram i t n m) x -> SDualBi (SliceDiagram i t n m) y
 sdgMapS = vmapBi sdgMapCov sdgMapCov sdgMapCnt sdgMapCnt
 
@@ -169,13 +169,13 @@ slcKernelsCone ks = LimitsG sks where
 --------------------------------------------------------------------------------
 -- NaturalDiagrammatic -
 
-instance (HomSlicedOriented i h, t ~ Dual (Dual t))
+instance (HomOrientedSliced i h, t ~ Dual (Dual t))
   => ApplicativeG (SDualBi (DiagramG (SliceDiagram i) t n m)) h (->) where
   amapG h = sdbFromDgmObj . sdgMapS h . sdbToDgmObj
   
 instance
   ( CategoryDisjunctive h
-  , HomSlicedOriented i h
+  , HomOrientedSliced i h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
@@ -183,7 +183,7 @@ instance
 
 instance
   ( CategoryDisjunctive h
-  , HomSlicedOriented i h
+  , HomOrientedSliced i h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )
@@ -192,7 +192,7 @@ instance
 
 instance
   ( CategoryDisjunctive h
-  , HomSlicedOriented i h
+  , HomOrientedSliced i h
   , FunctorialOriented h
   , t ~ Dual (Dual t)
   )

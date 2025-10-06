@@ -27,21 +27,21 @@ module OAlg.Entity.Slice.Sliced
     -- * Hom
     
     -- ** Oriented
-  , HomSlicedOriented, Sld
+  , HomOrientedSliced, Sld
   , sliceIndexDomain, sliceIndexRange
   , sldHom
   , toDualOpOrtSld, toDualOpOrtSld'
 
     -- ** Multiplicative
-  , HomSlicedMultiplicative
+  , HomMultiplicativeSliced
   , toDualOpMltSld, toDualOpMltSld'
 
     -- ** Distributive
-  , HomSlicedDistributive
+  , HomDistributiveSliced
   , toDualOpDstSld, toDualOpDstSld'
   
     -- * Proposition
-  , prpHomSlicedOriented
+  , prpHomOrientedSliced
 
   ) where
 
@@ -106,17 +106,17 @@ data Sld (i :: Type -> Type)
 type instance Structure (Sld i) x = Sliced i x
 
 --------------------------------------------------------------------------------
--- HomSlicedOriented -
+-- HomOrientedSliced -
 
 -- | homomorphisms between 'Sliced' structures, i.e homomorphisms between 'Oriented' structures where
 -- 'pmap' preserves the distinguished point.
 --
--- __Property__ Let @'HomSlicedOriented' __i__ __h__@, then holds:
+-- __Property__ Let @'HomOrientedSliced' __i__ __h__@, then holds:
 --
 -- (1) For all @__x__@, @__y__@ and @h@ in @__h x y__@ holds:
 -- @'pmap' h px '==' py@, where @px = 'slicePoint' '$' 'sliceIndexDomain' '$' 'sldHom' q h@,
 -- @py = 'slicePoint' '$' 'sliceIndexRange' '$' 'sldHom' q h@ and @q@ is any proxy in @__q i__@.
-class (HomOrientedDisjunctive h, Transformable (ObjectClass h) (Sld i)) => HomSlicedOriented i h
+class (HomOrientedDisjunctive h, Transformable (ObjectClass h) (Sld i)) => HomOrientedSliced i h
 
 --------------------------------------------------------------------------------
 -- sliceIndexDomain -
@@ -135,15 +135,15 @@ sliceIndexRange (_ :>: Struct) = unit1
 -- sldHom -
 
 -- | the induced homomorphous structure.
-sldHom :: HomSlicedOriented i h => q i -> h x y -> Homomorphous (Sld i) x y
+sldHom :: HomOrientedSliced i h => q i -> h x y -> Homomorphous (Sld i) x y
 sldHom _ h = tauHom (homomorphous h)
 
 --------------------------------------------------------------------------------
--- prpHomSlicedOriented -
+-- prpHomOrientedSliced -
 
-relHomSlicedOriented :: (HomSlicedOriented i h, Show2 h)
+relHomOrientedSliced :: (HomOrientedSliced i h, Show2 h)
   => Homomorphous Ort x y -> Homomorphous (Sld i) x y -> h x y -> Statement
-relHomSlicedOriented (Struct:>:Struct) hSld@(Struct:>:Struct) h
+relHomOrientedSliced (Struct:>:Struct) hSld@(Struct:>:Struct) h
   = (pmap h px == py) :?> Params [ "h":=show2 h
                                  , "px":= show px
                                  , "py":=show py
@@ -152,14 +152,14 @@ relHomSlicedOriented (Struct:>:Struct) hSld@(Struct:>:Struct) h
       px = slicePoint $ sliceIndexDomain hSld
       py = slicePoint $ sliceIndexRange hSld
 
--- | validity according to 'HomSlicedOriented'.
-prpHomSlicedOriented :: (HomSlicedOriented i h, Show2 h)
+-- | validity according to 'HomOrientedSliced'.
+prpHomOrientedSliced :: (HomOrientedSliced i h, Show2 h)
   => q i -> h x y -> Statement
-prpHomSlicedOriented q h = Prp "HomSlicedOriented"
-  :<=>: relHomSlicedOriented (tauHom $ homomorphous h) (sldHom q h) h
+prpHomOrientedSliced q h = Prp "HomOrientedSliced"
+  :<=>: relHomOrientedSliced (tauHom $ homomorphous h) (sldHom q h) h
 
 --------------------------------------------------------------------------------
--- IsoO - HomSlicedOriented -
+-- IsoO - HomOrientedSliced -
 
 instance Transformable (s,Sld i) Type where tau _ = Struct
 
@@ -205,22 +205,22 @@ instance
   ( Transformable s Ort
   , TransformableOp (s,Sld i)
   )
-  => HomSlicedOriented i (HomDisjEmpty (s,Sld i) Op)
+  => HomOrientedSliced i (HomDisjEmpty (s,Sld i) Op)
 
-instance (CategoryDisjunctive h, HomSlicedOriented i h) => HomSlicedOriented i (Inv2 h)
+instance (CategoryDisjunctive h, HomOrientedSliced i h) => HomOrientedSliced i (Inv2 h)
 
 instance
   ( TransformableOrt s
   , TransformableType s
   , TransformableOp s
-  ) => HomSlicedOriented i (Sub (s,Sld i) (HomDisjEmpty s Op))
+  ) => HomOrientedSliced i (Sub (s,Sld i) (HomDisjEmpty s Op))
 
 instance
   ( TransformableOrt s
   , TransformableType s
   , TransformableOp s
   )
-  => HomSlicedOriented i (Sub (s,Sld i) (IsoO s Op))
+  => HomOrientedSliced i (Sub (s,Sld i) (IsoO s Op))
 
 --------------------------------------------------------------------------------
 -- toDualOpOrtSld -
@@ -234,10 +234,10 @@ toDualOpOrtSld' :: Sliced i x => q i -> Variant2 Contravariant (IsoO (Ort, Sld i
 toDualOpOrtSld' _ = toDualOpOrtSld
 
 --------------------------------------------------------------------------------
--- HomSlicedMultiplicative -
+-- HomMultiplicativeSliced -
 
 -- | disjunctive multiplicative homomorphism respecting the slice structure.
-type HomSlicedMultiplicative i h = (HomSlicedOriented i h, HomMultiplicativeDisjunctive h)
+type HomMultiplicativeSliced i h = (HomOrientedSliced i h, HomMultiplicativeDisjunctive h)
 
 --------------------------------------------------------------------------------
 -- toDualOpMltSld -
@@ -253,10 +253,10 @@ toDualOpMltSld' :: (Sliced i x, Multiplicative x)
 toDualOpMltSld' _ = toDualOpMltSld
 
 --------------------------------------------------------------------------------
--- HomSlicedDistributive -
+-- HomDistributiveSliced -
 
 -- | disjunctive distributive homomorphism respecting the slice structure.
-type HomSlicedDistributive i h = (HomSlicedOriented i h, HomDistributiveDisjunctive h)
+type HomDistributiveSliced i h = (HomOrientedSliced i h, HomDistributiveDisjunctive h)
 
 -- | contravariant isomorphism on 'Sliced' 'Distributive' structures. 
 toDualOpDstSld :: (Sliced i x, Distributive x)
