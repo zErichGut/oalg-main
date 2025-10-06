@@ -48,7 +48,8 @@ module OAlg.Entity.Slice.Free
     
     -- * Liftable Free
   , LiftableFree(..), liftFree
-  , HomFree, lftFrMapSMlt, lftFrMapSDst
+  , HomFreeOp
+  , lftFrMapS, lftFrMapCov, lftFrMapCnt
   , NaturalDiagrammaticFree
 
   , CokernelsLiftableSomeFree, CokernelLiftableSomeFree
@@ -85,7 +86,6 @@ import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
-import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -113,7 +113,6 @@ instance Attestable k => Singleton1 (Free k) where
 instance Show1 (Free k)
 instance Eq1 (Free k)
 instance Validable1 (Free k)
--- instance Typeable k => Entity1 (Free k)
 
 --------------------------------------------------------------------------------
 -- free' -
@@ -181,13 +180,14 @@ class SlicedFree x where
 slicedFree' :: (SlicedFree x, Attestable k) => q x -> Any k -> Struct (Sld (Free k)) x
 slicedFree' _ _ = slicedFree
 
+{-
 --------------------------------------------------------------------------------
 -- tauSldFrTuple -
 
 -- | decorating the @__s__@ structure with @__k__@ sliced free.
 tauSldFrTuple :: (SlicedFree x, Attestable k) => Struct s x -> Struct (s,Sld (Free k)) x
 tauSldFrTuple s = tauTuple s slicedFree
-
+-}
 --------------------------------------------------------------------------------
 -- tauSldFreeOp -
 
@@ -219,17 +219,17 @@ instance TransformableAdd s    => TransformableAdd (s,SldFr)
 instance TransformableFbrOrt s => TransformableFbrOrt (s,SldFr)
 instance TransformableDst s    => TransformableDst (s,SldFr) 
 
-instance TransformableObjectClass (Mlt,SldFr) (HomDisj Mlt Op (HomEmpty Mlt))
-instance TransformableObjectClass (Dst,SldFr) (HomDisj Dst Op (HomEmpty Dst))
+-- instance TransformableObjectClass (Mlt,SldFr) (HomDisj Mlt Op (HomEmpty Mlt))
+-- instance TransformableObjectClass (Dst,SldFr) (HomDisj Dst Op (HomEmpty Dst))
 
-instance FunctorialOriented (Sub (Mlt,SldFr) (HomDisjEmpty Mlt Op))
-instance FunctorialOriented (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
+-- instance FunctorialOriented (Sub (Mlt,SldFr) (HomDisjEmpty Mlt Op))
+-- instance FunctorialOriented (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
 
 instance Attestable k => Transformable (s,SldFr) (Sld (Free k)) where
   tau s = case tauSnd s of Struct -> slicedFree
   
-instance Attestable k => HomSlicedOriented (Free k) (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
-
+-- instance Attestable k => HomSlicedOriented (Free k) (Sub (Dst,SldFr) (HomDisjEmpty Dst Op))
+{-
 --------------------------------------------------------------------------------
 -- lftFrSub -
 
@@ -239,6 +239,7 @@ lftFrSub :: q k
    -> Variant2 v (IsoO s Op) x y
    -> Variant2 v (Inv2 (Sub (s,Sld (Free k)) (HomDisjEmpty s Op))) x y
 lftFrSub _ sx sy = amapVariant2 (\(Inv2 t f) -> Inv2 (sub' (sx:>:sy) t) (sub' (sy:>:sx) f))
+-}
 
 --------------------------------------------------------------------------------
 -- DiagramFree -
@@ -484,6 +485,119 @@ liftFree :: LiftableFree p x -> Any k -> Liftable p (Free k) x
 liftFree (LiftableFree l) = l
 
 --------------------------------------------------------------------------------
+-- HomFreeOp -
+
+-- | homomorphism between free sliced structures.
+-- type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
+type HomFreeOp s = HomDisjEmpty (s,SldFr) Op
+
+instance Transformable (s,SldFr) Type where tau _ = Struct
+instance TransformableType (s,SldFr)
+
+instance Transformable (s,SldFr) SldFr where tau = tauSnd
+
+instance TransformableG Op SldFr SldFr where tauG Struct = Struct
+
+instance TransformableG Op s s => TransformableG Op (s,SldFr) s where tauG = tauG . tauFst
+instance TransformableOp s => TransformableOp (s,SldFr)
+
+instance TransformableG Op (s,SldFr) SldFr where tauG = tauG . tauSnd
+
+instance
+  ( TransformableOrt s
+  , TransformableOp s
+  )
+  => HomOrientedSlicedFree (HomFreeOp s)
+
+instance
+  ( TransformableOrt s
+  , TransformableOp s
+  )
+  => HomOrientedSlicedFree (Inv2 (HomFreeOp s))
+
+instance
+  ( TransformableOrt s
+  , TransformableOp s
+  , Attestable k
+  )
+  => HomSlicedOriented (Free k) (HomFreeOp s)
+
+instance
+  ( TransformableOrt s
+  , TransformableOp s
+  , Attestable k
+  )
+  => HomSlicedOriented (Free k) (Inv2 (HomFreeOp s))
+
+--------------------------------------------------------------------------------
+-- lftFrMapCov -
+
+lftFrMapCovk ::
+  ( TransformableOp s
+  , TransformableMlt s
+  )
+  => Variant2 Covariant (Inv2 (HomFreeOp s)) x y -> LiftableFree p x -> Any k -> Liftable p (Free k) y
+lftFrMapCovk i lf k = case ats k of Ats -> lftMapCov i (liftFree lf k) 
+
+lftFrMapCov ::
+  ( TransformableOp s
+  , TransformableMlt s
+  )
+  => Variant2 Covariant (Inv2 (HomFreeOp s)) x y -> LiftableFree p x -> LiftableFree p y
+lftFrMapCov i lf = LiftableFree (lftFrMapCovk i lf)
+
+--------------------------------------------------------------------------------
+-- lftFrMapCnt -
+
+lftFrMapCntk ::
+  ( TransformableOp s
+  , TransformableMlt s
+  )
+  => Variant2 Contravariant (Inv2 (HomFreeOp s)) x y
+  -> LiftableFree p x -> Any k -> Liftable (Dual p) (Free k) y
+lftFrMapCntk i lf k = case ats k of Ats -> lftMapCnt i (liftFree lf k) 
+
+lftFrMapCnt ::
+  ( TransformableOp s
+  , TransformableMlt s
+  )
+  => Variant2 Contravariant (Inv2 (HomFreeOp s)) x y -> LiftableFree p x -> LiftableFree (Dual p) y
+lftFrMapCnt i lf = LiftableFree (lftFrMapCntk i lf)
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (LiftableFree p) = LiftableFree (Dual p)
+
+--------------------------------------------------------------------------------
+-- lftFrMapS -
+
+lftFrMapS ::
+  ( TransformableOp s
+  , TransformableMlt s
+  , p ~ Dual (Dual p)
+  )
+  => Inv2 (HomFreeOp s) x y -> SDualBi (LiftableFree p) x -> SDualBi (LiftableFree p) y
+lftFrMapS = vmapBi lftFrMapCov lftFrMapCov lftFrMapCnt lftFrMapCnt
+
+instance
+  ( TransformableOp s
+  , TransformableMlt s
+  , p ~ Dual (Dual p)
+  )
+  => ApplicativeG (SDualBi (LiftableFree p)) (Inv2 (HomFreeOp s)) (->) where
+  amapG = lftFrMapS
+
+instance
+  ( TransformableOp s
+  , TransformableMlt s
+  , p ~ Dual (Dual p)
+  )
+  => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomFreeOp s)) (->)
+
+{-
+
+--------------------------------------------------------------------------------
 -- lftFrMapIsoOpCov -
 
 lftFrMapIsoOpCovStruct ::
@@ -553,23 +667,6 @@ lftFrMapIsoOpDstCnt ::
 lftFrMapIsoOpDstCnt i lf = LiftableFree (lftFrMapIsoOpCntStruct (domain i) (range i) i lf)
 
 --------------------------------------------------------------------------------
--- HomFree -
-
--- | homomorphism between free sliced structures.
-type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
-
-instance Transformable (s,SldFr) SldFr where tau = tauSnd
-
-instance
-  ( TransformableOrt s
-  , TransformableType s
-  , TransformableOp s
-  ) => HomOrientedSlicedFree (HomFree s)
-
-instance HomOrientedSlicedFree (Inv2 (HomFree Mlt))
-instance HomOrientedSlicedFree (Inv2 (HomFree Dst))
-
---------------------------------------------------------------------------------
 -- lftFrMapCov -
 
 -- | covariant mapping of 'LiftableFree'.
@@ -621,6 +718,7 @@ instance p ~ Dual (Dual p) => ApplicativeG (SDualBi (LiftableFree p)) (Inv2 (Hom
   amapG = lftFrMapSDst
 
 instance p ~ Dual (Dual p) => FunctorialG (SDualBi (LiftableFree p)) (Inv2 (HomFree Dst)) (->)
+-}
 
 --------------------------------------------------------------------------------
 -- ConeLiftable -
@@ -668,10 +766,10 @@ cnLiftable (ConeCokernelLiftable _ lft) = lft
 
 -- | covariant mapping of 'ConeLiftable'.
 cnlMapCov ::
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
   )
-  => Variant2 Covariant (Inv2 (HomFree s)) x y
+  => Variant2 Covariant (Inv2 (HomFreeOp s)) x y
   -> ConeLiftable s p d t n m x -> ConeLiftable s p d t n m y
 cnlMapCov (Covariant2 i) (ConeKernelLiftable k l) = ConeKernelLiftable k' l' where
   SDualBi (Right1 k') = amapG i (SDualBi (Right1 k))
@@ -685,10 +783,10 @@ cnlMapCov (Covariant2 i) (ConeCokernelLiftable k l) = ConeCokernelLiftable k' l'
 
 -- | contravariant mapping of 'ConeLiftable'.
 cnlMapCnt ::
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
   )
-  => Variant2 Contravariant (Inv2 (HomFree s)) x y
+  => Variant2 Contravariant (Inv2 (HomFreeOp s)) x y
   -> ConeLiftable s p d t n m x -> ConeLiftable s (Dual p) d (Dual t) n m y
 cnlMapCnt (Contravariant2 i) (ConeKernelLiftable k l) = ConeCokernelLiftable k' l' where
   SDualBi (Left1 k') = amapG i (SDualBi (Right1 k))
@@ -707,31 +805,31 @@ type instance Dual1 (ConeLiftable s p d t n m) = ConeLiftable s (Dual p) d (Dual
 
 -- | mapping of 'ConeLiftable'.
 cnlMapS ::
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
   , p ~ Dual (Dual p)
   , t ~ Dual (Dual t)
   )
-  => Inv2 (HomFree s) x y
+  => Inv2 (HomFreeOp s) x y
   -> SDualBi (ConeLiftable s p d t n m) x -> SDualBi (ConeLiftable s p d t n m) y
 cnlMapS = vmapBi cnlMapCov cnlMapCov cnlMapCnt cnlMapCnt
 
 instance
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
   , p ~ Dual (Dual p)
   , t ~ Dual (Dual t)
   )
-  => ApplicativeG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFree s)) (->) where
+  => ApplicativeG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFreeOp s)) (->) where
   amapG = cnlMapS
 
 instance
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) N2 N1
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) N2 N1
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
   , p ~ Dual (Dual p)
   , t ~ Dual (Dual t)
   )
-  => FunctorialG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFree s)) (->)
+  => FunctorialG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFreeOp s)) (->)
 
 --------------------------------------------------------------------------------
 -- CokernelLiftableSomeFree -
@@ -745,11 +843,12 @@ type CokernelsLiftableSomeFree = CokernelsG ConeLiftable SomeFreeSliceDiagram N1
 --------------------------------------------------------------------------------
 -- toDualOpFree -
 
+instance TransformableGRefl Op s => TransformableGRefl Op (s,SldFr)
+
 -- | to dual operator.
 toDualOpFreeDst :: (Distributive x, SlicedFree x)
-  => Variant2 Contravariant (Inv2 (HomFree Dst)) x (Op x)
-toDualOpFreeDst = Contravariant2 (Inv2 (Sub t) (Sub f)) where
-  Contravariant2 (Inv2 t f) = toDualOpDst
+  => Variant2 Contravariant (Inv2 (HomFreeOp Dst)) x (Op x)
+toDualOpFreeDst = toDualO Struct
 
 --------------------------------------------------------------------------------
 -- prpConeLiftable -
@@ -782,8 +881,8 @@ relConeLiftable ::
   , Distributive x
   , SlicedFree x
   , XStandardOrtOrientation x
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) n m
   , n ~ N2, m ~ N1
   )
   => N -> ConeLiftable s p d t n m x -> Statement
@@ -800,8 +899,8 @@ prpConeLiftable ::
   , Distributive x
   , SlicedFree x
   , XStandardOrtOrientation x
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) n m
   , n ~ N2, m ~ N1
   )
   => N -> ConeLiftable s p d t n m x -> Statement
@@ -812,8 +911,8 @@ prpConeLiftable kMax c = Prp "ConeLiftable" :<=>: relConeLiftable kMax c
 
 -- | helper class to avoid undecidable instances.
 class
-  ( NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel LeftToRight) n m
-  , NaturalDiagrammatic (Inv2 (HomFree s)) d (Parallel RightToLeft) n m
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) n m
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) n m
 
   )
   => NaturalDiagrammaticFree s d n m
@@ -900,7 +999,6 @@ instance
   => Validable (ConicFreeTip c s p d t n m x) where
   valid = prpConicFreeTip
 
-
 --------------------------------------------------------------------------------
 -- SomeFreeSlice -
 
@@ -952,4 +1050,5 @@ instance
         , Label "2" :<=>: (slicePoint k' == tip (universalCone ker))
             :?> Params ["k'":=show1 k',"ker":=show ker]
         ]
+
 

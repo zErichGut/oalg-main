@@ -30,7 +30,7 @@ module OAlg.Homology.ChainComplex
   , chainComplexHom, ChainComplexHom
   , ccpHomRepMatrix, ccpHomCardsHom
 
-  , bndZSet
+  , bndZSet, bndZAsc, bndZLst
 
   ) where
 

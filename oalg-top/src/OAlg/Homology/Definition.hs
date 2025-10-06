@@ -128,6 +128,6 @@ ccpfVariance = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSome
 --------------------------------------------------------------------------------
 
 c   = complex [Set [0..3]] :: Complex N
-cos = bndZSet Regular (attest :: Any N5) c
+cos = bndZLst Extended (attest :: Any N5) c
 cf  = ccpConsecutiveZeroFree cos
 v   = ccpfVariance cf

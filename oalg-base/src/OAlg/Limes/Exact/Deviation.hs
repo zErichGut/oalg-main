@@ -22,6 +22,7 @@ module OAlg.Limes.Exact.Deviation
   (
     -- * Deviation
     deviation, deviations, Deviation
+  , deviationTo, deviationsTo
   , dvZeroPoint, dvZeroPoint'
 
     -- * Deviation Hom
@@ -419,10 +420,7 @@ variance ks cs c@(ConsecutiveZero (DiagramChainFrom _ _)) = v where
 -- vrcConsZeroHom -
 
 -- | the induced @'ConsecutiveZeroHom' __'To'__@.
-vrcConsZeroHomTo ::
-  ( Distributive x
-  , Conic c, Conic k
-  )
+vrcConsZeroHomTo :: ( Distributive x, Conic c, Conic k)
   => VarianceG To k c d n x -> ConsecutiveZeroHom To n x
 vrcConsZeroHomTo (VarianceG (ConsecutiveZero top@(DiagramChainTo a (_:|w:|ds))) ((ker,coker):|_))
   = ConsecutiveZeroHom (DiagramTrafo bot top ts) where
@@ -637,10 +635,24 @@ varianceHom kers cokers h = VarianceGHom a b fs where
   b  = variance kers cokers (end h)
   fs = cnzHomArrows h
 
+
+--------------------------------------------------------------------------------
+-- deviationTo -
+
+-- | the deviation of being exact, i.e. the 'Point' @a'@ in the diagram of 'VarianceG'.
+deviationTo ::
+  ( Distributive x
+  , Conic c, Conic k
+  , Typeable n
+  )
+  => VarianceG To k c d n x -> Point x
+deviationTo v = case orientation $ vrcConsZeroHomTo v of
+  ConsecutiveZero (DiagramChainTo a' _) :> _   -> a'
+
 --------------------------------------------------------------------------------
 -- deviation -
 
--- | the 'deviation' of being exact, i.e. the 'Point' @a'@ in the diagram of 'VarianceG'.
+-- | the deviation of being exact, i.e. the 'Point' @a'@ in the diagram of 'VarianceG'.
 deviation ::
   ( Distributive x
   , NaturalKernelCokernel (IsoO Dst Op) k c d
@@ -656,6 +668,28 @@ deviation v = case orientation $ vrcConsZeroHom v of
 
 -- | measuring the deviations.
 type Deviation n = Diagram Discrete n N0
+
+--------------------------------------------------------------------------------
+-- deviations -
+
+-- | the induced 'Deviation's.
+deviationsTo :: 
+  ( Distributive x
+  , Conic k, Conic c
+  , Attestable n
+  )
+  => VarianceG To k c d n x -> Deviation (n+1) x
+deviationsTo v = DiagramDiscrete (dvs attest v) where
+
+  dvs ::
+    ( Distributive x
+    , Conic k, Conic c
+    , Attestable n
+    )
+    => Any n -> VarianceG To k c d n x -> FinList (n+1) (Point x)
+  dvs n v = deviationTo v :| case n of
+    W0   -> Nil
+    SW n -> case ats n of Ats -> dvs n (vrcTail v)
 
 --------------------------------------------------------------------------------
 -- deviations -
