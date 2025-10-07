@@ -23,11 +23,11 @@
 module OAlg.Homology.ChainComplex
   (
     -- * Chain Complex
-    chainComplex, Regular(..), ChainComplex
+    chainComplexOperators, Regular(..), ChainComplex
   , ccpRepMatrix, ccpCards
 
     -- * Chain Complex Trafo
-  , chainComplexHom, ChainComplexHom
+  , chainComplexOperatorsHom, ChainComplexHom
   , ccpHomRepMatrix, ccpHomCardsHom
 
   , bndZSet, bndZAsc, bndZLst
@@ -123,14 +123,15 @@ data Regular = Regular | Extended deriving (Show,Eq,Ord,Enum)
 type ChainComplex = ConsecutiveZero To
 
 --------------------------------------------------------------------------------
--- chainComplex -
+-- chainComplexOperators -
 
 -- | the chain complex of the boundary operators, where in the v'Regular' case the first operator
 -- is addapted to @'zero'@ with an empty 'end'.
-chainComplex :: (Ring r, Commutative r, Ord r)
+chainComplexOperators :: (Ring r, Commutative r, Ord r)
   => Struct (Smpl s) x -> Regular -> Any n -> Complex x
   -> ChainComplex n (ChainOperator r s)
-chainComplex Struct r n c = ConsecutiveZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
+chainComplexOperators Struct r n c
+  = ConsecutiveZero $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
 
   toBndOpr :: (Ring r, Commutative r, Ord r, Simplical s x)
     => FinList (n+1) (Set (s x)) -> FinList n (ChainOperator r s)
@@ -140,26 +141,26 @@ chainComplex Struct r n c = ConsecutiveZero $ toDgm r $ toBndOpr $ amap1 snd $ c
   -- converts to a Chain To diagram by possibly addapting the first operator to zero.
   toDgm :: (Ring r, Commutative r, Ord r, Typeable s)
     => Regular
-    -> FinList (n+1) (ChainOperator r s) -> Diagram (D.Chain To) (n+2) (n+1) (ChainOperator r s)
+    -> FinList (n+1) (ChainOperator r s) -> Diagram (Chain To) (n+2) (n+1) (ChainOperator r s)
   toDgm r (ChainOperator d:|ds) = DiagramChainTo (end d') (d':|ds) where
     d' = ChainOperator $ case r of
       Extended -> d              -- no addaption
       Regular  -> zeroEmptyEnd d -- to zero with empty end, but same start
       
   zeroEmptyEnd :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-    => ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
-    -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+    => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)
+    -> ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)
   zeroEmptyEnd d = zero (fst $ root d,empty) 
 
 
 bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
-bndZSet = chainComplex Struct
+bndZSet = chainComplexOperators Struct
 
 bndZAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
-bndZAsc = chainComplex Struct
+bndZAsc = chainComplexOperators Struct
 
 bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
-bndZLst = chainComplex Struct
+bndZLst = chainComplexOperators Struct
 
 
 --------------------------------------------------------------------------------
@@ -184,7 +185,7 @@ ccpCards c = Cards $ DiagramDiscrete $ cnzPoints $ cnzMapCov (homDisjOpDst chopr
 type ChainComplexHom = ConsecutiveZeroHom To
 
 --------------------------------------------------------------------------------
--- chainComplexHom -
+-- chainComplexOperatorsHom -
 
 eqSetType :: (Typeable x, Typeable x', Typeable y, Typeable y')
   => Map EntOrd x y -> Set (s x') -> Set (s y') -> Maybe (x :~: x',y :~: y')
@@ -201,19 +202,19 @@ eqSetType f sx sy = do
     eqRng _ _ = eqT
 
 -- | the transformation of chain complexes.
-chainComplexHom :: (Ring r, Commutative r, Ord r)
+chainComplexOperatorsHom :: (Ring r, Commutative r, Ord r)
   => Struct2 (Hmlg s) x y -> Regular -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexHom n (ChainOperator r s)
-chainComplexHom Struct2 r n f = ConsecutiveZeroHom $ DiagramTrafo  a b fs where
-  ConsecutiveZero a  = chainComplex Struct r n (cpmDomain f)
-  ConsecutiveZero b  = chainComplex Struct r n (cpmRange f)
+chainComplexOperatorsHom Struct2 r n f = ConsecutiveZeroHom $ DiagramTrafo  a b fs where
+  ConsecutiveZero a  = chainComplexOperators Struct r n (cpmDomain f)
+  ConsecutiveZero b  = chainComplexOperators Struct r n (cpmRange f)
   fs = amap1 (uncurry $ toChnMap $ cpmMap f) $ dgPoints a `F.zip` dgPoints b
 
   toChnMap :: (Ring r, Commutative r, Ord r, Homological s x y)
     => Map EntOrd x y -> SimplexSet s -> SimplexSet s -> ChainOperator r s
   toChnMap f (SimplexSet sx) (SimplexSet sy) = case eqSetType f sx sy of
     Just (Refl,Refl) -> chopr (Representable (ChainMap f) sx sy)
-    Nothing          -> throw $ ImplementationError "chainComplexHom.toChnMap"
+    Nothing          -> throw $ ImplementationError "chainComplexOperatorsHom.toChnMap"
 
 --------------------------------------------------------------------------------
 -- ccpHomRepMatrix -

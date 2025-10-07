@@ -268,7 +268,7 @@ isAsc _         = True
 --------------------------------------------------------------------------------
 -- ascCombinations -
 
--- | all possible combinations to a given dimension.
+-- | all possible ascending combinations to a given dimension.
 ascCombinations :: Set x -> [(Z,Set (Asc x))]
 ascCombinations (Set xs) = cbs xs where
   cbs []     = (-1,Set [Asc []]) : es 0

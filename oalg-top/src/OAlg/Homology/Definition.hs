@@ -18,6 +18,11 @@
 -- homology.
 module OAlg.Homology.Definition
   (
+    -- * Homology
+    Homology()
+    
+    -- * Chain Complex Free
+  , ChainComplexFree()
   ) where
 
 import Data.Typeable
@@ -27,7 +32,7 @@ import OAlg.Prelude
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Exponential
 
-import OAlg.Entity.Diagram
+import OAlg.Entity.Diagram hiding (Chain)
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
 import OAlg.Entity.Slice.Free
@@ -42,6 +47,7 @@ import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
 
+import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainOperator
 import OAlg.Homology.ChainComplex
@@ -54,50 +60,6 @@ import OAlg.Structure.Distributive
 import OAlg.Hom.Definition
 import OAlg.Limes.Cone
 
-{-
-instance ApplicativeG
-           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel t) N2 N1))
-           (IsoO Dst Op)
-           (->)
-
-instance FunctorialG
-           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel t) N2 N1))
-           (IsoO Dst Op)
-           (->)
-
-instance NaturalTransformable (IsoO Dst Op) (->)
-           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1))
-           (SDualBi (DiagramG Diagram (Parallel LeftToRight) N2 N1))
-instance NaturalTransformable (IsoO Dst Op) (->)
-           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1))
-           (SDualBi (DiagramG Diagram (Parallel RightToLeft) N2 N1))
-
-instance NaturalDiagrammatic (IsoO Dst Op) SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1
-instance NaturalDiagrammatic (IsoO Dst Op) SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1
-
-instance ApplicativeG 
-           (SDualBi (ConeG (ConicFreeTip Cone) Dst Projective
-                     SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
-           )
-           (IsoO Dst Op) (->)
-
-instance FunctorialG 
-           (SDualBi (ConeG (ConicFreeTip Cone) Dst Projective
-                     SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
-           )
-           (IsoO Dst Op) (->)
-           
-instance NaturalTransformable (IsoO Dst Op) (->)
-           (SDualBi (ConeG (ConicFreeTip Cone) Dst Projective
-                     SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
-           )
-           (SDualBi (ConeG Cone Dst Projective
-                     SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
-           )  
-
-instance NaturalConic
-  (IsoO Dst Op) (ConicFreeTip Cone) Dst Projective SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1
--}
 --------------------------------------------------------------------------------
 -- abgSomeFree -
 
@@ -109,25 +71,92 @@ abgSomeFree g | g == abg 0 ^ k = Just $ case someNatural k of SomeNatural k' -> 
 --------------------------------------------------------------------------------
 -- ChainComplexFree
 
-type ChainComplexFree = ConsecutiveZeroFree To
+data ChainComplexFree s n x where
+  ChainComplexFree :: Typeable x
+    => ChainComplex n (ChainOperator Z s)
+    -> ConsecutiveZeroFree To n AbHom
+    -> ChainComplexFree s n x
 
 --------------------------------------------------------------------------------
--- ccpConsecutiveZeroFree -
+-- chainComplexFree -
 
-ccpConsecutiveZeroFree :: Typeable s => ChainComplex n (ChainOperator Z s) -> ChainComplexFree n AbHom
-ccpConsecutiveZeroFree cos = ConsecutiveZeroFree cf fs where
-  cf = cnzMapCov (homDisjOpDst FreeAbHom) $ ccpRepMatrix cos
-  fs = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram cf 
+chainComplexFree :: Simplical s x
+  => Regular -> Any n -> Complex x -> ChainComplexFree s n x
+chainComplexFree r n c = ChainComplexFree cos (ccpOpsZSet cos) where
+  cos = chainComplexOperators Struct r n c
+  
+  ccpOpsZSet ::Typeable s
+    => ChainComplex n (ChainOperator Z s) -> ConsecutiveZeroFree To n AbHom
+  ccpOpsZSet cos = ConsecutiveZeroFree cf fs where
+    cf = cnzMapCov (homDisjOpDst FreeAbHom) $ ccpRepMatrix cos
+    fs = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram cf 
+
+chainComplexFree' :: Simplical s x
+  => q s -> Regular -> Any n -> Complex x -> ChainComplexFree s n x
+chainComplexFree' _ = chainComplexFree
+
 
 --------------------------------------------------------------------------------
--- ccpfVaraince -
+-- Homology -
 
-ccpfVariance :: ChainComplexFree n AbHom -> VarianceFreeLiftable To n AbHom
-ccpfVariance = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+data Homology s n x where
+  Homology :: Typeable x
+    => ChainComplex n (ChainOperator Z s)
+    -> VarianceFreeLiftable To n AbHom
+    -> Homology s n x
+
+--------------------------------------------------------------------------------
+-- homology -
+
+homology :: ChainComplexFree s n x -> Homology s n x
+homology (ChainComplexFree cos cf)
+  = Homology cos (varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree cf)
+
+--------------------------------------------------------------------------------
+-- hmgTail -
+
+hmgTail :: Typeable s => Homology s (n+1) x -> Homology s n x
+hmgTail (Homology cos vf) = Homology (cnzTail cos) (vrcTail vf)
+
+--------------------------------------------------------------------------------
+-- hmgGroups -
+
+hmgGroups :: Attestable n => Homology s n x -> Deviation (n+1) AbHom
+hmgGroups (Homology _ vfs) = deviationsTo vfs
+
+--------------------------------------------------------------------------------
+-- hmgGroup -
+
+hmgGroup :: Attestable n => Homology s n x -> AbGroup
+hmgGroup = head . dgPoints . hmgGroups
+
+--------------------------------------------------------------------------------
+-- hmgSimplices -
+
+hmgSimplices :: Typeable s => Homology s n x -> Set (s x)
+hmgSimplices h@(Homology cos _) = case cos of
+  ConsecutiveZero cs         -> case cs of
+    DiagramChainTo _ (d:|_)  -> case start d of
+      SimplexSet ssx         -> case eqType h ssx of
+        Just Refl            -> ssx
+        Nothing              -> throw $ ImplementationError "hmgSimplices"
+  where
+    eqType :: (Typeable x, Typeable y) => q x -> Set (s y) -> Maybe (x :~: y)
+    eqType _ _ = eqT
+
+-----------------------------------------------------------------------------------------
+-- Chain -
+
+type Chain x = ChainG Z Set x
+
+--------------------------------------------------------------------------------
+-- hmgChains -
+
+-- hmgChains :: Homology n AbHom -> [Chain AbHom]
 
 --------------------------------------------------------------------------------
 
-c   = complex [Set [0..3]] :: Complex N
-cos = bndZAsc Extended (attest :: Any N7) c
-cf  = ccpConsecutiveZeroFree cos
-v   = ccpfVariance cf
+c   = complex [Set [0..5]] :: Complex N
+h   = homology $ chainComplexFree' (Proxy :: Proxy [])  Regular (attest :: Any N5) c
+
+

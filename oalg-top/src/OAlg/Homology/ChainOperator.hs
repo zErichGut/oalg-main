@@ -37,7 +37,7 @@ module OAlg.Homology.ChainOperator
   , ChainOperatorAtom(..)
 
     -- * Chain
-  , Chain, ch, chZ, boundary, chainMap
+  , ChainG, ch, chZ, boundary, chainMap
 
   ) where
 
@@ -87,20 +87,20 @@ import OAlg.Entity.Matrix
 import OAlg.Homology.Simplical
 
 --------------------------------------------------------------------------------
--- Chain -
+-- ChainG -
 
 -- | chains as a formal sum of simplices.
-type Chain r s x = SumSymbol r (s x)
+type ChainG r s x = SumSymbol r (s x)
 
 --------------------------------------------------------------------------------
 -- ch -
 
 -- | a simplex as a @__r__@-chain.
-ch :: (Ring r, Commutative r, Simplical s x) => s x -> Chain r s x
+ch :: (Ring r, Commutative r, Simplical s x) => s x -> ChainG r s x
 ch = sy
 
 -- | a simplex as a 'Z'-chain.
-chZ :: Simplical s x => s x -> Chain Z s x
+chZ :: Simplical s x => s x -> ChainG Z s x
 chZ = ch
 
 --------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ rAlt = za rOne where za i = i:za (negate i)
 
 -- | the zero homomorphism.
 zeroHom :: (Ring r, Commutative r, Simplical s y)
-  => Chain r s x -> Chain r s y
+  => ChainG r s x -> ChainG r s y
 zeroHom = ssySum (const $ LinearCombination [])
 
 --------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ zeroHom = ssySum (const $ LinearCombination [])
 
 -- | the boundary operator of chains.
 boundary :: (Ring r, Commutative r, Simplical s x)
-  => Chain r s x -> Chain r s x
+  => ChainG r s x -> ChainG r s x
 boundary = ssySum (bdr rAlt) where
   bdr :: Simplical s x => [r] -> s x -> LinearCombination r (s x)
   bdr rs s = LinearCombination (rs `zip` faces s)
@@ -132,7 +132,7 @@ boundary = ssySum (bdr rAlt) where
 -- chainMap -
 
 chainMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
-  => Map EntOrd x y -> Chain r s x -> Chain r s y
+  => Map EntOrd x y -> ChainG r s x -> ChainG r s y
 chainMap f = ssySum (chMap f) where
   chMap :: (Ring r, SimplicalTransformable s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
@@ -141,9 +141,9 @@ chainMap f = ssySum (chMap f) where
 -- ChainOperatorAtom -
 
 data ChainOperatorAtom r s x y where
-  Boundary :: Simplical s x => ChainOperatorAtom r s (Chain r s x) (Chain r s x)
+  Boundary :: Simplical s x => ChainOperatorAtom r s (ChainG r s x) (ChainG r s x)
   ChainMap :: SimplicalTransformable s x y
-    => Map EntOrd x y -> ChainOperatorAtom r s (Chain r s x) (Chain r s y)
+    => Map EntOrd x y -> ChainOperatorAtom r s (ChainG r s x) (ChainG r s y)
 
 instance (Ring r, Commutative r) => Morphism (ChainOperatorAtom r s) where
   type ObjectClass (ChainOperatorAtom r s) = Vec r
@@ -196,75 +196,75 @@ instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorRep r s) (->) 
 --------------------------------------------------------------------------------
 -- chorDomain -
 
-chorDomain :: ChainOperatorRep r s (Chain r s x) (Chain r s y) -> Set (s x)
+chorDomain :: ChainOperatorRep r s (ChainG r s x) (ChainG r s y) -> Set (s x)
 chorDomain (ChainOperatorRep (Representable _ sx _)) = sx
 
 --------------------------------------------------------------------------------
 -- chorRange -
 
-chorRange :: ChainOperatorRep r s (Chain r s x) (Chain r s y) -> Set (s y)
+chorRange :: ChainOperatorRep r s (ChainG r s x) (ChainG r s y) -> Set (s y)
 chorRange (ChainOperatorRep (Representable _ _ sy)) = sy
 
 --------------------------------------------------------------------------------
 -- chorGraph - 
 
 chorGraph :: (Ring r, Commutative r, Simplical s x)
-  => ChainOperatorRep r s (Chain r s x) (Chain r s y) -> Graph (s x) (Chain r s y)
+  => ChainOperatorRep r s (ChainG r s x) (ChainG r s y) -> Graph (s x) (ChainG r s y)
 chorGraph (ChainOperatorRep (Representable o (Set sxs) _)) = Graph [(sx, amap o (ch sx)) | sx <- sxs]
 
 --------------------------------------------------------------------------------
 -- chorMlt -
 
 chorMlt :: (Ring r, Commutative r, Simplical s x, Simplical s z)
-  => ChainOperatorRep r s (Chain r s y) (Chain r s z)
-  -> ChainOperatorRep r s (Chain r s x) (Chain r s y)
-  -> ChainOperatorRep r s (Chain r s x) (Chain r s z)
+  => ChainOperatorRep r s (ChainG r s y) (ChainG r s z)
+  -> ChainOperatorRep r s (ChainG r s x) (ChainG r s y)
+  -> ChainOperatorRep r s (ChainG r s x) (ChainG r s z)
 chorMlt (ChainOperatorRep (Representable f _ sz)) (ChainOperatorRep (Representable g sx _))
   = ChainOperatorRep (Representable (f . g) sx sz)
 
 --------------------------------------------------------------------------------
 -- chorRepMatrix -
 
-chorRepMatrix :: ChainOperatorRep r s (Chain r s x) (Chain r s y) -> Matrix r
+chorRepMatrix :: ChainOperatorRep r s (ChainG r s x) (ChainG r s y) -> Matrix r
 chorRepMatrix (ChainOperatorRep r) = repMatrix r
 
 --------------------------------------------------------------------------------
 -- ChainOperatorRep r s - Entity -
 
 instance (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => Show (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
+  => Show (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) where
   show o = "ChainOperatorRep (" ++ (show $ chorGraph o) ++ ")"
 
 instance (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => Eq (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
+  => Eq (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) where
   f == g = (chorDomain f, chorRange f, chorGraph f) == (chorDomain g, chorRange g, chorGraph g)
 
 instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Ord (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
+  => Ord (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) where
   f `compare` g
     = (chorDomain f, chorRange f, chorGraph f) `compare` (chorDomain g, chorRange g, chorGraph g)
 
-instance Ring r => Validable (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
+instance Ring r => Validable (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) where
   valid (ChainOperatorRep r) = Label "ChainOperatorRep" :<=>: valid r
 
 --------------------------------------------------------------------------------
 -- ChainOperatorRep r s - Fibred -
 
-type instance Root (ChainOperatorRep r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
+type instance Root (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) = (Set (s x),Set (s y))
 
-instance (Simplical s x, Simplical s y) => ShowRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-instance (Simplical s x, Simplical s y) => EqRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+instance (Simplical s x, Simplical s y) => ShowRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+instance (Simplical s x, Simplical s y) => EqRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y)
-  => ValidableRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+  => ValidableRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y)
-  => TypeableRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+  => TypeableRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
 
 instance (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => Fibred (ChainOperatorRep r s (Chain r s x) (Chain r s y)) where
+  => Fibred (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) where
   root r = (chorDomain r, chorRange r)
 
 instance (Ring r, Simplical s x, Simplical s y)
-  => OrdRoot (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+  => OrdRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
   
 --------------------------------------------------------------------------------
 -- ChainOperatorSumForm -
@@ -272,8 +272,8 @@ instance (Ring r, Simplical s x, Simplical s y)
 type ChainOperatorSumForm r s x y = SumForm r (ChainOperatorRep r s x y)
 
 -- | reduces the paths according to 'rdcChnOprPth'.
-rdcChnOprSFPth :: ChainOperatorSumForm r s (Chain r s x) (Chain r s y)
-  -> Rdc (ChainOperatorSumForm r s (Chain r s x) (Chain r s y))
+rdcChnOprSFPth :: ChainOperatorSumForm r s (ChainG r s x) (ChainG r s y)
+  -> Rdc (ChainOperatorSumForm r s (ChainG r s x) (ChainG r s y))
 rdcChnOprSFPth o = case o of
   Zero _ -> return o 
   S (ChainOperatorRep (Representable h sx sy))
@@ -291,8 +291,8 @@ rdcChnOprSFPth o = case o of
 --     (*) empty domains to 'Zero'.
 --
 -- pre: the paths are reduced according to 'rdcChnOprPth'.
-rdcChnOprSFSum :: ChainOperatorSumForm r s (Chain r s x) (Chain r s y)
-  -> Rdc (ChainOperatorSumForm r s (Chain r s x) (Chain r s y))
+rdcChnOprSFSum :: ChainOperatorSumForm r s (ChainG r s x) (ChainG r s y)
+  -> Rdc (ChainOperatorSumForm r s (ChainG r s x) (ChainG r s y))
 rdcChnOprSFSum o = case o of
   Zero _ -> return o
   S (ChainOperatorRep (Representable h sx sy)) -> case h of
@@ -305,16 +305,16 @@ rdcChnOprSFSum o = case o of
     g' <- rdcChnOprSFSum g
     return (f' :+ g')
 
-rdcChnOprSumForm :: ChainOperatorSumForm r s (Chain r s x) (Chain r s y)
-  -> Rdc (ChainOperatorSumForm r s (Chain r s x) (Chain r s y))
+rdcChnOprSumForm :: ChainOperatorSumForm r s (ChainG r s x) (ChainG r s y)
+  -> Rdc (ChainOperatorSumForm r s (ChainG r s x) (ChainG r s y))
 rdcChnOprSumForm = rdcChnOprSFPth >>>= rdcChnOprSFSum
 
 --------------------------------------------------------------------------------
 -- smfChors'Appl -
 
 smfChors'Appl :: (Ring r, Commutative r, Simplical s y)
-  => SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-  -> Chain r s x -> SumForm r (SumForm r (R (s y)))
+  => SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+  -> ChainG r s x -> SumForm r (SumForm r (R (s y)))
 smfChors'Appl f c = case f of
   Zero _  -> Zero ()
   S f'    -> S $ (\(SumSymbol s) -> form s) $ amap f' c
@@ -325,8 +325,8 @@ smfChors'Appl f c = case f of
 -- smfChorsAppl -
 
 smfChorsAppl :: (Ring r, Commutative r, Simplical s y)
-  => SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-  -> Chain r s x -> Chain r s y
+  => SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+  -> ChainG r s x -> ChainG r s y
 smfChorsAppl f c = SumSymbol $ make $ smfJoin $ smfChors'Appl f c
 
 --------------------------------------------------------------------------------
@@ -335,8 +335,8 @@ smfChorsAppl f c = SumSymbol $ make $ smfJoin $ smfChors'Appl f c
 data ChainOperatorRepSum r s x y where
   ChainOperatorRepSum
     :: (Simplical s x, Simplical s y)
-    => Sum r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-    -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+    => Sum r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+    -> ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)
 
 instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorRepSum r s) (->) where
   amapG (ChainOperatorRepSum f) = toIdG $ smfChorsAppl $ form f
@@ -344,21 +344,21 @@ instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorRepSum r s) (-
 --------------------------------------------------------------------------------
 -- ChainOperatorRepSum - Constructable -
 
-instance Exposable (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
-  type Form (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
-    = SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
+instance Exposable (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
+  type Form (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
+    = SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
   form (ChainOperatorRepSum s) = form s
 
 instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Constructable (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
+  => Constructable (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
   make = ChainOperatorRepSum . make . reduceWith rdcChnOprSumForm
 
 --------------------------------------------------------------------------------
 -- chors -
 
 chors :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Representable r (ChainOperatorAtom r s) (Chain r s x) (Chain r s y)
-  -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+  => Representable r (ChainOperatorAtom r s) (ChainG r s x) (ChainG r s y)
+  -> ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)
 chors (Representable o sx sy)
   = make $ S $ ChainOperatorRep $ Representable (o :. IdPath (domain o)) sx sy 
 
@@ -366,81 +366,81 @@ chors (Representable o sx sy)
 -- ChainOperatorRepSum - Entity -
 
 deriving instance (Ring r, Commutative r)
-  => Show (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => Show (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 
 deriving instance (Ring r, Commutative r)
-  => Eq (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => Eq (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 
 deriving instance (Ring r, Commutative r, Ord r)
-  => Ord (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => Ord (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 
 instance (Ring r, Commutative r)
-  => Validable (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
+  => Validable (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
   valid (ChainOperatorRepSum r) = Label "ChainOperatorRepSum" :<=>: valid r
 
 --------------------------------------------------------------------------------
 -- ChainOperatorRepSum - Verctorial -
 
-type instance Root (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) = (Set (s x),Set (s y))
+type instance Root (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) = (Set (s x),Set (s y))
 
 instance (Simplical s x, Simplical s y)
-  => ShowRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => ShowRoot (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y)
-  => EqRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => EqRoot (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y)
-  => ValidableRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => ValidableRoot (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y)
-  => TypeableRoot (ChainOperatorRepSum r s (Chain r s x) (Chain r s y))
+  => TypeableRoot (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y))
 
 instance (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => Fibred (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
+  => Fibred (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
   root (ChainOperatorRepSum r) = root r
 
 instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Additive (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
+  => Additive (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
   zero = ChainOperatorRepSum . zero
   ChainOperatorRepSum a + ChainOperatorRepSum b = ChainOperatorRepSum (a+b)
   ntimes n (ChainOperatorRepSum a) = ChainOperatorRepSum (ntimes n a)
   
 instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Abelian (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
+  => Abelian (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
   negate (ChainOperatorRepSum a) = ChainOperatorRepSum (negate a)
   ChainOperatorRepSum a - ChainOperatorRepSum b = ChainOperatorRepSum (a-b)
   ztimes n (ChainOperatorRepSum a) = ChainOperatorRepSum (ztimes n a)
 
 instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Vectorial (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) where
-  type Scalar (ChainOperatorRepSum r s (Chain r s x) (Chain r s y)) = r
+  => Vectorial (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
+  type Scalar (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) = r
   r ! ChainOperatorRepSum a = ChainOperatorRepSum (r ! a)
   
 --------------------------------------------------------------------------------
 -- chorsDomain -
 
 chorsDomain :: (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) -> Set (s x)
+  => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y) -> Set (s x)
 chorsDomain = fst . root
 
 --------------------------------------------------------------------------------
 -- chorsRange -
 
 chorsRange :: (Ring r, Commutative r, Simplical s x, Simplical s y)
-  => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) -> Set (s y)
+  => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y) -> Set (s y)
 chorsRange = snd . root
 
 --------------------------------------------------------------------------------
 -- chorsOne -
 
 chorsOne :: (Ring r, Commutative r, Ord r, Simplical s x)
-  => Set (s x) -> ChainOperatorRepSum r s (Chain r s x) (Chain r s x)
+  => Set (s x) -> ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x)
 chorsOne sx = make $ S $ ChainOperatorRep $ Representable (cOne Struct) sx sx 
 
 --------------------------------------------------------------------------------
 -- chorSmfMlt -
 
 chorSmfMlt :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y, Simplical s z)
-  => ChainOperatorRep r s (Chain r s y) (Chain r s z)
-  -> SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-  -> SumForm r (SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s z)))
+  => ChainOperatorRep r s (ChainG r s y) (ChainG r s z)
+  -> SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+  -> SumForm r (SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s z)))
 chorSmfMlt c g = case g of
   Zero (sx,_) -> Zero (sx,sz) where sz = chorRange c
   S d         -> S $ S $ (c `chorMlt` d)
@@ -451,9 +451,9 @@ chorSmfMlt c g = case g of
 -- smfChor'Mlt -
 
 smfChor'Mlt :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y, Simplical s z)
-  => SumForm r (ChainOperatorRep r s (Chain r s y) (Chain r s z))
-  -> SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-  -> SumForm r (SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s z)))
+  => SumForm r (ChainOperatorRep r s (ChainG r s y) (ChainG r s z))
+  -> SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+  -> SumForm r (SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s z)))
 smfChor'Mlt f g = case f of
   Zero (_,sz) -> Zero (sx,sz) where (sx,_) = root g
   S c         -> c `chorSmfMlt` g
@@ -464,25 +464,25 @@ smfChor'Mlt f g = case f of
 -- smfChorMlt -
 
 smfChorMlt :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y, Simplical s z)
-  => SumForm r (ChainOperatorRep r s (Chain r s y) (Chain r s z))
-  -> SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y))
-  -> SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s z))
+  => SumForm r (ChainOperatorRep r s (ChainG r s y) (ChainG r s z))
+  -> SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+  -> SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s z))
 smfChorMlt f g = smfJoin (f `smfChor'Mlt` g)
 
 --------------------------------------------------------------------------------
 -- chorsMlt -
 
 chorsMlt :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y, Simplical s z)
-  => ChainOperatorRepSum r s (Chain r s y) (Chain r s z)
-  -> ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
-  -> ChainOperatorRepSum r s (Chain r s x) (Chain r s z)
+  => ChainOperatorRepSum r s (ChainG r s y) (ChainG r s z)
+  -> ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)
+  -> ChainOperatorRepSum r s (ChainG r s x) (ChainG r s z)
 chorsMlt f g = make (form f `smfChorMlt` form g)
 
 --------------------------------------------------------------------------------
 -- smfChorRepMatrix -
 
 smfChorRepMatrix :: (Ring r, Commutative r, Vectorial r, Scalar r ~ r, Simplical s x, Simplical s y)
-  => SumForm r (ChainOperatorRep r s (Chain r s x) (Chain r s y)) -> Matrix r
+  => SumForm r (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) -> Matrix r
 smfChorRepMatrix s = case s of
   Zero (sx,sy) -> zero (dx :> dy) where
     dx = dim unit ^ lengthN sx
@@ -495,7 +495,7 @@ smfChorRepMatrix s = case s of
 -- chorsRepMatrix -
 
 chorsRepMatrix :: (Ring r, Commutative r, Vectorial r, Scalar r ~ r, Simplical s x, Simplical s y)
-  => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) -> Matrix r
+  => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y) -> Matrix r
 chorsRepMatrix (ChainOperatorRepSum f) = smfChorRepMatrix $ form f
 
 --------------------------------------------------------------------------------
@@ -504,14 +504,14 @@ chorsRepMatrix (ChainOperatorRepSum f) = smfChorRepMatrix $ form f
 data ChainOperator r s where
   ChainOperator
     :: (Simplical s x, Simplical s y)
-    => ChainOperatorRepSum r s (Chain r s x) (Chain r s y)
+    => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)
     -> ChainOperator r s
 
 --------------------------------------------------------------------------------
 -- chopr -
 
 chopr :: (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
-  => Representable r (ChainOperatorAtom r s) (Chain r s x) (Chain r s y)
+  => Representable r (ChainOperatorAtom r s) (ChainG r s x) (ChainG r s y)
   -> ChainOperator r s
 chopr = ChainOperator . chors
 
@@ -529,22 +529,22 @@ deriving instance (Ring r, Commutative r) => Show (ChainOperator r s)
 
 eqChainOperatorTypes
   :: (Typeable x, Typeable x', Typeable y, Typeable y')
-  => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) 
-  -> ChainOperatorRepSum r s (Chain r s x') (Chain r s y')
+  => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y) 
+  -> ChainOperatorRepSum r s (ChainG r s x') (ChainG r s y')
   -> Maybe (x :~: x',y :~: y')
 eqChainOperatorTypes f g = do
   eqx <- xEqT f g
   eqy <- yEqT f g
   return (eqx,eqy)
   where xEqT :: (Typeable x, Typeable x')
-             => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) 
-             -> ChainOperatorRepSum r s (Chain r s x') (Chain r s y')
+             => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y) 
+             -> ChainOperatorRepSum r s (ChainG r s x') (ChainG r s y')
              -> Maybe (x :~: x')
         xEqT _ _ = eqT
 
         yEqT :: (Typeable y, Typeable y')
-             => ChainOperatorRepSum r s (Chain r s x) (Chain r s y) 
-             -> ChainOperatorRepSum r s (Chain r s x') (Chain r s y')
+             => ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y) 
+             -> ChainOperatorRepSum r s (ChainG r s x') (ChainG r s y')
              -> Maybe (y :~: y')
         yEqT _ _ = eqT
 
@@ -619,8 +619,8 @@ instance (Ring r, Commutative r, Ord r, Typeable s) => Vectorial (ChainOperator 
   r ! ChainOperator f = ChainOperator (r!f)
 
 eqDomRng :: (Typeable y, Typeable y')
-  => ChainOperatorRepSum r s (Chain r s y') z
-  -> ChainOperatorRepSum r s x (Chain r s y)
+  => ChainOperatorRepSum r s (ChainG r s y') z
+  -> ChainOperatorRepSum r s x (ChainG r s y)
   -> Maybe (y :~: y')
 eqDomRng _ _ = eqT
 
