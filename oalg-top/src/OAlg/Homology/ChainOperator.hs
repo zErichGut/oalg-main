@@ -38,7 +38,7 @@ module OAlg.Homology.ChainOperator
 
     -- * Chain
   , ChainG, ch, chZ, boundary, chainMap
-
+    
   ) where
 
 import Control.Monad
@@ -252,7 +252,8 @@ instance Ring r => Validable (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)
 
 type instance Root (ChainOperatorRep r s (ChainG r s x) (ChainG r s y)) = (Set (s x),Set (s y))
 
-instance (Simplical s x, Simplical s y) => ShowRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
+instance (Simplical s x, Simplical s y)
+  => ShowRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y) => EqRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
 instance (Simplical s x, Simplical s y)
   => ValidableRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
@@ -265,7 +266,18 @@ instance (Ring r, Commutative r, Simplical s x, Simplical s y)
 
 instance (Ring r, Simplical s x, Simplical s y)
   => OrdRoot (ChainOperatorRep r s (ChainG r s x) (ChainG r s y))
-  
+
+type instance Point (ChainOperatorRep r s (ChainG r s x) (ChainG r s x)) = Set (s x)
+instance Simplical s x => ShowPoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
+instance Simplical s x => EqPoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
+instance Simplical s x => ValidablePoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
+instance Simplical s x => TypeablePoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
+
+
+instance (Ring r, Commutative r, Simplical s x)
+  => Oriented (ChainOperatorRep r s (ChainG r s x) (ChainG r s x)) where
+  orientation r = chorDomain r :> chorRange r
+
 --------------------------------------------------------------------------------
 -- ChainOperatorSumForm -
 
@@ -412,7 +424,17 @@ instance (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
   => Vectorial (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) where
   type Scalar (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s y)) = r
   r ! ChainOperatorRepSum a = ChainOperatorRepSum (r ! a)
-  
+
+type instance Point (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x)) = Set (s x)
+instance Simplical s x => ShowPoint (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x))
+instance Simplical s x => EqPoint (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x))
+instance Simplical s x => ValidablePoint (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x))
+instance Simplical s x => TypeablePoint (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x))
+
+instance (Ring r, Commutative r, Ord r, Simplical s x)
+  => Oriented (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x)) where
+  orientation r = s :> e where (s,e) = root r
+
 --------------------------------------------------------------------------------
 -- chorsDomain -
 

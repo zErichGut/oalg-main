@@ -108,28 +108,30 @@ chainComplexFree' :: Simplical s x
   => q s -> Regular -> Any n -> Complex x -> ChainComplexFree s n x
 chainComplexFree' _ = chainComplexFree
 
-
 --------------------------------------------------------------------------------
 -- Homology -
 
 -- | homology for the simplex type @__s__@ over vertices of type @__x__@.
-data Homology s x where
+data Homology s n x where
   Homology :: (Simplical s x, Attestable n)
     => N -- actual dimension
     -> ChainComplex n (ChainOperator Z s)
     -> VarianceFreeLiftable To n AbHom
-    -> Homology s x
+    -> Homology s n x
 
 --------------------------------------------------------------------------------
 -- homology -
 
 -- | the induced homology of a complex.
-homology :: Simplical s x => Regular -> N -> Complex x -> Homology s x
+homology :: (Simplical s x, Attestable n) => Regular -> Any n -> Complex x -> Homology s n x
+homology = error "nyi"
+
+{-
 homology r dMax c = case someNatural dMax of
   SomeNatural dMax' -> Homology 0 cos vfs where
     ChainComplexFree cos cf = chainComplexFree r dMax' c
     vfs = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree cf
-
+{-
 -- | the induced homology of a complex according to the proxy type.
 homology' :: Simplical s x => q s -> Regular -> N -> Complex x -> Homology s x
 homology' _ = homology
@@ -277,7 +279,7 @@ hmgCycles h@(Homology _ _ vfs)  = case vfs of
 
 c   = complex [Set [0..4]] :: Complex N
 h   = homology' (Proxy :: Proxy Asc) Regular 5 c
-
+-}
 
 
 {-
