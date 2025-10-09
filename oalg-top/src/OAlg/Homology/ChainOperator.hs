@@ -22,15 +22,17 @@
 -- Operators on chains of simplices.
 module OAlg.Homology.ChainOperator
   (
+{-
     -- * Chain Operator
     ChainOperator(..), chopr, choprCards, choprCardsOrnt
   , SimplexSet(..)
 
   , choprRepMatrix, ChoprHom(..)
-
+-}
+    
     -- ** Representables
-  , ChainOperatorRepSum(), chors, chorsOne, chorsMlt
-  , chorsDomain, chorsRange
+    ChainOperatorRepSum(), chors, chorsOne, chorsMlt
+  , chorsDomain, chorsRange, chorsRepMatrix
   , chorsCards
   , ChorsHom(..)
 

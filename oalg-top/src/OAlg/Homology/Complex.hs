@@ -220,11 +220,10 @@ type Preserving = Asc
 
 -- | homological transformations.
 --
--- __Property__ Let @__s__ __x__ __y__@ be an instance of
--- @'Homological' __s__ __x__ __y__@, then holds:
+-- __Property__ Let @'Homological' __s x y__@, then holds:
 --
 -- (1) @'dimension' ('amap1' f s) '==' 'dimension' s@ for all
--- @f@ in @'Map' 'Ord'' __x__ __y__@ and @s@ in @__s__ __x__@.
+-- @f@ in @'Map' 'Ord'' __x y__@ and @s@ in @__s x__@.
 --
 -- __Note__ @('Map' 'Ord'') 'Set' __x__ __y__@ is not 'Homological'!.
 class SimplicalTransformable s x y => Homological s x y

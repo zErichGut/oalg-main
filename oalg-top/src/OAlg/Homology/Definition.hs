@@ -47,7 +47,7 @@ import OAlg.Entity.FinList
 import OAlg.Entity.Slice.Definition
 import OAlg.Entity.Slice.Free
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Matrix.Vector
+import OAlg.Entity.Matrix
 
 import OAlg.Hom.Distributive
 
@@ -80,7 +80,7 @@ abgSomeFree :: AbGroup -> Maybe (SomeFree AbHom)
 abgSomeFree g | g == abg 0 ^ k = Just $ case someNatural k of SomeNatural k' -> SomeFree $ Free k' 
               | otherwise       = Nothing
   where k = lengthN g
-
+{-
 --------------------------------------------------------------------------------
 -- ChainComplexFree
 
@@ -107,30 +107,37 @@ chainComplexFree r n c = ChainComplexFree cos (ccpOpsZSet cos) where
 chainComplexFree' :: Simplical s x
   => q s -> Regular -> Any n -> Complex x -> ChainComplexFree s n x
 chainComplexFree' _ = chainComplexFree
-
+-}
 --------------------------------------------------------------------------------
 -- Homology -
 
 -- | homology for the simplex type @__s__@ over vertices of type @__x__@.
-data Homology s n x where
+data Homology t s n x where
   Homology :: (Simplical s x, Attestable n)
     => N -- actual dimension
-    -> ChainComplex n (ChainOperator Z s)
+    -> ChainComplex t Z s n x 
     -> VarianceFreeLiftable To n AbHom
-    -> Homology s n x
+    -> Homology t s n x
+
 
 --------------------------------------------------------------------------------
 -- homology -
 
 -- | the induced homology of a complex.
-homology :: (Simplical s x, Attestable n) => Regular -> Any n -> Complex x -> Homology s n x
-homology = error "nyi"
+homology :: (Simplical s x, Attestable n)
+  => ComplexType t -> Any n -> Complex x -> Homology t s n x
+homology t dMax c = Homology 0 ds vfs where
+  ds  = chainComplex t dMax c
+  vfs = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+      $ toFree
+      $ ccxRepMatrix ds
 
-{-
-homology r dMax c = case someNatural dMax of
-  SomeNatural dMax' -> Homology 0 cos vfs where
-    ChainComplexFree cos cf = chainComplexFree r dMax' c
-    vfs = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree cf
+  toFree :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
+  toFree ds = ConsecutiveZeroFree ds' fs where
+    ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
+    fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
+    
+
 {-
 -- | the induced homology of a complex according to the proxy type.
 homology' :: Simplical s x => q s -> Regular -> N -> Complex x -> Homology s x
@@ -286,6 +293,7 @@ h   = homology' (Proxy :: Proxy Asc) Regular 5 c
 (ChainComplexFree cos cf)
   = Homology cos (varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree cf)
 -}
+
 {-
 --------------------------------------------------------------------------------
 -- hmgTail -
