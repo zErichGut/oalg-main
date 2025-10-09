@@ -63,6 +63,8 @@ import OAlg.Entity.Matrix hiding (Transformation(..))
 import OAlg.Entity.Sum.Definition
 import OAlg.Entity.Sum.SumSymbol
 
+import OAlg.Hom.Definition
+import OAlg.Hom.Oriented
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Exact.ConsecutiveZero
@@ -196,8 +198,6 @@ chainComplex' _ = chainComplex
 ccxCards :: ChainComplex s n x -> Cards r n 
 ccxCards (ChainComplex _ zssxs) = Cards $ DiagramDiscrete $ amap1 (lengthN . snd) zssxs
 
-c = complex [Set [0,1],Set [1,2],Set[0,2]] :: Complex N
-cx = chainComplex' (Proxy :: Proxy []) Regular (attest :: Any N2) c
 -}
 
 
@@ -206,10 +206,9 @@ cx = chainComplex' (Proxy :: Proxy []) Regular (attest :: Any N2) c
 
 -- | the chain complex of the boundary operators, where in the v'Regular' case the first operator
 -- is addapted to @'zero'@ with an empty 'end'.
-chainComplex :: (Ring r, Commutative r, Ord r)
-  => Struct (Smpl s) x -> Regular -> Any n -> Complex x
-  -> ChainComplex r s n x
-chainComplex Struct r n c
+chainComplex :: (Ring r, Commutative r, Ord r, Simplical s x)
+  => Regular -> Any n -> Complex x -> ChainComplex r s n x
+chainComplex r n c
   = ChainComplex $ toDgm r $ toBndOpr $ amap1 snd $ ccxSimplices n c where
 
   toBndOpr :: (Ring r, Commutative r, Ord r, Simplical s x)
@@ -231,32 +230,44 @@ chainComplex Struct r n c
     => BoundaryOperator r s x -> BoundaryOperator r s x
   zeroEmptyEnd d = zero (start d,empty) 
 
-{-
-bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Set)
-bndZSet = chainComplexOperators Struct
+chainComplex' :: Simplical s x
+  => q s -> Regular -> Any n -> Complex x -> ChainComplex Z s n x
+chainComplex' _ = chainComplex
 
-bndZAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z Asc)
-bndZAsc = chainComplexOperators Struct
+bndZSet :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex Z Set n x
+bndZSet = chainComplex 
 
-bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex n (ChainOperator Z [])
-bndZLst = chainComplexOperators Struct
+bndZAsc :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex Z Asc n x
+bndZAsc = chainComplex 
 
+bndZLst :: (Entity x, Ord x) => Regular -> Any n -> Complex x -> ChainComplex Z [] n x
+bndZLst = chainComplex 
 
---------------------------------------------------------------------------------
--- ccpRepMatrix -
-
-ccpRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
-  => ChainComplex n (ChainOperator r s) -> ChainComplex n (Matrix r)
-ccpRepMatrix = cnzMapCov (homDisjOpDst ChoprRepMatrix)
+c = complex [Set [0,1],Set [1,2],Set[0,2]] :: Complex N
+cx = chainComplex' (Proxy :: Proxy []) Regular (attest :: Any N5) c
 
 --------------------------------------------------------------------------------
--- ccpCards -
+-- homDisjOpOrt -
+
+homDisjOpOrt :: HomOriented h => h x y -> Variant2 Covariant (HomDisj Ort Op h) x y
+homDisjOpOrt = homDisj
+
+--------------------------------------------------------------------------------
+-- ccxRepMatrix -
+
+ccxRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
+  => ChainComplex r s n x -> ConsecutiveZero To n (Matrix r)
+ccxRepMatrix (ChainComplex c) = ConsecutiveZero $ dgMap ChorsRepMatrix c
+
+--------------------------------------------------------------------------------
+-- ccxCards -
 
 -- | the cardinalities of the consecutive 'SimplexSet's of the given chain complex.
-ccpCards :: (Ring r, Commutative r, Ord r, Typeable s)
-  => ChainComplex n (ChainOperator r s) -> Cards r n
-ccpCards c = Cards $ DiagramDiscrete $ cnzPoints $ cnzMapCov (homDisjOpDst choprCardsOrnt) c
-
+ccxCards :: (Ring r, Ord r, AlgebraicSemiring r, Simplical s x)
+  => ChainComplex r s n x -> Cards r n
+ccxCards (ChainComplex c)
+  = Cards $ DiagramDiscrete $ dgPoints $ dgMap ChorsCards c
+{-
 --------------------------------------------------------------------------------
 -- ChainComplexHom -
 
@@ -296,18 +307,18 @@ chainComplexOperatorsHom Struct2 r n f = ConsecutiveZeroHom $ DiagramTrafo  a b 
     Nothing          -> throw $ ImplementationError "chainComplexOperatorsHom.toChnMap"
 
 --------------------------------------------------------------------------------
--- ccpHomRepMatrix -
+-- ccxHomRepMatrix -
 
-ccpHomRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
+ccxHomRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
   => ChainComplexHom n (ChainOperator r s) -> ChainComplexHom n (Matrix r)
-ccpHomRepMatrix = cnzHomMapCov (homDisjOpDst ChoprRepMatrix)
+ccxHomRepMatrix = cnzHomMapCov (homDisjOpDst ChoprRepMatrix)
 
 --------------------------------------------------------------------------------
--- ccpHomCardsHom -
+-- ccxHomCardsHom -
 
-ccpHomCardsHom :: (Ring r, Commutative r, Ord r, Typeable s)
+ccxHomCardsHom :: (Ring r, Commutative r, Ord r, Typeable s)
   => ChainComplexHom n (ChainOperator r s) -> CardsHom r n
-ccpHomCardsHom t = CardsHom $ DiagramTrafo a b fs where
+ccxHomCardsHom t = CardsHom $ DiagramTrafo a b fs where
   ConsecutiveZeroHom (DiagramTrafo a' b' fs) = cnzHomMapCov (homDisjOpDst choprCardsOrnt) t
   a  = DiagramDiscrete $ dgPoints a'
   b  = DiagramDiscrete $ dgPoints b'

@@ -26,11 +26,13 @@ module OAlg.Homology.ChainOperator
     ChainOperator(..), chopr, choprCards, choprCardsOrnt
   , SimplexSet(..)
 
-  , choprRepMatrix, ChoprRepMatrix(..)
+  , choprRepMatrix, ChoprHom(..)
 
     -- ** Representables
   , ChainOperatorRepSum(), chors, chorsOne, chorsMlt
   , chorsDomain, chorsRange
+  , chorsCards
+  , ChorsHom(..)
 
   , ChainOperatorRep(..), chorDomain, chorRange, chorGraph, chorMlt
 
@@ -521,6 +523,59 @@ chorsRepMatrix :: (Ring r, Commutative r, Vectorial r, Scalar r ~ r, Simplical s
 chorsRepMatrix (ChainOperatorRepSum f) = smfChorRepMatrix $ form f
 
 --------------------------------------------------------------------------------
+-- chorsCrds -
+
+chorsCards :: (Ring r, Commutative r, Ord r, Simplical s x)
+  => Path (Ornt Ort) (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x)) (Orientation N)
+chorsCards = OrntMap lengthN :. ornt :. IdPath Struct where
+  ornt :: (Ring r, Commutative r, Ord r, Simplical s x)
+       => Ornt Ort (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x))
+                   (Orientation (Set (s x)))
+  ornt = Ornt
+
+--------------------------------------------------------------------------------
+-- ChorsHom -
+
+data ChorsHom r s x y where
+  ChorsCards :: Simplical s x
+    => ChorsHom r s (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x)) (Orientation N)
+  ChorsRepMatrix :: Simplical s x
+    => ChorsHom r s (ChainOperatorRepSum r s (ChainG r s x) (ChainG r s x)) (Matrix r)
+
+deriving instance Show (ChorsHom r s x y)
+instance Show2 (ChorsHom r s)
+
+deriving instance Eq (ChorsHom r s x y)
+instance Eq2 (ChorsHom r s)
+
+deriving instance Ord (ChorsHom r s x y)
+
+instance Validable (ChorsHom r s x y) where
+  valid h = Label "ChorsHom" :<=>: case h of
+    ChorsCards -> SValid
+    _          -> SValid
+    
+instance Validable2 (ChorsHom r s)
+
+--------------------------------------------------------------------------------
+-- ChorsHom - HomOriented -
+
+instance (Ring r, Commutative r, Ord r) => Morphism (ChorsHom r s) where
+  type ObjectClass (ChorsHom r s) = Ort
+  homomorphous ChorsCards = Struct :>: Struct
+  homomorphous ChorsRepMatrix = Struct :>: Struct
+
+instance (Ring r, Ord r, AlgebraicSemiring r) => ApplicativeG Id (ChorsHom r s) (->) where
+  amapG ChorsCards     = amapG chorsCards
+  amapG ChorsRepMatrix = toIdG chorsRepMatrix
+
+instance (Ring r, Ord r, AlgebraicSemiring r) => ApplicativeG Pnt (ChorsHom r s) (->) where
+  amapG ChorsCards = amapG chorsCards
+  amapG ChorsRepMatrix = \(Pnt s) -> Pnt (dim unit ^ lengthN s)
+
+instance (Ring r, Ord r, AlgebraicSemiring r) => HomOriented (ChorsHom r s)
+
+--------------------------------------------------------------------------------
 -- ChainOperator -
 
 data ChainOperator r s where
@@ -658,50 +713,50 @@ instance (Ring r, Commutative r, Ord r, Typeable s) => Distributive (ChainOperat
 instance (Ring r, Commutative r, Ord r, Typeable s) => Algebraic (ChainOperator r s)
 
 --------------------------------------------------------------------------------
--- ChoprRepMatrix -
+-- ChoprHom -
 
-data ChoprRepMatrix r s x y where
-  ChoprRepMatrix :: ChoprRepMatrix r s (ChainOperator r s) (Matrix r)
+data ChoprHom r s x y where
+  ChoprRepMatrix :: ChoprHom r s (ChainOperator r s) (Matrix r)
 
-deriving instance Show (ChoprRepMatrix r s x y)
-instance Show2 (ChoprRepMatrix r s)
+deriving instance Show (ChoprHom r s x y)
+instance Show2 (ChoprHom r s)
 
-deriving instance Eq (ChoprRepMatrix r s x y)
-instance Eq2 (ChoprRepMatrix r s)
+deriving instance Eq (ChoprHom r s x y)
+instance Eq2 (ChoprHom r s)
 
-deriving instance Ord (ChoprRepMatrix r s x y)
+deriving instance Ord (ChoprHom r s x y)
 
-instance Validable (ChoprRepMatrix r s x y) where
-  valid r = Label "ChoprRepMatrix" :<=>: case r of ChoprRepMatrix -> SValid
-instance Validable2 (ChoprRepMatrix r s)
+instance Validable (ChoprHom r s x y) where
+  valid r = Label "ChoprHom" :<=>: case r of ChoprRepMatrix -> SValid
+instance Validable2 (ChoprHom r s)
 
 --------------------------------------------------------------------------------
--- ChoprRepMatrix - HomAlgebraic -
+-- ChoprHom - HomAlgebraic -
 
 instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s)
-  => Morphism (ChoprRepMatrix r s) where
-  type ObjectClass (ChoprRepMatrix r s) = Alg r
+  => Morphism (ChoprHom r s) where
+  type ObjectClass (ChoprHom r s) = Alg r
   homomorphous ChoprRepMatrix = Struct :>: Struct
 
-instance (AlgebraicSemiring r, Ring r) => ApplicativeG Id (ChoprRepMatrix r s) (->) where
+instance (AlgebraicSemiring r, Ring r) => ApplicativeG Id (ChoprHom r s) (->) where
   amapG ChoprRepMatrix = toIdG choprRepMatrix
 
-instance (AlgebraicSemiring r, Ring r) => ApplicativeG Pnt (ChoprRepMatrix r s) (->) where
+instance (AlgebraicSemiring r, Ring r) => ApplicativeG Pnt (ChoprHom r s) (->) where
   amapG ChoprRepMatrix (Pnt (SimplexSet sx)) = Pnt (dim unit ^ lengthN sx)
 
 instance (AlgebraicSemiring r, Ring r)
-  => ApplicativeG Rt (ChoprRepMatrix r s) (->) where
+  => ApplicativeG Rt (ChoprHom r s) (->) where
   amapG o@ChoprRepMatrix = amapRt (omap o)
 
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprRepMatrix r s) where
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomOriented (ChoprHom r s) where
 
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomMultiplicative (ChoprRepMatrix r s)
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibred (ChoprRepMatrix r s)
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomAdditive (ChoprRepMatrix r s)
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomVectorial r (ChoprRepMatrix r s)
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibredOriented (ChoprRepMatrix r s)
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomDistributive (ChoprRepMatrix r s)
-instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomAlgebraic r (ChoprRepMatrix r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomMultiplicative (ChoprHom r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibred (ChoprHom r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomAdditive (ChoprHom r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomVectorial r (ChoprHom r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomFibredOriented (ChoprHom r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomDistributive (ChoprHom r s)
+instance (AlgebraicSemiring r, Ring r, Ord r, Typeable s) => HomAlgebraic r (ChoprHom r s)
 
 --------------------------------------------------------------------------------
 -- choprCardsOrnt -
