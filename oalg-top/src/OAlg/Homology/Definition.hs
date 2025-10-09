@@ -119,7 +119,22 @@ data Homology t s n x where
     -> VarianceFreeLiftable To n AbHom
     -> Homology t s n x
 
+{-
+t = ComplexRegular
+n = attest :: Any N4
+a = complex [Set "ab",Set "bc",Set "cd"]
+b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
+s = Proxy :: Proxy Asc
+cmf = ComplexMapNgl a b (Map f)
+cmfHom = chainComplexHomZ t n cmf
 
+f c = case c of
+  'a' -> 0
+  'b' -> 1
+  'c' -> 2
+  'd' -> 0
+  _   -> error "undefined"
+-}
 --------------------------------------------------------------------------------
 -- homology -
 
@@ -138,11 +153,20 @@ homology t dMax c = Homology 0 ds vfs where
     fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
     
 
-{-
+
 -- | the induced homology of a complex according to the proxy type.
-homology' :: Simplical s x => q s -> Regular -> N -> Complex x -> Homology s x
+homology' :: (Simplical s x, Attestable n)
+  => q s -> ComplexType t -> Any n -> Complex x -> Homology t s n x
 homology' _ = homology
 
+t = ComplexExtended
+n = attest :: Any N4
+a = complex [Set "ab",Set "bc",Set "cd"]
+b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
+s = Proxy :: Proxy Asc
+ha = homology' s t n a
+hb = homology' s t n b
+{-
 --------------------------------------------------------------------------------
 -- hmgCards -
 
@@ -170,14 +194,16 @@ hmgRange (Homology i cos _) = (i,i + lengthN (attest2 cos))
 -- | the actual index.
 hmgIndex :: Homology s x -> N
 hmgIndex = fst . hmgRange
+-}
 
 --------------------------------------------------------------------------------
 -- hmgGroups -
 
 -- | the homology groups.
-hmgGroups :: Homology s x -> [AbGroup]
-hmgGroups (Homology _ _ vfs) = toList $ dgPoints $ deviationsTo vfs
+hmgGroups :: Homology t s n x -> Deviation (n+1) AbHom
+hmgGroups (Homology _ _ vfs) = deviationsTo vfs
 
+{-
 --------------------------------------------------------------------------------
 -- hmgGroup -
 
