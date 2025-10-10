@@ -24,7 +24,7 @@ module OAlg.Homology.ChainComplex
   (
 
     -- * Chain Complex
-    chainComplex, ChainComplex(..)
+    chainComplex, chainComplex', ChainComplex(..)
   , ComplexType(..), Regularity(..), BoundaryOperator
   , ccxDiagram
 

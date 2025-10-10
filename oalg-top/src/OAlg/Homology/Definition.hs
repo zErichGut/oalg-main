@@ -112,37 +112,19 @@ chainComplexFree' _ = chainComplexFree
 -- Homology -
 
 -- | homology for the simplex type @__s__@ over vertices of type @__x__@.
-data Homology t s n x where
-  Homology :: (Simplical s x, Attestable n)
-    => N -- actual dimension
-    -> ChainComplex t Z s n x 
+data Homology t n x where
+  Homology :: Simplical s x
+    => ChainComplex t Z s n x
     -> VarianceFreeLiftable To n AbHom
-    -> Homology t s n x
+    -> Homology t n x
+ 
 
-{-
-t = ComplexRegular
-n = attest :: Any N4
-a = complex [Set "ab",Set "bc",Set "cd"]
-b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
-s = Proxy :: Proxy Asc
-cmf = ComplexMapNgl a b (Map f)
-cmfHom = chainComplexHomZ t n cmf
-
-f c = case c of
-  'a' -> 0
-  'b' -> 1
-  'c' -> 2
-  'd' -> 0
-  _   -> error "undefined"
--}
 --------------------------------------------------------------------------------
 -- homology -
 
 -- | the induced homology of a complex.
-homology :: (Simplical s x, Attestable n)
-  => ComplexType t -> Any n -> Complex x -> Homology t s n x
-homology t dMax c = Homology 0 ds vfs where
-  ds  = chainComplex t dMax c
+homology :: Simplical s x => ChainComplex t Z s n x -> Homology t n x
+homology ds = Homology ds vfs where
   vfs = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
       $ toFree
       $ ccxRepMatrix ds
@@ -154,18 +136,217 @@ homology t dMax c = Homology 0 ds vfs where
     
 
 
--- | the induced homology of a complex according to the proxy type.
-homology' :: (Simplical s x, Attestable n)
-  => q s -> ComplexType t -> Any n -> Complex x -> Homology t s n x
-homology' _ = homology
-
-t = ComplexExtended
+t = ComplexRegular
 n = attest :: Any N4
 a = complex [Set "ab",Set "bc",Set "cd"]
 b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
 s = Proxy :: Proxy Asc
-ha = homology' s t n a
-hb = homology' s t n b
+ca = chainComplex' s t n a
+cb = chainComplex' s t n b
+ha = homology ca
+hb = homology cb
+
+--------------------------------------------------------------------------------
+-- hmgGroups -
+
+-- | the homology groups.
+hmgGroups :: Attestable n => Homology t n x -> Deviation (n+1) AbHom
+hmgGroups (Homology _ vfs) = deviationsTo vfs
+
+--------------------------------------------------------------------------------
+-- HomologyHom -
+
+-- | homomorphism between homologies.
+--
+-- __Property__ Let @h@ be in @'HomologyHom' __t n x y__@, then holds:
+--
+-- (1) @'hmgVarianceHom' h@ is 'valid'.
+data HomologyHom t n x y
+  = HomologyHom (Homology t n x) (Homology t n y) (FinList (n+3) AbHom)
+
+--------------------------------------------------------------------------------
+-- VarianceLiftableFreeHom -
+
+type VarianceLiftableFreeHom t = VarianceHomG t (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram
+
+--------------------------------------------------------------------------------
+-- hmgVarianceHom -
+
+-- | the induced homomorphism of between varances.
+hmgVarianceHom :: HomologyHom t n x y -> VarianceLiftableFreeHom To n AbHom
+hmgVarianceHom (HomologyHom a b fs) = VarianceHomG a' b' fs where
+  Homology _ a' = a
+  Homology _ b' = b
+
+--------------------------------------------------------------------------------
+-- homologyHom -
+
+homologyHom :: Homological s x y => ChainComplexHom t Z s n x y -> HomologyHom t n x y
+homologyHom h@(ChainComplexHom a b _) = HomologyHom a' b' fs' where
+  a' = homology a
+  b' = homology b
+  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxRepMatrixHom h
+  fs' = amap1 (amap FreeAbHom) ts
+
+
+--------------------------------------------------------------------------------
+-- hmgGroupsHom -
+
+instance ApplicativeG
+           (SDualBi
+              (ConeG
+                 ConeLiftable Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+instance FunctorialG
+           (SDualBi
+              (ConeG
+                 ConeLiftable Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+instance NaturalTransformable (IsoO Dst Op) (->)
+           (SDualBi
+              (ConeG
+                 ConeLiftable Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1))
+           (SDualBi
+              (ConeG
+                 Cone Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+
+instance NaturalConic (IsoO Dst Op)
+           ConeLiftable Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1
+
+instance ApplicativeG
+           (SDualBi
+              (ConeG
+                 ConeLiftable Dst Projective SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+instance FunctorialG
+           (SDualBi
+              (ConeG
+                 ConeLiftable Dst Projective SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+instance NaturalTransformable (IsoO Dst Op) (->)
+           (SDualBi
+              (ConeG
+                 ConeLiftable Dst Projective SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+           (SDualBi
+              (ConeG
+                 Cone Dst Projective SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+
+instance NaturalConic (IsoO Dst Op) ConeLiftable Dst Projective
+           SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1
+
+instance ApplicativeG
+           (SDualBi
+              (ConeG
+                 (ConicFreeTip Cone) Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+
+instance FunctorialG
+           (SDualBi
+              (ConeG
+                 (ConicFreeTip Cone) Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+instance NaturalTransformable (IsoO Dst Op) (->)
+           (SDualBi
+              (ConeG
+                 (ConicFreeTip Cone) Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+           (SDualBi
+              (ConeG
+                 Cone Dst Injective SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1)
+           )
+         
+instance NaturalConic (IsoO Dst Op) (ConicFreeTip Cone) Dst Injective
+           SomeFreeSliceDiagram (Parallel RightToLeft) N2 N1
+
+instance ApplicativeG
+           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1))
+           (IsoO Dst Op)
+           (->)
+
+instance ApplicativeG
+           (SDualBi
+              (DiagramG
+                 SomeFreeSliceDiagram (Parallel RightToLeft) (S N1) (S N0))
+           )
+           (Inv2 (HomDisjEmpty Dst Op))
+           (->)
+
+instance FunctorialG
+           (SDualBi
+              (DiagramG
+                 SomeFreeSliceDiagram (Parallel RightToLeft) (S N1) (S N0))
+           )
+           (Inv2 (HomDisjEmpty Dst Op))
+           (->)
+
+instance NaturalTransformable (Inv2 (HomDisjEmpty Dst Op)) (->)
+           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel RightToLeft) (S N1) (S N0)))
+           (SDualBi (DiagramG Diagram (Parallel RightToLeft) (S N1) (S N0)))
+
+instance NaturalDiagrammatic
+          (Inv2 (HomDisjEmpty Dst Op))
+          SomeFreeSliceDiagram (Parallel RightToLeft) (S N1) (S N0)
+
+instance FunctorialG
+           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1))
+           (IsoO Dst Op)
+           (->)
+
+instance ApplicativeG
+           (SDualBi (ConeG (ConicFreeTip Cone) Dst Projective
+              SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+instance FunctorialG
+           (SDualBi (ConeG (ConicFreeTip Cone) Dst Projective
+              SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+           (IsoO Dst Op)
+           (->)
+
+
+instance NaturalTransformable (IsoO Dst Op) (->)
+           (SDualBi (DiagramG SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1))
+           (SDualBi (DiagramG Diagram (Parallel LeftToRight) N2 N1))
+
+instance NaturalDiagrammatic (IsoO Dst Op) SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1
+
+instance NaturalTransformable (IsoO Dst Op) (->)
+           (SDualBi (ConeG (ConicFreeTip Cone) Dst Projective
+              SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+           (SDualBi (ConeG Cone Dst Projective
+              SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1)
+           )
+
+instance NaturalConic (IsoO Dst Op) (ConicFreeTip Cone) Dst Projective
+           SomeFreeSliceDiagram (Parallel LeftToRight) N2 N1
+hmgGroupsHom :: Attestable n => HomologyHom t n x y -> DeviationHom (n+1) AbHom
+hmgGroupsHom = deviationHomG (Struct :: Struct Dst AbHom) . hmgVarianceHom
+
 {-
 --------------------------------------------------------------------------------
 -- hmgCards -
@@ -196,12 +377,6 @@ hmgIndex :: Homology s x -> N
 hmgIndex = fst . hmgRange
 -}
 
---------------------------------------------------------------------------------
--- hmgGroups -
-
--- | the homology groups.
-hmgGroups :: Homology t s n x -> Deviation (n+1) AbHom
-hmgGroups (Homology _ _ vfs) = deviationsTo vfs
 
 {-
 --------------------------------------------------------------------------------
