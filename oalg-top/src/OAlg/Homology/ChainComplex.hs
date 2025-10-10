@@ -216,12 +216,6 @@ f c = case c of
   _   -> error "undefined"
 
 --------------------------------------------------------------------------------
--- homDisjOpOrt -
-
-homDisjOpOrt :: HomOriented h => h x y -> Variant2 Covariant (HomDisj Ort Op h) x y
-homDisjOpOrt = homDisj
-
---------------------------------------------------------------------------------
 -- ccxRepMatrix -
 
 -- | the representation matrices of the boundary operators.

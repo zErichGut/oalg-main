@@ -24,7 +24,7 @@ module OAlg.Hom.Oriented.Definition
   (
 
     -- * Covariant
-    HomOriented
+    HomOriented, homDisjOpOrt
 
     -- * Disjunctive
   , HomOrientedDisjunctive, omapDisj
@@ -202,6 +202,13 @@ class (Functorial h, FunctorialPoint h) => FunctorialOriented h
 instance FunctorialOriented h => FunctorialOriented (Inv2 h)
 
 instance (HomOriented h, DualisableOriented s o) => FunctorialOriented (HomDisj s o h)
+
+--------------------------------------------------------------------------------
+-- homDisjOpOrt -
+
+-- | homomorphism on 'Oriented' structures as a 'Covariant' homomorphism in @'HomDisj' 'Ort' 'Op'@.
+homDisjOpOrt :: HomOriented h => h x y -> Variant2 Covariant (HomDisj Ort Op h) x y
+homDisjOpOrt = homDisj
 
 --------------------------------------------------------------------------------
 -- toDualOpOrt -

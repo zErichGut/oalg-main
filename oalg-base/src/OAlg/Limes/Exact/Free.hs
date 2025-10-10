@@ -28,6 +28,9 @@ module OAlg.Limes.Exact.Free
   
     -- ** Duality
   , cnzFreeMapS, cnzFreeMapCov, cnzFreeMapCnt
+
+    -- * Homomorphism
+  , VarianceFreeLiftableHom
   
     -- * Proposition
   , prpConsecutiveZeroFree
@@ -200,3 +203,9 @@ varianceFreeTo kers cokers (ConsecutiveZeroFree c fs) = VarianceG c (kcs kers co
   kcs kers cokers c (f:|fs) = kc kers cokers c f :| case fs of
     _ :| Nil    -> Nil
     _ :| _ :| _ -> kcs kers cokers (cnzTail c) fs 
+
+--------------------------------------------------------------------------------
+-- VarianceFreeLiftableHom -
+
+-- | homomorphism between 'VarianceFreeLiftable's.
+type VarianceFreeLiftableHom t = VarianceHomG t (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram

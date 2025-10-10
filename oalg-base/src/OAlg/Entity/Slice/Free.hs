@@ -86,6 +86,7 @@ import OAlg.Structure.Distributive
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
+import OAlg.Hom.Distributive
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -265,7 +266,7 @@ instance Diagrammatic DiagramFree where diagram = dgfDiagram
 --
 -- (1) For all @__k__@ holds:
 -- @'pmap' h ('slicePoint' '$' 'free'' qx k) '==' ('slicePoint' '$' 'free'' qy k)@ where
--- @k@ is in @'Free' __k__ __x__@ and @qx@ is any proxy in @__q x__@
+-- @k@ is in @'Free' __k x__@ and @qx@ is any proxy in @__q x__@
 -- and @qy@ is any proxy in @__q y__@. 
 class (HomOrientedDisjunctive h, Transformable (ObjectClass h) SldFr) => HomOrientedSlicedFree h
 
@@ -457,6 +458,26 @@ instance (HomOrientedSlicedFree h, t ~ Dual (Dual t))
 instance (HomOrientedSlicedFree h, FunctorialOriented h, t ~ Dual (Dual t))
   => FunctorialG (SDualBi (SomeFreeSliceDiagram t n m)) h (->)
 
+instance (HomOrientedSlicedFree h, FunctorialOriented h, t ~ Dual (Dual t))
+  => ApplicativeG (SDualBi (DiagramG SomeFreeSliceDiagram t n m)) h (->) where
+  amapG h = sdbFromDgmObj . amapG h . sdbToDgmObj
+  
+instance (HomOrientedSlicedFree h, FunctorialOriented h, t ~ Dual (Dual t))
+  => FunctorialG (SDualBi (DiagramG SomeFreeSliceDiagram t n m)) h (->)
+
+instance (HomOrientedSlicedFree h, FunctorialOriented h, t ~ Dual (Dual t))
+  => NaturalTransformable h (->)
+       (SDualBi (DiagramG SomeFreeSliceDiagram t n m))
+       (SDualBi (DiagramG Diagram t n m))
+
+instance
+  ( CategoryDisjunctive h
+  , HomOrientedSlicedFree h
+  , FunctorialOriented h
+  , t ~ Dual (Dual t)
+  )
+  => NaturalDiagrammatic h SomeFreeSliceDiagram t n m
+
 --------------------------------------------------------------------------------
 -- LiftableFree -
 
@@ -475,7 +496,6 @@ liftFree (LiftableFree l) = l
 -- HomFreeOp -
 
 -- | homomorphism between free sliced structures.
--- type HomFree s = Sub (s,SldFr) (HomDisjEmpty s Op)
 type HomFreeOp s = HomDisjEmpty (s,SldFr) Op
 
 instance Transformable (s,SldFr) Type where tau _ = Struct
@@ -603,7 +623,6 @@ instance Conic ConeLiftable where
   cone (ConeKernelLiftable c _)   = c
   cone (ConeCokernelLiftable c _) = c
 
-
 instance Show (d t n m x) => Show (ConeLiftable s p d t n m x) where
   show (ConeKernelLiftable k _) = "ConeKernelLiftable (" ++ show k ++ ") lftb"
   show (ConeCokernelLiftable k _) = "ConeCokernelLiftable (" ++ show k ++ ") lftb"
@@ -675,7 +694,7 @@ instance
   , p ~ Dual (Dual p)
   , t ~ Dual (Dual t)
   )
-  => ApplicativeG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFreeOp s)) (->) where
+  => ApplicativeG (SDualBi (ConeLiftable s p d (Parallel t) n m)) (Inv2 (HomFreeOp s)) (->) where
   amapG = cnlMapS
 
 instance
@@ -684,7 +703,60 @@ instance
   , p ~ Dual (Dual p)
   , t ~ Dual (Dual t)
   )
-  => FunctorialG (SDualBi (ConeLiftable s p d t n m)) (Inv2 (HomFreeOp s)) (->)
+  => FunctorialG (SDualBi (ConeLiftable s p d (Parallel t) n m)) (Inv2 (HomFreeOp s)) (->)
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
+  , p ~ Dual (Dual p)
+  , t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConeG ConeLiftable s p d (Parallel t) n m)) (Inv2 (HomFreeOp s)) (->) where
+  amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
+  , p ~ Dual (Dual p)
+  , t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConeG ConeLiftable s p d (Parallel t) n m)) (Inv2 (HomFreeOp s)) (->)
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
+  , s ~ Dst
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable (Inv2 (HomFreeOp s)) (->)
+           (SDualBi (ConeG ConeLiftable s p d (Parallel LeftToRight) N2 N1))
+           (SDualBi (ConeG Cone s p d (Parallel LeftToRight) N2 N1))
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
+  , s ~ Dst
+  , p ~ Dual (Dual p)
+  )
+  => NaturalTransformable (Inv2 (HomFreeOp s)) (->)
+           (SDualBi (ConeG ConeLiftable s p d (Parallel RightToLeft) N2 N1))
+           (SDualBi (ConeG Cone s p d (Parallel RightToLeft) N2 N1))
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
+  , s ~ Dst
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic (Inv2 (HomFreeOp s)) ConeLiftable s p d (Parallel RightToLeft) N2 N1
+
+instance
+  ( NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel LeftToRight) N2 N1
+  , NaturalDiagrammatic (Inv2 (HomFreeOp s)) d (Parallel RightToLeft) N2 N1
+  , s ~ Dst
+  , p ~ Dual (Dual p)
+  )
+  => NaturalConic (Inv2 (HomFreeOp s)) ConeLiftable s p d (Parallel LeftToRight) N2 N1
 
 --------------------------------------------------------------------------------
 -- CokernelLiftableSomeFree -
@@ -854,6 +926,132 @@ instance
   => Validable (ConicFreeTip c s p d t n m x) where
   valid = prpConicFreeTip
 
+--------------------------------------------------------------------------------
+-- cnftConeMapCov -
+
+cnftConeMapDstCovStruct ::
+  ( NaturalDiagrammatic h d t n m
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  )
+  => Struct SldFr y
+  -> Variant2 Covariant h x y
+  -> ConicFreeTip Cone Dst p d t n m x
+  -> ConicFreeTip Cone Dst p d t n m y
+cnftConeMapDstCovStruct Struct h (ConicFreeTip (Free k) c)
+  = case slicedFree' h k of Struct -> ConicFreeTip (Free k) (cnMapDstCov h c)
+
+cnftConeMapDstCov ::
+  ( NaturalDiagrammatic h d t n m
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  )
+  => Variant2 Covariant h x y
+  -> ConicFreeTip Cone Dst p d t n m x
+  -> ConicFreeTip Cone Dst p d t n m y
+cnftConeMapDstCov h = cnftConeMapDstCovStruct (tau $ range h) h
+
+--------------------------------------------------------------------------------
+-- cnftConeMapCnt -
+
+cnftConeMapDstCntStruct ::
+  ( NaturalDiagrammatic h d t n m
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  )
+  => Struct SldFr y
+  -> Variant2 Contravariant h x y
+  -> ConicFreeTip Cone Dst p d t n m x
+  -> ConicFreeTip Cone Dst (Dual p) d (Dual t) n m y
+cnftConeMapDstCntStruct Struct h (ConicFreeTip (Free k) c)
+  = case slicedFree' h k of Struct -> ConicFreeTip (Free k) (cnMapDstCnt h c)
+
+cnftConeMapDstCnt ::
+  ( NaturalDiagrammatic h d t n m
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  )
+  => Variant2 Contravariant h x y
+  -> ConicFreeTip Cone Dst p d t n m x
+  -> ConicFreeTip Cone Dst (Dual p) d (Dual t) n m y
+cnftConeMapDstCnt h = cnftConeMapDstCntStruct (tau $ range h) h
+
+--------------------------------------------------------------------------------
+-- Duality -
+
+type instance Dual1 (ConicFreeTip c s p d t n m) = ConicFreeTip c s (Dual p) d (Dual t) n m
+
+--------------------------------------------------------------------------------
+-- cnftConeMapDstS -
+
+cnftConeMapDstS ::
+  ( NaturalDiagrammaticBi h d t n m
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p)
+  )
+  => h x y
+  -> SDualBi (ConicFreeTip Cone Dst p d t n m) x -> SDualBi (ConicFreeTip Cone Dst p d t n m) y
+cnftConeMapDstS = vmapBi cnftConeMapDstCov cnftConeMapDstCov cnftConeMapDstCnt cnftConeMapDstCnt
+
+instance
+  ( CategoryDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConicFreeTip Cone Dst p SomeFreeSliceDiagram t n m)) h (->)
+  where amapG = cnftConeMapDstS 
+
+instance
+  ( CategoryDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConicFreeTip Cone Dst p SomeFreeSliceDiagram t n m)) h (->)
+
+instance
+  ( CategoryDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => ApplicativeG (SDualBi (ConeG (ConicFreeTip Cone) Dst p SomeFreeSliceDiagram t n m)) h (->)
+  where amapG h = sdbFromCncObj . amapG h . sdbToCncObj
+
+instance
+  ( CategoryDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => FunctorialG (SDualBi (ConeG (ConicFreeTip Cone) Dst p SomeFreeSliceDiagram t n m)) h (->)
+
+instance
+  ( CategoryDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => NaturalTransformable h (->)
+           (SDualBi (ConeG (ConicFreeTip Cone) Dst p SomeFreeSliceDiagram t n m))
+           (SDualBi (ConeG Cone Dst p SomeFreeSliceDiagram t n m))
+
+instance
+  ( CategoryDisjunctive h
+  , FunctorialOriented h
+  , HomOrientedSlicedFree h
+  , HomDistributiveDisjunctive h
+  , p ~ Dual (Dual p), t ~ Dual (Dual t)
+  )
+  => NaturalConic h (ConicFreeTip Cone) Dst p SomeFreeSliceDiagram t n m
+  
 --------------------------------------------------------------------------------
 -- SomeFreeSlice -
 
