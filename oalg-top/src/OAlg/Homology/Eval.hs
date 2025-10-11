@@ -24,18 +24,20 @@ import Control.Monad
 
 import Data.Kind
 import Data.Array
+import Data.List as L (zip)
 
 import OAlg.Prelude
 
 import OAlg.Data.Proxy
 import OAlg.Data.Either
 
+import OAlg.Structure.Oriented
 -- import OAlg.Structure.Distributive
 -- import OAlg.Structure.Exponential
 
--- import OAlg.Entity.Diagram hiding (Chain)
+import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
--- import OAlg.Entity.FinList
+import OAlg.Entity.FinList as F
 -- import OAlg.Entity.Slice.Free
 -- import OAlg.Entity.Matrix
 
@@ -50,6 +52,7 @@ import OAlg.Limes.Exact.Deviation
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
+import OAlg.Homology.ChainOperator
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
 
@@ -76,15 +79,21 @@ failure :: EvalFailure -> Eval x
 failure = Left
 
 --------------------------------------------------------------------------------
+-- ChainComplexHomology -
+
+-- | ignoring the 'ChainComplexType'.
+data SomeChainComplex r s n x where
+  SomeChainComplex ::  ChainComplex t r s n x -> SomeChainComplex r s n x
+
+--------------------------------------------------------------------------------
 -- Env -
 
 data Env t s n x where
   Env :: (Simplical s x, Attestable n)
-    => { envDim          :: N
+    => { envDimMax       :: N
        , envChainComplex :: ChainComplex t Z s n x
        , envHomology     :: Homology n
-       , envAt0          :: (ChainComplex t Z s N0 x,Homology N0)
-       , envAt           :: Array N (ChainComplex Regular Z s N0 x,Homology N0)
+       , envAt           :: Array N (SomeChainComplex Z s N0 x, Homology N0)
        }
     -> Env t s n x
 
@@ -93,28 +102,25 @@ data Env t s n x where
 
 env :: (Simplical s x, Attestable n) => ChainComplexType t -> Any n -> Complex x -> Env t s n x
 env t n c = case ats n of
-  Ats -> Env { envDim          = dm
-             , envChainComplex = cc
-             , envHomology     = hm
-             , envAt0          = at0
+  Ats -> Env { envDimMax       = dm
+             , envChainComplex = ccx
+             , envHomology     = hmg
              , envAt           = at
              } where
     dm  = lengthN n
-    cc  = chainComplex t n c
-    hm  = homology cc
-    at0 = (ccxHead cc,vrcHead hm)
-    at  = case n of
-      W0    -> array (1,0) []
-      SW n' -> array (1,dm) $ ascs n' 1 (ccxTail cc) (vrcTail hm)
+    ccx = chainComplex t n c
+    hmg = homology ccx
+    at  = array (0,dm) $ ascs n 0 ccx hmg
 
     ascs :: Simplical s x
       => Any n -> N
-      -> ChainComplex Regular Z s n x -> Homology n
-      -> [(N,(ChainComplex Regular Z s N0 x,Homology N0))]
-    ascs n i cc hm = (i,(ccxHead cc,vrcHead hm)) : case n of
+      -> ChainComplex t Z s n x -> Homology n
+      -> [(N,(SomeChainComplex Z s N0 x,Homology N0))]
+    ascs n i cc hm = (i,(SomeChainComplex $ ccxHead cc,vrcHead hm)) : case n of
       W0    -> []
       SW n' -> ascs n' (succ i) (ccxTail cc) (vrcTail hm)
-   
+
+
 env' :: (Simplical s x, Attestable n) => q s -> ChainComplexType t -> Any n -> Complex x -> Env t s n x
 env' _ = env
 
@@ -128,17 +134,33 @@ ea = env' s t n a
 eb = env' s t n b
 
 --------------------------------------------------------------------------------
+-- evalAt -
+
+evalAt :: Env t s n x -> N -> Eval (SomeChainComplex Z s N0 x,Homology N0)
+evalAt env i
+  | envDimMax env < i = failure $ IndexOutOfRange i
+  | otherwise         = return $ (envAt env ! i)
+
+--------------------------------------------------------------------------------
 -- evalMaxDim -
 
 evalMaxDim :: Env t s n x -> N
-evalMaxDim = envDim
+evalMaxDim = envDimMax
 
 --------------------------------------------------------------------------------
--- evalCardsSmplSet -
+-- evalCardSmplSetAll -
 
-evalCardsSmplSet :: Env t s n x -> Cards Z n
-evalCardsSmplSet env@Env{} = ccxCards $ envChainComplex env
+evalCardSmplSetAll :: Env t s n x -> Cards Z n
+evalCardSmplSetAll env@Env{} = ccxCards $ envChainComplex env
 
+--------------------------------------------------------------------------------
+-- evalCardSmplSetAt ´-
+
+evalCardSmplSetAt :: Env t s n x -> N -> Eval (Cards Z N0)
+evalCardSmplSetAt env@Env{} i = do
+  SomeChainComplex ccx <- evalAt env i >>= return . fst
+  return $ ccxCards ccx
+  
 --------------------------------------------------------------------------------
 -- evalHomologyGroups -
 
@@ -146,88 +168,119 @@ evalHomologyGroups :: Env t s n x -> Deviation (n+1) AbHom
 evalHomologyGroups env@Env{} = homologyGroups $ envHomology env
 
 --------------------------------------------------------------------------------
--- evlHomologyAt -
-
-evlHomologyAt :: Env t s n x -> N -> Eval (Homology N0)
-evlHomologyAt env i
-  | i == 0             = return $ snd $ envAt0 env
-  | evalMaxDim env < i = failure $ IndexOutOfRange i
-  | otherwise          = return $ snd (envAt env ! i)
-
---------------------------------------------------------------------------------
 -- evalHomologyGroupAt -
 
-evalHomologyGroupAt :: Env t s n x -> N -> Eval AbGroup
-evalHomologyGroupAt env i = evlHomologyAt env i >>= return . deviationTo
+evalHomologyGroupAt :: Env t s n x -> N -> Eval (Deviation N1 AbHom)
+evalHomologyGroupAt env i = evalAt env i >>= return . homologyGroups . snd
 
+--------------------------------------------------------------------------------
+-- evalChainBaseAt -
 
+evalChainBaseAt :: Env t s n x -> N -> Eval (Array N (ChainG Z s x))
+evalChainBaseAt env@Env{} i = do
+  SomeChainComplex ccx <- evalAt env i >>= return . fst
+  case ccx of
+    ChainComplex _ (DiagramChainTo _ (d:|_))
+      -> return $ array rng $ ([0..] `L.zip` ((\(Set sxs) -> amap1 ch sxs) ssxs)) where
+           ssxs = start d
+           rng  = case lengthN ssxs of
+                    0 -> (1,0)
+                    c -> (0,pred c)
+  
 --------------------------------------------------------------------------------
 -- Expression -
 
 -- | expression to evaluate values of type t'Value'.
-data Expression (t :: Regularity) (s :: Type -> Type) (n :: N') x
+data Expression
   = MaxDimExpr -- ^ the maximal dimension
-  | CardExpr  (CardinalityExpression t s n x) -- ^ cardinality.
-  | HomologyGroupExpr (HomologyGroupExpression t s n x)
+  | CardinalityExpr  CardinalityExpression -- ^ cardinality.
+  | HomologyGroupExpr HomologyGroupExpression
+  | ChainExpr ChainExpression
 
 --------------------------------------------------------------------------------
--- CardExpression -
+-- CardinalityExpression -
 
 -- | expression to evaluate values of type t'Cardinality'.
-data CardinalityExpression (t :: Regularity) (s :: Type -> Type) (n :: N') x
-  = CardSimplexSetExpr
+data CardinalityExpression
+  = CardSimplexSetAllExpr
+  | CardSimplexSetAtExpr N
 
 --------------------------------------------------------------------------------
 -- HomologyGroupExpression -
 
 -- | expression to evaluate values of type t'HomologyGroup'.
-data HomologyGroupExpression (t :: Regularity) (s :: Type -> Type) (n :: N') x
-  = HomologyGroupsAllExpr
+data HomologyGroupExpression
+  = HomologyGroupAllExpr
   | HomologyGroupAtExpr N
 
 --------------------------------------------------------------------------------
+-- ChainExpression -
+
+data ChainExpression
+  = ChainBaseAtExpr N
+  | ChainAtExpr N
+  
+--------------------------------------------------------------------------------
 -- Value -
 
-data Value (t :: Regularity) (s :: Type -> Type) (n :: N') x
+data Value (s :: Type -> Type) x
   = MaximalDimension N
-  | Cardinality (Cardinality t s n x)
-  | HomologyGroup (HomologyGroup t s n x)
-  deriving (Show,Eq)
+  | Cardinality (Cardinality s x)
+  | HomologyGroup (HomologyGroup s x)
+  | ChainValue (ChainValue s x)
+  deriving (Show)
 
 --------------------------------------------------------------------------------
 -- Cardinality -
 
-data Cardinality (t :: Regularity) (s :: Type -> Type) (n :: N') x
-  = SimplexSetCardinalities (Cards Z n)
-  deriving (Show,Eq)
+data Cardinality (s :: Type -> Type) x where
+  SimplexSetCardinalities :: Attestable n => Cards Z n -> Cardinality s x
+
+deriving instance Show (Cardinality s x)
 
 --------------------------------------------------------------------------------
 -- HomologyGroup -
 
-data HomologyGroup (t :: Regularity) (s :: Type -> Type) (n :: N') x
-  = HomologyGroups (Deviation (n+1) AbHom)
-  | HomologyGroupAt (AbGroup)
-  deriving (Show,Eq)
+data HomologyGroup (s :: Type -> Type) x where
+  HomologyGroups :: Attestable n => Deviation (n+1) AbHom -> HomologyGroup s x
+
+deriving instance Show (HomologyGroup s x)
 
 --------------------------------------------------------------------------------
--- evalCardExpr -
+-- ChainValue -
 
-evalCardExpr :: Env t s n x -> CardinalityExpression t s n x -> Eval (Cardinality t s n x)
-evalCardExpr env cexpr = case cexpr of
-  CardSimplexSetExpr -> return $ SimplexSetCardinalities $ evalCardsSmplSet env 
+data ChainValue s x
+  = ChainGenerator (Array N (ChainG Z s x))
+  deriving (Show)
+--------------------------------------------------------------------------------
+-- evalCardinalityExpr -
+
+evalCardinalityExpr :: Env t s n x -> CardinalityExpression -> Eval (Cardinality s x)
+evalCardinalityExpr env@Env{} cexpr = case cexpr of
+  CardSimplexSetAllExpr  -> return $ SimplexSetCardinalities $ evalCardSmplSetAll env
+  CardSimplexSetAtExpr i -> evalCardSmplSetAt env i >>= return . SimplexSetCardinalities 
 
 --------------------------------------------------------------------------------
 -- evalHomologyGroupExpr -
 
-evalHomologyGroupExpr :: Env t s n x -> HomologyGroupExpression t s n x -> Eval (HomologyGroup t s n x)
-evalHomologyGroupExpr env hexpr = case hexpr of
-  HomologyGroupsAllExpr -> return $ HomologyGroups $ evalHomologyGroups env
-  HomologyGroupAtExpr i -> evalHomologyGroupAt env i >>= return . HomologyGroupAt
+evalHomologyGroupExpr :: Env t s n x -> HomologyGroupExpression -> Eval (HomologyGroup s x)
+evalHomologyGroupExpr env@Env{} hexpr = case hexpr of
+  HomologyGroupAllExpr  -> return $ HomologyGroups $ evalHomologyGroups env
+  HomologyGroupAtExpr i -> evalHomologyGroupAt env i >>= return . HomologyGroups
+
+--------------------------------------------------------------------------------
+-- evalChainExpr -
+
+evalChainExpr :: Env t s n x -> ChainExpression -> Eval (ChainValue s x)
+evalChainExpr env cexpr = case cexpr of
+  ChainBaseAtExpr i -> evalChainBaseAt env i >>= return . ChainGenerator
 --------------------------------------------------------------------------------
 -- eval -
 
-eval :: Env t s n x -> Expression t s n x -> Eval (Value t s n x)
+eval :: Env t s n x -> Expression -> Eval (Value s x)
 eval env expr = case expr of
-  MaxDimExpr     -> return $ MaximalDimension $ evalMaxDim env
-  CardExpr cexpr -> evalCardExpr env cexpr >>= return . Cardinality
+  MaxDimExpr              -> return $ MaximalDimension $ evalMaxDim env
+  CardinalityExpr cexpr   -> evalCardinalityExpr env cexpr >>= return . Cardinality
   HomologyGroupExpr hexpr -> evalHomologyGroupExpr env hexpr >>= return . HomologyGroup
+  ChainExpr cexpr         -> evalChainExpr env cexpr >>= return . ChainValue
+
