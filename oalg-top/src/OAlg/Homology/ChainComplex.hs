@@ -25,8 +25,8 @@ module OAlg.Homology.ChainComplex
 
     -- * Chain Complex
     chainComplex, chainComplex', ChainComplex(..)
-  , ComplexType(..), Regularity(..), BoundaryOperator
-  , ccxDiagram
+  , ChainComplexType(..), Regularity(..), BoundaryOperator
+  , ccxDiagram, ccxHead, ccxTail
 
     -- ** Representation
   , ccxRepMatrix, ccxCards
@@ -41,8 +41,6 @@ module OAlg.Homology.ChainComplex
 
   ) where
 
-import Control.Monad
-
 import Data.Typeable
 import Data.List as L (repeat,(++),zip) 
 
@@ -56,7 +54,6 @@ import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
-import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
 import OAlg.Structure.Algebraic
 
@@ -66,12 +63,6 @@ import OAlg.Entity.FinList as F
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Matrix hiding (Transformation(..))
-import OAlg.Entity.Sum.Definition
-import OAlg.Entity.Sum.SumSymbol
-
-import OAlg.Hom.Definition
-import OAlg.Hom.Oriented
-import OAlg.Hom.Distributive
 
 import OAlg.Limes.Exact.ConsecutiveZero
 
@@ -125,17 +116,17 @@ ccxSimplices n c = case mSet (ccs n c) of
 -- Regular -
 
 -- | concept of regularity.
-data Regularity = Regular | Extended | Restricted deriving (Show,Eq,Ord,Enum)
+data Regularity = Restricted | Regular | Extended deriving (Show,Eq,Ord,Enum)
 
 --------------------------------------------------------------------------------
--- ComplexType -
+-- ChainComplexType -
 
-data ComplexType t where
-  ComplexRegular :: ComplexType 'Regular
-  ComplexExtended :: ComplexType Extended
+data ChainComplexType t where
+  ChainComplexStandard :: ChainComplexType Restricted
+  ChainComplexExtended :: ChainComplexType Regular
 
-deriving instance Show (ComplexType t)
-deriving instance Eq (ComplexType t)
+deriving instance Show (ChainComplexType t)
+deriving instance Eq (ChainComplexType t)
 
 --------------------------------------------------------------------------------
 -- BoundaryOperator -
@@ -151,13 +142,13 @@ type BoundaryOperator r s x = ChainOperatorRepSum r s (ChainG r s x) (ChainG r s
 -- __Property__ Let @v'ChainComplex' t zssx@ be in @t'ChainComplex' __t r s n x__@
 -- for @'Simplical' __s x__@, then for all @(_,ssx0) .. (z',ssx')':|'(z,ssx) ..@ in @zssx@ holds:
 --
--- (1) @@faces' ssx@ is a subset of @ssx'@ for all
---  @.. (z',ssx')':|'(z,ssx) ..@ in @'tail' zssx@.
+-- (1) @faces' ssx@ is a subset of @ssx'@ for all
+--  @.. (_,ssx')':|'(_,ssx) ..@ in @'tail' zssx@.
 --
--- (2) If @t@ matches 'ComplexRegular' then @ssx '==' 'empty'@ else @ssx '==' 'Set' 'empty'@ where
--- @(_,ssx) = 'head' zssc@.
+-- (2) If @t@ matches 'ChainComplexStandard' then @ssx '==' 'empty'@
+-- else @faces' ssx@ is a subset of @ssx'@ for all @(_,ssx')':|'(_,ssx) ..@ in @zssx@.
 data ChainComplex t r s n x
-  = ChainComplex (ComplexType t) (Diagram (Chain To) (n+3) (n+2) (BoundaryOperator r s x))
+  = ChainComplex (ChainComplexType t) (Diagram (Chain To) (n+3) (n+2) (BoundaryOperator r s x))
   deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
@@ -172,7 +163,7 @@ ccxDiagram (ChainComplex _ d) = d
 -- | the chain complex of the boundary operators, where in the t'Extended' case the first operator
 -- is addapted to @'zero'@ with an empty 'end'.
 chainComplex :: (Ring r, Commutative r, Ord r, Simplical s x)
-  => ComplexType t -> Any n -> Complex x -> ChainComplex t r s n x
+  => ChainComplexType t -> Any n -> Complex x -> ChainComplex t r s n x
 chainComplex t n c
   = ChainComplex t (toDgm t $ toBndOpr $ amap1 snd $ ccxSimplices n c) where
 
@@ -183,24 +174,24 @@ chainComplex t n c
 
   -- converts to a Chain To diagram by possibly addapting the first operator to zero.
   toDgm :: (Ring r, Commutative r, Ord r, Simplical s x)
-    => ComplexType t
+    => ChainComplexType t
     -> FinList (n+1) (BoundaryOperator r s x)
     -> Diagram (Chain To) (n+2) (n+1) (BoundaryOperator r s x)
   toDgm t (d:|ds) = DiagramChainTo (end d') (d':|ds) where
     d' = case t of
-      ComplexExtended -> d              -- no addaption
-      ComplexRegular  -> zeroEmptyEnd d -- to zero with empty end, but same start
+      ChainComplexExtended -> d              -- no addaption
+      ChainComplexStandard -> zeroEmptyEnd d -- to zero with empty end, but same start
 
   zeroEmptyEnd :: (Ring r, Commutative r, Ord r, Simplical s x)
     => BoundaryOperator r s x -> BoundaryOperator r s x
   zeroEmptyEnd d = zero (start d,empty) 
 
 chainComplex' :: Simplical s x
-  => q s -> ComplexType t -> Any n -> Complex x -> ChainComplex t Z s n x
+  => q s -> ChainComplexType t -> Any n -> Complex x -> ChainComplex t Z s n x
 chainComplex' _ = chainComplex
 
-
-t = ComplexRegular
+{-
+t = ChainComplexStandard
 n = attest :: Any N4
 a = complex [Set "ab",Set "bc",Set "cd"]
 b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
@@ -214,6 +205,22 @@ f c = case c of
   'c' -> 2
   'd' -> 0
   _   -> error "undefined"
+-}
+
+--------------------------------------------------------------------------------
+-- ccxHead -
+
+ccxHead :: ChainComplex t r s n x -> ChainComplex t r s N0 x
+ccxHead (ChainComplex t (DiagramChainTo e (d0:|d1:|_)))
+  = ChainComplex t (DiagramChainTo e (d0:|d1:|Nil))
+
+--------------------------------------------------------------------------------
+-- ccxTail -
+
+ccxTail :: (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
+  => ChainComplex t r s (n+1) x -> ChainComplex Regular r s n x
+ccxTail (ChainComplex _ (DiagramChainTo _ (d0:|ds)))
+  = ChainComplex ChainComplexExtended (DiagramChainTo (start d0) ds)
 
 --------------------------------------------------------------------------------
 -- ccxRepMatrix -
@@ -254,7 +261,7 @@ data ChainComplexHom t r s n x y
 
 -- | the induced homomorphsim of chain complexes.
 chainComplexHom :: (Ring r, Ord r, AlgebraicSemiring r, Homological s x y)
-  => ComplexType t -> Any n -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom t r s n x y
+  => ChainComplexType t -> Any n -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom t r s n x y
 chainComplexHom t n f = ChainComplexHom a b hs where
   a = chainComplex t n (cpmDomain f)
   b = chainComplex t n (cpmRange f)
@@ -266,7 +273,7 @@ chainComplexHom t n f = ChainComplexHom a b hs where
 
 -- | the induced homomorphsim of chain complexes within 'Z'.
 chainComplexHomZ ::Homological s x y
-  => ComplexType t -> Any n -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom t Z s n x y
+  => ChainComplexType t -> Any n -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom t Z s n x y
 chainComplexHomZ = chainComplexHom
 
 --------------------------------------------------------------------------------
@@ -286,7 +293,7 @@ ccxRepMatrixHom (ChainComplexHom a b hs) = ConsecutiveZeroHom (DiagramTrafo a' b
 -- | the cardinalities the mapping operators.
 ccxCardsHom :: (Ring r, Ord r, AlgebraicSemiring r, Simplical s x, Simplical s y)
   => ChainComplexHom t r s n x y -> CardsHom r n
-ccxCardsHom (ChainComplexHom a b fs) = CardsHom t where
+ccxCardsHom (ChainComplexHom a b _) = CardsHom t where
   Cards a' = ccxCards a
   Cards b' = ccxCards b
   t = DiagramTrafo a' b' $ amap1 (uncurry ((:>))) (dgPoints a' `F.zip` dgPoints b')

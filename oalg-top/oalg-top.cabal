@@ -29,10 +29,8 @@ library
       OAlg.Homology.ChainOperator
       OAlg.Homology.Complex
       OAlg.Homology.Definition
-      OAlg.Homology.Hom
+      OAlg.Homology.Eval
       OAlg.Homology.Simplical
-      OAlg.Homology.SomeComplex.Definition
-      OAlg.Homology.Variance
       OAlg.Topology.Definition
   other-modules:
       Paths_oalg_top
@@ -40,7 +38,8 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds -Wno-x-partial
   build-depends:
-      base >=4.7 && <5
+      array >=0.5 && <1
+    , base >=4.7 && <5
     , containers >=0.6
     , oalg-abg >=2
     , oalg-base >=3.1.0.1
@@ -55,7 +54,8 @@ test-suite oalg-top-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -Wno-unused-top-binds -Wno-x-partial -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      array >=0.5 && <1
+    , base >=4.7 && <5
     , containers >=0.6
     , oalg-abg >=2
     , oalg-base >=3.1.0.1
