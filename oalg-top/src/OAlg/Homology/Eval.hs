@@ -30,14 +30,17 @@ import OAlg.Prelude
 
 import OAlg.Data.Proxy
 import OAlg.Data.Either
+import OAlg.Data.Reducible
+import OAlg.Data.Constructable
 
 import OAlg.Structure.Oriented
 -- import OAlg.Structure.Distributive
 -- import OAlg.Structure.Exponential
 
-import OAlg.Entity.Diagram
-import OAlg.Entity.Natural
+import OAlg.Entity.Diagram hiding (Chain)
+import OAlg.Entity.Natural hiding (S)
 import OAlg.Entity.FinList as F
+import OAlg.Entity.Sum
 -- import OAlg.Entity.Slice.Free
 -- import OAlg.Entity.Matrix
 
@@ -64,6 +67,7 @@ import OAlg.Entity.Sequence.Set
 -- | evaluation failures.
 data EvalFailure
   = IndexOutOfRange N
+  | NotSupportedChainType String
   | EvalFailure String
   deriving (Show)
 
@@ -134,6 +138,12 @@ ea = env' s t n a
 eb = env' s t n b
 
 --------------------------------------------------------------------------------
+-- evalElmAt -
+
+evalElmAt :: Ix i => Array i x -> i -> EvalFailure -> Eval x
+evalElmAt xs i f = if (bounds xs `inRange` i) then return (xs ! i) else failure f
+
+--------------------------------------------------------------------------------
 -- evalAt -
 
 evalAt :: Env t s n x -> N -> Eval (SomeChainComplex Z s N0 x,Homology N0)
@@ -174,9 +184,14 @@ evalHomologyGroupAt :: Env t s n x -> N -> Eval (Deviation N1 AbHom)
 evalHomologyGroupAt env i = evalAt env i >>= return . homologyGroups . snd
 
 --------------------------------------------------------------------------------
+-- ChainList -
+
+type ChainList s x = Array N (ChainG Z s x)
+
+--------------------------------------------------------------------------------
 -- evalChainBaseAt -
 
-evalChainBaseAt :: Env t s n x -> N -> Eval (Array N (ChainG Z s x))
+evalChainBaseAt :: Env t s n x -> N -> Eval (ChainList s x)
 evalChainBaseAt env@Env{} i = do
   SomeChainComplex ccx <- evalAt env i >>= return . fst
   case ccx of
@@ -186,7 +201,44 @@ evalChainBaseAt env@Env{} i = do
            rng  = case lengthN ssxs of
                     0 -> (1,0)
                     c -> (0,pred c)
-  
+
+--------------------------------------------------------------------------------
+-- evalChainListsAt -
+
+evalChainListsAt :: Env t s n x -> N -> Eval (Array ChainType (ChainList s x))
+evalChainListsAt env i = do
+  bs <- evalChainBaseAt env i
+  return $ array (Chain,Chain) [(Chain,bs)]
+
+--------------------------------------------------------------------------------
+-- ChainValue -
+
+type ChainValue s x = ChainG Z s x
+
+--------------------------------------------------------------------------------
+-- evalChainValue -
+
+evalChainValue :: Env t s n x -> Array ChainType (ChainList s x)
+  -> SumForm Z (R ChainIndex) -> Eval (ChainValue s x)
+evalChainValue env@Env{} chs sf = evl env chs (reduce sf) >>= return . SumSymbol . make where
+  evl env chs sf = case sf of
+    Zero ()  -> return $ Zero ()
+    z :! sf' -> evl env chs sf' >>= return . (z:!)
+    a :+ b   -> do
+      a' <- evl env chs a
+      b' <- evl env chs b
+      return (a' :+ b')
+    S (R (ChainIndex t i)) -> do
+      cl           <- evalElmAt chs t (NotSupportedChainType $ show t)
+      SumSymbol sx <- evalElmAt cl i (IndexOutOfRange i)
+      return $ form sx
+
+{-      
+      cl <- when (bounds chs `inRange` t) (return (chs ! t))
+                                          
+      error "nyi"
+-}          
+
 --------------------------------------------------------------------------------
 -- Expression -
 
@@ -195,6 +247,7 @@ data Expression
   = MaxDimExpr -- ^ the maximal dimension
   | CardinalityExpr  CardinalityExpression -- ^ cardinality.
   | HomologyGroupExpr HomologyGroupExpression
+  | ChainListAtExpr ChainListAtExpression
   | ChainExpr ChainExpression
 
 --------------------------------------------------------------------------------
@@ -214,12 +267,33 @@ data HomologyGroupExpression
   | HomologyGroupAtExpr N
 
 --------------------------------------------------------------------------------
+-- ChainListAtExpression -
+
+data ChainListAtExpression
+  = ChainBaseAtExpr N
+
+--------------------------------------------------------------------------------
 -- ChainExpression -
 
 data ChainExpression
-  = ChainBaseAtExpr N
-  | ChainAtExpr N
-  
+  = ChainSumForm N (SumForm Z (R ChainIndex))
+
+--------------------------------------------------------------------------------
+-- ChainIndex -
+
+data ChainIndex = ChainIndex ChainType N deriving (Show,Eq,Ord)
+
+instance Validable ChainIndex where
+  valid (ChainIndex t n) = valid n && case t of
+    Chain -> SValid
+    _     -> SValid
+
+--------------------------------------------------------------------------------
+-- ChainType -
+
+data ChainType = Chain | Cycle | Boundary | Homology
+  deriving (Show,Eq,Ord,Enum,Bounded,Ix)
+
 --------------------------------------------------------------------------------
 -- Value -
 
@@ -227,6 +301,7 @@ data Value (s :: Type -> Type) x
   = MaximalDimension N
   | Cardinality (Cardinality s x)
   | HomologyGroup (HomologyGroup s x)
+  | ChainList (ChainList s x)
   | ChainValue (ChainValue s x)
   deriving (Show)
 
@@ -247,12 +322,6 @@ data HomologyGroup (s :: Type -> Type) x where
 deriving instance Show (HomologyGroup s x)
 
 --------------------------------------------------------------------------------
--- ChainValue -
-
-data ChainValue s x
-  = ChainGenerator (Array N (ChainG Z s x))
-  deriving (Show)
---------------------------------------------------------------------------------
 -- evalCardinalityExpr -
 
 evalCardinalityExpr :: Env t s n x -> CardinalityExpression -> Eval (Cardinality s x)
@@ -269,11 +338,21 @@ evalHomologyGroupExpr env@Env{} hexpr = case hexpr of
   HomologyGroupAtExpr i -> evalHomologyGroupAt env i >>= return . HomologyGroups
 
 --------------------------------------------------------------------------------
+-- evalChainListAtExpr -
+
+evalChainListAtExpr :: Env t s n x -> ChainListAtExpression -> Eval (ChainList s x)
+evalChainListAtExpr env cexpr = case cexpr of
+  ChainBaseAtExpr i -> evalChainBaseAt env i
+
+--------------------------------------------------------------------------------
 -- evalChainExpr -
 
 evalChainExpr :: Env t s n x -> ChainExpression -> Eval (ChainValue s x)
 evalChainExpr env cexpr = case cexpr of
-  ChainBaseAtExpr i -> evalChainBaseAt env i >>= return . ChainGenerator
+  ChainSumForm n sf -> do
+    chs <- evalChainListsAt env n
+    evalChainValue env chs sf
+
 --------------------------------------------------------------------------------
 -- eval -
 
@@ -282,5 +361,6 @@ eval env expr = case expr of
   MaxDimExpr              -> return $ MaximalDimension $ evalMaxDim env
   CardinalityExpr cexpr   -> evalCardinalityExpr env cexpr >>= return . Cardinality
   HomologyGroupExpr hexpr -> evalHomologyGroupExpr env hexpr >>= return . HomologyGroup
+  ChainListAtExpr cexpr   -> evalChainListAtExpr env cexpr >>= return . ChainList
   ChainExpr cexpr         -> evalChainExpr env cexpr >>= return . ChainValue
 
