@@ -20,9 +20,10 @@ module OAlg.AbelianGroup.Definition
   (
 
     -- * Abelian Group
-    AbGroup(..), abg, isSmithNormal
+    AbGroup(..), abg, abgxs, isSmithNormal
   , abgDim
   , abgZero
+  , abgSomeFree
 
     -- * Homomorphism
   , AbHom(..)
@@ -43,8 +44,10 @@ module OAlg.AbelianGroup.Definition
   , abgFinPres
 
     -- * Elements
-  , AbElement(..), AbElementForm(..), abge
+  , AbElement(..), AbElementForm(..), abge, abges
   , abhvecFree1, vecabhFree1
+  , abgevec, vecabge
+  
     -- * X
   , xAbHom, xAbHomTo, xAbHomFrom
   , stdMaxDim, xAbhSomeFreeSlice
@@ -237,6 +240,15 @@ abg = AbGroup . sy . ZMod
 -- | the indexed listing of the 'ZMod's.
 abgxs :: AbGroup -> [(ZMod,N)]
 abgxs (AbGroup g) = psyxs g
+
+--------------------------------------------------------------------------------
+-- abgSomeFree -
+
+-- | checking for free abelian groups.
+abgSomeFree :: AbGroup -> Maybe (SomeFree AbHom)
+abgSomeFree g | g == abg 0 ^ k = Just $ case someNatural k of SomeNatural k' -> SomeFree $ Free k' 
+              | otherwise       = Nothing
+  where k = lengthN g
 
 --------------------------------------------------------------------------------
 -- isSmithNormal -
@@ -822,6 +834,23 @@ instance LengthN AbElement where
   lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a
 
 --------------------------------------------------------------------------------
+-- AbElement - OrientedOpl -
+
+type instance Point AbElement = AbGroup
+instance ShowPoint AbElement
+instance EqPoint AbElement
+instance ValidablePoint AbElement
+instance TypeablePoint AbElement
+
+instance Oriented AbElement where
+  orientation (AbElement g) = orientation g
+  
+instance Opl AbHom AbElement where
+  h *> (AbElement g) = AbElement (h *> g)
+
+instance OrientedOpl AbHom AbElement
+
+--------------------------------------------------------------------------------
 -- AbElement - Constructable -
 
 instance Exposable AbElement where
@@ -851,6 +880,13 @@ abge :: AbGroup -> N -> AbElement
 abge a i = make (AbElementForm a [(1,i)])
 
 --------------------------------------------------------------------------------
+-- abges -
+
+-- | list of the canonical generators
+abges :: AbGroup -> [AbElement]
+abges g = [abge g (pred i) | i <- [1..lengthN g]] 
+
+--------------------------------------------------------------------------------
 -- vecabhFree1 -
 
 -- | the abelian homomorphism with the free 'start' point of dimension @1@ and free
@@ -870,6 +906,7 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
     []            -> Vector psqEmpty
     [(Col ris,0)] -> Vector ris
     _             -> throw $ InvalidData "abhvecFree1"
+
     
 --------------------------------------------------------------------------------
 -- AbElement - Abelian -
@@ -900,6 +937,39 @@ instance Abelian AbElement where
 instance Vectorial AbElement where
   type Scalar AbElement = Z
   z ! AbElement a = AbElement (z!a)
+
+--------------------------------------------------------------------------------
+-- abgevec -
+
+-- | the underlying 'Z'-vector.
+abgevec :: AbElement -> Vector Z
+abgevec (AbElement g) = abhvecFree1 g
+
+--------------------------------------------------------------------------------
+-- vecabge -
+
+-- | the abelian element to the given abelian group and the 'Z'-vecotr.
+--
+-- __Property__ 
+--
+-- (1) For all @e@ in 'AbElement' holds: @'vecabge' ('end' e) ('abgevec' e) '==' e@
+vecabge :: AbGroup -> Vector Z -> AbElement
+vecabge g v = AbElement $ (prj*>) $ vecabhFree1 n v where
+  n   = lengthN g
+  prj = abh' (abg 0 ^ n :> g) [let i' = pred i in (1,i',i') | i <- [1..n]]
+
+--------------------------------------------------------------------------------
+-- xAbElement -
+
+-- | random variable for abelian elements.
+xAbElement :: X AbElement
+xAbElement = amap1 AbElement xslc where
+  xslc = do
+    g <- xStandard
+    e <- xAbHom 1 (abg 0 :> g)
+    return (SliceFrom (Free attest :: Free N1 AbHom) e)
+
+instance XStandard AbElement where xStandard = xAbElement
 
 --------------------------------------------------------------------------------
 -- XSomeFreeSliceFromLiftable -

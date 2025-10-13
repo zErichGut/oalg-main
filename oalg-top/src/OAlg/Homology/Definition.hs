@@ -22,6 +22,7 @@ module OAlg.Homology.Definition
     -- * Homology
     homology, Homology
   , homologyGroups
+  , hmgCycles
     
     -- * Homomorphism
   , homologyHom, HomologyHom
@@ -32,8 +33,9 @@ module OAlg.Homology.Definition
 
 import OAlg.Prelude
 
+import OAlg.Structure.Oriented
 import OAlg.Structure.Distributive
-import OAlg.Structure.Exponential
+import OAlg.Structure.Operational
 
 import OAlg.Entity.Diagram hiding (Chain)
 import OAlg.Entity.Natural
@@ -46,6 +48,8 @@ import OAlg.Hom.Distributive
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 
+import OAlg.Limes.Definition
+import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
@@ -54,13 +58,6 @@ import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 
---------------------------------------------------------------------------------
--- abgSomeFree -
-
-abgSomeFree :: AbGroup -> Maybe (SomeFree AbHom)
-abgSomeFree g | g == abg 0 ^ k = Just $ case someNatural k of SomeNatural k' -> SomeFree $ Free k' 
-              | otherwise       = Nothing
-  where k = lengthN g
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -112,6 +109,44 @@ homologyHom h@(ChainComplexHom a b _) = VarianceHomG a' b' fs' where
 -- | homomorphism between the homology groups.
 homologyGroupsHom :: Attestable n => HomologyHom n -> DeviationHom (n+1) AbHom
 homologyGroupsHom = deviationHomG (Struct :: Struct (Dst,SldFr) AbHom)
+
+--------------------------------------------------------------------------------
+-- hmgCycles -
+
+-- | the cycles for the head homology.  
+hmgCycles :: Homology n -> [AbElement]
+hmgCycles (VarianceG _ ((ker,_):|_)) = case universalCone ker of
+  ConicFreeTip _ cn -> amap1 (k*>) $ abges $ start k where k = kernelFactor cn
+
+
+{-
+--------------------------------------------------------------------------------
+-- hmgToChain -
+
+-- | the chain according to the actual simplex set and the given vector.
+--
+-- __Note__ The indices of the given vector which succed the cardinality of the given set,
+-- will be troped.
+hmgToChain :: Homology s x -> Vector Z -> Eval (Chain s x)
+hmgToChain h@(Homology _ _ _) v = do
+  ssx <- hmgSimplices h
+  return (cfsssy ssx v)
+
+
+
+--------------------------------------------------------------------------------
+-- hmg -
+
+-- | a base for the cycles at the actual index.
+hmgCycles :: Homology s x -> Eval [Chain s x]
+hmgCycles h@(Homology _ _ vfs)  = case vfs of
+  VarianceG aCos ((aKer,_):|_) -> case universalCone aKer of
+    ConicFreeTip _ aCn         -> sequence
+                                $ amap1 (hmgToChain h . abhvecFree1 . (k*>). abeFreeFrom)
+                                $ abges
+                                $ start k
+      where k = kernelFactor aCn
+-}
 
 
 {-
@@ -213,42 +248,6 @@ hmgSimplices h@(Homology _ cos _) = case cos of
 
 -- | chain of the given simplex type over the given vertex type.
 type Chain s x = ChainG Z s x
-
---------------------------------------------------------------------------------
--- abges -
-
--- | list of the canonical generators
-abges :: AbGroup -> [AbElement]
-abges g = [abge g (pred i) | i <- [1..lengthN g]] 
-
-abeFreeFrom :: AbElement -> Slice From (Free N1) AbHom
-abeFreeFrom (AbElement f) = f
-
---------------------------------------------------------------------------------
--- hmgToChain -
-
--- | the chain according to the actual simplex set and the given vector.
---
--- __Note__ The indices of the given vector which succed the cardinality of the given set,
--- will be troped.
-hmgToChain :: Homology s x -> Vector Z -> Eval (Chain s x)
-hmgToChain h@(Homology _ _ _) v = do
-  ssx <- hmgSimplices h
-  return (cfsssy ssx v)
-
---------------------------------------------------------------------------------
--- hmg -
-
--- | a base for the cycles at the actual index.
-hmgCycles :: Homology s x -> Eval [Chain s x]
-hmgCycles h@(Homology _ _ vfs)  = case vfs of
-  VarianceG aCos ((aKer,_):|_) -> case universalCone aKer of
-    ConicFreeTip _ aCn         -> sequence
-                                $ amap1 (hmgToChain h . abhvecFree1 . (k*>). abeFreeFrom)
-                                $ abges
-                                $ start k
-      where k = kernelFactor aCn
-
 
 --------------------------------------------------------------------------------
 

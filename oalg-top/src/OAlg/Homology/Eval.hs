@@ -128,7 +128,7 @@ data SomeChainComplex r s n x where
 
 data Env t s n x where
   Env :: (Simplical s x, Attestable n)
-    => { envDimMax       :: N
+    => { envMaxDim       :: N
        , envChainComplex :: ChainComplex t Z s n x
        , envHomology     :: Homology n
        , envAt           :: Array N (SomeChainComplex Z s N0 x, Homology N0)
@@ -141,7 +141,7 @@ data Env t s n x where
 
 env :: (Simplical s x, Attestable n) => ChainComplexType t -> Any n -> Complex x -> Env t s n x
 env t n c = case ats n of
-  Ats -> Env { envDimMax       = dm
+  Ats -> Env { envMaxDim       = dm
              , envChainComplex = ccx
              , envHomology     = hmg
              , envAt           = at
@@ -150,20 +150,21 @@ env t n c = case ats n of
     dm  = lengthN n
     ccx = chainComplex t n c
     hmg = homology ccx
-    at  = array (0,dm) $ ascs n 0 ccx hmg
+    at  = array (0,dm) $ ascsAt n 0 ccx hmg
 
-    ascs :: Simplical s x
+    ascsAt :: Simplical s x
       => Any n -> N
       -> ChainComplex t Z s n x -> Homology n
       -> [(N,(SomeChainComplex Z s N0 x,Homology N0))]
-    ascs n i cc hm = (i,(SomeChainComplex $ ccxHead cc,vrcHead hm)) : case n of
+    ascsAt n i cc hm = (i,(SomeChainComplex $ ccxHead cc,vrcHead hm)) : case n of
       W0    -> []
-      SW n' -> ascs n' (succ i) (ccxTail cc) (vrcTail hm)
+      SW n' -> ascsAt n' (succ i) (ccxTail cc) (vrcTail hm)
 
     chns :: Simplical s x
       => (SomeChainComplex Z s N0 x,Homology N0) -> Array ChainType (ChainList s x)
-    chns (SomeChainComplex ccx,_)
-      = array (Chain,Chain) [(Chain,chnsChain ccx)
+    chns ch@(SomeChainComplex ccx,_)
+      = array (Chain,Chain) [ (Chain,chnsChain ccx)
+                            , (Cycle,chnsCycle ch)
                             ]
 
     chnsChain :: Simplical s x => ChainComplex t Z s N0 x -> ChainList s x
@@ -175,6 +176,9 @@ env t n c = case ats n of
                     c -> (0,pred c)
 
 
+    chnsCycle :: (SomeChainComplex Z s N0 x,Homology N0) -> ChainList s x
+    chnsCycle (SomeChainComplex ccx,hmg) = error "nyi"
+    
 env' :: (Simplical s x, Attestable n) => q s -> ChainComplexType t -> Any n -> Complex x -> Env t s n x
 env' _ = env
 
@@ -197,15 +201,9 @@ evalElmAt xs i f = if (bounds xs `inRange` i) then return (xs ! i) else failure 
 -- evalAt -
 
 evalAt :: Env t s n x -> N -> Eval (SomeChainComplex Z s N0 x,Homology N0)
-evalAt env i
-  | envDimMax env < i = failure $ IndexOutOfRange i
-  | otherwise         = return $ (envAt env ! i)
-
---------------------------------------------------------------------------------
--- evalMaxDim -
-
-evalMaxDim :: Env t s n x -> N
-evalMaxDim = envDimMax
+evalAt env at
+  | envMaxDim env < at = failure $ IndexOutOfRange at
+  | otherwise          = return $ (envAt env ! at)
 
 --------------------------------------------------------------------------------
 -- evalCardSmplSetAll -
@@ -245,17 +243,18 @@ evalChainValueAtEnv env@Env{} i t j = do
 --------------------------------------------------------------------------------
 -- evalChainValue -
 
-evalChainValueAtSmf :: Env t s n x -> N -> VarBind s x
-  -> SumForm Z (R ChainIndex) -> Eval (ChainValue s x)
-evalChainValueAtSmf env@Env{} at vrs sf
-  = evl env at vrs (reduce sf) >>= return . SumSymbol . make where
+evalChainValueAtSmf :: Env t s n x -> VarBind s x
+  -> N -> SumForm Z (R ChainIndex) -> Eval (ChainValue s x)
+evalChainValueAtSmf env@Env{} vrs at sf
+  | envMaxDim env < at = failure $ AtOutOfRange at
+  | otherwise          = evl env vrs at (reduce sf) >>= return . SumSymbol . make where
   
-  evl env at vrs sf = case sf of
+  evl env vrs at sf = case sf of
     Zero ()  -> return $ Zero ()
-    z :! sf' -> evl env at vrs sf' >>= return . (z:!)
+    z :! sf' -> evl env vrs at sf' >>= return . (z:!)
     a :+ b   -> do
-      a' <- evl env at vrs a
-      b' <- evl env at vrs b
+      a' <- evl env vrs at a
+      b' <- evl env vrs at b
       return (a' :+ b')
     S (R (ChainIndex t i)) -> do
       SumSymbol sx <- evalChainValueAtEnv env at t i
@@ -354,20 +353,20 @@ evalChainListAt env at t = do
 --------------------------------------------------------------------------------
 -- evalChainValueAt -
 
-evalChainValueAt :: Env t s n x -> N -> VarBind s x -> ChainValueAtExpression -> Eval (ChainValue s x)
-evalChainValueAt env at vrs (ChainSumFormAt sf) = evalChainValueAtSmf env at vrs sf
+evalChainValueAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval (ChainValue s x)
+evalChainValueAt env vrs at (ChainSumFormAt sf) = evalChainValueAtSmf env vrs at sf
 
 --------------------------------------------------------------------------------
 -- eval -
 
-eval :: Env t s n x -> N -> VarBind s x -> Expression -> Eval (Value s x)
-eval env at vrs expr        = case expr of
-  MaxDimExpr               -> return $ MaximalDimension $ evalMaxDim env
+eval :: Env t s n x -> VarBind s x -> N -> Expression -> Eval (Value s x)
+eval env vrs at expr        = case expr of
+  MaxDimExpr               -> return $ MaximalDimension $ envMaxDim env
   CardinalityExpr cexpr    -> evalCardinalityExpr env at cexpr >>= return . Cardinality
   HomologyGroupExpr hexpr  -> evalHomologyGroupExpr env at hexpr >>= return . HomologyGroup
   ChainExpr cexpr          -> case cexpr of
     ChainListAtExpr t      -> evalChainListAt env at t >>= return . ChainList
-    ChainValueAtExpr vexpr -> evalChainValueAt env at vrs vexpr >>= return . ChainValue
+    ChainValueAtExpr vexpr -> evalChainValueAt env vrs at vexpr >>= return . ChainValue
 
 vrs = M.empty
 
