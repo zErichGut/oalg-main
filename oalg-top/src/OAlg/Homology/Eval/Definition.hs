@@ -200,6 +200,31 @@ evalAt env at
   | otherwise          = return $ (envAt env ! at)
 
 --------------------------------------------------------------------------------
+-- evalToAbElement -
+
+-- | converting to the corresponding abelien element.
+evalToAbElement :: Env t s n x -> N -> ChainValue s x -> Eval AbElement
+evalToAbElement env@Env{} at ch = do
+  SomeChainComplex ccx <- evalAt env at >>= return . fst
+  case ccx of ChainComplex _ (DiagramChainTo _ (d:|_)) -> toAbElm (start d) ch
+
+  where
+    toAbElm :: Simplical s x => Set (s x) -> ChainValue s x -> Eval AbElement
+    toAbElm ssx ch
+      | ch' /= ch = failure $ NotEligible "evalToAbElement"
+      | otherwise = return $ AbElement $ vecabhFree1 n cfs
+      where ch' = cfsssy ssx cfs
+            cfs = ssycfs ssx ch
+            n   = lengthN ssx
+  
+--------------------------------------------------------------------------------
+-- evalFromAbElement -
+
+-- | converting from the corresponding abelien element.
+evalFromAbElement :: Env t s n x -> N -> AbElement -> Eval (ChainValue s x)
+evalFromAbElement = error "nyi"
+
+--------------------------------------------------------------------------------
 -- evalCardSmplSetAll -
 
 evalCardSmplSetAll :: Env t s n x -> Cards Z n
@@ -287,12 +312,19 @@ data HomologyGroupExpression
 data ChainExpression
   = ChainListAtExpr ChainType
   | ChainValueAtExpr ChainValueAtExpression
+  | ChainApplicationAtExpr ChainOperatorType ChainValueAtExpression
 
 --------------------------------------------------------------------------------
 -- ChainExpression -
 
 data ChainValueAtExpression = ChainSumFormAt (SumForm Z (R ChainIndex))
 
+--------------------------------------------------------------------------------
+-- ChainOperatorType -
+
+data ChainOperatorType
+  = HomologyClass
+  
 --------------------------------------------------------------------------------
 -- Value -
 
@@ -302,6 +334,7 @@ data Value (s :: Type -> Type) x
   | HomologyGroup (HomologyGroup s x)
   | ChainList (ChainList s x)
   | ChainValue (ChainValue s x)
+  | HomologyClassValue AbElement
   deriving (Show)
 
 --------------------------------------------------------------------------------
@@ -351,6 +384,16 @@ evalChainValueAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression ->
 evalChainValueAt env vrs at (ChainSumFormAt sf) = evalChainValueAtSmf env vrs at sf
 
 --------------------------------------------------------------------------------
+-- evalHomologyClassAt -
+
+evalHomologyClassAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval AbElement
+evalHomologyClassAt env vrs at vexpr = do
+  ch <- evalChainValueAt env vrs at vexpr
+  e  <- evalToAbElement env at ch
+  h  <- evalAt env at >>= return . snd
+  homologyClass h e
+
+--------------------------------------------------------------------------------
 -- eval -
 
 eval :: Env t s n x -> VarBind s x -> N -> Expression -> Eval (Value s x)
@@ -361,6 +404,8 @@ eval env vrs at expr        = case expr of
   ChainExpr cexpr          -> case cexpr of
     ChainListAtExpr t      -> evalChainListAt env at t >>= return . ChainList
     ChainValueAtExpr vexpr -> evalChainValueAt env vrs at vexpr >>= return . ChainValue
+    ChainApplicationAtExpr HomologyClass vexpr
+                           -> evalHomologyClassAt env vrs at vexpr >>= return . HomologyClassValue
 
 vrs = VarBind $ M.empty
 
@@ -378,3 +423,5 @@ cyAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Cycle
 
 hgwAt = ChainExpr (ChainListAtExpr Homology)
 hgAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Homology
+
+hcAt t i = ChainExpr (ChainApplicationAtExpr HomologyClass (ChainSumFormAt $ S $ R $ ChainIndex t i))
