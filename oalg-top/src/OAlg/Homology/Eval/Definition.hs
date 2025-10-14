@@ -33,8 +33,10 @@ import OAlg.Data.Proxy
 import OAlg.Data.Either
 import OAlg.Data.Reducible
 import OAlg.Data.Constructable
+import OAlg.Data.Canonical
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Additive
 -- import OAlg.Structure.Distributive
 -- import OAlg.Structure.Exponential
 
@@ -56,7 +58,7 @@ import OAlg.Limes.Exact.Deviation
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
-import OAlg.Homology.ChainOperator
+import OAlg.Homology.ChainOperator hiding (Boundary,boundary)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
 import OAlg.Homology.Eval.Core
@@ -196,34 +198,69 @@ evalElmAt xs i f = if (bounds xs `inRange` i) then return (xs ! i) else failure 
 
 evalAt :: Env t s n x -> N -> Eval (SomeChainComplex Z s N0 x,Homology N0)
 evalAt env at
-  | envMaxDim env < at = failure $ IndexOutOfRange at
+  | envMaxDim env < at = failure $ IndexOutOfRange $ inj at
   | otherwise          = return $ (envAt env ! at)
+
+--------------------------------------------------------------------------------
+-- evalSimplexSet -
+
+-- | evaluates the simplex set according to the given environment @enf@ and the given index
+-- in the range @-1,0..n'+'1@ where @n = 'envMaxDim' env@. If the givne index is not in the
+-- defined range then the evaluation yields a 'IndexOutOfRange' 'failure'.
+evalSimplexSet :: Env t s n x -> Z -> Eval (Set (s x))
+evalSimplexSet env@Env{} at
+  | at < l || h < at = failure $ IndexOutOfRange at
+  | at == -1         = do
+      SomeChainComplex ccx <- evalAt env 0 >>= return . fst
+      case ccx of ChainComplex _ (DiagramChainTo e _)         -> return e
+  | at == h          = do
+      SomeChainComplex ccx <- evalAt env (prj (pred at)) >>= return . fst
+      case ccx of ChainComplex _ (DiagramChainTo _ (_:|d:|_)) -> return (start d)
+  | otherwise        = do
+      SomeChainComplex ccx <- evalAt env (prj at) >>= return . fst
+      case ccx of ChainComplex _ (DiagramChainTo _ (d:|_))    -> return (start d)
+  
+  where l = -1
+        h = inj (envMaxDim env) + 1
 
 --------------------------------------------------------------------------------
 -- evalToAbElement -
 
 -- | converting to the corresponding abelien element.
-evalToAbElement :: Env t s n x -> N -> ChainValue s x -> Eval AbElement
-evalToAbElement env@Env{} at ch = do
-  SomeChainComplex ccx <- evalAt env at >>= return . fst
-  case ccx of ChainComplex _ (DiagramChainTo _ (d:|_)) -> toAbElm (start d) ch
+evalToAbElement :: Env t s n x -> Z -> ChainValue s x -> Eval AbElement
+evalToAbElement env@Env{} at e = do
+  ssx <- evalSimplexSet env at
+  toAbElm ssx e
 
   where
     toAbElm :: Simplical s x => Set (s x) -> ChainValue s x -> Eval AbElement
     toAbElm ssx ch
       | ch' /= ch = failure $ NotEligible "evalToAbElement"
-      | otherwise = return $ AbElement $ vecabhFree1 n cfs
-      where ch' = cfsssy ssx cfs
-            cfs = ssycfs ssx ch
+      | otherwise = return e
+      where cfs = ssycfs ssx ch
+            ch' = cfsssy ssx cfs
+            e   = AbElement $ vecabhFree1 n cfs
             n   = lengthN ssx
-  
+    
 --------------------------------------------------------------------------------
 -- evalFromAbElement -
 
 -- | converting from the corresponding abelien element.
-evalFromAbElement :: Env t s n x -> N -> AbElement -> Eval (ChainValue s x)
-evalFromAbElement = error "nyi"
-
+evalFromAbElement :: Env t s n x -> Z -> AbElement -> Eval (ChainValue s x)
+evalFromAbElement env@Env{} at e = do
+  ssx <- evalSimplexSet env at
+  fromAbElm ssx e
+  
+  where
+    fromAbElm :: Simplical s x => Set (s x) -> AbElement -> Eval (ChainValue s x)
+    fromAbElm ssx (AbElement e)
+      | e' /= e   = failure $ NotEligible "evalFromAbElment"
+      | otherwise = return ch
+      where cfs = abhvecFree1 e
+            ch  = cfsssy ssx cfs
+            e'  = vecabhFree1 n cfs
+            n   = lengthN (end e)
+    
 --------------------------------------------------------------------------------
 -- evalCardSmplSetAll -
 
@@ -257,7 +294,7 @@ evalChainValueAtEnv :: Env t s n x -> N -> ChainType -> N -> Eval (ChainValue s 
 evalChainValueAtEnv env@Env{} i t j = do
   chsAt <- evalElmAt (envChains env) i (AtOutOfRange i)
   chsTp <- evalElmAt chsAt t (EvalFailure ("unsupported chain type: " L.++ show t))
-  evalElmAt chsTp j (IndexOutOfRange j)
+  evalElmAt chsTp j (IndexOutOfRange $ inj j)
 
 --------------------------------------------------------------------------------
 -- evalChainValue -
@@ -324,7 +361,9 @@ data ChainValueAtExpression = ChainSumFormAt (SumForm Z (R ChainIndex))
 
 data ChainOperatorType
   = HomologyClass
-  
+  | Boundary
+  deriving (Show,Eq)  
+
 --------------------------------------------------------------------------------
 -- Value -
 
@@ -388,10 +427,22 @@ evalChainValueAt env vrs at (ChainSumFormAt sf) = evalChainValueAtSmf env vrs at
 
 evalHomologyClassAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval AbElement
 evalHomologyClassAt env vrs at vexpr = do
-  ch <- evalChainValueAt env vrs at vexpr
-  e  <- evalToAbElement env at ch
+  c <- evalChainValueAt env vrs at vexpr
+  e  <- evalToAbElement env (inj at) c
   h  <- evalAt env at >>= return . snd
   homologyClass h e
+
+--------------------------------------------------------------------------------
+-- evalBoundaryAt -
+
+evalBoundaryAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval (ChainValue s x)
+evalBoundaryAt env vrs at vexpr = do
+  c  <- evalChainValueAt env vrs at vexpr
+  e  <- evalToAbElement env (inj at) c
+  h  <- evalAt env at >>= return . snd
+  e' <- boundary h e
+  evalFromAbElement env (pred $ inj at) e'
+
 
 --------------------------------------------------------------------------------
 -- eval -
@@ -406,6 +457,8 @@ eval env vrs at expr        = case expr of
     ChainValueAtExpr vexpr -> evalChainValueAt env vrs at vexpr >>= return . ChainValue
     ChainApplicationAtExpr HomologyClass vexpr
                            -> evalHomologyClassAt env vrs at vexpr >>= return . HomologyClassValue
+    ChainApplicationAtExpr Boundary vexpr
+                           -> evalBoundaryAt env vrs at vexpr >>= return . ChainValue
 
 vrs = VarBind $ M.empty
 
@@ -425,3 +478,5 @@ hgwAt = ChainExpr (ChainListAtExpr Homology)
 hgAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Homology
 
 hcAt t i = ChainExpr (ChainApplicationAtExpr HomologyClass (ChainSumFormAt $ S $ R $ ChainIndex t i))
+
+dAt t i = ChainExpr (ChainApplicationAtExpr Boundary (ChainSumFormAt $ S $ R $ ChainIndex t i))

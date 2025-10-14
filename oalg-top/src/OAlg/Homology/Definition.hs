@@ -23,7 +23,8 @@ module OAlg.Homology.Definition
     homology, Homology
   , homologyGroups
   , hmgCycles, hmgClassGenerators
-  , homologyClass
+
+  , homologyClass, boundary
     
     -- * Homomorphism
   , homologyHom, HomologyHom
@@ -173,3 +174,11 @@ homologyClass (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) ((ker,coker
     c   = cokernelFactor $ universalCone coker
     eh' = universalFactor ker (ConeKernel (universalDiagram ker) eh)
     e'  = AbElement (SliceFrom k1 eh')
+
+--------------------------------------------------------------------------------
+-- boundary -
+
+boundary :: Homology n -> AbElement -> Eval AbElement
+boundary (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) e
+  | start d /= end e  = failure $ NotEligible "boundary"
+  | otherwise         = return (d *> e)
