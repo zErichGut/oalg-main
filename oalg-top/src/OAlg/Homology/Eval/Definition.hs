@@ -9,14 +9,14 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.Homology.Eval
+-- Module      : OAlg.Homology.Eval.Definition
 -- Description : evaluations for homology.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 --
 -- evaluations for homology.
-module OAlg.Homology.Eval
+module OAlg.Homology.Eval.Definition
   (
   ) where
 
@@ -59,7 +59,7 @@ import OAlg.Homology.Complex
 import OAlg.Homology.ChainOperator
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
-
+import OAlg.Homology.Eval.Core
 
 import OAlg.Entity.Sequence.Set
 
@@ -93,28 +93,6 @@ instance Validable ChainIndex where
 -- VarBind -
 
 newtype VarBind s x = VarBind (M.Map (N,String) (ChainValue s x))
-
---------------------------------------------------------------------------------
--- EvalFailure -
-
--- | evaluation failures.
-data EvalFailure
-  = IndexOutOfRange N
-  | AtOutOfRange N
-  | NotSupportedChainType String
-  | EvalFailure String
-  deriving (Show)
-
---------------------------------------------------------------------------------
--- Eval -
-
-type Eval = Either EvalFailure
-
---------------------------------------------------------------------------------
--- failure -
-
-failure :: EvalFailure -> Eval x
-failure = Left
 
 --------------------------------------------------------------------------------
 -- SomeChainComplex -

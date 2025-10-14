@@ -22,7 +22,8 @@ module OAlg.Homology.Definition
     -- * Homology
     homology, Homology
   , homologyGroups
-  , hmgCycles
+  , hmgCycles, hmgClassGenerators
+  , homologyClass
     
     -- * Homomorphism
   , homologyHom, HomologyHom
@@ -31,16 +32,24 @@ module OAlg.Homology.Definition
 
   ) where
 
+import Control.Monad
+
+import Data.Foldable (toList)
+
 import OAlg.Prelude
 
+import OAlg.Data.FinitelyPresentable
+
 import OAlg.Structure.Oriented
+import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 
 import OAlg.Entity.Diagram hiding (Chain)
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList
-import OAlg.Entity.Slice.Free
+import OAlg.Entity.Slice
+import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
 
 import OAlg.Hom.Distributive
@@ -49,6 +58,7 @@ import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 
 import OAlg.Limes.Definition
+import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
@@ -57,6 +67,8 @@ import OAlg.Limes.Exact.Free
 import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
+
+import OAlg.Homology.Eval.Core
 
 
 --------------------------------------------------------------------------------
@@ -113,176 +125,51 @@ homologyGroupsHom = deviationHomG (Struct :: Struct (Dst,SldFr) AbHom)
 --------------------------------------------------------------------------------
 -- hmgCycles -
 
--- | the cycles for the head homology.  
+-- | list of cycles generating the sub group of cycles for the head homology.  
 hmgCycles :: Homology n -> [AbElement]
 hmgCycles (VarianceG _ ((ker,_):|_)) = case universalCone ker of
   ConicFreeTip _ cn -> amap1 (k*>) $ abges $ start k where k = kernelFactor cn
 
-
-{-
 --------------------------------------------------------------------------------
--- hmgToChain -
+-- hmgClassGenerators -
 
--- | the chain according to the actual simplex set and the given vector.
---
--- __Note__ The indices of the given vector which succed the cardinality of the given set,
--- will be troped.
-hmgToChain :: Homology s x -> Vector Z -> Eval (Chain s x)
-hmgToChain h@(Homology _ _ _) v = do
-  ssx <- hmgSimplices h
-  return (cfsssy ssx v)
-
-
-
---------------------------------------------------------------------------------
--- hmg -
-
--- | a base for the cycles at the actual index.
-hmgCycles :: Homology s x -> Eval [Chain s x]
-hmgCycles h@(Homology _ _ vfs)  = case vfs of
-  VarianceG aCos ((aKer,_):|_) -> case universalCone aKer of
-    ConicFreeTip _ aCn         -> sequence
-                                $ amap1 (hmgToChain h . abhvecFree1 . (k*>). abeFreeFrom)
-                                $ abges
-                                $ start k
-      where k = kernelFactor aCn
--}
-
-
-{-
---------------------------------------------------------------------------------
--- hmgCards -
-
--- | the cardinalities of the simplex sets.
-hmgCards :: Homology s x -> [N]
-hmgCards (Homology _ cos _) = case cos of
-  ConsecutiveZero d -> toList $ amap1 lengthN $ dgPoints d
-
---------------------------------------------------------------------------------
--- attest2 -
-
-attest2 :: Attestable n => q n x -> Any n
-attest2 _ = attest
-
---------------------------------------------------------------------------------
--- hmgRange -
-
--- | the range of the homology.
-hmgRange :: Homology s x -> (N,N)
-hmgRange (Homology i cos _) = (i,i + lengthN (attest2 cos))
-
---------------------------------------------------------------------------------
--- hmgIndex -
-
--- | the actual index.
-hmgIndex :: Homology s x -> N
-hmgIndex = fst . hmgRange
--}
-
-
-{-
---------------------------------------------------------------------------------
--- hmgGroup -
-
--- | the homology group at the aktual index.
-hmgGroup :: Homology s x -> AbGroup
-hmgGroup (Homology _ _ vfs) = head $ dgPoints $ deviationsTo vfs
-
---------------------------------------------------------------------------------
--- EvalFailure -
-
--- | evaluation failures.
-data EvalFailure
-  = NoSuccesor
-  | IndexOutOfRange N
-  | EvalFailure String
-  deriving (Show)
-
-failure :: EvalFailure -> Eval x
-failure = Left
-
---------------------------------------------------------------------------------
--- Eval -
-
--- | evaluation monad for homology.
-type Eval x = Either EvalFailure x
-
---------------------------------------------------------------------------------
--- hmgSucc -
-
--- | increases the actual index by one.
-hmgSucc :: Homology s x -> Eval (Homology s x)
-hmgSucc (Homology i cos vfs) = case attest2 cos of
-  W0   -> failure NoSuccesor
-  SW n -> case ats n of Ats -> return $ Homology (succ i) (cnzTail cos) (vrcTail vfs) 
-  
---------------------------------------------------------------------------------
--- hmgAt -
-
--- | sets the index to the given one. 
-hmgAt :: N -> Homology s x -> Eval (Homology s x)
-hmgAt i hg | l <= i && i <= h = at l i hg
-           | otherwise        = failure $ IndexOutOfRange i
-  where (l,h) = hmgRange hg
-        at l i h | l == i    = return h
-                 | otherwise = hmgSucc h >>= at (succ l) i
-                  
---------------------------------------------------------------------------------
--- hmgSimplices -
-
--- | the set of simplices at the actual index, which form a base for the free abelian group of chains
--- of dimension given by the actual index.
-hmgSimplices :: Homology s x -> Eval (Set (s x))
-hmgSimplices h@(Homology _ cos _) = case cos of
-  ConsecutiveZero cs         -> case cs of
-    DiagramChainTo _ (d:|_)  -> case start d of
-      SimplexSet ssx         -> case eqType h ssx of
-        Just Refl            -> return ssx
-        Nothing              -> failure $ EvalFailure "implementation error at: hmgSimplices"
+-- | list of cycles genrating the homology group for the head homology.
+hmgClassGenerators :: Homology n -> [AbElement]
+hmgClassGenerators (VarianceG _ ((ker,coker):|_))
+  = case finitePresentation abgFinPres (tip $ cone cCn) of
+      GeneratorTo (DiagramChainTo _ (g:|_)) k'@(Free a) _ _ _ _
+        -> toList $ amap1 AbElement $ split abhSplitable $ (k*>)
+         $ lift (liftFree cLft a) (SliceFrom k' g)
   where
-    eqType :: (Typeable x, Typeable y) => q x -> Set (s y) -> Maybe (x :~: y)
-    eqType _ _ = eqT
-
------------------------------------------------------------------------------------------
--- Chain -
-
--- | chain of the given simplex type over the given vertex type.
-type Chain s x = ChainG Z s x
+    ConeCokernelLiftable cCn cLft = universalCone coker
+    k = kernelFactor $ universalCone ker
 
 --------------------------------------------------------------------------------
+-- hmgBoundaryOperator -
 
-c   = complex [Set [0..4]] :: Complex N
-h   = homology' (Proxy :: Proxy Asc) Regular 5 c
--}
-
-
-{-
-(ChainComplexFree cos cf)
-  = Homology cos (varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree cf)
--}
-
-{-
---------------------------------------------------------------------------------
--- hmgTail -
-
-hmgTail :: Typeable s => Homology s (n+1) x -> Homology s n x
-hmgTail (Homology cos vf) = Homology (cnzTail cos) (vrcTail vf)
+-- | the boundary operators of the head homology.
+hmgBoundaryOperator :: Homology n -> ConsecutiveZero To N0 AbHom
+hmgBoundaryOperator (VarianceG cs _) = cnzHead cs
 
 --------------------------------------------------------------------------------
--- hmgGroup -
+-- hmgChain -
 
-hmgGroup :: Attestable n => Homology s n x -> AbGroup
-hmgGroup = head . dgPoints . hmgGroups
-
---------------------------------------------------------------------------------
--- hmgChains -
-
--- hmgChains :: Homology n AbHom -> [Chain AbHom]
+-- | the abelian group of chains for the head homology.
+hmgChain :: Homology n -> AbGroup
+hmgChain (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) = start d
 
 --------------------------------------------------------------------------------
+-- homologyClass -
 
-c   = complex [Set [0..5]] :: Complex N
-h   = homology $ chainComplexFree' (Proxy :: Proxy [])  Regular (attest :: Any N5) c
+-- | the homology class of a cycle in the head homology.
+homologyClass :: Homology n -> AbElement -> Eval AbElement
+homologyClass (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) ((ker,coker):|_)) e
+  | start d /= end e      = failure $ NotEligible "homologyClass"
+  | not (isZero (d *> e)) = failure $ NotCycle "homologyClass"
+  | otherwise = return (c *> e')
 
-
--}
+  where
+    AbElement (SliceFrom k1 eh) = e
+    c   = cokernelFactor $ universalCone coker
+    eh' = universalFactor ker (ConeKernel (universalDiagram ker) eh)
+    e'  = AbElement (SliceFrom k1 eh')
