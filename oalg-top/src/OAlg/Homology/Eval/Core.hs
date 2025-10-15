@@ -28,6 +28,8 @@ data EvalFailure
   | NotSupportedChainType String
   | NotCycle String
   | NotEligible String
+  | NoSuchVariable Z String
+  | NotAddableExpressions
   | EvalFailure String
   deriving (Show)
 

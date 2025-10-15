@@ -30,6 +30,8 @@ library
       OAlg.Homology.Complex
       OAlg.Homology.Definition
       OAlg.Homology.Eval
+      OAlg.Homology.Eval.Core
+      OAlg.Homology.Eval.Definition
       OAlg.Homology.Simplical
       OAlg.Topology.Definition
   other-modules:
