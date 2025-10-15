@@ -22,17 +22,18 @@ module OAlg.Homology.Eval.Definition
 
 import Control.Monad 
 
-import Data.Kind
+-- import Data.Kind
+import Data.Foldable (toList)
 import Data.Array
 import Data.List as L (zip,(++))
-import qualified Data.Map as M
+-- import qualified Data.Map as M
 
 import OAlg.Prelude
 
-import OAlg.Data.Proxy
-import OAlg.Data.Either
-import OAlg.Data.Reducible
-import OAlg.Data.Constructable
+-- import OAlg.Data.Proxy
+-- import OAlg.Data.Either
+-- import OAlg.Data.Reducible
+-- import OAlg.Data.Constructable
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Oriented
@@ -43,7 +44,8 @@ import OAlg.Structure.Additive
 import OAlg.Entity.Diagram hiding (Chain)
 import OAlg.Entity.Natural hiding (S)
 import OAlg.Entity.FinList as F hiding ((++))
-import OAlg.Entity.Sum
+import OAlg.Entity.Sequence.Set
+-- import OAlg.Entity.Sum
 -- import OAlg.Entity.Slice.Free
 import OAlg.Entity.Matrix
 
@@ -63,12 +65,14 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
 import OAlg.Homology.Eval.Core
 
-import OAlg.Entity.Sequence.Set
-
 --------------------------------------------------------------------------------
 -- ChainType -
 
-data ChainType = Chain | Cycle | Homology
+-- | types of chains
+data ChainType
+  = Chain
+  | Cycle    -- ^ chains with zero boundary.
+  | Homology -- ^ cycles with non zero homology classes.
   deriving (Show,Eq,Ord,Enum,Bounded,Ix)
 
 --------------------------------------------------------------------------------
@@ -79,8 +83,8 @@ type ChainValue s x = ChainG Z s x
 --------------------------------------------------------------------------------
 -- ChainList -
 
-type ChainList s x = Array N (ChainValue s x)
-
+type ChainList s x = Array Z (ChainValue s x)
+{-
 --------------------------------------------------------------------------------
 -- ChainIndex -
 
@@ -95,6 +99,7 @@ instance Validable ChainIndex where
 -- VarBind -
 
 newtype VarBind s x = VarBind (M.Map (N,String) (ChainValue s x))
+-}
 
 --------------------------------------------------------------------------------
 -- SomeChainComplex -
@@ -108,11 +113,11 @@ data SomeChainComplex r s n x where
 
 data Env t s n x where
   Env :: (Simplical s x, Attestable n)
-    => { envMaxDim       :: N
+    => { envMaxDim       :: Z
        , envChainComplex :: ChainComplex t Z s n x
        , envHomology     :: Homology n
-       , envAt           :: Array N (SomeChainComplex Z s N0 x, Homology N0)
-       , envChains       :: Array N (Array ChainType (ChainList s x))
+       , envAt           :: Array Z (SomeChainComplex Z s N0 x, Homology N0)
+       , envChains       :: Array ChainType (Array Z (ChainList s x))
        }
     -> Env t s n x
 
@@ -124,57 +129,56 @@ env t n c = case ats n of
   Ats -> Env { envMaxDim       = dm
              , envChainComplex = ccx
              , envHomology     = hmg
-             , envAt           = at
-             , envChains       = fmap chns at
+             , envAt           = array (0,dm) $ ([0..] `L.zip` toList ats)
+             , envChains       = array (Chain,Homology) chns
              } where
-    dm  = lengthN n
+    
+    dm  = inj (lengthN n)
     ccx = chainComplex t n c
     hmg = homology ccx
-    at  = array (0,dm) $ ascsAt n 0 ccx hmg
+    ats = ccxhmg n ccx hmg
 
-    ascsAt :: Simplical s x
-      => Any n -> N
-      -> ChainComplex t Z s n x -> Homology n
-      -> [(N,(SomeChainComplex Z s N0 x,Homology N0))]
-    ascsAt n i cc hm = (i,(SomeChainComplex $ ccxHead cc,vrcHead hm)) : case n of
-      W0    -> []
-      SW n' -> ascsAt n' (succ i) (ccxTail cc) (vrcTail hm)
-
-    chns :: Simplical s x
-      => (SomeChainComplex Z s N0 x,Homology N0) -> Array ChainType (ChainList s x)
-    chns ch@(SomeChainComplex ccx,_)
-      = array (Chain,Homology) [ (Chain,chnsChain ccx)
-                               , (Cycle,chnsCycle ch)
-                               , (Homology,chnsCls ch)
-                               ]
-
-    chnsChain :: Simplical s x => ChainComplex t Z s N0 x -> ChainList s x
-    chnsChain (ChainComplex _ (DiagramChainTo _ (d:|_)))
-      = array rng $ ([0..] `L.zip` ((\(Set sxs) -> amap1 ch sxs) ssxs)) where
-      
-      ssxs = start d
-      rng  = case lengthN ssxs of
-               0 -> (1,0)
-               l -> (0,pred l)
+    chns = [ ( Chain   , array (-1,dm+1)
+                           ([-1..] `L.zip` (toList $ amap1 chains $ dgPoints $ ccxDiagram ccx))
+             )
+           , ( Cycle   , array (0,dm) ([0..] `L.zip` (toList $ amap1 cycles ats))
+             ) 
+           , ( Homology, array (0,dm) ([0..] `L.zip` (toList $ amap1 homologies ats))
+             ) 
+           ]
 
 
-    -- mapping the elements to chain values.
+    ccxhmg :: Simplical s x
+      => Any n -> ChainComplex t Z s n x -> Homology n
+      -> FinList (n+1) (SomeChainComplex Z s N0 x,Homology N0)
+    ccxhmg n cc hm = (SomeChainComplex $ ccxHead cc,vrcHead hm) :| case n of
+      W0    -> Nil
+      SW n' -> ccxhmg n' (ccxTail cc) (vrcTail hm)
+
+    chains :: Simplical s x => Set (s x) -> ChainList s x
+    chains (Set sxs) = array (0,pred n) $ ([0..] `L.zip` amap1 ch sxs) where n = inj (lengthN sxs)
+
+
+    -- mapping the elements to list of chains.
     toChnVls :: Simplical s x => SomeChainComplex Z s N0 x -> [AbElement] -> ChainList s x
     toChnVls (SomeChainComplex ccx) es
-      = array rng $ L.zip [0..] $ amap1 (cfsssy ssx . abgevec) $ es where
+      = array (0,pred n) $ L.zip [0..] $ amap1 (cfsssy ssx . abgevec) $ es where
 
       ChainComplex _ (DiagramChainTo _ (d:|_)) = ccx
       ssx = start d
-      rng = case lengthN es of
-        0 -> (1,0)
-        l -> (0,pred l)
+      n   = inj (lengthN es)
 
-    chnsCycle :: Simplical s x => (SomeChainComplex Z s N0 x,Homology N0) -> ChainList s x
-    chnsCycle (sccx,hmg) = toChnVls sccx $ hmgCycles hmg
+    -- base for the cycles.
+    cycles :: Simplical s x => (SomeChainComplex Z s N0 x,Homology N0) -> ChainList s x
+    cycles (sccx,hmg) = toChnVls sccx $ hmgCycles hmg
 
-    chnsCls :: Simplical s x => (SomeChainComplex Z s N0 x,Homology N0) -> ChainList s x
-    chnsCls (sccx,hmg) = toChnVls sccx $ hmgClassGenerators hmg
+    -- generator for the homology classes as chains
+    homologies :: Simplical s x => (SomeChainComplex Z s N0 x,Homology N0) -> ChainList s x
+    homologies (sccx,hmg) = toChnVls sccx $ hmgClassGenerators hmg
 
+
+
+{-
 env' :: (Simplical s x, Attestable n) => q s -> ChainComplexType t -> Any n -> Complex x -> Env t s n x
 env' _ = env
 
@@ -443,6 +447,11 @@ evalBoundaryAt env vrs at vexpr = do
   e' <- boundary h e
   evalFromAbElement env (pred $ inj at) e'
 
+--------------------------------------------------------------------------------
+-- evalChainValueAtExpression -
+
+evalChainValueAtExpression :: Env t s n x -> Z -> ChainValue s x -> Eval ChainValueAtExpression
+evalChainValueAtExpression = error "nyi"
 
 --------------------------------------------------------------------------------
 -- eval -
@@ -480,3 +489,4 @@ hgAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Homol
 hcAt t i = ChainExpr (ChainApplicationAtExpr HomologyClass (ChainSumFormAt $ S $ R $ ChainIndex t i))
 
 dAt t i = ChainExpr (ChainApplicationAtExpr Boundary (ChainSumFormAt $ S $ R $ ChainIndex t i))
+-}
