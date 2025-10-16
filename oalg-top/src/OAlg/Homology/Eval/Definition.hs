@@ -31,14 +31,18 @@ import qualified Data.Map as M
 
 import OAlg.Prelude
 
+import OAlg.Category.Path
+
 import OAlg.Data.Proxy
 -- import OAlg.Data.Either
 -- import OAlg.Data.Reducible
--- import OAlg.Data.Constructable
+import OAlg.Data.Constructable
 import OAlg.Data.Canonical
 
-import OAlg.Structure.Oriented
+import OAlg.Structure.Exception
+import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 -- import OAlg.Structure.Distributive
 -- import OAlg.Structure.Exponential
@@ -51,7 +55,7 @@ import OAlg.Entity.Sum
 -- import OAlg.Entity.Slice.Free
 import OAlg.Entity.Matrix
 
--- import OAlg.Hom.Distributive
+import OAlg.Hom.Definition
 
 import OAlg.AbelianGroup.Definition
 -- import OAlg.AbelianGroup.KernelsAndCokernels
@@ -356,6 +360,7 @@ data AbelianValue v s x where
 
 deriving instance Simplical s x => Show (AbelianValue v s x)
 deriving instance Simplical s x => Eq (AbelianValue v s x)
+deriving instance Simplical s x => Ord (AbelianValue v s x)
 
 instance Simplical s x => Validable (AbelianValue v s x) where
   valid v = Label "AbelianValue" :<=>: case v of
@@ -391,6 +396,29 @@ instance (Simplical s x, Typeable v) => Additive (AbelianValue v s x) where
   zero AblExprTypeZ            = ValZ (zero (():>()))
   zero (AblExprTypeChain z)    = ValChain z (zero ())
   zero (AblExprTypeHmgClass g) = ValHmgClass (zero g)
+
+  ValZ a        + ValZ b                    = ValZ (a+b)
+  ValChain z a  + ValChain z' b | z == z'   = ValChain z (a+b)
+                                | otherwise = throw $ NotAddable
+  ValHmgClass h + ValHmgClass h'            = ValHmgClass (h+h')
+
+  ntimes n (ValZ z)        = ValZ (ntimes n z)
+  ntimes n (ValChain z c)  = ValChain z (ntimes n c)
+  ntimes n (ValHmgClass h) = ValHmgClass (ntimes n h)
+
+instance (Simplical s x, Typeable v) => Abelian (AbelianValue v s x) where
+  negate (ValZ z)        = ValZ (negate z)
+  negate (ValChain z c)  = ValChain z (negate c)
+  negate (ValHmgClass h) = ValHmgClass (negate h)
+                                              
+  ValZ a        - ValZ b                    = ValZ (a-b)
+  ValChain z a  - ValChain z' b | z == z'   = ValChain z (a-b)
+                                | otherwise = throw $ NotAddable
+  ValHmgClass h - ValHmgClass h'            = ValHmgClass (h-h')
+
+  ztimes n (ValZ z)        = ValZ (ztimes n z)
+  ztimes n (ValChain z c)  = ValChain z (ztimes n c)
+  ztimes n (ValHmgClass h) = ValHmgClass (ztimes n h)
   
 --------------------------------------------------------------------------------
 -- AbelianVariable -
@@ -398,15 +426,22 @@ instance (Simplical s x, Typeable v) => Additive (AbelianValue v s x) where
 newtype AbelianVariable v (s :: Type -> Type) x = AblVar String deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
+-- AblVars -
+
+data AblVars v (s :: Type -> Type) x where
+  AblVars :: Typeable v => M.Map (Z,String) (AbelianExpression v s x) -> AblVars v s x
+
+--------------------------------------------------------------------------------
 -- Vars -
 
-newtype Vars v (s :: Type -> Type) x = Vars (M.Map (Z,String) (AbelianExpression v s x))
+data Vars s x
+  = Vars (AblVars Z s x) (AblVars (ChainValue s x) s x) (AblVars AbGroup s x)
 
 --------------------------------------------------------------------------------
 -- evalVar -
 
-evalVar :: Vars v s x -> Z -> String -> Eval (AbelianExpression v s x)
-evalVar (Vars bnds) at name = case (at,name) `M.lookup` bnds of
+evalVar :: AblVars v s x -> Z -> String -> Eval (AbelianExpression v s x)
+evalVar (AblVars bnds) at name = case (at,name) `M.lookup` bnds of
   Just axpr -> return axpr
   Nothing   -> failure $ NoSuchVariable at name
   
@@ -418,7 +453,7 @@ evalAblExprType ::
   ( Simplical s x
   , Typeable v
   )
-  => Vars v s x -> Z -> AbelianExpression v s x -> Eval (AbelianExpressionType v s x)
+  => AblVars v s x -> Z -> AbelianExpression v s x -> Eval (AbelianExpressionType v s x)
 evalAblExprType vrs at e      = case e of
   AblExprValue v             -> return $ root v
   AblExprVariable v          -> case v of
@@ -442,33 +477,24 @@ evalAblExprType vrs at e      = case e of
 --------------------------------------------------------------------------------
 -- evalAblValSumForm -
 
-evalAblValZ :: Vars Z s x -> AbelianExpression Z s x -> Eval Z
+evalAblValZ :: AblVars Z s x -> AbelianExpression Z s x -> Eval Z
 evalAblValZ vrs e = error "nyi"
 
 -- | evluation to a 'SumForm'.
---
--- Let @env@, @vrs@, @vrsZ@, @at@, @te@ and @e@ be the input parameters for
--- 'evalAblValSumForm':
---
--- [Pre] @'evalAblExprType' vrs at e@ evaluates to @te@.
---
--- [Post] If @'evalAblValSumForm' env vrs vrsZ at te e@ evaluates to a @s@ then
--- @'root' s '==' te@.
-evalAblValSumForm :: Env t s n x -> Vars v s x -> Vars Z s x
-  -> Z -> AbelianExpressionType v s x -> AbelianExpression v s x
-  -> Eval (SumForm Z (AbelianValue v s x))
-evalAblValSumForm env@Env{} vrs vrsZ at te e = case e of
+evalAblValSumForm :: Env t s n x -> AblVars v s x -> AblVars Z s x
+  -> Z -> AbelianExpression v s x -> Eval (SumForm Z (AbelianValue v s x))
+evalAblValSumForm env@Env{} vrs vrsZ at e = case e of
   AblExprValue a       -> return $ S a
   AblExprVariable v    -> case v of
-    AblVar name        -> evalVar vrs at name >>= evalAblValSumForm env vrs vrsZ at te
+    AblVar name        -> evalVar vrs at name >>= evalAblValSumForm env vrs vrsZ at
   AblExprZero t        -> return $ Zero t
   z :!> a              -> do
     vz <- evalAblValZ vrsZ z
-    sa <- evalAblValSumForm env vrs vrsZ at te a
+    sa <- evalAblValSumForm env vrs vrsZ at a
     return (vz :! sa)
   a :+: b              -> do
-    sa <- evalAblValSumForm env vrs vrsZ at te a
-    sb <- evalAblValSumForm env vrs vrsZ at te b
+    sa <- evalAblValSumForm env vrs vrsZ at a
+    sb <- evalAblValSumForm env vrs vrsZ at b
     return (sa :+ sb)
   f :$: a             -> case f of
     AblOprChainAt t i -> do
@@ -477,6 +503,21 @@ evalAblValSumForm env@Env{} vrs vrsZ at te e = case e of
       return $ S $ ValChain at ch
     AblOprBoundary    -> error "nyi"
 
+--------------------------------------------------------------------------------
+-- evalAblVal -
+
+type HomFib h = Path h
+type HomFibEmpty s = HomFib (HomEmpty s)
+
+
+evalAblVal :: Env t s n x -> AblVars v s x -> AblVars Z s x
+  -> Z -> AbelianExpression v s x -> Eval (AbelianValue v s x)
+evalAblVal env@Env{} vrs@AblVars{}  vrsZ at e = do
+  s <- evalAblValSumForm env vrs vrsZ at e
+  return $ zSum idV $ make s
+
+  where idV :: (Typeable v, Simplical s x) => HomFibEmpty Fbr (AbelianValue v s x) (AbelianValue v s x)
+        idV = cOne Struct
 
 
 
