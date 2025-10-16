@@ -311,6 +311,16 @@ evalHomologyGroupAt :: Env t s n x -> Z -> Eval (Deviation N1 AbHom)
 evalHomologyGroupAt env i = evalAt env i >>= return . homologyGroups . snd
 
 --------------------------------------------------------------------------------
+-- evalBoundaryAt -
+
+evalBoundaryAt :: Env t s n x -> Z -> ChainValue s x -> Eval (ChainValue s x)
+evalBoundaryAt env at ch = do
+  e  <- evalToAbElement env at ch
+  h  <- evalAt env at >>= return . snd
+  e' <- boundary h e
+  evalFromAbElement env (pred at) e'
+
+--------------------------------------------------------------------------------
 -- AbelianExpressionType -
 
 data AbelianExpressionType v s x where
@@ -330,9 +340,9 @@ instance Validable (AbelianExpressionType v s x) where
 --------------------------------------------------------------------------------
 -- AbelianOperator -
 
-data AbelianOperator v (s :: Type -> Type) x where
-  AblOprChainAt  :: ChainType -> AbelianExpression Z s x -> AbelianOperator (ChainValue s x) s x
-  AblOprBoundary :: AbelianOperator (ChainValue s x) s x
+data AbelianOperator v s x where
+  AblOprChainAt  :: ChainType -> AbelianOperator (Z,ChainValue s x) s x
+  AblOprBoundary :: AbelianOperator (ChainValue s x,ChainValue s x) s x
 
 deriving instance Simplical s x => Show (AbelianOperator v s x)
 
@@ -345,9 +355,8 @@ data AbelianExpression v s x where
   AblExprZero     :: AbelianExpressionType v s x -> AbelianExpression v s x
   (:!>)           :: AbelianExpression Z s x -> AbelianExpression v s x -> AbelianExpression v s x
   (:+:)           :: AbelianExpression v s x -> AbelianExpression v s x -> AbelianExpression v s x
-  (:$:)           :: AbelianOperator v s x -> AbelianExpression v s x -> AbelianExpression v s x
+  (:$:)           :: AbelianOperator (u,v) s x -> AbelianExpression u s x -> AbelianExpression v s x
   
-
 deriving instance Simplical s x => Show (AbelianExpression v s x)
 
 --------------------------------------------------------------------------------
@@ -465,20 +474,32 @@ evalAblExprType vrs at e      = case e of
     tb <- evalAblExprType vrs at b
     case ta == tb of
       True                   -> return ta
-      False                  -> failure NotAddableExpressions
+      False                  -> failure NotAddableExpressions      
   f :$: a                    -> case f of
-    AblOprChainAt _ _        -> return $ AblExprTypeChain at
+    AblOprChainAt _          -> return $ AblExprTypeChain at    
     AblOprBoundary           -> do
       ta <- evalAblExprType vrs at a
       case ta of
         AblExprTypeChain at' -> return $ AblExprTypeChain (pred at')
-        _                    -> failure NotAChainType
+
+--------------------------------------------------------------------------------
+-- evalBoundarySumForm -
+
+evalBoundarySumForm :: Env t s n x
+  ->       SumForm Z (AbelianValue (ChainValue s x) s x)
+  -> Eval (SumForm Z (AbelianValue (ChainValue s x) s x))
+evalBoundarySumForm env sf = case sf of
+  Zero r                -> case r of
+    AblExprTypeChain at -> return $ Zero $ AblExprTypeChain (pred at)
+  S (ValChain at ch)    -> evalBoundaryAt env at ch >>= return . S . ValChain (pred at)
+  z :! a                -> evalBoundarySumForm env a >>= return . (z:!)
+  a :+ b                -> do
+    a' <- evalBoundarySumForm env a
+    b' <- evalBoundarySumForm env b
+    return (a' :+ b')
 
 --------------------------------------------------------------------------------
 -- evalAblValSumForm -
-
-evalAblValZ :: AblVars Z s x -> AbelianExpression Z s x -> Eval Z
-evalAblValZ vrs e = error "nyi"
 
 -- | evluation to a 'SumForm'.
 evalAblValSumForm :: Env t s n x -> AblVars v s x -> AblVars Z s x
@@ -489,7 +510,7 @@ evalAblValSumForm env@Env{} vrs vrsZ at e = case e of
     AblVar name        -> evalVar vrs at name >>= evalAblValSumForm env vrs vrsZ at
   AblExprZero t        -> return $ Zero t
   z :!> a              -> do
-    vz <- evalAblValZ vrsZ z
+    vz <- evalAblValZ env vrsZ at z
     sa <- evalAblValSumForm env vrs vrsZ at a
     return (vz :! sa)
   a :+: b              -> do
@@ -497,11 +518,12 @@ evalAblValSumForm env@Env{} vrs vrsZ at e = case e of
     sb <- evalAblValSumForm env vrs vrsZ at b
     return (sa :+ sb)
   f :$: a             -> case f of
-    AblOprChainAt t i -> do
-      zi <- evalAblValZ vrsZ i
-      ch <- evalChainAt env t at zi
+    AblOprChainAt t   -> do
+      za <- evalAblValZ env vrsZ at a
+      ch <- evalChainAt env t at za
       return $ S $ ValChain at ch
-    AblOprBoundary    -> error "nyi"
+    AblOprBoundary    -> evalAblValSumForm env vrs vrsZ at a >>= evalBoundarySumForm env
+
 
 --------------------------------------------------------------------------------
 -- evalAblVal -
@@ -514,10 +536,17 @@ evalAblVal :: Env t s n x -> AblVars v s x -> AblVars Z s x
   -> Z -> AbelianExpression v s x -> Eval (AbelianValue v s x)
 evalAblVal env@Env{} vrs@AblVars{}  vrsZ at e = do
   s <- evalAblValSumForm env vrs vrsZ at e
-  return $ zSum idV $ make s
+  return $ zSum vOne $ make s
 
-  where idV :: (Typeable v, Simplical s x) => HomFibEmpty Fbr (AbelianValue v s x) (AbelianValue v s x)
-        idV = cOne Struct
+  where vOne :: (Typeable v, Simplical s x)
+             => HomFibEmpty Fbr (AbelianValue v s x) (AbelianValue v s x)
+        vOne = cOne Struct
+
+--------------------------------------------------------------------------------
+-- evalAblValZ -
+
+evalAblValZ :: Env t s n x -> AblVars Z s x -> Z -> AbelianExpression Z s x -> Eval Z
+evalAblValZ env vrs at e = evalAblVal env vrs vrs at e >>= return . (\(ValZ z) -> z) 
 
 
 
