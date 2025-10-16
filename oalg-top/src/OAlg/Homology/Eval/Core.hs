@@ -23,13 +23,14 @@ import OAlg.Data.Either
 
 -- | evaluation failures.
 data EvalFailure
-  = IndexOutOfRange Z
+  = IndexOutOfRange String
   | AtOutOfRange N
   | NotSupportedChainType String
   | NotCycle String
   | NotEligible String
   | NoSuchVariable Z String
   | NotAddableExpressions
+  | NotAChainType
   | EvalFailure String
   deriving (Show)
 

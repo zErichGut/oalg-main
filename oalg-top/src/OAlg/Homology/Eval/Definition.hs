@@ -68,6 +68,10 @@ import OAlg.Homology.Definition
 import OAlg.Homology.Eval.Core
 
 --------------------------------------------------------------------------------
+
+instance Ix i => ApplicativeG (Array i) (->) (->) where amapG = fmap
+
+--------------------------------------------------------------------------------
 -- ChainType -
 
 -- | types of chains
@@ -113,15 +117,26 @@ data SomeChainComplex r s n x where
 --------------------------------------------------------------------------------
 -- Env -
 
+-- | environment for evaluations in the context of homologies.
+--
+-- __Prperty__ Let @env@ be in @t'Env' __t s n x__@, then holds:
+--
+-- (1) Let @chs = 'envChains' env@, @n@ in 'Z' and let @C@ denote the free abelian group, generated
+-- by the set of simplices @'envSimplexSet' env n@, then holds:
+--
+--     (1) @chs 'GeneralType' n@ is the canonical base in @C@ given by @'envSimplexSet' env n@.
+--
+--     (2) @chs 'CycleType' n@ is a base for the cycles in @C@.
+--
+--     (3) @chs 'HomologyType' n@ are cyles in @C@, generating the homology group at @n@.
 data Env t s n x where
   Env :: (Simplical s x, Attestable n)
     => { envMaxDim       :: Z
        , envChainComplex :: ChainComplex t Z s n x
        , envHomology     :: Homology n
        , envAt           :: Array Z (SomeChainComplex Z s N0 x, Homology N0)
-       , envSimplexSets  :: Array Z (Set (s x))     -- ^ base for the chains.
-       , envCycles       :: Array Z (ChainList s x) -- ^ base of cyles.
-       , envHomologies   :: Array Z (ChainList s x) -- ^ generators for the homology classes.
+       , envSimplexSets  :: Array Z (Set (s x))     
+       , envChains       :: Array ChainType (Array Z (ChainList s x))
        }
     -> Env t s n x
 
@@ -135,8 +150,7 @@ env t n c = case ats n of
              , envHomology     = hmg
              , envAt           = at
              , envSimplexSets  = smps
-             , envCycles       = cys
-             , envHomologies   = hms
+             , envChains       = chs
              } where
     
     dm   = inj (lengthN n)
@@ -148,6 +162,15 @@ env t n c = case ats n of
     at   = array (0,dm) ([0..] `L.zip` toList ats)
     cys  = array (0,dm) ([0..] `L.zip` (toList $ amap1 cycles ats))
     hms  = array (0,dm) ([0..] `L.zip` (toList $ amap1 homologies ats))
+
+    chs  = array (GeneralType,HomologyType)
+             [ (GeneralType, amap1 base smps)
+             , (CycleType, cys)
+             , (HomologyType, hms)
+             ]
+
+    base :: Simplical s x => Set (s x) -> Array Z (ChainValue s x)
+    base (Set sxs) = array (0,n-1) ([0..] `L.zip` (amap1 ch sxs)) where n = inj (lengthN sxs)
     
     ccxhmg :: Simplical s x
       => Any n -> ChainComplex t Z s n x -> Homology n
@@ -189,15 +212,16 @@ eb = env' s t n b
 --------------------------------------------------------------------------------
 -- evalElmAt -
 
-evalElmAt :: Ix i => EvalFailure -> Array i x -> i -> Eval x
-evalElmAt f xs i = if (bounds xs `inRange` i) then return (xs ! i) else failure f
+evalElmAt :: (Ix i, Show i) => Array i x -> i -> Eval x
+evalElmAt xs i = if (bounds xs `inRange` i)
+  then return (xs ! i)
+  else failure $ IndexOutOfRange $ show i
 
 --------------------------------------------------------------------------------
 -- evalAt -
 
 evalAt :: Env t s n x -> Z -> Eval (SomeChainComplex Z s N0 x,Homology N0)
-evalAt env at = evalElmAt (IndexOutOfRange at) (envAt env) at 
-
+evalAt env at = evalElmAt (envAt env) at 
 
 --------------------------------------------------------------------------------
 -- evalSimplexSet -
@@ -206,7 +230,7 @@ evalAt env at = evalElmAt (IndexOutOfRange at) (envAt env) at
 -- in the range @-1,0..n'+'1@ where @n = 'envMaxDim' env@. If the givne index is not in the
 -- defined range then the evaluation yields a 'IndexOutOfRange' 'failure'.
 evalSimplexSet :: Env t s n x -> Z -> Eval (Set (s x))
-evalSimplexSet env@Env{} at = evalElmAt (IndexOutOfRange at) (envSimplexSets env) at 
+evalSimplexSet env@Env{} at = evalElmAt (envSimplexSets env) at 
 
 --------------------------------------------------------------------------------
 -- evalToAbElement -
@@ -246,6 +270,16 @@ evalFromAbElement env@Env{} at e = do
             e'  = vecabhFree1 n cfs
             n   = lengthN (end e)
     
+
+--------------------------------------------------------------------------------
+-- evalChainAt -
+
+evalChainAt :: Env t s n x -> ChainType -> Z -> Z -> Eval (ChainValue s x)
+evalChainAt env@Env{} t at i = do
+  chs   <- evalElmAt (envChains env) t
+  chsAt <- evalElmAt chs at
+  evalElmAt chsAt i
+
 --------------------------------------------------------------------------------
 -- evalCardSmplSetAll -
 
@@ -275,14 +309,15 @@ evalHomologyGroupAt env i = evalAt env i >>= return . homologyGroups . snd
 --------------------------------------------------------------------------------
 -- AbelianExpressionType -
 
-data AbelianExpressionType t s x where
+data AbelianExpressionType v s x where
   AblExprTypeZ        :: AbelianExpressionType Z s x
   AblExprTypeChain    :: Z -> AbelianExpressionType (ChainValue s x) s x
   AblExprTypeHmgClass :: AbGroup -> AbelianExpressionType AbGroup s x
   
-deriving instance Show (AbelianExpressionType t s x)
-deriving instance Eq (AbelianExpressionType t s x)
-instance Validable (AbelianExpressionType t s x) where
+deriving instance Show (AbelianExpressionType v s x)
+deriving instance Eq (AbelianExpressionType v s x)
+
+instance Validable (AbelianExpressionType v s x) where
   valid t = Label "AbelianExpressionType" :<=>: case t of
     AblExprTypeHmgClass g -> valid g
     AblExprTypeChain z    -> valid z
@@ -291,37 +326,38 @@ instance Validable (AbelianExpressionType t s x) where
 --------------------------------------------------------------------------------
 -- AbelianOperator -
 
-data AbelianOperator t (s :: Type -> Type) x where
-  AblOprChainAt :: ChainType -> AbelianExpression Z s x -> AbelianOperator (ChainValue s x) s x
+data AbelianOperator v (s :: Type -> Type) x where
+  AblOprChainAt  :: ChainType -> AbelianExpression Z s x -> AbelianOperator (ChainValue s x) s x
+  AblOprBoundary :: AbelianOperator (ChainValue s x) s x
 
-deriving instance Simplical s x => Show (AbelianOperator t s x)
+deriving instance Simplical s x => Show (AbelianOperator v s x)
 
 --------------------------------------------------------------------------------
 -- AbelianExpression -
 
-data AbelianExpression t s x where
-  AblExprValue    :: AbelianValue t s x -> AbelianExpression t s x
-  AblExprVariable :: AbelianVariable t s x -> AbelianExpression t s x
-  AblExprZero     :: AbelianExpressionType t s x -> AbelianExpression t s x
-  (:!>)           :: AbelianExpression Z s x -> AbelianExpression t s x -> AbelianExpression t s x
-  (:+:)           :: AbelianExpression t s x -> AbelianExpression t s x -> AbelianExpression t s x
-  (:$:)           :: AbelianOperator t s x -> AbelianExpression t s x -> AbelianExpression t s x
+data AbelianExpression v s x where
+  AblExprValue    :: AbelianValue v s x -> AbelianExpression v s x
+  AblExprVariable :: AbelianVariable v s x -> AbelianExpression v s x
+  AblExprZero     :: AbelianExpressionType v s x -> AbelianExpression v s x
+  (:!>)           :: AbelianExpression Z s x -> AbelianExpression v s x -> AbelianExpression v s x
+  (:+:)           :: AbelianExpression v s x -> AbelianExpression v s x -> AbelianExpression v s x
+  (:$:)           :: AbelianOperator v s x -> AbelianExpression v s x -> AbelianExpression v s x
   
 
-deriving instance Simplical s x => Show (AbelianExpression t s x)
+deriving instance Simplical s x => Show (AbelianExpression v s x)
 
 --------------------------------------------------------------------------------
 -- AbelianValue -
 
-data AbelianValue t s x where
+data AbelianValue v s x where
   ValZ        :: Z -> AbelianValue Z s x
   ValChain    :: Z -> ChainValue s x -> AbelianValue (ChainValue s x) s x
   ValHmgClass :: AbElement -> AbelianValue AbGroup s x 
 
-deriving instance Simplical s x => Show (AbelianValue t s x)
-deriving instance Simplical s x => Eq (AbelianValue t s x)
+deriving instance Simplical s x => Show (AbelianValue v s x)
+deriving instance Simplical s x => Eq (AbelianValue v s x)
 
-instance Simplical s x => Validable (AbelianValue t s x) where
+instance Simplical s x => Validable (AbelianValue v s x) where
   valid v = Label "AbelianValue" :<=>: case v of
     ValZ z        -> valid z
     ValChain z ch -> And [ valid z
@@ -339,19 +375,19 @@ instance Simplical s x => Validable (AbelianValue t s x) where
       vldHomogenDim :: Simplical s x => Z -> Statement -> s x -> Statement
       vldHomogenDim z v sx = v && (z == dimension sx) :?> Params ["z":=show z, "sx":=show sx]
 
-type instance Root (AbelianValue t s x) = AbelianExpressionType t s x
+type instance Root (AbelianValue v s x) = AbelianExpressionType v s x
 
-deriving instance ShowRoot (AbelianValue t s x)
-deriving instance EqRoot (AbelianValue t s x)
-deriving instance ValidableRoot (AbelianValue t s x)
-deriving instance (Typeable s, Typeable t, Typeable x) => TypeableRoot (AbelianValue t s x)
+deriving instance ShowRoot (AbelianValue v s x)
+deriving instance EqRoot (AbelianValue v s x)
+deriving instance ValidableRoot (AbelianValue v s x)
+deriving instance (Typeable s, Typeable v, Typeable x) => TypeableRoot (AbelianValue v s x)
 
-instance (Simplical s x, Typeable t) => Fibred (AbelianValue t s x) where
+instance (Simplical s x, Typeable v) => Fibred (AbelianValue v s x) where
   root (ValZ _)        = AblExprTypeZ
   root (ValChain z _)  = AblExprTypeChain z
   root (ValHmgClass e) = AblExprTypeHmgClass (end e) 
 
-instance (Simplical s x, Typeable t) => Additive (AbelianValue t s x) where
+instance (Simplical s x, Typeable v) => Additive (AbelianValue v s x) where
   zero AblExprTypeZ            = ValZ (zero (():>()))
   zero (AblExprTypeChain z)    = ValChain z (zero ())
   zero (AblExprTypeHmgClass g) = ValHmgClass (zero g)
@@ -359,17 +395,17 @@ instance (Simplical s x, Typeable t) => Additive (AbelianValue t s x) where
 --------------------------------------------------------------------------------
 -- AbelianVariable -
 
-newtype AbelianVariable t (s :: Type -> Type) x = AblVar String deriving (Show,Eq)
+newtype AbelianVariable v (s :: Type -> Type) x = AblVar String deriving (Show,Eq)
 
 --------------------------------------------------------------------------------
 -- Vars -
 
-newtype Vars t (s :: Type -> Type) x = Vars (M.Map (Z,String) (AbelianExpression t s x))
+newtype Vars v (s :: Type -> Type) x = Vars (M.Map (Z,String) (AbelianExpression v s x))
 
 --------------------------------------------------------------------------------
 -- evalVar -
 
-evalVar :: Vars t s x -> Z -> String -> Eval (AbelianExpression t s x)
+evalVar :: Vars v s x -> Z -> String -> Eval (AbelianExpression v s x)
 evalVar (Vars bnds) at name = case (at,name) `M.lookup` bnds of
   Just axpr -> return axpr
   Nothing   -> failure $ NoSuchVariable at name
@@ -377,34 +413,74 @@ evalVar (Vars bnds) at name = case (at,name) `M.lookup` bnds of
 --------------------------------------------------------------------------------
 -- evalAblExprType -
 
+-- | evaluation to the type of a abelian expression. 
 evalAblExprType ::
   ( Simplical s x
   , Typeable v
   )
   => Vars v s x -> Z -> AbelianExpression v s x -> Eval (AbelianExpressionType v s x)
-evalAblExprType vrs at aexpr = case aexpr of
-  AblExprValue v           -> return $ root v
-  AblExprVariable v        -> case v of
-    AblVar name            -> evalVar vrs at name >>= evalAblExprType vrs at
-  AblExprZero t            -> return t
-  _ :!> aexpr'             -> evalAblExprType vrs at aexpr'
-  a :+: b                  -> do
+evalAblExprType vrs at e      = case e of
+  AblExprValue v             -> return $ root v
+  AblExprVariable v          -> case v of
+    AblVar name              -> evalVar vrs at name >>= evalAblExprType vrs at
+  AblExprZero t              -> return t
+  _ :!> e'                   -> evalAblExprType vrs at e'
+  a :+: b                    -> do
     ta <- evalAblExprType vrs at a
     tb <- evalAblExprType vrs at b
     case ta == tb of
-      True                 -> return ta
-      False                -> failure NotAddableExpressions
-  f :$: a                  -> case f of
-    AblOprChainAt _ _      -> return $ AblExprTypeChain at
-
+      True                   -> return ta
+      False                  -> failure NotAddableExpressions
+  f :$: a                    -> case f of
+    AblOprChainAt _ _        -> return $ AblExprTypeChain at
+    AblOprBoundary           -> do
+      ta <- evalAblExprType vrs at a
+      case ta of
+        AblExprTypeChain at' -> return $ AblExprTypeChain (pred at')
+        _                    -> failure NotAChainType
 
 --------------------------------------------------------------------------------
--- evalSumFormAbelianValueSmf -
+-- evalAblValSumForm -
 
-evalSumFormAbelianValue :: Env t s n x -> Vars v s x
-  -> Z -> AbelianExpression v s x -> Eval (SumForm Z (AbelianValue v s x))
-evalSumFormAbelianValue env@Env{} vrs at aexpr = case aexpr of
-  AblExprValue v -> return (S v)
+evalAblValZ :: Vars Z s x -> AbelianExpression Z s x -> Eval Z
+evalAblValZ vrs e = error "nyi"
+
+-- | evluation to a 'SumForm'.
+--
+-- Let @env@, @vrs@, @vrsZ@, @at@, @te@ and @e@ be the input parameters for
+-- 'evalAblValSumForm':
+--
+-- [Pre] @'evalAblExprType' vrs at e@ evaluates to @te@.
+--
+-- [Post] If @'evalAblValSumForm' env vrs vrsZ at te e@ evaluates to a @s@ then
+-- @'root' s '==' te@.
+evalAblValSumForm :: Env t s n x -> Vars v s x -> Vars Z s x
+  -> Z -> AbelianExpressionType v s x -> AbelianExpression v s x
+  -> Eval (SumForm Z (AbelianValue v s x))
+evalAblValSumForm env@Env{} vrs vrsZ at te e = case e of
+  AblExprValue a       -> return $ S a
+  AblExprVariable v    -> case v of
+    AblVar name        -> evalVar vrs at name >>= evalAblValSumForm env vrs vrsZ at te
+  AblExprZero t        -> return $ Zero t
+  z :!> a              -> do
+    vz <- evalAblValZ vrsZ z
+    sa <- evalAblValSumForm env vrs vrsZ at te a
+    return (vz :! sa)
+  a :+: b              -> do
+    sa <- evalAblValSumForm env vrs vrsZ at te a
+    sb <- evalAblValSumForm env vrs vrsZ at te b
+    return (sa :+ sb)
+  f :$: a             -> case f of
+    AblOprChainAt t i -> do
+      zi <- evalAblValZ vrsZ i
+      ch <- evalChainAt env t at zi
+      return $ S $ ValChain at ch
+    AblOprBoundary    -> error "nyi"
+
+
+
+
+
 
 {-
 --------------------------------------------------------------------------------
