@@ -285,30 +285,30 @@ evalChainAt env@Env{} t at i = do
   evalElmAt chsAt i
 
 --------------------------------------------------------------------------------
--- evalCardSmplSetAll -
+-- evalCardSmpSetAll -
 
-evalCardSmplSetAll :: Env t s n x -> Cards Z n
-evalCardSmplSetAll env@Env{} = ccxCards $ envChainComplex env
+evalCardSmpSetAll :: Env t s n x -> Cards Z n
+evalCardSmpSetAll env@Env{} = ccxCards $ envChainComplex env
 
 --------------------------------------------------------------------------------
--- evalCardSmplSetAt ´-
+-- evalCardSmpSetAt ´-
 
-evalCardSmplSetAt :: Env t s n x -> Z -> Eval (Cards Z N0)
-evalCardSmplSetAt env@Env{} i = do
+evalCardSmpSetAt :: Env t s n x -> Z -> Eval (Cards Z N0)
+evalCardSmpSetAt env@Env{} i = do
   SomeChainComplex ccx <- evalAt env i >>= return . fst
   return $ ccxCards ccx
 
 --------------------------------------------------------------------------------
--- evalHomologyGroups -
+-- evalHmgGroupAll -
 
-evalHomologyGroups :: Env t s n x -> Deviation (n+1) AbHom
-evalHomologyGroups env@Env{} = homologyGroups $ envHomology env
+evalHmgGroupAll :: Env t s n x -> Deviation (n+1) AbHom
+evalHmgGroupAll env@Env{} = homologyGroups $ envHomology env
 
 --------------------------------------------------------------------------------
--- evalHomologyGroupAt -
+-- evalHmgGroupAt -
 
-evalHomologyGroupAt :: Env t s n x -> Z -> Eval (Deviation N1 AbHom)
-evalHomologyGroupAt env i = evalAt env i >>= return . homologyGroups . snd
+evalHmgGroupAt :: Env t s n x -> Z -> Eval (Deviation N1 AbHom)
+evalHmgGroupAt env i = evalAt env i >>= return . homologyGroups . snd
 
 --------------------------------------------------------------------------------
 -- evalBoundaryAt -
@@ -319,6 +319,18 @@ evalBoundaryAt env at ch = do
   h  <- evalAt env at >>= return . snd
   e' <- boundary h e
   evalFromAbElement env (pred at) e'
+
+{-
+--------------------------------------------------------------------------------
+-- evalHomologyClassAt -
+
+evalHomologyClassAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval AbElement
+evalHomologyClassAt env vrs at vexpr = do
+  c <- evalChainValueAt env vrs at vexpr
+  e  <- evalToAbElement env (inj at) c
+  h  <- evalAt env at >>= return . snd
+  homologyClass h e
+-}
 
 --------------------------------------------------------------------------------
 -- AbelianExpressionType -
@@ -524,7 +536,6 @@ evalAblValSumForm env@Env{} vrs vrsZ at e = case e of
       return $ S $ ValChain at ch
     AblOprBoundary    -> evalAblValSumForm env vrs vrsZ at a >>= evalBoundarySumForm env
 
-
 --------------------------------------------------------------------------------
 -- evalAblVal -
 
@@ -548,179 +559,52 @@ evalAblVal env@Env{} vrs@AblVars{}  vrsZ at e = do
 evalAblValZ :: Env t s n x -> AblVars Z s x -> Z -> AbelianExpression Z s x -> Eval Z
 evalAblValZ env vrs at e = evalAblVal env vrs vrs at e >>= return . (\(ValZ z) -> z) 
 
-
-
-
-
-{-
---------------------------------------------------------------------------------
--- evalChainValue -
-
-evalChainValueAtEnv :: Env t s n x -> N -> ChainType -> N -> Eval (ChainValue s x)
-evalChainValueAtEnv env@Env{} i t j = do
-  chsAt <- evalElmAt (envChains env) i (AtOutOfRange i)
-  chsTp <- evalElmAt chsAt t (EvalFailure ("unsupported chain type: " L.++ show t))
-  evalElmAt chsTp j (IndexOutOfRange $ inj j)
-
---------------------------------------------------------------------------------
--- evalChainValue -
-
-evalChainValueAtSmf :: Env t s n x -> VarBind s x
-  -> N -> SumForm Z (R ChainIndex) -> Eval (ChainValue s x)
-evalChainValueAtSmf env@Env{} vrs at sf
-  | envMaxDim env < at = failure $ AtOutOfRange at
-  | otherwise          = evl env vrs at (reduce sf) >>= return . SumSymbol . make where
-  
-  evl env vrs at sf = case sf of
-    Zero ()  -> return $ Zero ()
-    z :! sf' -> evl env vrs at sf' >>= return . (z:!)
-    a :+ b   -> do
-      a' <- evl env vrs at a
-      b' <- evl env vrs at b
-      return (a' :+ b')
-    S (R (ChainIndex t i)) -> do
-      SumSymbol sx <- evalChainValueAtEnv env at t i
-      return $ form sx
-
-
 --------------------------------------------------------------------------------
 -- Expression -
 
 -- | expression to evaluate values of type t'Value'.
-data Expression
-  = MaxDimExpr -- ^ the maximal dimension
-  | CardinalityExpr  CardinalityExpression -- ^ cardinality.
-  | HomologyGroupExpr HomologyGroupExpression
-  | ChainExpr ChainExpression
+data Expression (s :: Type -> Type) x
+  = ExprMaxDim              -- ^ the maximal dimension
+  | ExprCardSmpSet (CardinalitySimplexSetExpression s x)   -- ^ cardinalities of the simplex set
+  | ExprHmgGroup (HomologyGroupExpression s x)    -- ^ homology groups
 
 --------------------------------------------------------------------------------
--- CardinalityExpression -
+-- CardinalitySimplexSetExpression -
 
--- | expression to evaluate values of type t'Cardinality'.
-data CardinalityExpression
-  = CardSimplexSetAllExpr
-  | CardSimplexSetAtExpr
+data CardinalitySimplexSetExpression (s :: Type -> Type) x
+  = ExprCardSmpSetAll
+  | ExprCardSmpSetAt
 
 --------------------------------------------------------------------------------
 -- HomologyGroupExpression -
 
--- | expression to evaluate values of type t'HomologyGroup'.
-data HomologyGroupExpression
-  = HomologyGroupAllExpr
-  | HomologyGroupAtExpr
-
---------------------------------------------------------------------------------
--- ChainListAtExpression -
-
-data ChainExpression
-  = ChainListAtExpr ChainType
-  | ChainValueAtExpr ChainValueAtExpression
-  | ChainApplicationAtExpr ChainOperatorType ChainValueAtExpression
-
---------------------------------------------------------------------------------
--- ChainExpression -
-
-data ChainValueAtExpression = ChainSumFormAt (SumForm Z (R ChainIndex))
-
---------------------------------------------------------------------------------
--- ChainOperatorType -
-
-data ChainOperatorType
-  = HomologyClass
-  | Boundary
-  deriving (Show,Eq)  
-
+data HomologyGroupExpression (s :: Type -> Type) x
+  = ExprHmgGroupAll
+  | ExprHmgGroupAt
+  
 --------------------------------------------------------------------------------
 -- Value -
 
-data Value (s :: Type -> Type) x
-  = MaximalDimension N
-  | Cardinality (Cardinality s x)
-  | HomologyGroup (HomologyGroup s x)
-  | ChainList (ChainList s x)
-  | ChainValue (ChainValue s x)
-  | HomologyClassValue AbElement
-  deriving (Show)
+data Value (s :: Type -> Type) x where
+  ValMaxDim     :: Z -> Value s x
+  ValCardSmpSet :: Attestable n => Cards Z n -> Value s x
+  ValHmgGroup   :: Attestable n => Deviation (n+1) AbHom -> Value s x
 
---------------------------------------------------------------------------------
--- Cardinality -
-
-data Cardinality (s :: Type -> Type) x where
-  SimplexSetCardinalities :: Attestable n => Cards Z n -> Cardinality s x
-
-deriving instance Show (Cardinality s x)
-
---------------------------------------------------------------------------------
--- HomologyGroup -
-
-data HomologyGroup (s :: Type -> Type) x where
-  HomologyGroups :: Attestable n => Deviation (n+1) AbHom -> HomologyGroup s x
-
-deriving instance Show (HomologyGroup s x)
-
---------------------------------------------------------------------------------
--- evalCardinalityExpr -
-
-evalCardinalityExpr :: Env t s n x -> N -> CardinalityExpression -> Eval (Cardinality s x)
-evalCardinalityExpr env@Env{} at cexpr = case cexpr of
-  CardSimplexSetAllExpr  -> return $ SimplexSetCardinalities $ evalCardSmplSetAll env
-  CardSimplexSetAtExpr -> evalCardSmplSetAt env at >>= return . SimplexSetCardinalities 
-
---------------------------------------------------------------------------------
--- evalHomologyGroupExpr -
-
-evalHomologyGroupExpr :: Env t s n x -> N -> HomologyGroupExpression -> Eval (HomologyGroup s x)
-evalHomologyGroupExpr env@Env{} at hexpr = case hexpr of
-  HomologyGroupAllExpr  -> return $ HomologyGroups $ evalHomologyGroups env
-  HomologyGroupAtExpr   -> evalHomologyGroupAt env at >>= return . HomologyGroups
-
---------------------------------------------------------------------------------
--- evalChainListAt -
-
-evalChainListAt :: Env t s n x -> N -> ChainType -> Eval (ChainList s x)
-evalChainListAt env at t = do
-  chsAt <- evalElmAt (envChains env) at (AtOutOfRange at)
-  evalElmAt chsAt t (EvalFailure ("unsupported chain type: " L.++ show t))
-
---------------------------------------------------------------------------------
--- evalChainValueAt -
-
-evalChainValueAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval (ChainValue s x)
-evalChainValueAt env vrs at (ChainSumFormAt sf) = evalChainValueAtSmf env vrs at sf
-
---------------------------------------------------------------------------------
--- evalHomologyClassAt -
-
-evalHomologyClassAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval AbElement
-evalHomologyClassAt env vrs at vexpr = do
-  c <- evalChainValueAt env vrs at vexpr
-  e  <- evalToAbElement env (inj at) c
-  h  <- evalAt env at >>= return . snd
-  homologyClass h e
-
---------------------------------------------------------------------------------
--- evalBoundaryAt -
-
-evalBoundaryAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval (ChainValue s x)
-evalBoundaryAt env vrs at vexpr = do
-  c  <- evalChainValueAt env vrs at vexpr
-  e  <- evalToAbElement env (inj at) c
-  h  <- evalAt env at >>= return . snd
-  e' <- boundary h e
-  evalFromAbElement env (pred $ inj at) e'
-
---------------------------------------------------------------------------------
--- evalChainValueAtExpression -
-
-evalChainValueAtExpression :: Env t s n x -> Z -> ChainValue s x -> Eval ChainValueAtExpression
-evalChainValueAtExpression = error "nyi"
+deriving instance Show (Value s x)
 
 --------------------------------------------------------------------------------
 -- eval -
 
-eval :: Env t s n x -> VarBind s x -> N -> Expression -> Eval (Value s x)
-eval env vrs at expr        = case expr of
-  MaxDimExpr               -> return $ MaximalDimension $ envMaxDim env
+eval :: Env t s n x -> Vars s x -> Z -> Expression s x -> Eval (Value s x)
+eval env@Env{} vrs at expr        = case expr of
+  ExprMaxDim               -> return $ ValMaxDim $ envMaxDim env
+  ExprCardSmpSet cexpr     -> case cexpr of
+    ExprCardSmpSetAll      -> return $ ValCardSmpSet $ evalCardSmpSetAll env
+    ExprCardSmpSetAt       -> evalCardSmpSetAt env at >>= return . ValCardSmpSet
+  ExprHmgGroup hexpr       -> case hexpr of
+    ExprHmgGroupAll        -> return $ ValHmgGroup $ evalHmgGroupAll env
+    ExprHmgGroupAt         -> evalHmgGroupAt env at >>= return . ValHmgGroup
+{-  
   CardinalityExpr cexpr    -> evalCardinalityExpr env at cexpr >>= return . Cardinality
   HomologyGroupExpr hexpr  -> evalHomologyGroupExpr env at hexpr >>= return . HomologyGroup
   ChainExpr cexpr          -> case cexpr of
