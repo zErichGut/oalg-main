@@ -337,18 +337,9 @@ evalHomologyClassAt env vrs at vexpr = do
 
 data AbelianExpressionType v s x where
   AblExprTypeZ        :: AbelianExpressionType Z s x
-  AblExprTypeChain    :: Z -> AbelianExpressionType (ChainValue s x) s x
-  AblExprTypeHmgClass :: AbGroup -> AbelianExpressionType AbGroup s x
+  AblExprTypeChain    :: AbelianExpressionType (ChainValue s x) s x
+  AblExprTypeHmgClass :: AbelianExpressionType AbGroup s x
   
-deriving instance Show (AbelianExpressionType v s x)
-deriving instance Eq (AbelianExpressionType v s x)
-
-instance Validable (AbelianExpressionType v s x) where
-  valid t = Label "AbelianExpressionType" :<=>: case t of
-    AblExprTypeHmgClass g -> valid g
-    AblExprTypeChain z    -> valid z
-    AblExprTypeZ          -> SValid
-
 --------------------------------------------------------------------------------
 -- AbelianOperator -
 
@@ -363,13 +354,30 @@ deriving instance Simplical s x => Show (AbelianOperator v s x)
 
 data AbelianExpression v s x where
   AblExprValue    :: AbelianValue v s x -> AbelianExpression v s x
-  AblExprVariable :: AbelianVariable v s x -> AbelianExpression v s x
-  AblExprZero     :: AbelianExpressionType v s x -> AbelianExpression v s x
+  AblExprVariable :: String -> AbelianExpression v s x
+  AblExprZero     :: AbelianValueType v s x -> AbelianExpression v s x
   (:!>)           :: AbelianExpression Z s x -> AbelianExpression v s x -> AbelianExpression v s x
   (:+:)           :: AbelianExpression v s x -> AbelianExpression v s x -> AbelianExpression v s x
   (:$:)           :: AbelianOperator (u,v) s x -> AbelianExpression u s x -> AbelianExpression v s x
   
 deriving instance Simplical s x => Show (AbelianExpression v s x)
+
+--------------------------------------------------------------------------------
+-- AbelianValueType -
+
+data AbelianValueType v s x where
+  AblValTypeZ        :: AbelianValueType Z s x
+  AblValTypeChain    :: Z -> AbelianValueType (ChainValue s x) s x
+  AblValTypeHmgClass :: AbGroup -> AbelianValueType AbGroup s x
+  
+deriving instance Show (AbelianValueType v s x)
+deriving instance Eq (AbelianValueType v s x)
+
+instance Validable (AbelianValueType v s x) where
+  valid t = Label "AbelianValueType" :<=>: case t of
+    AblValTypeHmgClass g -> valid g
+    AblValTypeChain z    -> valid z
+    AblValTypeZ          -> SValid
 
 --------------------------------------------------------------------------------
 -- AbelianValue -
@@ -401,7 +409,7 @@ instance Simplical s x => Validable (AbelianValue v s x) where
       vldHomogenDim :: Simplical s x => Z -> Statement -> s x -> Statement
       vldHomogenDim z v sx = v && (z == dimension sx) :?> Params ["z":=show z, "sx":=show sx]
 
-type instance Root (AbelianValue v s x) = AbelianExpressionType v s x
+type instance Root (AbelianValue v s x) = AbelianValueType v s x
 
 deriving instance ShowRoot (AbelianValue v s x)
 deriving instance EqRoot (AbelianValue v s x)
@@ -409,14 +417,14 @@ deriving instance ValidableRoot (AbelianValue v s x)
 deriving instance (Typeable s, Typeable v, Typeable x) => TypeableRoot (AbelianValue v s x)
 
 instance (Simplical s x, Typeable v) => Fibred (AbelianValue v s x) where
-  root (ValZ _)        = AblExprTypeZ
-  root (ValChain z _)  = AblExprTypeChain z
-  root (ValHmgClass e) = AblExprTypeHmgClass (end e) 
+  root (ValZ _)        = AblValTypeZ
+  root (ValChain z _)  = AblValTypeChain z
+  root (ValHmgClass e) = AblValTypeHmgClass (end e) 
 
 instance (Simplical s x, Typeable v) => Additive (AbelianValue v s x) where
-  zero AblExprTypeZ            = ValZ (zero (():>()))
-  zero (AblExprTypeChain z)    = ValChain z (zero ())
-  zero (AblExprTypeHmgClass g) = ValHmgClass (zero g)
+  zero AblValTypeZ            = ValZ (zero (():>()))
+  zero (AblValTypeChain z)    = ValChain z (zero ())
+  zero (AblValTypeHmgClass g) = ValHmgClass (zero g)
 
   ValZ a        + ValZ b                    = ValZ (a+b)
   ValChain z a  + ValChain z' b | z == z'   = ValChain z (a+b)
@@ -442,15 +450,17 @@ instance (Simplical s x, Typeable v) => Abelian (AbelianValue v s x) where
   ztimes n (ValHmgClass h) = ValHmgClass (ztimes n h)
   
 --------------------------------------------------------------------------------
--- AbelianVariable -
-
-newtype AbelianVariable v (s :: Type -> Type) x = AblVar String deriving (Show,Eq)
-
---------------------------------------------------------------------------------
 -- AblVars -
 
-data AblVars v (s :: Type -> Type) x where
-  AblVars :: Typeable v => M.Map (Z,String) (AbelianExpression v s x) -> AblVars v s x
+newtype AblVars v s x = AblVars (M.Map (Z,String) (AbelianExpression v s x))
+
+--------------------------------------------------------------------------------
+-- evalAblVar -
+
+evalAblVar :: AblVars v s x -> Z -> String -> Eval (AbelianExpression v s x)
+evalAblVar (AblVars bnds) at name = case (at,name) `M.lookup` bnds of
+  Just axpr -> return axpr
+  Nothing   -> failure $ NoSuchVariable at name
 
 --------------------------------------------------------------------------------
 -- Vars -
@@ -459,40 +469,47 @@ data Vars s x
   = Vars (AblVars Z s x) (AblVars (ChainValue s x) s x) (AblVars AbGroup s x)
 
 --------------------------------------------------------------------------------
+-- ablVars -
+
+ablVars :: Vars s x -> AbelianExpressionType v s x -> AblVars v s x
+ablVars (Vars vZ vCh vAbG) t = case t of
+  AblExprTypeZ        -> vZ
+  AblExprTypeChain    -> vCh
+  AblExprTypeHmgClass -> vAbG
+
+--------------------------------------------------------------------------------
 -- evalVar -
 
-evalVar :: AblVars v s x -> Z -> String -> Eval (AbelianExpression v s x)
-evalVar (AblVars bnds) at name = case (at,name) `M.lookup` bnds of
-  Just axpr -> return axpr
-  Nothing   -> failure $ NoSuchVariable at name
-  
+evalVar :: Vars s x -> AbelianExpressionType v s x -> Z -> String -> Eval (AbelianExpression v s x)
+evalVar vrs t = evalAblVar (ablVars vrs t)
+
 --------------------------------------------------------------------------------
--- evalAblExprType -
+-- evalAblValType -
 
 -- | evaluation to the type of a abelian expression. 
-evalAblExprType ::
+evalAblValType ::
   ( Simplical s x
   , Typeable v
   )
-  => AblVars v s x -> Z -> AbelianExpression v s x -> Eval (AbelianExpressionType v s x)
-evalAblExprType vrs at e      = case e of
+  => Vars s x -> AbelianExpressionType v s x
+  -> Z -> AbelianExpression v s x -> Eval (AbelianValueType v s x)
+evalAblValType vrs te at e    = case e of
   AblExprValue v             -> return $ root v
-  AblExprVariable v          -> case v of
-    AblVar name              -> evalVar vrs at name >>= evalAblExprType vrs at
+  AblExprVariable name       -> evalVar vrs te at name >>= evalAblValType vrs te at
   AblExprZero t              -> return t
-  _ :!> e'                   -> evalAblExprType vrs at e'
+  _ :!> e'                   -> evalAblValType vrs te at e'
   a :+: b                    -> do
-    ta <- evalAblExprType vrs at a
-    tb <- evalAblExprType vrs at b
+    ta <- evalAblValType vrs te at a
+    tb <- evalAblValType vrs te at b
     case ta == tb of
       True                   -> return ta
       False                  -> failure NotAddableExpressions      
   f :$: a                    -> case f of
-    AblOprChainAt _          -> return $ AblExprTypeChain at    
+    AblOprChainAt _          -> return $ AblValTypeChain at    
     AblOprBoundary           -> do
-      ta <- evalAblExprType vrs at a
+      ta <- evalAblValType vrs te at a
       case ta of
-        AblExprTypeChain at' -> return $ AblExprTypeChain (pred at')
+        AblValTypeChain at' -> return $ AblValTypeChain (pred at')
 
 --------------------------------------------------------------------------------
 -- evalBoundarySumForm -
@@ -502,7 +519,7 @@ evalBoundarySumForm :: Env t s n x
   -> Eval (SumForm Z (AbelianValue (ChainValue s x) s x))
 evalBoundarySumForm env sf = case sf of
   Zero r                -> case r of
-    AblExprTypeChain at -> return $ Zero $ AblExprTypeChain (pred at)
+    AblValTypeChain at -> return $ Zero $ AblValTypeChain (pred at)
   S (ValChain at ch)    -> evalBoundaryAt env at ch >>= return . S . ValChain (pred at)
   z :! a                -> evalBoundarySumForm env a >>= return . (z:!)
   a :+ b                -> do
@@ -514,27 +531,26 @@ evalBoundarySumForm env sf = case sf of
 -- evalAblValSumForm -
 
 -- | evluation to a 'SumForm'.
-evalAblValSumForm :: Env t s n x -> AblVars v s x -> AblVars Z s x
+evalAblValSumForm :: Env t s n x -> Vars s x -> AbelianExpressionType v s x
   -> Z -> AbelianExpression v s x -> Eval (SumForm Z (AbelianValue v s x))
-evalAblValSumForm env@Env{} vrs vrsZ at e = case e of
+evalAblValSumForm env@Env{} vrs te at e = case e of
   AblExprValue a       -> return $ S a
-  AblExprVariable v    -> case v of
-    AblVar name        -> evalVar vrs at name >>= evalAblValSumForm env vrs vrsZ at
+  AblExprVariable name -> evalVar vrs te at name >>= evalAblValSumForm env vrs te at
   AblExprZero t        -> return $ Zero t
   z :!> a              -> do
-    vz <- evalAblValZ env vrsZ at z
-    sa <- evalAblValSumForm env vrs vrsZ at a
+    vz <- evalAblValZ env vrs AblExprTypeZ at z
+    sa <- evalAblValSumForm env vrs te at a
     return (vz :! sa)
   a :+: b              -> do
-    sa <- evalAblValSumForm env vrs vrsZ at a
-    sb <- evalAblValSumForm env vrs vrsZ at b
+    sa <- evalAblValSumForm env vrs te at a
+    sb <- evalAblValSumForm env vrs te at b
     return (sa :+ sb)
   f :$: a             -> case f of
     AblOprChainAt t   -> do
-      za <- evalAblValZ env vrsZ at a
+      za <- evalAblValZ env vrs AblExprTypeZ at a
       ch <- evalChainAt env t at za
       return $ S $ ValChain at ch
-    AblOprBoundary    -> evalAblValSumForm env vrs vrsZ at a >>= evalBoundarySumForm env
+    AblOprBoundary    -> evalAblValSumForm env vrs te at a >>= evalBoundarySumForm env
 
 --------------------------------------------------------------------------------
 -- evalAblVal -
@@ -542,11 +558,11 @@ evalAblValSumForm env@Env{} vrs vrsZ at e = case e of
 type HomFib h = Path h
 type HomFibEmpty s = HomFib (HomEmpty s)
 
-
-evalAblVal :: Env t s n x -> AblVars v s x -> AblVars Z s x
+evalAblVal :: Typeable v
+  => Env t s n x -> Vars s x -> AbelianExpressionType v s x
   -> Z -> AbelianExpression v s x -> Eval (AbelianValue v s x)
-evalAblVal env@Env{} vrs@AblVars{}  vrsZ at e = do
-  s <- evalAblValSumForm env vrs vrsZ at e
+evalAblVal env@Env{} vrs te at e = do
+  s <- evalAblValSumForm env vrs te at e
   return $ zSum vOne $ make s
 
   where vOne :: (Typeable v, Simplical s x)
@@ -556,17 +572,20 @@ evalAblVal env@Env{} vrs@AblVars{}  vrsZ at e = do
 --------------------------------------------------------------------------------
 -- evalAblValZ -
 
-evalAblValZ :: Env t s n x -> AblVars Z s x -> Z -> AbelianExpression Z s x -> Eval Z
-evalAblValZ env vrs at e = evalAblVal env vrs vrs at e >>= return . (\(ValZ z) -> z) 
+evalAblValZ :: Env t s n x -> Vars s x -> AbelianExpressionType Z s x
+  -> Z -> AbelianExpression Z s x -> Eval Z
+evalAblValZ env vrs te at e = evalAblVal env vrs te at e >>= return . (\(ValZ z) -> z) 
 
 --------------------------------------------------------------------------------
 -- Expression -
 
 -- | expression to evaluate values of type t'Value'.
-data Expression (s :: Type -> Type) x
-  = ExprMaxDim              -- ^ the maximal dimension
-  | ExprCardSmpSet (CardinalitySimplexSetExpression s x)   -- ^ cardinalities of the simplex set
-  | ExprHmgGroup (HomologyGroupExpression s x)    -- ^ homology groups
+data Expression s x where
+  ExprMaxDim     :: Expression s x
+  ExprCardSmpSet :: CardinalitySimplexSetExpression s x -> Expression s x
+  ExprHmgGroup   :: HomologyGroupExpression s x -> Expression s x
+  ExprAbl        :: Typeable v => AbelianExpressionType v s x -> AbelianExpression v s x
+                 -> Expression s x
 
 --------------------------------------------------------------------------------
 -- CardinalitySimplexSetExpression -
@@ -585,12 +604,13 @@ data HomologyGroupExpression (s :: Type -> Type) x
 --------------------------------------------------------------------------------
 -- Value -
 
-data Value (s :: Type -> Type) x where
+data Value s x where
   ValMaxDim     :: Z -> Value s x
   ValCardSmpSet :: Attestable n => Cards Z n -> Value s x
   ValHmgGroup   :: Attestable n => Deviation (n+1) AbHom -> Value s x
+  ValAbl        :: Typeable v => AbelianValue v s x -> Value s x
 
-deriving instance Show (Value s x)
+deriving instance Simplical s x => Show (Value s x)
 
 --------------------------------------------------------------------------------
 -- eval -
@@ -604,25 +624,25 @@ eval env@Env{} vrs at expr        = case expr of
   ExprHmgGroup hexpr       -> case hexpr of
     ExprHmgGroupAll        -> return $ ValHmgGroup $ evalHmgGroupAll env
     ExprHmgGroupAt         -> evalHmgGroupAt env at >>= return . ValHmgGroup
-{-  
-  CardinalityExpr cexpr    -> evalCardinalityExpr env at cexpr >>= return . Cardinality
-  HomologyGroupExpr hexpr  -> evalHomologyGroupExpr env at hexpr >>= return . HomologyGroup
-  ChainExpr cexpr          -> case cexpr of
-    ChainListAtExpr t      -> evalChainListAt env at t >>= return . ChainList
-    ChainValueAtExpr vexpr -> evalChainValueAt env vrs at vexpr >>= return . ChainValue
-    ChainApplicationAtExpr HomologyClass vexpr
-                           -> evalHomologyClassAt env vrs at vexpr >>= return . HomologyClassValue
-    ChainApplicationAtExpr Boundary vexpr
-                           -> evalBoundaryAt env vrs at vexpr >>= return . ChainValue
+  ExprAbl ta aexpr         -> evalAblVal env vrs ta at aexpr >>= return . ValAbl
 
-vrs = VarBind $ M.empty
+    
+vrs = Vars (AblVars M.empty) (AblVars M.empty) (AblVars M.empty)
 
-hmgs  = HomologyGroupExpr HomologyGroupAllExpr
-hmg   = HomologyGroupExpr HomologyGroupAtExpr
 
-crds  = CardinalityExpr CardSimplexSetAllExpr
-crd   = CardinalityExpr CardSimplexSetAtExpr
+maxDim = ExprMaxDim
 
+hmgs  = ExprHmgGroup ExprHmgGroupAll
+hmg   = ExprHmgGroup ExprHmgGroupAt
+
+crds  = ExprCardSmpSet ExprCardSmpSetAll
+crd   = ExprCardSmpSet ExprCardSmpSetAt
+
+chAt t i = ExprAbl AblExprTypeChain (AblOprChainAt t :$: AblExprValue (ValZ i))
+
+dAt t i = ExprAbl AblExprTypeChain (AblOprBoundary :$: (AblOprChainAt t :$: AblExprValue (ValZ i)))
+
+{-
 chsAt = ChainExpr (ChainListAtExpr Chain)
 chAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Chain
 
