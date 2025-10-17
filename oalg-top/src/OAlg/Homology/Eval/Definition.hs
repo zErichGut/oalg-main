@@ -8,6 +8,8 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving, DeriveAnyClass #-}
 {-# LANGUAGE DataKinds #-}
 
+{-# LANGUAGE TupleSections #-}
+
 -- |
 -- Module      : OAlg.Homology.Eval.Definition
 -- Description : evaluations for homology.
@@ -51,6 +53,7 @@ import OAlg.Entity.Diagram hiding (Chain)
 import OAlg.Entity.Natural hiding (S)
 import OAlg.Entity.FinList as F hiding ((++))
 import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sum
 -- import OAlg.Entity.Slice.Free
 import OAlg.Entity.Matrix
@@ -94,22 +97,6 @@ type ChainValue s x = ChainG Z s x
 -- ChainList -
 
 type ChainList s x = Array Z (ChainValue s x)
-{-
---------------------------------------------------------------------------------
--- ChainIndex -
-
-data ChainIndex = ChainIndex ChainType N deriving (Show,Eq,Ord)
-
-instance Validable ChainIndex where
-  valid (ChainIndex t n) = valid n && case t of
-    Chain -> SValid
-    _     -> SValid
-
---------------------------------------------------------------------------------
--- VarBind -
-
-newtype VarBind s x = VarBind (M.Map (N,String) (ChainValue s x))
--}
 
 --------------------------------------------------------------------------------
 -- SomeChainComplex -
@@ -276,12 +263,19 @@ evalFromAbElement env@Env{} at e = do
     
 
 --------------------------------------------------------------------------------
+-- evalChainsAt -
+
+evalChainsAt :: Env t s n x -> ChainType -> Z -> Eval (ChainList s x)
+evalChainsAt env t at = do
+  chs <- evalElmAt (envChains env) t
+  evalElmAt chs at
+
+--------------------------------------------------------------------------------
 -- evalChainAt -
 
 evalChainAt :: Env t s n x -> ChainType -> Z -> Z -> Eval (ChainValue s x)
-evalChainAt env@Env{} t at i = do
-  chs   <- evalElmAt (envChains env) t
-  chsAt <- evalElmAt chs at
+evalChainAt env t at i = do
+  chsAt <- evalChainsAt env t at
   evalElmAt chsAt i
 
 --------------------------------------------------------------------------------
@@ -320,6 +314,144 @@ evalBoundaryAt env at ch = do
   e' <- boundary h e
   evalFromAbElement env (pred at) e'
 
+--------------------------------------------------------------------------------
+-- Vec -
+
+data Vec x = Vec (Root x) (PSequence Z x)
+
+deriving instance Fibred x => Show (Vec x)
+deriving instance Fibred x => Eq (Vec x)
+deriving instance (Fibred x, Ord x, OrdRoot x) => Ord (Vec x)
+
+instance Additive x => Validable (Vec x) where
+  valid (Vec r xs) = Label "Vec" :<=>:
+    And [ valid xs
+        , foldl (vld r) SValid (amap1 fst $ psqxs xs)
+        ] where
+
+    vld :: Additive x => Root x -> Statement -> x -> Statement
+    vld r s x = And [ s
+                    , Label "Root" :<=>: (root x == r) :?> Params ["r":=show r,"x":=show x]
+                    , Label "non Zero" :<=>: not (isZero x) :?> Params ["x":=show x]
+                    ]
+
+
+type instance Root (Vec x) = Root x
+instance Fibred x => ShowRoot (Vec x)
+instance Fibred x => EqRoot (Vec x)
+instance Fibred x => ValidableRoot (Vec x)
+instance Fibred x => TypeableRoot (Vec x)
+
+instance Additive x => Fibred (Vec x) where
+  root (Vec r _) = r
+
+instance Additive x => Additive (Vec x) where
+  zero r = Vec r psqEmpty
+
+  Vec r a + Vec r' b | r == r'   = Vec r (psqFilter (not . isZero) $ psqInterlace (+) id id a b)
+                     | otherwise = throw NotAddable
+
+  ntimes n (Vec r xs) = Vec r (psqFilter (not . isZero) $ psqMap (ntimes n) xs)
+
+instance Abelian x => Abelian (Vec x) where
+  negate (Vec r xs) = Vec r (psqMap negate xs)
+
+  Vec r a - Vec r' b | r == r'   = Vec r (psqFilter (not . isZero) $ psqInterlace (-) id id a b)
+                     | otherwise = throw NotAddable
+
+  ztimes z (Vec r xs) = Vec r (psqFilter (not . isZero) $ psqMap (ztimes z) xs)
+
+--------------------------------------------------------------------------------
+-- ChainValueVec -
+
+data ChainValueAt s x = ChainValueAt Z (ChainValue s x) deriving (Show,Eq,Ord)
+
+instance Simplical s x => Validable (ChainValueAt s x) where
+  valid (ChainValueAt d xs) = Label "ChainValueAt" :<=>:
+    And [ valid xs
+        , foldl (vld d) SValid (amap1 snd $ lcs $ ssylc xs)
+        ] where
+
+    vld :: Simplical s x => Z -> Statement -> s x -> Statement
+    vld d s sx = And [ s
+                     , Label "dim" :<=>: (d == dimension sx) :?> Params ["d":=show d, "sx":=show sx]
+                     ]
+
+type instance Root (ChainValueAt s x) = Z
+instance ShowRoot (ChainValueAt s x)
+instance EqRoot (ChainValueAt s x)
+instance OrdRoot (ChainValueAt s x)
+instance ValidableRoot (ChainValueAt s x)
+instance TypeableRoot (ChainValueAt s x)
+
+instance Simplical s x => Fibred (ChainValueAt s x) where
+  root (ChainValueAt d _) = d
+
+instance Simplical s x => Additive (ChainValueAt s x) where
+  zero d = ChainValueAt d (zero ())
+
+  ChainValueAt d a + ChainValueAt d' b | d == d'   = ChainValueAt d (a+b)
+                                       | otherwise = throw NotAddable
+
+  ntimes n (ChainValueAt d sx) = ChainValueAt d (ntimes n sx)
+
+instance Simplical s x => Abelian (ChainValueAt s x) where
+  negate (ChainValueAt d sx) = ChainValueAt d (negate sx)
+
+  ChainValueAt d a - ChainValueAt d' b | d == d'   = ChainValueAt d (a-b)
+                                       | otherwise = throw NotAddable
+  
+  ztimes z (ChainValueAt d sx) = ChainValueAt d (ztimes z sx)
+
+
+--------------------------------------------------------------------------------
+-- evalChainValuesAt
+
+evalChainsVecAt :: Env t s n x -> ChainType -> Z -> Eval (Vec (ChainValueAt s x))
+evalChainsVecAt env@Env{} t at = do
+  chs <- evalChainsAt env t at
+  return $ Vec at
+         $ psqFilter (not . isZero)
+         $ PSequence
+         $ amap1 (\(i,c) -> (ChainValueAt at c,i))
+         $ assocs chs
+
+--------------------------------------------------------------------------------
+-- evalChainVecAt -
+
+evalChainVecAt :: Env t s n x -> ChainType -> Z -> Z -> Eval (Vec (ChainValueAt s x))
+evalChainVecAt env@Env{} t at i = do
+  ch <- evalChainAt env t at i
+  return $ Vec at
+         $ psqFilter (not . isZero)
+         $ PSequence
+         $ [(ChainValueAt at ch,0)]
+
+--------------------------------------------------------------------------------
+-- psqSequence -
+
+psqSequence :: Monad m => PSequence i (m x) -> m (PSequence i x)
+psqSequence (PSequence xis) = (sequence $ amap1 mxi xis) >>=  return . PSequence where
+  
+  mxi :: Monad m => (m x,i) -> m (x,i)
+  mxi (mx,i) = mx >>= return . (,i)
+
+--------------------------------------------------------------------------------
+-- evalBoundaryChainValueAt -
+
+evalBoundaryChainValueAt :: Env t s n x -> ChainValueAt s x -> Eval (ChainValueAt s x)
+evalBoundaryChainValueAt env (ChainValueAt at ch)
+  = evalBoundaryAt env at ch >>= return . ChainValueAt (pred at)
+
+--------------------------------------------------------------------------------
+-- evalBoundaryVec -
+
+evalBoundaryVec :: Env t s n x -> Vec (ChainValueAt s x) -> Eval (Vec (ChainValueAt s x))
+evalBoundaryVec env@Env{} (Vec at chs) = do
+  chs' <- psqSequence $ psqMap (evalBoundaryChainValueAt env) chs
+  return (Vec (pred at) (psqFilter (not . isZero) chs'))
+
+
 {-
 --------------------------------------------------------------------------------
 -- evalHomologyClassAt -
@@ -336,16 +468,18 @@ evalHomologyClassAt env vrs at vexpr = do
 -- AbelianExpressionType -
 
 data AbelianExpressionType v s x where
+  AblExprTypeVoid     :: AbelianExpressionType () s x
   AblExprTypeZ        :: AbelianExpressionType Z s x
-  AblExprTypeChain    :: AbelianExpressionType (ChainValue s x) s x
-  AblExprTypeHmgClass :: AbelianExpressionType AbGroup s x
-  
+  AblExprTypeChain    :: AbelianExpressionType (Vec (ChainValueAt s x)) s x
+  AblExprTypeHmgClass :: AbelianExpressionType (Vec AbElement) s x
+
 --------------------------------------------------------------------------------
 -- AbelianOperator -
 
 data AbelianOperator v s x where
-  AblOprChainAt  :: ChainType -> AbelianOperator (Z,ChainValue s x) s x
-  AblOprBoundary :: AbelianOperator (ChainValue s x,ChainValue s x) s x
+  AblOprChainAll :: ChainType -> AbelianOperator ((),Vec (ChainValueAt s x)) s x
+  AblOprChainAt  :: ChainType -> AbelianOperator (Z,Vec (ChainValueAt s x)) s x
+  AblOprBoundary :: AbelianOperator (Vec (ChainValueAt s x),Vec (ChainValueAt s x)) s x
 
 deriving instance Simplical s x => Show (AbelianOperator v s x)
 
@@ -366,15 +500,17 @@ deriving instance Simplical s x => Show (AbelianExpression v s x)
 -- AbelianValueType -
 
 data AbelianValueType v s x where
+  AblValTypeVoid     :: AbelianValueType () s x
   AblValTypeZ        :: AbelianValueType Z s x
-  AblValTypeChain    :: Z -> AbelianValueType (ChainValue s x) s x
-  AblValTypeHmgClass :: AbGroup -> AbelianValueType AbGroup s x
+  AblValTypeChain    :: Z -> AbelianValueType (Vec (ChainValueAt s x)) s x
+  AblValTypeHmgClass :: AbGroup -> AbelianValueType (Vec AbElement) s x
   
 deriving instance Show (AbelianValueType v s x)
 deriving instance Eq (AbelianValueType v s x)
 
 instance Validable (AbelianValueType v s x) where
   valid t = Label "AbelianValueType" :<=>: case t of
+    AblValTypeVoid       -> SValid
     AblValTypeHmgClass g -> valid g
     AblValTypeChain z    -> valid z
     AblValTypeZ          -> SValid
@@ -383,31 +519,24 @@ instance Validable (AbelianValueType v s x) where
 -- AbelianValue -
 
 data AbelianValue v s x where
+  ValVoid     :: AbelianValue () s x
   ValZ        :: Z -> AbelianValue Z s x
-  ValChain    :: Z -> ChainValue s x -> AbelianValue (ChainValue s x) s x
-  ValHmgClass :: AbElement -> AbelianValue AbGroup s x 
+  ValChain    :: Vec (ChainValueAt s x) -> AbelianValue (Vec (ChainValueAt s x)) s x
+  ValHmgClass :: Vec AbElement -> AbelianValue (Vec AbElement) s x 
 
 deriving instance Simplical s x => Show (AbelianValue v s x)
 deriving instance Simplical s x => Eq (AbelianValue v s x)
+
+instance OrdRoot AbElement
 deriving instance Simplical s x => Ord (AbelianValue v s x)
 
 instance Simplical s x => Validable (AbelianValue v s x) where
   valid v = Label "AbelianValue" :<=>: case v of
-    ValZ z        -> valid z
-    ValChain z ch -> And [ valid z
-                         , valid ch
-                         , vldValChain z (ssylc ch)
-                         ]
-    ValHmgClass e -> valid e
+    ValVoid        -> SValid
+    ValZ z         -> valid z
+    ValChain chs   -> valid chs
+    ValHmgClass hs -> valid hs
 
-    where
-      vldValChain :: Simplical s x => Z -> LinearCombination Z (s x) -> Statement
-      vldValChain z (LinearCombination chs)
-        = foldl (vldHomogenDim z) SValid $ amap1 snd chs
-
-
-      vldHomogenDim :: Simplical s x => Z -> Statement -> s x -> Statement
-      vldHomogenDim z v sx = v && (z == dimension sx) :?> Params ["z":=show z, "sx":=show sx]
 
 type instance Root (AbelianValue v s x) = AbelianValueType v s x
 
@@ -417,38 +546,43 @@ deriving instance ValidableRoot (AbelianValue v s x)
 deriving instance (Typeable s, Typeable v, Typeable x) => TypeableRoot (AbelianValue v s x)
 
 instance (Simplical s x, Typeable v) => Fibred (AbelianValue v s x) where
-  root (ValZ _)        = AblValTypeZ
-  root (ValChain z _)  = AblValTypeChain z
-  root (ValHmgClass e) = AblValTypeHmgClass (end e) 
+  root ValVoid          = AblValTypeVoid
+  root (ValZ _)         = AblValTypeZ
+  root (ValChain chs)   = AblValTypeChain (root chs)
+  root (ValHmgClass hs) = AblValTypeHmgClass (root hs) 
 
 instance (Simplical s x, Typeable v) => Additive (AbelianValue v s x) where
+  zero AblValTypeVoid         = ValVoid
   zero AblValTypeZ            = ValZ (zero (():>()))
-  zero (AblValTypeChain z)    = ValChain z (zero ())
+  zero (AblValTypeChain z)    = ValChain (zero z)
   zero (AblValTypeHmgClass g) = ValHmgClass (zero g)
 
-  ValZ a        + ValZ b                    = ValZ (a+b)
-  ValChain z a  + ValChain z' b | z == z'   = ValChain z (a+b)
-                                | otherwise = throw $ NotAddable
-  ValHmgClass h + ValHmgClass h'            = ValHmgClass (h+h')
+  ValVoid + ValVoid             = ValVoid
+  ValZ a + ValZ b               = ValZ (a+b)
+  ValChain a + ValChain b       = ValChain (a+b)
+  ValHmgClass h + ValHmgClass h'= ValHmgClass (h+h')
 
-  ntimes n (ValZ z)        = ValZ (ntimes n z)
-  ntimes n (ValChain z c)  = ValChain z (ntimes n c)
-  ntimes n (ValHmgClass h) = ValHmgClass (ntimes n h)
+  ntimes _ ValVoid          = ValVoid
+  ntimes n (ValZ z)         = ValZ (ntimes n z)
+  ntimes n (ValChain chs)   = ValChain (ntimes n chs)
+  ntimes n (ValHmgClass hs) = ValHmgClass (ntimes n hs)
 
 instance (Simplical s x, Typeable v) => Abelian (AbelianValue v s x) where
-  negate (ValZ z)        = ValZ (negate z)
-  negate (ValChain z c)  = ValChain z (negate c)
-  negate (ValHmgClass h) = ValHmgClass (negate h)
-                                              
-  ValZ a        - ValZ b                    = ValZ (a-b)
-  ValChain z a  - ValChain z' b | z == z'   = ValChain z (a-b)
-                                | otherwise = throw $ NotAddable
-  ValHmgClass h - ValHmgClass h'            = ValHmgClass (h-h')
+  negate ValVoid          = ValVoid
+  negate (ValZ z)         = ValZ (negate z)
+  negate (ValChain chs)   = ValChain (negate chs)
+  negate (ValHmgClass hs) = ValHmgClass (negate hs)
 
-  ztimes n (ValZ z)        = ValZ (ztimes n z)
-  ztimes n (ValChain z c)  = ValChain z (ztimes n c)
-  ztimes n (ValHmgClass h) = ValHmgClass (ztimes n h)
-  
+  ValVoid - ValVoid             = ValVoid
+  ValZ a - ValZ b               = ValZ (a-b)
+  ValChain a - ValChain b       = ValChain (a-b)
+  ValHmgClass h - ValHmgClass h'= ValHmgClass (h-h')
+
+  ztimes _ ValVoid          = ValVoid
+  ztimes n (ValZ z)         = ValZ (ztimes n z)
+  ztimes n (ValChain chs)   = ValChain (ztimes n chs)
+  ztimes n (ValHmgClass hs) = ValHmgClass (ztimes n hs)
+
 --------------------------------------------------------------------------------
 -- AblVars -
 
@@ -466,16 +600,19 @@ evalAblVar (AblVars bnds) at name = case (at,name) `M.lookup` bnds of
 -- Vars -
 
 data Vars s x
-  = Vars (AblVars Z s x) (AblVars (ChainValue s x) s x) (AblVars AbGroup s x)
+  = Vars (AblVars () s x) (AblVars Z s x)
+         (AblVars (Vec (ChainValueAt s x)) s x)
+         (AblVars (Vec AbElement) s x)
 
 --------------------------------------------------------------------------------
 -- ablVars -
 
 ablVars :: Vars s x -> AbelianExpressionType v s x -> AblVars v s x
-ablVars (Vars vZ vCh vAbG) t = case t of
+ablVars (Vars vV vZ vC vH) t = case t of
+  AblExprTypeVoid     -> vV
   AblExprTypeZ        -> vZ
-  AblExprTypeChain    -> vCh
-  AblExprTypeHmgClass -> vAbG
+  AblExprTypeChain    -> vC
+  AblExprTypeHmgClass -> vH
 
 --------------------------------------------------------------------------------
 -- evalVar -
@@ -505,6 +642,7 @@ evalAblValType vrs te at e    = case e of
       True                   -> return ta
       False                  -> failure NotAddableExpressions      
   f :$: a                    -> case f of
+    AblOprChainAll _         -> return $ AblValTypeChain at
     AblOprChainAt _          -> return $ AblValTypeChain at    
     AblOprBoundary           -> do
       ta <- evalAblValType vrs te at a
@@ -515,14 +653,14 @@ evalAblValType vrs te at e    = case e of
 -- evalBoundarySumForm -
 
 evalBoundarySumForm :: Env t s n x
-  ->       SumForm Z (AbelianValue (ChainValue s x) s x)
-  -> Eval (SumForm Z (AbelianValue (ChainValue s x) s x))
+  ->       SumForm Z (AbelianValue (Vec (ChainValueAt s x)) s x)
+  -> Eval (SumForm Z (AbelianValue (Vec (ChainValueAt s x)) s x))
 evalBoundarySumForm env sf = case sf of
-  Zero r                -> case r of
+  Zero r               -> case r of
     AblValTypeChain at -> return $ Zero $ AblValTypeChain (pred at)
-  S (ValChain at ch)    -> evalBoundaryAt env at ch >>= return . S . ValChain (pred at)
-  z :! a                -> evalBoundarySumForm env a >>= return . (z:!)
-  a :+ b                -> do
+  S (ValChain chs)     -> evalBoundaryVec env chs >>= return . S . ValChain
+  z :! a               -> evalBoundarySumForm env a >>= return . (z:!)
+  a :+ b               -> do
     a' <- evalBoundarySumForm env a
     b' <- evalBoundarySumForm env b
     return (a' :+ b')
@@ -536,7 +674,7 @@ evalAblValSumForm :: Env t s n x -> Vars s x -> AbelianExpressionType v s x
 evalAblValSumForm env@Env{} vrs te at e = case e of
   AblExprValue a       -> return $ S a
   AblExprVariable name -> evalVar vrs te at name >>= evalAblValSumForm env vrs te at
-  AblExprZero t        -> return $ Zero t
+  AblExprZero t        -> return $ Zero t  
   z :!> a              -> do
     vz <- evalAblValZ env vrs AblExprTypeZ at z
     sa <- evalAblValSumForm env vrs te at a
@@ -544,12 +682,16 @@ evalAblValSumForm env@Env{} vrs te at e = case e of
   a :+: b              -> do
     sa <- evalAblValSumForm env vrs te at a
     sb <- evalAblValSumForm env vrs te at b
-    return (sa :+ sb)
+    return (sa :+ sb)    
   f :$: a             -> case f of
+
+    AblOprChainAll t  -> error "nyi"
+    
     AblOprChainAt t   -> do
       za <- evalAblValZ env vrs AblExprTypeZ at a
-      ch <- evalChainAt env t at za
-      return $ S $ ValChain at ch
+      ch <- evalChainVecAt env t at za
+      return $ S $ ValChain ch
+
     AblOprBoundary    -> evalAblValSumForm env vrs te at a >>= evalBoundarySumForm env
 
 --------------------------------------------------------------------------------
@@ -575,7 +717,7 @@ evalAblVal env@Env{} vrs te at e = do
 evalAblValZ :: Env t s n x -> Vars s x -> AbelianExpressionType Z s x
   -> Z -> AbelianExpression Z s x -> Eval Z
 evalAblValZ env vrs te at e = evalAblVal env vrs te at e >>= return . (\(ValZ z) -> z) 
-
+{-
 --------------------------------------------------------------------------------
 -- Expression -
 
@@ -584,6 +726,7 @@ data Expression s x where
   ExprMaxDim     :: Expression s x
   ExprCardSmpSet :: CardinalitySimplexSetExpression s x -> Expression s x
   ExprHmgGroup   :: HomologyGroupExpression s x -> Expression s x
+  ExprChns       :: ChainType -> Expression s x
   ExprAbl        :: Typeable v => AbelianExpressionType v s x -> AbelianExpression v s x
                  -> Expression s x
 
@@ -608,6 +751,7 @@ data Value s x where
   ValMaxDim     :: Z -> Value s x
   ValCardSmpSet :: Attestable n => Cards Z n -> Value s x
   ValHmgGroup   :: Attestable n => Deviation (n+1) AbHom -> Value s x
+  ValChns       :: ChainList s x -> Value s x
   ValAbl        :: Typeable v => AbelianValue v s x -> Value s x
 
 deriving instance Simplical s x => Show (Value s x)
@@ -624,6 +768,7 @@ eval env@Env{} vrs at expr        = case expr of
   ExprHmgGroup hexpr       -> case hexpr of
     ExprHmgGroupAll        -> return $ ValHmgGroup $ evalHmgGroupAll env
     ExprHmgGroupAt         -> evalHmgGroupAt env at >>= return . ValHmgGroup
+  ExprChns ct              -> evalChainsAt env ct at >>= return . ValChns                
   ExprAbl ta aexpr         -> evalAblVal env vrs ta at aexpr >>= return . ValAbl
 
     
@@ -638,12 +783,21 @@ hmg   = ExprHmgGroup ExprHmgGroupAt
 crds  = ExprCardSmpSet ExprCardSmpSetAll
 crd   = ExprCardSmpSet ExprCardSmpSetAt
 
-chAt t i = ExprAbl AblExprTypeChain (AblOprChainAt t :$: AblExprValue (ValZ i))
+chsAt = ExprChns
 
-dAt t i = ExprAbl AblExprTypeChain (AblOprBoundary :$: (AblOprChainAt t :$: AblExprValue (ValZ i)))
+
+-- chAt t i = ExprAbl AblExprTypeChain (AblOprChainAt t :$: AblExprValue (ValZ i))
+ablExprCh :: Simplical s x => AbelianExpression (ChainValue s x) s x -> Expression s x
+ablExprCh = ExprAbl AblExprTypeChain
+
+vlz = AblExprValue . ValZ
+
+chAt t i = AblOprChainAt t :$: AblExprValue (ValZ i)
+
+dAt ch = ExprAbl AblExprTypeChain (AblOprBoundary :$: ch)
+-}
 
 {-
-chsAt = ChainExpr (ChainListAtExpr Chain)
 chAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Chain
 
 cysAt = ChainExpr (ChainListAtExpr Cycle)
