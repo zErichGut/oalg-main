@@ -24,7 +24,7 @@ dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6
 - array >= 0.5 && < 1
-- oalg-base >= 3.1.0.1
+- oalg-base >= 3.1.0.2
 - oalg-abg >= 2.0.0.2
 
 ghc-options:

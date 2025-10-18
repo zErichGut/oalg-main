@@ -168,3 +168,8 @@ by isoToOpOp ans its inverse isoFromOpOp.
 ### Added
 - OAlg.Limes.Exact
 
+## [3.0.0.2] - 2025-10-18
+
+### Added
+- instance ApplicativeG for Array.
+- VectorG

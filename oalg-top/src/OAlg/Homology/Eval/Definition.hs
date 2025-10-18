@@ -67,7 +67,6 @@ import OAlg.Homology.Eval.Core
 
 --------------------------------------------------------------------------------
 
-instance ApplicativeG (Array i) (->) (->) where amapG = fmap
 
 --------------------------------------------------------------------------------
 -- ChainType -
@@ -297,53 +296,9 @@ evalBoundaryAt env at ch = do
   evalFromAbElement env (pred at) e'
 
 --------------------------------------------------------------------------------
--- VectorG -
+-- Vec -
 
-data Vec x = Vec (Root x) (PSequence Z x)
-
-
-
-deriving instance Fibred x => Show (Vec x)
-deriving instance Fibred x => Eq (Vec x)
-deriving instance (Fibred x, Ord x, OrdRoot x) => Ord (Vec x)
-
-instance Additive x => Validable (Vec x) where
-  valid (Vec r xs) = Label "Vec" :<=>:
-    And [ valid xs
-        , foldl (vld r) SValid (amap1 fst $ psqxs xs)
-        ] where
-
-    vld :: Additive x => Root x -> Statement -> x -> Statement
-    vld r s x = And [ s
-                    , Label "Root" :<=>: (root x == r) :?> Params ["r":=show r,"x":=show x]
-                    , Label "non Zero" :<=>: not (isZero x) :?> Params ["x":=show x]
-                    ]
-
-
-type instance Root (Vec x) = Root x
-instance Fibred x => ShowRoot (Vec x)
-instance Fibred x => EqRoot (Vec x)
-instance Fibred x => ValidableRoot (Vec x)
-instance Fibred x => TypeableRoot (Vec x)
-
-instance Additive x => Fibred (Vec x) where
-  root (Vec r _) = r
-
-instance Additive x => Additive (Vec x) where
-  zero r = Vec r psqEmpty
-
-  Vec r a + Vec r' b | r == r'   = Vec r (psqFilter (not . isZero) $ psqInterlace (+) id id a b)
-                     | otherwise = throw NotAddable
-
-  ntimes n (Vec r xs) = Vec r (psqFilter (not . isZero) $ psqMap (ntimes n) xs)
-
-instance Abelian x => Abelian (Vec x) where
-  negate (Vec r xs) = Vec r (psqMap negate xs)
-
-  Vec r a - Vec r' b | r == r'   = Vec r (psqFilter (not . isZero) $ psqInterlace (-) id id a b)
-                     | otherwise = throw NotAddable
-
-  ztimes z (Vec r xs) = Vec r (psqFilter (not . isZero) $ psqMap (ztimes z) xs)
+type Vec x = VectorG Z
 
 --------------------------------------------------------------------------------
 -- ChainVec -
