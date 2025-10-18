@@ -3,9 +3,9 @@
 
 {-# LANGUAGE TypeFamilies, TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE DeriveFoldable, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : OAlg.Entity.Sequence.PSequence
@@ -21,7 +21,8 @@ module OAlg.Entity.Sequence.PSequence
   , psqSpan
   , psqEmpty, psqIsEmpty, psequence
   , psqHead, psqTail
-  , psqMap, psqMapShift, psqMapWithIndex, Monotone(..)
+  , psqMap, psqSequence
+  , psqMapShift, psqMapWithIndex, Monotone(..)
   , psqFilter
   , psqSplitWhile
   , psqInterlace
@@ -184,7 +185,6 @@ psqIsEmpty _              = False
 --------------------------------------------------------------------------------
 -- Monotone -
 
-
 -- | predicate for strict monoton mappings.
 --
 -- __Property__ Let @_i__@, @__j__@ two 'Ord'-types, and @'Monotone' f@ in @'Monotone' __i__ __j__@, then
@@ -223,6 +223,17 @@ psqMap f = psqMapWithIndex (Monotone id) (f . fst)
 instance M.Functor (PSequence i) where fmap = psqMap
 
 instance ApplicativeG (PSequence i) (->) (->) where amapG = psqMap
+
+--------------------------------------------------------------------------------
+-- psqSequence -
+
+-- | sequencing for @t'PSequence' __i__@
+psqSequence :: Monad m => PSequence i (m x) -> m (PSequence i x)
+psqSequence (PSequence xis) = (M.sequence $ amap1 mxi xis) >>=  return . PSequence where
+  
+  mxi :: Monad m => (m x,i) -> m (x,i)
+  mxi (mx,i) = mx >>= return . (,i)
+
 
 --------------------------------------------------------------------------------
 -- PSequence - Entity -

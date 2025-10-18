@@ -173,3 +173,5 @@ by isoToOpOp ans its inverse isoFromOpOp.
 ### Added
 - instance ApplicativeG for Array.
 - VectorG
+- psqSequence for PSequence.
+- types HomFib and HomFibEmpty.

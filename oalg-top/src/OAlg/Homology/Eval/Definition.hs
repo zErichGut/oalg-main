@@ -8,8 +8,6 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving, DeriveAnyClass #-}
 {-# LANGUAGE DataKinds #-}
 
-{-# LANGUAGE TupleSections #-}
-
 -- |
 -- Module      : OAlg.Homology.Eval.Definition
 -- Description : evaluations for homology.
@@ -33,8 +31,6 @@ import qualified Data.Map as M
 
 import OAlg.Prelude
 
-import OAlg.Category.Path
-
 -- import OAlg.Data.Proxy
 import OAlg.Data.Constructable
 import OAlg.Data.Canonical
@@ -51,8 +47,9 @@ import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sum
 import OAlg.Entity.Matrix
+import OAlg.Entity.VectorG
 
-import OAlg.Hom.Definition
+import OAlg.Hom.Fibred
 
 import OAlg.AbelianGroup.Definition
 
@@ -64,9 +61,6 @@ import OAlg.Homology.ChainOperator hiding (Boundary,boundary)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
 import OAlg.Homology.Eval.Core
-
---------------------------------------------------------------------------------
-
 
 --------------------------------------------------------------------------------
 -- ChainType -
@@ -298,7 +292,7 @@ evalBoundaryAt env at ch = do
 --------------------------------------------------------------------------------
 -- Vec -
 
-type Vec x = VectorG Z
+type Vec = VectorG Z
 
 --------------------------------------------------------------------------------
 -- ChainVec -
@@ -349,8 +343,8 @@ instance Simplical s x => Abelian (ChainAt s x) where
 evalVecChainsAt :: Env t s n x -> ChainType -> Z -> Eval (Vec (ChainAt s x))
 evalVecChainsAt env@Env{} t at = do
   chs <- evalChainsAt env t at
-  return $ Vec at
-         $ psqFilter (not . isZero)
+  return $ make
+         $ VectorGForm at
          $ PSequence
          $ amap1 (\(i,c) -> (ChainAt at c,i))
          $ assocs chs
@@ -361,19 +355,10 @@ evalVecChainsAt env@Env{} t at = do
 evalVecChainAt :: Env t s n x -> ChainType -> Z -> Z -> Eval (Vec (ChainAt s x))
 evalVecChainAt env@Env{} t at i = do
   ch <- evalChainAt env t at i
-  return $ Vec at
-         $ psqFilter (not . isZero)
+  return $ make
+         $ VectorGForm at
          $ PSequence
          $ [(ChainAt at ch,0)]
-
---------------------------------------------------------------------------------
--- psqSequence -
-
-psqSequence :: Monad m => PSequence i (m x) -> m (PSequence i x)
-psqSequence (PSequence xis) = (sequence $ amap1 mxi xis) >>=  return . PSequence where
-  
-  mxi :: Monad m => (m x,i) -> m (x,i)
-  mxi (mx,i) = mx >>= return . (,i)
 
 --------------------------------------------------------------------------------
 -- evalChainAtBoundary -
@@ -386,10 +371,9 @@ evalChainAtBoundary env (ChainAt at ch)
 -- evalVecBoundary -
 
 evalVecBoundary :: Env t s n x -> Vec (ChainAt s x) -> Eval (Vec (ChainAt s x))
-evalVecBoundary env@Env{} (Vec at chs) = do
-  chs' <- psqSequence $ psqMap (evalChainAtBoundary env) chs
-  return (Vec (pred at) (psqFilter (not . isZero) chs'))
-
+evalVecBoundary env@Env{} v
+  = (psqSequence $ psqMap (evalChainAtBoundary env) chs) >>= return . make . VectorGForm (pred at)
+  where VectorGForm at chs = form v
 
 {-
 --------------------------------------------------------------------------------
@@ -466,7 +450,6 @@ data AbelianValue v s x where
 deriving instance Simplical s x => Show (AbelianValue v s x)
 deriving instance Simplical s x => Eq (AbelianValue v s x)
 
-instance OrdRoot AbElement
 deriving instance Simplical s x => Ord (AbelianValue v s x)
 
 instance Simplical s x => Validable (AbelianValue v s x) where
@@ -638,9 +621,6 @@ evalSumFormAblVal env@Env{} vrs te at e = case e of
 --------------------------------------------------------------------------------
 -- evalAblVal -
 
-type HomFib h = Path h
-type HomFibEmpty s = HomFib (HomEmpty s)
-
 evalAblVal :: Typeable v
   => Env t s n x -> Vars s x -> AbelianExpressionType v s x
   -> Z -> AbelianExpression v s x -> Eval (AbelianValue v s x)
@@ -723,6 +703,7 @@ eval env@Env{} vrs at expr        = case expr of
     ExprHmgGroupAt         -> evalHmgGroupAt env at >>= return . ValHmgGroup
   -- ExprChns ct              -> evalChainsAt env ct at >>= return . ValChns                
   ExprAbl ta aexpr         -> evalAblVal env vrs ta at aexpr >>= return . ValAbl
+
 
 {-
 

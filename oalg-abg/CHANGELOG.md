@@ -70,3 +70,8 @@ and this project adheres to the
 - Functions for conversion between Z-Vectors and abelian elements: abges, abgevec, vecabge
 - Instance OrientdOpl for AbElement.
 - Functions abgSomeFree, abgxs
+
+## [2.0.0.3] - 2025-10-18
+
+### Added
+- instances OrdPoint and OrdRoot for AbElement.

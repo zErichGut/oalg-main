@@ -43,8 +43,8 @@ library
       array >=0.5 && <1
     , base >=4.7 && <5
     , containers >=0.6
-    , oalg-abg >=2.0.0.2
-    , oalg-base >=3.1.0.1
+    , oalg-abg >=2.0.0.3
+    , oalg-base >=3.1.0.2
   default-language: Haskell2010
 
 test-suite oalg-top-test
@@ -59,7 +59,7 @@ test-suite oalg-top-test
       array >=0.5 && <1
     , base >=4.7 && <5
     , containers >=0.6
-    , oalg-abg >=2.0.0.2
-    , oalg-base >=3.1.0.1
+    , oalg-abg >=2.0.0.3
+    , oalg-base >=3.1.0.2
     , oalg-top
   default-language: Haskell2010

@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           oalg-abg
-version:        2.0.0.2
+version:        2.0.0.3
 synopsis:       Finitely generated abelian groups.
 description:    Representing __finitely generated abelian groups__ ("OAlg.AbelianGroup.Definition") as finite products of __cyclic groups__ ("OAlg.AbelianGroup.ZMod") and additive homomorphisms between finitely generated abelian groups as matrices of additive homomorphisms between cyclic groups.
                 .

@@ -839,6 +839,7 @@ instance LengthN AbElement where
 type instance Point AbElement = AbGroup
 instance ShowPoint AbElement
 instance EqPoint AbElement
+instance OrdPoint AbElement
 instance ValidablePoint AbElement
 instance TypeablePoint AbElement
 
@@ -914,6 +915,7 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
 type instance Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
 instance ShowRoot AbElement
 instance EqRoot AbElement
+instance OrdRoot AbElement
 instance ValidableRoot AbElement
 instance TypeableRoot AbElement
 
