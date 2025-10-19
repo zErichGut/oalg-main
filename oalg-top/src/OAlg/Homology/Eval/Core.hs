@@ -28,7 +28,7 @@ data EvalFailure
   | NotSupportedChainType String
   | NotCycle String
   | NotEligible String
-  | NoSuchVariable Z String
+  | UnboundVariable Z String
   | NotAddableExpressions
   | NotAChainType
   | EvalFailure String

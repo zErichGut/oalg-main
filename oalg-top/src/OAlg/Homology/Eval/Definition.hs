@@ -25,11 +25,11 @@ import Control.Monad
 import Data.Typeable
 import Data.Kind
 import Data.Foldable (toList)
-import Data.Array
+import Data.Array as A
 import Data.List as L (zip,foldl)
 import qualified Data.Map as M
 
-import OAlg.Prelude
+import OAlg.Prelude as P
 
 -- import OAlg.Data.Proxy
 import OAlg.Data.Constructable
@@ -39,6 +39,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
+import OAlg.Structure.Vectorial as V hiding (Vec)
 
 import OAlg.Entity.Diagram hiding (Chain)
 import OAlg.Entity.Natural hiding (S)
@@ -180,7 +181,7 @@ env' _ = env
 
 evalElmAt :: (Ix i, Show i) => Array i x -> i -> Eval x
 evalElmAt xs i = if (bounds xs `inRange` i)
-  then return (xs ! i)
+  then return (xs A.! i)
   else failure $ IndexOutOfRange $ show i
 
 --------------------------------------------------------------------------------
@@ -337,6 +338,10 @@ instance Simplical s x => Abelian (ChainAt s x) where
   ztimes z (ChainAt d sx) = ChainAt d (ztimes z sx)
 
 
+instance Simplical s x => Vectorial (ChainAt s x) where
+  type Scalar (ChainAt s x) = Z
+  z ! (ChainAt d ch) = ChainAt d (z V.! ch)
+
 --------------------------------------------------------------------------------
 -- evalVecChainsAt
 
@@ -387,6 +392,127 @@ evalHomologyClassAt env vrs at vexpr = do
   homologyClass h e
 -}
 
+
+--------------------------------------------------------------------------------
+-- AbelianExpressionType -
+
+data AbelianExpressionType v where
+  AblExprTypeZ :: AbelianExpressionType Z
+
+--------------------------------------------------------------------------------
+-- Vars -
+
+data Vars h
+  = Vars { vrsZ :: M.Map (Z,String) (AbelianExpression h Z)
+         }
+
+--------------------------------------------------------------------------------
+-- evalLookup -
+
+evalLookup :: M.Map (Z,String) x -> Z -> String  -> Eval x
+evalLookup m at n = case M.lookup (at,n) m of
+  Just x  -> return x
+  Nothing -> failure $ UnboundVariable at n
+
+--------------------------------------------------------------------------------
+-- evalVar -
+
+evalVar :: Vars h -> AbelianExpressionType v -> Z -> String -> Eval (AbelianExpression h v)
+evalVar vrs t z n = case t of
+  AblExprTypeZ -> evalLookup (vrsZ vrs) z n
+
+--------------------------------------------------------------------------------
+-- AbelianExpression -
+
+data AbelianExpression h v where
+  AblExprValue    :: v -> AbelianExpression h v
+  AblExprVariable :: AbelianExpressionType v -> String -> AbelianExpression h v 
+  AblExprZero     :: Root v -> AbelianExpression h v
+  (:!>)           :: AbelianExpression h Z -> AbelianExpression h v -> AbelianExpression h v
+  (:+:)           :: AbelianExpression h v -> AbelianExpression h v -> AbelianExpression h v
+  (:$:)           :: h u v -> AbelianExpression h u -> AbelianExpression h v
+
+--------------------------------------------------------------------------------
+-- HomologyOperator -
+
+data HomologyOperator s x u v where
+  HmgOprChainAll :: ChainType -> HomologyOperator s x Z (Vec (ChainAt s x))
+
+instance Simplical s x => Morphism (HomologyOperator s x) where
+  type ObjectClass (HomologyOperator s x) = (Abl,Ord')
+  homomorphous (HmgOprChainAll _) = Struct :>: Struct
+  
+--------------------------------------------------------------------------------
+-- evalHmgOpr -
+
+evalHmgOpr :: Env t s n x -> Z -> HomologyOperator s x u v -> u -> Eval v
+evalHmgOpr env@Env{} at (HmgOprChainAll t) z = evalVecChainsAt env t at >>= return . (z V.!)
+
+--------------------------------------------------------------------------------
+-- evalRootHmgOpr -
+
+evalRootHmgOpr :: Env t s n x -> Z -> HomologyOperator s x u v -> Root u -> Eval (Root v)
+evalRootHmgOpr _ at (HmgOprChainAll _) (():>()) = return at
+
+--------------------------------------------------------------------------------
+-- evalSumFormHmgOpr -
+
+evalSumFormHmgOpr :: Env t s n x -> Z -> HomologyOperator s x u v -> SumForm Z u -> Eval (SumForm Z v)
+evalSumFormHmgOpr env at h s = case s of
+  Zero r -> evalRootHmgOpr env at h r >>= return . Zero
+  S u    -> evalHmgOpr env at h u >>= return . S
+  z :! a -> evalSumFormHmgOpr env at h a >>= return . (z:!)
+  a :+ b -> do
+    a' <- evalSumFormHmgOpr env at h a
+    b' <- evalSumFormHmgOpr env at h b
+    return (a' :+ b')
+    
+--------------------------------------------------------------------------------
+-- HomologyExpression -
+
+type HomologyExpression s x = AbelianExpression (HomologyOperator s x)
+
+--------------------------------------------------------------------------------
+-- HomologyVars -
+
+type HomologyVars s x = Vars (HomologyOperator s x)
+
+--------------------------------------------------------------------------------
+-- evalSumFormHmgExpr -
+
+evalSumFormHmgExpr :: (Abelian v, Ord v)
+  => Env t s n x -> HomologyVars s x
+  ->  Z -> HomologyExpression s x v -> Eval (SumForm Z v)
+evalSumFormHmgExpr env@Env{} vrs at e = case e of
+  AblExprValue v      -> return $ S v
+  AblExprVariable t n -> evalVar vrs t at n >>= evalSumFormHmgExpr env vrs at
+  AblExprZero r       -> return $ Zero r
+  z :!> a             -> do
+    z' <- evalHmgExpr env vrs at z
+    a' <- evalSumFormHmgExpr env vrs at a
+    return (z' :! a')
+  a :+: b             -> do
+    a' <- evalSumFormHmgExpr env vrs at a
+    b' <- evalSumFormHmgExpr env vrs at b
+    return (a' :+ b')
+  h :$: u             -> case P.domain h of
+    Struct -> evalSumFormHmgExpr env vrs at u >>= evalSumFormHmgOpr env at h
+
+--------------------------------------------------------------------------------
+-- evalHmgExpr -
+
+evalHmgExpr :: (Abelian v, Ord v)
+  => Env t s n x -> HomologyVars s x -> Z -> HomologyExpression s x v -> Eval v
+evalHmgExpr env@Env{} vrs at e =  do
+  s <- evalSumFormHmgExpr env vrs at e
+  return $ zSum vOne $ make s
+
+  where vOne :: Abelian v
+             => HomFibEmpty Fbr v v
+        vOne = cOne Struct
+
+
+{-
 --------------------------------------------------------------------------------
 -- AbelianExpressionType -
 
@@ -703,7 +829,7 @@ eval env@Env{} vrs at expr        = case expr of
     ExprHmgGroupAt         -> evalHmgGroupAt env at >>= return . ValHmgGroup
   -- ExprChns ct              -> evalChainsAt env ct at >>= return . ValChns                
   ExprAbl ta aexpr         -> evalAblVal env vrs ta at aexpr >>= return . ValAbl
-
+-}
 
 {-
 
