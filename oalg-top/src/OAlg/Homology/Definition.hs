@@ -73,6 +73,7 @@ import OAlg.Homology.ChainComplex
 
 import OAlg.Homology.Eval.Core
 
+import OAlg.Adjunction.Definition
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -187,6 +188,19 @@ boundary (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) e
   | otherwise         = return (d *> e)
 
 --------------------------------------------------------------------------------
+-- abhLift -
+
+abhLift :: DiagramFree (Parallel LeftToRight) N2 N1 AbHom -> AbHom -> Maybe AbHom
+abhLift (DiagramFree _ (DiagramParallelLR _ _ (h:|Nil))) e
+  | end h /= end e = throw NotLiftable
+  | otherwise      = zMatrixLift zh e' >>= return . adjr abhFreeAdjunction (start e)
+
+  where
+    -- as h has free start and end it follwos, that amap FreeAbHom zh == h
+    zh = amap AbHomFree h
+    e' = adjl abhFreeAdjunction (end zh) e
+    
+--------------------------------------------------------------------------------
 -- boundaryInv -
 
 -- | determines the bounary of a given cycle with zero homology class.
@@ -194,18 +208,16 @@ boundaryInv :: Homology n -> AbElement -> Eval AbElement
 boundaryInv hmg e = do
   h <- homologyClass hmg e
   case isZero h of
-    True  -> case zMatrixLift zd'' zeh' of
-      Just zeh'' -> return $ AbElement $ SliceFrom k1 $ amap FreeAbHom zeh''
-      Nothing    -> failure $ EvalFailure "implememtation error!"
+{-    
+    True -> case abhLift d'' e' of
+      Just e'' -> return $ AbElement e''
+      Nothing  -> failure $ EvalFailure "implememtation error!"
+-}
     False -> failure $ NonZeroHomologyClass h
 
   where
     VarianceG (ConsecutiveZero (DiagramChainTo _ (_:|d':|_))) ((ker,_):|_) = hmg
-    AbElement (SliceFrom k1 eh) = e
-    eh' = universalFactor ker (ConeKernel (universalDiagram ker) eh)
+    AbElement e' = e
     d'' = universalFactor ker (ConeKernel (universalDiagram ker) d')
 
-    -- as start and end of d'' are free!!!
-    zd'' = amap AbHomFree d''
-    zeh' = amap AbHomFree eh'
     
