@@ -57,6 +57,8 @@ import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+import OAlg.AbelianGroup.Liftable
+
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -178,7 +180,32 @@ homologyClass (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) ((ker,coker
 --------------------------------------------------------------------------------
 -- boundary -
 
+-- | the boundary of an abelian element.
 boundary :: Homology n -> AbElement -> Eval AbElement
 boundary (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) e
   | start d /= end e  = failure $ NotEligible "boundary"
   | otherwise         = return (d *> e)
+
+--------------------------------------------------------------------------------
+-- boundaryInv -
+
+-- | determines the bounary of a given cycle with zero homology class.
+boundaryInv :: Homology n -> AbElement -> Eval AbElement
+boundaryInv hmg e = do
+  h <- homologyClass hmg e
+  case isZero h of
+    True  -> case zMatrixLift zd'' zeh' of
+      Just zeh'' -> return $ AbElement $ SliceFrom k1 $ amap FreeAbHom zeh''
+      Nothing    -> failure $ EvalFailure "implememtation error!"
+    False -> failure $ NonZeroHomologyClass h
+
+  where
+    VarianceG (ConsecutiveZero (DiagramChainTo _ (_:|d':|_))) ((ker,_):|_) = hmg
+    AbElement (SliceFrom k1 eh) = e
+    eh' = universalFactor ker (ConeKernel (universalDiagram ker) eh)
+    d'' = universalFactor ker (ConeKernel (universalDiagram ker) d')
+
+    -- as start and end of d'' are free!!!
+    zd'' = amap AbHomFree d''
+    zeh' = amap AbHomFree eh'
+    

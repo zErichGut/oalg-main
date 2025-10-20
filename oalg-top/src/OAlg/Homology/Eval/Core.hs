@@ -18,6 +18,8 @@ import OAlg.Prelude
 
 import OAlg.Data.Either
 
+import OAlg.AbelianGroup.Definition
+
 --------------------------------------------------------------------------------
 -- EvalFailure -
 
@@ -31,6 +33,7 @@ data EvalFailure
   | UnboundVariable Z String
   | NotAddableExpression
   | NotAChainType
+  | NonZeroHomologyClass AbElement
   | EvalFailure String
   deriving (Show)
 
