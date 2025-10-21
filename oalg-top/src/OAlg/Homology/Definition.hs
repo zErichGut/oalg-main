@@ -24,7 +24,7 @@ module OAlg.Homology.Definition
   , homologyGroups
   , hmgCycles, hmgClassGenerators
 
-  , homologyClass, boundary
+  , homologyClass, boundary, boundaryInv
     
     -- * Homomorphism
   , homologyHom, HomologyHom
@@ -36,6 +36,7 @@ module OAlg.Homology.Definition
 import Control.Monad
 
 import Data.Foldable (toList)
+import Data.List as L (zip,filter)
 
 import OAlg.Prelude
 
@@ -43,6 +44,7 @@ import OAlg.Data.FinitelyPresentable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 
@@ -52,13 +54,14 @@ import OAlg.Entity.FinList
 import OAlg.Entity.Slice
 import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
+import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 import OAlg.AbelianGroup.Liftable
-
+import OAlg.AbelianGroup.ZMod hiding (NotEligible)
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -188,18 +191,71 @@ boundary (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) e
   | otherwise         = return (d *> e)
 
 --------------------------------------------------------------------------------
+--
+
+
+--------------------------------------------------------------------------------
+-- abhFreeEmbedding -
+
+-- | the canonical emmedding of the free part of a given abelian group.
+--
+-- __Property__ Let @'Adjunction' l r u v = 'abhFreeAdjunction'@, @rl = 'pmap' r '.' 'pmap' l@
+-- and @i = 'abhFreeEmbedding'@, then holds:
+--
+-- (1) For all @g@ in 'AbGroup' holds: @u g v'*' i g@ is 'one'. (see diagram belaow)
+--
+-- @
+--                 l
+--             <--------- 
+--    Matrix Z            AbHom
+--             --------->
+--                 r
+--                               u g
+--                           ----------->
+--                         g              rl g = pmap r (pmap l g)
+--                           <-----------
+--                               i g
+-- @
+--
+-- __Note__ If @g@ is free, then @'abgFreeEmbedding' g@ is 'one'.
+abhFreeEmbedding :: AbGroup -> AbHom
+abhFreeEmbedding g = AbHom $ Matrix (abgDim g) (abgDim rlg) $ Entries $ PSequence $ oijs where
+  rlg  = pmap FreeAbHom (pmap AbHomFree g)
+  oijs = amap1 oij $ ((filter gFree $ abgxs g) `L.zip` [0..]) 
+
+  gFree :: (ZMod,N) -> Bool
+  gFree (ZMod n,_) = n == 0
+
+  oij :: ((ZMod,N),N) -> (ZModHom,(N,N))
+  oij ((z,i),j) = (one z,(i,j))
+
+--------------------------------------------------------------------------------
+-- prpAbhFreeEmbedding -
+
+-- | validity according to 'abhFreeEmbedding'.
+prpAbhFreeEmbedding :: AbGroup -> Statement
+prpAbhFreeEmbedding g = Prp "AbhFreeEmbedding"
+  :<=>: (u g * i == one (start i)) :?> Params ["g":= show g] where
+  
+  Adjunction _ _ u _ = abhFreeAdjunction
+  i                  = abhFreeEmbedding g
+  
+--------------------------------------------------------------------------------
 -- abhLift -
 
-abhLift :: DiagramFree (Parallel LeftToRight) N2 N1 AbHom -> AbHom -> Maybe AbHom
-abhLift (DiagramFree _ (DiagramParallelLR _ _ (h:|Nil))) e
-  | end h /= end e = throw NotLiftable
-  | otherwise      = zMatrixLift zh e' >>= return . adjr abhFreeAdjunction (start e)
-
+abhLift :: Attestable k
+  => Slice To (Free k) AbHom -> Slice To (Free k) AbHom -> Maybe (SliceFactor To (Free k) AbHom)
+abhLift a b = do
+  a''  <- zMatrixLift lb a'
+  ra'' <- return $ adjr abhFreeAdjunction (start a) a''
+  return $ SliceFactor a b $ (i * ra'')
+  
   where
-    -- as h has free start and end it follwos, that amap FreeAbHom zh == h
-    zh = amap AbHomFree h
-    e' = adjl abhFreeAdjunction (end zh) e
-    
+    m  = pmap AbHomFree (end a)  -- end a is free!
+    a' = adjl abhFreeAdjunction m (slice a)
+    lb = amap AbHomFree (slice b)
+    i  = abhFreeEmbedding (start b)
+  
 --------------------------------------------------------------------------------
 -- boundaryInv -
 
@@ -208,16 +264,18 @@ boundaryInv :: Homology n -> AbElement -> Eval AbElement
 boundaryInv hmg e = do
   h <- homologyClass hmg e
   case isZero h of
-{-    
-    True -> case abhLift d'' e' of
-      Just e'' -> return $ AbElement e''
-      Nothing  -> failure $ EvalFailure "implememtation error!"
--}
+    True               -> case universalCone ker of
+      ConicFreeTip k _ -> case abhLift (SliceTo k (slice e')) (SliceTo k d'') of
+        Just e''       -> return $ AbElement $ SliceFrom k1 $ slfFactor e''
+        Nothing        -> failure $ EvalFailure "implementation error!"
+                          -- as h is zero, e' should be liftable!
     False -> failure $ NonZeroHomologyClass h
 
   where
     VarianceG (ConsecutiveZero (DiagramChainTo _ (_:|d':|_))) ((ker,_):|_) = hmg
-    AbElement e' = e
+    AbElement e'   = e
+    SliceFrom k1 _ = e'
+    
     d'' = universalFactor ker (ConeKernel (universalDiagram ker) d')
 
     

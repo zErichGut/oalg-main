@@ -379,18 +379,33 @@ evalVecBoundary env@Env{} v
   = (psqSequence $ psqMap (evalChainAtBoundary env) chs) >>= return . make . VectorGForm (pred at)
   where VectorGForm at chs = form v
 
-{-
 --------------------------------------------------------------------------------
--- evalHomologyClassAt -
+-- evalVecBoundaryInv -
 
-evalHomologyClassAt :: Env t s n x -> VarBind s x -> N -> ChainValueAtExpression -> Eval AbElement
-evalHomologyClassAt env vrs at vexpr = do
-  c <- evalChainValueAt env vrs at vexpr
-  e  <- evalToAbElement env (inj at) c
-  h  <- evalAt env at >>= return . snd
+evalVecBoundaryInv :: Env t s n x -> Vec (ChainAt s x) -> Eval (Vec (ChainAt s x))
+evalVecBoundaryInv = error "nyi"
+
+--------------------------------------------------------------------------------
+-- evalChainAtHomologyClass -
+
+evalChainAtHomologyClass :: Env t s n x -> ChainAt s x -> Eval AbElement
+evalChainAtHomologyClass env (ChainAt at ch) = do
+  e     <- evalToAbElement env at ch
+  (_,h) <- evalAt env at
   homologyClass h e
--}
+  
+--------------------------------------------------------------------------------
+-- evalVecHomologyClass -
 
+evalVecHomologyClass :: Env t s n x -> Vec (ChainAt s x) -> Eval (Vec AbElement)
+evalVecHomologyClass env v = do
+  hs <- evalHmgGroupAt env at
+  case hs of
+    DiagramDiscrete (h:|_) -> do
+      vh <- psqSequence $ psqMap (evalChainAtHomologyClass env) chs
+      return $ make $ VectorGForm h vh
+    
+  where VectorGForm at chs = form v
 
 --------------------------------------------------------------------------------
 -- evalLookup -
@@ -432,23 +447,29 @@ evalRootHmgValType at t = case t of
 -- HomologyOperator -
 
 data HomologyOperator s x u v where
-  HmgOprChainAll :: ChainType -> HomologyOperator s x () (Vec (ChainAt s x))
-  HmgOprChainAt  :: ChainType -> HomologyOperator s x Z (Vec (ChainAt s x))
-  HmgOprBoundary :: HomologyOperator s x (Vec (ChainAt s x)) (Vec (ChainAt s x))
+  HmgOprChainAll    :: ChainType -> HomologyOperator s x () (Vec (ChainAt s x))
+  HmgOprChainAt     :: ChainType -> HomologyOperator s x Z (Vec (ChainAt s x))
+  HmgOprBoundary    :: HomologyOperator s x (Vec (ChainAt s x)) (Vec (ChainAt s x))
+  HmgOprBoundaryInv :: HomologyOperator s x (Vec (ChainAt s x)) (Vec (ChainAt s x)) 
+  HmgOprClass       :: HomologyOperator s x (Vec (ChainAt s x)) (Vec AbElement)
 
 instance Simplical s x => Morphism (HomologyOperator s x) where
   type ObjectClass (HomologyOperator s x) = (Abl,Ord')
   homomorphous (HmgOprChainAll _) = Struct :>: Struct
   homomorphous (HmgOprChainAt _)  = Struct :>: Struct
   homomorphous HmgOprBoundary     = Struct :>: Struct
+  homomorphous HmgOprBoundaryInv  = Struct :>: Struct
+  homomorphous HmgOprClass        = Struct :>: Struct
   
 --------------------------------------------------------------------------------
 -- evalHmgOpr -
 
 evalHmgOpr :: Env t s n x -> Z -> HomologyOperator s x u v -> u -> Eval v
-evalHmgOpr env@Env{} at (HmgOprChainAll t) () = evalVecChainsAt env t at
-evalHmgOpr env@Env{} at (HmgOprChainAt t) z   = evalVecChainAt env t at z
-evalHmgOpr env@Env{} at HmgOprBoundary chs    = evalVecBoundary env chs
+evalHmgOpr env at (HmgOprChainAll t) () = evalVecChainsAt env t at
+evalHmgOpr env at (HmgOprChainAt t) z   = evalVecChainAt env t at z
+evalHmgOpr env _  HmgOprBoundary chs    = evalVecBoundary env chs
+evalHmgOpr env _  HmgOprBoundaryInv chs = evalVecBoundaryInv env chs 
+evalHmgOpr env _  HmgOprClass chs       = evalVecHomologyClass env chs
 
 --------------------------------------------------------------------------------
 -- evalRootHmgOpr -
@@ -460,9 +481,17 @@ evalRootHmgOpr env at (HmgOprChainAll _) (():>())
 evalRootHmgOpr env at (HmgOprChainAt _) (():>())
   | -2 < at && at < envMaxDim env + 2   = return at
   | otherwise                           = failure $ AtOutOfRange at
-evalRootHmgOpr env at HmgOprBoundary at'
+evalRootHmgOpr env _ HmgOprBoundary at'
   | -1 < at' && at' < envMaxDim env + 2 = return (pred at')
-  | otherwise                           = failure $ AtOutOfRange at
+  | otherwise                           = failure $ AtOutOfRange at'
+evalRootHmgOpr env _ HmgOprBoundaryInv at'
+  | -1 < at' && at' < envMaxDim env + 1 = return (succ at')
+  | otherwise                           = failure $ AtOutOfRange at'
+evalRootHmgOpr env _ HmgOprClass at'
+  | -1 < at' && at' < envMaxDim env + 1 = do
+      h <- evalHmgGroupAt env at'
+      case h of DiagramDiscrete gs     -> return $ head gs
+  | otherwise                           = failure $ AtOutOfRange at'
 
 --------------------------------------------------------------------------------
 -- HomologyExpr -
@@ -630,4 +659,6 @@ chAt t i = HmgOprChainAt t :$: AblExprValue i
 
 dAt = (:$:) HmgOprBoundary 
 
+hAt = (:$:) HmgOprClass
 
+(.+.) = (:+:)
