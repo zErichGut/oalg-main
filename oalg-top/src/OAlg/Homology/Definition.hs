@@ -36,7 +36,7 @@ module OAlg.Homology.Definition
 import Control.Monad
 
 import Data.Foldable (toList)
-import Data.List as L (zip,filter)
+import Data.List as L (zip,filter, (++))
 
 import OAlg.Prelude
 
@@ -283,15 +283,33 @@ abhLift (a:>b) = do
 -- | validity according to 'abhLift'.
 prpAbhLift :: N -> Statement
 prpAbhLift k = case someNatural k of
-  SomeNatural k' -> Forall (xotLiftable k')
-    (\otl -> case abhLift otl of
-        Just f  -> valid f
-        Nothing -> False :?> Params ["otl":= show otl] -- otl must be liftable!
-    )
+  SomeNatural k'
+    -> And [ Forall (xoToAbhLiftable k')
+               (\otl -> case abhLift otl of
+                 Just f  -> And [ valid f
+                                , Label "1" :<=>: (orientation f == otl) :?> Params ["a:>b":= show otl
+                                                                                    ,"f":= show f
+                                                                                    ] 
+                                ]
+                 Nothing -> Label "2" :<=>: False :?> Params ["a:>b":= show otl]
+                            -- otl must be liftable!
+               )
+           , Forall (xoToAbh k') (valid . abhLift)
+           ]
 
+-- | random variable for orientations. They might be not liftable!
+xoToAbh :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xoToAbh k = do
+  sa <- xStandard
+  a  <- xAbHom 1 (sa:>m)
+  sb <- xStandard
+  b  <- xAbHom 1 (sb:>m)
+  return (SliceTo (Free k) a :> SliceTo (Free k) b)
+  where m = abg 0 ^ lengthN k
+                     
 -- | random variable for liftable orientations, i.e. 'abhLift' has to give a solution.
-xotLiftable :: Any k -> X (Orientation (Slice To (Free k) AbHom))
-xotLiftable k = do
+xoToAbhLiftable :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xoToAbhLiftable k = do
   sa <- xStandard
   sb <- xStandard
   b  <- xAbHom 1 (sb :> m)
@@ -301,21 +319,34 @@ xotLiftable k = do
   where m  = abg 0 ^ lengthN k
         k' = Free k
 
--- | validity of 'xotLiftable'.
-vldXotLiftable :: N -> Statement
-vldXotLiftable k = case someNatural k of SomeNatural k' -> Forall (xotLiftable k') valid
+-- | validity of 'xoToAbhLiftable'.
+vldXoToLiftable :: N -> Statement
+vldXoToLiftable k = case someNatural k of SomeNatural k' -> Forall (xoToAbhLiftable k') valid
 
--- | distribution of /triavial/ or /substantial/ values of 'xotLiftable'.
-dstXotLiftable :: Int -> N -> IO ()
-dstXotLiftable n k = case someNatural k of
-  SomeNatural k' -> putDstr asp n (xotLiftable k')
+
+abhTrv :: AbHom -> String
+abhTrv h = if isZero h then "trivial" else "substantial" 
+
+dstXoTo :: Int -> N -> IO ()
+dstXoTo n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (amap1 (\ot -> (ot,abhLift ot)) $ xoToAbh k')
+
+  where
+    asp :: (Orientation (Slice To (Free k) AbHom), Maybe (SliceFactor To (Free k) AbHom)) -> [String]
+    asp (a:>b,mf) = [abhTrv $ slice a, abhTrv $ slice b] L.++ case mf of
+      Just _  -> ["Just"]
+      Nothing -> ["Nothing"]
+
+
+-- | distribution of /triavial/ or /substantial/ values of 'xoToAbhLiftable'.
+dstXoToLiftable :: Int -> N -> IO ()
+dstXoToLiftable n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (xoToAbhLiftable k')
 
   where
     asp :: Orientation (Slice To (Free k) AbHom) -> [String]
-    asp (SliceTo _ a :> SliceTo _ b) = [trv a, trv b]
+    asp (SliceTo _ a :> SliceTo _ b) = [abhTrv a, abhTrv b]
 
-    trv :: AbHom -> String
-    trv h = if isZero h then "trivial" else "substantial" 
   
 --------------------------------------------------------------------------------
 -- boundaryInv -
@@ -326,8 +357,8 @@ boundaryInv hmg e = do
   h <- homologyClass hmg e
   case isZero h of
     True               -> case universalCone ker of
-      ConicFreeTip k _ -> case abhLift (SliceTo k (slice e') :> SliceTo k d'') of
-        Just e''       -> return $ AbElement $ SliceFrom k1 $ slfFactor e''
+      ConicFreeTip k _ -> case abhLift (SliceTo k e'' :> SliceTo k d'') of
+        Just e'''      -> return $ AbElement $ SliceFrom k1 $ slfFactor e'''
         Nothing        -> failure $ EvalFailure "implementation error!"
                           -- as h is zero, e' should be liftable!
     False -> failure $ NonZeroHomologyClass h
@@ -336,7 +367,8 @@ boundaryInv hmg e = do
     VarianceG (ConsecutiveZero (DiagramChainTo _ (_:|d':|_))) ((ker,_):|_) = hmg
     AbElement e'   = e
     SliceFrom k1 _ = e'
-    
+
+    e'' = universalFactor ker (ConeKernel (universalDiagram ker) (slice e'))
     d'' = universalFactor ker (ConeKernel (universalDiagram ker) d')
 
     
