@@ -380,10 +380,24 @@ evalVecBoundary env@Env{} v
   where VectorGForm at chs = form v
 
 --------------------------------------------------------------------------------
+-- evalChainAtBoundaryInv -
+
+evalChainAtBoundaryInv :: Env t s n x -> ChainAt s x -> Eval (ChainAt s x)
+evalChainAtBoundaryInv env (ChainAt at ch) = do
+  e   <- evalToAbElement env at ch
+  h   <- evalAt env at >>= return . snd
+  e'  <- boundaryInv h e
+  ch' <- evalFromAbElement env at' e'
+  return $ ChainAt at' ch'
+  where at' = succ at
+
+--------------------------------------------------------------------------------
 -- evalVecBoundaryInv -
 
 evalVecBoundaryInv :: Env t s n x -> Vec (ChainAt s x) -> Eval (Vec (ChainAt s x))
-evalVecBoundaryInv = error "nyi"
+evalVecBoundaryInv env@Env{} v
+  = (psqSequence $ psqMap (evalChainAtBoundaryInv env) chs) >>= return . make . VectorGForm (succ at)
+  where VectorGForm at chs = form v
 
 --------------------------------------------------------------------------------
 -- evalChainAtHomologyClass -
@@ -657,8 +671,8 @@ vl = ExprHmg . AblExprValue
 chs t  = HmgOprChainAll t :$: AblExprValue ()
 chAt t i = HmgOprChainAt t :$: AblExprValue i
 
-dAt = (:$:) HmgOprBoundary 
-
-hAt = (:$:) HmgOprClass
+dAt  = (:$:) HmgOprBoundary 
+dAt' = (:$:) HmgOprBoundaryInv
+hAt  = (:$:) HmgOprClass
 
 (.+.) = (:+:)

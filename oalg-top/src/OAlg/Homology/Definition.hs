@@ -45,6 +45,7 @@ import OAlg.Data.FinitelyPresentable
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Exponential
 import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 
@@ -191,10 +192,6 @@ boundary (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) e
   | otherwise         = return (d *> e)
 
 --------------------------------------------------------------------------------
---
-
-
---------------------------------------------------------------------------------
 -- abhFreeEmbedding -
 
 -- | the canonical emmedding of the free part of a given abelian group.
@@ -243,9 +240,33 @@ prpAbhFreeEmbedding g = Prp "AbhFreeEmbedding"
 --------------------------------------------------------------------------------
 -- abhLift -
 
+-- | liftable abelian homomorphisms with a free end.
+--
+-- __Property__ Let @a@ and @b@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ for some @__k__@, then
+-- holds (see diagram below):
+--
+-- (1) If @'abhLift' (a ':>' b)@ yields @'Just' f@ for some @f@ in @'AbHom', then
+-- @'orientation' f '==' a ':>' b@
+-- 
+-- (2) The following to statements are equivalent:
+--
+--     (1) There exists an @f@ in @'SliceFactor' 'To' ('Free' __k__) 'AbHom'@ with
+--     @'orientation' f '==' a ':>' b@. 
+--
+--     (2) There exitst an @f@ in 'AbHom' with @'abhLift' (a ':>' b)@ yields @'Just' f@.
+--
+-- @
+--            f
+--        * - - - > *
+--         \       /
+--        a \     / b
+--           \   /
+--            v v
+--             k
+-- @
 abhLift :: Attestable k
-  => Slice To (Free k) AbHom -> Slice To (Free k) AbHom -> Maybe (SliceFactor To (Free k) AbHom)
-abhLift a b = do
+  => Orientation (Slice To (Free k) AbHom) -> Maybe (SliceFactor To (Free k) AbHom)
+abhLift (a:>b) = do
   a''  <- zMatrixLift lb a'
   ra'' <- return $ adjr abhFreeAdjunction (start a) a''
   return $ SliceFactor a b $ (i * ra'')
@@ -255,6 +276,46 @@ abhLift a b = do
     a' = adjl abhFreeAdjunction m (slice a)
     lb = amap AbHomFree (slice b)
     i  = abhFreeEmbedding (start b)
+
+--------------------------------------------------------------------------------
+-- prpAbhLiftJust -
+
+-- | validity according to 'abhLift'.
+prpAbhLift :: N -> Statement
+prpAbhLift k = case someNatural k of
+  SomeNatural k' -> Forall (xotLiftable k')
+    (\otl -> case abhLift otl of
+        Just f  -> valid f
+        Nothing -> False :?> Params ["otl":= show otl] -- otl must be liftable!
+    )
+
+-- | random variable for liftable orientations, i.e. 'abhLift' has to give a solution.
+xotLiftable :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xotLiftable k = do
+  sa <- xStandard
+  sb <- xStandard
+  b  <- xAbHom 1 (sb :> m)
+  f  <- xAbHom 1 (sa :> sb)
+  return (SliceTo k' (b*f)  :> SliceTo k' b)
+  
+  where m  = abg 0 ^ lengthN k
+        k' = Free k
+
+-- | validity of 'xotLiftable'.
+vldXotLiftable :: N -> Statement
+vldXotLiftable k = case someNatural k of SomeNatural k' -> Forall (xotLiftable k') valid
+
+-- | distribution of /triavial/ or /substantial/ values of 'xotLiftable'.
+dstXotLiftable :: Int -> N -> IO ()
+dstXotLiftable n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (xotLiftable k')
+
+  where
+    asp :: Orientation (Slice To (Free k) AbHom) -> [String]
+    asp (SliceTo _ a :> SliceTo _ b) = [trv a, trv b]
+
+    trv :: AbHom -> String
+    trv h = if isZero h then "trivial" else "substantial" 
   
 --------------------------------------------------------------------------------
 -- boundaryInv -
@@ -265,7 +326,7 @@ boundaryInv hmg e = do
   h <- homologyClass hmg e
   case isZero h of
     True               -> case universalCone ker of
-      ConicFreeTip k _ -> case abhLift (SliceTo k (slice e')) (SliceTo k d'') of
+      ConicFreeTip k _ -> case abhLift (SliceTo k (slice e') :> SliceTo k d'') of
         Just e''       -> return $ AbElement $ SliceFrom k1 $ slfFactor e''
         Nothing        -> failure $ EvalFailure "implementation error!"
                           -- as h is zero, e' should be liftable!
