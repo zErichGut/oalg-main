@@ -550,21 +550,6 @@ evalVar vrs t z n = case t of
   HmgValTypeVoid  -> evalLookup (vrsVoid vrs) z n
   HmgValTypeZ     -> evalLookup (vrsZ vrs) z n
   HmgValTypeChain -> evalLookup (vrsChain vrs) z n
-{-
---------------------------------------------------------------------------------
--- evalSumFormHmgOpr -
-
--- | application of a homology operator on a 'SumForm'
-evalSumFormHmgOpr :: Env t s n x -> Z -> HomologyOperator s x u v -> SumForm Z u -> Eval (SumForm Z v)
-evalSumFormHmgOpr env at h s = case s of
-  Zero r -> evalRootHmgOpr env at h r >>= return . Zero
-  S u    -> evalHmgOpr env at h u >>= return . S
-  z :! a -> evalSumFormHmgOpr env at h a >>= return . (z:!)
-  a :+ b -> do
-    a' <- evalSumFormHmgOpr env at h a
-    b' <- evalSumFormHmgOpr env at h b
-    return (a' :+ b')
--}    
 
 --------------------------------------------------------------------------------
 -- evalSumFormHmgExpr -
@@ -590,11 +575,6 @@ evalSumFormHmgExpr env@Env{} vrs at e = case e of
       v  <- evalHmgOpr env at h u'
       return $ S v
       
-{-    
-  h :$: u             -> case P.domain h of
-    Struct -> evalSumFormHmgExpr env vrs at u >>= evalSumFormHmgOpr env at h
--}
-
 --------------------------------------------------------------------------------
 -- evalHmgExpr -
 
@@ -646,7 +626,6 @@ eval env@Env{} vrs at e = case e of
     ExprHmgGroupAll    -> return $ evalHmgGroupAll env
     ExprHmgGroupAt     -> evalHmgGroupAt env at    
   ExprHmg h            -> evalHmgExpr env vrs at h
-
 
 
 t = ChainComplexStandard
