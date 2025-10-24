@@ -18,19 +18,22 @@ import OAlg.Prelude
 
 import OAlg.Data.Either
 
+import OAlg.AbelianGroup.Definition
+
 --------------------------------------------------------------------------------
 -- EvalFailure -
 
 -- | evaluation failures.
 data EvalFailure
   = IndexOutOfRange String
-  | AtOutOfRange N
+  | AtOutOfRange Z
   | NotSupportedChainType String
   | NotCycle String
   | NotEligible String
-  | NoSuchVariable Z String
-  | NotAddableExpressions
+  | UnboundVariable Z String
+  | NotAddableExpression
   | NotAChainType
+  | NonZeroHomologyClass AbElement
   | EvalFailure String
   deriving (Show)
 

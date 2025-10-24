@@ -66,7 +66,7 @@ import OAlg.AbelianGroup.Euclid
 -- will be 'Nothing'. If there exists a non trivial solution, then @x@ will also be non trival.
 zMatrixLift :: Matrix Z -> Matrix Z -> Maybe (Matrix Z)
 zMatrixLift a y
-  | end a /= end y = throw NotLiftable "end missmatch"
+  | end a /= end y = throw NotLiftable
   | otherwise      = amap1 (r*) $ lft (start a) (ds `zip` [0..]) (s * y) where
   
   DiagonalForm ds (RowTrafo sRT) (ColTrafo rCT) = snfDiagonalForm $ smithNormalForm a

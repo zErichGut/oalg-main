@@ -24,7 +24,7 @@ module OAlg.Homology.Definition
   , homologyGroups
   , hmgCycles, hmgClassGenerators
 
-  , homologyClass, boundary
+  , homologyClass, boundary, boundaryInv
     
     -- * Homomorphism
   , homologyHom, HomologyHom
@@ -36,6 +36,7 @@ module OAlg.Homology.Definition
 import Control.Monad
 
 import Data.Foldable (toList)
+import Data.List as L (zip,filter, (++))
 
 import OAlg.Prelude
 
@@ -43,6 +44,8 @@ import OAlg.Data.FinitelyPresentable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Exponential
 import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 
@@ -52,11 +55,14 @@ import OAlg.Entity.FinList
 import OAlg.Entity.Slice
 import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
+import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+import OAlg.AbelianGroup.Liftable
+import OAlg.AbelianGroup.ZMod hiding (NotEligible)
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -71,6 +77,7 @@ import OAlg.Homology.ChainComplex
 
 import OAlg.Homology.Eval.Core
 
+import OAlg.Adjunction.Definition
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -178,7 +185,190 @@ homologyClass (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) ((ker,coker
 --------------------------------------------------------------------------------
 -- boundary -
 
+-- | the boundary of an abelian element.
 boundary :: Homology n -> AbElement -> Eval AbElement
 boundary (VarianceG (ConsecutiveZero (DiagramChainTo _ (d:|_))) _) e
   | start d /= end e  = failure $ NotEligible "boundary"
   | otherwise         = return (d *> e)
+
+--------------------------------------------------------------------------------
+-- abhFreeEmbedding -
+
+-- | the canonical emmedding of the free part of a given abelian group.
+--
+-- __Property__ Let @'Adjunction' l r u v = 'abhFreeAdjunction'@, @rl = 'pmap' r '.' 'pmap' l@
+-- and @i = 'abhFreeEmbedding'@, then holds:
+--
+-- (1) For all @g@ in 'AbGroup' holds: @u g v'*' i g@ is 'one'. (see diagram belaow)
+--
+-- @
+--                 l
+--             <--------- 
+--    Matrix Z            AbHom
+--             --------->
+--                 r
+--                               u g
+--                           ----------->
+--                         g              rl g = pmap r (pmap l g)
+--                           <-----------
+--                               i g
+-- @
+--
+-- __Note__ If @g@ is free, then @'abgFreeEmbedding' g@ is 'one'.
+abhFreeEmbedding :: AbGroup -> AbHom
+abhFreeEmbedding g = AbHom $ Matrix (abgDim g) (abgDim rlg) $ Entries $ PSequence $ oijs where
+  rlg  = pmap FreeAbHom (pmap AbHomFree g)
+  oijs = amap1 oij $ ((filter gFree $ abgxs g) `L.zip` [0..]) 
+
+  gFree :: (ZMod,N) -> Bool
+  gFree (ZMod n,_) = n == 0
+
+  oij :: ((ZMod,N),N) -> (ZModHom,(N,N))
+  oij ((z,i),j) = (one z,(i,j))
+
+--------------------------------------------------------------------------------
+-- prpAbhFreeEmbedding -
+
+-- | validity according to 'abhFreeEmbedding'.
+prpAbhFreeEmbedding :: AbGroup -> Statement
+prpAbhFreeEmbedding g = Prp "AbhFreeEmbedding"
+  :<=>: (u g * i == one (start i)) :?> Params ["g":= show g] where
+  
+  Adjunction _ _ u _ = abhFreeAdjunction
+  i                  = abhFreeEmbedding g
+  
+--------------------------------------------------------------------------------
+-- abhLift -
+
+-- | liftable abelian homomorphisms with a free end.
+--
+-- __Property__ Let @a@ and @b@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ for some @__k__@, then
+-- holds (see diagram below):
+--
+-- (1) If @'abhLift' (a ':>' b)@ yields @'Just' f@ for some @f@ in @'AbHom', then
+-- @'orientation' f '==' a ':>' b@
+-- 
+-- (2) The following to statements are equivalent:
+--
+--     (1) There exists an @f@ in @'SliceFactor' 'To' ('Free' __k__) 'AbHom'@ with
+--     @'orientation' f '==' a ':>' b@. 
+--
+--     (2) There exitst an @f@ in 'AbHom' with @'abhLift' (a ':>' b)@ yields @'Just' f@.
+--
+-- @
+--            f
+--        * - - - > *
+--         \       /
+--        a \     / b
+--           \   /
+--            v v
+--             k
+-- @
+abhLift :: Attestable k
+  => Orientation (Slice To (Free k) AbHom) -> Maybe (SliceFactor To (Free k) AbHom)
+abhLift (a:>b) = do
+  a''  <- zMatrixLift lb a'
+  ra'' <- return $ adjr abhFreeAdjunction (start a) a''
+  return $ SliceFactor a b $ (i * ra'')
+  
+  where
+    m  = pmap AbHomFree (end a)  -- end a is free!
+    a' = adjl abhFreeAdjunction m (slice a)
+    lb = amap AbHomFree (slice b)
+    i  = abhFreeEmbedding (start b)
+
+--------------------------------------------------------------------------------
+-- prpAbhLiftJust -
+
+-- | validity according to 'abhLift'.
+prpAbhLift :: N -> Statement
+prpAbhLift k = case someNatural k of
+  SomeNatural k'
+    -> And [ Forall (xoToAbhLiftable k')
+               (\otl -> case abhLift otl of
+                 Just f  -> And [ valid f
+                                , Label "1" :<=>: (orientation f == otl) :?> Params ["a:>b":= show otl
+                                                                                    ,"f":= show f
+                                                                                    ] 
+                                ]
+                 Nothing -> Label "2" :<=>: False :?> Params ["a:>b":= show otl]
+                            -- otl must be liftable!
+               )
+           , Forall (xoToAbh k') (valid . abhLift)
+           ]
+
+-- | random variable for orientations. They might be not liftable!
+xoToAbh :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xoToAbh k = do
+  sa <- xStandard
+  a  <- xAbHom 1 (sa:>m)
+  sb <- xStandard
+  b  <- xAbHom 1 (sb:>m)
+  return (SliceTo (Free k) a :> SliceTo (Free k) b)
+  where m = abg 0 ^ lengthN k
+                     
+-- | random variable for liftable orientations, i.e. 'abhLift' has to give a solution.
+xoToAbhLiftable :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xoToAbhLiftable k = do
+  sa <- xStandard
+  sb <- xStandard
+  b  <- xAbHom 1 (sb :> m)
+  f  <- xAbHom 1 (sa :> sb)
+  return (SliceTo k' (b*f)  :> SliceTo k' b)
+  
+  where m  = abg 0 ^ lengthN k
+        k' = Free k
+
+-- | validity of 'xoToAbhLiftable'.
+vldXoToLiftable :: N -> Statement
+vldXoToLiftable k = case someNatural k of SomeNatural k' -> Forall (xoToAbhLiftable k') valid
+
+
+abhTrv :: AbHom -> String
+abhTrv h = if isZero h then "trivial" else "substantial" 
+
+dstXoTo :: Int -> N -> IO ()
+dstXoTo n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (amap1 (\ot -> (ot,abhLift ot)) $ xoToAbh k')
+
+  where
+    asp :: (Orientation (Slice To (Free k) AbHom), Maybe (SliceFactor To (Free k) AbHom)) -> [String]
+    asp (a:>b,mf) = [abhTrv $ slice a, abhTrv $ slice b] L.++ case mf of
+      Just _  -> ["Just"]
+      Nothing -> ["Nothing"]
+
+
+-- | distribution of /triavial/ or /substantial/ values of 'xoToAbhLiftable'.
+dstXoToLiftable :: Int -> N -> IO ()
+dstXoToLiftable n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (xoToAbhLiftable k')
+
+  where
+    asp :: Orientation (Slice To (Free k) AbHom) -> [String]
+    asp (SliceTo _ a :> SliceTo _ b) = [abhTrv a, abhTrv b]
+
+  
+--------------------------------------------------------------------------------
+-- boundaryInv -
+
+-- | determines the bounary of a given cycle with zero homology class.
+boundaryInv :: Homology n -> AbElement -> Eval AbElement
+boundaryInv hmg e = do
+  h <- homologyClass hmg e
+  case isZero h of
+    True               -> case universalCone ker of
+      ConicFreeTip k _ -> case abhLift (SliceTo k e'' :> SliceTo k d'') of
+        Just e'''      -> return $ AbElement $ SliceFrom k1 $ slfFactor e'''
+        Nothing        -> failure $ EvalFailure "implementation error!"
+                          -- as h is zero, e' should be liftable!
+    False -> failure $ NonZeroHomologyClass h
+
+  where
+    VarianceG (ConsecutiveZero (DiagramChainTo _ (_:|d':|_))) ((ker,_):|_) = hmg
+    AbElement e'   = e
+    SliceFrom k1 _ = e'
+
+    e'' = universalFactor ker (ConeKernel (universalDiagram ker) (slice e'))
+    d'' = universalFactor ker (ConeKernel (universalDiagram ker) d')
+
+    
