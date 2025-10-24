@@ -67,7 +67,7 @@ import OAlg.Homology.Eval.Core
 
 -- | types of chains
 data ChainType
-  = GeneralType  -- ^ general chains with no restriction.
+  = ChainType  -- ^ general chains with no restriction.
   | CycleType    -- ^ chains with zero boundary.
   | HomologyType -- ^ cycles with non zero homology classes.
   deriving (Show,Eq,Ord,Enum,Bounded,Ix)
@@ -99,7 +99,7 @@ data SomeChainComplex r s n x where
 -- (1) Let @chs = 'envChains' env@, @n@ in 'Z' and let @C@ denote the free abelian group, generated
 -- by the set of simplices @'envSimplexSet' env n@, then holds:
 --
---     (1) @chs 'GeneralType' n@ is the canonical base in @C@ given by @'envSimplexSet' env n@.
+--     (1) @chs 'ChainType' n@ is the canonical base in @C@ given by @'envSimplexSet' env n@.
 --
 --     (2) @chs 'CycleType' n@ is a base for the cycles in @C@.
 --
@@ -138,8 +138,8 @@ env t n c = case ats n of
     cys  = array (0,dm) ([0..] `L.zip` (toList $ amap1 cycles ats))
     hms  = array (0,dm) ([0..] `L.zip` (toList $ amap1 homologies ats))
 
-    chs  = array (GeneralType,HomologyType)
-             [ (GeneralType, amap1 base smps)
+    chs  = array (ChainType,HomologyType)
+             [ (ChainType, amap1 base smps)
              , (CycleType, cys)
              , (HomologyType, hms)
              ]
@@ -550,10 +550,11 @@ evalVar vrs t z n = case t of
   HmgValTypeVoid  -> evalLookup (vrsVoid vrs) z n
   HmgValTypeZ     -> evalLookup (vrsZ vrs) z n
   HmgValTypeChain -> evalLookup (vrsChain vrs) z n
-
+{-
 --------------------------------------------------------------------------------
 -- evalSumFormHmgOpr -
 
+-- | application of a homology operator on a 'SumForm'
 evalSumFormHmgOpr :: Env t s n x -> Z -> HomologyOperator s x u v -> SumForm Z u -> Eval (SumForm Z v)
 evalSumFormHmgOpr env at h s = case s of
   Zero r -> evalRootHmgOpr env at h r >>= return . Zero
@@ -563,7 +564,8 @@ evalSumFormHmgOpr env at h s = case s of
     a' <- evalSumFormHmgOpr env at h a
     b' <- evalSumFormHmgOpr env at h b
     return (a' :+ b')
-    
+-}    
+
 --------------------------------------------------------------------------------
 -- evalSumFormHmgExpr -
 
@@ -583,7 +585,15 @@ evalSumFormHmgExpr env@Env{} vrs at e = case e of
     b' <- evalSumFormHmgExpr env vrs at b
     return (a' :+ b')
   h :$: u             -> case P.domain h of
+    Struct            -> do
+      u' <- evalHmgExpr env vrs at u
+      v  <- evalHmgOpr env at h u'
+      return $ S v
+      
+{-    
+  h :$: u             -> case P.domain h of
     Struct -> evalSumFormHmgExpr env vrs at u >>= evalSumFormHmgOpr env at h
+-}
 
 --------------------------------------------------------------------------------
 -- evalHmgExpr -
