@@ -424,17 +424,28 @@ evalVecHomologyClass env v = do
 --------------------------------------------------------------------------------
 -- evalLookup -
 
-evalLookup :: M.Map (Z,String) x -> Z -> String  -> Eval x
+evalLookup :: M.Map (Z,String) x -> Z -> String -> Eval x
 evalLookup m at n = case M.lookup (at,n) m of
   Just x  -> return x
   Nothing -> failure $ UnboundVariable at n
 
 --------------------------------------------------------------------------------
+-- evalInsert -
+
+evalInsert :: M.Map (Z,String) x -> Z -> String -> x -> Eval (M.Map (Z,String) x)
+evalInsert m at n x = return (M.insert (at,n) x m)
+
+--------------------------------------------------------------------------------
 -- AbelianExpression -
 
+-- | abelian expression.
+--
+-- @'AblExprLet' t n a b@ represents the idiom @let n = a in b@. 
 data AbelianExpression t h v where
   AblExprValue    :: v -> AbelianExpression t h v
-  AblExprVariable :: t v -> String -> AbelianExpression t h v 
+  AblExprVariable :: t v -> String -> AbelianExpression t h v
+  AblExprLet      :: t v -> String -> AbelianExpression t h v -> AbelianExpression t h v
+                  -> AbelianExpression t h v
   AblExprZero     :: Root v -> AbelianExpression t h v
   (:!>)           :: AbelianExpression t h Z -> AbelianExpression t h v -> AbelianExpression t h v
   (:+:)           :: AbelianExpression t h v -> AbelianExpression t h v -> AbelianExpression t h v
@@ -448,14 +459,8 @@ data HomologyValueType s x v where
   HmgValTypeZ     :: HomologyValueType s x Z
   HmgValTypeChain :: HomologyValueType s x (Vec (ChainAt s x)) 
 
---------------------------------------------------------------------------------
--- evalRootHmgValType -
-
-evalRootHmgValType :: Z -> HomologyValueType s x v -> Eval (Root v)
-evalRootHmgValType at t = case t of
-  HmgValTypeVoid  -> return (():>())
-  HmgValTypeZ     -> return (():>())
-  HmgValTypeChain -> return at
+deriving instance Show (HomologyValueType s x v)
+deriving instance Eq (HomologyValueType s x v)
 
 --------------------------------------------------------------------------------
 -- HomologyOperator -
@@ -508,31 +513,6 @@ evalRootHmgOpr env _ HmgOprClass at'
   | otherwise                           = failure $ AtOutOfRange at'
 
 --------------------------------------------------------------------------------
--- HomologyExpr -
-
-type HomologyExpr s x = AbelianExpression (HomologyValueType s x) (HomologyOperator s x)
-
---------------------------------------------------------------------------------
--- evalRootHmgExpr -
-
--- | the root of a 'HomologyExpr' which serves to check wether the expression is well formed.
-evalRootHmgExpr :: Fibred v => Env t s n x -> Z -> HomologyExpr s x v -> Eval (Root v)
-evalRootHmgExpr env@Env{} at e = case e of
-  AblExprValue v      -> return $ root v
-  AblExprVariable t _ -> evalRootHmgValType at t
-  AblExprZero r       -> return r
-  _ :!> a             -> evalRootHmgExpr env at a
-  a :+: b             -> do
-    ra <- evalRootHmgExpr env at a
-    rb <- evalRootHmgExpr env at b
-    case ra == rb of
-      True            -> return ra
-      False           -> failure NotAddableExpression
-  f :$: a             -> case P.domain f of
-    Struct            -> evalRootHmgExpr env at a >>= evalRootHmgOpr env at f
-
-
---------------------------------------------------------------------------------
 -- Vars -
 
 data Vars s x
@@ -541,6 +521,21 @@ data Vars s x
          , vrsChain :: M.Map (Z,String) (HomologyExpr s x (Vec (ChainAt s x)))
          }
 
+--------------------------------------------------------------------------------
+-- varOccurs -
+
+-- | @'varOccurs' n e@ is 'True' iff the there exists an expression @'AblExprVariable' _ n'@
+-- in @e@ with @n' '==' n@.
+varOccurs :: String -> HomologyExpr s x v -> Bool
+varOccurs n e = case e of
+  AblExprValue _       -> False
+  AblExprVariable _ n' -> n' == n
+  AblExprLet _ _ a b   -> varOccurs n a || varOccurs n b
+  AblExprZero _        -> False
+  z :!> a              -> varOccurs n z || varOccurs n a
+  a :+: b              -> varOccurs n a || varOccurs n b
+  _ :$: a              -> varOccurs n a
+  
 --------------------------------------------------------------------------------
 -- evalVar -
 
@@ -552,6 +547,87 @@ evalVar vrs t z n = case t of
   HmgValTypeChain -> evalLookup (vrsChain vrs) z n
 
 --------------------------------------------------------------------------------
+-- evalInsertVar -
+
+evalInsertVar :: Vars s x -> HomologyValueType s x v
+  -> Z -> String -> HomologyExpr s x v -> Eval (Vars s x)
+evalInsertVar vrs t at n e = case t of
+  HmgValTypeVoid  -> do
+    vrsV' <- evalInsert (vrsVoid vrs) at n e
+    return (vrs{vrsVoid = vrsV'})
+  HmgValTypeZ     -> do
+    vrsZ' <- evalInsert (vrsZ vrs) at n e
+    return (vrs{vrsZ = vrsZ'})
+  HmgValTypeChain -> do
+    vrsC' <- evalInsert (vrsChain vrs) at n e
+    return (vrs{vrsChain = vrsC'})
+
+--------------------------------------------------------------------------------
+-- HomologyExpr -
+
+type HomologyExpr s x = AbelianExpression (HomologyValueType s x) (HomologyOperator s x)
+
+--------------------------------------------------------------------------------
+-- evalNoRecursiveDefs -
+
+-- | checks for no recursive definitions.
+--
+-- __Definition__ A homology expression @e@ contains no recursive definition iff for all sub expresions
+-- of the form @'AblExprLet' _ n a _@ in @e@ holds: @'varOccurs' n a@ is 'False'.
+--
+-- [Pre] @vrs@ contains no recursive variable bindings.
+evalNoRecursiveDefs :: Vars s x -> Z -> String -> HomologyExpr s x v -> Eval ()
+evalNoRecursiveDefs vrs at n e = case e of
+  AblExprValue _        -> return ()
+  AblExprVariable _ _   -> return ()
+  AblExprLet t n' a b   -> case varOccurs n' a of
+    True                -> failure $ RecursiveDefinition $ n'
+    False               -> do
+      vrs' <- evalInsertVar vrs t at n' a
+      evalNoRecursiveDefs vrs' at n b
+  AblExprZero _         -> return ()
+  z :!> a               -> do
+    () <- evalNoRecursiveDefs vrs at n z
+    () <- evalNoRecursiveDefs vrs at n a
+    return ()
+  a :+: b               -> do
+    () <- evalNoRecursiveDefs vrs at n a
+    () <- evalNoRecursiveDefs vrs at n b
+    return ()
+  _ :$: a               -> evalNoRecursiveDefs vrs at n a
+
+--------------------------------------------------------------------------------
+-- evalRootHmgExpr -
+
+-- | the root of a 'HomologyExpr' which serves to check wether the expression is well formed.
+evalRootHmgExpr :: Fibred v => Env t s n x -> Vars s x -> Z -> HomologyExpr s x v -> Eval (Root v)
+evalRootHmgExpr env@Env{} vrs at e = case e of
+  AblExprValue v      -> return $ root v
+  AblExprVariable t n -> evalVar vrs t at n >>= evalRootHmgExpr env vrs at
+  AblExprLet t n a b  -> do
+    ()   <- evalNoRecursiveDefs vrs at n a
+    vrs' <- evalInsertVar vrs t at n a
+    evalRootHmgExpr env vrs' at b
+  AblExprZero r       -> return r
+  _ :!> a             -> evalRootHmgExpr env vrs at a
+  a :+: b             -> do
+    ra <- evalRootHmgExpr env vrs at a
+    rb <- evalRootHmgExpr env vrs at b
+    case ra == rb of
+      True            -> return ra
+      False           -> failure NotAddableExpression
+  f :$: a             -> case P.domain f of
+    Struct            -> evalRootHmgExpr env vrs at a >>= evalRootHmgOpr env at f
+
+--------------------------------------------------------------------------------
+-- evalLetHmgExpr -
+
+-- | checks for eligibility of the variable binding (no recursions!)
+evalLetHmgExpr :: Vars s x -> HomologyValueType s x v
+  -> Z -> String -> HomologyExpr s x v -> Eval (Vars s x)
+evalLetHmgExpr vrs t at n e = evalInsertVar vrs t at n e
+
+--------------------------------------------------------------------------------
 -- evalSumFormHmgExpr -
 
 evalSumFormHmgExpr :: (Abelian v, Ord v)
@@ -560,6 +636,9 @@ evalSumFormHmgExpr :: (Abelian v, Ord v)
 evalSumFormHmgExpr env@Env{} vrs at e = case e of
   AblExprValue v      -> return $ S v
   AblExprVariable t n -> evalVar vrs t at n >>= evalSumFormHmgExpr env vrs at
+  AblExprLet t n a b  -> do
+    vrs' <- evalInsertVar vrs t at n a
+    evalSumFormHmgExpr env vrs' at b
   AblExprZero r       -> return $ Zero r
   z :!> a             -> do
     z' <- evalHmgExpr env vrs at z
@@ -581,6 +660,7 @@ evalSumFormHmgExpr env@Env{} vrs at e = case e of
 evalHmgExpr :: (Abelian v, Ord v)
   => Env t s n x -> Vars s x -> Z -> HomologyExpr s x v -> Eval v
 evalHmgExpr env@Env{} vrs at e =  do
+  _ <- evalRootHmgExpr env vrs at e
   s <- evalSumFormHmgExpr env vrs at e
   return $ zSum vOne $ make s
 
@@ -665,3 +745,19 @@ dAt' = (:$:) HmgOprBoundaryInv
 hAt  = (:$:) HmgOprClass
 
 (.+.) = (:+:)
+
+a .-. b = a :+: (AblExprValue (-1) :!> b)
+
+-- exprHmg :: (Abelian v, Ord v) => HomologyExpr s x v -> Expr n s x v
+{-
+exprHmg e = ExprHmg
+  ( AblExprLet HmgValTypeChain "a" (chAt CycleType 1)
+    ( AblExprLet HmgValTypeChain "b" (chAt CycleType 4) e 
+    )
+  ) 
+-}
+exprHmg e = ExprHmg
+  ( AblExprLet HmgValTypeChain "a" (AblExprVariable HmgValTypeChain "a")
+    ( AblExprLet HmgValTypeChain "b" (chAt CycleType 4) e 
+    )
+  ) 

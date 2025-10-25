@@ -34,6 +34,7 @@ data EvalFailure
   | NotAddableExpression
   | NotAChainType
   | NonZeroHomologyClass AbElement
+  | RecursiveDefinition String
   | EvalFailure String
   deriving (Show)
 
