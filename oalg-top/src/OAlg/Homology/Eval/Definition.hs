@@ -579,7 +579,9 @@ type HomologyExpr s x = AbelianExpression (HomologyValueType s x) (HomologyOpera
 evalNoRecursiveDefs :: Vars s x -> Z -> String -> HomologyExpr s x v -> Eval ()
 evalNoRecursiveDefs vrs at n e = case e of
   AblExprValue _        -> return ()
-  AblExprVariable _ _   -> return ()
+  AblExprVariable _ n'  -> case n' == n of
+    True                -> failure $ RecursiveDefinition $ n'
+    False               -> return ()
   AblExprLet t n' a b   -> case varOccurs n' a of
     True                -> failure $ RecursiveDefinition $ n'
     False               -> do
@@ -757,7 +759,9 @@ exprHmg e = ExprHmg
   ) 
 -}
 exprHmg e = ExprHmg
-  ( AblExprLet HmgValTypeChain "a" (AblExprVariable HmgValTypeChain "a")
-    ( AblExprLet HmgValTypeChain "b" (chAt CycleType 4) e 
+  ( AblExprLet HmgValTypeChain "a" (chAt CycleType 4)
+    ( AblExprLet HmgValTypeChain "b" (   AblExprVariable HmgValTypeChain "a"
+                                     :+: AblExprVariable HmgValTypeChain "c"
+                                     ) e 
     )
   ) 
