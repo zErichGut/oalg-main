@@ -742,7 +742,7 @@ eval env@Env{} vrs at e = case e of
     ExprHmgGroupAll    -> return $ evalHmgGroupAll env
     ExprHmgGroupAt     -> evalHmgGroupAt env at    
   ExprHmg h            -> do
-    r <- evalRootHmgExpr env vrs at h
+    r <- evalRootHmgExpr env vrs at h -- check for h being well formed!
     v <- evalHmgExpr env vrs at h
     return (r,v)
 
