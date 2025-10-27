@@ -31,6 +31,7 @@ import qualified Data.Map as M
 import OAlg.Prelude as P
 
 import OAlg.Data.Proxy
+import OAlg.Data.Either
 import OAlg.Data.Constructable
 import OAlg.Data.Canonical
 
@@ -38,6 +39,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Fibred
 import OAlg.Structure.Additive
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Vectorial as V hiding (Vec)
 
 import OAlg.Entity.Diagram hiding (Chain)
@@ -442,25 +444,16 @@ evalInsert m at n x = return (M.insert (at,n) x m)
 --
 -- @'AblExprLet' t n a b@ represents the idiom @let n = a in b@. 
 data AbelianExpression t h v where
-  AblExprValue    :: v -> AbelianExpression t h v
-  AblExprVariable :: t v -> String -> AbelianExpression t h v
-  AblExprLet      :: t v -> String -> AbelianExpression t h v -> AbelianExpression t h v
+  AblExprValue    :: Show v => v -> AbelianExpression t h v
+  AblExprVariable :: Show (t v) => t v -> String -> AbelianExpression t h v
+  AblExprLet      :: Show (t v) => t v -> String -> AbelianExpression t h v -> AbelianExpression t h v
                   -> AbelianExpression t h v
-  AblExprZero     :: Root v -> AbelianExpression t h v
+  AblExprZero     :: Show (Root v) => Root v -> AbelianExpression t h v
   (:!>)           :: AbelianExpression t h Z -> AbelianExpression t h v -> AbelianExpression t h v
   (:+:)           :: AbelianExpression t h v -> AbelianExpression t h v -> AbelianExpression t h v
-  (:$:)           :: h u v -> AbelianExpression t h u -> AbelianExpression t h v
+  (:$:)           :: Show (h u v) => h u v -> AbelianExpression t h u -> AbelianExpression t h v
 
---------------------------------------------------------------------------------
--- HomologyValueType -
-
-data HomologyValueType s x v where
-  HmgValTypeVoid  :: HomologyValueType s x ()
-  HmgValTypeZ     :: HomologyValueType s x Z
-  HmgValTypeChain :: HomologyValueType s x (Vec (ChainAt s x)) 
-
-deriving instance Show (HomologyValueType s x v)
-deriving instance Eq (HomologyValueType s x v)
+deriving instance Show (AbelianExpression t h v)
 
 --------------------------------------------------------------------------------
 -- HomologyOperator -
@@ -471,6 +464,8 @@ data HomologyOperator s x u v where
   HmgOprBoundary    :: HomologyOperator s x (Vec (ChainAt s x)) (Vec (ChainAt s x))
   HmgOprBoundaryInv :: HomologyOperator s x (Vec (ChainAt s x)) (Vec (ChainAt s x)) 
   HmgOprClass       :: HomologyOperator s x (Vec (ChainAt s x)) (Vec AbElement)
+
+deriving instance Show (HomologyOperator s x u v)
 
 instance Simplical s x => Morphism (HomologyOperator s x) where
   type ObjectClass (HomologyOperator s x) = (Abl,Ord')
@@ -513,54 +508,44 @@ evalRootHmgOpr env _ HmgOprClass at'
   | otherwise                           = failure $ AtOutOfRange at'
 
 --------------------------------------------------------------------------------
--- Vars -
+-- HomologyValueType -
 
-data Vars s x
-  = Vars { vrsVoid  :: M.Map (Z,String) (HomologyExpr s x ())
-         , vrsZ     :: M.Map (Z,String) (HomologyExpr s x Z)
-         , vrsChain :: M.Map (Z,String) (HomologyExpr s x (Vec (ChainAt s x)))
-         }
+data HomologyValueType s x v where
+  HmgValTypeVoid  :: HomologyValueType s x ()
+  HmgValTypeZ     :: HomologyValueType s x Z
+  HmgValTypeChain :: HomologyValueType s x (Vec (ChainAt s x)) 
 
---------------------------------------------------------------------------------
--- varOccurs -
-
--- | @'varOccurs' n e@ is 'True' iff the there exists an expression @'AblExprVariable' _ n'@
--- in @e@ with @n' '==' n@.
-varOccurs :: String -> HomologyExpr s x v -> Bool
-varOccurs n e = case e of
-  AblExprValue _       -> False
-  AblExprVariable _ n' -> n' == n
-  AblExprLet _ _ a b   -> varOccurs n a || varOccurs n b
-  AblExprZero _        -> False
-  z :!> a              -> varOccurs n z || varOccurs n a
-  a :+: b              -> varOccurs n a || varOccurs n b
-  _ :$: a              -> varOccurs n a
-  
---------------------------------------------------------------------------------
--- evalVar -
-
-evalVar :: Vars s x
-  -> HomologyValueType s x v -> Z -> String -> Eval (HomologyExpr s x v)
-evalVar vrs t z n = case t of
-  HmgValTypeVoid  -> evalLookup (vrsVoid vrs) z n
-  HmgValTypeZ     -> evalLookup (vrsZ vrs) z n
-  HmgValTypeChain -> evalLookup (vrsChain vrs) z n
+deriving instance Show (HomologyValueType s x v)
+deriving instance Eq (HomologyValueType s x v)
+deriving instance Ord (HomologyValueType s x v)
 
 --------------------------------------------------------------------------------
--- evalInsertVar -
+-- SomeHomologyVariable -
 
-evalInsertVar :: Vars s x -> HomologyValueType s x v
-  -> Z -> String -> HomologyExpr s x v -> Eval (Vars s x)
-evalInsertVar vrs t at n e = case t of
-  HmgValTypeVoid  -> do
-    vrsV' <- evalInsert (vrsVoid vrs) at n e
-    return (vrs{vrsVoid = vrsV'})
-  HmgValTypeZ     -> do
-    vrsZ' <- evalInsert (vrsZ vrs) at n e
-    return (vrs{vrsZ = vrsZ'})
-  HmgValTypeChain -> do
-    vrsC' <- evalInsert (vrsChain vrs) at n e
-    return (vrs{vrsChain = vrsC'})
+data SomeHomologyVariable s x where
+  SomeHmgVar :: HomologyValueType s x v -> Z -> String -> SomeHomologyVariable s x
+
+deriving instance Show (SomeHomologyVariable s x)
+
+-- | the rank of a hmology value type, i.e. a injective mapping to 'N'.
+hmgValTypeRank :: HomologyValueType s x v -> N
+hmgValTypeRank t = case t of
+  HmgValTypeVoid  -> 0
+  HmgValTypeZ     -> 1
+  HmgValTypeChain -> 2
+
+instance Eq (SomeHomologyVariable s x) where
+  SomeHmgVar t z v == SomeHmgVar t' z' v' = (hmgValTypeRank t,z,v) == (hmgValTypeRank t',z',v')
+
+instance Ord (SomeHomologyVariable s x) where
+  SomeHmgVar t z v `compare` SomeHmgVar t' z' v'
+    = (hmgValTypeRank t,z,v) `compare` (hmgValTypeRank t',z',v')
+
+--------------------------------------------------------------------------------
+-- hmgVar -
+
+hmgVar :: HomologyValueType s x v -> Z -> String -> Set (SomeHomologyVariable s x)
+hmgVar t z n = Set [SomeHmgVar t z n]
 
 --------------------------------------------------------------------------------
 -- HomologyExpr -
@@ -568,35 +553,83 @@ evalInsertVar vrs t at n e = case t of
 type HomologyExpr s x = AbelianExpression (HomologyValueType s x) (HomologyOperator s x)
 
 --------------------------------------------------------------------------------
--- evalNoRecursiveDefs -
+-- SomeHomologyExpr -
 
--- | checks for no recursive definitions.
+data SomeHomologyExpr s x where
+  SomeHmgExpr :: HomologyValueType s x v -> HomologyExpr s x v -> SomeHomologyExpr s x
+  
+--------------------------------------------------------------------------------
+-- Vars -
+
+type Vars s x = M.Map (SomeHomologyVariable s x) (SomeHomologyExpr s x)
+
+--------------------------------------------------------------------------------
+-- evalVar -
+
+evalVar :: Vars s x
+  -> HomologyValueType s x v -> Z -> String -> Eval (HomologyExpr s x v)
+evalVar vrs t z n                      = case M.lookup (SomeHmgVar t z n) vrs of
+  Nothing                             -> failure $ UnboundVariable z n
+  Just (SomeHmgExpr t' e)             -> case (t,t') of
+    (HmgValTypeVoid ,HmgValTypeVoid ) -> return e
+    (HmgValTypeZ    ,HmgValTypeZ    ) -> return e
+    (HmgValTypeChain,HmgValTypeChain) -> return e
+    _                                 -> failure $ EvalFailure "inconsistent variable mapping"
+    
+--------------------------------------------------------------------------------
+-- evalInsertVar -
+
+evalInsertVar :: Vars s x -> HomologyValueType s x v
+  -> Z -> String -> HomologyExpr s x v -> Eval (Vars s x)
+evalInsertVar vrs t at n e
+  = return (M.insert (SomeHmgVar t at n) (SomeHmgExpr t e) vrs)
+
+
+--------------------------------------------------------------------------------
+-- varDependent -
+
+-- | the set of dependend variables.
+varDependent :: Z -> HomologyExpr s x v -> Set (SomeHomologyVariable s x)
+varDependent at e       = case e of
+  AblExprValue _      -> empty
+  AblExprVariable t n -> hmgVar t at n
+  AblExprLet t n a b  -> case hmgVar t at n <<= vb of
+    True  -> varDependent at a || vb
+    False -> vb
+    where vb = varDependent at b
+
+  AblExprZero _       -> empty
+  z :!> a             -> varDependent at z || varDependent at a
+  a :+: b             -> varDependent at a || varDependent at b
+  _ :$: a             -> varDependent at a
+
+--------------------------------------------------------------------------------
+-- evaluable -
+
+-- | evaluability of a given set of values according to there evaluation dependencies.
 --
--- __Definition__ A homology expression @e@ contains no recursive definition iff for all sub expresions
--- of the form @'AblExprLet' _ n a _@ in @e@ holds: @'varOccurs' n a@ is 'False'.
---
--- [Pre] @vrs@ contains no recursive variable bindings.
-evalNoRecursiveDefs :: Vars s x -> Z -> String -> HomologyExpr s x v -> Eval ()
-evalNoRecursiveDefs vrs at n e = case e of
-  AblExprValue _        -> return ()
-  AblExprVariable _ n'  -> case n' == n of
-    True                -> failure $ RecursiveDefinition $ n'
-    False               -> return ()
-  AblExprLet t n' a b   -> case varOccurs n' a of
-    True                -> failure $ RecursiveDefinition $ n'
-    False               -> do
-      vrs' <- evalInsertVar vrs t at n' a
-      evalNoRecursiveDefs vrs' at n b
-  AblExprZero _         -> return ()
-  z :!> a               -> do
-    () <- evalNoRecursiveDefs vrs at n z
-    () <- evalNoRecursiveDefs vrs at n a
-    return ()
-  a :+: b               -> do
-    () <- evalNoRecursiveDefs vrs at n a
-    () <- evalNoRecursiveDefs vrs at n b
-    return ()
-  _ :$: a               -> evalNoRecursiveDefs vrs at n a
+evaluable :: (Ord v, Show v) => Deps v -> Set v -> Eval ()
+evaluable dps es = evlb dps es empty where
+  
+  -- Constraint: @es@ and @vs@ are disjunct.
+  evlb :: (Ord v, Show v) => Deps v -> Set v -> Set v -> Eval ()
+  evlb _ (Set []) _        = return ()
+  evlb dps (Set (e:es)) vs = case M.lookup e dps of
+    Nothing             -> evlb dps (Set es) empty
+    Just eds            -> case isEmpty (eds && vs) of
+      True              -> evlb dps (eds || Set es) (Set [e] || vs)
+      False             -> failure $ RecursiveDefinition $ show e
+
+--------------------------------------------------------------------------------
+-- Deps -
+
+type Deps v = M.Map v (Set v)
+
+--------------------------------------------------------------------------------
+-- deps -
+
+deps :: Vars s x -> Deps (SomeHomologyVariable s x)
+deps = M.mapWithKey (\(SomeHmgVar _ z _) (SomeHmgExpr _ e) -> varDependent z e)
 
 --------------------------------------------------------------------------------
 -- evalRootHmgExpr -
@@ -607,11 +640,14 @@ evalRootHmgExpr env@Env{} vrs at e = case e of
   AblExprValue v      -> return $ root v
   AblExprVariable t n -> evalVar vrs t at n >>= evalRootHmgExpr env vrs at
   AblExprLet t n a b  -> do
-    ()   <- evalNoRecursiveDefs vrs at n a
     vrs' <- evalInsertVar vrs t at n a
-    evalRootHmgExpr env vrs' at b
+    ()   <- evaluable (deps vrs') (varDependent at b)
+    evalRootHmgExpr env vrs' at b 
+    
   AblExprZero r       -> return r
-  _ :!> a             -> evalRootHmgExpr env vrs at a
+  z :!> a             -> do
+    ():>() <- evalRootHmgExpr env vrs at z
+    evalRootHmgExpr env vrs at a
   a :+: b             -> do
     ra <- evalRootHmgExpr env vrs at a
     rb <- evalRootHmgExpr env vrs at b
@@ -662,13 +698,26 @@ evalSumFormHmgExpr env@Env{} vrs at e = case e of
 evalHmgExpr :: (Abelian v, Ord v)
   => Env t s n x -> Vars s x -> Z -> HomologyExpr s x v -> Eval v
 evalHmgExpr env@Env{} vrs at e =  do
-  _ <- evalRootHmgExpr env vrs at e
   s <- evalSumFormHmgExpr env vrs at e
   return $ zSum vOne $ make s
 
   where vOne :: Abelian v
              => HomFibEmpty Fbr v v
         vOne = cOne Struct
+
+--------------------------------------------------------------------------------
+-- CardinalitySimplexSetExpr -
+
+data CardinalitySimplexSetExpr n (s :: Type -> Type) x v where
+  ExprCardSmpSetAll :: CardinalitySimplexSetExpr n s x (Cards Z n)
+  ExprCardSmpSetAt :: CardinalitySimplexSetExpr n s x (Cards Z N0)
+  
+--------------------------------------------------------------------------------
+-- HomologyGroupExpr -
+
+data HomologyGroupExpr n (s :: Type -> Type) x v where
+  ExprHmgGroupAll :: HomologyGroupExpr n s x (Deviation (n+1) AbHom)
+  ExprHmgGroupAt  :: HomologyGroupExpr n s x (Deviation N1 AbHom)
 
 --------------------------------------------------------------------------------
 -- Expr -
@@ -678,22 +727,7 @@ data Expr n s x v where
   ExprMaxDim     :: Expr n s x Z  
   ExprCardSmpSet :: CardinalitySimplexSetExpr n s x v -> Expr n s x v
   ExprHmgGroup   :: HomologyGroupExpr n s x v -> Expr n s x v
-  ExprHmg        :: (Abelian v, Ord v) => HomologyExpr s x v -> Expr n s x v
-
---------------------------------------------------------------------------------
--- CardinalitySimplexSetExpr -
-
-data CardinalitySimplexSetExpr n (s :: Type -> Type) x v where
-  ExprCardSmpSetAll :: CardinalitySimplexSetExpr n s x (Cards Z n)
-  ExprCardSmpSetAt :: CardinalitySimplexSetExpr n s x (Cards Z N0)
-  
-
---------------------------------------------------------------------------------
--- HomologyGroupExpr -
-
-data HomologyGroupExpr n (s :: Type -> Type) x v where
-  ExprHmgGroupAll :: HomologyGroupExpr n s x (Deviation (n+1) AbHom)
-  ExprHmgGroupAt  :: HomologyGroupExpr n s x (Deviation N1 AbHom)
+  ExprHmg        :: (Abelian v, Ord v) => HomologyExpr s x v -> Expr n s x (Root v,v)
 
 --------------------------------------------------------------------------------
 -- eval -
@@ -707,8 +741,10 @@ eval env@Env{} vrs at e = case e of
   ExprHmgGroup h       -> case h of
     ExprHmgGroupAll    -> return $ evalHmgGroupAll env
     ExprHmgGroupAt     -> evalHmgGroupAt env at    
-  ExprHmg h            -> evalHmgExpr env vrs at h
-
+  ExprHmg h            -> do
+    r <- evalRootHmgExpr env vrs at h
+    v <- evalHmgExpr env vrs at h
+    return (r,v)
 
 t = ChainComplexStandard
 n = attest :: Any N6
@@ -719,7 +755,7 @@ s = Proxy :: Proxy Asc
 ea = env' s t n a
 eb = env' s t n b
 
-vrs = Vars (M.empty) (M.empty) (M.empty)
+vrs = M.empty
 
 maxDim = ExprMaxDim
 
@@ -732,10 +768,11 @@ crd   = ExprCardSmpSet ExprCardSmpSetAt
 -- chsAt = ExprChns
 
 
-ablExprCh :: (Abelian v, Ord v) => HomologyExpr s x v -> Expr n s x v
+ablExprCh :: (Abelian v, Ord v) => HomologyExpr s x v -> Expr n s x (Root v,v)
 ablExprCh = ExprHmg
 
-vl :: (Abelian v, Ord v) => v -> Expr n s x v
+
+vl :: (Abelian v, Ord v) => v -> Expr n s x (Root v,v)
 vl = ExprHmg . AblExprValue
 
 
@@ -750,18 +787,42 @@ hAt  = (:$:) HmgOprClass
 
 a .-. b = a :+: (AblExprValue (-1) :!> b)
 
--- exprHmg :: (Abelian v, Ord v) => HomologyExpr s x v -> Expr n s x v
-{-
+chlet n = AblExprLet HmgValTypeChain n
+chvar = AblExprVariable HmgValTypeChain
+
 exprHmg e = ExprHmg
-  ( AblExprLet HmgValTypeChain "a" (chAt CycleType 1)
-    ( AblExprLet HmgValTypeChain "b" (chAt CycleType 4) e 
-    )
-  ) 
--}
-exprHmg e = ExprHmg
-  ( AblExprLet HmgValTypeChain "a" (chAt CycleType 4)
+  ( AblExprLet HmgValTypeChain "a" (AblExprVariable HmgValTypeChain "b")
     ( AblExprLet HmgValTypeChain "b" (   AblExprVariable HmgValTypeChain "a"
                                      :+: AblExprVariable HmgValTypeChain "c"
                                      ) e 
     )
-  ) 
+  )
+
+vae a e
+  = AblExprLet HmgValTypeChain "a" (AblExprVariable HmgValTypeChain a)
+      ( AblExprLet HmgValTypeChain "b"
+        ( AblExprVariable HmgValTypeChain "a"
+        :+: AblExprVariable HmgValTypeChain "c"
+        )
+        e
+      )
+
+vab a n
+  = AblExprLet HmgValTypeChain "a" (AblExprVariable HmgValTypeChain a)
+      ( AblExprLet HmgValTypeChain "b"
+        ( AblExprVariable HmgValTypeChain "a"
+        :+: AblExprVariable HmgValTypeChain "c"
+        )
+        (AblExprVariable HmgValTypeChain n)
+      )
+
+vb n = AblExprLet HmgValTypeChain "b"
+        ( AblExprVariable HmgValTypeChain "a"
+        :+: AblExprVariable HmgValTypeChain "c"
+        )
+        (AblExprVariable HmgValTypeChain n)
+
+
+
+
+
