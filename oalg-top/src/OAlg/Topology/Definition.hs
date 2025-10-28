@@ -84,9 +84,11 @@ data SomeChainComplex t r s n where
   SomeChainComplex :: (Simplical s x, Attestable n)
     => ChainComplex t r s n x -> SomeChainComplex t r s n
 
+{-
 --------------------------------------------------------------------------------
 -- someChainComplex -
 
 someChainComplex :: (Ring r, Commutative r, Ord r)
   => ChainComplexType t -> Any n -> Space m -> SomeChainComplex t r s n
 someChainComplex t n (SpaceAbstract c) = SomeChainComplex $ chainComplex t n c
+-}

@@ -21,6 +21,7 @@
 -- Simplices and there faces.
 module OAlg.Homology.Simplical
   (
+{-    
     -- * Simplical
     Simplical(..), Smpl, faces', gphFaces
   , spxAdjDim
@@ -31,7 +32,7 @@ module OAlg.Homology.Simplical
 
     -- * Asc
   , Asc(..), isAsc, ascxs, asc
-  
+-}  
   ) where
 
 import Control.Monad (join)
@@ -87,23 +88,26 @@ import OAlg.Structure.PartiallyOrdered
 --        (5.2.2) @'vertices' s '<<=' sv@.
 --
 --    (5.3) For all @s@ in @__s__ __x__@ with @'verteices' s '<<=' sv@ holds: @s@ is in @g@.
+{-
 class ( Entity x, Ord x
       , Entity (s x), Ord (s x), PartiallyOrdered (s x), Empty (s x), Erasable (s x)
       , Typeable s
       )
   => Simplical s x where
+-}
+class Simplical s where
   dimension :: s x -> Z
   -- | the underlying set of vertices..
-  vertices :: s x -> Set x
+  vertices :: Ord x => s x -> Set x
   -- | the face of a set of simplices.
   faces :: s x -> [s x]
   -- | set of all simplices with vertices in the given set.
   --
   -- __Note__ This maybe an infinite list, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
-  simplices :: Set x -> Graph Z (Set (s x)) 
+  simplices :: Ord x => Set x -> Graph Z (Set (s x)) 
   
 
-instance (Entity x, Ord x) => Simplical [] x where
+instance Simplical [] where
   dimension = pred . inj . lengthN
   vertices = set
   faces []     = []
@@ -112,38 +116,40 @@ instance (Entity x, Ord x) => Simplical [] x where
     -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
     cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
 
-instance (Entity x, Ord x) => Simplical Set x where
+instance Simplical Set where
   dimension (Set vs) = dimension vs
   vertices = id
   faces (Set vs) = amap1 Set $ faces vs
   simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
+{-
 --------------------------------------------------------------------------------
 -- Smpl -
 
 data Smpl (s :: Type -> Type)
 
 type instance Structure (Smpl s) x = Simplical s x 
+-}
 
 --------------------------------------------------------------------------------
 -- faces' -
 
 -- | the faces as set of simplices.
-faces' :: Simplical s x => Set (s x) -> Set (s x)
+faces' :: (Simplical s, Ord (s x)) => Set (s x) -> Set (s x)
 faces' = set . join . amap1 faces . setxs
 
 --------------------------------------------------------------------------------
 -- spxAdjDim -
 
 -- | adjoins the dimension to the given simplex.
-spxAdjDim :: Simplical s x => s x -> (Z,s x)
+spxAdjDim :: Simplical s => s x -> (Z,s x)
 spxAdjDim s = (dimension s,s)
 
 --------------------------------------------------------------------------------
 -- gphFaces -
 
 -- | the faces.
-gphFaces :: Simplical s x => Graph Z (Set (s x)) -> Graph Z (Set (s x))
+gphFaces :: (Simplical s, Ord (s x)) => Graph Z (Set (s x)) -> Graph Z (Set (s x))
 gphFaces (Graph zs) = Graph $ amap1 (\(z,s) -> (pred z,faces' s)) zs
 
 --------------------------------------------------------------------------------
@@ -153,29 +159,34 @@ gphFaces (Graph zs) = Graph $ amap1 (\(z,s) -> (pred z,faces' s)) zs
 --
 -- __Propoerty__ Let @(z,s)@ be in @'Set' ('Z',___s___ __x__)@, the holds:
 -- @z '==' 'dimension' s@.
-relDimSimplex :: Simplical s x => Set (Z,s x) -> Statement
+relDimSimplex :: (Simplical s, Show (s x)) => Set (Z,s x) -> Statement
 relDimSimplex (Set zss) = foldl vldDim SValid zss where
-  vldDim :: Simplical s x => Statement -> (Z,s x) -> Statement
+  vldDim :: (Simplical s, Show (s x)) => Statement -> (Z,s x) -> Statement
   vldDim v (z,s) = v && (z == dimension s) :?> Params ["z":=show z, "s":=show s]
 
 --------------------------------------------------------------------------------
 -- prpSimplical -
 
 -- | validity of 'Simplical'-structure.
-prpSimplical :: Simplical s x => X (s x) -> X (Set x) -> Statement
+prpSimplical ::
+  ( Simplical s
+  , Show (s x), Empty (s x)
+  , Ord x
+  )
+  => X (s x) -> X (Set x) -> Statement
 prpSimplical xsx xvx = Prp "Simplical" :<=>:
   And [ Label "1" :<=>: (dimension (spxEmpty xsx) == -1) :?> Params ["empty":= show (spxEmpty xsx)]
       , Forall xsx vldFaces
       , vldSimplices (xSimplices xsx xvx)
       ] where
 
-    xSimplices :: Simplical s x => X (s x) -> X (Set x) -> X (Graph Z (Set (s x)))
+    xSimplices :: (Simplical s, Ord x) => X (s x) -> X (Set x) -> X (Graph Z (Set (s x)))
     xSimplices _ xvx = amap1 simplices xvx
   
-    spxEmpty :: Simplical s x => X (s x) -> s x
+    spxEmpty :: Empty (s x) => X (s x) -> s x
     spxEmpty _ = empty
 
-    vldFaces :: Simplical s x => s x -> Statement
+    vldFaces :: (Simplical s, Show (s x), PartiallyOrdered (s x)) => s x -> Statement
     vldFaces s = foldl vldFace SValid $ faces s where
       d = pred $ dimension s
       
@@ -184,14 +195,14 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
                         , Label "2.2" :<=>: (f <<= s) :?> Params ["s":=show s, "f":=show f]
                         ]
 
-    vldSimplices :: Simplical s x => X (Graph Z (Set (s x))) -> Statement
+    vldSimplices :: (Simplical s, Show (s x)) => X (Graph Z (Set (s x))) -> Statement
     vldSimplices xg = Forall xg
       (\g -> And [ Label "3.1" :<=>: Forall (xOneOf $ setxs $ setTakeN 10000 $ gphset g)
                      (\(z,s) -> (z == dimension s) :?> Params ["z":=show z, "s":=show s])
                  -- tbd!!
                  ]
       )
-    
+
 --------------------------------------------------------------------------------
 -- SimplicalTransformable -
 
@@ -201,27 +212,32 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
 --
 -- (1) @'vertices' ('amap1' f s) '==' 'amap1' f ('vertices' s)@ for all
 -- @f@ in @'Map' 'Ord'' __x y__@ and @s@ in @__s x__@.
-class (Functorial1 (Map EntOrd) s, Simplical s x, Simplical s y)
-  => SimplicalTransformable s x y 
+class (Functorial1 (Map EntOrd) s, Simplical s) -- x, Simplical s y)
+  => SimplicalTransformable s
 
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Set x y
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable [] x y
+instance SimplicalTransformable Set
+instance SimplicalTransformable []
 
 --------------------------------------------------------------------------------
 -- prpSimplicalTransformable -
 
 -- | validity for 'SimplicalTransformable'.
-prpSimplicalTransformable :: SimplicalTransformable s x y
+prpSimplicalTransformable :: SimplicalTransformable s
   => X (Map EntOrd x y) -> X (s x) -> Statement
 prpSimplicalTransformable xf xsx = Prp "SimplicalTransformable" :<=>:
   Forall (xTupple2 xf xsx) (uncurry vldTrafo) where
 
-    vldTrafo :: SimplicalTransformable s x y
-              => Map EntOrd x y -> s x -> Statement
-    vldTrafo f sx = (vf == fv) :?> Params ["vf // fv":= show (vf // fv)]
+    vldTrafoStruct ::
+         SimplicalTransformable s
+      => Struct EntOrd x -> Struct EntOrd y -> Map EntOrd x y -> s x -> Statement
+    vldTrafoStruct Struct Struct f sx = (vf == fv) :?> Params ["vf // fv":= show (vf // fv)]
       where sy = amap1 f sx
             vf = vertices sy
             fv = amap1 f $ vertices sx
+
+    vldTrafo :: SimplicalTransformable s
+              => Map EntOrd x y -> s x -> Statement
+    vldTrafo f = vldTrafoStruct (domain f) (range f) f
 
 --------------------------------------------------------------------------------
 -- Asc -
@@ -316,13 +332,13 @@ instance Eq x => Empty (Asc x) where
 instance Eq x => Erasable (Asc x) where
   Asc xs // Asc ys = Asc (xs // ys)
   
-instance (Entity x, Ord x) => Simplical Asc x where
+instance Simplical Asc where
   dimension (Asc xs) = dimension xs
   vertices (Asc xs)  = set xs
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = Graph . ascCombinations
 
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Asc x y
+instance SimplicalTransformable Asc
 
 --------------------------------------------------------------------------------
 -- SimplexType -
@@ -331,7 +347,7 @@ data SimplexType s where
   SpxTypeSet :: SimplexType Set
   SpxTypeLst :: SimplexType []
   SpxTypeAsc :: SimplexType Asc
-
+{-
 --------------------------------------------------------------------------------
 -- structSmpl -
 
@@ -341,3 +357,4 @@ structSmpl SpxTypeLst _ = Struct
 structSmpl SpxTypeAsc _ = Struct
 
 
+-}
