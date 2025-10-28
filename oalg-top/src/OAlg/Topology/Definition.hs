@@ -1,17 +1,16 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE
-    TypeFamilies
-  , TypeOperators
-  , MultiParamTypeClasses
-  , FlexibleInstances
-  , FlexibleContexts
-  , GADTs
-  , StandaloneDeriving
-  , DataKinds
-  , TupleSections
-#-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TupleSections #-}
+
 
 -- |
 -- Module      : OAlg.Topology.Definition
@@ -39,7 +38,8 @@ import OAlg.Category.Map
 import OAlg.Data.Filterable
 
 import OAlg.Structure.Oriented
-
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Ring
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Diagram
@@ -48,8 +48,9 @@ import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.Sequence hiding (span,isEmpty)
 import OAlg.Structure.PartiallyOrdered
 
-import OAlg.Topology.Simplical
-import OAlg.Topology.Complex
+import OAlg.Homology.Simplical
+import OAlg.Homology.Complex
+import OAlg.Homology.ChainComplex
 
 --------------------------------------------------------------------------------
 -- Model -
@@ -76,16 +77,16 @@ instance Eq (Space m) where
 instance Validable (Space m) where
   valid (SpaceAbstract c) = Label "SpaceAbstract" :<=>: valid c
 
-instance Typeable m => Entity (Space m)
-{-
-instance Show Space where
-  show (Space i _) = show i
+--------------------------------------------------------------------------------
+-- SomeChainComplex -
 
-instance Eq Space where
-  Space i c == Space i' c' = i == i' && error "nyi"
+data SomeChainComplex t r s n where
+  SomeChainComplex :: (Simplical s x, Attestable n)
+    => ChainComplex t r s n x -> SomeChainComplex t r s n
 
-instance Validable Space where
-  valid (Space i c) = Label "Space" :<=>: valid i && valid c
+--------------------------------------------------------------------------------
+-- someChainComplex -
 
-instance Entity Space
--}
+someChainComplex :: (Ring r, Commutative r, Ord r)
+  => ChainComplexType t -> Any n -> Space m -> SomeChainComplex t r s n
+someChainComplex t n (SpaceAbstract c) = SomeChainComplex $ chainComplex t n c
