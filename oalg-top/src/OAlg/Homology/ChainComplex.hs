@@ -128,6 +128,10 @@ data ChainComplexType t where
 deriving instance Show (ChainComplexType t)
 deriving instance Eq (ChainComplexType t)
 
+instance Validable (ChainComplexType t) where
+  valid ChainComplexStandard = SValid
+  valid ChainComplexExtended = SValid
+
 --------------------------------------------------------------------------------
 -- BoundaryOperator -
 
@@ -151,6 +155,11 @@ data ChainComplex t r s n x
   = ChainComplex (ChainComplexType t) (Diagram (Chain To) (n+3) (n+2) (BoundaryOperator r s x))
   deriving (Show,Eq)
 
+instance (Ring r, Commutative r, Ord r, Simplical s x) => Validable (ChainComplex t r s n x) where
+  valid (ChainComplex t d) = Label "ChainComplex" :<=>:
+    And [ valid t
+        , valid d
+        ]
 --------------------------------------------------------------------------------
 -- ccxDiagram -
 

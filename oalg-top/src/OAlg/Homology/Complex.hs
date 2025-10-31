@@ -32,7 +32,7 @@ module OAlg.Homology.Complex
     -- * Map
   , ComplexMap(..), Neglecting, Preserving
   , cpmForget, cpmDomain, cpmRange
-  , cpmMap, cpmGraph
+  , cpmMap, cpmHomEntOrd, cpmGraph
 
     -- * Homological
   , Homological, Hmlg
@@ -325,6 +325,12 @@ cpmRange (ComplexMapPrs _ b _) = b
 cpmMap :: ComplexMap s (Complex x) (Complex y) -> Map EntOrd x y
 cpmMap (ComplexMapNgl _ _ f) = f
 cpmMap (ComplexMapPrs _ _ f) = f
+
+--------------------------------------------------------------------------------
+-- cpmHomEntOrd -
+
+cpmHomEntOrd :: ComplexMap s (Complex x) (Complex y) -> Homomorphous EntOrd x y
+cpmHomEntOrd = homomorphous . cpmMap
 
 --------------------------------------------------------------------------------
 -- cpmGraph -
