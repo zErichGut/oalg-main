@@ -108,7 +108,7 @@ instance (Ring r, Commutative r, Ord r) => Eq (SomeChainComplex t r s n) where
     Just Refl -> a == b
     Nothing   -> False
 
-instance (Ring r, Commutative r, Ord r) => Validable (SomeChainComplex t r s n) where
+instance (AlgebraicSemiring r, Ring r, Ord r) => Validable (SomeChainComplex t r s n) where
   valid (SomeChainComplex c) = Label "SomeChainComplex" :<=>: valid c
 
 --------------------------------------------------------------------------------
@@ -218,7 +218,11 @@ data SomeChainComplexHom t r n where
 deriving instance (Ring r, Ord r, AlgebraicSemiring r) => Show (SomeChainComplexHom t r n)
 
 instance (Ring r, Ord r, AlgebraicSemiring r) => Eq (SomeChainComplexHom t r n) where
-  SomeChainComplexHom f == SomeChainComplexHom g = error "nyi"
+  SomeChainComplexHom f == SomeChainComplexHom g
+    = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
+        (Just Refl,Just Refl) -> f == g
+        _                     -> False
+  
 --------------------------------------------------------------------------------
 -- someChainComplexHom -
 
@@ -247,7 +251,7 @@ type instance Point (SomeChainComplexHom t r n) = SomeChainComplex t r Asc n
 
 deriving instance (Ring r, Commutative r, Ord r) => ShowPoint (SomeChainComplexHom t r n)
 deriving instance (Ring r, Commutative r, Ord r) => EqPoint (SomeChainComplexHom t r n)
-deriving instance (Ring r, Commutative r, Ord r) => ValidablePoint (SomeChainComplexHom t r n)
+deriving instance (AlgebraicSemiring r, Ring r, Ord r) => ValidablePoint (SomeChainComplexHom t r n)
 deriving instance (Typeable t, Typeable r, Typeable n) => TypeablePoint (SomeChainComplexHom t r n)
 
 {-

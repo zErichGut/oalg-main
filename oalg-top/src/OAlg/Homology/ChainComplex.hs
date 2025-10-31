@@ -33,6 +33,7 @@ module OAlg.Homology.ChainComplex
 
     -- * Homomorphsim
   , chainComplexHom, chainComplexHomZ
+  , ccxhDomain, ccxhRange
   , ChainComplexHom(..)
   , MapOperator
 
@@ -155,11 +156,6 @@ data ChainComplex t r s n x
   = ChainComplex (ChainComplexType t) (Diagram (Chain To) (n+3) (n+2) (BoundaryOperator r s x))
   deriving (Show,Eq)
 
-instance (Ring r, Commutative r, Ord r, Simplical s x) => Validable (ChainComplex t r s n x) where
-  valid (ChainComplex t d) = Label "ChainComplex" :<=>:
-    And [ valid t
-        , valid d
-        ]
 --------------------------------------------------------------------------------
 -- ccxDiagram -
 
@@ -239,6 +235,23 @@ ccxRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
   => ChainComplex t r s n x -> ConsecutiveZero To n (Matrix r)
 ccxRepMatrix (ChainComplex _ c) = ConsecutiveZero $ dgMap ChorsRepMatrix c
 
+instance (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
+  => Validable (ChainComplex t r s n x) where
+  valid c@(ChainComplex t d) = Label "ChainComplex" :<=>:
+    And [ valid t
+        , valid d
+        , Label "ChainComplexType" :<=>: vldCcxType t d
+        , Label "ConsecutiveZero" :<=>: valid (ccxRepMatrix c)
+        ] where
+
+    vldCcxType ::
+      (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
+      => ChainComplexType t -> Diagram (Chain To) (n+2) (n+1) (BoundaryOperator r s x)
+      -> Statement
+    vldCcxType t (DiagramChainTo _ (d0:|_)) = case t of
+      ChainComplexStandard -> isZero d0 :?> Params ["d0":=show d0]
+      ChainComplexExtended -> SValid
+    
 --------------------------------------------------------------------------------
 -- ccxCards -
 
@@ -264,6 +277,18 @@ data ChainComplexHom t r s n x y
       (ChainComplex t r s n y)
       (FinList (n+3) (MapOperator r s x y))
   deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- ccxhDomain -
+
+ccxhDomain :: ChainComplexHom t r s n x y -> ChainComplex t r s n x
+ccxhDomain (ChainComplexHom d _ _) = d
+
+--------------------------------------------------------------------------------
+-- ccxhRange -
+
+ccxhRange :: ChainComplexHom t r s n x y -> ChainComplex t r s n y
+ccxhRange (ChainComplexHom _ r _) = r
 
 --------------------------------------------------------------------------------
 -- chainComplexHom -
