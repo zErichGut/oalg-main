@@ -40,8 +40,11 @@ import OAlg.Data.Filterable
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
+import OAlg.Structure.Distributive
 import OAlg.Structure.Additive
 import OAlg.Structure.Ring
+import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 
 import OAlg.Hom.Distributive ()
@@ -302,3 +305,19 @@ instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
     = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
         (Just Refl,Just Refl) -> SomeChainComplexHom $ ccxhSbtr f g
         _                     -> throw NotAddable
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Vectorial (SomeChainComplexHom t r n) where
+  type Scalar (SomeChainComplexHom t r n) = r
+  r ! (SomeChainComplexHom f) = SomeChainComplexHom (r `ccxhSclMlt` f)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => FibredOriented (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Distributive (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Algebraic (SomeChainComplexHom t r n)
+
+  

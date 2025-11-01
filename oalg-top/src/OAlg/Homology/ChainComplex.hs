@@ -39,6 +39,7 @@ module OAlg.Homology.ChainComplex
   , ccxhOne, ccxhMlt
   , ccxhZero, ccxhAdd
   , ccxhNegate, ccxhSbtr
+  , ccxhSclMlt
 
     -- ** Representaiton
   , ccxRepMatrixHom, ccxCardsHom
@@ -60,6 +61,7 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
 import OAlg.Structure.Additive
+import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 
 import OAlg.Entity.Diagram as D
@@ -392,6 +394,13 @@ ccxhSbtr (ChainComplexHom a b fs) (ChainComplexHom a' b' gs)
   | (a,b) /= (a',b') = throw NotAddable
   | otherwise        = ChainComplexHom a b (amap1 (uncurry (-)) $ (fs `F.zip` gs))
 
+--------------------------------------------------------------------------------
+-- ccxhSclMlt -
+
+ccxhSclMlt ::
+  (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+  => r -> ChainComplexHom t r s n x y -> ChainComplexHom t r s n x y
+ccxhSclMlt r (ChainComplexHom a b fs) = ChainComplexHom a b (amap1 (r!) fs)
 
 --------------------------------------------------------------------------------
 -- ccxRepMatrixHom -
