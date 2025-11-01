@@ -39,6 +39,8 @@ import OAlg.Data.Filterable
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
+import OAlg.Structure.Additive
 import OAlg.Structure.Ring
 import OAlg.Structure.Algebraic
 
@@ -222,7 +224,10 @@ instance (Ring r, Ord r, AlgebraicSemiring r) => Eq (SomeChainComplexHom t r n) 
     = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
         (Just Refl,Just Refl) -> f == g
         _                     -> False
-  
+
+instance (Ring r, Ord r, AlgebraicSemiring r) => Validable (SomeChainComplexHom t r n) where
+  valid (SomeChainComplexHom f) = Label "SomeChainComplexHom" :<=>: valid f
+
 --------------------------------------------------------------------------------
 -- someChainComplexHom -
 
@@ -254,7 +259,46 @@ deriving instance (Ring r, Commutative r, Ord r) => EqPoint (SomeChainComplexHom
 deriving instance (AlgebraicSemiring r, Ring r, Ord r) => ValidablePoint (SomeChainComplexHom t r n)
 deriving instance (Typeable t, Typeable r, Typeable n) => TypeablePoint (SomeChainComplexHom t r n)
 
-{-
-instance (Ring r, Commutative r, Ord r, Typeable t, Typeable n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
   => Oriented (SomeChainComplexHom t r n) where
--}  
+  start (SomeChainComplexHom f) = SomeChainComplex $ ccxhDomain f
+  end (SomeChainComplexHom f)   = SomeChainComplex $ ccxhRange f
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Multiplicative (SomeChainComplexHom t r n) where
+  one (SomeChainComplex c) = SomeChainComplexHom $ ccxhOne c
+
+  SomeChainComplexHom f * SomeChainComplexHom g
+    = case eqVertexType (ccxhRange g) (ccxhDomain f) of
+        Just Refl -> SomeChainComplexHom (f `ccxhMlt` g)
+        Nothing   -> throw NotMultiplicable
+
+type instance Root (SomeChainComplexHom t r n) = Orientation (SomeChainComplex t r Asc n)
+
+deriving instance (Ring r,Commutative r, Ord r) => ShowRoot (SomeChainComplexHom t r n)
+deriving instance (Ring r,Commutative r, Ord r) => EqRoot (SomeChainComplexHom t r n)
+deriving instance (AlgebraicSemiring r, Ring r, Ord r) => ValidableRoot (SomeChainComplexHom t r n)
+deriving instance (Typeable r, Typeable t, Typeable n) => TypeableRoot (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Fibred (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Additive (SomeChainComplexHom t r n) where
+  zero (SomeChainComplex a :> SomeChainComplex b)
+    = SomeChainComplexHom $ ccxhZero a b
+
+  SomeChainComplexHom f + SomeChainComplexHom g
+    = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
+        (Just Refl,Just Refl) -> SomeChainComplexHom (f `ccxhAdd` g)
+        _                     -> throw NotAddable
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Abelian (SomeChainComplexHom t r n) where
+  negate (SomeChainComplexHom f) = SomeChainComplexHom $ ccxhNegate f
+
+  SomeChainComplexHom f - SomeChainComplexHom g
+    = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
+        (Just Refl,Just Refl) -> SomeChainComplexHom $ ccxhSbtr f g
+        _                     -> throw NotAddable

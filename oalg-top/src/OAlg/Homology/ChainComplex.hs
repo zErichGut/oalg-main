@@ -36,6 +36,9 @@ module OAlg.Homology.ChainComplex
   , ccxhDomain, ccxhRange
   , ChainComplexHom(..)
   , MapOperator
+  , ccxhOne, ccxhMlt
+  , ccxhZero, ccxhAdd
+  , ccxhNegate, ccxhSbtr
 
     -- ** Representaiton
   , ccxRepMatrixHom, ccxCardsHom
@@ -51,6 +54,7 @@ import OAlg.Category.Map
 
 import OAlg.Data.Filterable
 
+import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -156,6 +160,22 @@ data ChainComplex t r s n x
   = ChainComplex (ChainComplexType t) (Diagram (Chain To) (n+3) (n+2) (BoundaryOperator r s x))
   deriving (Show,Eq)
 
+instance (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
+  => Validable (ChainComplex t r s n x) where
+  valid (ChainComplex t d) = Label "ChainComplex" :<=>:
+    And [ valid t
+        , valid d
+        , Label "ChainComplexType" :<=>: vldCcxType t d
+        ] where
+
+    vldCcxType ::
+      (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
+      => ChainComplexType t -> Diagram (Chain To) (n+2) (n+1) (BoundaryOperator r s x)
+      -> Statement
+    vldCcxType t (DiagramChainTo _ (d0:|_)) = case t of
+      ChainComplexStandard -> isZero d0 :?> Params ["d0":=show d0]
+      ChainComplexExtended -> SValid
+    
 --------------------------------------------------------------------------------
 -- ccxDiagram -
 
@@ -235,23 +255,6 @@ ccxRepMatrix :: (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
   => ChainComplex t r s n x -> ConsecutiveZero To n (Matrix r)
 ccxRepMatrix (ChainComplex _ c) = ConsecutiveZero $ dgMap ChorsRepMatrix c
 
-instance (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
-  => Validable (ChainComplex t r s n x) where
-  valid c@(ChainComplex t d) = Label "ChainComplex" :<=>:
-    And [ valid t
-        , valid d
-        , Label "ChainComplexType" :<=>: vldCcxType t d
-        , Label "ConsecutiveZero" :<=>: valid (ccxRepMatrix c)
-        ] where
-
-    vldCcxType ::
-      (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
-      => ChainComplexType t -> Diagram (Chain To) (n+2) (n+1) (BoundaryOperator r s x)
-      -> Statement
-    vldCcxType t (DiagramChainTo _ (d0:|_)) = case t of
-      ChainComplexStandard -> isZero d0 :?> Params ["d0":=show d0]
-      ChainComplexExtended -> SValid
-    
 --------------------------------------------------------------------------------
 -- ccxCards -
 
@@ -277,6 +280,27 @@ data ChainComplexHom t r s n x y
       (ChainComplex t r s n y)
       (FinList (n+3) (MapOperator r s x y))
   deriving (Show,Eq)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Simplical s x, Simplical s y)
+  => Validable (ChainComplexHom t r s n x y) where
+  valid (ChainComplexHom a b fs) = Label "ChainComplexHom" :<=>:
+    And [ valid a
+        , valid b
+        , valid fs
+        , Label "commutative" :<=>: vldCom 0 (dgArrows $ ccxDiagram a) (dgArrows $ ccxDiagram b) fs
+        ] where
+
+    vldCom ::
+      (Ring r, Ord r, AlgebraicSemiring r, Simplical s x, Simplical s y)
+      => N
+      -> FinList n (BoundaryOperator r s x) -> FinList n (BoundaryOperator r s y)
+      -> FinList (n+1) (MapOperator r s x y)
+      -> Statement
+    vldCom _ Nil _ _ = SValid
+    vldCom i (d:|ds) (d':|ds') (f:|f':|fs)
+      = And [ (chorsMlt f d == chorsMlt d' f') :?> Params ["i":=show i]
+            , vldCom (succ i) ds ds' (f':|fs)
+            ]
 
 --------------------------------------------------------------------------------
 -- ccxhDomain -
@@ -309,6 +333,65 @@ chainComplexHom t n f = ChainComplexHom a b hs where
 chainComplexHomZ ::Homological s x y
   => ChainComplexType t -> Any n -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom t Z s n x y
 chainComplexHomZ = chainComplexHom
+
+--------------------------------------------------------------------------------
+-- ccxhOne -
+
+ccxhOne :: (Ring r, Ord r, AlgebraicSemiring r, Simplical s x)
+  => ChainComplex t r s n x -> ChainComplexHom t r s n x x
+ccxhOne c = ChainComplexHom c c (amap1 chorsOne $ dgPoints $ ccxDiagram c)
+
+--------------------------------------------------------------------------------
+-- ccxhMlt -
+
+ccxhMlt ::
+  (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y, Simplical s z)
+  => ChainComplexHom t r s n y z -> ChainComplexHom t r s n x y
+  -> ChainComplexHom t r s n x z
+ccxhMlt (ChainComplexHom b' c fs) (ChainComplexHom a b gs)
+  | b' /= b   = throw NotMultiplicable
+  | otherwise = ChainComplexHom a c (amap1 (uncurry chorsMlt) (fs `F.zip` gs))
+
+--------------------------------------------------------------------------------
+-- ccxhZero -
+
+ccxhZero ::
+  (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+  => ChainComplex t r s n x -> ChainComplex t r s n y
+  -> ChainComplexHom t r s n x y
+ccxhZero a b
+  = ChainComplexHom a b (amap1 zero $ ((dgPoints $ ccxDiagram a) `F.zip` (dgPoints $ ccxDiagram b)))
+
+--------------------------------------------------------------------------------
+-- ccxhAdd -
+
+ccxhAdd ::
+  (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+  => ChainComplexHom t r s n x y -> ChainComplexHom t r s n x y
+  -> ChainComplexHom t r s n x y
+ccxhAdd (ChainComplexHom a b fs) (ChainComplexHom a' b' gs)
+  | (a,b) /= (a',b') = throw NotAddable
+  | otherwise        = ChainComplexHom a b (amap1 (uncurry (+)) (fs `F.zip` gs))
+
+--------------------------------------------------------------------------------
+-- ccxhNegate -
+
+ccxhNegate ::
+  (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+  => ChainComplexHom t r s n x y -> ChainComplexHom t r s n x y
+ccxhNegate (ChainComplexHom a b fs) = ChainComplexHom a b (amap1 negate fs)
+
+--------------------------------------------------------------------------------
+-- ccxhSbtr -
+
+ccxhSbtr ::
+  (Ring r, Commutative r, Ord r, Simplical s x, Simplical s y)
+  => ChainComplexHom t r s n x y -> ChainComplexHom t r s n x y
+  -> ChainComplexHom t r s n x y
+ccxhSbtr (ChainComplexHom a b fs) (ChainComplexHom a' b' gs)
+  | (a,b) /= (a',b') = throw NotAddable
+  | otherwise        = ChainComplexHom a b (amap1 (uncurry (-)) $ (fs `F.zip` gs))
+
 
 --------------------------------------------------------------------------------
 -- ccxRepMatrixHom -

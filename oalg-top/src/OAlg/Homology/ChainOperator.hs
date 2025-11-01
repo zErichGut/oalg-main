@@ -51,6 +51,7 @@ import OAlg.Data.Constructable
 import OAlg.Data.Singleton
 import OAlg.Data.Ornt
 
+import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented hiding (Path)
 import OAlg.Structure.Fibred
@@ -206,8 +207,9 @@ chorMlt :: (Ring r, Commutative r, Simplical s x, Simplical s z)
   => ChainOperatorRep r s (ChainG r s y) (ChainG r s z)
   -> ChainOperatorRep r s (ChainG r s x) (ChainG r s y)
   -> ChainOperatorRep r s (ChainG r s x) (ChainG r s z)
-chorMlt (ChainOperatorRep (Representable f _ sz)) (ChainOperatorRep (Representable g sx _))
-  = ChainOperatorRep (Representable (f . g) sx sz)
+chorMlt (ChainOperatorRep (Representable f sy' sz)) (ChainOperatorRep (Representable g sx sy))
+  | sy /= sy' = throw NotMultiplicable
+  | otherwise = ChainOperatorRep (Representable (f . g) sx sz)
 
 --------------------------------------------------------------------------------
 -- chorRepMatrix -
