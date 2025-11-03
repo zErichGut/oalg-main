@@ -37,6 +37,8 @@ import OAlg.Category.Map
 
 import OAlg.Data.Filterable
 
+import OAlg.Structure.Exception
+import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Fibred
@@ -55,11 +57,14 @@ import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.Sequence hiding (span,isEmpty)
 import OAlg.Entity.Matrix.Vector
 
-import OAlg.Structure.Exception
-import OAlg.Structure.PartiallyOrdered
+import OAlg.Limes.Exact.ConsecutiveZero
+import OAlg.Limes.Exact.Deviation
+import OAlg.Limes.Exact.Free
+
+import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Simplical
-import OAlg.Homology.Complex
+import OAlg.Homology.Complex hiding (Hmlg)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
 
@@ -320,4 +325,31 @@ instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
 instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
   => Algebraic (SomeChainComplexHom t r n)
 
-  
+
+--------------------------------------------------------------------------------
+-- Hmlg -
+
+data Hmlg n x y where
+  Chc :: (Typeable m, Typeable t, Attestable n)
+      => ChainComplexType t -> Any n
+      -> Hmlg n (Continuous m) (SomeChainComplexHom t Z n)
+  Cnz :: (Typeable t, Attestable n)
+      => Hmlg n (SomeChainComplexHom t Z n) (ConsecutiveZeroFreeHom To n AbHom)
+  Dev :: Attestable n => Hmlg n (ConsecutiveZeroFreeHom To n AbHom) (DeviationHom (n+1) AbHom)
+
+
+instance Typeable n => Morphism (Hmlg n) where
+  type ObjectClass (Hmlg n) = Mlt
+  homomorphous (Chc _ _) = Struct :>: Struct
+  homomorphous Cnz       = Struct :>: Struct
+  homomorphous Dev       = Struct :>: Struct 
+
+
+instance ApplicativeG Id (Hmlg n) (->) where
+  amapG (Chc t n) (Id f) = Id $ case f of
+    ContAbstract f'     -> case domain $ cpmHomEntOrd f' of
+      Struct            -> SomeChainComplexHom $ chainComplexHom t n f'
+    ContConcrete _      -> c where Id c = amapG (Chc t n) (Id $ contAbstract f)
+  amapG Cnz (Id sc)      = Id $ case sc of SomeChainComplexHom f -> abhCnzfh f
+  amapG Dev (Id c)       = Id $ homologyGroupsHom $ abhCnzfhHomologyHom c
+

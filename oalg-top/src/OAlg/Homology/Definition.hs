@@ -23,17 +23,22 @@ module OAlg.Homology.Definition
     homology, Homology
   , homologyGroups
   , hmgCycles, hmgClassGenerators
+  , abhCnzf, abhCnzfHomology
 
   , homologyClass, boundary, boundaryInv
     
     -- * Homomorphism
   , homologyHom, HomologyHom
   , homologyGroupsHom
+  , abhCnzfh, abhCnzfhHomologyHom
 
+  , ConsecutiveZeroFreeHom(..)
 
   ) where
 
 import Control.Monad
+
+import Data.Typeable
 
 import Data.Foldable (toList)
 import Data.List as L (zip,filter, (++))
@@ -42,6 +47,7 @@ import OAlg.Prelude
 
 import OAlg.Data.FinitelyPresentable
 
+import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Multiplicative
@@ -49,9 +55,9 @@ import OAlg.Structure.Exponential
 import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 
-import OAlg.Entity.Diagram hiding (Chain)
+import OAlg.Entity.Diagram as D 
 import OAlg.Entity.Natural
-import OAlg.Entity.FinList
+import OAlg.Entity.FinList as F
 import OAlg.Entity.Slice
 import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
@@ -80,25 +86,85 @@ import OAlg.Homology.Eval.Core
 import OAlg.Adjunction.Definition
 
 --------------------------------------------------------------------------------
+-- cnzfDiagram -
+
+cnzfDiagram :: ConsecutiveZeroFree t n x -> Diagram (Chain t) (n+3) (n+2) x
+cnzfDiagram (ConsecutiveZeroFree d _) = cnzDiagram d
+
+--------------------------------------------------------------------------------
+-- ConsecutiveZeroFreeHom -
+
+data ConsecutiveZeroFreeHom t n x where
+  ConsecutiveZeroFreeHom :: ConsecutiveZeroFree t n x -> ConsecutiveZeroFree t n x
+    -> FinList (n+3) x -> ConsecutiveZeroFreeHom t n x
+
+deriving instance (Show x, ShowPoint x) => Show (ConsecutiveZeroFreeHom t n x)
+deriving instance (Eq x, EqPoint x) => Eq (ConsecutiveZeroFreeHom t n x)
+
+instance Distributive x => Validable (ConsecutiveZeroFreeHom t n x) where
+  valid (ConsecutiveZeroFreeHom a b fs) = Label "ConsecutiveZeroFreeHom" :<=>:
+    And [ valid a
+        , valid b
+        , vldCm 0 (dgArrows $ cnzfDiagram a) (dgArrows $ cnzfDiagram b) fs
+        ] where
+
+    vldCm :: Multiplicative x => N -> FinList n x -> FinList n x -> FinList (n+1) x -> Statement
+    vldCm _ Nil _ _ = SValid
+    vldCm i (a:|as) (b:|bs) (f:|f':|fs)
+      = (f * a == b * f') :?> Params ["i":=show i] && vldCm (succ i) as bs (f':|fs)
+
+--------------------------------------------------------------------------------
+-- Distributive -
+
+type instance Point (ConsecutiveZeroFreeHom t n x) = ConsecutiveZeroFree t n x
+
+instance (Show x, ShowPoint x) => ShowPoint (ConsecutiveZeroFreeHom t n x)
+instance (Eq x, EqPoint x) => EqPoint (ConsecutiveZeroFreeHom t n x)
+instance Distributive x => ValidablePoint (ConsecutiveZeroFreeHom t n x)
+instance (Typeable t, Typeable n, Typeable x) => TypeablePoint (ConsecutiveZeroFreeHom t n x)
+
+instance (Distributive x, Typeable t, Typeable n) => Oriented (ConsecutiveZeroFreeHom t n x) where
+  orientation (ConsecutiveZeroFreeHom a b _) = a :> b
+
+instance (Distributive x, Typeable t, Typeable n)
+  => Multiplicative (ConsecutiveZeroFreeHom t n x) where
+  one a = ConsecutiveZeroFreeHom a a (amap1 one $ dgPoints $ cnzfDiagram a)
+
+  ConsecutiveZeroFreeHom b' c fs * ConsecutiveZeroFreeHom a b gs
+    | b' /= b   = throw NotMultiplicable
+    | otherwise = ConsecutiveZeroFreeHom a c (amap1 (uncurry (*)) (fs `F.zip` gs))
+    
+
+--------------------------------------------------------------------------------
 -- Homology -
 
 -- | homology.
 type Homology n = VarianceFreeLiftable To n AbHom
 
 --------------------------------------------------------------------------------
--- homology -
+-- abhCnzf -
 
--- | the induced homology of a complex.
-homology :: Simplical s x => ChainComplex t Z s n x -> Homology n
-homology ds = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
-            $ toFree
-            $ ccxRepMatrix ds where
+abhCnzf :: Simplical s x => ChainComplex t Z s n x -> ConsecutiveZeroFree To n AbHom
+abhCnzf = toFree . ccxRepMatrix where
   
   toFree :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
   toFree ds = ConsecutiveZeroFree ds' fs where
     ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
     fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
-    
+
+--------------------------------------------------------------------------------
+-- abhCnzfHomology -
+
+abhCnzfHomology :: ConsecutiveZeroFree To n AbHom -> Homology n
+abhCnzfHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+
+--------------------------------------------------------------------------------
+-- homology -
+
+-- | the induced homology of a complex.
+homology :: Simplical s x => ChainComplex t Z s n x -> Homology n
+homology = abhCnzfHomology . abhCnzf
+
 --------------------------------------------------------------------------------
 -- homologyGroups -
 
@@ -113,15 +179,29 @@ homologyGroups = deviationsTo
 type HomologyHom n = VarianceFreeLiftableHom To n AbHom
 
 --------------------------------------------------------------------------------
+-- abhCnzfh -
+
+abhCnzfh :: Homological s x y => ChainComplexHom t Z s n x y -> ConsecutiveZeroFreeHom To n AbHom
+abhCnzfh h@(ChainComplexHom a b _) = ConsecutiveZeroFreeHom a' b' fs' where
+  a'  = abhCnzf a
+  b'  = abhCnzf b
+  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxRepMatrixHom h
+  fs' = amap1 (amap FreeAbHom) ts
+
+--------------------------------------------------------------------------------
+-- cnzfhHomologyHom -
+
+abhCnzfhHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
+abhCnzfhHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = abhCnzfHomology a
+  b' = abhCnzfHomology b
+
+--------------------------------------------------------------------------------
 -- homologyHom -
 
 -- | the induced homomorphism between homologies.
 homologyHom :: Homological s x y => ChainComplexHom t Z s n x y -> HomologyHom n
-homologyHom h@(ChainComplexHom a b _) = VarianceHomG a' b' fs' where
-  a' = homology a
-  b' = homology b
-  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxRepMatrixHom h
-  fs' = amap1 (amap FreeAbHom) ts
+homologyHom = abhCnzfhHomologyHom . abhCnzfh
 
 --------------------------------------------------------------------------------
 -- hmgGroupsHom -
