@@ -7,7 +7,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE StandaloneDeriving, DeriveAnyClass #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
@@ -44,6 +44,11 @@ module OAlg.Homology.ChainComplex
     -- ** Representaiton
   , ccxRepMatrixHom, ccxCardsHom
 
+    -- * Some Chain Complex
+  , SomeChainComplex(..)
+  , SomeChainComplexHom(..)
+  , eqVertexType
+
   ) where
 
 import Data.Typeable
@@ -59,8 +64,11 @@ import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
-import OAlg.Structure.Ring
+import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 
@@ -423,3 +431,112 @@ ccxCardsHom (ChainComplexHom a b _) = CardsHom t where
   Cards a' = ccxCards a
   Cards b' = ccxCards b
   t = DiagramTrafo a' b' $ amap1 (uncurry ((:>))) (dgPoints a' `F.zip` dgPoints b')
+
+--------------------------------------------------------------------------------
+-- eqVertexType -
+
+eqVertexType :: (Typeable x, Typeable y) => c x -> c y -> Maybe (x :~: y)
+eqVertexType _ _ = eqT
+
+--------------------------------------------------------------------------------
+-- SomeChainComplex -
+
+data SomeChainComplex t r s n where
+  SomeChainComplex :: (Simplical s x, Attestable n)
+    => ChainComplex t r s n x -> SomeChainComplex t r s n
+
+deriving instance (Ring r, Commutative r, Ord r) => Show (SomeChainComplex t r s n)
+
+instance (Ring r, Commutative r, Ord r) => Eq (SomeChainComplex t r s n) where
+  SomeChainComplex a == SomeChainComplex b = case eqVertexType a b of
+    Just Refl -> a == b
+    Nothing   -> False
+
+instance (AlgebraicSemiring r, Ring r, Ord r) => Validable (SomeChainComplex t r s n) where
+  valid (SomeChainComplex c) = Label "SomeChainComplex" :<=>: valid c
+
+--------------------------------------------------------------------------------
+-- SomeChainChomplexHom -
+
+data SomeChainComplexHom t r n where
+  SomeChainComplexHom :: (Entity x, Ord x, Entity y, Ord y)
+    => ChainComplexHom t r Asc n x y -> SomeChainComplexHom t r n
+
+deriving instance (Ring r, Ord r, AlgebraicSemiring r) => Show (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r) => Eq (SomeChainComplexHom t r n) where
+  SomeChainComplexHom f == SomeChainComplexHom g
+    = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
+        (Just Refl,Just Refl) -> f == g
+        _                     -> False
+
+instance (Ring r, Ord r, AlgebraicSemiring r) => Validable (SomeChainComplexHom t r n) where
+  valid (SomeChainComplexHom f) = Label "SomeChainComplexHom" :<=>: valid f
+
+--------------------------------------------------------------------------------
+-- SomeChainComplexHom - Multiplicative -
+
+type instance Point (SomeChainComplexHom t r n) = SomeChainComplex t r Asc n
+
+deriving instance (Ring r, Commutative r, Ord r) => ShowPoint (SomeChainComplexHom t r n)
+deriving instance (Ring r, Commutative r, Ord r) => EqPoint (SomeChainComplexHom t r n)
+deriving instance (AlgebraicSemiring r, Ring r, Ord r) => ValidablePoint (SomeChainComplexHom t r n)
+deriving instance (Typeable t, Typeable r, Typeable n) => TypeablePoint (SomeChainComplexHom t r n)
+
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Oriented (SomeChainComplexHom t r n) where
+  start (SomeChainComplexHom f) = SomeChainComplex $ ccxhDomain f
+  end (SomeChainComplexHom f)   = SomeChainComplex $ ccxhRange f
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Multiplicative (SomeChainComplexHom t r n) where
+  one (SomeChainComplex c) = SomeChainComplexHom $ ccxhOne c
+
+  SomeChainComplexHom f * SomeChainComplexHom g
+    = case eqVertexType (ccxhRange g) (ccxhDomain f) of
+        Just Refl -> SomeChainComplexHom (f `ccxhMlt` g)
+        Nothing   -> throw NotMultiplicable
+
+type instance Root (SomeChainComplexHom t r n) = Orientation (SomeChainComplex t r Asc n)
+
+deriving instance (Ring r,Commutative r, Ord r) => ShowRoot (SomeChainComplexHom t r n)
+deriving instance (Ring r,Commutative r, Ord r) => EqRoot (SomeChainComplexHom t r n)
+deriving instance (AlgebraicSemiring r, Ring r, Ord r) => ValidableRoot (SomeChainComplexHom t r n)
+deriving instance (Typeable r, Typeable t, Typeable n) => TypeableRoot (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Fibred (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Additive (SomeChainComplexHom t r n) where
+  zero (SomeChainComplex a :> SomeChainComplex b)
+    = SomeChainComplexHom $ ccxhZero a b
+
+  SomeChainComplexHom f + SomeChainComplexHom g
+    = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
+        (Just Refl,Just Refl) -> SomeChainComplexHom (f `ccxhAdd` g)
+        _                     -> throw NotAddable
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Abelian (SomeChainComplexHom t r n) where
+  negate (SomeChainComplexHom f) = SomeChainComplexHom $ ccxhNegate f
+
+  SomeChainComplexHom f - SomeChainComplexHom g
+    = case (eqVertexType (ccxhDomain f) (ccxhDomain g),eqVertexType (ccxhRange f) (ccxhRange g)) of
+        (Just Refl,Just Refl) -> SomeChainComplexHom $ ccxhSbtr f g
+        _                     -> throw NotAddable
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Vectorial (SomeChainComplexHom t r n) where
+  type Scalar (SomeChainComplexHom t r n) = r
+  r ! (SomeChainComplexHom f) = SomeChainComplexHom (r `ccxhSclMlt` f)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => FibredOriented (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Distributive (SomeChainComplexHom t r n)
+
+instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
+  => Algebraic (SomeChainComplexHom t r n)
