@@ -100,7 +100,7 @@ spcAbstract (SpaceConcrete c)   = SpaceAbstract c
 
 -- | mapping between two spaces.
 data Continuous m where
-  CntAbstract :: ComplexMap Preserving (Complex x) (Complex x)
+  CntAbstract :: ComplexMap Preserving (Complex x) (Complex y)
                -> Continuous Abstract
   CntConcrete :: ComplexMap Preserving (Complex (Vector Q)) (Complex (Vector Q))
                -> Continuous Concrete
@@ -164,11 +164,11 @@ instance Typeable m => Multiplicative (Continuous m) where
   one (SpaceAbstract c) = CntAbstract (cpmOne Struct c) 
   one (SpaceConcrete c) = CntConcrete (cpmOne Struct c)
 
-  CntConcrete f * CntConcrete g = CntConcrete (cpmMlt f g)
-  CntAbstract f * CntAbstract g = case (cpmHomEntOrd f,cpmHomEntOrd g) of
-    (Struct:>:Struct,Struct:>:_) -> case eqVertexType (cpmRange g) (cpmDomain f) of
-      Just Refl                  -> CntAbstract (cpmMlt f g)
-      Nothing                    -> throw NotMultiplicable
+  CntConcrete f * CntConcrete g        = CntConcrete (cpmMlt f g)
+  CntAbstract f * CntAbstract g        = case (cpmHomEntOrd f,cpmHomEntOrd g) of
+    (Struct:>:Struct,Struct:>:Struct) -> case eqVertexType (cpmRange g) (cpmDomain f) of
+      Just Refl                       -> CntAbstract (cpmMlt f g)
+      Nothing                         -> throw NotMultiplicable
 
 --------------------------------------------------------------------------------
 -- Hmlg -
@@ -195,8 +195,8 @@ instance Typeable n => Morphism (Hmlg n) where
 instance ApplicativeG Id (Hmlg n) (->) where
   amapG Abs (Id f)        = Id $ cntAbstract f
   amapG (Chc t n) (Id f)  = Id $ case f of
-    CntAbstract f'       -> case domain $ cpmHomEntOrd f' of
-      Struct             -> SomeChainComplexHom $ chainComplexHom t n f'
+    CntAbstract f'       -> case cpmHomEntOrd f' of
+      Struct:>:Struct    -> SomeChainComplexHom $ chainComplexHom t n f'
   amapG Crd (Id sc)       = case sc of SomeChainComplexHom f -> Id $ ccxCardsHom f
   amapG Cnz (Id sc)       = Id $ case sc of SomeChainComplexHom f -> abhCnzfh f
   amapG Dev (Id c)        = Id $ homologyGroupsHom $ abhCnzfhHomologyHom c

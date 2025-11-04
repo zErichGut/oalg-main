@@ -163,7 +163,7 @@ cpx n = complex [Set [1..n]]
 
 -- | the induced complex given by a list of simplices.
 complex :: (Entity x, Ord x) => [Set x] -> Complex x
-complex = Complex . foldl (||) empty . amap1 simplices
+complex ssx = Complex $ foldl (||) empty $ amap1 simplices $ (empty:ssx)
 
 --------------------------------------------------------------------------------
 -- cpxVertices -
