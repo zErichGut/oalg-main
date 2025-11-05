@@ -27,6 +27,8 @@ module OAlg.Limes.Definition.Core
     -- * Constructions
   , lmMltPrjOrnt, lmMltInjOrnt
 
+    -- * Exception
+  , NotEligibleCone(..)
   ) where
 
 import Data.Typeable
@@ -49,6 +51,15 @@ import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive
 
 import OAlg.Limes.Cone
+
+--------------------------------------------------------------------------------
+-- NotEligibleCone -
+
+data NotEligibleCone = NotEligibleCone deriving (Eq,Show)
+
+instance Exception NotEligibleCone where
+  toException   = oalgExceptionToException
+  fromException = oalgExceptionFromException
 
 --------------------------------------------------------------------------------
 -- LimesG -

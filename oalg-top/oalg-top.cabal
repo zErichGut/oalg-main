@@ -34,6 +34,8 @@ library
       OAlg.Homology.Eval.Definition
       OAlg.Homology.Simplical
       OAlg.Topology.Definition
+      OAlg.Topology.Limes.ProductsAndSums
+      OAlg.Topology.Limes.TerminalAndInitialSpace
   other-modules:
       Paths_oalg_top
   hs-source-dirs:

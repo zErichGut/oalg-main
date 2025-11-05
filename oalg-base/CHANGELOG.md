@@ -175,3 +175,9 @@ by isoToOpOp ans its inverse isoFromOpOp.
 - VectorG
 - psqSequence for PSequence.
 - types HomFib and HomFibEmpty.
+
+## [3.0.0.3] - 2025-11-05
+
+### Added
+- instances for transfromable EntOrd.
+- exception NotEligibleCone

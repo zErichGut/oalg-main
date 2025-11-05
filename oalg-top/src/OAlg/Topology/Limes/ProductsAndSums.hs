@@ -62,15 +62,6 @@ cpxProduct a b = (ab, mFst, mSnd) where
 --------------------------------------------------------------------------------
 -- cntProduct2 -
 
-data NotEligibleCone = NotEligibleCone deriving (Eq,Show)
-
-instance Exception NotEligibleCone where
-  toException   = oalgExceptionToException
-  fromException = oalgExceptionFromException
-
-
-instance Transformable EntOrd Typ where tau Struct = Struct
-
 cntProduct2 :: Diagram Discrete N2 N0 (Continuous Abstract) -> Product N2 (Continuous Abstract)
 cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   = LimesProjective abCn (abUn ab) where

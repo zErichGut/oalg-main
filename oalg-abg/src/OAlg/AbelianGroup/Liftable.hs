@@ -18,12 +18,13 @@
 module OAlg.AbelianGroup.Liftable
   (
     -- * Lifting
-    zMatrixLift
+    abhLift, zMatrixLift
 
     -- * Proposition
   , prpMatrixZJustLiftable
   , prpMatrixZMaybeLiftable
   , prpMatrixZLiftable
+  , prpAbhLift
 
     -- * X
   , xLiftable
@@ -41,15 +42,22 @@ import OAlg.Data.Canonical
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
 import OAlg.Structure.Number
 import OAlg.Structure.Exponential
 
+import OAlg.Entity.Natural hiding ((++))
+import OAlg.Entity.Slice.Definition
+import OAlg.Entity.Slice.Free
 import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
 import OAlg.Entity.Sequence.PSequence
 
+import OAlg.Adjunction.Definition
+
 import OAlg.AbelianGroup.Free.SmithNormalForm
 import OAlg.AbelianGroup.Euclid
+import OAlg.AbelianGroup.Definition
 
 --------------------------------------------------------------------------------
 -- zMatrixLift -
@@ -109,6 +117,116 @@ zMatrixLift a y
     -- the case GT should not occure, as the dis are succesive!
   lftCol [] (_:_) = Nothing
   lftCol _ _      = Just []
+
+--------------------------------------------------------------------------------
+-- abhLift -
+
+-- | liftable abelian homomorphisms with a free end.
+--
+-- __Property__ Let @a@ and @b@ be in @'Slice' 'To' ('Free' __k__) 'AbHom'@ for some @__k__@, then
+-- holds (see diagram below):
+--
+-- (1) If @'abhLift' (a ':>' b)@ yields @'Just' f@ for some @f@ in @'AbHom', then
+-- @'orientation' f '==' a ':>' b@
+-- 
+-- (2) The following to statements are equivalent:
+--
+--     (1) There exists an @f@ in @'SliceFactor' 'To' ('Free' __k__) 'AbHom'@ with
+--     @'orientation' f '==' a ':>' b@. 
+--
+--     (2) There exitst an @f@ in 'AbHom' with @'abhLift' (a ':>' b)@ yields @'Just' f@.
+--
+-- @
+--            f
+--        * - - - > *
+--         \       /
+--        a \     / b
+--           \   /
+--            v v
+--             k
+-- @
+abhLift :: Attestable k
+  => Orientation (Slice To (Free k) AbHom) -> Maybe (SliceFactor To (Free k) AbHom)
+abhLift (a:>b) = do
+  a''  <- zMatrixLift lb a'
+  ra'' <- return $ adjr abhFreeAdjunction (start a) a''
+  return $ SliceFactor a b $ (i * ra'')
+  
+  where
+    m  = pmap AbHomFree (end a)  -- end a is free!
+    a' = adjl abhFreeAdjunction m (slice a)
+    lb = amap AbHomFree (slice b)
+    i  = abhFreeEmbedding (start b)
+
+--------------------------------------------------------------------------------
+-- prpAbhLiftJust -
+
+-- | validity according to 'abhLift'.
+prpAbhLift :: N -> Statement
+prpAbhLift k = case someNatural k of
+  SomeNatural k'
+    -> And [ Forall (xoToAbhLiftable k')
+               (\otl -> case abhLift otl of
+                 Just f  -> And [ valid f
+                                , Label "1" :<=>: (orientation f == otl) :?> Params ["a:>b":= show otl
+                                                                                    ,"f":= show f
+                                                                                    ] 
+                                ]
+                 Nothing -> Label "2" :<=>: False :?> Params ["a:>b":= show otl]
+                            -- otl must be liftable!
+               )
+           , Forall (xoToAbh k') (valid . abhLift)
+           ]
+
+-- | random variable for orientations. They might be not liftable!
+xoToAbh :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xoToAbh k = do
+  sa <- xStandard
+  a  <- xAbHom 1 (sa:>m)
+  sb <- xStandard
+  b  <- xAbHom 1 (sb:>m)
+  return (SliceTo (Free k) a :> SliceTo (Free k) b)
+  where m = abg 0 ^ lengthN k
+                     
+-- | random variable for liftable orientations, i.e. 'abhLift' has to give a solution.
+xoToAbhLiftable :: Any k -> X (Orientation (Slice To (Free k) AbHom))
+xoToAbhLiftable k = do
+  sa <- xStandard
+  sb <- xStandard
+  b  <- xAbHom 1 (sb :> m)
+  f  <- xAbHom 1 (sa :> sb)
+  return (SliceTo k' (b*f)  :> SliceTo k' b)
+  
+  where m  = abg 0 ^ lengthN k
+        k' = Free k
+
+-- | validity of 'xoToAbhLiftable'.
+vldXoToLiftable :: N -> Statement
+vldXoToLiftable k = case someNatural k of SomeNatural k' -> Forall (xoToAbhLiftable k') valid
+
+
+abhTrv :: AbHom -> String
+abhTrv h = if isZero h then "trivial" else "substantial" 
+
+dstXoTo :: Int -> N -> IO ()
+dstXoTo n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (amap1 (\ot -> (ot,abhLift ot)) $ xoToAbh k')
+
+  where
+    asp :: (Orientation (Slice To (Free k) AbHom), Maybe (SliceFactor To (Free k) AbHom)) -> [String]
+    asp (a:>b,mf) = [abhTrv $ slice a, abhTrv $ slice b] ++ case mf of
+      Just _  -> ["Just"]
+      Nothing -> ["Nothing"]
+
+
+-- | distribution of /triavial/ or /substantial/ values of 'xoToAbhLiftable'.
+dstXoToLiftable :: Int -> N -> IO ()
+dstXoToLiftable n k = case someNatural k of
+  SomeNatural k' -> putDstr asp n (xoToAbhLiftable k')
+
+  where
+    asp :: Orientation (Slice To (Free k) AbHom) -> [String]
+    asp (SliceTo _ a :> SliceTo _ b) = [abhTrv a, abhTrv b]
 
 --------------------------------------------------------------------------------
 -- xLiftable -

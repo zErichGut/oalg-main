@@ -79,6 +79,8 @@ type instance Structure EntOrd x = (Entity x, Ord x)
 
 instance TransformableG [] EntOrd EntOrd where tauG Struct = Struct
 
+instance Transformable EntOrd Typ where tau Struct = Struct
+
 --------------------------------------------------------------------------------
 -- Entity1 -
 

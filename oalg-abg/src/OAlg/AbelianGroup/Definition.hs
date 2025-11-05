@@ -31,6 +31,7 @@ module OAlg.AbelianGroup.Definition
   , abhz, zabh
   , abhDensity
   , abhSplitable
+  , abhFreeEmbedding
   
     -- * Adjunction
   , abhFreeAdjunction
@@ -54,6 +55,7 @@ module OAlg.AbelianGroup.Definition
 
     -- * Proposition
   , prpAbHom
+  , prpAbhFreeEmbedding
 
   ) where
 
@@ -114,6 +116,7 @@ import OAlg.Entity.Sum hiding (sy)
 
 import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
+
 
 --------------------------------------------------------------------------------
 -- AbGroup -
@@ -699,6 +702,53 @@ instance HomAdditive AbHomFree
 instance HomDistributive AbHomFree
 instance HomVectorial Z AbHomFree
 instance HomAlgebraic Z AbHomFree
+
+--------------------------------------------------------------------------------
+-- abhFreeEmbedding -
+
+-- | the canonical emmedding of the free part of a given abelian group.
+--
+-- __Property__ Let @'Adjunction' l r u v = 'abhFreeAdjunction'@, @rl = 'pmap' r '.' 'pmap' l@
+-- and @i = 'abhFreeEmbedding'@, then holds:
+--
+-- (1) For all @g@ in 'AbGroup' holds: @u g v'*' i g@ is 'one'. (see diagram belaow)
+--
+-- @
+--                 l
+--             <--------- 
+--    Matrix Z            AbHom
+--             --------->
+--                 r
+--                               u g
+--                           ----------->
+--                         g              rl g = pmap r (pmap l g)
+--                           <-----------
+--                               i g
+-- @
+--
+-- __Note__ If @g@ is free, then @'abgFreeEmbedding' g@ is 'one'.
+abhFreeEmbedding :: AbGroup -> AbHom
+abhFreeEmbedding g = AbHom $ Matrix (abgDim g) (abgDim rlg) $ Entries $ PSequence $ oijs where
+  rlg  = pmap FreeAbHom (pmap AbHomFree g)
+  oijs = amap1 oij $ ((filter gFree $ abgxs g) `zip` [0..]) 
+
+  gFree :: (ZMod,N) -> Bool
+  gFree (ZMod n,_) = n == 0
+
+  oij :: ((ZMod,N),N) -> (ZModHom,(N,N))
+  oij ((z,i),j) = (one z,(i,j))
+
+--------------------------------------------------------------------------------
+-- prpAbhFreeEmbedding -
+
+-- | validity according to 'abhFreeEmbedding'.
+prpAbhFreeEmbedding :: AbGroup -> Statement
+prpAbhFreeEmbedding g = Prp "AbhFreeEmbedding"
+  :<=>: (u g * i == one (start i)) :?> Params ["g":= show g] where
+  
+  Adjunction _ _ u _ = abhFreeAdjunction
+  i                  = abhFreeEmbedding g
+  
 
 --------------------------------------------------------------------------------
 -- abhFreeAdjucntion -

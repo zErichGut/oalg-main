@@ -1,0 +1,67 @@
+name:                oalg-top
+version:             1.1.0.0
+github:              "zErichGut/oalg-top"
+license:             BSD3
+author:              "Erich.Gut"
+maintainer:          "zerich.gut@gmail.com"
+copyright:           "(c) Erich Gut"
+status:              experimental
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Combinatoral algebraic topology
+# category:            Mathematics,Algebra, Topology
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/zErichGut/oalg-top#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- containers >= 0.6
+- array >= 0.5 && < 1
+- oalg-base >= 3.1.0.3
+- oalg-abg >= 2.0.0.4
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -Wno-name-shadowing
+- -Wno-unused-top-binds
+- -Wno-x-partial
+
+library:
+  source-dirs: src
+
+# executables:
+#   oalg-top-exe:
+#     main:                Main.hs
+#     source-dirs:         app
+#     ghc-options:
+#     - -threaded
+#     - -rtsopts
+#     - -with-rtsopts=-N
+#     dependencies:
+#     - oalg-top
+
+tests:
+  oalg-top-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - oalg-top

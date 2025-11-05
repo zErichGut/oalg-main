@@ -75,3 +75,8 @@ and this project adheres to the
 
 ### Added
 - instances OrdPoint and OrdRoot for AbElement.
+
+## [2.0.0.4] - 2025-11-05
+
+### Added
+- abhLift

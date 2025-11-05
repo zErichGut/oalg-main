@@ -24,6 +24,9 @@ module OAlg.Limes.Definition
     -- * Duality
   , module Dl
 
+    -- * Exception
+  , NotEligibleCone(..)
+
     -- * Proposition
   , module Prp
   ) where
@@ -31,3 +34,4 @@ module OAlg.Limes.Definition
 import OAlg.Limes.Definition.Core
 import OAlg.Limes.Definition.Duality as Dl
 import OAlg.Limes.Definition.Proposition as Prp
+
