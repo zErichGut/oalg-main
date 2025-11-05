@@ -44,6 +44,7 @@ import OAlg.Limes.ProductsAndSums
 import OAlg.Homology.Complex hiding (cpxProduct)
 
 import OAlg.Topology.Definition
+import OAlg.Topology.Limes.TerminalAndInitialSpace
 
 --------------------------------------------------------------------------------
 -- cpxProduct -
@@ -114,3 +115,19 @@ cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
         => Complex (x,y) -> ComplexMap Preserving (Complex tS) (Complex yS)
         -> Maybe (y :~: yS)
       ySEq _ (ComplexMapPrs _ _ g) = case tauTyp $ range g of Struct -> eqT
+
+--------------------------------------------------------------------------------
+-- cntProducts2 -
+
+cntProducts2 :: Products N2 (Continuous Abstract)
+cntProducts2 = LimitsG cntProduct2
+
+--------------------------------------------------------------------------------
+-- cntProducts -
+
+cntProducts :: Products n (Continuous Abstract)
+cntProducts = products (products0 spcTerminal) cntProducts2
+
+
+d = limes cntProducts (DiagramDiscrete (spcPoint:|spcPoint:|spcPoint:|Nil))
+s = tip $ universalCone d

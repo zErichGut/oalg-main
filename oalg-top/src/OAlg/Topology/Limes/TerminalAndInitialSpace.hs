@@ -21,11 +21,11 @@ module OAlg.Topology.Limes.TerminalAndInitialSpace
     -- * Terminal
    cntTerminal, spcPoint
 
-  , spcTerminals
+  ,spcTerminals, spcTerminal
 
     -- * Initial
   , cntInitial, spcEmpty
-  , spcInitials
+  , spcInitials, spcInitial
   ) where
 
 import OAlg.Prelude

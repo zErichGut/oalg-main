@@ -24,7 +24,8 @@ module OAlg.Limes.Exact.Free
     varianceFreeTo, VarianceFreeLiftable
     
     -- * Free Consecutive Zero
-  , ConsecutiveZeroFree(..)
+  , ConsecutiveZeroFree(..), cnzfDiagram
+  , ConsecutiveZeroFreeHom(..)
   
     -- ** Duality
   , cnzFreeMapS, cnzFreeMapCov, cnzFreeMapCnt
@@ -36,13 +37,17 @@ module OAlg.Limes.Exact.Free
   , prpConsecutiveZeroFree
   ) where
 
+import Data.Typeable
+
 import OAlg.Prelude
 
 import OAlg.Category.SDuality
 
 import OAlg.Data.Variant
 
+import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 
 import OAlg.Entity.Diagram
@@ -209,3 +214,54 @@ varianceFreeTo kers cokers (ConsecutiveZeroFree c fs) = VarianceG c (kcs kers co
 
 -- | homomorphism between 'VarianceFreeLiftable's.
 type VarianceFreeLiftableHom t = VarianceHomG t (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram
+
+--------------------------------------------------------------------------------
+-- cnzfDiagram -
+
+cnzfDiagram :: ConsecutiveZeroFree t n x -> Diagram (Chain t) (n+3) (n+2) x
+cnzfDiagram (ConsecutiveZeroFree d _) = cnzDiagram d
+
+--------------------------------------------------------------------------------
+-- ConsecutiveZeroFreeHom -
+
+data ConsecutiveZeroFreeHom t n x where
+  ConsecutiveZeroFreeHom :: ConsecutiveZeroFree t n x -> ConsecutiveZeroFree t n x
+    -> FinList (n+3) x -> ConsecutiveZeroFreeHom t n x
+
+deriving instance (Show x, ShowPoint x) => Show (ConsecutiveZeroFreeHom t n x)
+deriving instance (Eq x, EqPoint x) => Eq (ConsecutiveZeroFreeHom t n x)
+
+instance Distributive x => Validable (ConsecutiveZeroFreeHom t n x) where
+  valid (ConsecutiveZeroFreeHom a b fs) = Label "ConsecutiveZeroFreeHom" :<=>:
+    And [ valid a
+        , valid b
+        , vldCm 0 (dgArrows $ cnzfDiagram a) (dgArrows $ cnzfDiagram b) fs
+        ] where
+
+    vldCm :: Multiplicative x => N -> FinList n x -> FinList n x -> FinList (n+1) x -> Statement
+    vldCm _ Nil _ _ = SValid
+    vldCm i (a:|as) (b:|bs) (f:|f':|fs)
+      = (f * a == b * f') :?> Params ["i":=show i] && vldCm (succ i) as bs (f':|fs)
+
+--------------------------------------------------------------------------------
+-- Distributive -
+
+type instance Point (ConsecutiveZeroFreeHom t n x) = ConsecutiveZeroFree t n x
+
+instance (Show x, ShowPoint x) => ShowPoint (ConsecutiveZeroFreeHom t n x)
+instance (Eq x, EqPoint x) => EqPoint (ConsecutiveZeroFreeHom t n x)
+instance Distributive x => ValidablePoint (ConsecutiveZeroFreeHom t n x)
+instance (Typeable t, Typeable n, Typeable x) => TypeablePoint (ConsecutiveZeroFreeHom t n x)
+
+instance (Distributive x, Typeable t, Typeable n) => Oriented (ConsecutiveZeroFreeHom t n x) where
+  orientation (ConsecutiveZeroFreeHom a b _) = a :> b
+
+instance (Distributive x, Typeable t, Typeable n)
+  => Multiplicative (ConsecutiveZeroFreeHom t n x) where
+  one a = ConsecutiveZeroFreeHom a a (amap1 one $ dgPoints $ cnzfDiagram a)
+
+  ConsecutiveZeroFreeHom b' c fs * ConsecutiveZeroFreeHom a b gs
+    | b' /= b   = throw NotMultiplicable
+    | otherwise = ConsecutiveZeroFreeHom a c (amap1 (uncurry (*)) (fs `zip` gs))
+    
+

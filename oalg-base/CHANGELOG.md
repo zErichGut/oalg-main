@@ -181,3 +181,4 @@ by isoToOpOp ans its inverse isoFromOpOp.
 ### Added
 - instances for transfromable EntOrd.
 - exception NotEligibleCone
+- data ConsecutiveZeroFreeHom
