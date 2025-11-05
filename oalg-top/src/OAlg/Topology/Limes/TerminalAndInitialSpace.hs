@@ -6,11 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving, DeriveAnyClass #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TupleSections #-}
-
 
 -- |
 -- Module      : OAlg.Topology.Limes.TerminalAndInitialSpace
@@ -22,21 +18,22 @@
 -- Terminal and initial space.
 module OAlg.Topology.Limes.TerminalAndInitialSpace
   (
-  ) where
+    -- * Terminal
+   cntTerminal, spcPoint
 
-import Data.Typeable
+  , spcTerminals
+
+    -- * Initial
+  , cntInitial, spcEmpty
+  , spcInitials
+  ) where
 
 import OAlg.Prelude
 
 import OAlg.Category.Map
 
-import OAlg.Structure.Oriented
-
 import OAlg.Entity.Diagram
-import OAlg.Entity.Natural
-import OAlg.Entity.FinList
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Matrix.Vector
 
 import OAlg.Limes.Definition
@@ -45,15 +42,8 @@ import OAlg.Limes.Limits
 import OAlg.Limes.TerminalAndInitialPoint
 
 import OAlg.Homology.Complex
-import OAlg.Homology.ChainComplex
 
 import OAlg.Topology.Definition
-
---------------------------------------------------------------------------------
--- cpxConcrete -
-
-cpxConcrete :: Complex x -> Complex (Vector Q)
-cpxConcrete = error "nyi"
 
 --------------------------------------------------------------------------------
 -- cpxTerminal -
@@ -81,8 +71,16 @@ spcTerminals :: Terminals (Continuous Abstract)
 spcTerminals = LimitsG (const spcTerminal)
 
 --------------------------------------------------------------------------------
+-- spcPoint -
+
+-- | a space with one point.
+spcPoint :: Space Abstract
+spcPoint = tip $ universalCone spcTerminal
+
+--------------------------------------------------------------------------------
 -- cntTerminal -
 
+-- | the uniquely determined continuous map from the given space to the a space with one point.
 cntTerminal :: Space Abstract -> Continuous Abstract
 cntTerminal = universalFactor (limes spcTerminals DiagramEmpty) . trmCone
 
@@ -112,7 +110,15 @@ spcInitials :: Initials (Continuous Abstract)
 spcInitials = LimitsG (const spcInitial)
 
 --------------------------------------------------------------------------------
+-- spcEmpty -
+
+-- | a empty space
+spcEmpty :: Space Abstract
+spcEmpty = tip $ universalCone spcInitial
+
+--------------------------------------------------------------------------------
 -- cntInitial -
 
+-- | the uniquely determined continuous map from the empty space to the given one.
 cntInitial :: Space Abstract -> Continuous Abstract
 cntInitial = universalFactor (limes spcInitials DiagramEmpty) . intCone
