@@ -168,7 +168,7 @@ products2 prd2 = LimitsG (prd prd2) where
 
     u (ConeProjective _ t (c0:|cN@(_:|_:|_)))
       = u2 (ConeProjective d2 t (c0:|c1:|Nil)) where
-        c1 = uN (ConeProjective dN tN cN)
+        c1 = uN (ConeProjective dN t cN)
 
 --------------------------------------------------------------------------------
 -- products -
