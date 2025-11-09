@@ -31,6 +31,9 @@ import OAlg.Category.Map
 import OAlg.Data.Either
 
 import OAlg.Structure.Definition
+import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
@@ -46,6 +49,7 @@ import OAlg.Limes.ProductsAndSums
 import OAlg.Limes.Proposition
 
 import OAlg.Homology.Complex hiding (cpxProduct)
+import OAlg.Homology.ChainComplex
 
 import OAlg.Topology.Definition
 import OAlg.Topology.Limes.TerminalAndInitialSpace
@@ -233,3 +237,35 @@ sF = universalFactor s sU
 spcType :: Space m -> TypeRep
 spcType (SpaceAbstract c) = typeOf c
 spcType (SpaceConcrete c) = typeOf c
+
+--------------------------------------------------------------------------------
+-- spcBorder -
+
+dropLast :: [a] -> [a]
+dropLast []     = []
+dropLast [_]    = []
+dropLast (x:xs) = x:dropLast xs
+
+spcBorder :: Space m -> Space m
+spcBorder (SpaceAbstract (Complex (Graph ssx)))
+  = SpaceAbstract $ Complex $ Graph $ case ssx of
+  [_] -> ssx
+  _   -> dropLast ssx
+
+--------------------------------------------------------------------------------
+-- simplex -
+
+simplex :: N -> Space Abstract
+simplex n = SpaceAbstract $ complex $ [Set [0..n]]
+
+--------------------------------------------------------------------------------
+-- sphere -
+
+sphere :: N -> Space Abstract
+sphere n = spcBorder $ simplex (n+1)
+
+t :: Diagram Discrete N3 N0 (Continuous Abstract)
+t = DiagramDiscrete (s:|s:|s:|Nil) where s = sphere 1
+
+torus :: Space Abstract
+torus = tip $ universalCone $ limes cntProducts t
