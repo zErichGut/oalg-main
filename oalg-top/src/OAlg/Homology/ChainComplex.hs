@@ -22,7 +22,7 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
-
+{-
     -- * Chain Complex
     chainComplex, chainComplex', ChainComplex(..)
   , ChainComplexType(..), Regularity(..), BoundaryOperator
@@ -48,8 +48,10 @@ module OAlg.Homology.ChainComplex
   , SomeChainComplex(..)
   , SomeChainComplexHom(..)
   , eqVertexType
-
+-}
   ) where
+
+import Control.Monad
 
 import Data.Typeable
 import Data.List as L (repeat,(++),zip) 
@@ -58,12 +60,14 @@ import OAlg.Prelude
 
 import OAlg.Category.Map
 
+import OAlg.Data.Singleton
 import OAlg.Data.Filterable
 
 import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Exponential
 import OAlg.Structure.Fibred
 import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
@@ -126,6 +130,173 @@ ccxSimplices n c = case mSet (ccs n c) of
   
       elg :: Simplical s x => Complex x -> s x -> Bool
       elg c = cpxElem c . vertices
+
+ccxSimplices' :: (Entity x, Ord x)
+  => Any n -> SimplexType s -> Complex x -> FinList (n+3) (Z,Set (s x))
+ccxSimplices' n s c = case structSmpl s c of Struct -> ccxSimplices n c
+
+--------------------------------------------------------------------------------
+-- ChainComplex -
+
+data ChainComplex r n where
+  ChainComplex :: Simplical s x
+    => ConsecutiveZero To n (Matrix r)
+    -> FinList (n+3) (Set (s x))
+    -> ChainComplex r n
+
+deriving instance Ring r => Show (ChainComplex r n)
+
+instance Ring r => Eq (ChainComplex r n) where
+  ChainComplex a s == ChainComplex b t
+    = a == b && case equi s t of
+        Just (Refl,Refl) -> s == t
+        Nothing          -> False
+
+    where equi ::(Typeable s, Typeable r, Typeable x, Typeable y)
+            => f (Set (s x)) -> f (Set (r y)) -> Maybe (s :~: r,x :~: y)
+          equi s t = do
+            sr <- eF s t
+            xy <- eS s t
+            return (sr,xy)
+            
+            where eF :: (Typeable s, Typeable r)
+                     => f (Set (s x)) -> f (Set (r y)) -> Maybe (s :~: r)
+                  eF _ _ = eqT
+
+                  eS :: (Typeable x, Typeable y)
+                    => f (Set (s x)) -> f (Set (r y)) -> Maybe (x :~: y)
+                  eS _ _ = eqT
+
+
+instance Ring r =>Validable (ChainComplex r n) where
+  valid (ChainComplex c s) = Label "ChainComplex" :<=>:
+    And [ valid c
+        , vldDim 0 (amap1 lengthN $ dgPoints $ cnzDiagram c) (amap1 lengthN s)
+        ] where
+
+    vldDim :: N -> FinList n N -> FinList n N -> Statement
+    vldDim _ Nil _ = SValid
+    vldDim i (d:|ds) (s:|ss)
+      = And [ (d == s) :?> Params ["i":=show i,"d":=show d,"s":=show s]
+            , vldDim (succ i) ds ss
+            ]
+
+--------------------------------------------------------------------------------
+-- ccxcnz -
+
+ccxcnz :: ChainComplex r n -> ConsecutiveZero To n (Matrix r)
+ccxcnz (ChainComplex c _) = c
+
+{-
+--------------------------------------------------------------------------------
+-- ccxSimplexType -
+
+ccxSimplexType :: ChianComplex r n -> TypeRep
+ccxSimplexType (ChianComplex _ ss) = error "nyi"
+-}
+
+--------------------------------------------------------------------------------
+-- ccxSimplexSets -
+
+ccxSimplexSets :: (Entity x, Ord x)
+  => SimplexType s -> q x -> ChainComplex r n -> Maybe (FinList (n+3) (Set (s x)))
+ccxSimplexSets s q (ChainComplex _ fs) = do
+  Refl <- eqs s q fs
+  Refl <- eqx s q fs
+  return fs
+  
+  where eqs :: (Entity x, Ord x, Simplical s' x')
+          => SimplexType s -> q x -> f (Set (s' x')) -> Maybe (s :~: s')
+        eqs s q _ = case structSmpl s q of Struct -> eqT
+
+        eqx :: (Entity x, Ord x, Simplical s' x')
+          => SimplexType s -> q x -> f (Set (s' x')) -> Maybe (x :~: x')
+        eqx s q _ = case structSmpl s q of Struct -> eqT
+        
+--------------------------------------------------------------------------------
+-- ChainComplexType -
+
+data ChainComplexType = ChainComplexStandard | ChainComplexExtended
+  deriving (Show,Eq,Ord,Enum,Bounded)
+
+
+--------------------------------------------------------------------------------
+-- chainComplex -
+
+chainComplex :: (Ring r, Commutative r, Entity x, Ord x)
+  => Any n -> ChainComplexType -> SimplexType s -> Complex x -> ChainComplex r n
+chainComplex n t s c = case structSmpl s c of
+  Struct -> adapt t $ ChainComplex cz sxs where
+    cz  = ConsecutiveZero $ DiagramChainTo (end $ head ds) ds where ds = reps sxs
+    sxs = amap1 snd $ ccxSimplices' n s c
+
+    reps :: (Ring r, Commutative r, Simplical s x)
+      => FinList (n+1) (Set (s x)) -> FinList n (Matrix r)
+    reps (_:|Nil)       = Nil
+    reps (sx:|sx':|sxs) = repMatrix (Representable Boundary sx' sx) :| reps (sx':|sxs)
+
+    adapt :: (Ring r) => ChainComplexType -> ChainComplex r n -> ChainComplex r n
+    adapt ChainComplexExtended c                     = c
+    adapt ChainComplexStandard (ChainComplex cz sxs) = ChainComplex cz' sxs' where
+      sxs' = empty :| tail sxs
+
+      cz'  = case cz of
+        ConsecutiveZero (DiagramChainTo _ ds) -> ConsecutiveZero (DiagramChainTo d0 ds')
+          where d0  = dim unit ^ 0
+                d1  = start $ head ds
+                ds' = zero  (d1:>d0) :| tail ds
+
+
+
+--------------------------------------------------------------------------------
+-- ChainComplexHom -
+
+data ChainComplexHom r n
+  = ChainComplexHom (ChainComplex r n) (ChainComplex r n) (FinList (n+3) (Matrix r))
+  deriving (Show,Eq)
+
+instance Ring r => Validable (ChainComplexHom r n) where
+  valid (ChainComplexHom a b fs) = Label "ChainComplexHom" :<=>:
+    And [ valid a
+        , valid b
+        , valid fs
+        , vldCm 0 (dgArrows $ cnzDiagram $ ccxcnz a) (dgArrows $ cnzDiagram $ ccxcnz b) fs
+        ] where
+
+    vldCm :: Ring r 
+      => N -> FinList n (Matrix r) -> FinList n (Matrix r) -> FinList (n+1) (Matrix r)
+      -> Statement
+    vldCm _ Nil _ _ = SValid
+    vldCm i (a:|as) (b:|bs) (f:|f':|fs)
+      = And [ (f * a == b * f') :?> Params ["i":=show i]
+            , vldCm (succ i) as bs (f':|fs)
+            ]
+
+--------------------------------------------------------------------------------
+-- chainComplexHom -
+
+chainComplexHom :: (Ring r, Commutative r, Entity x, Ord x, Entity y, Ord y)
+  => Any n -> ChainComplexType -> HomologyType s -> ComplexMap s (Complex x) (Complex y)
+  -> ChainComplexHom r n
+chainComplexHom n t h f = ChainComplexHom a b fs where
+  s  = injHmlgType h
+  a  = chainComplex n t s (cpmDomain f)
+  b  = chainComplex n t s (cpmRange f)
+  fs = fromJust $ do
+    sxs <- ccxSimplexSets s (cpmDomain f) a
+    sys <- ccxSimplexSets s (cpmRange f) b
+    case structHmlg h f of
+      Struct2 -> return $ reps sxs sys $ cpmMap f
+
+  reps :: (Ring r, Commutative r, Homological s x y)
+    => FinList n (Set (s x)) -> FinList n (Set (s y))
+    -> Map EntOrd x y
+    -> FinList n (Matrix r)
+  reps Nil _ _ = Nil
+  reps (sx:|sxs) (sy:|sys) f = repMatrix (Representable (ChainMap f) sx sy) :| reps sxs sys f
+
+  
+{-
 
 --------------------------------------------------------------------------------
 -- Regular -
@@ -540,3 +711,4 @@ instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
 
 instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
   => Algebraic (SomeChainComplexHom t r n)
+-}
