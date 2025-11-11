@@ -22,19 +22,23 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
-{-
+{-    
     -- * Chain Complex
-    chainComplex, chainComplex', ChainComplex(..)
-  , ChainComplexType(..), Regularity(..), BoundaryOperator
-  , ccxDiagram, ccxHead, ccxTail
-
-    -- ** Representation
-  , ccxRepMatrix, ccxCards
+    chainComplex, ChainComplex(..), ChainComplexType(..)
+  , ccxcnz
+  , ccxSimplexSets
+  , ccxCards
+  , ccxHead, ccxTail
 
     -- * Homomorphsim
-  , chainComplexHom, chainComplexHomZ
-  , ccxhDomain, ccxhRange
-  , ChainComplexHom(..)
+  , chainComplexHom, ChainComplexHom(..)
+  , ccxCardsHom
+-}
+  
+{-  
+  -- , chainComplexHomZ
+  -- , ccxhDomain, ccxhRange
+
   , MapOperator
   , ccxhOne, ccxhMlt
   , ccxhZero, ccxhAdd
@@ -63,18 +67,12 @@ import OAlg.Category.Map
 import OAlg.Data.Singleton
 import OAlg.Data.Filterable
 
-import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Exponential
-import OAlg.Structure.Fibred
-import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
-import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
-import OAlg.Structure.Vectorial
-import OAlg.Structure.Algebraic
 
 import OAlg.Entity.Diagram as D
 import OAlg.Entity.Natural as N
@@ -138,6 +136,23 @@ ccxSimplices' n s c = case structSmpl s c of Struct -> ccxSimplices n c
 --------------------------------------------------------------------------------
 -- ChainComplex -
 
+data ChainComplex r s n x where
+  ChainComplex
+    :: Diagram (Chain To) (n+3) (n+2) (ChainOperator r s (ChainG r s x) (ChainG r s x))
+    -> FinList (n+3) (Set (s x))
+    -> ChainComplex r s n x
+
+type instance Point (ChainOperator r s (ChainG r s x) (ChainG r s x)) = Set (s x)
+
+instance Oriented (ChainOperator r s (ChainG r s x) (ChainG r s x)) where
+  
+
+-- deriving instance Show (ChainComplex r s n x)
+  
+{-
+--------------------------------------------------------------------------------
+-- ChainComplex -
+
 data ChainComplex r n where
   ChainComplex :: Simplical s x
     => ConsecutiveZero To n (Matrix r)
@@ -187,13 +202,18 @@ instance Ring r =>Validable (ChainComplex r n) where
 ccxcnz :: ChainComplex r n -> ConsecutiveZero To n (Matrix r)
 ccxcnz (ChainComplex c _) = c
 
-{-
 --------------------------------------------------------------------------------
--- ccxSimplexType -
+-- ccxHead -
 
-ccxSimplexType :: ChianComplex r n -> TypeRep
-ccxSimplexType (ChianComplex _ ss) = error "nyi"
--}
+ccxHead :: Ring r => ChainComplex r n -> ChainComplex r N0
+ccxHead (ChainComplex c sxs) = ChainComplex (cnzHead c) (s0:|s1:|s2:|Nil) where
+  s0:|s1:|s2:|_ = sxs
+
+--------------------------------------------------------------------------------
+-- ccxTail -
+
+ccxTail :: Ring r => ChainComplex r (n+1) -> ChainComplex r n
+ccxTail (ChainComplex c sxs) = ChainComplex (cnzTail c) (tail sxs)
 
 --------------------------------------------------------------------------------
 -- ccxSimplexSets -
@@ -246,7 +266,11 @@ chainComplex n t s c = case structSmpl s c of
                 d1  = start $ head ds
                 ds' = zero  (d1:>d0) :| tail ds
 
+--------------------------------------------------------------------------------
+-- ccxCards -
 
+ccxCards :: ChainComplex r n -> Cards n
+ccxCards (ChainComplex _ sxs) = DiagramDiscrete $ amap1 lengthN sxs
 
 --------------------------------------------------------------------------------
 -- ChainComplexHom -
@@ -295,7 +319,17 @@ chainComplexHom n t h f = ChainComplexHom a b fs where
   reps Nil _ _ = Nil
   reps (sx:|sxs) (sy:|sys) f = repMatrix (Representable (ChainMap f) sx sy) :| reps sxs sys f
 
-  
+
+--------------------------------------------------------------------------------
+-- ccxCardsHom -
+
+ccxCardsHom :: ChainComplexHom r n -> CardsHom n
+ccxCardsHom (ChainComplexHom a b _) = DiagramTrafo ca cb ts where
+  ca = ccxCards a
+  cb = ccxCards b
+  ts = amap1 (uncurry (:>)) (dgPoints ca `F.zip` dgPoints cb)
+-}
+
 {-
 
 --------------------------------------------------------------------------------
@@ -412,21 +446,6 @@ f c = case c of
   'd' -> 0
   _   -> error "undefined"
 -}
-
---------------------------------------------------------------------------------
--- ccxHead -
-
-ccxHead :: ChainComplex t r s n x -> ChainComplex t r s N0 x
-ccxHead (ChainComplex t (DiagramChainTo e (d0:|d1:|_)))
-  = ChainComplex t (DiagramChainTo e (d0:|d1:|Nil))
-
---------------------------------------------------------------------------------
--- ccxTail -
-
-ccxTail :: (AlgebraicSemiring r, Ring r, Ord r, Simplical s x)
-  => ChainComplex t r s (n+1) x -> ChainComplex Regular r s n x
-ccxTail (ChainComplex _ (DiagramChainTo _ (d0:|ds)))
-  = ChainComplex ChainComplexExtended (DiagramChainTo (start d0) ds)
 
 --------------------------------------------------------------------------------
 -- ccxRepMatrix -

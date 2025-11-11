@@ -22,13 +22,13 @@
 -- Operators on chains of simplices.
 module OAlg.Homology.ChainOperator
   (
-
+{-
     -- * Chain Operator
     ChainOperator(..)
 
     -- * Chain
   , ChainG, ch, chZ, boundary, chainMap
-
+-}
 {-    
     -- ** Representables
     ChainOperatorRepSum(), chors, chorsOne, chorsMlt
@@ -133,32 +133,30 @@ chainMap f = ssySum (chMap f) where
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
 
 --------------------------------------------------------------------------------
--- ChainOperator -
+-- ChainOperatorAtom -
 
-data ChainOperator r s x y where
-  Boundary :: Simplical s x => ChainOperator r s (ChainG r s x) (ChainG r s x)
+data ChainOperatorAtom r s x y where
+  Boundary :: Simplical s x => ChainOperatorAtom r s (ChainG r s x) (ChainG r s x)
   ChainMap :: SimplicalTransformable s x y
-    => Map EntOrd x y -> ChainOperator r s (ChainG r s x) (ChainG r s y)
+    => Map EntOrd x y -> ChainOperatorAtom r s (ChainG r s x) (ChainG r s y)
 
-instance (Ring r, Commutative r) => Morphism (ChainOperator r s) where
-  type ObjectClass (ChainOperator r s) = Vec r
+instance (Ring r, Commutative r) => Morphism (ChainOperatorAtom r s) where
+  type ObjectClass (ChainOperatorAtom r s) = Vec r
   homomorphous Boundary     = Struct :>: Struct
   homomorphous (ChainMap _) = Struct :>: Struct
 
-instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperator r s) (->) where
+instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorAtom r s) (->) where
   amapG Boundary     = toIdG boundary
   amapG (ChainMap f) = toIdG (chainMap f)
 
-instance Ring r => ApplicativeG Rt (ChainOperator r s) (->) where
+instance Ring r => ApplicativeG Rt (ChainOperatorAtom r s) (->) where
   amapG Boundary     = amapRt (const ())
   amapG (ChainMap _) = amapRt (const ())
 
-instance (Ring r, Commutative r) => HomFibred (ChainOperator r s)
-instance (Ring r, Commutative r) => HomAdditive (ChainOperator r s)
-instance (Ring r, Commutative r) => HomVectorial r (ChainOperator r s)
+instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s)
+instance (Ring r, Commutative r) => HomAdditive (ChainOperatorAtom r s)
+instance (Ring r, Commutative r) => HomVectorial r (ChainOperatorAtom r s)
 
-
-{-
 --------------------------------------------------------------------------------
 -- ChainOpreratorPath -
 
@@ -270,7 +268,6 @@ instance Simplical s x => ShowPoint (ChainOperatorRep r s (ChainG r s x) (ChainG
 instance Simplical s x => EqPoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
 instance Simplical s x => ValidablePoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
 instance Simplical s x => TypeablePoint (ChainOperatorRep r s (ChainG r s x) (ChainG r s x))
-
 
 instance (Ring r, Commutative r, Simplical s x)
   => Oriented (ChainOperatorRep r s (ChainG r s x) (ChainG r s x)) where
@@ -571,4 +568,4 @@ instance (Ring r, Ord r, AlgebraicSemiring r) => ApplicativeG Pnt (ChorsHom r s)
 
 instance (Ring r, Ord r, AlgebraicSemiring r) => HomOriented (ChorsHom r s)
 
--}
+
