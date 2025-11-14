@@ -126,25 +126,47 @@ chainMap f = ssySum (chMap f) where
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
 
 --------------------------------------------------------------------------------
+-- chainSimplex -
+
+chainSimplex :: (Ring r, Commutative r, Simplical s x)
+  => ChainG r Set x -> ChainG r s x
+chainSimplex = ssySum toSmpl where
+  toSmpl :: (Ring r, Simplical s x) => Set x -> LinearCombination r (s x)
+  toSmpl s = LinearCombination [(rOne,simplex s)]
+
+--------------------------------------------------------------------------------
+-- chainVertices -
+
+chainVertices :: (Ring r, Commutative r, Simplical s x)
+  => ChainG r s x -> ChainG r Set x
+chainVertices = ssySum toVrts where
+  toVrts :: (Ring r, Simplical s x) => s x -> LinearCombination r (Set x)
+  toVrts s = LinearCombination [(rOne,vertices s)]
+
+--------------------------------------------------------------------------------
 -- ChainOperatorAtom -
 
 data ChainOperatorAtom r s x y where
   Boundary :: Simplical s x => ChainOperatorAtom r s (ChainG r s x) (ChainG r s x)
   ChainMap :: SimplicalTransformable s x y
     => Map EntOrd x y -> ChainOperatorAtom r s (ChainG r s x) (ChainG r s y)
+  Simplex :: Simplical s x => ChainOperatorAtom r s (ChainG r Set x) (ChainG r s x)
 
 instance (Ring r, Commutative r) => Morphism (ChainOperatorAtom r s) where
   type ObjectClass (ChainOperatorAtom r s) = Vec r
   homomorphous Boundary     = Struct :>: Struct
   homomorphous (ChainMap _) = Struct :>: Struct
+  homomorphous Simplex      = Struct :>: Struct
 
 instance (Ring r, Commutative r) => ApplicativeG Id (ChainOperatorAtom r s) (->) where
   amapG Boundary     = toIdG boundary
   amapG (ChainMap f) = toIdG (chainMap f)
+  amapG Simplex      = toIdG chainSimplex
 
 instance Ring r => ApplicativeG Rt (ChainOperatorAtom r s) (->) where
   amapG Boundary     = amapRt (const ())
   amapG (ChainMap _) = amapRt (const ())
+  amapG Simplex      = amapRt (const ())
 
 instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s)
 instance (Ring r, Commutative r) => HomAdditive (ChainOperatorAtom r s)
@@ -161,6 +183,7 @@ type ChainOperatorPath r s = Path (ChainOperatorAtom r s)
 rdcChnOprPth :: ChainOperatorPath r s x y -> Rdc (ChainOperatorPath r s x y)
 rdcChnOprPth o = case o of
   ChainMap f :. Boundary :. hs -> reducesTo (Boundary :. ChainMap f :. hs)
+  Simplex :. Boundary :. hs    -> reducesTo (Boundary :. Simplex :. hs)
   h :. hs                      -> rdcChnOprPth hs >>= return . (h :.)
   _                            -> return o
 

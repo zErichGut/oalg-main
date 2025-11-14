@@ -122,7 +122,7 @@ ccxSimplices n c = case mSet (ccs n c) of
     ccs :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
     ccs n c = toFinList3 n ([-1..] `L.zip` ssx) where
       ssx = amap1 (filter (elg c))
-          $ ((amap1 snd $ gphxs $ simplices $ cpxVertices c) L.++ L.repeat empty  )
+          $ ((amap1 snd $ gphxs $ simplices $ cpxVertices c) L.++ L.repeat empty)
   
       elg :: Simplical s x => Complex x -> s x -> Bool
       elg c = cpxElem c . vertices

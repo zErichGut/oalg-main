@@ -87,36 +87,48 @@ import OAlg.Structure.PartiallyOrdered
 --        (5.2.2) @'vertices' s '<<=' sv@.
 --
 --    (5.3) For all @s@ in @__s__ __x__@ with @'verteices' s '<<=' sv@ holds: @s@ is in @g@.
+--
+--  (6) For all @s@ in @'Set' __x__@ holds: @'faces' ('simplex' s) '==' 'amap1' 'simplex' ('faces' s)@.
 class ( Entity x, Ord x
       , Entity (s x), Ord (s x), PartiallyOrdered (s x), Empty (s x), Erasable (s x)
       , Typeable s
       )
   => Simplical s x where
+  
   dimension :: s x -> Z
+  
+  -- | the induced simplex.
+  simplex :: Set x -> s x
+
   -- | the underlying set of vertices..
   vertices :: s x -> Set x
+  
   -- | the face of a set of simplices.
   faces :: s x -> [s x]
+  
   -- | set of all simplices with vertices in the given set.
   --
-  -- __Note__ This maybe an infinite list, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
-  simplices :: Set x -> Graph Z (Set (s x)) 
+  -- __Note__ The generated graph could be infinite, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
+  simplices :: Set x -> Graph Z (Set (s x))
+
   
+
+instance (Entity x, Ord x) => Simplical Set x where
+  dimension (Set vs) = dimension vs
+  simplex = id
+  vertices = id
+  faces (Set vs) = amap1 Set $ faces vs
+  simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
 instance (Entity x, Ord x) => Simplical [] x where
   dimension = pred . inj . lengthN
+  simplex (Set xs) = xs
   vertices = set
   faces []     = []
   faces (x:xs) = xs : amap1 (x:) (faces xs)
   simplices (Set vs) = Graph $ cbns (-1) [[]] where
     -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
     cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
-
-instance (Entity x, Ord x) => Simplical Set x where
-  dimension (Set vs) = dimension vs
-  vertices = id
-  faces (Set vs) = amap1 Set $ faces vs
-  simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
 --------------------------------------------------------------------------------
 -- Smpl -
@@ -318,6 +330,7 @@ instance Eq x => Erasable (Asc x) where
   
 instance (Entity x, Ord x) => Simplical Asc x where
   dimension (Asc xs) = dimension xs
+  simplex (Set xs)   = Asc xs
   vertices (Asc xs)  = set xs
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = Graph . ascCombinations
