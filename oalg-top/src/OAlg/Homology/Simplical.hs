@@ -111,21 +111,20 @@ class ( Entity x, Ord x
   -- __Note__ The generated graph could be infinite, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
   simplices :: Set x -> Graph Z (Set (s x))
 
-  
 
 instance (Entity x, Ord x) => Simplical Set x where
   dimension (Set vs) = dimension vs
-  simplex = id
-  vertices = id
-  faces (Set vs) = amap1 Set $ faces vs
-  simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
+  simplex            = id
+  vertices           = id
+  faces (Set vs)     = amap1 Set $ faces vs
+  simplices          = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
 instance (Entity x, Ord x) => Simplical [] x where
-  dimension = pred . inj . lengthN
-  simplex (Set xs) = xs
-  vertices = set
-  faces []     = []
-  faces (x:xs) = xs : amap1 (x:) (faces xs)
+  dimension          = pred . inj . lengthN
+  simplex (Set xs)   = xs
+  vertices           = set
+  faces []           = []
+  faces (x:xs)       = xs : amap1 (x:) (faces xs)
   simplices (Set vs) = Graph $ cbns (-1) [[]] where
     -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
     cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]

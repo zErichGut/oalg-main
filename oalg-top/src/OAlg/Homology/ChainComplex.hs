@@ -22,7 +22,7 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
-
+{-
     -- * Chain Complex
     chainComplex, chainComplex', ChainComplex(..)
   , ChainComplexType(..), Regularity(..), BoundaryOperator
@@ -48,8 +48,10 @@ module OAlg.Homology.ChainComplex
   , SomeChainComplex(..)
   , SomeChainComplexHom(..)
   , eqVertexType
-
+-}
   ) where
+
+import Control.Monad
 
 import Data.Typeable
 import Data.List as L (repeat,(++),zip) 
@@ -59,6 +61,7 @@ import OAlg.Prelude
 import OAlg.Category.Map
 
 import OAlg.Data.Filterable
+import OAlg.Data.Singleton
 
 import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
@@ -68,6 +71,7 @@ import OAlg.Structure.Fibred
 import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
+import OAlg.Structure.Exponential
 import OAlg.Structure.Ring
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
@@ -127,6 +131,81 @@ ccxSimplices n c = case mSet (ccs n c) of
       elg :: Simplical s x => Complex x -> s x -> Bool
       elg c = cpxElem c . vertices
 
+ccxSimplices' :: (Entity x, Ord x)
+  => SimplexType s -> Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
+ccxSimplices' s n c = case structSmpl s c of Struct -> ccxSimplices n c
+
+--------------------------------------------------------------------------------
+-- ChainComplex -
+
+-- | chain complex of dimension @__n__@ over a @'Ring' __r__@.
+--
+-- __Properties__ Let @v'ChainComplex' c sx@ be in @t'ChainComplex __r n__@, then holds:
+--
+-- (1) @'lengthN' d '==' 'lengthN' s@ for all @(d,s)@ in @('dgPoints' $ 'cnzDiagram' c) `zip` sx@.
+data ChainComplex r n where
+  ChainComplex :: (Entity s, Ord s)
+    => ConsecutiveZero To n (Matrix r) -> FinList (n+3) (Set s) -> ChainComplex r n
+
+deriving instance Oriented r => Show (ChainComplex r n)
+
+eqSmplSet :: (Typeable s, Typeable s') => f s -> f s' -> Maybe (s :~: s')
+eqSmplSet _ _ = eqT
+
+instance Oriented r =>  Eq (ChainComplex r n) where
+  ChainComplex c s == ChainComplex c' s' = c == c' && case eqSmplSet s s' of
+    Just Refl -> s == s'
+    Nothing   -> False
+
+instance Ring r => Validable (ChainComplex r n) where
+  valid (ChainComplex c sx) = Label "ChainComplex" :<=>:
+    And [ valid c
+        , valid sx
+        , vldDims 0 (amap1 lengthN $ dgPoints $ cnzDiagram c) (amap1 lengthN sx)
+        ]
+
+    where
+      vldDims :: N -> FinList n N -> FinList n N -> Statement
+      vldDims _ Nil _           = SValid
+      vldDims i (d:|ds) (c:|cs) = And [ (d == c) :?> Params ["i":=show i,"d":=show d,"c":=show c]
+                                      , vldDims (succ i) ds cs
+                                      ]
+
+
+data ChainComplexType = ChainComplexStandard | ChainComplexExtended
+  deriving (Show,Eq,Ord,Enum,Bounded)
+
+--------------------------------------------------------------------------------
+-- chainComplex -
+
+chainComplex :: (Ring r, Commutative r, Entity x, Ord x)
+  => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplex r n
+chainComplex t s n c = case structSmpl s c of
+  str@Struct -> ChainComplex cnz' ssx' where
+    ssx = chns str n c
+    ds  = bnds ssx
+
+    ssx'  = case t of
+              ChainComplexExtended -> ssx
+              ChainComplexStandard -> empty :| tail ssx
+              
+    cnz'  = ConsecutiveZero $ DiagramChainTo (end $ head ds') ds' where
+      ds' = case t of
+              ChainComplexExtended -> ds
+              ChainComplexStandard -> d0' :| tail ds
+                where d0  = head ds
+                      d0' = zero (dim unit ^ 0 :> start d0) 
+        
+
+  where
+    chns :: Struct (Smpl s) x -> Any n -> Complex x -> FinList (n+3) (Set (s x))
+    chns Struct n c = amap1 snd $ ccxSimplices n c
+
+    bnds :: (Ring r, Commutative r, Simplical s x) => FinList (n+1) (Set (s x)) -> FinList n (Matrix r)
+    bnds (_:|Nil)       = Nil
+    bnds (sx':|sx:|sxs) = d :| bnds (sx:|sxs) where d = repMatrix (Representable Boundary sx sx')
+
+{-
 --------------------------------------------------------------------------------
 -- Regular -
 
@@ -540,3 +619,4 @@ instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
 
 instance (Ring r, Ord r, AlgebraicSemiring r, Typeable t, Attestable n)
   => Algebraic (SomeChainComplexHom t r n)
+-}
