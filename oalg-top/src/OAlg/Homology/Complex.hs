@@ -33,6 +33,7 @@ module OAlg.Homology.Complex
   , ComplexMap(..), Neglecting, Preserving
   , cpmForget, cpmDomain, cpmRange
   , cpmMap, cpmHomEntOrd, cpmGraph
+  , cpmHomologyType
 
     -- * Homological
   , Homological, Hmlg
@@ -294,6 +295,15 @@ data ComplexMap s a b where
     -> Map EntOrd x y
     -> ComplexMap Preserving (Complex x) (Complex y)
 
+--------------------------------------------------------------------------------
+-- cmpHomologyType -
+
+-- | the associated homology type.
+cpmHomologyType :: ComplexMap s x y -> HomologyType s
+cpmHomologyType f = case f of
+  ComplexMapPrs _ _ _ -> HmlgTypePrs
+  ComplexMapNgl _ _ _ -> HmlgTypeNgl
+  
 --------------------------------------------------------------------------------
 -- cpmForget -
 

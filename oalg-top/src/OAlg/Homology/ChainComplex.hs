@@ -171,6 +171,19 @@ instance Ring r => Validable (ChainComplex r n) where
                                       , vldDims (succ i) ds cs
                                       ]
 
+--------------------------------------------------------------------------------
+-- ccxSmplSet -
+
+ccxSmplSet :: Struct (Smpl s) x -> ChainComplex r n -> Maybe (FinList (n+3) (Set (s x)))
+ccxSmplSet s (ChainComplex _ ssx) = case eqS s ssx of
+  Just Refl -> return ssx
+  Nothing   -> Nothing
+  
+  where eqS :: Typeable s' => Struct (Smpl s) x -> f (Set s') -> Maybe (s' :~: s x)
+        eqS Struct _ = eqT
+
+--------------------------------------------------------------------------------
+-- ChainComplexType -
 
 data ChainComplexType = ChainComplexStandard | ChainComplexExtended
   deriving (Show,Eq,Ord,Enum,Bounded)
@@ -181,21 +194,10 @@ data ChainComplexType = ChainComplexStandard | ChainComplexExtended
 chainComplex :: (Ring r, Commutative r, Entity x, Ord x)
   => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplex r n
 chainComplex t s n c = case structSmpl s c of
-  str@Struct -> ChainComplex cnz' ssx' where
+  str@Struct -> adpt t $ ChainComplex cnz ssx where
     ssx = chns str n c
     ds  = bnds ssx
-
-    ssx'  = case t of
-              ChainComplexExtended -> ssx
-              ChainComplexStandard -> empty :| tail ssx
-              
-    cnz'  = ConsecutiveZero $ DiagramChainTo (end $ head ds') ds' where
-      ds' = case t of
-              ChainComplexExtended -> ds
-              ChainComplexStandard -> d0' :| tail ds
-                where d0  = head ds
-                      d0' = zero (dim unit ^ 0 :> start d0) 
-        
+    cnz = ConsecutiveZero $ DiagramChainTo (end $ head ds) ds
 
   where
     chns :: Struct (Smpl s) x -> Any n -> Complex x -> FinList (n+3) (Set (s x))
@@ -204,6 +206,101 @@ chainComplex t s n c = case structSmpl s c of
     bnds :: (Ring r, Commutative r, Simplical s x) => FinList (n+1) (Set (s x)) -> FinList n (Matrix r)
     bnds (_:|Nil)       = Nil
     bnds (sx':|sx:|sxs) = d :| bnds (sx:|sxs) where d = repMatrix (Representable Boundary sx sx')
+    -- Representable Boundary sx' sx is valid, because of the construction of sx' and sx via
+    -- ccxSimplex and the property (3) of Complex and (3.4) of Simplical.
+
+    adpt :: Ring r => ChainComplexType -> ChainComplex r n -> ChainComplex r n
+    adpt ChainComplexExtended c                      = c
+    adpt ChainComplexStandard (ChainComplex cnz ssx) = ChainComplex cnz' ssx' where
+      ssx' = empty :| tail ssx
+      cnz' = ConsecutiveZero (DiagramChainTo (end d0') ds') where
+        DiagramChainTo _ (d0:|ds) = cnzDiagram cnz
+        d0' = zero (start d0 :> one unit)
+        ds' = d0' :| ds
+      
+chainComplexZ :: (Entity x, Ord x)
+  => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplex Z n
+chainComplexZ = chainComplex
+
+--------------------------------------------------------------------------------
+-- ccxConsecutiveZero -
+
+-- | the underlying consecutive zero
+ccxConsecutiveZero :: ChainComplex r n -> ConsecutiveZero To n (Matrix r)
+ccxConsecutiveZero (ChainComplex c _) = c
+
+--------------------------------------------------------------------------------
+-- ChainComplexHom -
+
+data ChainComplexHom r n
+  = ChainComplexHom (ChainComplex r n) (ChainComplex r n) (FinList (n+3) (Matrix r))
+  deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- ccxConsecutiveZeroHom -
+
+-- | the underlying homomorphism between consecutive zeros.
+ccxConsecutiveZeroHom :: ChainComplexHom r n -> ConsecutiveZeroHom To n (Matrix r)
+ccxConsecutiveZeroHom (ChainComplexHom a b fs)
+  = ConsecutiveZeroHom $ DiagramTrafo a' b' fs where
+  a' = cnzDiagram $ ccxConsecutiveZero a
+  b' = cnzDiagram $ ccxConsecutiveZero b
+
+instance (Ring r, Attestable n) => Validable (ChainComplexHom r n) where
+  valid h@(ChainComplexHom a b _) = Label "ChainComplexHom" :<=>:
+    And [ valid a
+        , valid b
+        , valid $ ccxConsecutiveZeroHom h
+        ]
+
+--------------------------------------------------------------------------------
+-- chainComplexHom -
+
+chainComplexHom :: (Ring r, Commutative r
+                   , Entity x, Ord x, Entity y, Ord y
+                   )
+  => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
+  -> ChainComplexHom r n
+chainComplexHom t n f = let h = cpmHomologyType f in case structHmlg h f of
+  Struct2 -> ChainComplexHom a b fs where
+    s  = injHmlgType h
+    sx = structSmpl s (cpmDomain f)
+    sy = structSmpl s (cpmRange f)
+    
+    a  = chainComplex t s n (cpmDomain f)
+    b  = chainComplex t s n (cpmRange f)
+    fs = amap1 (uncurry (toMap sx sy f))
+           ((fromJust $ ccxSmplSet sx a) `F.zip` (fromJust $ ccxSmplSet sy b))
+  
+    toMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
+      => Struct (Smpl s) x -> Struct (Smpl s) y
+      -> ComplexMap s (Complex x) (Complex y)
+      -> Set (s x) -> Set (s y) -> Matrix r
+    toMap Struct Struct f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
+  
+
+chainComplexHomZ :: (Entity x, Ord x, Entity y, Ord y)
+  => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
+  -> ChainComplexHom Z n
+chainComplexHomZ = chainComplexHom
+
+n = attest :: Any N4
+a = complex [Set "ab",Set "bc",Set "cd"]
+b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
+
+t = ChainComplexStandard
+cmf = ComplexMapNgl a b (Map f)
+cmfHom = chainComplexHomZ t n cmf
+
+f c = case c of
+  'a' -> 0
+  'b' -> 1
+  'c' -> 2
+  'd' -> 0
+  _   -> error "undefined"
+
+
+
 
 {-
 --------------------------------------------------------------------------------
@@ -303,23 +400,6 @@ chainComplex t n c
 chainComplex' :: Simplical s x
   => q s -> ChainComplexType t -> Any n -> Complex x -> ChainComplex t Z s n x
 chainComplex' _ = chainComplex
-
-{-
-t = ChainComplexStandard
-n = attest :: Any N4
-a = complex [Set "ab",Set "bc",Set "cd"]
-b = complex [Set[0,1],Set[1,2],Set[0,2],Set[1,2,3]] :: Complex N
-s = Proxy :: Proxy Asc
-cmf = ComplexMapNgl a b (Map f)
-cmfHom = chainComplexHomZ t n cmf
-
-f c = case c of
-  'a' -> 0
-  'b' -> 1
-  'c' -> 2
-  'd' -> 0
-  _   -> error "undefined"
--}
 
 --------------------------------------------------------------------------------
 -- ccxHead -
