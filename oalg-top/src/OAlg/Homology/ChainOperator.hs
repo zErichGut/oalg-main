@@ -22,6 +22,11 @@
 -- Operators on chains of simplices.
 module OAlg.Homology.ChainOperator
   (
+    ChainOperatorAtom(..)
+
+    -- * Chain
+  , ChainG, ch, chZ, boundary, chainMap
+{-    
     -- ** Representables
     ChainOperatorRepSum(), chors, chorsOne, chorsMlt
   , chorsDomain, chorsRange, chorsRepMatrix
@@ -34,7 +39,7 @@ module OAlg.Homology.ChainOperator
 
     -- * Chain
   , ChainG, ch, chZ, boundary, chainMap
-    
+-}    
   ) where
 
 import Control.Monad
@@ -172,6 +177,7 @@ instance (Ring r, Commutative r) => HomFibred (ChainOperatorAtom r s)
 instance (Ring r, Commutative r) => HomAdditive (ChainOperatorAtom r s)
 instance (Ring r, Commutative r) => HomVectorial r (ChainOperatorAtom r s)
 
+{-
 --------------------------------------------------------------------------------
 -- ChainOpreratorPath -
 
@@ -585,3 +591,4 @@ instance (Ring r, Ord r, AlgebraicSemiring r) => ApplicativeG Pnt (ChorsHom r s)
 
 instance (Ring r, Ord r, AlgebraicSemiring r) => HomOriented (ChorsHom r s)
 
+-}

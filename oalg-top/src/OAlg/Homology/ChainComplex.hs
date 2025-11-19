@@ -183,6 +183,12 @@ ccxSmplSet s (ChainComplex _ ssx) = case eqS s ssx of
         eqS Struct _ = eqT
 
 --------------------------------------------------------------------------------
+-- ccxCards -
+
+ccxCards :: Ring r => ChainComplex r n -> Cards n
+ccxCards (ChainComplex c _) = DiagramDiscrete $ amap1 lengthN $ dgPoints $ cnzDiagram c
+
+--------------------------------------------------------------------------------
 -- ChainComplexType -
 
 data ChainComplexType = ChainComplexStandard | ChainComplexExtended
@@ -256,9 +262,7 @@ instance (Ring r, Attestable n) => Validable (ChainComplexHom r n) where
 --------------------------------------------------------------------------------
 -- chainComplexHom -
 
-chainComplexHom :: (Ring r, Commutative r
-                   , Entity x, Ord x, Entity y, Ord y
-                   )
+chainComplexHom :: (Ring r, Commutative r, Entity x, Ord x, Entity y, Ord y)
   => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexHom r n
 chainComplexHom t n f = let h = cpmHomologyType f in case structHmlg h f of
@@ -269,20 +273,28 @@ chainComplexHom t n f = let h = cpmHomologyType f in case structHmlg h f of
     
     a  = chainComplex t s n (cpmDomain f)
     b  = chainComplex t s n (cpmRange f)
-    fs = amap1 (uncurry (toMap sx sy f))
+    fs = amap1 (uncurry (rep sx sy f))
            ((fromJust $ ccxSmplSet sx a) `F.zip` (fromJust $ ccxSmplSet sy b))
   
-    toMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
+    rep :: (Ring r, Commutative r, SimplicalTransformable s x y)
       => Struct (Smpl s) x -> Struct (Smpl s) y
       -> ComplexMap s (Complex x) (Complex y)
       -> Set (s x) -> Set (s y) -> Matrix r
-    toMap Struct Struct f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
+    rep Struct Struct f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
   
-
 chainComplexHomZ :: (Entity x, Ord x, Entity y, Ord y)
   => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexHom Z n
 chainComplexHomZ = chainComplexHom
+
+--------------------------------------------------------------------------------
+-- ccxCardsHom -
+
+ccxCardsHom :: Ring r => ChainComplexHom r n -> CardsHom n
+ccxCardsHom (ChainComplexHom a b _) = DiagramTrafo ca cb cs where
+  ca = ccxCards a
+  cb = ccxCards b
+  cs = amap1 (uncurry (:>)) (dgPoints ca `F.zip` dgPoints cb)
 
 n = attest :: Any N4
 a = complex [Set "ab",Set "bc",Set "cd"]
@@ -296,7 +308,7 @@ f c = case c of
   'a' -> 0
   'b' -> 1
   'c' -> 2
-  'd' -> 0
+  'd' -> 3
   _   -> error "undefined"
 
 

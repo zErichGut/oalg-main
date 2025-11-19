@@ -44,7 +44,7 @@ module OAlg.Homology.Complex
 
     -- * Cardinalities
   , cpxCards, Cards(..)
-  , cpmCardsHom, CardsHom(..), crdsHomTrafo
+  , cpmCardsHom, CardsHom(..)
 
   ) where
 
@@ -224,7 +224,7 @@ type Preserving = Asc
 -- __Property__ Let @'Homological' __s x y__@, then holds:
 --
 -- (1) @'dimension' ('amap1' f s) '==' 'dimension' s@ for all
--- @f@ in @'Map' 'Ord'' __x y__@ and @s@ in @__s x__@.
+-- @f@ in @'Map' 'EntOrd' __x y__@ and @s@ in @__s x__@.
 --
 -- __Note__ @('Map' 'Ord'') 'Set' __x__ __y__@ is not 'Homological'!.
 class SimplicalTransformable s x y => Homological s x y
@@ -422,19 +422,15 @@ instance MultiplicativeComplexMap Preserving where
 --------------------------------------------------------------------------------
 -- Cards -
 
-newtype Cards r n = Cards (Diagram Discrete (n+3) N0 (Orientation N))
-  deriving (Show,Eq)
-
-instance Validable (Cards r n) where
-  valid (Cards d) = Label "Cards" :<=>: valid d
+type Cards n = Diagram Discrete (n+3) N0 (Orientation N)
 
 --------------------------------------------------------------------------------
 -- cpxCards -
 
 -- | the cardinalities of the simplex sets up to the given dimension, starting at dimension @-1@. 
-cpxCards :: Any n -> Complex x -> Cards r n
+cpxCards :: Any n -> Complex x -> Cards n
 cpxCards n (Complex (Graph zs))
-  = Cards $ DiagramDiscrete $ crds n $ (amap1 snd zs ++ repeat (Set [])) where
+  = DiagramDiscrete $ crds n $ (amap1 snd zs ++ repeat (Set [])) where
   crds :: Any d -> [Set s] -> FinList (d+3) N
   crds W0 (s:s':s'':_) = lengthN s :| lengthN s' :| lengthN s'' :| Nil
   crds (SW n) (s:ss)   = lengthN s :| crds n ss
@@ -443,71 +439,16 @@ cpxCards n (Complex (Graph zs))
 --------------------------------------------------------------------------------
 -- CardsHom -
 
-newtype CardsHom r n = CardsHom (DiagramTrafo Discrete (n+3) N0 (Orientation N))
-  deriving (Show,Eq)
+type CardsHom n = DiagramTrafo Discrete (n+3) N0 (Orientation N)
 
-instance Validable (CardsHom r n) where
-  valid (CardsHom t) = Label "CardsHom" :<=>: valid t
-
---------------------------------------------------------------------------------
--- crdsHomTrafo -
-
--- | the underlying transformation of diagrams.
-crdsHomTrafo :: CardsHom r n -> DiagramTrafo Discrete (n+3) N0 (Orientation N)
-crdsHomTrafo (CardsHom t) = t
-
---------------------------------------------------------------------------------
--- CardsHom - Algebraic -
-
-type instance Point (CardsHom r n) = Cards r n
-instance ShowPoint (CardsHom r n)
-instance EqPoint (CardsHom r n)
-instance ValidablePoint (CardsHom r n)
-instance (Typeable r, Typeable n) => TypeablePoint (CardsHom r n)
-
-instance (Typeable r, Typeable n) => Oriented (CardsHom r n) where
-  orientation (CardsHom (DiagramTrafo a b _)) = Cards a :> Cards b
-
-instance (Typeable r, Typeable n) => Multiplicative (CardsHom r n) where
-  one (Cards a) = CardsHom (one a)
-  CardsHom f * CardsHom g = CardsHom (f*g)
-
-type instance Root (CardsHom r n) = Orientation (Cards r n)
-instance ShowRoot (CardsHom r n)
-instance EqRoot (CardsHom r n)
-instance ValidableRoot (CardsHom r n)
-instance (Typeable r, Typeable n) => TypeableRoot (CardsHom r n)
-
-instance (Typeable r, Typeable n) => Fibred (CardsHom r n)
-
-instance (Typeable r, Typeable n) => FibredOriented (CardsHom r n)
-
--- Note: all CardsHom are zero!
-instance (Typeable r, Typeable n) => Additive (CardsHom r n) where
-  zero (Cards a :> Cards b) = CardsHom $ zero (a :> b)
-  a + b | root a == root b = a
-        | otherwise        = throw NotAddable
-
-instance (Typeable r, Typeable n) => Abelian (CardsHom r n) where
-  negate = id
-  a - b | root a == root b = a
-        | otherwise        = throw NotAddable
-
-instance (Semiring r, Commutative r, Typeable n) => Vectorial (CardsHom r n) where
-  type Scalar (CardsHom r n) = r
-  (!) _ = id 
-
-instance (Typeable r, Typeable n) => Distributive (CardsHom r n)
-
-instance (Semiring r, Commutative r, Typeable n) => Algebraic (CardsHom r n)
 
 --------------------------------------------------------------------------------
 -- cpmCardsHom -
 
-cpmCardsHom :: Any n -> ComplexMap s (Complex x) (Complex y) -> CardsHom r n
-cpmCardsHom d m = CardsHom $ DiagramTrafo cd cr ts where
-  Cards cd = cpxCards d (cpmDomain m)
-  Cards cr = cpxCards d (cpmRange m)
+cpmCardsHom :: Any n -> ComplexMap s (Complex x) (Complex y) -> CardsHom n
+cpmCardsHom d m = DiagramTrafo cd cr ts where
+  cd = cpxCards d (cpmDomain m)
+  cr = cpxCards d (cpmRange m)
   ts = amap1 (uncurry (:>)) (dgPoints cd `zip` dgPoints cr)
 
 

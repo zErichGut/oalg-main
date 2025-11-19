@@ -211,7 +211,7 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
 -- __Property__ Let @'SimplicalTransformable' __s x y__@, then holds:
 --
 -- (1) @'vertices' ('amap1' f s) '==' 'amap1' f ('vertices' s)@ for all
--- @f@ in @'Map' 'Ord'' __x y__@ and @s@ in @__s x__@.
+-- @f@ in @'Map' 'EntOrd' __x y__@ and @s@ in @__s x__@.
 class (Functorial1 (Map EntOrd) s, Simplical s x, Simplical s y)
   => SimplicalTransformable s x y 
 
