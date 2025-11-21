@@ -18,7 +18,6 @@
 -- homology.
 module OAlg.Homology.Definition
   (
-
     -- * Homology
     homology, Homology
   , homologyGroups
@@ -31,27 +30,18 @@ module OAlg.Homology.Definition
   , homologyHom, HomologyHom
   , homologyGroupsHom
   , abhCnzfh, abhCnzfhHomologyHom
-
-  , ConsecutiveZeroFreeHom(..)
-
   ) where
 
 import Control.Monad
 
-import Data.Typeable
-
 import Data.Foldable (toList)
-import Data.List as L (zip,filter, (++))
 
 import OAlg.Prelude
 
 import OAlg.Data.FinitelyPresentable
 
-import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Exponential
 import OAlg.Structure.Distributive
 import OAlg.Structure.Operational
 
@@ -61,14 +51,12 @@ import OAlg.Entity.FinList as F
 import OAlg.Entity.Slice
 import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
-import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 import OAlg.AbelianGroup.Liftable
-import OAlg.AbelianGroup.ZMod hiding (NotEligible)
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -77,13 +65,9 @@ import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
 
-import OAlg.Homology.Simplical
-import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 
 import OAlg.Homology.Eval.Core
-
-import OAlg.Adjunction.Definition
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -94,8 +78,8 @@ type Homology n = VarianceFreeLiftable To n AbHom
 --------------------------------------------------------------------------------
 -- abhCnzf -
 
-abhCnzf :: Simplical s x => ChainComplex t Z s n x -> ConsecutiveZeroFree To n AbHom
-abhCnzf = toFree . ccxRepMatrix where
+abhCnzf :: ChainComplex Z n -> ConsecutiveZeroFree To n AbHom
+abhCnzf = toFree . ccxConsecutiveZero where
   
   toFree :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
   toFree ds = ConsecutiveZeroFree ds' fs where
@@ -112,7 +96,7 @@ abhCnzfHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableS
 -- homology -
 
 -- | the induced homology of a complex.
-homology :: Simplical s x => ChainComplex t Z s n x -> Homology n
+homology :: ChainComplex Z n -> Homology n
 homology = abhCnzfHomology . abhCnzf
 
 --------------------------------------------------------------------------------
@@ -131,11 +115,11 @@ type HomologyHom n = VarianceFreeLiftableHom To n AbHom
 --------------------------------------------------------------------------------
 -- abhCnzfh -
 
-abhCnzfh :: Homological s x y => ChainComplexHom t Z s n x y -> ConsecutiveZeroFreeHom To n AbHom
+abhCnzfh :: ChainComplexHom Z n -> ConsecutiveZeroFreeHom To n AbHom
 abhCnzfh h@(ChainComplexHom a b _) = ConsecutiveZeroFreeHom a' b' fs' where
   a'  = abhCnzf a
   b'  = abhCnzf b
-  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxRepMatrixHom h
+  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxConsecutiveZeroHom h
   fs' = amap1 (amap FreeAbHom) ts
 
 --------------------------------------------------------------------------------
@@ -150,7 +134,7 @@ abhCnzfhHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs wher
 -- homologyHom -
 
 -- | the induced homomorphism between homologies.
-homologyHom :: Homological s x y => ChainComplexHom t Z s n x y -> HomologyHom n
+homologyHom :: ChainComplexHom Z n -> HomologyHom n
 homologyHom = abhCnzfhHomologyHom . abhCnzfh
 
 --------------------------------------------------------------------------------

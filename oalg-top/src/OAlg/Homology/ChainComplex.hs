@@ -24,6 +24,7 @@ module OAlg.Homology.ChainComplex
   (
     -- * Chain Complex
     chainComplex, chainComplexZ
+  , chainComplexSet
   , ChainComplex(..), ChainComplexType(..)
   , ccxConsecutiveZero
   , ccxHead, ccxTail
@@ -31,8 +32,8 @@ module OAlg.Homology.ChainComplex
 
     -- * Chain Complex Hom
   , chainComplexHom, ChainComplexHom(..)
+  , ccxConsecutiveZeroHom
   , ccxCardsHom
-
   ) where
 
 import Control.Monad
@@ -41,6 +42,8 @@ import Data.Typeable
 import Data.List as L (repeat,(++),zip) 
 
 import OAlg.Prelude
+
+-- import OAlg.Category.Map
 
 import OAlg.Data.Filterable
 import OAlg.Data.Singleton
@@ -290,6 +293,31 @@ ccxCardsHom (ChainComplexHom a b _) = DiagramTrafo ca cb cs where
   cs = amap1 (uncurry (:>)) (dgPoints ca `F.zip` dgPoints cb)
 
 --------------------------------------------------------------------------------
+-- chainComplexSet -
+
+-- | embedding of the set-simplices.
+chainComplexSet :: (Ring r, Commutative r, Entity x, Ord x)
+  => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplexHom r n
+chainComplexSet t s n c = ChainComplexHom ccSet cc fs where
+  sxSet = structSmpl SpxTypeSet c
+  sx    = structSmpl s c
+  ccSet = chainComplex t SpxTypeSet n c
+  cc    = chainComplex t s n c
+  fs    = amap1 (uncurry (rep sxSet sx))
+          ( (fromJust $ ccxSmplSet sxSet ccSet)
+          `F.zip`
+            (fromJust $ ccxSmplSet sx cc)
+          )
+
+  rep :: (Ring r, Commutative r)
+    => Struct (Smpl Set) x -> Struct (Smpl s) x -> Set (Set x) -> Set (s x) -> Matrix r
+  rep Struct Struct sxSet sx = repMatrix (Representable Simplex sxSet sx)
+
+chainComplexSetZ :: (Entity x, Ord x)
+  => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplexHom Z n
+chainComplexSetZ = chainComplexSet
+
+--------------------------------------------------------------------------------
 -- Algebraic -
 
 type instance Point (ChainComplexHom r n) = ChainComplex r n
@@ -352,7 +380,6 @@ instance ( Ring r, AlgebraicSemiring r, Attestable n)
 
 --------------------------------------------------------------------------------
 -- examples
-
 {-
 n = attest :: Any N4
 a = complex [Set "ab",Set "bc",Set "cd"]
@@ -376,5 +403,4 @@ l  = complex [set [0,1]] :: Complex N
 
 p1 = ComplexMapPrs ab l (Map fst)
 p2 = ComplexMapPrs ab (cpxProductAsc l l) (Map snd)
-
 -}
