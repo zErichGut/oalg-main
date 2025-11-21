@@ -22,14 +22,14 @@ module OAlg.Homology.Definition
     homology, Homology
   , homologyGroups
   , hmgCycles, hmgClassGenerators
-  , abhCnzf, abhCnzfHomology
+  , cnzFreeAbl, ccxCnzFreeAbl, cnzFreeAblHomology
 
   , homologyClass, boundary, boundaryInv
     
     -- * Homomorphism
   , homologyHom, HomologyHom
   , homologyGroupsHom
-  , abhCnzfh, abhCnzfhHomologyHom
+  , ccxCnzFreeHomAbl, ccxCnzFreeHomAblHomologyHom
   ) where
 
 import Control.Monad
@@ -76,28 +76,31 @@ import OAlg.Homology.Eval.Core
 type Homology n = VarianceFreeLiftable To n AbHom
 
 --------------------------------------------------------------------------------
--- abhCnzf -
+-- cnzFreeAbl -
 
-abhCnzf :: ChainComplex Z n -> ConsecutiveZeroFree To n AbHom
-abhCnzf = toFree . ccxConsecutiveZero where
-  
-  toFree :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
-  toFree ds = ConsecutiveZeroFree ds' fs where
-    ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
-    fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
+cnzFreeAbl :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
+cnzFreeAbl ds = ConsecutiveZeroFree ds' fs where
+  ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
+  fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
 
 --------------------------------------------------------------------------------
--- abhCnzfHomology -
+-- ccxCnzFreeAbl -
 
-abhCnzfHomology :: ConsecutiveZeroFree To n AbHom -> Homology n
-abhCnzfHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+ccxCnzFreeAbl :: ChainComplex Z n -> ConsecutiveZeroFree To n AbHom
+ccxCnzFreeAbl = cnzFreeAbl . ccxConsecutiveZero where
+  
+--------------------------------------------------------------------------------
+-- cnzFreeAblHomology -
+
+cnzFreeAblHomology :: ConsecutiveZeroFree To n AbHom -> Homology n
+cnzFreeAblHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- homology -
 
 -- | the induced homology of a complex.
 homology :: ChainComplex Z n -> Homology n
-homology = abhCnzfHomology . abhCnzf
+homology = cnzFreeAblHomology . ccxCnzFreeAbl
 
 --------------------------------------------------------------------------------
 -- homologyGroups -
@@ -113,29 +116,29 @@ homologyGroups = deviationsTo
 type HomologyHom n = VarianceFreeLiftableHom To n AbHom
 
 --------------------------------------------------------------------------------
--- abhCnzfh -
+-- ccxCnzFreeHomAbl -
 
-abhCnzfh :: ChainComplexHom Z n -> ConsecutiveZeroFreeHom To n AbHom
-abhCnzfh h@(ChainComplexHom a b _) = ConsecutiveZeroFreeHom a' b' fs' where
-  a'  = abhCnzf a
-  b'  = abhCnzf b
-  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxConsecutiveZeroHom h
-  fs' = amap1 (amap FreeAbHom) ts
+ccxCnzFreeHomAbl :: ChainComplexHom Z n -> ConsecutiveZeroFreeHom To n AbHom
+ccxCnzFreeHomAbl h = ConsecutiveZeroFreeHom a' b' fs' where
+  ConsecutiveZeroHom (DiagramTrafo a b fs) = ccxConsecutiveZeroHom h
+  a'  = cnzFreeAbl $ (ConsecutiveZero a)
+  b'  = cnzFreeAbl $ (ConsecutiveZero b)
+  fs' = amap1 (amap FreeAbHom) fs
 
 --------------------------------------------------------------------------------
 -- cnzfhHomologyHom -
 
-abhCnzfhHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
-abhCnzfhHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
-  a' = abhCnzfHomology a
-  b' = abhCnzfHomology b
+ccxCnzFreeHomAblHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
+ccxCnzFreeHomAblHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = cnzFreeAblHomology a
+  b' = cnzFreeAblHomology b
 
 --------------------------------------------------------------------------------
 -- homologyHom -
 
 -- | the induced homomorphism between homologies.
 homologyHom :: ChainComplexHom Z n -> HomologyHom n
-homologyHom = abhCnzfhHomologyHom . abhCnzfh
+homologyHom = ccxCnzFreeHomAblHomologyHom . ccxCnzFreeHomAbl
 
 --------------------------------------------------------------------------------
 -- hmgGroupsHom -
