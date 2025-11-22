@@ -29,7 +29,7 @@ module OAlg.Homology.Definition
     -- * Homomorphism
   , homologyHom, HomologyHom
   , homologyGroupsHom
-  , ccxCnzFreeHomAbl, ccxCnzFreeHomAblHomologyHom
+  , ccxCnzFreeHomAbl, cnzFreeHomAblHomologyHom
   ) where
 
 import Control.Monad
@@ -128,8 +128,8 @@ ccxCnzFreeHomAbl h = ConsecutiveZeroFreeHom a' b' fs' where
 --------------------------------------------------------------------------------
 -- cnzfhHomologyHom -
 
-ccxCnzFreeHomAblHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
-ccxCnzFreeHomAblHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+cnzFreeHomAblHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
+cnzFreeHomAblHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
   a' = cnzFreeAblHomology a
   b' = cnzFreeAblHomology b
 
@@ -138,7 +138,7 @@ ccxCnzFreeHomAblHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b'
 
 -- | the induced homomorphism between homologies.
 homologyHom :: ChainComplexHom Z n -> HomologyHom n
-homologyHom = ccxCnzFreeHomAblHomologyHom . ccxCnzFreeHomAbl
+homologyHom = cnzFreeHomAblHomologyHom . ccxCnzFreeHomAbl
 
 --------------------------------------------------------------------------------
 -- hmgGroupsHom -

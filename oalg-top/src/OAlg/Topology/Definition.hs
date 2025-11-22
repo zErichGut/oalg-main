@@ -22,6 +22,7 @@
 -- Definition of topological spaces.
 module OAlg.Topology.Definition
   (
+{-    
     -- * Space
     Space(..), Model(..)
   , spcAbstract
@@ -34,6 +35,7 @@ module OAlg.Topology.Definition
     -- * Homology
   , HmlgCat, Hmlg(..)
   , cntAbs, cntChc, cntCrd, cntCnz, cntDev
+-}
   ) where
 
 
@@ -54,10 +56,12 @@ import OAlg.Hom.Distributive ()
 import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.Matrix.Vector
 
+import OAlg.Limes.Exact.Free
 import OAlg.Limes.Exact.Deviation
 
 import OAlg.AbelianGroup.Definition
 
+import OAlg.Homology.Simplical
 import OAlg.Homology.Complex hiding (Hmlg)
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
@@ -76,6 +80,9 @@ data Space m where
   SpaceConcrete :: Complex (Vector Q)             -> Space Concrete
   
 deriving instance Show (Space m)
+
+eqVertexType :: (Typeable x, Typeable y) => c x -> c y -> Maybe (x :~: y)
+eqVertexType _ _ = eqT
 
 instance Eq (Space m) where
   SpaceAbstract c == SpaceAbstract c' = case eqVertexType c c' of
@@ -99,13 +106,12 @@ spcAbstract (SpaceConcrete c)   = SpaceAbstract c
 -- Continuous -
 
 -- | mapping between two spaces.
-data Continuous m where
-  CntAbstract :: ComplexMap Preserving (Complex x) (Complex y)
-               -> Continuous Abstract
-  CntConcrete :: ComplexMap Preserving (Complex (Vector Q)) (Complex (Vector Q))
-               -> Continuous Concrete
+data Continuous s m where
+  CntAbstract :: ComplexMap s (Complex x) (Complex y) -> Continuous s Abstract
+  CntConcrete :: ComplexMap s (Complex (Vector Q)) (Complex (Vector Q)) -> Continuous s Concrete
 
-deriving instance Show (Continuous m)
+
+deriving instance Show (Continuous s m)
 
 cntEqAbstr :: Homomorphous EntOrd x y -> Homomorphous EntOrd x' y'
   -> ComplexMap s (Complex x) (Complex y) -> ComplexMap s (Complex x') (Complex y')
@@ -115,52 +121,52 @@ cntEqAbstr (Struct :>: Struct) (Struct :>: Struct) f g
       (Just Refl,Just Refl) -> f == g
       _                     -> False
 
-instance Eq (Continuous m) where
+instance Eq (Continuous s m) where
   CntAbstract f == CntAbstract g = cntEqAbstr (cpmHomEntOrd f) (cpmHomEntOrd g) f g
   CntConcrete f == CntConcrete g = f == g
 
-instance Validable (Continuous m) where
+instance Validable (Continuous s m) where
   valid f = Label "Continous" :<=>: case f of
     CntAbstract f' -> Label "Abstract" :<=>: valid f'
     CntConcrete f' -> Label "Concrete" :<=>: valid f'
-    
+
 --------------------------------------------------------------------------------
 -- cntAbstract -
 
 -- | abstraction of a continuous map.
-cntAbstract :: Continuous m -> Continuous Abstract
+cntAbstract :: Continuous s m -> Continuous s Abstract
 cntAbstract f@(CntAbstract _ ) = f
 cntAbstract (CntConcrete f)    = CntAbstract f
 
 --------------------------------------------------------------------------------
 -- cntDomain -
 
-cntDomain :: Continuous m -> Space m
+cntDomain :: Continuous s m -> Space m
 cntDomain (CntAbstract f) = case cpmHomEntOrd f of Struct :>: _ -> SpaceAbstract (cpmDomain f)
 cntDomain (CntConcrete f) = SpaceConcrete (cpmDomain f)
 
 --------------------------------------------------------------------------------
 -- contRange -
 
-cntRange :: Continuous m -> Space m
+cntRange :: Continuous s m -> Space m
 cntRange (CntAbstract f) = case cpmHomEntOrd f of _ :>: Struct -> SpaceAbstract (cpmRange f)
 cntRange (CntConcrete f) = SpaceConcrete (cpmRange f)
 
 --------------------------------------------------------------------------------
 -- Continuous - Multiplicative -
 
-type instance Point (Continuous m) = Space m
+type instance Point (Continuous s m) = Space m
 
-deriving instance ShowPoint (Continuous m)
-deriving instance EqPoint (Continuous m)
-deriving instance ValidablePoint (Continuous m)
-deriving instance Typeable m => TypeablePoint (Continuous m)
+deriving instance ShowPoint (Continuous s m)
+deriving instance EqPoint (Continuous s m)
+deriving instance ValidablePoint (Continuous s m)
+deriving instance Typeable m => TypeablePoint (Continuous s m)
 
-instance Typeable m => Oriented (Continuous m) where
+instance (Typeable s, Typeable m) => Oriented (Continuous s m) where
   start = cntDomain
   end   = cntRange
 
-instance Typeable m => Multiplicative (Continuous m) where
+instance (MultiplicativeComplexMap s, Typeable m) => Multiplicative (Continuous s m) where
   one (SpaceAbstract c) = CntAbstract (cpmOne Struct c) 
   one (SpaceConcrete c) = CntConcrete (cpmOne Struct c)
 
@@ -173,63 +179,83 @@ instance Typeable m => Multiplicative (Continuous m) where
 --------------------------------------------------------------------------------
 -- Hmlg -
 
-data Hmlg n x y where
-  Abs :: Typeable m => Hmlg n (Continuous m) (Continuous Abstract)
-  Chc :: (Typeable t, Attestable n)
-      => ChainComplexType t -> Any n
-      -> Hmlg n (Continuous Abstract) (SomeChainComplexHom t Z n)
-  Crd :: (Typeable t, Attestable n) => Hmlg n (SomeChainComplexHom t Z n) (CardsHom Z n)
-  Cnz :: (Typeable t, Attestable n)
-      => Hmlg n (SomeChainComplexHom t Z n) (ConsecutiveZeroFreeHom To n AbHom)
-  Dev :: Attestable n => Hmlg n (ConsecutiveZeroFreeHom To n AbHom) (DeviationHom (n+1) AbHom)
+data Hmlg s n x y where
+  Abs  :: Typeable m => Hmlg s n (Continuous s m) (Continuous s Abstract)
+  Chc  :: Attestable n
+       => ChainComplexType -> SimplexType s -> Any n
+       -> Hmlg s n (Continuous s Abstract) (ChainComplexHom Z n)      
+  Crd  :: Attestable n => Hmlg s n (ChainComplexHom Z n) (CardsHom n)
+  Cnz  :: Attestable n
+       => Hmlg s n (ChainComplexHom Z n) (ConsecutiveZeroFreeHom To n AbHom)
+  Dev  :: Attestable n => Hmlg s n (ConsecutiveZeroFreeHom To n AbHom) (DeviationHom (n+1) AbHom)
+  Hmlg :: (Typeable  m, Attestable n)
+       => ChainComplexType -> SimplexType s -> Any n
+       -> Hmlg s n (Continuous s m) (DeviationHom (n+1) AbHom)
 
+instance (MultiplicativeComplexMap s, Typeable n) => Morphism (Hmlg s n) where
+  type ObjectClass (Hmlg s n) = Mlt
+  homomorphous Abs          = Struct :>: Struct
+  homomorphous (Chc _ _ _)  = Struct :>: Struct
+  homomorphous Crd          = Struct :>: Struct
+  homomorphous Cnz          = Struct :>: Struct
+  homomorphous Dev          = Struct :>: Struct
+  homomorphous (Hmlg _ _ _) = Struct :>: Struct
 
-instance Typeable n => Morphism (Hmlg n) where
-  type ObjectClass (Hmlg n) = Mlt
-  homomorphous Abs       = Struct :>: Struct
-  homomorphous (Chc _ _) = Struct :>: Struct
-  homomorphous Crd       = Struct :>: Struct
-  homomorphous Cnz       = Struct :>: Struct
-  homomorphous Dev       = Struct :>: Struct 
+instance ApplicativeG Id (Hmlg s n) (->) where
+  amapG Abs (Id f)          = Id $ cntAbstract f  
+  amapG (Chc t _ n) (Id f)  = Id $ case f of
+    CntAbstract f'         -> case cpmHomEntOrd f' of
+      Struct:>:Struct      -> chainComplexHom t n f'      
+  amapG Crd (Id h)          = Id $ ccxCardsHom h
+  amapG Cnz (Id h)          = Id $ ccxCnzFreeHomAbl h
+  amapG Dev (Id h)          = Id $ homologyGroupsHom $ cnzFreeHomAblHomologyHom h
+  amapG (Hmlg t _ n) (Id f) = Id $ case cntAbstract f of
+    CntAbstract f'         -> case cpmHomEntOrd f' of
+      Struct:>:Struct      -> homologyGroupsHom $ cnzFreeHomAblHomologyHom
+                            $ ccxCnzFreeHomAbl $ chainComplexHom t n f'
+  
 
-instance ApplicativeG Id (Hmlg n) (->) where
-  amapG Abs (Id f)        = Id $ cntAbstract f
-  amapG (Chc t n) (Id f)  = Id $ case f of
-    CntAbstract f'       -> case cpmHomEntOrd f' of
-      Struct:>:Struct    -> SomeChainComplexHom $ chainComplexHom t n f'
-  amapG Crd (Id sc)       = case sc of SomeChainComplexHom f -> Id $ ccxCardsHom f
-  amapG Cnz (Id sc)       = Id $ case sc of SomeChainComplexHom f -> abhCnzfh f
-  amapG Dev (Id c)        = Id $ homologyGroupsHom $ abhCnzfhHomologyHom c
+instance ApplicativeG Pnt (Hmlg s n) (->) where
+  amapG Abs (Pnt x)          = Pnt $ spcAbstract x
+  amapG (Chc t s n) (Pnt x)  = Pnt $ case x of SpaceAbstract x' -> chainComplex t s n x'    
+  amapG Crd (Pnt c)          = Pnt $ ccxCards c
+  amapG Cnz (Pnt c)          = Pnt $ ccxCnzFreeAbl c
+  amapG Dev (Pnt c)          = Pnt $ homologyGroups $ cnzFreeAblHomology c
+  amapG (Hmlg t s n) (Pnt x) = Pnt $ case spcAbstract x of
+    SpaceAbstract x'        -> start
+                             $ homologyGroupsHom $ cnzFreeHomAblHomologyHom
+                             $ ccxCnzFreeHomAbl $ chainComplexSet t s n x'
 
-instance ApplicativeG Pnt (Hmlg n) (->) where
-  amapG Abs (Pnt s)       = Pnt $ spcAbstract s
-  amapG (Chc t n) (Pnt s) = Pnt $ case s of
-    SpaceAbstract s'     -> SomeChainComplex $ chainComplex t n s'
-  amapG Crd (Pnt sc)      = Pnt $ case sc of SomeChainComplex c -> ccxCards c
-  amapG Cnz (Pnt sc)      = case sc of SomeChainComplex c -> Pnt $ abhCnzf c
-  amapG Dev (Pnt c)       = Pnt $ homologyGroups $ abhCnzfHomology c
+instance (MultiplicativeComplexMap s, Typeable n) => HomOriented (Hmlg s n)
+instance (MultiplicativeComplexMap s, Typeable n) => HomMultiplicative (Hmlg s n)
 
-instance Typeable n => HomOriented (Hmlg n)
-instance Typeable n => HomMultiplicative (Hmlg n)
 
 --------------------------------------------------------------------------------
 -- HmlgCat -
 
-type HmlgCat n = Path (Hmlg n)
+type HmlgCat s n = Path (Hmlg s n)
 
-cntAbs :: Typeable m => HmlgCat n (Continuous m) (Continuous Abstract)
+cntAbs :: (MultiplicativeComplexMap s, Typeable m)
+  => HmlgCat s n (Continuous s m) (Continuous s Abstract)
 cntAbs = Abs :. IdPath Struct
 
-cntChc :: (Typeable t, Attestable n)
-  => ChainComplexType t -> Any n -> HmlgCat n (Continuous Abstract) (SomeChainComplexHom t Z n)
-cntChc t n = Chc t n :. IdPath Struct
+cntChc :: (MultiplicativeComplexMap s, Attestable n)
+  => ChainComplexType -> SimplexType s -> Any n
+  -> HmlgCat s n (Continuous s Abstract) (ChainComplexHom Z n)
+cntChc t s n = Chc t s n :. IdPath Struct
 
-cntCrd :: (Typeable t, Attestable n) => HmlgCat n (SomeChainComplexHom t Z n) (CardsHom Z n)
+cntCrd :: Attestable n => HmlgCat s n (ChainComplexHom Z n) (CardsHom n)
 cntCrd = Crd :. IdPath Struct
 
-cntCnz :: (Typeable t, Attestable n)
-  => HmlgCat n (SomeChainComplexHom t Z n) (ConsecutiveZeroFreeHom To n AbHom)
+cntCnz :: Attestable n
+  => HmlgCat s n (ChainComplexHom Z n) (ConsecutiveZeroFreeHom To n AbHom)
 cntCnz = Cnz :. IdPath Struct
 
-cntDev :: Attestable n => HmlgCat n (ConsecutiveZeroFreeHom To n AbHom) (DeviationHom (n+1) AbHom)
+cntDev :: Attestable n => HmlgCat s n (ConsecutiveZeroFreeHom To n AbHom) (DeviationHom (n+1) AbHom)
 cntDev = Dev :. IdPath Struct
+
+cntHmlg :: (MultiplicativeComplexMap s, Typeable m, Attestable n)
+  => ChainComplexType -> SimplexType s -> Any n
+  -> HmlgCat s n (Continuous s m) (DeviationHom (n+1) AbHom)
+cntHmlg t s n = Hmlg t s n :. IdPath Struct
+
