@@ -22,7 +22,7 @@
 -- Definition of topological spaces.
 module OAlg.Topology.Definition
   (
-{-    
+
     -- * Space
     Space(..), Model(..)
   , spcAbstract
@@ -35,7 +35,8 @@ module OAlg.Topology.Definition
     -- * Homology
   , HmlgCat, Hmlg(..)
   , cntAbs, cntChc, cntCrd, cntCnz, cntDev
--}
+  , cntHmlg
+
   ) where
 
 

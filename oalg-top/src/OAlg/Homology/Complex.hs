@@ -23,7 +23,7 @@
 module OAlg.Homology.Complex
   (
     -- * Complex of Set Simplices
-    Complex(..), cpxElem, complex
+    Complex(..), cpxDim, cpxElem, complex
   , cpxVertices, cpxSimplices, cpxGenerators
 
     -- * Constructions
@@ -72,13 +72,14 @@ import OAlg.Structure.Distributive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Ring
+import OAlg.Structure.PartiallyOrdered
+
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.FinList as F hiding ((++),repeat)
 import OAlg.Entity.Natural as N hiding ((++))
 import OAlg.Entity.Sequence hiding (span,isEmpty)
-import OAlg.Structure.PartiallyOrdered
 
 import OAlg.Homology.Simplical
 
@@ -115,14 +116,16 @@ instance (Entity x, Ord x) => Validable (Complex x) where
       
       vldGraph [] = SValid
       vldGraph ((z,sx):zsx)
-        = And [ vldDim vs z (setxs sx)
+        = And [ valid z
+              , vldDim vs z (setxs sx)
               , vldFaces sx zsx
               , vldGraph zsx
               ]
 
       vldDim _ _ [] = SValid
       vldDim sv z (s:sx)
-        = And [ Label "2.1" :<=>: (dimension s == z) :?> Params ["z":=show z, "s":=show s]
+        = And [ valid s
+              , Label "2.1" :<=>: (dimension s == z) :?> Params ["z":=show z, "s":=show s]
               , Label "2.2" :<=>: (s <<= sv) :?> Params ["s // sv" := show (s // sv)]
               , vldDim sv z sx
               ]
@@ -132,6 +135,12 @@ instance (Entity x, Ord x) => Validable (Complex x) where
         = Label "3" :<=>: let fs = faces' sv in
             (fs <<= su) :?> Params ["faces' sv // su" := show (fs // su)]
 
+--------------------------------------------------------------------------------
+-- cpxDim -
+
+-- | the dimension of a complex, i.e. the maximal dimension of its simplices.
+cpxDim :: Complex x -> Z
+cpxDim (Complex g) = (inj $ lengthN g) - 2
 
 --------------------------------------------------------------------------------
 -- cpxSimplices -

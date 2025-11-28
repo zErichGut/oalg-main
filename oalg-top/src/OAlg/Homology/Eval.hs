@@ -19,7 +19,7 @@
 module OAlg.Homology.Eval
   (
   ) where
-
+{-
 import Control.Monad 
 
 import Data.Kind
@@ -400,3 +400,4 @@ cyAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Cycle
 
 hgwAt = ChainExpr (ChainListAtExpr Homology)
 hgAt  = ChainExpr . ChainValueAtExpr . ChainSumFormAt . S . R . ChainIndex Homology
+-}

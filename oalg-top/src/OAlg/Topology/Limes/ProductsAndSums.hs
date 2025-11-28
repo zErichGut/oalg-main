@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds, TupleSections #-}
 
 -- |
 -- Module      : OAlg.Topology.Limes.ProductsAndSums
@@ -23,36 +23,112 @@ module OAlg.Topology.Limes.ProductsAndSums
 import Control.Monad as M
 
 import Data.Typeable
+import Data.List as L (zip,head,tail,groupBy,(++))
 
 import OAlg.Prelude
 
 import OAlg.Category.Map
 
+import OAlg.Data.Canonical
 import OAlg.Data.Either
+import OAlg.Data.Filterable
 
-import OAlg.Structure.Definition
+-- import OAlg.Structure.Definition
 import OAlg.Structure.Oriented
-import OAlg.Structure.Multiplicative
+-- import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
+import OAlg.Structure.PartiallyOrdered
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural
-import OAlg.Entity.FinList
+import OAlg.Entity.FinList as F
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
-import OAlg.Entity.Matrix.Vector
+-- import OAlg.Entity.Matrix.Vector
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.ProductsAndSums
-import OAlg.Limes.Proposition
+-- import OAlg.Limes.Proposition
 
+import OAlg.Homology.Simplical hiding (simplex)
 import OAlg.Homology.Complex hiding (cpxProduct)
 import OAlg.Homology.ChainComplex
 
 import OAlg.Topology.Definition
 import OAlg.Topology.Limes.TerminalAndInitialSpace
+
+--------------------------------------------------------------------------------
+-- gphProductPrs -
+
+-- | the product graph for the given sets.
+--
+-- __Prpoperty__ 
+gphProductPrs :: (Entity x, Ord x, Entity y, Ord y)
+  => Set x -> Set y -> Graph Z (Set (Set (x,y)))
+gphProductPrs xs ys = Graph $ gph (-1) xy0 (Set [empty]) where
+  dx  = dimension xs
+  dy  = dimension ys
+  dxy = (-1) `max` (dx + dy)
+  xy0 = Set [(x,y) | x <- setxs xs, y <- setxs ys]
+
+  gph :: (Ord x, Ord y) => Z -> Set (x,y) -> Set (Set (x,y)) -> [(Z,Set (Set (x,y)))]
+  gph d xy0 xys = (d,xys) : if d < dxy then gph d' xy0 xys' else [] where
+    d'   = succ d
+    xys' = Set [Set (xy:xys'') | xy <- setxs xy0, Set xys'' <- setxs xys, elg xy xys'']
+
+  elg :: (Ord x, Ord y) => (x,y) -> [(x,y)] -> Bool
+  elg _ []                     = True
+  elg xy@(x,y) (xy'@(x',y'):_) = x <= x' && y <= y' && xy /= xy'
+
+--------------------------------------------------------------------------------
+-- cpxProductPrs -
+
+-- | product for complex within @'ComplexMap' 'Preserving'@.
+--
+-- __Property__ Let @ab = 'cpxProductPrs' a b@, then holds:
+--
+-- (1) @'ComplexMapPrs' ab a ('Map' fst)@ and @'CompelxMapPrs' ab b ('Map' snd')@ are 'valid'.
+cpxProductPrs :: (Entity x, Ord x, Entity y, Ord y)
+  => Complex x -> Complex y -> Complex (x,y)
+-- cpxProductPrs = cpxProductAsc 
+cpxProductPrs a b
+  = Complex $ Graph $ gph xy0 (elg a b) (-1) (Set [empty]) where
+
+  xs  = cpxVertices a
+  ys  = cpxVertices b
+  dx  = cpxDim a
+  dy  = cpxDim b
+  dxy = dx + dy
+  xy0 = Set [(x,y) | x <- setxs xs, y <- setxs ys]
+
+  map :: (Entity x, Ord x, Entity y, Ord y) => (x -> y) -> Map EntOrd x y
+  map = Map
+
+  elg :: (Entity x, Ord x, Entity y, Ord y)
+    => Complex x -> Complex y -> Set (x,y) -> Bool
+  elg a b = (cpxElem a . amap1 (map fst)) && (cpxElem b . amap1 (map snd))
+
+  -- pre: for all xy in xys hilds:
+  --        - dimension xy == d.
+  --        - elg xy is True.
+  gph :: (Ord x, Ord y)
+    => Set (x,y) -> (Set (x,y) -> Bool) -> Z -> Set (Set (x,y)) -> [(Z,Set (Set (x,y)))]
+  gph xy0 elg d xys = (d,xys) : if d < dxy then gph xy0 elg d' xys' else [] where
+    d'   = succ d
+    xys' = Set
+         $ filter elg
+         $ [Set (xy:xys'') | xy <- setxs xy0, Set xys'' <- setxs xys, xy << xys'']
+
+  (<<) :: (Ord x, Ord y) => (x,y) -> [(x,y)] -> Bool
+  _ << []                     = True
+  xy@(x,y) << (xy'@(x',y'):_) = x <= x' && y <= y' && xy /= xy'
+
+l = complex [Set [0,1]] :: Complex N
+k = complex [Set "ab"]
+p = cpxProductPrs l k
+
 
 --------------------------------------------------------------------------------
 -- cpxProduct -
@@ -64,14 +140,15 @@ cpxProduct :: (Entity x, Ord x, Entity y, Ord y)
      , ComplexMap Preserving (Complex (x,y)) (Complex y)
      )
 cpxProduct a b = (ab, mFst, mSnd) where
-  ab   = cpxProductAsc a b
+  ab   = cpxProductPrs a b
   mFst = ComplexMapPrs ab a (Map fst)
   mSnd = ComplexMapPrs ab b (Map snd)
 
 --------------------------------------------------------------------------------
 -- cntProduct2 -
 
-cntProduct2 :: Diagram Discrete N2 N0 (Continuous Abstract) -> Product N2 (Continuous Abstract)
+cntProduct2 :: Diagram Discrete N2 N0 (Continuous Preserving Abstract)
+  -> Product N2 (Continuous Preserving Abstract)
 cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   = LimesProjective abCn (abUn ab) where
   
@@ -80,7 +157,8 @@ cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   abCn = ConeProjective d (SpaceAbstract ab) (CntAbstract mFst:|CntAbstract mSnd:|Nil)
 
   abUn :: (Entity x, Ord x, Entity y, Ord y)
-    => Complex (x,y) -> ProductCone N2 (Continuous Abstract) -> Continuous Abstract
+    => Complex (x,y) -> ProductCone N2 (Continuous Preserving Abstract)
+    -> Continuous Preserving Abstract
   abUn ab (ConeProjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
     = case elg ab t f g of
       Nothing                    -> throw $ NotEligibleCone
@@ -122,13 +200,13 @@ cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
 --------------------------------------------------------------------------------
 -- cntProducts2 -
 
-cntProducts2 :: Products N2 (Continuous Abstract)
+cntProducts2 :: Products N2 (Continuous Preserving Abstract)
 cntProducts2 = LimitsG cntProduct2
 
 --------------------------------------------------------------------------------
 -- cntProducts -
 
-cntProducts :: Products n (Continuous Abstract)
+cntProducts :: Products n (Continuous Preserving Abstract)
 cntProducts = products (products0 spcTerminal) cntProducts2
 
 --------------------------------------------------------------------------------
@@ -159,7 +237,8 @@ cpxSum2 a@(Complex ssx) b@(Complex ssy) = (ab, mFst, mSnd) where
 --------------------------------------------------------------------------------
 -- cntSum2 -
 
-cntSum2 :: Diagram Discrete N2 N0 (Continuous Abstract) -> Sum N2 (Continuous Abstract)
+cntSum2 :: Diagram Discrete N2 N0 (Continuous Preserving Abstract)
+  -> Sum N2 (Continuous Preserving Abstract)
 cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   = LimesInjective abCn (abUn ab) where
   (ab,mFst,mSnd) = cpxSum2 a b
@@ -167,7 +246,8 @@ cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   abCn = ConeInjective d (SpaceAbstract ab) (CntAbstract mFst:|CntAbstract mSnd:|Nil)
 
   abUn :: (Entity x, Ord x, Entity y, Ord y)
-    => Complex (Either x y) -> SumCone N2 (Continuous Abstract) -> Continuous Abstract
+    => Complex (Either x y) -> SumCone N2 (Continuous Preserving Abstract)
+    -> Continuous Preserving Abstract
   abUn ab (ConeInjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
     = case elg ab t f g of
       -- Nothing                    -> throw $ NotEligibleCone
@@ -212,16 +292,16 @@ cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
 --------------------------------------------------------------------------------
 -- cntSums2 -
 
-cntSums2 :: Sums N2 (Continuous Abstract)
+cntSums2 :: Sums N2 (Continuous Preserving Abstract)
 cntSums2 = LimitsG cntSum2
 
 --------------------------------------------------------------------------------
 -- cntSums -
 
-cntSums :: Sums n (Continuous Abstract)
+cntSums :: Sums n (Continuous Preserving Abstract)
 cntSums = sums (sums0 spcInitial) cntSums2
-
-d :: Diagram Discrete N3 N0 (Continuous Abstract)
+{-
+d :: Diagram Discrete N3 N0 (Continuous Preserving Abstract)
 d = DiagramDiscrete (spcPoint:|spcPoint:|spcPoint:|Nil)
 
 p = limes cntProducts d
@@ -233,10 +313,15 @@ pF = universalFactor p pU
 sF = universalFactor s sU
 
 (f:|g:|h:|Nil) = shell sU
+-}
+
+--------------------------------------------------------------------------------
+-- spcType -
 
 spcType :: Space m -> TypeRep
 spcType (SpaceAbstract c) = typeOf c
 spcType (SpaceConcrete c) = typeOf c
+
 
 --------------------------------------------------------------------------------
 -- spcBorder -
@@ -264,8 +349,39 @@ simplex n = SpaceAbstract $ complex $ [Set [0..n]]
 sphere :: N -> Space Abstract
 sphere n = spcBorder $ simplex (n+1)
 
-t :: Diagram Discrete N3 N0 (Continuous Abstract)
-t = DiagramDiscrete (s:|s:|s:|Nil) where s = sphere 1
+t :: Diagram Discrete N4 N0 (Continuous Preserving Abstract)
+t = DiagramDiscrete (s:|s:|s:|s:|Nil) where s = sphere 1
 
 torus :: Space Abstract
 torus = tip $ universalCone $ limes cntProducts t
+
+crds = pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
+
+
+cntDim :: Space m -> Z
+cntDim (SpaceAbstract (Complex g)) = (inj $ lengthN g) - 2
+cntDim s = cntDim $ spcAbstract s
+
+spcCards :: Any n -> Space m -> Cards n
+spcCards n (SpaceAbstract c) = cpxCards n c
+spcCards n s = spcCards n $ spcAbstract s
+
+{-
+ghci> spcCards (attest :: Any N3) torus
+DiagramDiscrete [|1,27,189,324,162,0|]
+
+ghci> pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N4)) torus
+DiagramDiscrete [|AbGroup[],AbGroup[Z^3],AbGroup[Z^3],AbGroup[Z],AbGroup[]|]
+
+DiagramDiscrete [|1,81,1215,4050,4860,1944,0|]
+
+
+
+
+ghci> spcCards (attest :: Any N3) torus
+DiagramDiscrete [|1,27,189,324,162,0|]
+
+ghci> pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
+DiagramDiscrete [|AbGroup[],AbGroup[Z^3],AbGroup[Z^3],AbGroup[Z]|]
+
+-}

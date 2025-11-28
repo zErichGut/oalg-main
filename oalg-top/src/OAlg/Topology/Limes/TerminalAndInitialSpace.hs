@@ -18,6 +18,7 @@
 -- Terminal and initial space.
 module OAlg.Topology.Limes.TerminalAndInitialSpace
   (
+
     -- * Terminal
    cntTerminal, spcPoint
 
@@ -26,6 +27,7 @@ module OAlg.Topology.Limes.TerminalAndInitialSpace
     -- * Initial
   , cntInitial, spcEmpty
   , spcInitials, spcInitial
+
   ) where
 
 import OAlg.Prelude
@@ -34,7 +36,6 @@ import OAlg.Category.Map
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Sequence.Set
-import OAlg.Entity.Matrix.Vector
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -57,17 +58,17 @@ cpmTerminal c = ComplexMapPrs c (cpxTerminal ()) (Map (const ()))
 --------------------------------------------------------------------------------
 -- spcTerminal -
 
-spcTerminal :: TerminalPoint (Continuous Abstract)
+spcTerminal :: TerminalPoint (Continuous Preserving Abstract)
 spcTerminal = LimesProjective lm un where
   lm = trmCone $ SpaceAbstract $ cpxTerminal ()
   
-  un :: TerminalCone (Continuous Abstract) -> Continuous Abstract 
+  un :: TerminalCone (Continuous Preserving Abstract) -> Continuous Preserving Abstract 
   un (ConeProjective _ (SpaceAbstract c) _) = CntAbstract $ cpmTerminal c
 
 --------------------------------------------------------------------------------
 -- spcTerminals -
 
-spcTerminals :: Terminals (Continuous Abstract)
+spcTerminals :: Terminals (Continuous Preserving Abstract)
 spcTerminals = LimitsG (const spcTerminal)
 
 --------------------------------------------------------------------------------
@@ -81,7 +82,7 @@ spcPoint = tip $ universalCone spcTerminal
 -- cntTerminal -
 
 -- | the uniquely determined continuous map from the given space to the a space with one point.
-cntTerminal :: Space Abstract -> Continuous Abstract
+cntTerminal :: Space Abstract -> Continuous Preserving Abstract
 cntTerminal = universalFactor (limes spcTerminals DiagramEmpty) . trmCone
 
 --------------------------------------------------------------------------------
@@ -96,17 +97,17 @@ cpmInitial c = ComplexMapPrs cpxInitial c (Map fromEmpty)
 --------------------------------------------------------------------------------
 -- spcInitial -
 
-spcInitial :: InitialPoint (Continuous Abstract)
+spcInitial :: InitialPoint (Continuous Preserving Abstract)
 spcInitial = LimesInjective lm un where
   lm = intCone $ SpaceAbstract $ (cpxInitial :: Complex EntEmpty)
 
-  un :: InitialCone (Continuous Abstract) -> Continuous Abstract
+  un :: InitialCone (Continuous Preserving Abstract) -> Continuous Preserving Abstract
   un (ConeInjective _ (SpaceAbstract c) _) = CntAbstract $ cpmInitial c
 
 --------------------------------------------------------------------------------
 -- spcInitials -
 
-spcInitials :: Initials (Continuous Abstract)
+spcInitials :: Initials (Continuous Preserving Abstract)
 spcInitials = LimitsG (const spcInitial)
 
 --------------------------------------------------------------------------------
@@ -120,5 +121,6 @@ spcEmpty = tip $ universalCone spcInitial
 -- cntInitial -
 
 -- | the uniquely determined continuous map from the empty space to the given one.
-cntInitial :: Space Abstract -> Continuous Abstract
+cntInitial :: Space Abstract -> Continuous Preserving Abstract
 cntInitial = universalFactor (limes spcInitials DiagramEmpty) . intCone
+
