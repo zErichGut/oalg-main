@@ -95,10 +95,10 @@ boundary = ssySum (bdr rAlt) where
 --------------------------------------------------------------------------------
 -- chainMap -
 
-chainMap :: (Ring r, Commutative r, SimplicalTransformable s x y)
+chainMap :: (Ring r, Commutative r, SimplicalApplicative s x y)
   => Map EntOrd x y -> ChainG r s x -> ChainG r s y
 chainMap f = ssySum (chMap f) where
-  chMap :: (Ring r, SimplicalTransformable s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
+  chMap :: (Ring r, SimplicalApplicative s x y) => Map EntOrd x y -> s x -> LinearCombination r (s y)
   chMap f sx = LinearCombination [(rOne,amap1 f sx)]
 
 --------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ chainVertices = ssySum toVrts where
 
 data ChainOperator r s x y where
   Boundary :: Simplical s x => ChainOperator r s (ChainG r s x) (ChainG r s x)
-  ChainMap :: SimplicalTransformable s x y
+  ChainMap :: SimplicalApplicative s x y
     => Map EntOrd x y -> ChainOperator r s (ChainG r s x) (ChainG r s y)
   Simplex :: Simplical s x => ChainOperator r s (ChainG r Set x) (ChainG r s x)
 

@@ -197,7 +197,7 @@ chainComplex t s n c = case structSmpl s c of
     bnds (_:|Nil)       = Nil
     bnds (sx':|sx:|sxs) = d :| bnds (sx:|sxs) where d = repMatrix (Representable Boundary sx sx')
     -- Representable Boundary sx' sx is valid, because of the construction of sx' and sx via
-    -- ccxSimplex and the property (3) of Complex and (3.4) of Simplical.
+    -- ccxSimplex and the property (3) of Complex and (5) of Simplical.
 
     adpt :: Ring r => ChainComplexType -> ChainComplex r n -> ChainComplex r n
     adpt ChainComplexExtended c                      = c
@@ -261,22 +261,21 @@ instance (Ring r, Attestable n) => Validable (ChainComplexHom r n) where
 chainComplexHom :: (Ring r, Commutative r, Entity x, Ord x, Entity y, Ord y)
   => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexHom r n
-chainComplexHom t n f = let h = cpmHomologyType f in case structHmlg h f of
+chainComplexHom t n f = let h = cpmSmplTrfType f in case structSmplTrf h f of
   Struct2 -> ChainComplexHom a b fs where
-    s  = injHmlgType h
+    s  = injSmplTrfType h
     sx = structSmpl s (cpmDomain f)
     sy = structSmpl s (cpmRange f)
     
     a  = chainComplex t s n (cpmDomain f)
     b  = chainComplex t s n (cpmRange f)
-    fs = amap1 (uncurry (rep sx sy f))
+    fs = amap1 (uncurry (rep f))
            ((fromJust $ ccxSmplSet sx a) `F.zip` (fromJust $ ccxSmplSet sy b))
   
-    rep :: (Ring r, Commutative r, Homological s x y)
-      => Struct (Smpl s) x -> Struct (Smpl s) y
-      -> ComplexMap s (Complex x) (Complex y)
+    rep :: (Ring r, Commutative r, SimplicalTransformable s x y)
+      => ComplexMap s (Complex x) (Complex y)
       -> Set (s x) -> Set (s y) -> Matrix r
-    rep Struct Struct f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
+    rep f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
   
 chainComplexHomZ :: (Entity x, Ord x, Entity y, Ord y)
   => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)

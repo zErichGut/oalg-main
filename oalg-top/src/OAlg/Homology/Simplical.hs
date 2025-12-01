@@ -26,8 +26,8 @@ module OAlg.Homology.Simplical
   , spxAdjDim
   , SimplexType(..), structSmpl
 
-    -- * Simplical Transformable
-  , SimplicalTransformable
+    -- * Applicative
+  , SimplicalApplicative
 
     -- * Asc
   , Asc(..), isAsc, ascxs, asc
@@ -66,7 +66,7 @@ import OAlg.Structure.PartiallyOrdered
 --
 -- (3) @'set' '.' 'toList' '.' 'simplex' '.=.' 'id'@.
 --
--- (4) For all @s@ in @__s x__@ and @u@ in @'faces' s@ holds:
+-- (4) For all @s@ in @__s x__@ and @u@ in @'faces' s@, then holds:
 --
 --     (1) @u '<<=' s@.
 --
@@ -190,30 +190,30 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
       )
     
 --------------------------------------------------------------------------------
--- SimplicalTransformable -
+-- SimplicalApplicative -
 
 -- | transforming simplices over @__x__@ to simplices over @__y__@.
 --
--- __Property__ Let @'SimplicalTransformable' __s x y__@, then holds:
+-- __Property__ Let @'SimplicalApplicative' __s x y__@, then holds:
 --
 -- (1) @'vertices' ('amap1' f s) '==' 'amap1' f ('vertices' s)@ for all
 -- @f@ in @'Map' 'EntOrd' __x y__@ and @s@ in @__s x__@.
 class (Functorial1 (Map EntOrd) s, Simplical s x, Simplical s y)
-  => SimplicalTransformable s x y 
+  => SimplicalApplicative s x y 
 
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Set x y
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable [] x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative Set x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative [] x y
 
 --------------------------------------------------------------------------------
--- prpSimplicalTransformable -
+-- prpSimplicalApplicative -
 
--- | validity for 'SimplicalTransformable'.
-prpSimplicalTransformable :: SimplicalTransformable s x y
+-- | validity for 'SimplicalApplicative'.
+prpSimplicalApplicative :: SimplicalApplicative s x y
   => X (Map EntOrd x y) -> X (s x) -> Statement
-prpSimplicalTransformable xf xsx = Prp "SimplicalTransformable" :<=>:
+prpSimplicalApplicative xf xsx = Prp "SimplicalApplicative" :<=>:
   Forall (xTupple2 xf xsx) (uncurry vldTrafo) where
 
-    vldTrafo :: SimplicalTransformable s x y
+    vldTrafo :: SimplicalApplicative s x y
               => Map EntOrd x y -> s x -> Statement
     vldTrafo f sx = (vf == fv) :?> Params ["vf // fv":= show (vf // fv)]
       where sy = amap1 f sx
@@ -320,7 +320,7 @@ instance (Entity x, Ord x) => Simplical Asc x where
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = Graph . ascCombinations
 
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Asc x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative Asc x y
 
 --------------------------------------------------------------------------------
 -- SimplexType -

@@ -33,11 +33,11 @@ module OAlg.Homology.Complex
   , ComplexMap(..), Neglecting, Preserving
   , cpmForget, cpmDomain, cpmRange
   , cpmMap, cpmHomEntOrd, cpmGraph
-  , cpmHomologyType
+  , cpmSmplTrfType
 
-    -- * Homological
-  , Homological, Hmlg
-  , HomologyType(..), structHmlg, injHmlgType
+    -- * Transformable
+  , SimplicalTransformable, SmplTrf
+  , SimplicalTransformableType(..), structSmplTrf, injSmplTrfType
   
     -- * Multiplictive
   , MultiplicativeComplexMap(..)
@@ -226,51 +226,51 @@ type Neglecting = []
 type Preserving = Asc
 
 --------------------------------------------------------------------------------
--- Homological -
+-- SimplicalTransformable -
 
 -- | homological transformations.
 --
--- __Property__ Let @'Homological' __s x y__@, then holds:
+-- __Property__ Let @'SimplicalTransformable' __s x y__@, then holds:
 --
 -- (1) @'dimension' ('amap1' f s) '==' 'dimension' s@ for all
 -- @f@ in @'Map' 'EntOrd' __x y__@ and @s@ in @__s x__@.
 --
--- __Note__ @('Map' 'Ord'') 'Set' __x__ __y__@ is not 'Homological'!.
-class SimplicalTransformable s x y => Homological s x y
+-- __Note__ @('Map' 'Ord'') 'Set' __x__ __y__@ is not 'SimplicalTransformable'!.
+class SimplicalApplicative s x y => SimplicalTransformable s x y
 
-instance (Entity x, Ord x, Entity y, Ord y) => Homological Neglecting x y
-instance (Entity x, Ord x, Entity y, Ord y) => Homological Preserving x y
-
---------------------------------------------------------------------------------
--- Hmlg -
-
-data Hmlg (s :: Type -> Type)
-
-type instance Structure2 (Hmlg s) x y = Homological s x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Neglecting x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Preserving x y
 
 --------------------------------------------------------------------------------
--- HomologyType -
+-- SmplTrf -
 
-data HomologyType s where
-  HmlgTypeNgl :: HomologyType Neglecting
-  HmlgTypePrs :: HomologyType Preserving
+data SmplTrf (s :: Type -> Type)
 
---------------------------------------------------------------------------------
--- structHmlg -
-
-structHmlg :: (Entity x, Ord x, Entity y, Ord y)
-  => HomologyType s -> f (Complex x) (Complex y) -> Struct2 (Hmlg s) x y
-structHmlg HmlgTypeNgl _ = Struct2
-structHmlg HmlgTypePrs _ = Struct2
+type instance Structure2 (SmplTrf s) x y = SimplicalTransformable s x y
 
 --------------------------------------------------------------------------------
--- injHmlgType -
+-- SimplicalTransformableType -
 
-injHmlgType :: HomologyType s -> SimplexType s
-injHmlgType HmlgTypeNgl = SpxTypeLst
-injHmlgType HmlgTypePrs = SpxTypeAsc
+data SimplicalTransformableType s where
+  SmplTrfTypeNgl :: SimplicalTransformableType Neglecting
+  SmplTrfTypePrs :: SimplicalTransformableType Preserving
 
-instance Embeddable (HomologyType s) (SimplexType s) where inj = injHmlgType
+--------------------------------------------------------------------------------
+-- structSmplTrf -
+
+structSmplTrf :: (Entity x, Ord x, Entity y, Ord y)
+  => SimplicalTransformableType s -> f (Complex x) (Complex y) -> Struct2 (SmplTrf s) x y
+structSmplTrf SmplTrfTypeNgl _ = Struct2
+structSmplTrf SmplTrfTypePrs _ = Struct2
+
+--------------------------------------------------------------------------------
+-- injSmplTrfType -
+
+injSmplTrfType :: SimplicalTransformableType s -> SimplexType s
+injSmplTrfType SmplTrfTypeNgl = SpxTypeLst
+injSmplTrfType SmplTrfTypePrs = SpxTypeAsc
+
+instance Embeddable (SimplicalTransformableType s) (SimplexType s) where inj = injSmplTrfType
 
 --------------------------------------------------------------------------------
 -- ComplexMap -
@@ -305,13 +305,13 @@ data ComplexMap s a b where
     -> ComplexMap Preserving (Complex x) (Complex y)
 
 --------------------------------------------------------------------------------
--- cmpHomologyType -
+-- cmpSimplicalTransformableType -
 
 -- | the associated homology type.
-cpmHomologyType :: ComplexMap s x y -> HomologyType s
-cpmHomologyType f = case f of
-  ComplexMapPrs _ _ _ -> HmlgTypePrs
-  ComplexMapNgl _ _ _ -> HmlgTypeNgl
+cpmSmplTrfType :: ComplexMap s x y -> SimplicalTransformableType s
+cpmSmplTrfType f = case f of
+  ComplexMapPrs _ _ _ -> SmplTrfTypePrs
+  ComplexMapNgl _ _ _ -> SmplTrfTypeNgl
   
 --------------------------------------------------------------------------------
 -- cpmForget -

@@ -23,7 +23,7 @@ module OAlg.Topology.Limes.ProductsAndSums
 import Control.Monad as M
 
 import Data.Typeable
-import Data.List as L (zip,head,tail,groupBy,(++))
+import Data.List as L (zip,head,tail,groupBy,(++),foldl)
 
 import OAlg.Prelude
 
@@ -83,6 +83,33 @@ gphProductPrs xs ys = Graph $ gph (-1) xy0 (Set [empty]) where
   elg xy@(x,y) (xy'@(x',y'):_) = x <= x' && y <= y' && xy /= xy'
 
 --------------------------------------------------------------------------------
+-- gphProduct -
+
+gphProduct :: (Entity x, Ord x, Entity y, Ord y) => Set x -> Set y -> Graph Z (Set (Set (x,y)))
+gphProduct (Set (x:xs)) (Set (y:ys)) =  (x,y) <: gphProduct (Set xs) (Set (y:ys))
+                                     || (x,y) <: gphProduct (Set xs) (Set ys)
+                                     || (x,y) <: gphProduct (Set (x:xs)) (Set ys)
+gphProduct (Set [x]) (Set ys)        = Graph [(dimension ys,Set [Set $ amap1 ((x,)) ys])]
+gphProduct (Set xs) (Set [y])        = Graph [(dimension xs,Set [Set $ amap1 ((,y)) xs])]
+gphProduct _ _                       = Graph [(-1,Set [empty])]
+                                
+
+infixr 5 <:
+
+-- pre: x < x' in g
+(<:) :: x -> Graph Z (Set (Set x)) -> Graph Z (Set (Set x))
+x <: Graph zxss = Graph $ amap1 (\(z,Set xs) -> (z+1,Set $ amap1 (x<<:) xs)) zxss where
+
+  (<<:) :: x -> Set x -> Set x
+  x <<: Set xs = Set (x:xs)
+
+--------------------------------------------------------------------------------
+-- cpxRelations -
+
+cpxRelations :: Complex x -> Graph Z (Set (Set x))
+cpxRelations (Complex (Graph g)) = Graph (L.tail $ L.tail g)
+
+--------------------------------------------------------------------------------
 -- cpxProductPrs -
 
 -- | product for complex within @'ComplexMap' 'Preserving'@.
@@ -92,7 +119,16 @@ gphProductPrs xs ys = Graph $ gph (-1) xy0 (Set [empty]) where
 -- (1) @'ComplexMapPrs' ab a ('Map' fst)@ and @'CompelxMapPrs' ab b ('Map' snd')@ are 'valid'.
 cpxProductPrs :: (Entity x, Ord x, Entity y, Ord y)
   => Complex x -> Complex y -> Complex (x,y)
--- cpxProductPrs = cpxProductAsc 
+-- cpxProductPrs = cpxProductAsc
+{-
+cpxProductPrs (Complex (Graph zxss)) (Complex (Graph zyss))
+  = Complex $ L.foldl (||) e [gphProduct xs ys | xs <- rxs, ys <- rys]  where
+
+  e   = Graph [(-1,Set [empty])]
+  rxs = join $ amap1 (setxs . snd) zxss
+  rys = join $ amap1 (setxs . snd) zyss
+-}
+
 cpxProductPrs a b
   = Complex $ Graph $ gph xy0 (elg a b) (-1) (Set [empty]) where
 
@@ -349,8 +385,8 @@ simplex n = SpaceAbstract $ complex $ [Set [0..n]]
 sphere :: N -> Space Abstract
 sphere n = spcBorder $ simplex (n+1)
 
-t :: Diagram Discrete N4 N0 (Continuous Preserving Abstract)
-t = DiagramDiscrete (s:|s:|s:|s:|Nil) where s = sphere 1
+t :: Diagram Discrete N5 N0 (Continuous Preserving Abstract)
+t = DiagramDiscrete (s:|s:|s:|s:|s:|Nil) where s = sphere 1
 
 torus :: Space Abstract
 torus = tip $ universalCone $ limes cntProducts t
@@ -383,5 +419,8 @@ DiagramDiscrete [|1,27,189,324,162,0|]
 
 ghci> pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
 DiagramDiscrete [|AbGroup[],AbGroup[Z^3],AbGroup[Z^3],AbGroup[Z]|]
+
+ghci> spcCards (attest :: Any N5) torus
+DiagramDiscrete [|1,243,7533,43740,94770,87480,29160,0|]
 
 -}
