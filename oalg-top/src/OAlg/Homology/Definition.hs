@@ -20,17 +20,18 @@ module OAlg.Homology.Definition
   (
     -- * Homology
     homology, Homology    
-  , homologyGroups
+  , betti, Betti
   
     -- * Homomorphism
   , homologyHom, HomologyHom
-  , homologyGroupsHom
+  , bettiHom, BettiHom
 
     -- * Homological
   , Homological(..)
 
     -- * Abelian
   , cnzFreeAbl, cnzFreeHomAbl
+
   ) where
 
 import Control.Monad
@@ -94,11 +95,16 @@ homology :: Homological h => ConsecutiveZeroFree To n h -> Homology n h
 homology = varianceFreeTo kernelsSomeFreeTip cokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
--- homologyGroups -
+-- Betti -
+
+type Betti n = Deviation (n+1)
+
+--------------------------------------------------------------------------------
+-- betti -
 
 -- | the homology groups.
-homologyGroups :: (Attestable n, Distributive h) => Homology n h -> Deviation (n+1) h
-homologyGroups = deviationsTo
+betti :: (Attestable n, Distributive h) => Homology n h -> Betti n h
+betti = deviationsTo
 
 --------------------------------------------------------------------------------
 -- cnzFreeAbl -
@@ -122,11 +128,16 @@ homologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
   b' = homology b
 
 --------------------------------------------------------------------------------
--- homologyGroupsHom -
+-- BettiHom -
 
-homologyGroupsHom :: (Distributive h, SlicedFree h, Attestable n)
-  => HomologyHom n h -> DeviationHom (n+1) h
-homologyGroupsHom h = deviationHomG (sld h) h where
+type BettiHom n = DeviationHom (n+1)
+
+--------------------------------------------------------------------------------
+-- bettiHom -
+
+bettiHom :: (Distributive h, SlicedFree h, Attestable n)
+  => HomologyHom n h -> BettiHom n h
+bettiHom h = deviationHomG (sld h) h where
   sld :: (Distributive h, SlicedFree h) => p h -> Struct (Dst,SldFr) h
   sld _ = Struct
 
