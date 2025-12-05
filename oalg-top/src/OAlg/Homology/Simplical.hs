@@ -27,10 +27,11 @@ module OAlg.Homology.Simplical
   , SimplexType(..), structSmpl
 
     -- * Applicative
-  , SimplicalApplicative
+  , SimplicalApplicative, SmplAppl
+  , structSmplAppl
 
     -- * Asc
-  , Asc(..), isAsc, ascxs, asc
+  , Asc(..), isAsc, isSet, ascxs, asc
   
   ) where
 
@@ -263,6 +264,14 @@ isAsc (x:x':xs) = x <= x' && isAsc (x':xs)
 isAsc _         = True
 
 --------------------------------------------------------------------------------
+-- isSet -
+
+-- | checks if the given list is in strict ascending order.
+isSet :: Ord x => [x] -> Bool
+isSet (x:x':xs) = x < x' && isSet (x':xs)
+isSet _         = True
+
+--------------------------------------------------------------------------------
 -- ascCombinations -
 
 -- | all possible ascending combinations to a given dimension.
@@ -325,10 +334,20 @@ instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative Asc x y
 --------------------------------------------------------------------------------
 -- SimplexType -
 
+-- | the eligible simplex types. This list should not be extended. 
 data SimplexType s where
   SpxTypeSet :: SimplexType Set
   SpxTypeAsc :: SimplexType Asc
   SpxTypeLst :: SimplexType []
+
+deriving instance Show (SimplexType s)
+deriving instance Eq (SimplexType s)
+deriving instance Ord (SimplexType s)
+
+instance Validable (SimplexType s) where
+  valid s = Label "SimplexType" :<=>: case s of
+    SpxTypeSet -> SValid
+    _          -> SValid
 
 --------------------------------------------------------------------------------
 -- structSmpl -
@@ -338,4 +357,18 @@ structSmpl SpxTypeSet _ = Struct
 structSmpl SpxTypeAsc _ = Struct
 structSmpl SpxTypeLst _ = Struct
 
+--------------------------------------------------------------------------------
+-- SmplAppl -
 
+data SmplAppl (s :: Type -> Type)
+
+type instance Structure2 (SmplAppl s) x y = SimplicalApplicative s x y
+
+--------------------------------------------------------------------------------
+-- structSmplAppl -
+
+structSmplAppl :: (Entity x, Ord x, Entity y, Ord y)
+  => SimplexType s -> f x y -> Struct2 (SmplAppl s) x y
+structSmplAppl SpxTypeSet _ = Struct2
+structSmplAppl SpxTypeAsc _ = Struct2
+structSmplAppl SpxTypeLst _ = Struct2

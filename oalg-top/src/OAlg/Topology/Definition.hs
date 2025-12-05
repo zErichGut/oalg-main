@@ -26,6 +26,7 @@ module OAlg.Topology.Definition
     -- * Space
     Space(..), Model(..)
   , spcAbstract
+  , spcChainComplexSet, spcChainComplexSetZ
 
     -- * Continuous
   , Continuous(..)
@@ -110,6 +111,9 @@ spcChainComplexSet :: (Ring r, Commutative r)
   => ChainComplexType -> SimplexType s -> Any n -> Space m -> ChainComplexHom r n
 spcChainComplexSet t s n (SpaceAbstract c) = chainComplexSet t s n c
 spcChainComplexSet t s n x = spcChainComplexSet t s n (spcAbstract x)
+
+spcChainComplexSetZ ::  ChainComplexType -> SimplexType s -> Any n -> Space m -> ChainComplexHom Z n
+spcChainComplexSetZ = spcChainComplexSet
 
 --------------------------------------------------------------------------------
 -- Continuous -
@@ -264,7 +268,7 @@ hBetti :: (Ring r, Commutative r, Homological h, Attestable n)
   => HomologyType r h -> HCat (ChainComplexHom r n) (BettiHom n h)
 hBetti t = Betti t :. IdPath Struct
 
-hZ :: (Attestable n, MultiplicativeComplexMap s, Typeable m)
-  => ChainComplexType -> Any n -> HCat (Continuous s m) (BettiHom n AbHom)
+hZ :: (Attestable n, Typeable m)
+  => ChainComplexType -> Any n -> HCat (Continuous Asc m) (BettiHom n AbHom)
 hZ t n = Hmlg t HmlgTypeZ n :. IdPath Struct 
 

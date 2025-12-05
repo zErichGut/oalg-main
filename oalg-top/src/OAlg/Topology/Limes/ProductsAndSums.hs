@@ -385,13 +385,15 @@ simplex n = SpaceAbstract $ complex $ [Set [0..n]]
 sphere :: N -> Space Abstract
 sphere n = spcBorder $ simplex (n+1)
 
-t :: Diagram Discrete N5 N0 (Continuous Preserving Abstract)
-t = DiagramDiscrete (s:|s:|s:|s:|s:|Nil) where s = sphere 1
+t :: Diagram Discrete N3 N0 (Continuous Preserving Abstract)
+t = DiagramDiscrete (s:|s:|s:|Nil) where s = sphere 1
 
 torus :: Space Abstract
 torus = tip $ universalCone $ limes cntProducts t
 
-crds = pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
+torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
+
+-- crds = pmap (hCrd ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
 
 
 cntDim :: Space m -> Z

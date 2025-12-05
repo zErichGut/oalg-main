@@ -34,43 +34,26 @@ module OAlg.Homology.Definition
 
   ) where
 
-import Control.Monad
-
-import Data.Foldable (toList)
-
 import OAlg.Prelude
 
-import OAlg.Data.FinitelyPresentable
-
 import OAlg.Structure.Oriented
-import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
-import OAlg.Structure.Operational
 
 import OAlg.Entity.Diagram as D 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
 import OAlg.Entity.Slice
-import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
 
 import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
-import OAlg.AbelianGroup.Liftable
 
-import OAlg.Limes.Definition
-import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
-
-import OAlg.Homology.ChainComplex
-
-import OAlg.Homology.Eval.Core
-
 
 --------------------------------------------------------------------------------
 -- Homology -

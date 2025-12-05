@@ -22,18 +22,20 @@
 -- definition of 'ChainComplex'.
 module OAlg.Homology.ChainComplex
   (
+
     -- * Chain Complex
     chainComplex, chainComplexZ
   , chainComplexSet
   , ChainComplex(..), ChainComplexType(..)
   , ccxConsecutiveZero
   , ccxHead, ccxTail
-  , ccxCards, ccxSmplSet
+  , ccxCards, ccxSpxSet
 
     -- * Chain Complex Hom
   , chainComplexHom, ChainComplexHom(..)
   , ccxConsecutiveZeroHom
   , ccxCardsHom
+
   ) where
 
 import Control.Monad
@@ -47,6 +49,7 @@ import OAlg.Prelude
 
 import OAlg.Data.Filterable
 import OAlg.Data.Singleton
+import OAlg.Data.Proxy
 
 import OAlg.Structure.Exception
 import OAlg.Structure.PartiallyOrdered
@@ -85,6 +88,7 @@ toFinList3 _ _             = throw $ ImplementationError "toFinList3"
 --------------------------------------------------------------------------------
 -- ccxSimplices -
 
+
 -- | sequence of sets of simplices over the given complex.
 --
 -- __Property__ Let @n@ be in @'Any' __n__@ and @c@ in @'Complex' __x__@, then holds:
@@ -94,30 +98,24 @@ toFinList3 _ _             = throw $ ImplementationError "toFinList3"
 --    (1) @'dimension' s '==' z@ 
 --
 --    (2) @s@ is in @ssx@ iff @'vertices' s@ is in @c@.
-ccxSimplices :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
-ccxSimplices n c = case mSet (ccs n c) of
-  (Just Refl,_) -> ccsSet n c -- more economic and faster
-  (Nothing,s)   -> s
-  where
+ccxSimplices :: (Entity x, Ord x)
+  => SimplexType s -> Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
+ccxSimplices s n c = ccsStruct (structSmpl s c) s n c where
+  ccsStruct :: Struct (Smpl s) x -> SimplexType s -> Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
+  ccsStruct Struct SpxTypeSet n c = ccsSet n c
+  ccsStruct Struct _ n c          = ccs n c
 
-    mSet :: Typeable s => FinList n (Z,Set (s x)) -> (Maybe (s :~: Set),FinList n (Z,Set (s x)))
-    mSet s = (eqT,s)
+  ccsSet :: Ord x => Any n -> Complex x -> FinList (n+3) (Z,Set (Set x))
+  ccsSet n c = toFinList3 n ([-1..] `L.zip` ssx) where
+    ssx = (amap1 snd $ gphxs $ cpxSimplices c) L.++ L.repeat empty
   
-    ccsSet :: Ord x => Any n -> Complex x -> FinList (n+3) (Z,Set (Set x))
-    ccsSet n c = toFinList3 n ([-1..] `L.zip` ssx) where
-      ssx = (amap1 snd $ gphxs $ cpxSimplices c) L.++ L.repeat empty
-  
-    ccs :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
-    ccs n c = toFinList3 n ([-1..] `L.zip` ssx) where
-      ssx = amap1 (filter (elg c))
+  ccs :: Simplical s x => Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
+  ccs n c = toFinList3 n ([-1..] `L.zip` ssx) where
+    ssx = amap1 (filter (elg c))
           $ ((amap1 snd $ gphxs $ simplices $ cpxVertices c) L.++ L.repeat empty)
   
-      elg :: Simplical s x => Complex x -> s x -> Bool
-      elg c = cpxElem c . vertices
-
-ccxSimplices' :: (Entity x, Ord x)
-  => SimplexType s -> Any n -> Complex x -> FinList (n+3) (Z,Set (s x))
-ccxSimplices' s n c = case structSmpl s c of Struct -> ccxSimplices n c
+    elg :: Simplical s x => Complex x -> s x -> Bool
+    elg c = cpxElem c . vertices
 
 --------------------------------------------------------------------------------
 -- ChainComplex -
@@ -156,10 +154,10 @@ instance Ring r => Validable (ChainComplex r n) where
                                       ]
 
 --------------------------------------------------------------------------------
--- ccxSmplSet -
+-- ccxSpxSet -
 
-ccxSmplSet :: Struct (Smpl s) x -> ChainComplex r n -> Maybe (FinList (n+3) (Set (s x)))
-ccxSmplSet s (ChainComplex _ ssx) = case eqS s ssx of
+ccxSpxSet :: Struct (Smpl s) x -> ChainComplex r n -> Maybe (FinList (n+3) (Set (s x)))
+ccxSpxSet s (ChainComplex _ ssx) = case eqS s ssx of
   Just Refl -> return ssx
   Nothing   -> Nothing
   
@@ -181,33 +179,35 @@ data ChainComplexType = ChainComplexStandard | ChainComplexExtended
 --------------------------------------------------------------------------------
 -- chainComplex -
 
+chainComplexStruct :: (Ring r, Commutative r)
+  => Struct (Smpl s) x -> ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplex r n
+chainComplexStruct Struct t s n c = adpt t $ ChainComplex cnz ssx where
+  ssx = chns s n c
+  ds  = bnds ssx
+  cnz = ConsecutiveZero $ DiagramChainTo (end $ head ds) ds
+
+  chns :: (Entity x, Ord x) => SimplexType s -> Any n -> Complex x -> FinList (n+3) (Set (s x))
+  chns s n c = amap1 snd $ ccxSimplices s n c
+
+  bnds :: (Ring r, Commutative r, Simplical s x) => FinList (n+1) (Set (s x)) -> FinList n (Matrix r)
+  bnds (_:|Nil)       = Nil
+  bnds (sx':|sx:|sxs) = d :| bnds (sx:|sxs) where d = repMatrix (Representable Boundary sx sx')
+  -- Representable Boundary sx' sx is valid, because of the construction of sx' and sx via
+  -- ccxSimplex and the property (3) of Complex and (5) of Simplical.
+
+  adpt :: Ring r => ChainComplexType -> ChainComplex r n -> ChainComplex r n
+  adpt ChainComplexExtended c                      = c
+  adpt ChainComplexStandard (ChainComplex cnz ssx) = ChainComplex cnz' ssx' where
+    ssx' = empty :| tail ssx
+    cnz' = ConsecutiveZero (DiagramChainTo (end d0') ds') where
+      DiagramChainTo _ (d0:|ds) = cnzDiagram cnz
+      d0' = zero (start d0 :> one unit)
+      ds' = d0' :| ds
+
 chainComplex :: (Ring r, Commutative r, Entity x, Ord x)
   => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplex r n
-chainComplex t s n c = case structSmpl s c of
-  str@Struct -> adpt t $ ChainComplex cnz ssx where
-    ssx = chns str n c
-    ds  = bnds ssx
-    cnz = ConsecutiveZero $ DiagramChainTo (end $ head ds) ds
+chainComplex t s n c = chainComplexStruct (structSmpl s c) t s n c
 
-  where
-    chns :: Struct (Smpl s) x -> Any n -> Complex x -> FinList (n+3) (Set (s x))
-    chns Struct n c = amap1 snd $ ccxSimplices n c
-
-    bnds :: (Ring r, Commutative r, Simplical s x) => FinList (n+1) (Set (s x)) -> FinList n (Matrix r)
-    bnds (_:|Nil)       = Nil
-    bnds (sx':|sx:|sxs) = d :| bnds (sx:|sxs) where d = repMatrix (Representable Boundary sx sx')
-    -- Representable Boundary sx' sx is valid, because of the construction of sx' and sx via
-    -- ccxSimplex and the property (3) of Complex and (5) of Simplical.
-
-    adpt :: Ring r => ChainComplexType -> ChainComplex r n -> ChainComplex r n
-    adpt ChainComplexExtended c                      = c
-    adpt ChainComplexStandard (ChainComplex cnz ssx) = ChainComplex cnz' ssx' where
-      ssx' = empty :| tail ssx
-      cnz' = ConsecutiveZero (DiagramChainTo (end d0') ds') where
-        DiagramChainTo _ (d0:|ds) = cnzDiagram cnz
-        d0' = zero (start d0 :> one unit)
-        ds' = d0' :| ds
-      
 chainComplexZ :: (Entity x, Ord x)
   => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplex Z n
 chainComplexZ = chainComplex
@@ -261,26 +261,25 @@ instance (Ring r, Attestable n) => Validable (ChainComplexHom r n) where
 chainComplexHom :: (Ring r, Commutative r, Entity x, Ord x, Entity y, Ord y)
   => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
   -> ChainComplexHom r n
-chainComplexHom t n f = let h = cpmSmplTrfType f in case structSmplTrf h f of
-  Struct2 -> ChainComplexHom a b fs where
-    s  = injSmplTrfType h
-    sx = structSmpl s (cpmDomain f)
-    sy = structSmpl s (cpmRange f)
+chainComplexHom t n f = ChainComplexHom a b fs where
+  s  = cpmSpxType f
+  st = structSmplAppl s (prx f)
+
+  sx = structSmpl s (cpmDomain f)
+  sy = structSmpl s (cpmRange f)
     
-    a  = chainComplex t s n (cpmDomain f)
-    b  = chainComplex t s n (cpmRange f)
-    fs = amap1 (uncurry (rep f))
-           ((fromJust $ ccxSmplSet sx a) `F.zip` (fromJust $ ccxSmplSet sy b))
+  a  = chainComplex t s n (cpmDomain f)
+  b  = chainComplex t s n (cpmRange f)
+  fs = amap1 (uncurry (rep st f))
+           ((fromJust $ ccxSpxSet sx a) `F.zip` (fromJust $ ccxSpxSet sy b))
   
-    rep :: (Ring r, Commutative r, SimplicalTransformable s x y)
-      => ComplexMap s (Complex x) (Complex y)
-      -> Set (s x) -> Set (s y) -> Matrix r
-    rep f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
-  
-chainComplexHomZ :: (Entity x, Ord x, Entity y, Ord y)
-  => ChainComplexType -> Any n -> ComplexMap s (Complex x) (Complex y)
-  -> ChainComplexHom Z n
-chainComplexHomZ = chainComplexHom
+  rep :: (Ring r, Commutative r)
+    => Struct2 (SmplAppl s) x y -> ComplexMap s (Complex x) (Complex y)
+    -> Set (s x) -> Set (s y) -> Matrix r
+  rep Struct2 f sx sy = repMatrix (Representable (ChainMap $ cpmMap f) sx sy)
+
+  prx :: ComplexMap s (Complex x) (Complex y) -> Proxy2 x y
+  prx _ = Proxy2
 
 --------------------------------------------------------------------------------
 -- ccxCardsHom -
@@ -294,7 +293,7 @@ ccxCardsHom (ChainComplexHom a b _) = DiagramTrafo ca cb cs where
 --------------------------------------------------------------------------------
 -- chainComplexSet -
 
--- | embedding of the set-simplices.
+-- | embedding of set-simplices to @__s__@-simplices, given by 'Simplex'.
 chainComplexSet :: (Ring r, Commutative r, Entity x, Ord x)
   => ChainComplexType -> SimplexType s -> Any n -> Complex x -> ChainComplexHom r n
 chainComplexSet t s n c = ChainComplexHom ccSet cc fs where
@@ -303,9 +302,9 @@ chainComplexSet t s n c = ChainComplexHom ccSet cc fs where
   ccSet = chainComplex t SpxTypeSet n c
   cc    = chainComplex t s n c
   fs    = amap1 (uncurry (rep sxSet sx))
-          ( (fromJust $ ccxSmplSet sxSet ccSet)
+          ( (fromJust $ ccxSpxSet sxSet ccSet)
           `F.zip`
-            (fromJust $ ccxSmplSet sx cc)
+            (fromJust $ ccxSpxSet sx cc)
           )
 
   rep :: (Ring r, Commutative r)
@@ -334,8 +333,9 @@ instance (Ring r, Attestable n) => Multiplicative (ChainComplexHom r n) where
   one c = ChainComplexHom c c (amap1 one $ dgPoints $ cnzDiagram $ ccxConsecutiveZero c)
 
   ChainComplexHom b' c fs * ChainComplexHom a b gs
-    | b' == b = ChainComplexHom a c (amap1 (uncurry (*)) (fs `F.zip` gs))
+    | b' == b   = ChainComplexHom a c (amap1 (uncurry (*)) (fs `F.zip` gs))
     | otherwise = throw NotMultiplicable
+
 
 type instance Root (ChainComplexHom r n) = Orientation (ChainComplex r n)
 
