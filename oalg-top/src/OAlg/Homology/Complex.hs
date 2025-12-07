@@ -212,7 +212,7 @@ isFaithful p f (Set xs) = p $ amap1 f xs
 -- holds: Let @f = 'cpmMap' m@ in
 --
 --  (1) For all simplices @s@ in @'cpmDomain' m@ holds:
---  @'amap1' f s@ is an element of @'cpmRange' m@
+--  @'amap1' f s@ is an element of @'cpmRange' m@.
 --
 --  (2) If @__s__ ~ t'Asc'@ then for all simplices @s@ in @'cpmDomain' m@ holds:
 --  @'isFaithful' 'isAsc' f s@
@@ -226,6 +226,29 @@ isFaithful p f (Set xs) = p $ amap1 f xs
 --  properties above on the generators @'cpxGenerators' ('cpmDomain' m)@.
 --
 --  (2) For @__s__ ~ t'Set'@ holds that the mapping preserves the dimension of the simplices.
+--
+--  (3) From the properties above follows: For all @s@ in @__s x__@ with
+--  @'vertices' s@ is in @'cpmDomain' m@ holds
+--
+--    (1) @'vertices' ('amap1' s)@ is in @'cpmRange' m@ (these follows form
+--    @'structSmplAppl' ('cpmSpxType' m) m@).
+--
+--    (2) The following diagram commutes:
+--
+-- @
+--                amap1
+--         [x] ----------> [y]
+--          ^               ^
+--          |               |
+--   toList |               | toList
+--          |               |
+--          |               |
+--        s m x --------> s m y
+--                amap1
+-- @
+--
+-- where @s m x@ is the subset of all @s@ in @__s x__@ with @'vertices' s@ is in @'cpmDomain' m@
+-- and @s m y@ is the subset of all @s@ in @__s y__@ with @'vertices' s@ is in @'cpmRange' m@.
 data ComplexMap s a b where
   ComplexMap :: SimplexType s -> Complex x -> Complex y -> Map EntOrd x y
              -> ComplexMap s (Complex x) (Complex y)

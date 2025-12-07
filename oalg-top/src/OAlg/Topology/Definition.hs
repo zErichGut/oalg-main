@@ -22,7 +22,6 @@
 -- Definition of topological spaces.
 module OAlg.Topology.Definition
   (
-
     -- * Space
     Space(..), Model(..)
   , spcAbstract
@@ -35,7 +34,7 @@ module OAlg.Topology.Definition
 
     -- * Homology
   , HCat, Hmlg(..), HomologyType(..)
-  , hChC, hCrd, hBetti, hZ
+  , hChC, hChC', hCrd, hBetti, hZ, hZ'
 
   ) where
 
@@ -123,7 +122,6 @@ data Continuous s m where
   CntAbstract :: ComplexMap s (Complex x) (Complex y) -> Continuous s Abstract
   CntConcrete :: ComplexMap s (Complex (Vector Q)) (Complex (Vector Q)) -> Continuous s Concrete
 
-
 deriving instance Show (Continuous s m)
 
 cntEqAbstr :: Homomorphous EntOrd x y -> Homomorphous EntOrd x' y'
@@ -179,11 +177,11 @@ instance (Typeable s, Typeable m) => Oriented (Continuous s m) where
   start = cntDomain
   end   = cntRange
 
-instance (MultiplicativeComplexMap s, Typeable m) => Multiplicative (Continuous s m) where
-  one (SpaceAbstract c) = CntAbstract (cpmOne Struct c) 
-  one (SpaceConcrete c) = CntConcrete (cpmOne Struct c)
+instance (Simplical1 s, Typeable m) => Multiplicative (Continuous s m) where
+  one (SpaceAbstract c) = CntAbstract (cpmOne Struct simplexType c) 
+  one (SpaceConcrete c) = CntConcrete (cpmOne Struct simplexType c)
 
-  CntConcrete f * CntConcrete g        = CntConcrete (cpmMlt f g)
+  CntConcrete f * CntConcrete g        = CntConcrete (cpmMlt f g)  
   CntAbstract f * CntAbstract g        = case (cpmHomEntOrd f,cpmHomEntOrd g) of
     (Struct:>:Struct,Struct:>:Struct) -> case eqVertexType (cpmRange g) (cpmDomain f) of
       Just Refl                       -> CntAbstract (cpmMlt f g)
@@ -206,14 +204,14 @@ hmlg HmlgTypeZ = cnzFreeHomAbl
 -- Hmlg -
 
 data Hmlg x y where
-  ChC   :: (Ring r, Commutative r, MultiplicativeComplexMap s, Typeable m, Attestable n)
+  ChC   :: (Ring r, Commutative r, Simplical1 s, Typeable m, Attestable n)
         => ChainComplexType -> Any n -> Hmlg (Continuous s m) (ChainComplexHom r n)
   Crd   :: (Ring r, Attestable n) => Hmlg (ChainComplexHom r n) (CardsHom n)
   Betti :: (Ring r, Commutative r, Homological h, Attestable n)
         => HomologyType r h
         -> Hmlg (ChainComplexHom r n) (BettiHom n h)
   Hmlg  :: ( Ring r, Commutative r, Homological h, Attestable n
-           , MultiplicativeComplexMap s, Typeable m
+           , Simplical1 s, Typeable m
            )
         => ChainComplexType -> HomologyType r h -> Any n
         -> Hmlg (Continuous s m) (BettiHom n h)
@@ -232,7 +230,7 @@ instance ApplicativeG Id Hmlg (->) where
 
   amapG Crd (Id c)       = Id $ ccxCardsHom c
   
-  amapG (Betti h ) (Id c)  = Id
+  amapG (Betti h) (Id c) = Id
                          $ bettiHom
                          $ homologyHom
                          $ hmlg h 
@@ -242,11 +240,8 @@ instance ApplicativeG Id Hmlg (->) where
 
 
 instance ApplicativeG Pnt Hmlg (->) where
-  amapG (Hmlg t h n) (Pnt x) = Pnt $ start $ amap (Betti h) $ spcChainComplexSet t SpxTypeAsc n x
-  -- more efficient!
-  
-  amapG h (Pnt x)            = Pnt $ case homomorphous h of
-    Struct:>:Struct         -> start $ amap h (one x) 
+  amapG h (Pnt x)    =  Pnt $ case homomorphous h of
+    Struct:>:Struct -> start $ amap h (one x) 
 
 instance HomOriented Hmlg
 instance HomMultiplicative Hmlg
@@ -257,9 +252,13 @@ instance HomMultiplicative Hmlg
 -- | category of homology operators.
 type HCat = Path Hmlg
 
-hChC :: (Ring r, Commutative r, MultiplicativeComplexMap s, Typeable m, Attestable n)
+hChC :: (Ring r, Commutative r, Simplical1 s, Typeable m, Attestable n)
   => ChainComplexType -> Any n -> HCat (Continuous s m) (ChainComplexHom r n)
 hChC t n = ChC t n :. IdPath Struct
+
+hChC' :: (Ring r, Commutative r, Simplical1 s, Typeable m, Attestable n)
+  => q s -> ChainComplexType -> Any n -> HCat (Continuous s m) (ChainComplexHom r n)
+hChC' _ = hChC
 
 hCrd :: (Ring r, Attestable n) => HCat (ChainComplexHom r n) (CardsHom n)
 hCrd = Crd :. IdPath Struct
@@ -268,7 +267,11 @@ hBetti :: (Ring r, Commutative r, Homological h, Attestable n)
   => HomologyType r h -> HCat (ChainComplexHom r n) (BettiHom n h)
 hBetti t = Betti t :. IdPath Struct
 
-hZ :: (Attestable n, Typeable m)
-  => ChainComplexType -> Any n -> HCat (Continuous Asc m) (BettiHom n AbHom)
+hZ :: (Attestable n, Simplical1 s, Typeable m)
+  => ChainComplexType -> Any n -> HCat (Continuous s m) (BettiHom n AbHom)
 hZ t n = Hmlg t HmlgTypeZ n :. IdPath Struct 
+
+hZ' :: (Attestable n, Simplical1 s, Typeable m)
+  => q s -> ChainComplexType -> Any n -> HCat (Continuous s m) (BettiHom n AbHom)
+hZ' _ = hZ
 

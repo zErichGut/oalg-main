@@ -112,7 +112,7 @@ cpxRelations (Complex (Graph g)) = Graph (L.tail $ L.tail g)
 --------------------------------------------------------------------------------
 -- cpxProductPrs -
 
--- | product for complex within @'ComplexMap' 'Preserving'@.
+-- | product for complex within @'ComplexMap' 'Asc'@.
 --
 -- __Property__ Let @ab = 'cpxProductPrs' a b@, then holds:
 --
@@ -161,10 +161,11 @@ cpxProductPrs a b
   _ << []                     = True
   xy@(x,y) << (xy'@(x',y'):_) = x <= x' && y <= y' && xy /= xy'
 
+{-
 l = complex [Set [0,1]] :: Complex N
 k = complex [Set "ab"]
 p = cpxProductPrs l k
-
+-}
 
 --------------------------------------------------------------------------------
 -- cpxProduct -
@@ -172,19 +173,20 @@ p = cpxProductPrs l k
 cpxProduct :: (Entity x, Ord x, Entity y, Ord y)
   => Complex x -> Complex y
   -> ( Complex (x,y)
-     , ComplexMap Preserving (Complex (x,y)) (Complex x)
-     , ComplexMap Preserving (Complex (x,y)) (Complex y)
+     , ComplexMap Asc (Complex (x,y)) (Complex x)
+     , ComplexMap Asc (Complex (x,y)) (Complex y)
      )
 cpxProduct a b = (ab, mFst, mSnd) where
   ab   = cpxProductPrs a b
-  mFst = ComplexMapPrs ab a (Map fst)
-  mSnd = ComplexMapPrs ab b (Map snd)
+  s    = SpxTypeAsc
+  mFst = ComplexMap s ab a (Map fst)
+  mSnd = ComplexMap s ab b (Map snd)
 
 --------------------------------------------------------------------------------
 -- cntProduct2 -
 
-cntProduct2 :: Diagram Discrete N2 N0 (Continuous Preserving Abstract)
-  -> Product N2 (Continuous Preserving Abstract)
+cntProduct2 :: Diagram Discrete N2 N0 (Continuous Asc Abstract)
+  -> Product N2 (Continuous Asc Abstract)
 cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   = LimesProjective abCn (abUn ab) where
   
@@ -193,22 +195,22 @@ cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   abCn = ConeProjective d (SpaceAbstract ab) (CntAbstract mFst:|CntAbstract mSnd:|Nil)
 
   abUn :: (Entity x, Ord x, Entity y, Ord y)
-    => Complex (x,y) -> ProductCone N2 (Continuous Preserving Abstract)
-    -> Continuous Preserving Abstract
+    => Complex (x,y) -> ProductCone N2 (Continuous Asc Abstract)
+    -> Continuous Asc Abstract
   abUn ab (ConeProjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
     = case elg ab t f g of
       Nothing                    -> throw $ NotEligibleCone
       Just (Refl,Refl,Refl,Refl) -> CntAbstract fg where
-        fg = ComplexMapPrs t ab (Map (\t -> (f' t, g' t)))
-        ComplexMapPrs _ _ (Map f') = f
-        ComplexMapPrs _ _ (Map g') = g
+        fg = ComplexMap s t ab (Map (\t -> (f' t, g' t)))
+        ComplexMap s _ _ (Map f') = f
+        ComplexMap _ _ _ (Map g') = g
         
   elg ::
     (Typeable x, Typeable y, Typeable t)
     => Complex (x,y)
     -> Complex t
-    -> ComplexMap Preserving (Complex tF) (Complex x')
-    -> ComplexMap Preserving (Complex tS) (Complex y')
+    -> ComplexMap Asc (Complex tF) (Complex x')
+    -> ComplexMap Asc (Complex tS) (Complex y')
     -> Maybe (t :~: tF,t :~: tS,x :~: x', y :~: y')
   elg ab t f g = do
     tF <- tFEq t f
@@ -219,30 +221,30 @@ cntProduct2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
     
     where
       tFEq :: Typeable t
-        => Complex t -> ComplexMap Preserving (Complex tF) c
+        => Complex t -> ComplexMap s (Complex tF) c
         -> Maybe (t :~: tF)
-      tFEq _ (ComplexMapPrs _ _ f) = case tauTyp $ domain f of Struct -> eqT
+      tFEq _ (ComplexMap _ _ _ f) = case tauTyp $ domain f of Struct -> eqT
 
       xFEq :: Typeable x
-        => Complex (x,y) -> ComplexMap Preserving (Complex tF) (Complex xF)
+        => Complex (x,y) -> ComplexMap s (Complex tF) (Complex xF)
         -> Maybe (x :~: xF)
-      xFEq _ (ComplexMapPrs _ _ f) = case tauTyp $ range f of Struct -> eqT 
+      xFEq _ (ComplexMap _ _ _ f) = case tauTyp $ range f of Struct -> eqT 
 
       ySEq :: Typeable y
-        => Complex (x,y) -> ComplexMap Preserving (Complex tS) (Complex yS)
+        => Complex (x,y) -> ComplexMap s (Complex tS) (Complex yS)
         -> Maybe (y :~: yS)
-      ySEq _ (ComplexMapPrs _ _ g) = case tauTyp $ range g of Struct -> eqT
+      ySEq _ (ComplexMap _ _ _ g) = case tauTyp $ range g of Struct -> eqT
 
 --------------------------------------------------------------------------------
 -- cntProducts2 -
 
-cntProducts2 :: Products N2 (Continuous Preserving Abstract)
+cntProducts2 :: Products N2 (Continuous Asc Abstract)
 cntProducts2 = LimitsG cntProduct2
 
 --------------------------------------------------------------------------------
 -- cntProducts -
 
-cntProducts :: Products n (Continuous Preserving Abstract)
+cntProducts :: Products n (Continuous Asc Abstract)
 cntProducts = products (products0 spcTerminal) cntProducts2
 
 --------------------------------------------------------------------------------
@@ -254,15 +256,16 @@ instance ApplicativeG (Graph i) (->) (->) where amapG = M.fmap
 -- cpxSum2 -
 
 cpxSum2 :: (Entity x, Ord x, Entity y, Ord y)
-  => Complex x -> Complex y
+  => SimplexType s
+  -> Complex x -> Complex y
   -> ( Complex (Either x y)
-     , ComplexMap Preserving (Complex x) (Complex (Either x y))
-     , ComplexMap Preserving (Complex y) (Complex (Either x y))
+     , ComplexMap s (Complex x) (Complex (Either x y))
+     , ComplexMap s (Complex y) (Complex (Either x y))
      )
-cpxSum2 a@(Complex ssx) b@(Complex ssy) = (ab, mFst, mSnd) where
+cpxSum2 s a@(Complex ssx) b@(Complex ssy) = (ab, mFst, mSnd) where
   ab   = Complex (amap1 left ssx || amap1 right ssy)
-  mFst = ComplexMapPrs a ab (Map Left)
-  mSnd = ComplexMapPrs b ab (Map Right)
+  mFst = ComplexMap s a ab (Map Left)
+  mSnd = ComplexMap s b ab (Map Right)
 
   left :: Set (Set x) -> Set (Set (Either x y))
   left (Set sx) = Set $ amap1 (\(Set xs) -> Set (amap1 Left xs)) sx
@@ -273,38 +276,36 @@ cpxSum2 a@(Complex ssx) b@(Complex ssy) = (ab, mFst, mSnd) where
 --------------------------------------------------------------------------------
 -- cntSum2 -
 
-cntSum2 :: Diagram Discrete N2 N0 (Continuous Preserving Abstract)
-  -> Sum N2 (Continuous Preserving Abstract)
-cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
-  = LimesInjective abCn (abUn ab) where
-  (ab,mFst,mSnd) = cpxSum2 a b
+cntSum2 :: Simplical1 s
+  => SimplexType s
+  -> Diagram Discrete N2 N0 (Continuous s Abstract)
+  -> Sum N2 (Continuous s Abstract)
+cntSum2 s d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
+  = LimesInjective abCn (abUn s ab) where
+  (ab,mFst,mSnd) = cpxSum2 s a b
   
   abCn = ConeInjective d (SpaceAbstract ab) (CntAbstract mFst:|CntAbstract mSnd:|Nil)
 
   abUn :: (Entity x, Ord x, Entity y, Ord y)
-    => Complex (Either x y) -> SumCone N2 (Continuous Preserving Abstract)
-    -> Continuous Preserving Abstract
-  abUn ab (ConeInjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
+    => SimplexType s -> Complex (Either x y) -> SumCone N2 (Continuous s Abstract)
+    -> Continuous s Abstract
+  abUn s ab (ConeInjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
     = case elg ab t f g of
-      -- Nothing                    -> throw $ NotEligibleCone
-      -- Nothing                    -> error $ show $ (tEq t f, tEq t g, xEq ab f, yEq ab g)
-      Nothing                    -> error $ case cpmHomEntOrd g of
-        Struct:>:Struct          -> show $ typeOf $ (t,cpmDomain g, cpmRange g)
-      -- Nothing                    -> error $ show $ typeOf t
-      Just (Refl,Refl,Refl,Refl) -> CntAbstract $ ComplexMapPrs ab t (Map fg) where
+      Nothing                    -> throw $ NotEligibleCone
+      Just (Refl,Refl,Refl,Refl) -> CntAbstract $ ComplexMap s ab t (Map fg) where
         
         fg (Left x) = f' x
         fg (Right y) = g' y
 
-        ComplexMapPrs _ _ (Map f') = f
-        ComplexMapPrs _ _ (Map g') = g
+        ComplexMap _ _ _ (Map f') = f
+        ComplexMap _ _ _ (Map g') = g
 
   elg ::
     (Typeable x, Typeable y, Typeable t)
     => Complex (Either x y)
     -> Complex t
-    -> ComplexMap Preserving (Complex x') (Complex tF)
-    -> ComplexMap Preserving (Complex y') (Complex tS)
+    -> ComplexMap s (Complex x') (Complex tF)
+    -> ComplexMap s (Complex y') (Complex tS)
     -> Maybe (t :~: tF,t :~: tS,x :~: x', y :~: y')
   elg ab t f g = do
     tF <- tEq t f
@@ -314,37 +315,39 @@ cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
     return (tF,tS,ex,ey)
 
   tEq :: Typeable t
-    => Complex t -> ComplexMap Preserving c (Complex tF) -> Maybe (t :~: tF)
-  tEq _ (ComplexMapPrs _ _ f) = case tauTyp $ range f of Struct -> eqT
+    => Complex t -> ComplexMap s c (Complex tF) -> Maybe (t :~: tF)
+  tEq _ (ComplexMap _ _ _ f) = case tauTyp $ range f of Struct -> eqT
 
   xEq :: Typeable x
-    => Complex (Either x y) -> ComplexMap Preserving (Complex x') c -> Maybe (x :~: x')
-  xEq _ (ComplexMapPrs _ _ f) = case tauTyp $ domain f of Struct -> eqT
+    => Complex (Either x y) -> ComplexMap s (Complex x') c -> Maybe (x :~: x')
+  xEq _ (ComplexMap _ _ _ f) = case tauTyp $ domain f of Struct -> eqT
 
   yEq :: Typeable y
-    => Complex (Either x y) -> ComplexMap Preserving (Complex y') c -> Maybe (y :~: y')
-  yEq _ (ComplexMapPrs _ _ g) = case tauTyp $ domain g of Struct -> eqT
+    => Complex (Either x y) -> ComplexMap s (Complex y') c -> Maybe (y :~: y')
+  yEq _ (ComplexMap _ _ _ g) = case tauTyp $ domain g of Struct -> eqT
+
 
 --------------------------------------------------------------------------------
 -- cntSums2 -
 
-cntSums2 :: Sums N2 (Continuous Preserving Abstract)
-cntSums2 = LimitsG cntSum2
+cntSums2 :: Simplical1 s => SimplexType s -> Sums N2 (Continuous s Abstract)
+cntSums2 s = LimitsG $ cntSum2 s
 
 --------------------------------------------------------------------------------
 -- cntSums -
 
-cntSums :: Sums n (Continuous Preserving Abstract)
-cntSums = sums (sums0 spcInitial) cntSums2
-{-
-d :: Diagram Discrete N3 N0 (Continuous Preserving Abstract)
+cntSums :: Simplical1 s => SimplexType s -> Sums n (Continuous s Abstract)
+cntSums s = sums (sums0 (spcInitial s)) (cntSums2 s)
+
+
+d :: Diagram Discrete N3 N0 (Continuous Asc Abstract)
 d = DiagramDiscrete (spcPoint:|spcPoint:|spcPoint:|Nil)
 
 p = limes cntProducts d
-s = limes cntSums d
+s = limes (cntSums SpxTypeAsc) d
 pU = universalCone p
 sU = universalCone s
-
+{-
 pF = universalFactor p pU
 sF = universalFactor s sU
 
@@ -385,7 +388,7 @@ simplex n = SpaceAbstract $ complex $ [Set [0..n]]
 sphere :: N -> Space Abstract
 sphere n = spcBorder $ simplex (n+1)
 
-t :: Diagram Discrete N3 N0 (Continuous Preserving Abstract)
+t :: Diagram Discrete N3 N0 (Continuous Asc Abstract)
 t = DiagramDiscrete (s:|s:|s:|Nil) where s = sphere 1
 
 torus :: Space Abstract

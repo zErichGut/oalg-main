@@ -25,6 +25,7 @@ module OAlg.Homology.Simplical
     Simplical(..), Smpl, faces', gphFaces
   , spxAdjDim
   , SimplexType(..), structSmpl
+  , Simplical1(..)
 
     -- * Applicative
   , SimplicalApplicative, SmplAppl
@@ -372,3 +373,14 @@ structSmplAppl :: (Entity x, Ord x, Entity y, Ord y)
 structSmplAppl SpxTypeSet _ = Struct2
 structSmplAppl SpxTypeAsc _ = Struct2
 structSmplAppl SpxTypeLst _ = Struct2
+
+--------------------------------------------------------------------------------
+-- Simplical1 -
+
+class Typeable s => Simplical1 s where
+  simplexType :: SimplexType s
+
+instance Simplical1 [] where simplexType = SpxTypeLst
+instance Simplical1 Asc where simplexType = SpxTypeAsc
+instance Simplical1 Set where simplexType = SpxTypeSet
+
