@@ -208,47 +208,49 @@ isFaithful p f (Set xs) = p $ amap1 f xs
 -- given simplex sets. Depended on the type @__s__@, such a mapping fulfills the 'isAsc' or 'isSet'
 -- predicate.
 --
--- __Properties__ Let @m@ be in @'ComplexMap' __s__ ('Complex' __x__) ('Complex' __y__), then
--- holds: Let @f = 'cpmMap' m@ in
+-- __Properties__ Let @'ComplexMap' t a b f@ be in
+-- @'ComplexMap' __s__ ('Complex' __x__) ('Complex' __y__), then for all simplices @s@ in @a@ holds:
 --
---  (1) For all simplices @s@ in @'cpmDomain' m@ holds:
---  @'amap1' f s@ is an element of @'cpmRange' m@.
+--  (1) @'amap1' f s@ is an element of @b@.
 --
---  (2) If @__s__ ~ t'Asc'@ then for all simplices @s@ in @'cpmDomain' m@ holds:
---  @'isFaithful' 'isAsc' f s@
+--  (2) If @__s__ ~ t'Asc'@ then @'isFaithful' 'isAsc' f s@.
 --
---  (3) If @__s__ ~ t'Set'@ then for all simplices @s@ in @'cpmDomain' m@ holds:
---   @'isFaithful' 'isSet' f s@
+--  (3) If @__s__ ~ t'Set'@ then @'isFaithful' 'isSet' f s@.
 --
 -- __Note__
 --
---  (1) If @'cpmDomain' m@ and @'cpmRange' m@ are 'valid' then it is sufficient to test the
---  properties above on the generators @'cpxGenerators' ('cpmDomain' m)@.
+--  (1) As @__x__@ and @__y__@ are ordered entities (given by the constraint of @f@) and
+--  @'structSmplAppl't@ holds, it follows: @'SimplicalApplicative' __s x y__@
+--  and as such @'amap1' f@ is well defined as a mapping form @__s x__@ to @__s y__@.
 --
---  (2) For @__s__ ~ t'Set'@ holds that the mapping preserves the dimension of the simplices.
+--  (2) If @a@ and @b@ are 'valid' then it is sufficient to test the
+--  properties above on the generators @'cpxGenerators' a@.
 --
---  (3) From the properties above follows: For all @s@ in @__s x__@ with
---  @'vertices' s@ is in @'cpmDomain' m@ holds
+--  (3) For @__s__ ~ t'Set'@ holds that the mapping preserves the dimension of the simplices.
 --
---    (1) @'vertices' ('amap1' s)@ is in @'cpmRange' m@ (these follows form
---    @'structSmplAppl' ('cpmSpxType' m) m@).
+--  (4) As @__s__@ is either t'[]', t'Asc' or t'Set' and the definition of @'amap1' f@ from @__s x__@
+--  to @__s y__@ and the properties above follows:
 --
---    (2) The following diagram commutes:
+--    (1) @'amap1' f@ induces a map - also denoted by @'amap1 f@ - from the subset of all simplices
+--    @s@ in @__s x__@ with @'vertices' s@ in @a@ - denoted by @__s x__ a@ to the subset of all
+--    simplices @r@ in @__s y__@ with @'vertices' r@ in @b@ - denoted by @__s y__ b@
+--    (property 1 above and @'SimplicalApplicative' __s x__@).
+--
+--
+--    (2) The following diagram is commutative:
 --
 -- @
---                amap1
+--               amap1 f
 --         [x] ----------> [y]
 --          ^               ^
 --          |               |
 --   toList |               | toList
 --          |               |
 --          |               |
---        s m x --------> s m y
---                amap1
+--        s x a --------> s y b
+--               amap1 f
 -- @
 --
--- where @s m x@ is the subset of all @s@ in @__s x__@ with @'vertices' s@ is in @'cpmDomain' m@
--- and @s m y@ is the subset of all @s@ in @__s y__@ with @'vertices' s@ is in @'cpmRange' m@.
 data ComplexMap s a b where
   ComplexMap :: SimplexType s -> Complex x -> Complex y -> Map EntOrd x y
              -> ComplexMap s (Complex x) (Complex y)

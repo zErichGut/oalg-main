@@ -25,7 +25,7 @@ module OAlg.Homology.Simplical
     Simplical(..), Smpl, faces', gphFaces
   , spxAdjDim
   , SimplexType(..), structSmpl
-  , Simplical1(..)
+  , AttestableSimplexType(..)
 
     -- * Applicative
   , SimplicalApplicative, SmplAppl
@@ -194,7 +194,7 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
 --------------------------------------------------------------------------------
 -- SimplicalApplicative -
 
--- | transforming simplices over @__x__@ to simplices over @__y__@.
+-- | mapping simplices over @__x__@ to simplices over @__y__@.
 --
 -- __Property__ Let @'SimplicalApplicative' __s x y__@, then holds:
 --
@@ -368,6 +368,8 @@ type instance Structure2 (SmplAppl s) x y = SimplicalApplicative s x y
 --------------------------------------------------------------------------------
 -- structSmplAppl -
 
+-- | /proof/ that for all @s@ in @'SimplexType' __s__@ and proxy @f@ in @__f x y__@ holds:
+-- @'SimplicalApplicative' __s x y__@.
 structSmplAppl :: (Entity x, Ord x, Entity y, Ord y)
   => SimplexType s -> f x y -> Struct2 (SmplAppl s) x y
 structSmplAppl SpxTypeSet _ = Struct2
@@ -375,12 +377,13 @@ structSmplAppl SpxTypeAsc _ = Struct2
 structSmplAppl SpxTypeLst _ = Struct2
 
 --------------------------------------------------------------------------------
--- Simplical1 -
+-- AttestableSimplexType -
 
-class Typeable s => Simplical1 s where
+-- | attestable simplex type.
+class Typeable s => AttestableSimplexType s where
   simplexType :: SimplexType s
 
-instance Simplical1 [] where simplexType = SpxTypeLst
-instance Simplical1 Asc where simplexType = SpxTypeAsc
-instance Simplical1 Set where simplexType = SpxTypeSet
+instance AttestableSimplexType [] where simplexType = SpxTypeLst
+instance AttestableSimplexType Asc where simplexType = SpxTypeAsc
+instance AttestableSimplexType Set where simplexType = SpxTypeSet
 

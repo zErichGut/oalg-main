@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 
 -- |
@@ -18,14 +19,14 @@
 -- Terminal and initial space.
 module OAlg.Topology.Limes.TerminalAndInitialSpace
   (
-    -- * Terminal
-   cntTerminal, spcPoint
 
-  ,spcTerminals, spcTerminal
+    -- * Terminal
+    cntTerminalAsc, spcPoint
+  , spcTerminalsAsc, spcTerminalAsc
 
     -- * Initial
-  , cntInitial, spcEmpty
-  , spcInitials, spcInitial
+  , cntInitial, spcInitial', spcEmpty
+  , spcInitials, spcInitials', spcInitial
 
   ) where
 
@@ -47,43 +48,43 @@ import OAlg.Homology.Complex
 import OAlg.Topology.Definition
 
 --------------------------------------------------------------------------------
--- cpxTerminal -
+-- cpxTerminalAsc -
 
 cpxTerminal :: (Entity x, Ord x) => x -> Complex x
 cpxTerminal x = complex [Set [x]]
 
-cpmTerminal :: (Entity x, Ord x) => Complex x -> ComplexMap Asc (Complex x) (Complex ())
-cpmTerminal c = ComplexMap SpxTypeAsc c (cpxTerminal ()) (Map (const ()))
+cpmTerminalAsc :: (Entity x, Ord x) => Complex x -> ComplexMap Asc (Complex x) (Complex ())
+cpmTerminalAsc c = ComplexMap SpxTypeAsc c (cpxTerminal ()) (Map (const ()))
 
 --------------------------------------------------------------------------------
--- spcTerminal -
+-- spcTerminalAsc -
 
-spcTerminal :: TerminalPoint (Continuous Asc Abstract)
-spcTerminal = LimesProjective lm un where
+spcTerminalAsc :: TerminalPoint (Continuous Asc Abstract)
+spcTerminalAsc = LimesProjective lm un where
   lm = trmCone $ SpaceAbstract $ cpxTerminal ()
   
   un :: TerminalCone (Continuous Asc Abstract) -> Continuous Asc Abstract 
-  un (ConeProjective _ (SpaceAbstract c) _) = CntAbstract $ cpmTerminal c
+  un (ConeProjective _ (SpaceAbstract c) _) = CntAbstract $ cpmTerminalAsc c
 
 --------------------------------------------------------------------------------
--- spcTerminals -
+-- spcTerminalsAsc -
 
-spcTerminals :: Terminals (Continuous Asc Abstract)
-spcTerminals = LimitsG (const spcTerminal)
+spcTerminalsAsc :: Terminals (Continuous Asc Abstract)
+spcTerminalsAsc = LimitsG (const spcTerminalAsc)
 
 --------------------------------------------------------------------------------
 -- spcPoint -
 
 -- | a space with one point.
 spcPoint :: Space Abstract
-spcPoint = tip $ universalCone spcTerminal
+spcPoint = tip $ universalCone spcTerminalAsc
 
 --------------------------------------------------------------------------------
--- cntTerminal -
+-- cntTerminalAsc -
 
 -- | the uniquely determined continuous map from the given space to the a space with one point.
-cntTerminal :: Space Abstract -> Continuous Asc Abstract
-cntTerminal = universalFactor (limes spcTerminals DiagramEmpty) . trmCone
+cntTerminalAsc :: Space Abstract -> Continuous Asc Abstract
+cntTerminalAsc = universalFactor (limes spcTerminalsAsc DiagramEmpty) . trmCone
 
 --------------------------------------------------------------------------------
 -- cpxInitial -
@@ -91,40 +92,52 @@ cntTerminal = universalFactor (limes spcTerminals DiagramEmpty) . trmCone
 cpxInitial :: (Entity x, Ord x) => Complex x
 cpxInitial = complex []
 
-cpmInitial :: (Entity x, Ord x)
-  => SimplexType s -> Complex x -> ComplexMap s (Complex EntEmpty) (Complex x)
-cpmInitial s c = ComplexMap s cpxInitial c (Map fromEmpty)
+cpmInitial :: (Entity x, Ord x, AttestableSimplexType s)
+  => Complex x -> ComplexMap s (Complex EntEmpty) (Complex x)
+cpmInitial c = ComplexMap simplexType cpxInitial c (Map fromEmpty)
 
 
 --------------------------------------------------------------------------------
 -- spcInitial -
+data FF s where
+  FF :: AttestableSimplexType s => FF s
 
-spcInitial :: Simplical1 s => SimplexType s -> InitialPoint (Continuous s Abstract)
-spcInitial s = LimesInjective lm (un s) where
+ff :: SimplexType s -> FF s
+ff SpxTypeLst = FF
+ff SpxTypeAsc = FF
+ff SpxTypeSet = FF
+  
+spcInitial :: AttestableSimplexType s => InitialPoint (Continuous s Abstract)
+spcInitial = LimesInjective lm (un simplexType) where
   lm = intCone $ SpaceAbstract $ (cpxInitial :: Complex EntEmpty)
 
   un :: SimplexType s -> InitialCone (Continuous s Abstract) -> Continuous s Abstract
-  un s (ConeInjective _ (SpaceAbstract c) _) = CntAbstract $ cpmInitial s c
+  un s (ConeInjective _ (SpaceAbstract c) _) = case ff s of FF -> CntAbstract $ cpmInitial c
 
+spcInitial' :: AttestableSimplexType s => p s -> InitialPoint (Continuous s Abstract)
+spcInitial' _ = spcInitial
 
 --------------------------------------------------------------------------------
 -- spcInitials -
 
-spcInitials :: Simplical1 s => SimplexType s -> Initials (Continuous s Abstract)
-spcInitials s = LimitsG (const $ spcInitial s)
+spcInitials :: AttestableSimplexType s => Initials (Continuous s Abstract)
+spcInitials = LimitsG (const spcInitial)
+
+spcInitials' :: AttestableSimplexType s => q s -> Initials (Continuous s Abstract)
+spcInitials' _ = spcInitials
 
 --------------------------------------------------------------------------------
 -- spcEmpty -
 
 -- | a empty space
-spcEmpty :: Simplical1 s => SimplexType s ->  Space Abstract
-spcEmpty s = tip $ universalCone $ spcInitial s
+spcEmpty :: Space Abstract
+spcEmpty = tip $ universalCone $ (spcInitial' SpxTypeSet)
 
 --------------------------------------------------------------------------------
 -- cntInitial -
 
 -- | the uniquely determined continuous map from the empty space to the given one.
-cntInitial :: Simplical1 s => SimplexType s -> Space Abstract -> Continuous s Abstract
-cntInitial s = universalFactor (limes (spcInitials s) DiagramEmpty) . intCone
+cntInitial :: AttestableSimplexType s => Space Abstract -> Continuous s Abstract
+cntInitial = universalFactor (limes spcInitials DiagramEmpty) . intCone
 
 
