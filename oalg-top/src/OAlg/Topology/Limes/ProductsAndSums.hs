@@ -18,24 +18,24 @@
 -- Product and disjoint union space.
 module OAlg.Topology.Limes.ProductsAndSums
   (
+    -- * Products
+    cntProductsAsc
+
+    -- * Sums
+  , cntSums
   ) where
 
 import Control.Monad as M
 
 import Data.Typeable
-import Data.List as L (zip,head,tail,groupBy,(++),foldl)
 
 import OAlg.Prelude
 
 import OAlg.Category.Map
 
-import OAlg.Data.Canonical
 import OAlg.Data.Either
 import OAlg.Data.Filterable
 
--- import OAlg.Structure.Definition
-import OAlg.Structure.Oriented
--- import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.PartiallyOrdered
 
@@ -44,17 +44,14 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
--- import OAlg.Entity.Matrix.Vector
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.ProductsAndSums
--- import OAlg.Limes.Proposition
 
 import OAlg.Homology.Simplical hiding (simplex)
 import OAlg.Homology.Complex hiding (cpxProduct, cpxProductAsc)
-import OAlg.Homology.ChainComplex
 
 import OAlg.Topology.Definition
 import OAlg.Topology.Limes.TerminalAndInitialSpace
@@ -110,18 +107,12 @@ cpxProductAsc a b = (ab,mFst,mSnd) where
   _ << []                     = True
   xy@(x,y) << (xy'@(x',y'):_) = x <= x' && y <= y' && xy /= xy'
 
-{-
-l = complex [Set [0,1]] :: Complex N
-k = complex [Set "ab"]
-p = cpxProductAsc l k
--}
-
 --------------------------------------------------------------------------------
--- cntProductAsc2 -
+-- cntProduct2Asc -
 
-cntProductAsc2 :: Diagram Discrete N2 N0 (Continuous Asc Abstract)
+cntProduct2Asc :: Diagram Discrete N2 N0 (Continuous Asc Abstract)
   -> Product N2 (Continuous Asc Abstract)
-cntProductAsc2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
+cntProduct2Asc d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
   = LimesProjective abCn (abUn ab) where
   
   (ab,mFst,mSnd) = cpxProductAsc a b
@@ -170,21 +161,16 @@ cntProductAsc2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
       ySEq _ (ComplexMap _ _ _ g) = case tauTyp $ range g of Struct -> eqT
 
 --------------------------------------------------------------------------------
--- cntProductsAsc2 -
+-- cntProducts2Asc -
 
-cntProductsAsc2 :: Products N2 (Continuous Asc Abstract)
-cntProductsAsc2 = LimitsG cntProductAsc2
+cntProducts2Asc :: Products N2 (Continuous Asc Abstract)
+cntProducts2Asc = LimitsG cntProduct2Asc
 
 --------------------------------------------------------------------------------
 -- cntProductsAsc -
 
 cntProductsAsc :: Products n (Continuous Asc Abstract)
-cntProductsAsc = products (products0 spcTerminalAsc) cntProductsAsc2
-
---------------------------------------------------------------------------------
--- 
-
-instance ApplicativeG (Graph i) (->) (->) where amapG = M.fmap
+cntProductsAsc = products (products0 spcTerminalAsc) cntProducts2Asc
 
 --------------------------------------------------------------------------------
 -- cpxSum2 -
@@ -273,29 +259,6 @@ cntSums :: AttestableSimplexType s => Sums n (Continuous s Abstract)
 cntSums = sums (sums0 spcInitial) cntSums2
 
 {-
-d :: Diagram Discrete N3 N0 (Continuous Asc Abstract)
-d = DiagramDiscrete (spcPoint:|spcPoint:|spcPoint:|Nil)
-
-p = limes cntProductsAsc d
-s = limes (cntSums SpxTypeAsc) d
-pU = universalCone p
-sU = universalCone s
-
-
-pF = universalFactor p pU
-sF = universalFactor s sU
-
-(f:|g:|h:|Nil) = shell sU
--}
-
---------------------------------------------------------------------------------
--- spcType -
-
-spcType :: Space m -> TypeRep
-spcType (SpaceAbstract c) = typeOf c
-spcType (SpaceConcrete c) = typeOf c
-
-
 --------------------------------------------------------------------------------
 -- spcBorder -
 
@@ -329,38 +292,5 @@ torus :: Space Abstract
 torus = tip $ universalCone $ limes cntProductsAsc t
 
 torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
-
--- crds = pmap (hCrd ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
-
-
-cntDim :: Space m -> Z
-cntDim (SpaceAbstract (Complex g)) = (inj $ lengthN g) - 2
-cntDim s = cntDim $ spcAbstract s
-
-spcCards :: Any n -> Space m -> Cards n
-spcCards n (SpaceAbstract c) = cpxCards n c
-spcCards n s = spcCards n $ spcAbstract s
-
-
-{-
-ghci> spcCards (attest :: Any N3) torus
-DiagramDiscrete [|1,27,189,324,162,0|]
-
-ghci> pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N4)) torus
-DiagramDiscrete [|AbGroup[],AbGroup[Z^3],AbGroup[Z^3],AbGroup[Z],AbGroup[]|]
-
-DiagramDiscrete [|1,81,1215,4050,4860,1944,0|]
-
-
-
-
-ghci> spcCards (attest :: Any N3) torus
-DiagramDiscrete [|1,27,189,324,162,0|]
-
-ghci> pmap (cntHmlg ChainComplexExtended SpxTypeAsc (attest :: Any N3)) torus
-DiagramDiscrete [|AbGroup[],AbGroup[Z^3],AbGroup[Z^3],AbGroup[Z]|]
-
-ghci> spcCards (attest :: Any N5) torus
-DiagramDiscrete [|1,243,7533,43740,94770,87480,29160,0|]
-
 -}
+

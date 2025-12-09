@@ -24,7 +24,7 @@ module OAlg.Topology.Definition
   (
     -- * Space
     Space(..), Model(..)
-  , spcAbstract
+  , spcAbstract, spcDim
   , spcChainComplexSet, spcChainComplexSetZ
 
     -- * Continuous
@@ -45,9 +45,12 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
+import OAlg.Data.Canonical
+
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Additive
 import OAlg.Structure.Ring
 
 import OAlg.Hom.Oriented
@@ -102,6 +105,13 @@ instance Validable (Space m) where
 spcAbstract :: Space m -> Space Abstract
 spcAbstract x@(SpaceAbstract _) = x
 spcAbstract (SpaceConcrete c)   = SpaceAbstract c
+
+--------------------------------------------------------------------------------
+-- spcDim -
+
+spcDim :: Space m -> Z
+spcDim (SpaceAbstract (Complex g)) = (inj $ lengthN g) - 2
+spcDim s = spcDim $ spcAbstract s
 
 --------------------------------------------------------------------------------
 -- spcChainComplexSet -
@@ -210,18 +220,12 @@ data Hmlg x y where
   Betti :: (Ring r, Commutative r, Homological h, Attestable n)
         => HomologyType r h
         -> Hmlg (ChainComplexHom r n) (BettiHom n h)
-  Hmlg  :: ( Ring r, Commutative r, Homological h, Attestable n
-           , AttestableSimplexType s, Typeable m
-           )
-        => ChainComplexType -> HomologyType r h -> Any n
-        -> Hmlg (Continuous s m) (BettiHom n h)
 
 instance Morphism Hmlg where
   type ObjectClass Hmlg = Mlt
   homomorphous (ChC _ _)    = Struct :>: Struct
   homomorphous Crd          = Struct :>: Struct
   homomorphous (Betti _)    = Struct :>: Struct
-  homomorphous (Hmlg _ _ _) = Struct :>: Struct
 
 instance ApplicativeG Id Hmlg (->) where
   amapG (ChC t n) (Id f) = Id $ case cntAbstract f of
@@ -235,9 +239,6 @@ instance ApplicativeG Id Hmlg (->) where
                          $ homologyHom
                          $ hmlg h 
                          $ ccxConsecutiveZeroHom c
-
-  amapG (Hmlg t h n) f   = (amapG (Betti h) . amapG (ChC t n)) f
-
 
 instance ApplicativeG Pnt Hmlg (->) where
   amapG h (Pnt x)    =  Pnt $ case homomorphous h of
@@ -269,7 +270,7 @@ hBetti t = Betti t :. IdPath Struct
 
 hZ :: (Attestable n, AttestableSimplexType s, Typeable m)
   => ChainComplexType -> Any n -> HCat (Continuous s m) (BettiHom n AbHom)
-hZ t n = Hmlg t HmlgTypeZ n :. IdPath Struct 
+hZ t n = hBetti HmlgTypeZ . hChC t n -- Hmlg t HmlgTypeZ n :. IdPath Struct 
 
 hZ' :: (Attestable n, AttestableSimplexType s, Typeable m)
   => q s -> ChainComplexType -> Any n -> HCat (Continuous s m) (BettiHom n AbHom)
