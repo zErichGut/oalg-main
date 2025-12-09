@@ -70,6 +70,8 @@ instance (Entity x, Entity i, Ord i) => Validable (Graph i x) where
 instance M.Functor (Graph i) where
   fmap f (Graph ixs) = Graph $ map (\(i,x) -> (i, f x)) ixs
 
+instance ApplicativeG (Graph i) (->) (->) where amapG = M.fmap
+
 instance Filterable (Graph i) where
   filter p (Graph ixs) = Graph $ filter (p . snd) ixs
 

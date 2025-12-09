@@ -18,6 +18,7 @@
 -- evaluations for homology.
 module OAlg.Homology.Eval.Definition
   (
+{-    
     -- * Evaluation
     eval, calculable
   , evalHmgExpr
@@ -47,9 +48,9 @@ module OAlg.Homology.Eval.Definition
   , evalVar, evalInsertVar
   , varDeps
   , deps, Deps
-
+-}
   ) where
-
+{-
 import Control.Monad 
 
 import Data.Kind
@@ -753,7 +754,7 @@ eval env@Env{} vrs at e = case e of
     r <- evalHmgExprRoot env vrs at h -- check for h being well formed!
     v <- evalHmgExpr env vrs at h
     return (r,v)
-
+-}
 {-
 t = ChainComplexStandard
 n = attest :: Any N6

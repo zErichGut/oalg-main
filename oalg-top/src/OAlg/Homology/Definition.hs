@@ -18,140 +18,172 @@
 -- homology.
 module OAlg.Homology.Definition
   (
-
     -- * Homology
-    homology, Homology
-  , homologyGroups
-  , hmgCycles, hmgClassGenerators
-  , abhCnzf, abhCnzfHomology
-
-  , homologyClass, boundary, boundaryInv
-    
+    homology, Homology    
+  , betti, Betti
+  
     -- * Homomorphism
   , homologyHom, HomologyHom
-  , homologyGroupsHom
-  , abhCnzfh, abhCnzfhHomologyHom
+  , bettiHom, BettiHom
 
-  , ConsecutiveZeroFreeHom(..)
+    -- * Homological
+  , Homological(..)
+
+    -- * Abelian
+  , cnzFreeAbl, cnzFreeHomAbl
 
   ) where
 
-import Control.Monad
-
-import Data.Typeable
-
-import Data.Foldable (toList)
-import Data.List as L (zip,filter, (++))
-
 import OAlg.Prelude
 
-import OAlg.Data.FinitelyPresentable
-
-import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
-import OAlg.Structure.Additive
-import OAlg.Structure.Multiplicative
-import OAlg.Structure.Exponential
 import OAlg.Structure.Distributive
-import OAlg.Structure.Operational
 
 import OAlg.Entity.Diagram as D 
 import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
 import OAlg.Entity.Slice
-import OAlg.Entity.Slice.Liftable
 import OAlg.Entity.Matrix
-import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
-import OAlg.AbelianGroup.Liftable
-import OAlg.AbelianGroup.ZMod hiding (NotEligible)
 
-import OAlg.Limes.Definition
-import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
 
-import OAlg.Homology.Simplical
-import OAlg.Homology.Complex
-import OAlg.Homology.ChainComplex
-
-import OAlg.Homology.Eval.Core
-
-import OAlg.Adjunction.Definition
-
 --------------------------------------------------------------------------------
 -- Homology -
 
--- | homology.
-type Homology n = VarianceFreeLiftable To n AbHom
+type Homology = VarianceFreeLiftable To
 
 --------------------------------------------------------------------------------
--- abhCnzf -
+-- Homological -
 
-abhCnzf :: Simplical s x => ChainComplex t Z s n x -> ConsecutiveZeroFree To n AbHom
-abhCnzf = toFree . ccxRepMatrix where
-  
-  toFree :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
-  toFree ds = ConsecutiveZeroFree ds' fs where
-    ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
-    fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
+class (Distributive h, SlicedFree h) => Homological h where
+  kernelsSomeFreeTip        :: KernelsSomeFreeFreeTip h
+  cokernelsLiftableSomeFree :: CokernelsG ConeLiftable SomeFreeSliceDiagram N1 h
 
---------------------------------------------------------------------------------
--- abhCnzfHomology -
-
-abhCnzfHomology :: ConsecutiveZeroFree To n AbHom -> Homology n
-abhCnzfHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+instance Homological AbHom where
+  kernelsSomeFreeTip        = abhKernelsSomeFreeFreeTip
+  cokernelsLiftableSomeFree = abhCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- homology -
 
--- | the induced homology of a complex.
-homology :: Simplical s x => ChainComplex t Z s n x -> Homology n
-homology = abhCnzfHomology . abhCnzf
+homology :: Homological h => ConsecutiveZeroFree To n h -> Homology n h
+homology = varianceFreeTo kernelsSomeFreeTip cokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
--- homologyGroups -
+-- Betti -
+
+type Betti n = Deviation (n+1)
+
+--------------------------------------------------------------------------------
+-- betti -
 
 -- | the homology groups.
-homologyGroups :: Attestable n => Homology n -> Deviation (n+1) AbHom
-homologyGroups = deviationsTo
+betti :: (Attestable n, Distributive h) => Homology n h -> Betti n h
+betti = deviationsTo
+
+--------------------------------------------------------------------------------
+-- cnzFreeAbl -
+
+cnzFreeAbl :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
+cnzFreeAbl ds = ConsecutiveZeroFree ds' fs where
+  ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
+  fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
+
+--------------------------------------------------------------------------------
+-- HomologyHom -
+
+type HomologyHom = VarianceFreeLiftableHom To
+
+--------------------------------------------------------------------------------
+-- homologyHom -
+
+homologyHom :: Homological h => ConsecutiveZeroFreeHom To n h -> HomologyHom n h
+homologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = homology a
+  b' = homology b
+
+--------------------------------------------------------------------------------
+-- BettiHom -
+
+type BettiHom n = DeviationHom (n+1)
+
+--------------------------------------------------------------------------------
+-- bettiHom -
+
+bettiHom :: (Distributive h, SlicedFree h, Attestable n)
+  => HomologyHom n h -> BettiHom n h
+bettiHom h = deviationHomG (sld h) h where
+  sld :: (Distributive h, SlicedFree h) => p h -> Struct (Dst,SldFr) h
+  sld _ = Struct
+
+--------------------------------------------------------------------------------
+-- cnzFreeHomAbl -
+
+cnzFreeHomAbl :: (Attestable n)
+  => ConsecutiveZeroHom To n (Matrix Z) -> ConsecutiveZeroFreeHom To n AbHom
+cnzFreeHomAbl h = ConsecutiveZeroFreeHom a' b' fs' where
+  a'  = cnzFreeAbl $ start h
+  b'  = cnzFreeAbl $ end h
+  fs' = amap1 (amap FreeAbHom) $ cnzHomArrows h
+
+
+{-
+--------------------------------------------------------------------------------
+-- ccxCnzFreeAbl -
+
+ccxCnzFreeAbl :: ChainComplex Z n -> ConsecutiveZeroFree To n AbHom
+ccxCnzFreeAbl = cnzFreeAbl . ccxConsecutiveZero where
+  
+--------------------------------------------------------------------------------
+-- cnzFreeAblHomology -
+
+cnzFreeAblHomology :: ConsecutiveZeroFree To n AbHom -> Homology n
+cnzFreeAblHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- HomologyHom -
 
 -- | homomorphism between homologies.
-type HomologyHom n = VarianceFreeLiftableHom To n AbHom
+type HomologyHom n = HomologyHomG n AbHom
 
 --------------------------------------------------------------------------------
--- abhCnzfh -
+-- ccxCnzFreeHomAbl -
 
-abhCnzfh :: Homological s x y => ChainComplexHom t Z s n x y -> ConsecutiveZeroFreeHom To n AbHom
-abhCnzfh h@(ChainComplexHom a b _) = ConsecutiveZeroFreeHom a' b' fs' where
-  a'  = abhCnzf a
-  b'  = abhCnzf b
-  ConsecutiveZeroHom (DiagramTrafo _ _ ts) = ccxRepMatrixHom h
-  fs' = amap1 (amap FreeAbHom) ts
+ccxCnzFreeHomAbl :: ChainComplexHom Z n -> ConsecutiveZeroFreeHom To n AbHom
+ccxCnzFreeHomAbl h = ConsecutiveZeroFreeHom a' b' fs' where
+  ConsecutiveZeroHom (DiagramTrafo a b fs) = ccxConsecutiveZeroHom h
+  a'  = cnzFreeAbl $ (ConsecutiveZero a)
+  b'  = cnzFreeAbl $ (ConsecutiveZero b)
+  fs' = amap1 (amap FreeAbHom) fs
 
 --------------------------------------------------------------------------------
 -- cnzfhHomologyHom -
 
-abhCnzfhHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
-abhCnzfhHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
-  a' = abhCnzfHomology a
-  b' = abhCnzfHomology b
+cnzFreeHomAblHomologyHom :: ConsecutiveZeroFreeHom To n AbHom -> HomologyHom n
+cnzFreeHomAblHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = cnzFreeAblHomology a
+  b' = cnzFreeAblHomology b
 
+
+cnzFreeHomHomologyHom :: Homological h => ConsecutiveZeroFreeHom To n h -> HomologyHomG n h
+cnzFreeHomHomologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = homologyG a
+  b' = homologyG b
+  
 --------------------------------------------------------------------------------
 -- homologyHom -
 
 -- | the induced homomorphism between homologies.
-homologyHom :: Homological s x y => ChainComplexHom t Z s n x y -> HomologyHom n
-homologyHom = abhCnzfhHomologyHom . abhCnzfh
+homologyHom :: ChainComplexHom Z n -> HomologyHom n
+homologyHom = cnzFreeHomAblHomologyHom . ccxCnzFreeHomAbl
 
 --------------------------------------------------------------------------------
 -- hmgGroupsHom -
@@ -160,6 +192,12 @@ homologyHom = abhCnzfhHomologyHom . abhCnzfh
 homologyGroupsHom :: Attestable n => HomologyHom n -> DeviationHom (n+1) AbHom
 homologyGroupsHom = deviationHomG (Struct :: Struct (Dst,SldFr) AbHom)
 
+ff :: (Distributive h, SlicedFree h) => HomologyHomG n h -> Struct (Dst,SldFr) h
+ff _ = Struct
+{-
+hhg :: (Attestable n, Distributive h) => HomologyHomG n h -> DeviationHom (n+1) h
+hhg h = deviationHomG (ff h) h
+-}
 --------------------------------------------------------------------------------
 -- hmgCycles -
 
@@ -245,3 +283,4 @@ boundaryInv hmg e = do
     d'' = universalFactor ker (ConeKernel (universalDiagram ker) d')
 
     
+-}

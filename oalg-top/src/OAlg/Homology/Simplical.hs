@@ -25,12 +25,14 @@ module OAlg.Homology.Simplical
     Simplical(..), Smpl, faces', gphFaces
   , spxAdjDim
   , SimplexType(..), structSmpl
+  , AttestableSimplexType(..)
 
-    -- * Simplical Transformable
-  , SimplicalTransformable
+    -- * Applicative
+  , SimplicalApplicative, SmplAppl
+  , structSmplAppl
 
     -- * Asc
-  , Asc(..), isAsc, ascxs, asc
+  , Asc(..), isAsc, isSet, ascxs, asc
   
   ) where
 
@@ -57,51 +59,37 @@ import OAlg.Structure.PartiallyOrdered
 
 -- | simplical structer over a given vertex-set @__x__@.
 --
--- __Properties__ Let the pair @(__s__,__x__)@ be an instance of @'Simplical' __s__ __x__@, then holds:
+-- __Property__ Let @'Simplical' __s x__@, then holds:
 --
--- (1) @'dimension' 'empty' '==' -1@.
+-- (1) @'simplex' 'empty' '==' 'empty'@.
 --
--- (2) For all @s@, @t@ in @__s__ __x__@ holds: If @s '<<=' t@ then @'vertices' s '<<=' 'vertices' t@.
+-- (2) For all @u@, @v@ in @__s x__@ holds: from @u '<<=' v@ follows that
+--     @'simplex' u '<<=' 'simplex' v@.
 --
--- (3) For all @s@ in @__s__ __x__@:
+-- (3) @'set' '.' 'toList' '.' 'simplex' '.=.' 'id'@.
 --
---    (3.1) @-1 '<=' 'dimension' s@.
+-- (4) For all @s@ in @__s x__@ and @u@ in @'faces' s@, then holds:
 --
---    (3.2) @s@ is 'empty' iff @'vertices' s@ is 'empty'.
+--     (1) @u '<<=' s@.
 --
---    (3.3) @'dimension' f '==' 'dimension' s '-' 1@ for all @f@ in @'faces' s@.
+--     (2) @'dimension' f '==' 'dimension' s '-' 1@.
 --
---    (3.4) For all @f@ in @__s__ __x__@ with @'dimension' f '==' 'dimension' s '-' 1@ holds:
---    @'vertices' f '<<=' 'vertices' s@ iff @f@ is in @'faces' s@.
---
---  (4) For all @x@ in @__x__@ holds: @'vertices' ('vertex' x) '==' 'Set' [x]@.
---
---  (5) For all @sv@ in @'Set' __x__@ holds: Let @g = 'simplieces' sv@ in
---
---    (5.1) @'empty'@ is in @g@.
---
---    (5.2) For all @(z,sx)@ in @g@ and @s@ in @sx@ holds:
---
---        (5.2.1) @'dimension' s '==' z@.
---
---        (5.2.2) @'vertices' s '<<=' sv@.
---
---    (5.3) For all @s@ in @__s__ __x__@ with @'verteices' s '<<=' sv@ holds: @s@ is in @g@.
---
---  (6) For all @s@ in @'Set' __x__@ holds: @'faces' ('simplex' s) '==' 'amap1' 'simplex' ('faces' s)@.
+-- (5) @'faces' '.' 'toList' '.=.' 'amap1' 'toList' '.' 'faces'@.
 class ( Entity x, Ord x
       , Entity (s x), Ord (s x), PartiallyOrdered (s x), Empty (s x), Erasable (s x)
-      , Typeable s
+      , Foldable s, Typeable s
       )
   => Simplical s x where
   
   dimension :: s x -> Z
+  dimension = pred . inj . length . toList
   
   -- | the induced simplex.
   simplex :: Set x -> s x
 
   -- | the underlying set of vertices..
   vertices :: s x -> Set x
+  vertices = set . toList
   
   -- | the face of a set of simplices.
   faces :: s x -> [s x]
@@ -111,21 +99,20 @@ class ( Entity x, Ord x
   -- __Note__ The generated graph could be infinite, e.g. for @__s__ ~ []@ or @__s__ ~ 'Asc'@ 
   simplices :: Set x -> Graph Z (Set (s x))
 
-  
 
 instance (Entity x, Ord x) => Simplical Set x where
   dimension (Set vs) = dimension vs
-  simplex = id
-  vertices = id
-  faces (Set vs) = amap1 Set $ faces vs
-  simplices = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
+  simplex            = id
+  vertices           = id
+  faces (Set vs)     = amap1 Set $ faces vs
+  simplices          = Graph . amap1 (\(n,ssx) -> (pred $ inj n,ssx)) . setxs . setPower
 
 instance (Entity x, Ord x) => Simplical [] x where
-  dimension = pred . inj . lengthN
-  simplex (Set xs) = xs
-  vertices = set
-  faces []     = []
-  faces (x:xs) = xs : amap1 (x:) (faces xs)
+  dimension          = pred . inj . lengthN
+  simplex (Set xs)   = xs
+  vertices           = set
+  faces []           = []
+  faces (x:xs)       = xs : amap1 (x:) (faces xs)
   simplices (Set vs) = Graph $ cbns (-1) [[]] where
     -- cbns :: Z -> [x] -> [[x]] -> [(N,[[x]])]
     cbns n xss = (n,Set xss) : cbns (succ n) [v:xs | v <- vs, xs <- xss]
@@ -205,30 +192,30 @@ prpSimplical xsx xvx = Prp "Simplical" :<=>:
       )
     
 --------------------------------------------------------------------------------
--- SimplicalTransformable -
+-- SimplicalApplicative -
 
--- | transforming simplices over @__x__@ to simplices over @__y__@.
+-- | mapping simplices over @__x__@ to simplices over @__y__@.
 --
--- __Property__ Let @'SimplicalTransformable' __s x y__@, then holds:
+-- __Property__ Let @'SimplicalApplicative' __s x y__@, then holds:
 --
 -- (1) @'vertices' ('amap1' f s) '==' 'amap1' f ('vertices' s)@ for all
--- @f@ in @'Map' 'Ord'' __x y__@ and @s@ in @__s x__@.
+-- @f@ in @'Map' 'EntOrd' __x y__@ and @s@ in @__s x__@.
 class (Functorial1 (Map EntOrd) s, Simplical s x, Simplical s y)
-  => SimplicalTransformable s x y 
+  => SimplicalApplicative s x y 
 
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Set x y
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable [] x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative Set x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative [] x y
 
 --------------------------------------------------------------------------------
--- prpSimplicalTransformable -
+-- prpSimplicalApplicative -
 
--- | validity for 'SimplicalTransformable'.
-prpSimplicalTransformable :: SimplicalTransformable s x y
+-- | validity for 'SimplicalApplicative'.
+prpSimplicalApplicative :: SimplicalApplicative s x y
   => X (Map EntOrd x y) -> X (s x) -> Statement
-prpSimplicalTransformable xf xsx = Prp "SimplicalTransformable" :<=>:
+prpSimplicalApplicative xf xsx = Prp "SimplicalApplicative" :<=>:
   Forall (xTupple2 xf xsx) (uncurry vldTrafo) where
 
-    vldTrafo :: SimplicalTransformable s x y
+    vldTrafo :: SimplicalApplicative s x y
               => Map EntOrd x y -> s x -> Statement
     vldTrafo f sx = (vf == fv) :?> Params ["vf // fv":= show (vf // fv)]
       where sy = amap1 f sx
@@ -276,6 +263,14 @@ asc = Asc . sort
 isAsc :: Ord x => [x] -> Bool
 isAsc (x:x':xs) = x <= x' && isAsc (x':xs)
 isAsc _         = True
+
+--------------------------------------------------------------------------------
+-- isSet -
+
+-- | checks if the given list is in strict ascending order.
+isSet :: Ord x => [x] -> Bool
+isSet (x:x':xs) = x < x' && isSet (x':xs)
+isSet _         = True
 
 --------------------------------------------------------------------------------
 -- ascCombinations -
@@ -335,22 +330,60 @@ instance (Entity x, Ord x) => Simplical Asc x where
   faces (Asc xs)     = amap1 Asc $ faces xs
   simplices          = Graph . ascCombinations
 
-instance (Entity x, Ord x, Entity y, Ord y) => SimplicalTransformable Asc x y
+instance (Entity x, Ord x, Entity y, Ord y) => SimplicalApplicative Asc x y
 
 --------------------------------------------------------------------------------
 -- SimplexType -
 
+-- | the eligible simplex types. This list should not be extended. 
 data SimplexType s where
   SpxTypeSet :: SimplexType Set
-  SpxTypeLst :: SimplexType []
   SpxTypeAsc :: SimplexType Asc
+  SpxTypeLst :: SimplexType []
+
+deriving instance Show (SimplexType s)
+deriving instance Eq (SimplexType s)
+deriving instance Ord (SimplexType s)
+
+instance Validable (SimplexType s) where
+  valid s = Label "SimplexType" :<=>: case s of
+    SpxTypeSet -> SValid
+    _          -> SValid
 
 --------------------------------------------------------------------------------
 -- structSmpl -
 
 structSmpl :: (Entity x, Ord x) => SimplexType s -> f x -> Struct (Smpl s) x
 structSmpl SpxTypeSet _ = Struct
-structSmpl SpxTypeLst _ = Struct
 structSmpl SpxTypeAsc _ = Struct
+structSmpl SpxTypeLst _ = Struct
 
+--------------------------------------------------------------------------------
+-- SmplAppl -
+
+data SmplAppl (s :: Type -> Type)
+
+type instance Structure2 (SmplAppl s) x y = SimplicalApplicative s x y
+
+--------------------------------------------------------------------------------
+-- structSmplAppl -
+
+-- | /proof/ that for all @s@ in @'SimplexType' __s__@ and proxy @f@ in @__f x y__@ holds:
+-- @'SimplicalApplicative' __s x y__@.
+structSmplAppl :: (Entity x, Ord x, Entity y, Ord y)
+  => SimplexType s -> f x y -> Struct2 (SmplAppl s) x y
+structSmplAppl SpxTypeSet _ = Struct2
+structSmplAppl SpxTypeAsc _ = Struct2
+structSmplAppl SpxTypeLst _ = Struct2
+
+--------------------------------------------------------------------------------
+-- AttestableSimplexType -
+
+-- | attestable simplex type.
+class Typeable s => AttestableSimplexType s where
+  simplexType :: SimplexType s
+
+instance AttestableSimplexType [] where simplexType = SpxTypeLst
+instance AttestableSimplexType Asc where simplexType = SpxTypeAsc
+instance AttestableSimplexType Set where simplexType = SpxTypeSet
 
