@@ -1,0 +1,102 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-pre
+version:        1.0.0.0
+synopsis:       Prelude for OAlg.
+description:    Basic definitions for algebraic structures on oriented entities.
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-pre#readme>
+category:       Mathematics, Algebra, Category
+homepage:       https://github.com/zErichGut/oalg-pre#readme
+bug-reports:    https://github.com/zErichGut/oalg-pre/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-pre
+
+library
+  exposed-modules:
+      OAlg.Category.Applicative
+      OAlg.Category.Definition
+      OAlg.Category.Path
+      OAlg.Category.Proposition
+      OAlg.Category.Unify
+      OAlg.Control.Action
+      OAlg.Control.Exception
+      OAlg.Control.HNFData
+      OAlg.Control.Solver
+      OAlg.Control.Validate
+      OAlg.Control.Verbose
+      OAlg.Data.Boolean
+      OAlg.Data.Boolean.Definition
+      OAlg.Data.Boolean.Proposition
+      OAlg.Data.Canonical
+      OAlg.Data.Dualisable
+      OAlg.Data.Either
+      OAlg.Data.Equal
+      OAlg.Data.EqualExtensional
+      OAlg.Data.Identity
+      OAlg.Data.Logical
+      OAlg.Data.Maybe
+      OAlg.Data.Number
+      OAlg.Data.Ord
+      OAlg.Data.Proxy
+      OAlg.Data.Show
+      OAlg.Data.Singleton
+      OAlg.Data.Singular
+      OAlg.Data.Statement
+      OAlg.Data.Statement.Definition
+      OAlg.Data.Statement.Proposition
+      OAlg.Data.Statistics
+      OAlg.Data.Symbol
+      OAlg.Data.TypeLits
+      OAlg.Data.Validable
+      OAlg.Data.X
+      OAlg.Entity.Definition
+      OAlg.Prelude
+      OAlg.Structure.Definition
+  other-modules:
+      Paths_oalg_pre
+  autogen-modules:
+      Paths_oalg_pre
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
+  build-depends:
+      array >=0.5 && <1
+    , base >=4.7 && <5
+    , deepseq >=1.4 && <2
+    , random >=1.2 && <2
+    , time >=1.12 && <2
+  default-language: Haskell2010
+
+test-suite oalg-pre-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_pre
+  autogen-modules:
+      Paths_oalg_pre
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      array >=0.5 && <1
+    , base >=4.7 && <5
+    , deepseq >=1.4 && <2
+    , oalg-pre
+    , random >=1.2 && <2
+    , time >=1.12 && <2
+  default-language: Haskell2010
