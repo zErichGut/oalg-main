@@ -1,6 +1,6 @@
-name:                oalg-pre
-version:             1.1.0.0
-github:              "zErichGut/oalg-pre"
+name:                oalg-mtx
+version:             0.1.0.0
+github:              "zErichGut/oalg-mtx"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
@@ -11,24 +11,26 @@ extra-source-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:            Prelude for OAlg.
-category:            Mathematics, Algebra, Category
+synopsis:          Linear algebra
+category:          Mathematics, Algebra
+
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:
-  Basic definitions for algebraic structures on oriented entities.
-
-  Please see the README on GitHub at <https://github.com/zErichGut/oalg-pre#readme>
+  Linear algebra on oriented algerbaic structures.
+  
+  Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>
 
 dependencies:
 - base >= 4.7 && < 5
-- array >= 0.5 && < 1
-- time >= 1.12 && < 2
-- deepseq >= 1.4 && < 2
-- random >= 1.2 && < 2
-
+- oalg-pre >= 1.1 && < 2
+- oalg-stc >= 1 && < 2
+- oalg-hom >= 1 && < 2
+- oalg-sqc >= 1 && < 2
+- oalg-fin >= 1 && < 2
+- oalg-lim >= 1 && < 2
 
 ghc-options:
 - -Wall
@@ -51,7 +53,7 @@ library:
   source-dirs: src
 
 # executables:
-#   oalg-pre-exe:
+#   oalg-mtx-exe:
 #     main:                Main.hs
 #     source-dirs:         app
 #     ghc-options:
@@ -59,10 +61,10 @@ library:
 #     - -rtsopts
 #     - -with-rtsopts=-N
 #     dependencies:
-#     - oalg-pre
+#     - oalg-mtx
 
 tests:
-  oalg-pre-test:
+  oalg-mtx-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -70,4 +72,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - oalg-pre
+    - oalg-mtx

@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-pre
-version:        1.0.0.0
+version:        1.1.0.0
 synopsis:       Prelude for OAlg.
 description:    Basic definitions for algebraic structures on oriented entities.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-pre#readme>
@@ -43,6 +43,7 @@ library
       OAlg.Data.Boolean.Definition
       OAlg.Data.Boolean.Proposition
       OAlg.Data.Canonical
+      OAlg.Data.Constructable
       OAlg.Data.Dualisable
       OAlg.Data.Either
       OAlg.Data.Equal
@@ -53,6 +54,7 @@ library
       OAlg.Data.Number
       OAlg.Data.Ord
       OAlg.Data.Proxy
+      OAlg.Data.Reducible
       OAlg.Data.Show
       OAlg.Data.Singleton
       OAlg.Data.Singular
