@@ -7,7 +7,7 @@ cabal-version: 2.2
 name:           oalg-fin
 version:        1.0.0.0
 synopsis:       Finite lists
-description:    Definition of finite lists.
+description:    Definition of finite lists, indexed by a its length.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-fin#readme>
 category:       Mathematics
 homepage:       https://github.com/zErichGut/oalg-fin#readme

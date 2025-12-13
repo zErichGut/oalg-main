@@ -11,15 +11,15 @@ extra-source-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:          Linear algebra
-category:          Mathematics, Algebra
+synopsis:          Matrix
+category:          Mathematics, Linear Algebra
 
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:
-  Linear algebra on oriented algerbaic structures.
+  Matrices over oriented algebraic structures
   
   Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>
 

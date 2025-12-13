@@ -18,6 +18,10 @@ category:          Mathematics, Algebra, Category
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:
+  Limits - in context of categories - serve as a backbone for solving algebraic
+  problems, e. g. finding all solutions of the equation @a * x == 0@ is given by the
+  kernel of @a@.  
+
   Please see the README on GitHub at <https://github.com/zErichGut/oalg-lim#readme>
 
 dependencies:

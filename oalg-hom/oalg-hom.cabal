@@ -6,7 +6,7 @@ cabal-version: 2.2
 
 name:           oalg-hom
 version:        1.0.0.0
-synopsis:       Homomorphisms
+synopsis:       Homomorphism
 description:    Homomorphisms between oriented algebraic structures.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-hom#readme>
 category:       Mathematics, Algebra, Category
