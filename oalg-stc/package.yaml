@@ -1,0 +1,82 @@
+name:                oalg-stc
+version:             1.0.0.0
+github:              "zErichGut/oalg-stc"
+license:             BSD-3-Clause
+author:              "Erich.Gut"
+maintainer:          "zerich.gut@gmail.com"
+copyright:           "(c) Erich Gut"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+synopsis:            Definition of oriented algebraic structures.
+category:            Mathematics, Algebra, Category
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:
+  Basic definition of algebraic structures on oriented entities.
+
+
+  First of all we define [entities]("OAlg.Entity.Definition"). Based on them and since we look at
+  algebra through the lens of categories, we define [oriented]("OAlg.Structure.Oriented.Definition")
+  structures on which, by means of a suitable partially defined multiplication,
+  [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. If one provides
+  such a multiplicative structure with a matching [additive]("OAlg.Structure.Additive.Definition")
+  structure, one obtains [distributive]("OAlg.Structure.Distributive.Definition") structures on which
+  matrices are build. If an additive structure is provided with a matching scalar multiplication,
+  [vectorial]("OAlg.Structure.Vectorial.Definition") structures are obtained, which then form
+  -  together with the distributive structures - the basis for
+  [algebraic]("OAlg.Structure.Algebraic.Definition") structures
+
+  Please see the README on GitHub at <https://github.com/zErichGut/oalg-stc#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- oalg-pre >= 1.0 && < 2
+
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -Wno-unticked-promoted-constructors
+- -Wno-name-shadowing
+- -Wno-unused-top-binds
+- -Wno-incomplete-uni-patterns
+# - -Wno-incomplete-patterns
+- -Wno-identities
+
+library:
+  source-dirs: src
+
+# executables:
+#   oalg-stc-exe:
+#     main:                Main.hs
+#     source-dirs:         app
+#     ghc-options:
+#     - -threaded
+#     - -rtsopts
+#     - -with-rtsopts=-N
+#     dependencies:
+#     - oalg-stc
+
+tests:
+  oalg-stc-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - oalg-stc

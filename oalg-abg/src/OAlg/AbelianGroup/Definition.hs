@@ -20,9 +20,10 @@ module OAlg.AbelianGroup.Definition
   (
 
     -- * Abelian Group
-    AbGroup(..), abg, isSmithNormal
+    AbGroup(..), abg, abgxs, isSmithNormal
   , abgDim
   , abgZero
+  , abgSomeFree
 
     -- * Homomorphism
   , AbHom(..)
@@ -30,6 +31,7 @@ module OAlg.AbelianGroup.Definition
   , abhz, zabh
   , abhDensity
   , abhSplitable
+  , abhFreeEmbedding
   
     -- * Adjunction
   , abhFreeAdjunction
@@ -43,14 +45,17 @@ module OAlg.AbelianGroup.Definition
   , abgFinPres
 
     -- * Elements
-  , AbElement(..), AbElementForm(..), abge
+  , AbElement(..), AbElementForm(..), abge, abges
   , abhvecFree1, vecabhFree1
+  , abgevec, vecabge
+  
     -- * X
   , xAbHom, xAbHomTo, xAbHomFrom
   , stdMaxDim, xAbhSomeFreeSlice
 
     -- * Proposition
   , prpAbHom
+  , prpAbhFreeEmbedding
 
   ) where
 
@@ -111,6 +116,7 @@ import OAlg.Entity.Sum hiding (sy)
 
 import OAlg.AbelianGroup.ZMod
 import OAlg.AbelianGroup.Euclid
+
 
 --------------------------------------------------------------------------------
 -- AbGroup -
@@ -237,6 +243,15 @@ abg = AbGroup . sy . ZMod
 -- | the indexed listing of the 'ZMod's.
 abgxs :: AbGroup -> [(ZMod,N)]
 abgxs (AbGroup g) = psyxs g
+
+--------------------------------------------------------------------------------
+-- abgSomeFree -
+
+-- | checking for free abelian groups.
+abgSomeFree :: AbGroup -> Maybe (SomeFree AbHom)
+abgSomeFree g | g == abg 0 ^ k = Just $ case someNatural k of SomeNatural k' -> SomeFree $ Free k' 
+              | otherwise       = Nothing
+  where k = lengthN g
 
 --------------------------------------------------------------------------------
 -- isSmithNormal -
@@ -689,6 +704,53 @@ instance HomVectorial Z AbHomFree
 instance HomAlgebraic Z AbHomFree
 
 --------------------------------------------------------------------------------
+-- abhFreeEmbedding -
+
+-- | the canonical emmedding of the free part of a given abelian group.
+--
+-- __Property__ Let @'Adjunction' l r u v = 'abhFreeAdjunction'@, @rl = 'pmap' r '.' 'pmap' l@
+-- and @i = 'abhFreeEmbedding'@, then holds:
+--
+-- (1) For all @g@ in 'AbGroup' holds: @u g v'*' i g@ is 'one'. (see diagram belaow)
+--
+-- @
+--                 l
+--             <--------- 
+--    Matrix Z            AbHom
+--             --------->
+--                 r
+--                               u g
+--                           ----------->
+--                         g              rl g = pmap r (pmap l g)
+--                           <-----------
+--                               i g
+-- @
+--
+-- __Note__ If @g@ is free, then @'abgFreeEmbedding' g@ is 'one'.
+abhFreeEmbedding :: AbGroup -> AbHom
+abhFreeEmbedding g = AbHom $ Matrix (abgDim g) (abgDim rlg) $ Entries $ PSequence $ oijs where
+  rlg  = pmap FreeAbHom (pmap AbHomFree g)
+  oijs = amap1 oij $ ((filter gFree $ abgxs g) `zip` [0..]) 
+
+  gFree :: (ZMod,N) -> Bool
+  gFree (ZMod n,_) = n == 0
+
+  oij :: ((ZMod,N),N) -> (ZModHom,(N,N))
+  oij ((z,i),j) = (one z,(i,j))
+
+--------------------------------------------------------------------------------
+-- prpAbhFreeEmbedding -
+
+-- | validity according to 'abhFreeEmbedding'.
+prpAbhFreeEmbedding :: AbGroup -> Statement
+prpAbhFreeEmbedding g = Prp "AbhFreeEmbedding"
+  :<=>: (u g * i == one (start i)) :?> Params ["g":= show g] where
+  
+  Adjunction _ _ u _ = abhFreeAdjunction
+  i                  = abhFreeEmbedding g
+  
+
+--------------------------------------------------------------------------------
 -- abhFreeAdjucntion -
 
 -- | the projection 'AbHomFree' as left adjoint.
@@ -822,6 +884,24 @@ instance LengthN AbElement where
   lengthN (AbElement (SliceFrom _ a)) = lengthN $ end a
 
 --------------------------------------------------------------------------------
+-- AbElement - OrientedOpl -
+
+type instance Point AbElement = AbGroup
+instance ShowPoint AbElement
+instance EqPoint AbElement
+instance OrdPoint AbElement
+instance ValidablePoint AbElement
+instance TypeablePoint AbElement
+
+instance Oriented AbElement where
+  orientation (AbElement g) = orientation g
+  
+instance Opl AbHom AbElement where
+  h *> (AbElement g) = AbElement (h *> g)
+
+instance OrientedOpl AbHom AbElement
+
+--------------------------------------------------------------------------------
 -- AbElement - Constructable -
 
 instance Exposable AbElement where
@@ -851,6 +931,13 @@ abge :: AbGroup -> N -> AbElement
 abge a i = make (AbElementForm a [(1,i)])
 
 --------------------------------------------------------------------------------
+-- abges -
+
+-- | list of the canonical generators
+abges :: AbGroup -> [AbElement]
+abges g = [abge g (pred i) | i <- [1..lengthN g]] 
+
+--------------------------------------------------------------------------------
 -- vecabhFree1 -
 
 -- | the abelian homomorphism with the free 'start' point of dimension @1@ and free
@@ -870,6 +957,7 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
     []            -> Vector psqEmpty
     [(Col ris,0)] -> Vector ris
     _             -> throw $ InvalidData "abhvecFree1"
+
     
 --------------------------------------------------------------------------------
 -- AbElement - Abelian -
@@ -877,6 +965,7 @@ abhvecFree1 (SliceFrom _ h) = fstRow $ mtxRowCol $ abhz h where
 type instance Root AbElement = AbGroup -- i.e. Root (Slice From (Free N1) AbHom)
 instance ShowRoot AbElement
 instance EqRoot AbElement
+instance OrdRoot AbElement
 instance ValidableRoot AbElement
 instance TypeableRoot AbElement
 
@@ -900,6 +989,39 @@ instance Abelian AbElement where
 instance Vectorial AbElement where
   type Scalar AbElement = Z
   z ! AbElement a = AbElement (z!a)
+
+--------------------------------------------------------------------------------
+-- abgevec -
+
+-- | the underlying 'Z'-vector.
+abgevec :: AbElement -> Vector Z
+abgevec (AbElement g) = abhvecFree1 g
+
+--------------------------------------------------------------------------------
+-- vecabge -
+
+-- | the abelian element to the given abelian group and the 'Z'-vecotr.
+--
+-- __Property__ 
+--
+-- (1) For all @e@ in 'AbElement' holds: @'vecabge' ('end' e) ('abgevec' e) '==' e@
+vecabge :: AbGroup -> Vector Z -> AbElement
+vecabge g v = AbElement $ (prj*>) $ vecabhFree1 n v where
+  n   = lengthN g
+  prj = abh' (abg 0 ^ n :> g) [let i' = pred i in (1,i',i') | i <- [1..n]]
+
+--------------------------------------------------------------------------------
+-- xAbElement -
+
+-- | random variable for abelian elements.
+xAbElement :: X AbElement
+xAbElement = amap1 AbElement xslc where
+  xslc = do
+    g <- xStandard
+    e <- xAbHom 1 (abg 0 :> g)
+    return (SliceFrom (Free attest :: Free N1 AbHom) e)
+
+instance XStandard AbElement where xStandard = xAbElement
 
 --------------------------------------------------------------------------------
 -- XSomeFreeSliceFromLiftable -

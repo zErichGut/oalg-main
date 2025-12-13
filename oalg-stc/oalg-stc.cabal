@@ -1,0 +1,101 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-stc
+version:        1.0.0.0
+synopsis:       Definition of oriented algebraic structures.
+description:    Basic definition of algebraic structures on oriented entities.
+                .
+                First of all we define [entities]("OAlg.Entity.Definition"). Based on them and since we look at algebra through the lens of categories, we define [oriented]("OAlg.Structure.Oriented.Definition") structures on which, by means of a suitable partially defined multiplication, [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. If one provides such a multiplicative structure with a matching [additive]("OAlg.Structure.Additive.Definition") structure, one obtains [distributive]("OAlg.Structure.Distributive.Definition") structures on which matrices are build. If an additive structure is provided with a matching scalar multiplication, [vectorial]("OAlg.Structure.Vectorial.Definition") structures are obtained, which then form -  together with the distributive structures - the basis for [algebraic]("OAlg.Structure.Algebraic.Definition") structures
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-stc#readme>
+category:       Mathematics, Algebra, Category
+homepage:       https://github.com/zErichGut/oalg-stc#readme
+bug-reports:    https://github.com/zErichGut/oalg-stc/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-stc
+
+library
+  exposed-modules:
+      OAlg.Structure.Additive
+      OAlg.Structure.Additive.Definition
+      OAlg.Structure.Additive.Proposition
+      OAlg.Structure.Algebraic
+      OAlg.Structure.Algebraic.Definition
+      OAlg.Structure.Algebraic.Proposition
+      OAlg.Structure.Distributive
+      OAlg.Structure.Distributive.Definition
+      OAlg.Structure.Distributive.Proposition
+      OAlg.Structure.Exception
+      OAlg.Structure.Exponential
+      OAlg.Structure.Fibred
+      OAlg.Structure.Fibred.Definition
+      OAlg.Structure.Fibred.Proposition
+      OAlg.Structure.Fibred.Root
+      OAlg.Structure.FibredOriented
+      OAlg.Structure.Lattice
+      OAlg.Structure.Lattice.Definition
+      OAlg.Structure.Lattice.Proposition
+      OAlg.Structure.Multiplicative
+      OAlg.Structure.Multiplicative.Definition
+      OAlg.Structure.Multiplicative.Proposition
+      OAlg.Structure.Number
+      OAlg.Structure.Number.Definition
+      OAlg.Structure.Operational
+      OAlg.Structure.Oriented
+      OAlg.Structure.Oriented.Definition
+      OAlg.Structure.Oriented.Opposite
+      OAlg.Structure.Oriented.Orientation
+      OAlg.Structure.Oriented.Path
+      OAlg.Structure.Oriented.Point
+      OAlg.Structure.Oriented.Proposition
+      OAlg.Structure.Oriented.X
+      OAlg.Structure.PartiallyOrdered
+      OAlg.Structure.PartiallyOrdered.Definition
+      OAlg.Structure.PartiallyOrdered.Proposition
+      OAlg.Structure.Proposition
+      OAlg.Structure.Ring
+      OAlg.Structure.Ring.Definition
+      OAlg.Structure.Vectorial
+      OAlg.Structure.Vectorial.Definition
+      OAlg.Structure.Vectorial.Proposition
+  other-modules:
+      Paths_oalg_stc
+  autogen-modules:
+      Paths_oalg_stc
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
+  build-depends:
+      base >=4.7 && <5
+    , oalg-pre >=1.0 && <2
+  default-language: Haskell2010
+
+test-suite oalg-stc-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_stc
+  autogen-modules:
+      Paths_oalg_stc
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , oalg-pre >=1.0 && <2
+    , oalg-stc
+  default-language: Haskell2010

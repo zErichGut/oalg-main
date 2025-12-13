@@ -1,0 +1,79 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-sqc
+version:        1.0.0.0
+synopsis:       Sequences
+description:    Various types of sequences.
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-sqc#readme>
+category:       Mathematics, Algebra
+homepage:       https://github.com/zErichGut/oalg-sqc#readme
+bug-reports:    https://github.com/zErichGut/oalg-sqc/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-sqc
+
+library
+  exposed-modules:
+      OAlg.Category.Map
+      OAlg.Data.Filterable
+      OAlg.Data.Tree
+      OAlg.Entity.Product
+      OAlg.Entity.Product.Definition
+      OAlg.Entity.Product.ProductSymbol
+      OAlg.Entity.Product.Proposition
+      OAlg.Entity.Sequence
+      OAlg.Entity.Sequence.CSequence
+      OAlg.Entity.Sequence.Definition
+      OAlg.Entity.Sequence.FSequence
+      OAlg.Entity.Sequence.Graph
+      OAlg.Entity.Sequence.Permutation
+      OAlg.Entity.Sequence.PSequence
+      OAlg.Entity.Sequence.Set
+      OAlg.Entity.Sum
+      OAlg.Entity.Sum.Definition
+      OAlg.Entity.Sum.SumSymbol
+  other-modules:
+      Paths_oalg_sqc
+  autogen-modules:
+      Paths_oalg_sqc
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
+  build-depends:
+      base >=4.7 && <5
+    , oalg-hom ==1.*
+    , oalg-pre ==1.*
+    , oalg-stc ==1.*
+  default-language: Haskell2010
+
+test-suite oalg-sqc-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_sqc
+  autogen-modules:
+      Paths_oalg_sqc
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , oalg-hom ==1.*
+    , oalg-pre ==1.*
+    , oalg-sqc
+    , oalg-stc ==1.*
+  default-language: Haskell2010

@@ -1,0 +1,72 @@
+name:                oalg-sqc
+version:             1.0.0.0
+github:              "zErichGut/oalg-sqc"
+license:             BSD-3-Clause
+author:              "Erich.Gut"
+maintainer:          "zerich.gut@gmail.com"
+copyright:           "(c) Erich Gut"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+synopsis:            Sequences
+category:            Mathematics, Algebra
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:
+  Various types of sequences.
+
+  Please see the README on GitHub at <https://github.com/zErichGut/oalg-sqc#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- oalg-pre >= 1 && < 2
+- oalg-stc >= 1 && < 2
+- oalg-hom >= 1 && < 2
+
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -Wno-unticked-promoted-constructors
+- -Wno-name-shadowing
+- -Wno-unused-top-binds
+- -Wno-incomplete-uni-patterns
+# - -Wno-incomplete-patterns
+- -Wno-identities
+
+library:
+  source-dirs: src
+
+# executables:
+#   oalg-sqc-exe:
+#     main:                Main.hs
+#     source-dirs:         app
+#     ghc-options:
+#     - -threaded
+#     - -rtsopts
+#     - -with-rtsopts=-N
+#     dependencies:
+#     - oalg-sqc
+
+tests:
+  oalg-sqc-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - oalg-sqc

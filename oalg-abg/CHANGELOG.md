@@ -63,3 +63,23 @@ and this project adheres to the
 
 ### Adaption
 - adaption to oalg-base-3.0.0.0
+
+## [2.0.0.2] - 2025-10-13
+
+### Added
+- Functions for conversion between Z-Vectors and abelian elements: abges, abgevec, vecabge
+- Instance OrientdOpl for AbElement.
+- Functions abgSomeFree, abgxs
+
+## [2.0.0.3] - 2025-10-18
+
+### Added
+- instances OrdPoint and OrdRoot for AbElement.
+
+## [2.0.0.4] - 2025-11-05
+
+### Added
+- abhLift
+
+## [2.1.0.0] - 2025-12-13
+- Adaption to the new package structure.
