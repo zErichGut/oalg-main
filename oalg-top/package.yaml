@@ -24,8 +24,14 @@ dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6
 - array >= 0.5 && < 1
-- oalg-base >= 3.1.1
-- oalg-abg >= 2.0.0.4
+- oalg-pre >= 1.1 && < 2
+- oalg-stc >= 1 && < 2
+- oalg-hom >= 1 && < 2
+- oalg-sqc >= 1 && < 2
+- oalg-fin >= 1 && < 2
+- oalg-lim >= 1 && < 2
+- oalg-mtx >= 1 && < 2
+- oalg-abg >= 2.1 && < 3
 
 ghc-options:
 - -Wall

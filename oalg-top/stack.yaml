@@ -32,7 +32,13 @@ resolver: lts-24.13
 
 packages:
 - .
-- ../oalg-base
+- ../oalg-pre
+- ../oalg-stc
+- ../oalg-hom
+- ../oalg-sqc
+- ../oalg-fin
+- ../oalg-lim
+- ../oalg-mtx
 - ../oalg-abg
 
 # Dependency packages to be pulled from upstream that are not in the resolver.

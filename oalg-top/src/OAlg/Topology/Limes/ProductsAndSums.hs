@@ -52,6 +52,7 @@ import OAlg.Limes.ProductsAndSums
 
 import OAlg.Homology.Simplical hiding (simplex)
 import OAlg.Homology.Complex hiding (cpxProduct, cpxProductAsc)
+import OAlg.Homology.ChainComplex
 
 import OAlg.Topology.Definition
 import OAlg.Topology.Limes.TerminalAndInitialSpace
@@ -258,7 +259,7 @@ cntSums2 = LimitsG $ cntSum2
 cntSums :: AttestableSimplexType s => Sums n (Continuous s Abstract)
 cntSums = sums (sums0 spcInitial) cntSums2
 
-{-
+
 --------------------------------------------------------------------------------
 -- spcBorder -
 
@@ -292,5 +293,5 @@ torus :: Space Abstract
 torus = tip $ universalCone $ limes cntProductsAsc t
 
 torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
--}
+
 

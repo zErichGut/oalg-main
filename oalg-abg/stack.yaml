@@ -31,7 +31,14 @@ resolver: lts-24.13
 #   - wai
 packages:
 - .
-- ../oalg-base
+- ../oalg-pre
+- ../oalg-stc
+- ../oalg-hom
+- ../oalg-sqc
+- ../oalg-fin
+- ../oalg-lim
+- ../oalg-mtx
+
 
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as

@@ -1,0 +1,79 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-mtx
+version:        1.0.0.0
+synopsis:       Linear algebra
+description:    Linear algebra on oriented algerbaic structures.
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>
+category:       Mathematics, Algebra
+homepage:       https://github.com/zErichGut/oalg-mtx#readme
+bug-reports:    https://github.com/zErichGut/oalg-mtx/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-mtx
+
+library
+  exposed-modules:
+      OAlg.Data.FinitelyPresentable
+      OAlg.Data.HomCo
+      OAlg.Entity.Matrix
+      OAlg.Entity.Matrix.Definition
+      OAlg.Entity.Matrix.Dim
+      OAlg.Entity.Matrix.Entries
+      OAlg.Entity.Matrix.GeneralLinearGroup
+      OAlg.Entity.Matrix.ProductsAndSums
+      OAlg.Entity.Matrix.Proposition
+      OAlg.Entity.Matrix.Transformation
+      OAlg.Entity.Matrix.Vector
+      OAlg.Entity.VectorG
+  other-modules:
+      Paths_oalg_mtx
+  autogen-modules:
+      Paths_oalg_mtx
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
+  build-depends:
+      base >=4.7 && <5
+    , oalg-fin ==1.*
+    , oalg-hom ==1.*
+    , oalg-lim ==1.*
+    , oalg-pre >=1.1 && <2
+    , oalg-sqc ==1.*
+    , oalg-stc ==1.*
+  default-language: Haskell2010
+
+test-suite oalg-mtx-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_mtx
+  autogen-modules:
+      Paths_oalg_mtx
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , oalg-fin ==1.*
+    , oalg-hom ==1.*
+    , oalg-lim ==1.*
+    , oalg-mtx
+    , oalg-pre >=1.1 && <2
+    , oalg-sqc ==1.*
+    , oalg-stc ==1.*
+  default-language: Haskell2010

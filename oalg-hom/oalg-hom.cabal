@@ -1,0 +1,75 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-hom
+version:        1.0.0.0
+synopsis:       Homomorphisms
+description:    Homomorphisms between oriented algebraic structures.
+                Please see the README on GitHub at <https://github.com/zErichGut/oalg-hom#readme>
+category:       Mathematics, Algebra, Category
+homepage:       https://github.com/zErichGut/oalg-hom#readme
+bug-reports:    https://github.com/zErichGut/oalg-hom/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-hom
+
+library
+  exposed-modules:
+      OAlg.Category.Dualisable
+      OAlg.Category.SDuality
+      OAlg.Data.Variant
+      OAlg.Hom
+      OAlg.Hom.Additive
+      OAlg.Hom.Algebraic
+      OAlg.Hom.Definition
+      OAlg.Hom.Distributive
+      OAlg.Hom.Fibred
+      OAlg.Hom.FibredOriented
+      OAlg.Hom.Multiplicative
+      OAlg.Hom.Oriented
+      OAlg.Hom.Oriented.Definition
+      OAlg.Hom.Oriented.Proposition
+      OAlg.Hom.Proposition
+      OAlg.Hom.Vectorial
+  other-modules:
+      Paths_oalg_hom
+  autogen-modules:
+      Paths_oalg_hom
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
+  build-depends:
+      base >=4.7 && <5
+    , oalg-pre >=1.1 && <2
+    , oalg-stc >=1.0 && <2
+  default-language: Haskell2010
+
+test-suite oalg-hom-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_hom
+  autogen-modules:
+      Paths_oalg_hom
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , oalg-hom
+    , oalg-pre >=1.1 && <2
+    , oalg-stc >=1.0 && <2
+  default-language: Haskell2010
