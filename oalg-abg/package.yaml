@@ -1,5 +1,5 @@
 name:                oalg-abg
-version:             2.0.0.4
+version:             2.1.0.0
 github:              "zErichGut/oalg-main/oalg-abg"
 license:             BSD3
 author:              "Erich.Gut"
@@ -35,7 +35,14 @@ description:
 
 dependencies:
 - base >= 4.17 && < 5
-- oalg-base >= 3.1.1 && < 4
+- oalg-pre >= 1.1 && < 2
+- oalg-stc >= 1 && < 2
+- oalg-hom >= 1 && < 2
+- oalg-sqc >= 1 && < 2
+- oalg-fin >= 1 && < 2
+- oalg-lim >= 1 && < 2
+- oalg-mtx >= 1 && < 2
+
 
 ghc-options:
 - -Wall

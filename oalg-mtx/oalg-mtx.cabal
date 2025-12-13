@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-mtx
-version:        0.1.0.0
+version:        1.0.0.0
 synopsis:       Linear algebra
 description:    Linear algebra on oriented algerbaic structures.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>
@@ -28,6 +28,7 @@ source-repository head
 
 library
   exposed-modules:
+      OAlg.Data.FinitelyPresentable
       OAlg.Data.HomCo
       OAlg.Entity.Matrix
       OAlg.Entity.Matrix.Definition
