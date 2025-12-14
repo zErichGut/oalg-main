@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-sqc
-version:        1.0.0.0
+version:        3.2.0.0
 synopsis:       Sequences
 description:    Various types of sequences.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-sqc#readme>
@@ -55,9 +55,9 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
   build-depends:
       base >=4.7 && <5
-    , oalg-hom ==1.*
-    , oalg-pre ==1.*
-    , oalg-stc ==1.*
+    , oalg-hom >=3.2 && <4
+    , oalg-pre
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010
 
 test-suite oalg-sqc-test
@@ -72,8 +72,8 @@ test-suite oalg-sqc-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , oalg-hom ==1.*
-    , oalg-pre ==1.*
+    , oalg-hom >=3.2 && <4
+    , oalg-pre
     , oalg-sqc
-    , oalg-stc ==1.*
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010

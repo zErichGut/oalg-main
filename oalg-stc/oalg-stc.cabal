@@ -5,11 +5,11 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-stc
-version:        1.0.0.0
+version:        3.2.0.0
 synopsis:       Definition of oriented algebraic structures.
 description:    Basic definition of algebraic structures on oriented entities.
                 .
-                First of all we define [entities]("OAlg.Entity.Definition"). Based on them and since we look at algebra through the lens of categories, we define [oriented]("OAlg.Structure.Oriented.Definition") structures on which, by means of a suitable partially defined multiplication, [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. If one provides such a multiplicative structure with a matching [additive]("OAlg.Structure.Additive.Definition") structure, one obtains [distributive]("OAlg.Structure.Distributive.Definition") structures on which matrices are build. If an additive structure is provided with a matching scalar multiplication, [vectorial]("OAlg.Structure.Vectorial.Definition") structures are obtained, which then form -  together with the distributive structures - the basis for [algebraic]("OAlg.Structure.Algebraic.Definition") structures
+                Based on [entities]("OAlg.Entity.Definition") and since we look at algebra through the lens of categories, we define [oriented]("OAlg.Structure.Oriented.Definition") structures on which, by means of a suitable partially defined multiplication, [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. Providing such a multiplicative structure with a matching [additive]("OAlg.Structure.Additive.Definition") structure, yields [distributive]("OAlg.Structure.Distributive.Definition") structures on which matrices are build. If an additive structure is provided with a matching scalar multiplication, [vectorial]("OAlg.Structure.Vectorial.Definition") structures are obtained, which then form -  together with the distributive structures - the basis for [algebraic]("OAlg.Structure.Algebraic.Definition") structures
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-stc#readme>
 category:       Mathematics, Algebra, Category
 homepage:       https://github.com/zErichGut/oalg-stc#readme
@@ -81,7 +81,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
   build-depends:
       base >=4.7 && <5
-    , oalg-pre >=1.0 && <2
+    , oalg-pre >=3.2 && <4
   default-language: Haskell2010
 
 test-suite oalg-stc-test
@@ -96,6 +96,6 @@ test-suite oalg-stc-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , oalg-pre >=1.0 && <2
+    , oalg-pre >=3.2 && <4
     , oalg-stc
   default-language: Haskell2010

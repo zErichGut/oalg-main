@@ -1,5 +1,5 @@
 name:                oalg-sqc
-version:             1.0.0.0
+version:             3.2.0.0
 github:              "zErichGut/oalg-sqc"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
@@ -24,9 +24,9 @@ description:
 
 dependencies:
 - base >= 4.7 && < 5
-- oalg-pre >= 1 && < 2
-- oalg-stc >= 1 && < 2
-- oalg-hom >= 1 && < 2
+- oalg-pre 
+- oalg-stc >= 3.2 && < 4
+- oalg-hom >= 3.2 && < 4
 
 
 ghc-options:

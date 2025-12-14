@@ -8,5 +8,5 @@ and this project adheres to the
 
 ## Unreleased
 
-## 1.0.0.0 - 2025-12-11
-- Creation
+## [3.2.0.0] - 2025-12-14
+- extraction from oalg-base 3.1.1.0

@@ -5,8 +5,8 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-mtx
-version:        1.0.0.0
-synopsis:       Matrix
+version:        3.2.0.0
+synopsis:       Matrix over oriented algebraic structures.
 description:    Matrices over oriented algebraic structures
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>
 category:       Mathematics, Linear Algebra
@@ -49,12 +49,12 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities
   build-depends:
       base >=4.7 && <5
-    , oalg-fin ==1.*
-    , oalg-hom ==1.*
-    , oalg-lim ==1.*
-    , oalg-pre >=1.1 && <2
-    , oalg-sqc ==1.*
-    , oalg-stc ==1.*
+    , oalg-fin >=3.2 && <4
+    , oalg-hom >=3.2 && <4
+    , oalg-lim >=3.2 && <4
+    , oalg-pre >=3.2 && <4
+    , oalg-sqc >=3.2 && <4
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010
 
 test-suite oalg-mtx-test
@@ -69,11 +69,11 @@ test-suite oalg-mtx-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , oalg-fin ==1.*
-    , oalg-hom ==1.*
-    , oalg-lim ==1.*
+    , oalg-fin >=3.2 && <4
+    , oalg-hom >=3.2 && <4
+    , oalg-lim >=3.2 && <4
     , oalg-mtx
-    , oalg-pre >=1.1 && <2
-    , oalg-sqc ==1.*
-    , oalg-stc ==1.*
+    , oalg-pre >=3.2 && <4
+    , oalg-sqc >=3.2 && <4
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010

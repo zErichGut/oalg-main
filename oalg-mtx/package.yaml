@@ -1,5 +1,5 @@
 name:                oalg-mtx
-version:             1.0.0.0
+version:             3.2.0.0
 github:              "zErichGut/oalg-mtx"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
@@ -11,7 +11,7 @@ extra-source-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:          Matrix
+synopsis:          Matrix over oriented algebraic structures.
 category:          Mathematics, Linear Algebra
 
 
@@ -25,12 +25,12 @@ description:
 
 dependencies:
 - base >= 4.7 && < 5
-- oalg-pre >= 1.1 && < 2
-- oalg-stc >= 1 && < 2
-- oalg-hom >= 1 && < 2
-- oalg-sqc >= 1 && < 2
-- oalg-fin >= 1 && < 2
-- oalg-lim >= 1 && < 2
+- oalg-pre >= 3.2 && < 4
+- oalg-stc >= 3.2 && < 4
+- oalg-hom >= 3.2 && < 4
+- oalg-sqc >= 3.2 && < 4
+- oalg-fin >= 3.2 && < 4
+- oalg-lim >= 3.2 && < 4
 
 ghc-options:
 - -Wall

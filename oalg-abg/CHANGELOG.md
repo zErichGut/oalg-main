@@ -82,4 +82,4 @@ and this project adheres to the
 - abhLift
 
 ## [2.1.0.0] - 2025-12-13
-- Adaption to the new package structure.
+- Adaption to the new package structure, extracted from oalg-base 3.1.1.0

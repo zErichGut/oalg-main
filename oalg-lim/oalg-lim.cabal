@@ -5,8 +5,8 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-lim
-version:        1.0.0.0
-synopsis:       Limits for oriented algebraic structures
+version:        3.2.0.0
+synopsis:       Limits for oriented algebraic structures.
 description:    Limits - in context of categories - serve as a backbone for solving algebraic problems, e. g. finding all solutions of the equation @a * x == 0@ is given by the kernel of @a@.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-lim#readme>
 category:       Mathematics, Algebra, Category
@@ -86,10 +86,10 @@ library
   build-depends:
       array >=0.5 && <1
     , base >=4.7 && <5
-    , oalg-fin ==1.*
-    , oalg-hom ==1.*
-    , oalg-pre >=1.1 && <2
-    , oalg-stc ==1.*
+    , oalg-fin >=3.2 && <4
+    , oalg-hom >=3.2 && <4
+    , oalg-pre >=3.2 && <4
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010
 
 test-suite oalg-lim-test
@@ -105,9 +105,9 @@ test-suite oalg-lim-test
   build-depends:
       array >=0.5 && <1
     , base >=4.7 && <5
-    , oalg-fin ==1.*
-    , oalg-hom ==1.*
+    , oalg-fin >=3.2 && <4
+    , oalg-hom >=3.2 && <4
     , oalg-lim
-    , oalg-pre >=1.1 && <2
-    , oalg-stc ==1.*
+    , oalg-pre >=3.2 && <4
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010

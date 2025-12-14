@@ -35,13 +35,13 @@ description:
 
 dependencies:
 - base >= 4.17 && < 5
-- oalg-pre >= 1.1 && < 2
-- oalg-stc >= 1 && < 2
-- oalg-hom >= 1 && < 2
-- oalg-sqc >= 1 && < 2
-- oalg-fin >= 1 && < 2
-- oalg-lim >= 1 && < 2
-- oalg-mtx >= 1 && < 2
+- oalg-pre >= 3.2 && < 4
+- oalg-stc >= 3.2 && < 4
+- oalg-hom >= 3.2 && < 4
+- oalg-sqc >= 3.2 && < 4
+- oalg-fin >= 3.2 && < 4
+- oalg-lim >= 3.2 && < 4
+- oalg-mtx >= 3.2 && < 4
 
 
 ghc-options:

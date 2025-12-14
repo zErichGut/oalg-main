@@ -1,5 +1,5 @@
 name:                oalg-fin
-version:             1.0.0.0
+version:             3.2.0.0
 github:              "zErichGut/oalg-fin"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
@@ -11,7 +11,7 @@ extra-source-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:          Finite lists
+synopsis:          Finite list.
 category:          Mathematics
 
 # To avoid duplicated efforts in documentation and dealing with the
@@ -25,8 +25,8 @@ description:
 dependencies:
 - base >= 4.7 && < 5
 - array >= 0.5 && < 1
-- oalg-pre >= 1 && < 2
-- oalg-stc >= 1 && < 2
+- oalg-pre >= 3.2 && < 4
+- oalg-stc >= 3.2 && < 4
 
 ghc-options:
 - -Wall

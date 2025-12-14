@@ -1,5 +1,5 @@
 name:                oalg-stc
-version:             1.0.0.0
+version:             3.2.0.0
 github:              "zErichGut/oalg-stc"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
@@ -21,12 +21,12 @@ description:
   Basic definition of algebraic structures on oriented entities.
 
 
-  First of all we define [entities]("OAlg.Entity.Definition"). Based on them and since we look at
+  Based on [entities]("OAlg.Entity.Definition") and since we look at
   algebra through the lens of categories, we define [oriented]("OAlg.Structure.Oriented.Definition")
   structures on which, by means of a suitable partially defined multiplication,
-  [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. If one provides
+  [multiplicative]("OAlg.Structure.Multiplicative.Definition") structures are defined. Providing
   such a multiplicative structure with a matching [additive]("OAlg.Structure.Additive.Definition")
-  structure, one obtains [distributive]("OAlg.Structure.Distributive.Definition") structures on which
+  structure, yields [distributive]("OAlg.Structure.Distributive.Definition") structures on which
   matrices are build. If an additive structure is provided with a matching scalar multiplication,
   [vectorial]("OAlg.Structure.Vectorial.Definition") structures are obtained, which then form
   -  together with the distributive structures - the basis for
@@ -36,7 +36,7 @@ description:
 
 dependencies:
 - base >= 4.7 && < 5
-- oalg-pre >= 1.0 && < 2
+- oalg-pre >= 3.2 && < 4
 
 
 ghc-options:

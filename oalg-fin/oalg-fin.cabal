@@ -5,8 +5,8 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-fin
-version:        1.0.0.0
-synopsis:       Finite lists
+version:        3.2.0.0
+synopsis:       Finite list.
 description:    Definition of finite lists, indexed by a its length.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-fin#readme>
 category:       Mathematics
@@ -40,8 +40,8 @@ library
   build-depends:
       array >=0.5 && <1
     , base >=4.7 && <5
-    , oalg-pre ==1.*
-    , oalg-stc ==1.*
+    , oalg-pre >=3.2 && <4
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010
 
 test-suite oalg-fin-test
@@ -58,6 +58,6 @@ test-suite oalg-fin-test
       array >=0.5 && <1
     , base >=4.7 && <5
     , oalg-fin
-    , oalg-pre ==1.*
-    , oalg-stc ==1.*
+    , oalg-pre >=3.2 && <4
+    , oalg-stc >=3.2 && <4
   default-language: Haskell2010
