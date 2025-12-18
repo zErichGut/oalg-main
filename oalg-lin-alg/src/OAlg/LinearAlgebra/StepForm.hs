@@ -22,7 +22,7 @@ module OAlg.LinearAlgebra.StepForm
   (
   ) where
 
-import Data.List (head,tail,zip)
+import Data.List (head,tail,zip,reverse,foldl)
 
 import OAlg.Prelude
 
@@ -145,4 +145,47 @@ instance Semiring k => Validable (StepMatrix k) where
 stepGraph :: StepMatrix x -> StepGraph N N
 stepGraph (StepMatrix m) = StepGraph $ rowHeadIndex m
 
-sf = StepMatrix (matrix (dim () ^ 7) (dim () ^ 5) [(1,0,1),(3,0,2),(1,1,3),(2,1,4)]) :: StepMatrix N
+sf = StepMatrix (matrix (dim () ^ 7) (dim () ^ 5) [(1,0,1),(1,1,3),(2,1,4),(3,0,2)]) :: StepMatrix N
+
+--------------------------------------------------------------------------------
+-- stepMatrix -
+
+-- | transforming a matrix by row transformations to step form.
+--
+-- __Property__ Let @m@ be in @'Matrix' __k__@ for a @'Field' __k__@ and let
+-- @(m',t) = 'stepMatrix' m@, then holds:
+--
+-- (1) @t '*>' m' '==' m@.
+stepMatrix :: Field k => Matrix k -> (StepMatrix k, RowTrafo k)
+stepMatrix (Matrix dr dc xij) = (StepMatrix $ Matrix dr dc xij',t) where
+  (cls,tfs) = crStepMtx dr 0 (etscr xij)
+  xij'      = rcets cls
+  t         = RowTrafo $ amap FTGLT $ make tfs
+  
+type TF k     = ProductForm Z (Transformation k)
+
+crStepMtx :: (i ~ N, Ord j) => Dim' k -> i -> Col i (Row j k) -> (Row j (Col i k),TF k)
+crStepMtx dr i crs@(Col (PSequence rws)) = (Row $ PSequence cls,tfs) where
+  (cls,tfs) = crStepMtx' dr i (crHeadIndex crs) (rws,One dr) 
+
+
+-- let crStepMtx' rw i sg (rws,tfs)
+--
+-- pre: - Col (PSequence rws) is valid
+--      - hi = crHeadIndex (Col (PSequence rws))
+crStepMtx' :: (i ~ N, Ord j)
+  => Dim' k -> i -> Graph i j -> ([(Row j k,i)],TF k) -> ([(Col i k,j)],TF k)
+crStepMtx' _ _ (Graph []) (_,tfs) = ([],tfs)  -- hi is empty implies that rws is empty!
+crStepMtx' dr i (Graph hi) (rws,tfs)
+  | i' < i    = let (cls,tfs') = crStepMtx' dr i hi' (rws',tfs) in ((cl,j):cls,tfs')
+  | otherwise = error "nyi"
+  where
+    (i',j) = foldl (\(_,j) (i,j') -> (i,min j j')) (head hi) hi -- i is strict increasing for hi
+    cl     = crHeadColAt j (Col $ PSequence rws)
+    crRws' = crTailRowsAt j (Col $ PSequence rws)
+    hi'    = crHeadIndex crRws'
+    
+    Col (PSequence rws') = crRws'
+
+crTailRowsAt :: j -> Col i (Row j x) -> Col i (Row j x)
+crTailRowsAt = error "nyi"
