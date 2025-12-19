@@ -165,17 +165,45 @@ stepMatrix (Matrix dr dc xij) = (StepMatrix $ Matrix dr dc xij',t) where
 type TF k     = ProductForm Z (Transformation k)
 
 crStepMtx :: (i ~ N, Ord j) => Dim' k -> i -> Col i (Row j k) -> (Row j (Col i k),TF k)
+crStepMtx dr i rws = crStepMtx' dr i (crHeadIndex rws) rws
+
+{-  
 crStepMtx dr i crs@(Col (PSequence rws)) = (Row $ PSequence cls,tfs) where
   (cls,tfs) = crStepMtx' dr i (crHeadIndex crs) (rws,One dr) 
+-}
 
-
--- let crStepMtx' rw i sg (rws,tfs)
+-- let crStepMtx' dr i ijs (rws,tfs)
 --
--- pre: - Col (PSequence rws) is valid
---      - hi = crHeadIndex (Col (PSequence rws))
+-- pre: - ijs = crHeadIndex rws
 crStepMtx' :: (i ~ N, Ord j)
-  => Dim' k -> i -> Graph i j -> ([(Row j k,i)],TF k) -> ([(Col i k,j)],TF k)
-crStepMtx' _ _ (Graph []) (_,tfs) = ([],tfs)  -- hi is empty implies that rws is empty!
+  => Dim' k -> i -> Graph i j -> Col i (Row j k) -> (Row j (Col i k),TF k)
+crStepMtx' dr _ (Graph []) _    = (rowEmpty,One dr)  -- ijs is empty implies that rws is empty!
+crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex rws') rws' where
+  j  = foldl min (snd $ head ijs) (amap1 snd ijs)
+  cl = crHeadColAt j rws
+
+  (i',cl',tfs') = clNormalForm dr i cl
+  rws'          = tfs' *> crTailRowsAt j rws
+
+  (>:*) :: (j,Col i k,TF k) -> (Row j (Col i k),TF k) -> (Row j (Col i k),TF k)
+  (j,cl,tf) >:* (cls,tfs) = ((cl,j)>:cls,tfs :* tf)
+
+  (>:) :: (Col i k,j) -> Row j (Col i k) -> Row j (Col i k)
+  clj >: Row (PSequence cls) = Row (PSequence (clj:cls))
+
+  -- applying the row transformations 
+  (*>) :: TF k -> Col i (Row j k) -> Col i (Row j k)
+  (*>) = error "nyi"
+
+  -- reduces the column to its normal form.
+  clNormalForm :: Dim' k -> i -> Col i k -> (i,Col i k,TF k)
+  clNormalForm = error "nyi"
+
+
+crTailRowsAt :: j -> Col i (Row j x) -> Col i (Row j x)
+crTailRowsAt = error "nyi"
+
+{-
 crStepMtx' dr i (Graph hi) (rws,tfs)
   | i' < i    = let (cls,tfs') = crStepMtx' dr i hi' (rws',tfs) in ((cl,j):cls,tfs')
   | otherwise = error "nyi"
@@ -187,5 +215,4 @@ crStepMtx' dr i (Graph hi) (rws,tfs)
     
     Col (PSequence rws') = crRws'
 
-crTailRowsAt :: j -> Col i (Row j x) -> Col i (Row j x)
-crTailRowsAt = error "nyi"
+-}
