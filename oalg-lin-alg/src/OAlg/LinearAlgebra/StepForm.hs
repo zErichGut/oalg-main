@@ -22,13 +22,16 @@ module OAlg.LinearAlgebra.StepForm
   (
   ) where
 
-import Data.List (head,tail,zip,reverse,foldl)
+import Data.List (head,tail,zip,reverse,foldl,span)
 
 import OAlg.Prelude
 
 import OAlg.Data.Constructable
+import OAlg.Data.Canonical
 
+import OAlg.Structure.Oriented
 import OAlg.Structure.FibredOriented
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Ring
 import OAlg.Structure.PartiallyOrdered
@@ -164,7 +167,7 @@ stepMatrix (Matrix dr dc xij) = (StepMatrix $ Matrix dr dc xij',t) where
   
 type TF k     = ProductForm Z (Transformation k)
 
-crStepMtx :: (i ~ N, Ord j) => Dim' k -> i -> Col i (Row j k) -> (Row j (Col i k),TF k)
+crStepMtx :: (i ~ N, j ~ N, Field k) => Dim' k -> i -> Col i (Row j k) -> (Row j (Col i k),TF k)
 crStepMtx dr i rws = crStepMtx' dr i (crHeadIndex rws) rws
 
 {-  
@@ -175,7 +178,7 @@ crStepMtx dr i crs@(Col (PSequence rws)) = (Row $ PSequence cls,tfs) where
 -- let crStepMtx' dr i ijs (rws,tfs)
 --
 -- pre: - ijs = crHeadIndex rws
-crStepMtx' :: (i ~ N, Ord j)
+crStepMtx' :: (i ~ N, j ~ N, Field k)
   => Dim' k -> i -> Graph i j -> Col i (Row j k) -> (Row j (Col i k),TF k)
 crStepMtx' dr _ (Graph []) _    = (rowEmpty,One dr)  -- ijs is empty implies that rws is empty!
 crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex rws') rws' where
@@ -185,19 +188,26 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
   (i',cl',tfs') = clNormalForm dr i cl
   rws'          = tfs' *> crTailRowsAt j rws
 
-  (>:*) :: (j,Col i k,TF k) -> (Row j (Col i k),TF k) -> (Row j (Col i k),TF k)
-  (j,cl,tf) >:* (cls,tfs) = ((cl,j)>:cls,tfs :* tf)
+  (>:*) :: (j,Col i k,GLT k) -> (Row j (Col i k),TF k) -> (Row j (Col i k),TF k)
+  (j,cl,tf) >:* (cls,tfs) = ((cl,j)>:cls,tfs :* toTF tf) where
+    toTF :: GLT k -> TF k
+    toTF = (inj :: ProductForm N a -> ProductForm Z a) . inj
 
   (>:) :: (Col i k,j) -> Row j (Col i k) -> Row j (Col i k)
   clj >: Row (PSequence cls) = Row (PSequence (clj:cls))
 
   -- applying the row transformations 
-  (*>) :: TF k -> Col i (Row j k) -> Col i (Row j k)
-  (*>) = error "nyi"
+  (*>) :: (i ~ N, j ~ N) => GLT k -> Col i (Row j k) -> Col i (Row j k)
+  t *> rws = prfopl crTrafoRows (inj t) rws where
 
   -- reduces the column to its normal form.
-  clNormalForm :: Dim' k -> i -> Col i k -> (i,Col i k,TF k)
-  clNormalForm = error "nyi"
+  clNormalForm :: (i ~ N, Ring k) => Dim' k -> i -> Col i k -> (i,Col i k,GLT k)
+  clNormalForm dr i cl@(Col (PSequence xi)) = case xih of
+    [] -> (i,cl,one dr)
+    _  -> (succ i,Col (PSequence [(rOne,i)]),tfs)
+    where
+      (xil,xih) = span ((<i) . snd) xi
+      tfs = error "nyi"
 
 
 crTailRowsAt :: j -> Col i (Row j x) -> Col i (Row j x)
