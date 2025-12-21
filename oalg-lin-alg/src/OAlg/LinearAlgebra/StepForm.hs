@@ -22,7 +22,7 @@ module OAlg.LinearAlgebra.StepForm
   (
   ) where
 
-import Data.List (head,tail,zip,reverse,foldl,span)
+import Data.List (head,tail,zip,reverse,foldl,foldr,span,(++))
 
 import OAlg.Prelude
 
@@ -40,6 +40,7 @@ import OAlg.Structure.Exponential
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sequence.Set
+import OAlg.Entity.Sequence.Permutation
 
 import OAlg.Entity.Product
 
@@ -201,14 +202,35 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
   t *> rws = prfopl crTrafoRows (inj t) rws where
 
   -- reduces the column to its normal form.
-  clNormalForm :: (i ~ N, Ring k) => Dim' k -> i -> Col i k -> (i,Col i k,GLT k)
-  clNormalForm dr i cl@(Col (PSequence xi)) = case xih of
-    [] -> (i,cl,one dr)
-    _  -> (succ i,Col (PSequence [(rOne,i)]),tfs)
-    where
-      (xil,xih) = span ((<i) . snd) xi
-      tfs = error "nyi"
+  clNormalForm :: (i ~ N, Field k) => Dim' k -> i -> Col i k -> (i,Col i k,GLT k)
+  clNormalForm dr i cl@(Col (PSequence xi)) = let (xil,xih) = span ((<i) . snd) xi in case xih of
+    []           -> (i,cl,one dr)
+    (x,i'):xih'  -> (succ i,Col (PSequence [(rOne,i)]),tfs) where
+      tfs = amap FTGLT $ make (  tElims tElimh dr i xil
+                              :* tElims tEliml dr i xil
+                              :* tScale dr i x'
+                              :* tSwap dr i i'
+                              )
+      x'  = Inv (invert x) x  -- x is not zero!
 
+      tSwap :: (i ~ N, Ring k) => Dim' k -> i -> i -> TF k
+      tSwap d i i' = P $ Permute d d (swap i i')
+    
+      tScale :: (i ~ N, Ring k) => Dim' k -> i -> Inv k -> TF k
+      tScale d i x = P $ Scale d i x
+    
+      tElims :: (Dim' k -> i -> (k,i) -> TF k) -> Dim' k -> i -> [(k,i)] -> TF k
+      tElims shr d i = foldr (:*) (One d) . amap1 (shr d i)
+
+      -- let t = tElim d i (x,i')
+      -- pre : i' < i
+      tEliml :: (i ~ N, Field k) => Dim' k -> i -> (k,i) -> TF k
+      tEliml d i (x,i') = P $ Shear d i' i (GL2 rOne (negate x) rZero rOne) 
+
+      -- let t = tElim d i (x,i')
+      -- pre : i < i'
+      tElimh :: (i ~ N, Field k) => Dim' k -> i -> (k,i) -> TF k
+      tElimh d i (x,i') = P $ Shear d i i' (GL2 rOne rZero (negate x) rOne)
 
 crTailRowsAt :: j -> Col i (Row j x) -> Col i (Row j x)
 crTailRowsAt = error "nyi"
