@@ -22,6 +22,7 @@ module OAlg.LinearAlgebra.StepForm
   (
   ) where
 
+import Control.Monad (fmap)
 import Data.List (head,tail,zip,reverse,foldl,foldr,span,(++))
 
 import OAlg.Prelude
@@ -36,6 +37,7 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Ring
 import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Exponential
+import OAlg.Structure.Operational
 
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Graph
@@ -171,11 +173,6 @@ type TF k     = ProductForm Z (Transformation k)
 crStepMtx :: (i ~ N, j ~ N, Field k) => Dim' k -> i -> Col i (Row j k) -> (Row j (Col i k),TF k)
 crStepMtx dr i rws = crStepMtx' dr i (crHeadIndex rws) rws
 
-{-  
-crStepMtx dr i crs@(Col (PSequence rws)) = (Row $ PSequence cls,tfs) where
-  (cls,tfs) = crStepMtx' dr i (crHeadIndex crs) (rws,One dr) 
--}
-
 -- let crStepMtx' dr i ijs (rws,tfs)
 --
 -- pre: - ijs = crHeadIndex rws
@@ -239,7 +236,7 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
 --
 -- [Pre] for all @j'@ in @rws@ holds: @j '<=' j'@.
 crTailRowsAt :: Eq j => j -> Col i (Row j x) -> Col i (Row j x)
-crTailRowsAt j (Col (PSequence rws)) = colFilter (rowIsEmpty)
+crTailRowsAt j (Col (PSequence rws)) = colFilter (not . rowIsEmpty)
                                      $ Col
                                      $ PSequence
                                      $ amap1 (tl j) rws
@@ -251,4 +248,4 @@ crTailRowsAt j (Col (PSequence rws)) = colFilter (rowIsEmpty)
         []          -> []
         (_,j'):xjs' -> if j == j' then xjs' else xjs 
 
-m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0)] :: Matrix Q
+m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0),(7,1,1)] :: Matrix Q
