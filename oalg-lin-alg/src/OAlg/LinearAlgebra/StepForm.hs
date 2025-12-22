@@ -206,7 +206,7 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
   clNormalForm dr i cl@(Col (PSequence xi)) = let (xil,xih) = span ((<i) . snd) xi in case xih of
     []           -> (i,cl,one dr)
     (x,i'):xih'  -> (succ i,Col (PSequence [(rOne,i)]),tfs) where
-      tfs = amap FTGLT $ make (  tElims tElimh dr i xil
+      tfs = amap FTGLT $ make (  tElims tElimh dr i xih'
                               :* tElims tEliml dr i xil
                               :* tScale dr i x'
                               :* tSwap dr i i'
@@ -232,19 +232,23 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
       tElimh :: (i ~ N, Field k) => Dim' k -> i -> (k,i) -> TF k
       tElimh d i (x,i') = P $ Shear d i i' (GL2 rOne rZero (negate x) rOne)
 
-crTailRowsAt :: j -> Col i (Row j x) -> Col i (Row j x)
-crTailRowsAt = error "nyi"
+--------------------------------------------------------------------------------
+-- crTailRowsAt -
 
-{-
-crStepMtx' dr i (Graph hi) (rws,tfs)
-  | i' < i    = let (cls,tfs') = crStepMtx' dr i hi' (rws',tfs) in ((cl,j):cls,tfs')
-  | otherwise = error "nyi"
+-- | get the tail column of rows.
+--
+-- [Pre] for all @j'@ in @rws@ holds: @j '<=' j'@.
+crTailRowsAt :: Eq j => j -> Col i (Row j x) -> Col i (Row j x)
+crTailRowsAt j (Col (PSequence rws)) = colFilter (rowIsEmpty)
+                                     $ Col
+                                     $ PSequence
+                                     $ amap1 (tl j) rws
   where
-    (i',j) = foldl (\(_,j) (i,j') -> (i,min j j')) (head hi) hi -- i is strict increasing for hi
-    cl     = crHeadColAt j (Col $ PSequence rws)
-    crRws' = crTailRowsAt j (Col $ PSequence rws)
-    hi'    = crHeadIndex crRws'
-    
-    Col (PSequence rws') = crRws'
 
--}
+    tl :: Eq j => j -> (Row j x,i) -> (Row j x,i)
+    tl j (Row (PSequence xjs),i) = (Row (PSequence xj's),i) where
+      xj's = case xjs of
+        []          -> []
+        (_,j'):xjs' -> if j == j' then xjs' else xjs 
+
+m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0)] :: Matrix Q
