@@ -11,19 +11,26 @@
 {-# LANGUAGE DataKinds #-}
 
 -- |
--- Module      : OAlg.LinearAlgebra.StepForm
--- Description : matrices over fields.
+-- Module      : OAlg.LinearAlgebra.StepMatrix
+-- Description : reducing to step matrices.
 -- Copyright   : (c) Erich Gut
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- Matrices over fields.
-module OAlg.LinearAlgebra.StepForm
+-- Reducing matrices over fields to step matrices.
+module OAlg.LinearAlgebra.StepMatrix
   (
+    -- * Step Matrix
+    stepMatrix, StepMatrix(..)
+  , stepGraph, StepGraph(..)
+  , crHeadIndex
+
+    -- * Proposition
+  , prpStepMatrixQ, prpStepMatrix
   ) where
 
-import Control.Monad (fmap)
-import Data.List (head,tail,zip,reverse,foldl,foldr,span,(++))
+import Control.Monad (join)
+import Data.List (head,tail,zip,foldl,foldr,span)
 
 import OAlg.Prelude
 
@@ -31,7 +38,6 @@ import OAlg.Data.Constructable
 import OAlg.Data.Canonical
 
 import OAlg.Structure.Oriented
-import OAlg.Structure.FibredOriented
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Ring
@@ -93,14 +99,14 @@ instance Validable (StepGraph N N) where
     vldSGraph _ []          = SValid
     vldSGraph n ((i,j):ijs) = And [ Label "1" :<=>: (n == i) :?> Params ["n":=show n, "i":=show i]
                                   , case ijs of
-                                      []        -> SValid
-                                      (i',j'):_ -> And [ Label "2" :<=>: (j < j')
+                                      []       -> SValid
+                                      (_,j'):_ -> And [ Label "2" :<=>: (j < j')
                                                            :?> Params [ "i" :=show i
                                                                       , "j" :=show j
                                                                       , "j'":=show j'
                                                                       ]
-                                                       , vldSGraph (succ n) ijs
-                                                       ]
+                                                      , vldSGraph (succ n) ijs
+                                                      ]
                                   ]
 --------------------------------------------------------------------------------
 -- StepMatrix -
@@ -125,7 +131,7 @@ instance Semiring k => Validable (StepMatrix k) where
         , vldStpRws s' (etscr rws)
         ] where
 
-    s@(StepGraph (Graph s')) = stepGraph m
+    StepGraph (Graph s') = stepGraph m
     Matrix _ _ rws = m'
 
     vldStpRws [] _ = SValid -- as such, rws is empty, i.e all entries are zero
@@ -159,7 +165,7 @@ sf = StepMatrix (matrix (dim () ^ 7) (dim () ^ 5) [(1,0,1),(1,1,3),(2,1,4),(3,0,
 -- | transforming a matrix by row transformations to step form.
 --
 -- __Property__ Let @m@ be in @'Matrix' __k__@ for a @'Field' __k__@ and let
--- @(m',t) = 'stepMatrix' m@, then holds:
+-- @('StepMatrix' m',t) = 'stepMatrix' m@, then holds:
 --
 -- (1) @t '*>' m' '==' m@.
 stepMatrix :: Field k => Matrix k -> (StepMatrix k, RowTrafo k)
@@ -248,4 +254,35 @@ crTailRowsAt j (Col (PSequence rws)) = colFilter (not . rowIsEmpty)
         []          -> []
         (_,j'):xjs' -> if j == j' then xjs' else xjs 
 
-m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0),(7,1,1)] :: Matrix Q
+-- m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0),(7,1,1)] :: Matrix Q
+
+mt :: (Ring r, i ~ N, j ~ N) => N -> N -> [([(r,j)],i)] -> Matrix r
+mt r c xijs = matrixTtl r c xijs' where
+  xijs' = join $ amap1 (\(xjs,i) -> amap1 (\(x,j) -> (x,i,j)) xjs) xijs
+
+m :: Matrix Q
+m = mt 4 6 ([ [2,4,6,0,2  ] `zip` [1..]
+            , [1,2,3,3,0.5] `zip` [1..]
+            , [3,6,7,1,2  ] `zip` [1..]
+            , [1,2,5,3,4/3] `zip` [1..]
+            ] `zip` [0..]
+           )
+    
+--------------------------------------------------------------------------------
+-- prpStepMatrix -
+
+-- | validity according to 'stepMatrix'.
+prpStepMatrix :: Field k => Matrix k -> Statement
+prpStepMatrix m = Prp "StepMatrix" :<=>:
+  And [ valid s
+      , valid t
+      , Label "1" :<=>: (t *> m == m') :?> Params ["m'":=show m',"t":=show t] 
+      ] where
+  (s@(StepMatrix m'),t) = stepMatrix m
+
+-- | validity of transforming matrices over 'Q' with the given maximal dimension to 'stepMatrix'.
+prpStepMatrixQ :: N -> Statement
+prpStepMatrixQ nMax = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
+  xQ :: X (Matrix Q)
+  xQ = join $ amap1 (xoArrow xOM) xO where
+    xOM@(XOrtOrientation xO _) = xMatrixTtl nMax 0.8 xStandard

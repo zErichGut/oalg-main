@@ -45,6 +45,8 @@ ghc-options:
 - -Wno-incomplete-uni-patterns
 # - -Wno-incomplete-patterns
 - -Wno-identities
+- -Wno-x-partial
+- -Wno-missing-signatures
 
 library:
   source-dirs: src
