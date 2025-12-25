@@ -45,11 +45,11 @@ import OAlg.Structure.PartiallyOrdered
 import OAlg.Structure.Exponential
 import OAlg.Structure.Operational
 
+import OAlg.Entity.Natural
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Permutation
-
 import OAlg.Entity.Product
 
 import OAlg.Entity.Matrix.Dim
@@ -58,6 +58,9 @@ import OAlg.Entity.Matrix.Entries
 import OAlg.Entity.Matrix.Transformation
 import OAlg.Entity.Matrix.GeneralLinearGroup
 
+import OAlg.Limes.Definition
+import OAlg.Limes.Cone
+import OAlg.Limes.KernelsAndCokernels
 
 --------------------------------------------------------------------------------
 -- rowHeadIndex -
@@ -108,6 +111,7 @@ instance Validable (StepGraph N N) where
                                                       , vldSGraph (succ n) ijs
                                                       ]
                                   ]
+
 --------------------------------------------------------------------------------
 -- StepMatrix -
 
@@ -169,12 +173,18 @@ sf = StepMatrix (matrix (dim () ^ 7) (dim () ^ 5) [(1,0,1),(1,1,3),(2,1,4),(3,0,
 --
 -- (1) @t '*>' m' '==' m@.
 stepMatrix :: Field k => Matrix k -> (StepMatrix k, RowTrafo k)
-stepMatrix (Matrix dr dc xij) = (StepMatrix $ Matrix dr dc xij',t) where
-  (cls,tfs) = crStepMtx dr 0 (etscr xij)
+stepMatrix m@(Matrix dr dc _) = (StepMatrix $ Matrix dr dc xij',t) where
+  (cls,tfs) = stepMatrixPre m
   xij'      = rcets cls
   t         = RowTrafo $ amap FTGLT $ make tfs
   
 type TF k     = ProductForm Z (Transformation k)
+
+-- | transforming a matrix by row transformations to a row of columns in step form. This is the
+-- pre evaluation for 'stepMatrix'.
+stepMatrixPre :: (Field k, i ~ N, j ~ N) => Matrix k -> (Row j (Col i k),TF k)
+stepMatrixPre (Matrix dr _ xij) = crStepMtx dr 0 (etscr xij)
+
 
 crStepMtx :: (i ~ N, j ~ N, Field k) => Dim' k -> i -> Col i (Row j k) -> (Row j (Col i k),TF k)
 crStepMtx dr i rws = crStepMtx' dr i (crHeadIndex rws) rws
@@ -235,25 +245,6 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
       tElimh :: (i ~ N, Field k) => Dim' k -> i -> (k,i) -> TF k
       tElimh d i (x,i') = P $ Shear d i i' (GL2 rOne rZero (negate x) rOne)
 
---------------------------------------------------------------------------------
--- crTailRowsAt -
-
--- | get the tail column of rows.
---
--- [Pre] for all @j'@ in @rws@ holds: @j '<=' j'@.
-crTailRowsAt :: Eq j => j -> Col i (Row j x) -> Col i (Row j x)
-crTailRowsAt j (Col (PSequence rws)) = colFilter (not . rowIsEmpty)
-                                     $ Col
-                                     $ PSequence
-                                     $ amap1 (tl j) rws
-  where
-
-    tl :: Eq j => j -> (Row j x,i) -> (Row j x,i)
-    tl j (Row (PSequence xjs),i) = (Row (PSequence xj's),i) where
-      xj's = case xjs of
-        []          -> []
-        (_,j'):xjs' -> if j == j' then xjs' else xjs 
-
 -- m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0),(7,1,1)] :: Matrix Q
 
 mt :: (Ring r, i ~ N, j ~ N) => N -> N -> [([(r,j)],i)] -> Matrix r
@@ -286,3 +277,19 @@ prpStepMatrixQ nMax = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
   xQ :: X (Matrix Q)
   xQ = join $ amap1 (xoArrow xOM) xO where
     xOM@(XOrtOrientation xO _) = xMatrixTtl nMax 0.8 xStandard
+
+--------------------------------------------------------------------------------
+-- mtxKernel -
+
+-- | a kernel for the given matrix.
+mtxKernel :: Field k => Matrix k -> Kernel N1 (Matrix k)
+mtxKernel m = LimesProjective cn uv where
+  cn = ConeKernel dg kr
+  uv = error "nyi"
+
+  dg = kernelDiagram m
+  (cls,tfs) = stepMatrixPre m
+
+  kr = error "nyi"
+
+  

@@ -38,7 +38,8 @@ module OAlg.Entity.Matrix.Entries
   , colElimZeros, colSwap, colAdd, colMltr, colShear, colScale
 
     -- * Col Row
-  , crHeadColAt, crHeadRowAt
+  , crHeadColAt, crTailRowsAt
+  , crHeadRowAt
 
     -- * Duality
   , coEntries, coEntriesInv
@@ -652,6 +653,26 @@ crHeadColAt j rws
   $ colxs
   $ fmap rowHead
   $ colFilter (not . rowIsEmpty)  rws
+
+--------------------------------------------------------------------------------
+-- crTailRowsAt -
+
+-- | get the column of the tail of the rows having there first entry at the given index.
+--
+-- __Pre__ for all @j'@ in @rws@ holds: @j '<=' j'@.
+crTailRowsAt :: Eq j => j -> Col i (Row j x) -> Col i (Row j x)
+crTailRowsAt j (Col (PSequence rws)) = colFilter (not . rowIsEmpty)
+                                     $ Col
+                                     $ PSequence
+                                     $ amap1 (tl j) rws
+  where
+
+    tl :: Eq j => j -> (Row j x,i) -> (Row j x,i)
+    tl j (Row (PSequence xjs),i) = (Row (PSequence xj's),i) where
+      xj's = case xjs of
+        []          -> []
+        (_,j'):xjs' -> if j == j' then xjs' else xjs 
+
 
 --------------------------------------------------------------------------------
 -- crHeadRowAt -

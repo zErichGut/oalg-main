@@ -1,12 +1,13 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
+
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Transformation
