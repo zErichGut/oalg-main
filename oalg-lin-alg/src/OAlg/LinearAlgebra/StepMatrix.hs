@@ -30,12 +30,14 @@ module OAlg.LinearAlgebra.StepMatrix
   ) where
 
 import Control.Monad (join)
-import Data.List (head,tail,zip,foldl,foldr,span)
+import Data.List as L (head,tail,zip,foldl,foldr,span)
 
 import OAlg.Prelude
 
 import OAlg.Data.Constructable
 import OAlg.Data.Canonical
+import OAlg.Data.Singleton
+import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
@@ -46,6 +48,9 @@ import OAlg.Structure.Exponential
 import OAlg.Structure.Operational
 
 import OAlg.Entity.Natural
+import OAlg.Entity.FinList hiding (head,tail,zip)
+import OAlg.Entity.Diagram
+import OAlg.Entity.Sequence.Definition as S (span)
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Graph
 import OAlg.Entity.Sequence.Set
@@ -95,7 +100,7 @@ rowHeadIndex (Matrix _ _ xij) = crHeadIndex $ etscr xij
 --  @i0 '==' 0@ and @i' '==' i '+' 1@,
 --
 -- (2) Teh sequence of the range indices are strict increasing, i.e. @j '<' j'@.
-newtype StepGraph i j = StepGraph (Graph i j) deriving (Show,Eq)
+newtype StepGraph i j = StepGraph (Graph i j) deriving (Show,Eq,LengthN)
 
 instance Validable (StepGraph N N) where
   valid (StepGraph (Graph ijs)) = Label "StepGraph" :<=>: vldSGraph 0 ijs where
@@ -216,7 +221,7 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
 
   -- reduces the column to its normal form.
   clNormalForm :: (i ~ N, Field k) => Dim' k -> i -> Col i k -> (i,Col i k,GLT k)
-  clNormalForm dr i cl@(Col (PSequence xi)) = let (xil,xih) = span ((<i) . snd) xi in case xih of
+  clNormalForm dr i cl@(Col (PSequence xi)) = let (xil,xih) = L.span ((<i) . snd) xi in case xih of
     []           -> (i,cl,one dr)
     (x,i'):xih'  -> (succ i,Col (PSequence [(rOne,i)]),tfs) where
       tfs = amap FTGLT $ make (  tElims tElimh dr i xih'
@@ -282,14 +287,40 @@ prpStepMatrixQ nMax = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
 -- mtxKernel -
 
 -- | a kernel for the given matrix.
-mtxKernel :: Field k => Matrix k -> Kernel N1 (Matrix k)
-mtxKernel m = LimesProjective cn uv where
+mtxKernel :: Field k => KernelDiagram N1 (Matrix k) -> Kernel N1 (Matrix k)
+mtxKernel dg@(DiagramParallelLR _ _ (m@(Matrix rw cl _):|_)) = LimesProjective cn uv where
   cn = ConeKernel dg kr
+  kr = Matrix cl (dim unit ^ krCls) (rcets $ krMtx krCls sGrp sMtx)
+
   uv = error "nyi"
 
-  dg = kernelDiagram m
-  (cls,tfs) = stepMatrixPre m
-
-  kr = error "nyi"
-
+  sMtx  = fst $ stepMatrixPre m
+  sGrp  = stpGrph sMtx
+  krCls = lengthN cl >- lengthN sGrp
   
+  -- pre: cls is in step form
+  stpGrph :: i ~ N => Row j (Col i x) -> StepGraph i j
+  stpGrph cls = StepGraph $ Graph $ stpg 0 (rowxs cls) where
+    stpg _ []           = []
+    stpg i ((cl,j):cls) | hi < It i = stpg i cls
+                        | otherwise = (i,j):stpg (succ i) cls
+      where
+        hi = snd $ S.span (pi cl) cl 
+
+    pi :: Col i x -> Proxy i
+    pi _ = Proxy
+
+  -- pre: for all (_,i) in cl holds:
+  --      - i < max i' where (i',_) in sg
+  --      - si < j where (i',si) in sg and i' == i 
+  krCl :: (Ring x, i ~ N, j ~ N) => StepGraph i j -> Col i x -> j -> Col i x
+  krCl (StepGraph (Graph sg)) (Col (PSequence xi)) j = Col $ PSequence $ krc sg xi where
+    krc ((i,si):sg') xi@((x,i'):xi') | i < i'    = krc sg' xi
+                                     | otherwise = (negate x,si) : krc sg' xi' -- i == i' 
+    krc _ _                                      = [(rOne,j)]
+
+  krMtx :: (Ring x, i ~ N, j ~ N) => j -> StepGraph i j -> Row j (Col i x) -> Row j (Col i x)
+  krMtx krCls s@(StepGraph (Graph sg)) cls = Row $ PSequence $ kmx 0 sg (rowxs cls) where
+    
+    kmx j sg@[] cls | j < krCls = (krCl s colEmpty j,j) : kmx (succ j) sg cls
+                    | otherwise = []
