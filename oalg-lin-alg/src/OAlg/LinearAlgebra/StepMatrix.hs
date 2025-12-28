@@ -288,15 +288,16 @@ prpStepMatrixQ nMax = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
 
 -- | a kernel for the given matrix.
 mtxKernel :: Field k => KernelDiagram N1 (Matrix k) -> Kernel N1 (Matrix k)
-mtxKernel dg@(DiagramParallelLR _ _ (m@(Matrix rw cl _):|_)) = LimesProjective cn uv where
+mtxKernel dg@(DiagramParallelLR _ _ (m@(Matrix _ cl _):|_)) = LimesProjective cn uv where
   cn = ConeKernel dg kr
-  kr = Matrix cl (dim unit ^ krCls) (rcets $ krMtx krCls sGrp sMtx)
+  kr = Matrix cl (dim unit ^ krCls) (rcets $ krMtx jMax sGrph sMtx)
 
   uv = error "nyi"
 
   sMtx  = fst $ stepMatrixPre m
-  sGrp  = stpGrph sMtx
-  krCls = lengthN cl >- lengthN sGrp
+  sGrph = stpGrph sMtx
+  jMax  = lengthN cl
+  krCls = jMax >- lengthN sGrph
   
   -- pre: cls is in step form
   stpGrph :: i ~ N => Row j (Col i x) -> StepGraph i j
@@ -312,15 +313,27 @@ mtxKernel dg@(DiagramParallelLR _ _ (m@(Matrix rw cl _):|_)) = LimesProjective c
 
   -- pre: for all (_,i) in cl holds:
   --      - i < max i' where (i',_) in sg
-  --      - si < j where (i',si) in sg and i' == i 
+  --      - si < j where (i',si) in sg and i' <= i 
   krCl :: (Ring x, i ~ N, j ~ N) => StepGraph i j -> Col i x -> j -> Col i x
   krCl (StepGraph (Graph sg)) (Col (PSequence xi)) j = Col $ PSequence $ krc sg xi where
     krc ((i,si):sg') xi@((x,i'):xi') | i < i'    = krc sg' xi
                                      | otherwise = (negate x,si) : krc sg' xi' -- i == i' 
     krc _ _                                      = [(rOne,j)]
 
+  -- pre: sg is the step graph of cls
   krMtx :: (Ring x, i ~ N, j ~ N) => j -> StepGraph i j -> Row j (Col i x) -> Row j (Col i x)
-  krMtx krCls s@(StepGraph (Graph sg)) cls = Row $ PSequence $ kmx 0 sg (rowxs cls) where
-    
-    kmx j sg@[] cls | j < krCls = (krCl s colEmpty j,j) : kmx (succ j) sg cls
-                    | otherwise = []
+  krMtx jMax sg cls = Row $ PSequence $ kmx 0 0 (amap1 snd sis) (rowxs cls) where
+    StepGraph (Graph sis) = sg
+
+    kmx j _ _ _                     | j >= jMax  = []
+    kmx j jk _ []                                = (krCl sg colEmpty j,jk) : kmx (j+1) (jk+1) [] []
+    kmx j jk sis cls@((cl,j'):cls') | j == j'    = case sis of
+      si:sis'                       | j == si   -> kmx (j+1) jk sis' cls'
+      _                                         -> (krCl sg cl j,jk) : kmx (j+1) (jk+1) sis cls'
+                                    | otherwise  = (krCl sg colEmpty j,jk) : kmx (j+1) (jk+1) sis cls
+
+pp :: N -> Statement
+pp nMax = Forall xQ (valid . universalCone . mtxKernel . kernelDiagram) where
+  xQ :: X (Matrix Q)
+  xQ = join $ amap1 (xoArrow xOM) xO where
+    xOM@(XOrtOrientation xO _) = xMatrixTtl nMax 0.8 xStandard
