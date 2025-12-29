@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-mtx
-version:        3.2.0.1
+version:        3.2.0.2
 synopsis:       Matrix over oriented algebraic structures.
 description:    Matrices over oriented algebraic structures
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>

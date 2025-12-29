@@ -17,4 +17,8 @@ and this project adheres to the
 ### Added
 - crTailRowsAt in the module OAlg.Entity.Matrix.Entries
 
+## [3.2.0.2] - 2025-12-29
+
+### Chainged
+- xStandardOrtOrientation for matrices. Now the dimensions are ranging form 0 to 17.
 

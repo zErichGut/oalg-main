@@ -852,7 +852,7 @@ xoDim l h (XOrtOrientation xo _) = do
   return (productDim pcl :> productDim prw)
 
 instance (Distributive x, XStandardOrtOrientation x) => XStandardOrtOrientation (Matrix x) where
-  xStandardOrtOrientation = xMatrix 1 xo (xoDim 0 5 xo) where xo = xStandardOrtOrientation
+  xStandardOrtOrientation = xMatrix 1 xo (xoDim 0 17 xo) where xo = xStandardOrtOrientation
 
 instance TransformableG Matrix DstX DstX where tauG Struct = Struct
 instance TransformableGRefl Matrix DstX

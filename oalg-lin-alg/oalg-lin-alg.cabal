@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      OAlg.LinearAlgebra.KernelsAndCokernels
       OAlg.LinearAlgebra.StepMatrix
   other-modules:
       Paths_oalg_lin_alg
@@ -38,7 +39,7 @@ library
     , oalg-fin >=3.2 && <4
     , oalg-hom >=3.2 && <4
     , oalg-lim >=3.2 && <4
-    , oalg-mtx >=3.2.0.1 && <4
+    , oalg-mtx >=3.2.0.2 && <4
     , oalg-pre >=3.2 && <4
     , oalg-sqc >=3.2 && <4
     , oalg-stc >=3.2.1 && <4
@@ -60,7 +61,7 @@ test-suite oalg-lin-alg-test
     , oalg-hom >=3.2 && <4
     , oalg-lim >=3.2 && <4
     , oalg-lin-alg
-    , oalg-mtx >=3.2.0.1 && <4
+    , oalg-mtx >=3.2.0.2 && <4
     , oalg-pre >=3.2 && <4
     , oalg-sqc >=3.2 && <4
     , oalg-stc >=3.2.1 && <4
