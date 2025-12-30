@@ -409,8 +409,8 @@ class XStandardOrtOrientation q where
 instance XStandard p => XStandardOrtOrientation (Orientation p) where
   xStandardOrtOrientation = xoOrnt xStandard
 
-instance XStandardOrtOrientation Z where
-  xStandardOrtOrientation = XOrtOrientation (return (():>())) (const xStandard)
+instance XStandardOrtOrientation Z where xStandardOrtOrientation = xoTtl xStandard
+instance XStandardOrtOrientation Q where xStandardOrtOrientation = xoTtl xStandard
 
 instance XStandardOrtOrientation x => XStandardOrtOrientation (Op x) where
   xStandardOrtOrientation = XOrtOrientation xo' xq' where

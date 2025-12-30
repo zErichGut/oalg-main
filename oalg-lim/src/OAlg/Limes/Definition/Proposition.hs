@@ -345,7 +345,7 @@ xecfEligibleCone (XEligibleConeFactorG xecf) = XEligibleConeG (amap1 fst . xecf)
 -- | standard random variable for eligible cone factors.
 class XStandardEligibleConeFactorG c s p d t n m x where
   xStandardEligibleConeFactorG :: XEligibleConeFactorG c s p d t n m x
-  
+
 --------------------------------------------------------------------------------
 -- XStandardEligibleCone -
 

@@ -19,21 +19,23 @@
 -- 
 -- Kernels and cokernels for matrices over a field.
 module OAlg.LinearAlgebra.KernelsAndCokernels
-  ( mtxKernels
+  ( mtxKernels, mtxCokernels
+  , prpMtxKernelsQ
   ) where
-
-import Control.Monad
 
 import Data.List (zip)
 
 import OAlg.Prelude
 
+import OAlg.Category.SDuality
+
+import OAlg.Data.Variant
+import OAlg.Data.Either
 import OAlg.Data.Singleton
 import OAlg.Data.Proxy
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
-import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 import OAlg.Structure.Exponential
@@ -121,6 +123,7 @@ mtxKernel dg = LimesProjective cn uv where
       _                                   -> krCl sg cl j : kmx (j+1) sis cls'
     kmx j sis cls                          = krCl sg colEmpty j : kmx (j+1) sis cls
 
+{-
 pp :: N -> Statement
 pp nMax = Forall xQ (valid . universalCone . mtxKernel . kernelDiagram) where
   xQ :: X (Matrix Q)
@@ -142,45 +145,47 @@ m = mt 4 6 ([ [2,4,6,0,2  ] `zip` [1..]
     
 kr = limes mtxKernels (kernelDiagram m)
 cn = universalCone kr
+-}
 --------------------------------------------------------------------------------
 -- mtxKernels -
 
+-- | kernels for matrices over a @'Field' __k__@.
 mtxKernels :: Field k => Kernels N1 (Matrix k)
 mtxKernels = LimitsG mtxKernel
 
 --------------------------------------------------------------------------------
+-- mtxCokernels -
+
+mtxCokernels :: Field k => Cokernels N1 (Matrix k)
+mtxCokernels = ckrs where
+  Contravariant2 i     = isoCoMatrixOp
+  SDualBi (Left1 ckrs) = amapF (inv2 i) (SDualBi (Right1 mtxKernels))
+
+--------------------------------------------------------------------------------
 -- prpMtxKernels -
 
-xodQ :: XOrtOrientation Q
-xodQ = xoTtl xStandard
-
-xodMtxQ :: XOrtOrientation (Matrix Q)
-xodMtxQ = xMatrixTtl 15 1 xStandard
-
-instance XStandardOrtOrientation Q where xStandardOrtOrientation = xodQ
-
-xecfMtxQ :: Kernel N1 (Matrix Q) -> X (KernelCone N1 (Matrix Q),Matrix Q)
+-- xecfMtxQ :: Kernel N1 (Matrix Q) -> X (KernelCone N1 (Matrix Q),Matrix Q)
+xecfMtxQ :: XEligibleConeFactorG
+              Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 (Matrix Q)
+xecfMtxQ = xecfOrtSite $ xoTo xStandardOrtOrientation
+{-
 xecfMtxQ kr = do
   f <- xf
   return (ConeKernel dg (k*f),f)
   
   where
+    xodMtxQ = xStandardOrtOrientation
+    
     ConeKernel dg k = cone $ universalCone kr
   
     xf = do
       n <- xoPoint xodMtxQ
       xoArrow xodMtxQ (n :> start k)
 
-instance XStandardEligibleConeFactorG
-           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 (Matrix Q) where
-  xStandardEligibleConeFactorG = XEligibleConeFactorG xecfMtxQ
-
-
-instance XStandardEligibleConeG
-           Cone Dst Projective Diagram (Parallel LeftToRight) N2 N1 (Matrix Q) where
-  xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
-
+-}
 
 -- | validity of 'mtxKernels' for matrices over 'Q'.
-prpMtxKernels :: Statement
-prpMtxKernels = Prp "MtxKernels" :<=>: valid (mtxKernels :: Kernels N1 (Matrix Q))
+prpMtxKernelsQ :: Statement
+prpMtxKernelsQ = Prp "MtxKernelsQ" :<=>: valid (mtxKernels :: Kernels N1 (Matrix Q))
+
+
