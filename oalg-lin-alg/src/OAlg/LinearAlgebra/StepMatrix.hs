@@ -57,6 +57,7 @@ import OAlg.Entity.Matrix.Entries
 import OAlg.Entity.Matrix.Transformation
 import OAlg.Entity.Matrix.GeneralLinearGroup
 
+import OAlg.Hom.Distributive
 
 --------------------------------------------------------------------------------
 -- rowHeadIndex -
@@ -260,7 +261,54 @@ m = mt 4 6 ([ [2,4,6,0,2  ] `zip` [1..]
             , [1,2,5,3,4/3] `zip` [1..]
             ] `zip` [0..]
            )
-    
+
+--------------------------------------------------------------------------------
+-- mtxDiagonalForm -
+
+-- | transforming a matrix to its diagonal form.
+--
+-- __Property__ Let @m@ be a matrix over a @'Field' __k__@ and @d = 'mtxDiagonal' m@, then holds:
+--
+-- (1) @'dgfMatrix' d '==' m@.
+mtxDiagonalForm :: Field k => Matrix k -> DiagonalForm k
+mtxDiagonalForm (Matrix rs cs xijs) = DiagonalForm dg rt ct where
+  dg = rcDiags dis
+  rt = RowTrafo $ amap FTGLT $ make rtfs
+  ct = ColTrafo $ amap FTGLT $ make $ tfsFromOp ctfs'
+
+  (xijs',ctfs') = crStepMtx (dimToOp cs) 0 (etsToOp xijs)
+  (dis,rtfs)    = crStepMtx rs 0 (rcFromOp xijs')
+
+  -- toOp = toDualOpDst
+
+  dimToOp :: Dim' k -> Dim' (Op k)
+  dimToOp (Dim d) = Dim d -- toDualOpDst operates identical on the points!
+
+  -- the transposed entries as a column of rows
+  etsToOp :: (Ring k, Ord j, Ord i) => Entries i j k -> Col j (Row i (Op k))
+  etsToOp xijs = etscr $ etsMapCnt toDualOpDst xijs
+
+  -- the transposed row of columns as a column of rows.
+  rcFromOp :: Row j (Col i (Op k)) -> Col i (Row j k)
+  rcFromOp = error "nyi"
+
+  -- the transposed transformations.
+  tfsFromOp :: TF (Op k) -> TF k
+  tfsFromOp = error "nyi"
+
+  -- the diagonal entries.
+  rcDiags :: (Ord j, j ~ i) => Row j (Col i k) -> [k]
+  rcDiags (Row (PSequence cls)) = rcdg cls where
+    rcdg []                 = []
+    rcdg ((cl,j):cls)       = case cl of
+      Col (PSequence xis)  -> rcdg' j xis cls
+
+    rcdg' _ [] cls          = rcdg cls
+    rcdg' j ((x,i):xis) cls = case i `compare` j of
+      LT                   -> rcdg' j xis cls
+      EQ                   -> x:rcdg cls
+      GT                   -> rcdg cls
+
 --------------------------------------------------------------------------------
 -- prpStepMatrix -
 
