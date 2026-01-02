@@ -30,3 +30,7 @@ and this project adheres to the
 ### Chained
 - xStandardOrtOrientation for matrices. Now the dimensions are ranging form 0 to 13.
 
+## [3.2.0.4] - 2026-01-02
+
+### Added
+- crTranspose

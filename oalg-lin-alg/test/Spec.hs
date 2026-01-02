@@ -10,7 +10,8 @@ import OAlg.Prelude
 import OAlg.LinearAlgebra.StepMatrix
 proposition :: Statement
 proposition = Prp "oalg-lin-alg"
-  :<=>: And [ prpStepMatrixQ 10
+  :<=>: And [ prpStepMatrixQ
+            , prpMtxDiagonalFormQ
             ]
 
 main :: IO ()

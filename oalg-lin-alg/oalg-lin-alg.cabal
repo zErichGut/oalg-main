@@ -39,7 +39,7 @@ library
     , oalg-fin >=3.2 && <4
     , oalg-hom >=3.2 && <4
     , oalg-lim >=3.2 && <4
-    , oalg-mtx >=3.2.0.3 && <4
+    , oalg-mtx >=3.2.0.4 && <4
     , oalg-pre >=3.2 && <4
     , oalg-sqc >=3.2 && <4
     , oalg-stc >=3.2.2 && <4
@@ -61,7 +61,7 @@ test-suite oalg-lin-alg-test
     , oalg-hom >=3.2 && <4
     , oalg-lim >=3.2 && <4
     , oalg-lin-alg
-    , oalg-mtx >=3.2.0.3 && <4
+    , oalg-mtx >=3.2.0.4 && <4
     , oalg-pre >=3.2 && <4
     , oalg-sqc >=3.2 && <4
     , oalg-stc >=3.2.2 && <4

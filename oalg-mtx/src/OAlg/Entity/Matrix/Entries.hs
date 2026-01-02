@@ -43,6 +43,7 @@ module OAlg.Entity.Matrix.Entries
 
     -- * Duality
   , coEntries, coEntriesInv
+  , rcTranspose
  
   ) where
 
@@ -410,6 +411,22 @@ coColRow = error "nyi"
 coColRowInv :: Row j (Col i (Op a)) -> Col i (Row j a)
 coColRowInv = error "nyi"
 -}
+
+--------------------------------------------------------------------------------
+-- rcTranspose -
+
+-- | transposing a row of colums to a column of rows by the given contravariant isomorphism.
+rcTranspose :: (i ~ j, HomDistributiveDisjunctive h)
+  => Variant2 Contravariant (Inv2 h) x y -> Row j (Col i x) -> Col i (Row j y)
+rcTranspose h (Row (PSequence cls)) = Col $ PSequence $ amap1 (clTrsp h) cls where
+  -- no filtering is necessary because of h being an isomorphism!
+  clTrsp :: (i ~ j, HomDistributiveDisjunctive h)
+    => Variant2 Contravariant (Inv2 h) x y -> (Col i x,j) -> (Row j y,i)
+  clTrsp h (Col (PSequence xis),j) = (Row $ PSequence $ amap1 (xTrsp h) xis,j)
+
+  xTrsp :: HomDistributiveDisjunctive h
+    => Variant2 Contravariant (Inv2 h) x y -> (x,i) -> (y,i)
+  xTrsp (Contravariant2 h) (k',i) = (amap h k',i)
 
 --------------------------------------------------------------------------------
 -- Entries -

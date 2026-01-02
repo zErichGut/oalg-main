@@ -25,8 +25,12 @@ module OAlg.LinearAlgebra.StepMatrix
   , stepGraph, StepGraph(..), stgxs
   , crHeadIndex
 
+    -- * Diagonal Form
+  , mtxDiagonalForm
+
     -- * Proposition
   , prpStepMatrixQ, prpStepMatrix
+  , prpMtxDiagonalFormQ, prpMtxDiagonalForm
   ) where
 
 import Control.Monad (join)
@@ -36,9 +40,11 @@ import OAlg.Prelude
 
 import OAlg.Data.Constructable
 import OAlg.Data.Canonical
+import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Distributive
 import OAlg.Structure.Additive
 import OAlg.Structure.Ring
 import OAlg.Structure.PartiallyOrdered
@@ -57,6 +63,7 @@ import OAlg.Entity.Matrix.Entries
 import OAlg.Entity.Matrix.Transformation
 import OAlg.Entity.Matrix.GeneralLinearGroup
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Distributive
 
 --------------------------------------------------------------------------------
@@ -263,7 +270,30 @@ m = mt 4 6 ([ [2,4,6,0,2  ] `zip` [1..]
            )
 
 --------------------------------------------------------------------------------
+-- prpStepMatrix -
+
+-- | validity according to 'stepMatrix'.
+prpStepMatrix :: Field k => Matrix k -> Statement
+prpStepMatrix m = Prp "StepMatrix" :<=>:
+  And [ valid s
+      , valid t
+      , Label "1" :<=>: (t *> m == m') :?> Params ["m'":=show m',"t":=show t] 
+      ] where
+  (s@(StepMatrix m'),t) = stepMatrix m
+
+-- | validity of transforming matrices over 'Q' with the given maximal dimension to 'stepMatrix'.
+prpStepMatrixQ :: Statement
+prpStepMatrixQ = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
+  xQ :: X (Matrix Q)
+  xQ = xOneOfXW [ (2/5,xoOrt $ xMatrixTtl 5 1 xStandard)
+                , (2/5,xoOrt $ xMatrixTtl 16 0.8 xStandard)
+                , (1/5,xoOrt $ xMatrixTtl 100 0.01 $ xOneOf [-1,1])
+                ]
+
+--------------------------------------------------------------------------------
 -- mtxDiagonalForm -
+
+type IsoOpDst x = Variant2 Contravariant (IsoO Dst Op) x (Op x)
 
 -- | transforming a matrix to its diagonal form.
 --
@@ -272,29 +302,36 @@ m = mt 4 6 ([ [2,4,6,0,2  ] `zip` [1..]
 -- (1) @'dgfMatrix' d '==' m@.
 mtxDiagonalForm :: Field k => Matrix k -> DiagonalForm k
 mtxDiagonalForm (Matrix rs cs xijs) = DiagonalForm dg rt ct where
+  toOp = toDualOpDst -- the duality operator on the type k.
+
   dg = rcDiags dis
   rt = RowTrafo $ amap FTGLT $ make rtfs
-  ct = ColTrafo $ amap FTGLT $ make $ tfsFromOp ctfs'
+  ct = ColTrafo $ amap FTGLT $ make $ tfsFromOp toOp ctfs'
 
-  (xijs',ctfs') = crStepMtx (dimToOp cs) 0 (etsToOp xijs)
-  (dis,rtfs)    = crStepMtx rs 0 (rcFromOp xijs')
+  (xijs',ctfs') = crStepMtx (dimToOp toOp cs) 0 (etsToOp toOp xijs)
+  (dis,rtfs)    = crStepMtx rs 0 (rcFromOp toOp xijs')
 
-  -- toOp = toDualOpDst
+  dimToOp :: Ring k => IsoOpDst k -> Dim' k -> Dim' (Op k)
+  dimToOp (Contravariant2 t) = dimMap (pmap t)
 
-  dimToOp :: Dim' k -> Dim' (Op k)
-  dimToOp (Dim d) = Dim d -- toDualOpDst operates identical on the points!
+  dimFromOp :: Ring k => IsoOpDst k -> Dim' (Op k) -> Dim' k
+  dimFromOp (Contravariant2 t) = dimMap (pmap (inv2 t))
 
   -- the transposed entries as a column of rows
-  etsToOp :: (Ring k, Ord j, Ord i) => Entries i j k -> Col j (Row i (Op k))
-  etsToOp xijs = etscr $ etsMapCnt toDualOpDst xijs
+  etsToOp :: (Ord j, Ord i) => IsoOpDst k -> Entries i j k -> Col j (Row i (Op k))
+  etsToOp t = etscr . etsMapCnt t
 
   -- the transposed row of columns as a column of rows.
-  rcFromOp :: Row j (Col i (Op k)) -> Col i (Row j k)
-  rcFromOp = error "nyi"
+  rcFromOp :: i ~ j => IsoOpDst k -> Row j (Col i (Op k)) -> Col i (Row j k)
+  rcFromOp = rcTranspose . vInv2
 
   -- the transposed transformations.
-  tfsFromOp :: TF (Op k) -> TF k
-  tfsFromOp = error "nyi"
+  tfsFromOp :: Field k => IsoOpDst k -> TF (Op k) -> TF k
+  tfsFromOp i tr = case tr of
+    One d       -> One (dimFromOp i d)
+    P t         -> P (trfFromOp i t)
+    tf' :^ z    -> tfsFromOp i tf' :^ z
+    a :* b      -> tfsFromOp i b :* tfsFromOp i a
 
   -- the diagonal entries.
   rcDiags :: (Ord j, j ~ i) => Row j (Col i k) -> [k]
@@ -309,22 +346,30 @@ mtxDiagonalForm (Matrix rs cs xijs) = DiagonalForm dg rt ct where
       EQ                   -> x:rcdg cls
       GT                   -> rcdg cls
 
+  trfFromOp :: Field k => IsoOpDst k -> Transformation (Op k) -> Transformation k
+  trfFromOp i tr   = case tr of
+    Permute r c p -> Permute (dimFromOp i c) (dimFromOp i r) (invert p)
+    Scale d l s   -> Scale (dimFromOp i d) l (Inv f g) where Inv (Op f) (Op g) = s
+    Shear d l k g -> Shear (dimFromOp i d) l k g' where
+      GL2 (Op s) (Op t) (Op u) (Op v) = g
+      g' = GL2 s u t v
+
 --------------------------------------------------------------------------------
--- prpStepMatrix -
+-- prpMtxDiagonalForm -
 
--- | validity according to 'stepMatrix'.
-prpStepMatrix :: Field k => Matrix k -> Statement
-prpStepMatrix m = Prp "StepMatrix" :<=>:
-  And [ valid s
-      , valid t
-      , Label "1" :<=>: (t *> m == m') :?> Params ["m'":=show m',"t":=show t] 
-      ] where
-  (s@(StepMatrix m'),t) = stepMatrix m
+-- | validity according to 'mtxDiagomlForm'.
+prpMtxDiagonalForm :: Field k => Matrix k -> Statement
+prpMtxDiagonalForm m = Prp "MtxDiagonalForm"
+  :<=>: (dgfMatrix d == m) :?> Params ["m":=show m,"d":=show d]
+  where d = mtxDiagonalForm m
 
--- | validity of transforming matrices over 'Q' with the given maximal dimension to 'stepMatrix'.
-prpStepMatrixQ :: N -> Statement
-prpStepMatrixQ nMax = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
+--------------------------------------------------------------------------------
+-- prpMtxDiagonalForm -
+
+-- | validity according to 'mtxDiagomlForm' for some matrices over 'Q',
+prpMtxDiagonalFormQ :: Statement
+prpMtxDiagonalFormQ = Prp "MtxDiagonalFromQ"
+  :<=>: Forall xQ prpMtxDiagonalForm where
   xQ :: X (Matrix Q)
-  xQ = join $ amap1 (xoArrow xOM) xO where
-    xOM@(XOrtOrientation xO _) = xMatrixTtl nMax 0.8 xStandard
+  xQ = xoOrt $ xMatrixTtl 16 0.8 xStandard
 
