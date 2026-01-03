@@ -33,6 +33,8 @@ module OAlg.LinearAlgebra.StepMatrix
   , prpMtxDiagonalFormQ, prpMtxDiagonalForm
   ) where
 
+import Data.Kind
+
 import Control.Monad (join)
 import Data.List as L (head,tail,zip,foldl,foldr,span)
 
@@ -44,6 +46,8 @@ import OAlg.Data.Variant
 
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Distributive
 import OAlg.Structure.Additive
 import OAlg.Structure.Ring
@@ -65,6 +69,7 @@ import OAlg.Entity.Matrix.GeneralLinearGroup
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Distributive
+
 
 --------------------------------------------------------------------------------
 -- rowHeadIndex -
@@ -293,7 +298,7 @@ prpStepMatrixQ = Prp "StepMatrixQ" :<=>: Forall xQ prpStepMatrix where
 --------------------------------------------------------------------------------
 -- mtxDiagonalForm -
 
-type IsoOpDst x = Variant2 Contravariant (IsoO Dst Op) x (Op x)
+type IsoOpGal x = Variant2 Contravariant (IsoO Gal Op) x (Op x)
 
 -- | transforming a matrix to its diagonal form.
 --
@@ -302,57 +307,39 @@ type IsoOpDst x = Variant2 Contravariant (IsoO Dst Op) x (Op x)
 -- (1) @'dgfMatrix' d '==' m@.
 mtxDiagonalForm :: Field k => Matrix k -> DiagonalForm k
 mtxDiagonalForm (Matrix rs cs xijs) = DiagonalForm dg rt ct where
-  toOp = toDualOpDst -- the duality operator on the type k.
+  toOp = toDualOpGal -- the duality operator on the type k.
 
-  dg = rcDiags dis
+  dg = amap1 fst $ rcDiags dis
   rt = RowTrafo $ amap FTGLT $ make rtfs
   ct = ColTrafo $ amap FTGLT $ make $ tfsFromOp toOp ctfs'
 
   (xijs',ctfs') = crStepMtx (dimToOp toOp cs) 0 (etsToOp toOp xijs)
   (dis,rtfs)    = crStepMtx rs 0 (rcFromOp toOp xijs')
 
-  dimToOp :: Ring k => IsoOpDst k -> Dim' k -> Dim' (Op k)
+  dimToOp :: Ring k => IsoOpGal k -> Dim' k -> Dim' (Op k)
   dimToOp (Contravariant2 t) = dimMap (pmap t)
 
-  dimFromOp :: Ring k => IsoOpDst k -> Dim' (Op k) -> Dim' k
+  dimFromOp :: Ring k => IsoOpGal k -> Dim' (Op k) -> Dim' k
   dimFromOp (Contravariant2 t) = dimMap (pmap (inv2 t))
 
   -- the transposed entries as a column of rows
-  etsToOp :: (Ord j, Ord i) => IsoOpDst k -> Entries i j k -> Col j (Row i (Op k))
+  etsToOp :: (Ord j, Ord i) => IsoOpGal k -> Entries i j k -> Col j (Row i (Op k))
   etsToOp t = etscr . etsMapCnt t
 
   -- the transposed row of columns as a column of rows.
-  rcFromOp :: i ~ j => IsoOpDst k -> Row j (Col i (Op k)) -> Col i (Row j k)
+  rcFromOp :: i ~ j => IsoOpGal k -> Row j (Col i (Op k)) -> Col i (Row j k)
   rcFromOp = rcTranspose . vInv2
 
   -- the transposed transformations.
-  tfsFromOp :: Field k => IsoOpDst k -> TF (Op k) -> TF k
+  tfsFromOp :: Field k => IsoOpGal k -> TF (Op k) -> TF k
   tfsFromOp i tr = case tr of
     One d       -> One (dimFromOp i d)
     P t         -> P (trfFromOp i t)
     tf' :^ z    -> tfsFromOp i tf' :^ z
     a :* b      -> tfsFromOp i b :* tfsFromOp i a
 
-  -- the diagonal entries.
-  rcDiags :: (Ord j, j ~ i) => Row j (Col i k) -> [k]
-  rcDiags (Row (PSequence cls)) = rcdg cls where
-    rcdg []                 = []
-    rcdg ((cl,j):cls)       = case cl of
-      Col (PSequence xis)  -> rcdg' j xis cls
-
-    rcdg' _ [] cls          = rcdg cls
-    rcdg' j ((x,i):xis) cls = case i `compare` j of
-      LT                   -> rcdg' j xis cls
-      EQ                   -> x:rcdg cls
-      GT                   -> rcdg cls
-
-  trfFromOp :: Field k => IsoOpDst k -> Transformation (Op k) -> Transformation k
-  trfFromOp i tr   = case tr of
-    Permute r c p -> Permute (dimFromOp i c) (dimFromOp i r) (invert p)
-    Scale d l s   -> Scale (dimFromOp i d) l (Inv f g) where Inv (Op f) (Op g) = s
-    Shear d l k g -> Shear (dimFromOp i d) l k g' where
-      GL2 (Op s) (Op t) (Op u) (Op v) = g
-      g' = GL2 s u t v
+  trfFromOp :: IsoOpGal k -> Transformation (Op k) -> Transformation k
+  trfFromOp i = trfMapCnt (vInv2 i)
 
 --------------------------------------------------------------------------------
 -- prpMtxDiagonalForm -
@@ -373,3 +360,86 @@ prpMtxDiagonalFormQ = Prp "MtxDiagonalFromQ"
   xQ :: X (Matrix Q)
   xQ = xoOrt $ xMatrixTtl 16 0.8 xStandard
 
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- rcDiags -
+
+-- | the diagonal entries.
+rcDiags :: (Ord j, j ~ i) => Row j (Col i x) -> [(x,i)]
+rcDiags (Row (PSequence cls)) = rcdgs cls where
+  rcdgs []                 = []
+  rcdgs ((cl,j):cls)       = case cl of
+    Col (PSequence xis)  -> rcdgs' j xis cls
+
+  rcdgs' _ [] cls       = rcdgs cls
+  rcdgs' j (xi:xis) cls = case snd xi `compare` j of
+    LT                 -> rcdgs' j xis cls
+    EQ                 -> xi:rcdgs cls
+    GT                 -> rcdgs cls
+
+--------------------------------------------------------------------------------
+-- Gal -
+
+data Gal
+
+type instance Structure Gal x = Galoisian x
+
+instance Transformable Gal Type where tau Struct = Struct
+instance Transformable Gal Ort where tau Struct = Struct
+instance Transformable Gal Mlt where tau Struct = Struct
+instance Transformable Gal Fbr where tau Struct = Struct
+instance Transformable Gal FbrOrt where tau Struct = Struct
+instance Transformable Gal Add where tau Struct = Struct
+instance Transformable Gal Dst where tau Struct = Struct
+
+instance TransformableType Gal
+instance TransformableOrt Gal
+instance TransformableMlt Gal
+instance TransformableFbr Gal
+instance TransformableFbrOrt Gal
+instance TransformableAdd Gal
+instance TransformableDst Gal
+instance TransformableOp Gal
+
+instance TransformableG Op Gal Gal where tauG Struct = Struct
+instance TransformableGRefl Op Gal
+
+--------------------------------------------------------------------------------
+-- toDualOpGal -
+
+toDualOpGal :: Galoisian x => Variant2 Contravariant (IsoO Gal Op) x (Op x)
+toDualOpGal = toDualO Struct
+
+--------------------------------------------------------------------------------
+-- trfMapCnt -
+
+trfMapCntStruct :: HomDistributiveDisjunctive h
+  => Struct Gal y -> Variant2 Contravariant (Inv2 h) x y -> Transformation x -> Transformation y
+trfMapCntStruct Struct (Contravariant2 h) t = case t of
+  Permute r c p       -> Permute (dimMap (pmap h) c) (dimMap (pmap h) r) (invert p)
+  
+  -- as h is a homomorphism on multiplicative structure it follows that if f is invertible with
+  -- inverse equal to g then amap h f is invertible with inverse equal to amap h g!
+  Scale d k (Inv f g) -> Scale (dimMap (pmap h) d) k (Inv (amap h f) (amap h g))
+
+  Shear d k l (GL2 s t u v) -> Shear (dimMap (pmap h) d) k l (GL2 s' u' t' v') where
+    s' = amap h s
+    t' = amap h t
+    u' = amap h u
+    v' = amap h v
+
+{-  
+  trfFromOp i tr   = case tr of
+    Permute r c p -> Permute (dimFromOp i c) (dimFromOp i r) (invert p)
+    Scale d l s   -> Scale (dimFromOp i d) l (Inv f g) where Inv (Op f) (Op g) = s
+    Shear d l k g -> Shear (dimFromOp i d) l k g' where
+      GL2 (Op s) (Op t) (Op u) (Op v) = g
+      g' = GL2 s u t v
+-}
+
+-- | mapping a transformation.
+trfMapCnt :: (HomDistributiveDisjunctive h, Transformable (ObjectClass h) Gal)
+  => Variant2 Contravariant (Inv2 h) x y -> Transformation x -> Transformation y
+trfMapCnt h = trfMapCntStruct (tau $ range h) h
