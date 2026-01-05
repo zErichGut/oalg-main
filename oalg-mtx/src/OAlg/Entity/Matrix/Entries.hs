@@ -41,6 +41,9 @@ module OAlg.Entity.Matrix.Entries
   , crHeadColAt, crTailRowsAt
   , crHeadRowAt
 
+    -- * Row Col
+  , rcDiags
+
     -- * Duality
   , coEntries, coEntriesInv
   , rcTranspose
@@ -427,6 +430,22 @@ rcTranspose h (Row (PSequence cls)) = Col $ PSequence $ amap1 (clTrsp h) cls whe
   xTrsp :: HomDistributiveDisjunctive h
     => Variant2 Contravariant (Inv2 h) x y -> (x,i) -> (y,i)
   xTrsp (Contravariant2 h) (k',i) = (amap h k',i)
+
+--------------------------------------------------------------------------------
+-- rcDiags -
+
+-- | the diagonal entries.
+rcDiags :: (Ord j, j ~ i) => Row j (Col i x) -> [(x,i)]
+rcDiags (Row (PSequence cls)) = rcdgs cls where
+  rcdgs []                 = []
+  rcdgs ((cl,j):cls)       = case cl of
+    Col (PSequence xis)  -> rcdgs' j xis cls
+
+  rcdgs' _ [] cls       = rcdgs cls
+  rcdgs' j (xi:xis) cls = case snd xi `compare` j of
+    LT                 -> rcdgs' j xis cls
+    EQ                 -> xi:rcdgs cls
+    GT                 -> rcdgs cls
 
 --------------------------------------------------------------------------------
 -- Entries -

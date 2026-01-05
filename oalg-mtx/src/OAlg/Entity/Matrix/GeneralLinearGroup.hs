@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ConstraintKinds, DataKinds #-}
 
 -- |
 -- Module      : OAlg.Entity.Matrix.GeneralLinearGroup
@@ -20,6 +21,11 @@ module OAlg.Entity.Matrix.GeneralLinearGroup
 
     -- * Transformation
     Transformation(..)
+
+    -- * Galoisian
+  , toDualOpGal, IsoOpGal, Gal
+  , trMapCnt, pdfTrMapCnt
+  , HomGaloisianDisjunctive
 
     -- * GL
   , GL, GL2(..)
@@ -50,6 +56,7 @@ module OAlg.Entity.Matrix.GeneralLinearGroup
 
 import Control.Monad hiding (sequence)
 
+import Data.Kind
 import Data.List ((++))
 
 import OAlg.Prelude hiding (T)
@@ -58,10 +65,13 @@ import OAlg.Data.Reducible
 import OAlg.Data.Constructable
 import OAlg.Data.Canonical
 import OAlg.Data.Singleton
+import OAlg.Data.Variant
 
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
+import OAlg.Structure.Fibred
+import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
@@ -69,8 +79,10 @@ import OAlg.Structure.Number
 import OAlg.Structure.Exponential
 import OAlg.Structure.Operational
 
+import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
 import OAlg.Hom.Multiplicative
+import OAlg.Hom.Distributive
 
 import OAlg.Entity.Product
 import OAlg.Entity.Sequence
@@ -412,6 +424,92 @@ type GLTForm x = ProductForm Z (Transformation x)
 --  (2) For all exponents @z@ in @'rdcGLTForm' f@ holds: @0 '<' z@.
 rdcGLTForm :: Oriented x => GLTForm x -> GLTForm x
 rdcGLTForm = prfReduceWith rdcTransformations
+
+--------------------------------------------------------------------------------
+-- Gal -
+
+data Gal
+
+type instance Structure Gal x = Galoisian x
+
+instance Transformable Gal Type where tau Struct = Struct
+instance Transformable Gal Ort where tau Struct = Struct
+instance Transformable Gal Mlt where tau Struct = Struct
+instance Transformable Gal Fbr where tau Struct = Struct
+instance Transformable Gal FbrOrt where tau Struct = Struct
+instance Transformable Gal Add where tau Struct = Struct
+instance Transformable Gal Dst where tau Struct = Struct
+
+instance TransformableType Gal
+instance TransformableOrt Gal
+instance TransformableMlt Gal
+instance TransformableFbr Gal
+instance TransformableFbrOrt Gal
+instance TransformableAdd Gal
+instance TransformableDst Gal
+instance TransformableOp Gal
+
+instance TransformableG Op Gal Gal where tauG Struct = Struct
+instance TransformableGRefl Op Gal
+
+--------------------------------------------------------------------------------
+-- IsoOpGal -
+
+-- | contravariant isomorphism. 
+type IsoOpGal x = Variant2 Contravariant (IsoO Gal Op) x (Op x)
+
+--------------------------------------------------------------------------------
+-- toDualOpGal -
+
+toDualOpGal :: Galoisian x => Variant2 Contravariant (IsoO Gal Op) x (Op x)
+toDualOpGal = toDualO Struct
+
+--------------------------------------------------------------------------------
+-- trMapCnt -
+
+-- | contravariant mapping a transformation.
+trMapCntStruct :: HomDistributiveDisjunctive h
+  => Struct Gal y -> Variant2 Contravariant (Inv2 h) x y -> Transformation x -> Transformation y
+trMapCntStruct Struct (Contravariant2 h) t = case t of
+  Permute r c p       -> Permute (dimMap (pmap h) c) (dimMap (pmap h) r) (invert p)
+  
+  -- as h is a homomorphism on multiplicative structure it follows that if f is invertible with
+  -- inverse equal to g then amap h f is invertible with inverse equal to amap h g!
+  Scale d k (Inv f g) -> Scale (dimMap (pmap h) d) k (Inv (amap h f) (amap h g))
+
+  Shear d k l (GL2 s t u v) -> Shear (dimMap (pmap h) d) k l (GL2 s' u' t' v') where
+    s' = amap h s
+    t' = amap h t
+    u' = amap h u
+    v' = amap h v
+
+-- | disjunctive homomorphism between 'Galoisian' structures.
+type HomGaloisianDisjunctive h = (HomDistributiveDisjunctive h, Transformable (ObjectClass h) Gal)
+
+-- | contravariant mapping a transformation.
+trMapCnt :: HomGaloisianDisjunctive h
+  => Variant2 Contravariant (Inv2 h) x y -> Transformation x -> Transformation y
+trMapCnt h = trMapCntStruct (tau $ range h) h
+
+--------------------------------------------------------------------------------
+-- pdfTrMapCnt -
+
+-- | contravariant mapping of a 'Z'-product form of transformations.
+pdfTrMapCntStruct :: HomGaloisianDisjunctive h
+  => Struct Gal y
+  -> Variant2 Contravariant (Inv2 h) x y
+  -> ProductForm Z (Transformation x) -> ProductForm Z (Transformation y)
+pdfTrMapCntStruct sg@Struct i p = case p of
+  One d    -> One (dimMap (pmap i) d)
+  P t      -> P (trMapCnt i t)
+  a :^ z   -> pdfTrMapCntStruct sg i a :^ z
+  a :* b   -> pdfTrMapCntStruct sg i b :* pdfTrMapCntStruct sg i a
+
+-- | contravariant mapping of a 'Z'-product form of transformations.
+pdfTrMapCnt :: HomGaloisianDisjunctive h
+  => Variant2 Contravariant (Inv2 h) x y
+  -> ProductForm Z (Transformation x) -> ProductForm Z (Transformation y)
+pdfTrMapCnt i = pdfTrMapCntStruct (tau $ range i) i  
 
 --------------------------------------------------------------------------------
 -- FT -

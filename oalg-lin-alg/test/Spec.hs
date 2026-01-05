@@ -8,10 +8,13 @@ import Data.List((++))
 import OAlg.Prelude
 
 import OAlg.LinearAlgebra.StepMatrix
+import OAlg.LinearAlgebra.KernelsAndCokernels
+
 proposition :: Statement
 proposition = Prp "oalg-lin-alg"
   :<=>: And [ prpStepMatrixQ
             , prpMtxDiagonalFormQ
+            , prpMtxKernelsQ
             ]
 
 main :: IO ()

@@ -33,4 +33,10 @@ and this project adheres to the
 ## [3.2.0.4] - 2026-01-02
 
 ### Added
-- crTranspose
+- rcTranspose
+
+## [3.2.0.5] - 2026-01-04
+
+### Added
+- rcDiags
+- contravariant mappings for Transformation.
