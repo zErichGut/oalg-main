@@ -251,20 +251,6 @@ crStepMtx' dr i (Graph ijs) rws = (j,cl',tfs') >:* crStepMtx' dr i' (crHeadIndex
       tElimh :: (i ~ N, Field k) => Dim' k -> i -> (k,i) -> TF k
       tElimh d i (x,i') = P $ Shear d i i' (GL2 rOne rZero (negate x) rOne)
 
--- m = matrix (dim () ^ 7) (dim () ^ 5) [(2,1,0),(4,3,0),(7,1,1)] :: Matrix Q
-
-mt :: (Ring r, i ~ N, j ~ N) => N -> N -> [([(r,j)],i)] -> Matrix r
-mt r c xijs = matrixTtl r c xijs' where
-  xijs' = join $ amap1 (\(xjs,i) -> amap1 (\(x,j) -> (x,i,j)) xjs) xijs
-
-m :: Matrix Q
-m = mt 4 6 ([ [2,4,6,0,2  ] `zip` [1..]
-            , [1,2,3,3,0.5] `zip` [1..]
-            , [3,6,7,1,2  ] `zip` [1..]
-            , [1,2,5,3,4/3] `zip` [1..]
-            ] `zip` [0..]
-           )
-
 --------------------------------------------------------------------------------
 -- prpStepMatrix -
 
