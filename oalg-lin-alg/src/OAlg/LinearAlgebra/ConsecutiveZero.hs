@@ -118,8 +118,7 @@ dgzField = Diagonalizable mtxDiagonalForm
 --------------------------------------------------------------------------------
 -- isoChainDiagFst -
 
--- | isomorphism from the given chain diagram to a chain diagram with first matrix a diagonal matrix
--- with non zero entries.
+-- | see 'isoChainDiagFst'.
 isoChainToDiagFst :: Distributive k
   => Diagonalizable k -> Diagram (Chain To) (n+1) n (Matrix k)
   -> Inv (DiagramTrafo (Chain To) (n+1) n (Matrix k))
@@ -144,6 +143,8 @@ isoChainToDiagFst dgz a@(DiagramChainTo _ chs) = case chs of
     (*>) _ Nil     = Nil
     (*>) l (x:|xs) = (l*x):|xs
 
+-- | isomorphism from the given chain diagram to a chain diagram with first matrix a diagonal matrix
+-- with non zero entries.
 isoChainDiagFst :: Distributive k
   => Diagonalizable k -> Diagram (Chain t) (n+1) n (Matrix k)
   -> Inv (DiagramTrafo (Chain t) (n+1) n (Matrix k))
@@ -167,8 +168,7 @@ class Distributive d => Monic d
 
 -- | predicate for consecutive zero chain diagrams beeing in normal form.
 --
--- __Property__ Let @'ConsZeroNormalForm c@ be in @t'ConsZeroNormalForm' __t n k__@, then for all
---  holds:
+-- __Property__ Let @'ConsZeroNormalForm' c@ be in @t'ConsZeroNormalForm' __t n k__@, then holds:
 --
 -- (1) @'ConsecutiveZero' c@ is 'valid'.
 --
@@ -176,25 +176,35 @@ class Distributive d => Monic d
 --
 --   (1) For all @(i,j)@ not in @s@ holds: @m i j@ is 'zero'.
 --
---   (2) For @(_,j)':'..@ in @s@ holds: @j '==' 0@. 
+--   (2) For @(i0,j)':'..@ in @s@ holds: @j '==' 0@. 
 --
 --   (3) For all @..(i,j)':'(i',j')..@ in @s@ holds: @i' '==' i '+' 1@ and @j' '==' j '+' 1@.
 --
 -- As such, @m@ has the form:
 --
 -- @
---    [0 ..           0]
---    ..
---    [0 ..           0]
---    [x0 0 ..        0]
---    [0 x1 0 ..      0]
---    [0 0 x2 0 ..    0]
---    ..
---    [0 .. 0 xr 0 .. 0]
---    [0 ..           0]
---    ..
---    [0 ..           0]
+--           0 1 2 .. r
+--      
+--          [0 ..             0]
+--          ..
+--          [0 ..             0]
+--  i0      [x0 0 ..          0]
+--  i0 + 1  [0 x1 0 ..        0]
+--  i0 + 2  [0 0 x2 0 ..      0]
+--  ..      ..
+--  i0 + r  [0 ..   0 xr 0 .. 0]
+--          [0 ..             0]
+--          ..  
+--          [0 ..             0]
 -- @
+--
+-- (3) If @__t__ ~ 'From'@, then for all @m@ in @'dgArrows' c@ and @s = 'rowHeadIndex' m@ holds:
+--
+--   (1) For all @(i,j)@ not in @s@ holds: @m i j@ is 'zero'.
+--
+--   (2) For @(i,j0)':'..@ in @s@ holds: @i '==' 0@. 
+--
+--   (3) For all @..(i,j)':'(i',j')..@ in @s@ holds: @i' '==' i '+' 1@ and @j' '==' j '+' 1@.
 --
 newtype ConsZeroNormalForm t n k = ConsZeroNormalForm (Diagram (Chain t) (n+3) (n+2) (Matrix k))
   deriving (Show,Eq)
@@ -249,12 +259,21 @@ instance Distributive k => Validable (ConsZeroNormalForm t n k) where
 -- | the normal form of a consecutive zero chain.
 --
 -- __Property__ Let @c@ be in @'ConsecutiveZero' 'To' __n__ ('Matrix' __k__)@,
--- @d@ be a witness of @'Diagonalizable' __k__@ and @i = 'cnzNormalFormTo' d c@ for @'Monic' __k__@,
--- then holds:
+-- @dgz@ be a witness of @'Diagonalizable' __k__@ and @iso = 'cnzNormalFormTo' dgz c@ for
+-- a @'Monic' __k__@, then holds:
 --
--- (1) @'start' i '==' c@.
+-- (1) @'start' iso '==' c@.
 --
--- (2) @'ConsZeroNormalForm' ('end' i)@ is 'valid'.
+-- (2) Let @d = 'cnzDiagram' ('end' iso)@ and @ds = 'dgArrows' d@, then holds
+--
+--     (1) @'ConsZeroNormalForm' d@ is 'valid'.
+--
+--     (2) @d0@ is a diagonal matrix, where @d0 = 'head' ds@.
+--
+--     (3) For all @..dk':|'dl..@ in @ds@ holds: @il '==' rk '+' 1@, where
+--     @il@ is the first row index of @dl@ with a entry not equal to 'zero' and
+--     @rk@ is the last row index of @dk@  with a entry not equal to 'zero' (note: if @dk@ is
+--     is 'zero', then @rk@ is defined as @-1@.)
 cnzNormalFormTo :: Monic k
   => Diagonalizable k
   -> ConsecutiveZero To n (Matrix k) -> Inv (ConsecutiveZeroHom To n (Matrix k))
