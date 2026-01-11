@@ -30,6 +30,7 @@ import OAlg.Prelude
 
 import OAlg.Category.SDuality
 
+import OAlg.Data.Singleton
 import OAlg.Data.Either
 import OAlg.Data.Variant
 
@@ -38,10 +39,12 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
+import OAlg.Structure.Exponential
 
 import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Entity.Matrix.Definition
+import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Entries
 import OAlg.Entity.Matrix.Transformation
 import OAlg.Entity.Matrix.GeneralLinearGroup
@@ -274,11 +277,36 @@ instance Distributive k => Validable (ConsZeroNormalForm t n k) where
 --     @il@ is the first row index of @dl@ with a entry not equal to 'zero' and
 --     @rk@ is the last row index of @dk@  with a entry not equal to 'zero' (note: if @dk@ is
 --     is 'zero', then @rk@ is defined as @-1@.)
-cnzNormalFormTo :: Monic k
+cnzNormalFormTo :: (Galoisian k, Monic k, Attestable n)
   => Diagonalizable k
   -> ConsecutiveZero To n (Matrix k) -> Inv (ConsecutiveZeroHom To n (Matrix k))
-cnzNormalFormTo = error "nyi"
+cnzNormalFormTo dgz (ConsecutiveZero c0) = Inv t f where
 
+  t = error "nyi"
+  f = error "nyi"
+
+  Inv t0 f0 = isoChainToDiagFst dgz c0
+  -- start t0 is equal to c0.
+
+  c1 = end t0
+  d0:|d1:|ds = dgArrows c1
+
+  -- rank of d0.
+  r = lengthN $ mtxxs d0
+  -- as d0 is diagonal and the ring k is monic, it follows that all rows of d1
+  -- with a row index i < r are zero!
+  s = (lengthN $ start d0) >- r
+
+  p1 = mtxJoin $ matrixBlc [s'] [r',s'] [(one s',0,1)] where
+    r' = dim unit ^ r
+    s' = dim unit ^ s
+
+  -- tail of c1 with adapted first matrix
+  c'1 = DiagramChainTo (end d'1) (d'1 :| ds) where d'1 = p1 * d1
+
+  Inv t'1 f'1  = isoChainToDiagFst dgz c'1
+  c'2 = end t'1
+    
 
 {-
     chs'' = case chs' of
