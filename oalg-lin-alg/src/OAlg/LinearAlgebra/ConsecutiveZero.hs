@@ -167,6 +167,68 @@ invChainDiagFst d a     = case a of
 class Distributive d => Monic d
 
 --------------------------------------------------------------------------------
+-- invChainDiag -
+
+-- | isomorphism from the given chain-to diagram with consecutive zero matrices to a chain-to diagram
+-- with diagonal entries.
+invChainToDiag :: (Galoisian k, Monic k)
+  => Diagonalizable k
+  -> Any n
+  -> Diagram (Chain To) (n+1) n (Matrix k) -> Inv (DiagramTrafo (Chain To) (n+1) n (Matrix k))
+invChainToDiag dgz n@(SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,n'Ats) of
+  (Ats,Ats) -> β * α where
+--            a0      a1
+--     a:   <----- <-----  ...
+--     |   |      |      |
+--  α  |   |      |      | ...
+--     v   v  b0  v  b1  v
+--     b:   <----- <-----  ...
+--     |   |      |      |
+--  β  |   |      |      | ...
+--     v   v  c0  v  c1  v
+--     c:   <----- <-----  ...
+
+    α = invChainToDiagFst dgz a
+    β = Inv μ ν
+
+    b          = end α
+    b0:|b1:|bs = dgArrows b
+    r          = lengthN $ mtxxs b0 -- the rank of b0
+    s          = (lengthN $ start b0) >- r 
+-- as a is consecutive zero, it follows that:
+--   b and c are consecutive zero
+--   b0 is diagonal
+--   as k is monic it follows that:
+--     all rows of b1 with an index i < r are zero
+
+    r' = dim unit ^ r
+    s' = dim unit ^ s
+
+    or = one r'
+    os = one s'
+    p1 = mtxJoin $ matrixBlc [s'] [r',s'] [(os,0,1)]
+    i1 = mtxJoin $ matrixBlc [r',s'] [s'] [(os,1,0)]
+  
+    b'             = DiagramChainTo s' (b'1:|bs) where b'1 = p1 * b1
+    β'@(Inv μ' ν') = invChainToDiag dgz n' b'
+
+    c'       = end β'
+    c'1:|c's = dgArrows c'
+    c        = DiagramChainTo (end b0) (b0:|c1:|c's) where c1 = i1 * c'1
+    
+    o0 = one (end b0)
+    μ  = DiagramTrafo b c μs where
+      μs       = o0:| μ''1 :| μ's
+      μ'1:|μ's = dgts μ'
+      μ''1     = mtxJoin $ matrixBlc [r',s'] [r',s'] [(or,0,0),(μ'1,1,1)] 
+    ν  = DiagramTrafo c b νs where
+      νs       = o0:| ν''1 :| ν's
+      ν'1:|ν's = dgts ν'
+      ν''1     = mtxJoin $ matrixBlc [r',s'] [r',s'] [(or,0,0),(ν'1,1,1)] 
+
+invChainToDiag dgz _ a = invChainToDiagFst dgz a
+
+--------------------------------------------------------------------------------
 -- ConsZeroNormalForm -
 
 -- | predicate for consecutive zero chain diagrams beeing in normal form.
@@ -281,54 +343,8 @@ cnzNormalFormTo :: (Galoisian k, Monic k)--, Attestable n)
   => Diagonalizable k
   -> Any n
   -> ConsecutiveZero To n (Matrix k) -> Inv (ConsecutiveZeroHom To n (Matrix k))
-cnzNormalFormTo dgz n (ConsecutiveZero c0) = case n' of {Ats -> toCnzInv (inv1 * inv0)} where
-  n' = ats n
-
-  inv0@(Inv t0 f0) = invChainToDiagFst dgz c0
-  -- start t0 is equal to c0.
-
-  c1 = case n' of Ats -> end t0
-  d0:|d1:|ds = dgArrows c1
-
-  -- rank of d0.
-  r = lengthN $ mtxxs d0
-  r' = dim unit ^ r
+cnzNormalFormTo dgz n (ConsecutiveZero a) = toCnzInv $ invChainToDiag dgz (SW (SW n)) a where
   
-  -- as d0 is diagonal and the ring k is monic, it follows that all rows of d1
-  -- with a row index i < r are zero!
-  s = (lengthN $ start d0) >- r
-  s' = dim unit ^ s
-
-  os = one s'
-  p1 = mtxJoin $ matrixBlc [s'] [r',s'] [(os,0,1)]
-  i1 = mtxJoin $ matrixBlc [r',s'] [s'] [(os,1,0)]
-    
-  -- tail of c1 with adapted first matrix
-  c'1 = DiagramChainTo (end d'1) (d'1 :| ds) where d'1 = p1 * d1
-
-  Inv t'1 f'1  = nfTo dgz (SW n) c'1
-  c'2 = case n' of Ats -> end t'1
-
-  c2 = DiagramChainTo (end d0) (d0:|d'1:|ds) where
-    d'1    = d1 * i1
-    d1:|ds = dgArrows c'2
-
-  inv1 = Inv t1 f1 where
-    t1 = DiagramTrafo c1 c2 fs where fs = error "nyi"
-    f1 = DiagramTrafo c2 c1 fs where fs = error "nyi"
-
-  
-  -- pre: if n >= 2, then c is consecutive zero!
-  nfTo :: (Galoisian k, Monic k)
-    => Diagonalizable k
-    -> Any n
-    -> Diagram (Chain To) (n+1) n (Matrix k) -> Inv (DiagramTrafo (Chain To) (n+1) n (Matrix k))
-  nfTo dgz (SW (SW n)) c  = Inv t' f' where
-    Inv t f               = cnzNormalFormTo dgz n (ConsecutiveZero c)
-    ConsecutiveZeroHom t' = t
-    ConsecutiveZeroHom f' = f
-  nfTo dgz _ c            = invChainToDiagFst dgz c
-
   toCnzInv :: Inv (DiagramTrafo (Chain To) (n+3) (n+2) (Matrix k))
            -> Inv (ConsecutiveZeroHom To n (Matrix k))
   toCnzInv (Inv t f) = Inv t' f' where
