@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      OAlg.LinearAlgebra.ConsecutiveZero
       OAlg.LinearAlgebra.KernelsAndCokernels
       OAlg.LinearAlgebra.StepMatrix
   other-modules:

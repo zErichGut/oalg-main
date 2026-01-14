@@ -19,10 +19,10 @@
 -- 
 -- Representation for consecutive zeros.
 module OAlg.LinearAlgebra.ConsecutiveZero
-  (
+  ( cnzNormalFormTo
   ) where
 
-import Control.Monad (join)
+import Control.Monad
 import qualified Data.List as L (zip)
 import Data.Foldable
 
@@ -56,6 +56,12 @@ import OAlg.Entity.Diagram
 import OAlg.Limes.Exact.ConsecutiveZero
 
 import OAlg.LinearAlgebra.StepMatrix
+
+
+import OAlg.Limes.Definition
+import OAlg.Limes.Limits
+import OAlg.Limes.KernelsAndCokernels
+import OAlg.LinearAlgebra.KernelsAndCokernels
 
 --------------------------------------------------------------------------------
 
@@ -166,6 +172,8 @@ invChainDiagFst d a     = case a of
 -- If @'isZero' (f '*' x)@ then @'isZero' x@.
 class Distributive d => Monic d
 
+instance Monic Q
+
 --------------------------------------------------------------------------------
 -- invChainDiag -
 
@@ -175,7 +183,7 @@ invChainToDiag :: (Galoisian k, Monic k)
   => Diagonalizable k
   -> Any n
   -> Diagram (Chain To) (n+1) n (Matrix k) -> Inv (DiagramTrafo (Chain To) (n+1) n (Matrix k))
-invChainToDiag dgz n@(SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,n'Ats) of
+invChainToDiag dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,n'Ats) of
   (Ats,Ats) -> β * α where
 --            a0      a1
 --     a:   <----- <-----  ...
@@ -352,6 +360,28 @@ cnzNormalFormTo dgz n (ConsecutiveZero a) = toCnzInv $ invChainToDiag dgz (SW (S
     f' = ConsecutiveZeroHom f
 
 
+--------------------------------------------------------------------------------
+-- prpCnzNormalFormToQ -
+
+relCnzNormalFormToQ :: (Galoisian k, Monic k, Attestable n)
+  => Diagonalizable k
+  -> Any n -> ConsecutiveZero To n (Matrix k) -> Statement
+relCnzNormalFormToQ dgz n c
+  = And [ valid iso
+        , Label "1" :<=>: (start iso == c) :?> Params ["c":=show c]
+        , Label "2.1" :<=>: valid (ConsZeroNormalForm d)
+        ] where
+
+  iso = cnzNormalFormTo dgz n c
+  d   = cnzDiagram (end iso)
+
+-- | validity according to 'cnzNormalFormTo' for matrices over 'Q'.
+prpCnzNormalFormToQ :: Attestable n => Any n -> Statement
+prpCnzNormalFormToQ n = Prp "CnzNormalFormToQ"
+  :<=>: Forall (xCnzToQ n) (relCnzNormalFormToQ dgzField n)
+
+
+
 mt :: (Ring r, i ~ N, j ~ N) => N -> N -> [([(r,j)],i)] -> Matrix r
 mt r c xijs = matrixTtl r c xijs' where
   xijs' = join $ amap1 (\(xjs,i) -> amap1 (\(x,j) -> (x,i,j)) xjs) xijs
@@ -364,10 +394,47 @@ m = mt 4 6 ([ [2,4,6,0,2  ] `L.zip` [1..]
             ] `L.zip` [0..]
            )
 
-d = DiagramChainTo (end m) (m:|Nil)
+km = limes mtxKernels (kernelDiagram m)
+
+d = ConsecutiveZero $ DiagramChainTo (end m) (m:|k:|Nil) where k = kernelFactor $ universalCone km
 
 
 xx :: X (Diagram (Chain To) N4 N3 (Matrix Q))
 xx = xStandard
 
 pp = Forall xx (valid . invChainDiagFst dgzField)
+
+
+xCnzToQ :: Any n -> X (ConsecutiveZero To n (Matrix Q))
+xCnzToQ = xConsZeroTo mtxKernels xStandardOrtOrientation
+
+qq = Forall (xCnzToQ (attest :: Any N3)) valid
+
+--------------------------------------------------------------------------------
+-- xConsZeroTo -
+
+-- | random variable of 'To'-consecutive zero matrices.
+xConsZeroTo :: Distributive x => Kernels N1 (Matrix x) -> XOrtOrientation (Matrix x)
+  -> Any n -> X (ConsecutiveZero To n (Matrix x))
+xConsZeroTo krs xo n = do
+  o  <- xoOrientation xo 
+  d0 <- xoArrow xo o
+  ds <- xc krs xo (SW n) d0
+  return (ConsecutiveZero $ DiagramChainTo (end d0) (d0:|ds))
+  
+  where
+    -- random variable of consecutive zero matrices, where the first matrix is consecutive zero
+    -- to the given on.
+    xc :: Distributive x
+      => Kernels N1 (Matrix x) -> XOrtOrientation (Matrix x)
+      -> Any n -> Matrix x -> X (FinList n (Matrix x))
+    xc _ _ W0 _        = return Nil
+    xc krs xo (SW n) d = do
+      s  <- xoPoint xo
+      f  <- xoArrow xo (s :> start dk)
+      d' <- return (dk * f)
+      ds <- xc krs xo n d'
+      return (d':|ds)
+      where dk = kernelFactor $ universalCone $ limes krs (kernelDiagram d)
+    
+
