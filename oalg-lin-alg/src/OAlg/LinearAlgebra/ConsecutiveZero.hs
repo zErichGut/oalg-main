@@ -19,11 +19,17 @@
 -- 
 -- Representation for consecutive zeros.
 module OAlg.LinearAlgebra.ConsecutiveZero
-  ( cnzNormalFormTo
+  ( -- * Normal Form
+    invCnzNormalFormTo
+  , invChainDiagFstTo
+  , ConsZeroNormalForm(..)
+  , dgzField
+
+    -- * Proposition
+  , prpInvCnzNormalFormToQ
   ) where
 
 import Control.Monad
-import qualified Data.List as L (zip)
 import Data.Foldable
 
 import OAlg.Prelude
@@ -99,7 +105,7 @@ instance (Distributive k, XStandardOrtOrientation k) => Validable (Diagonalizabl
 -- | the associated diagonal form.
 diagonalForm :: Diagonalizable k -> Matrix k -> DiagonalForm k
 diagonalForm (Diagonalizable d) = d
-
+{-
 --------------------------------------------------------------------------------
 -- dgzOp -
 
@@ -116,7 +122,7 @@ dgzOp d = Diagonalizable (dOp toDualOpGal d) where
     ks' = amap1 (amap i) ks
     rt' = error "nyi"
     ct' = error "nyi"
-
+-}
 --------------------------------------------------------------------------------
 -- dgzField -
 
@@ -127,11 +133,20 @@ dgzField = Diagonalizable mtxDiagonalForm
 --------------------------------------------------------------------------------
 -- invChainDiagFst -
 
--- | see 'invChainDiagFst'.
-invChainToDiagFst :: Distributive k
+-- | isomorphism from the given chain diagram to a chain diagram with first matrix a diagonal matrix.
+--
+-- __Property__ Let @a@ be in @'Diagram' ('Chain' 'To) (__n__ + 1) __n__ ('Matrix' __k__)@ and
+-- @i = 'invChainDiagFstTo' d a@ for a @d@ in @'Diagonalizable' __k__@, then holds:
+--
+-- (1) @a '==' 'start' i@.
+--
+-- (2) @b0@ is a diagonal matrix, where @b0':|'_ = 'dgArrows' ('end' i)@.
+--
+-- (3) @f@ is 'one' for all @f@ in @_':|'_':|'fs = 'dgts' ('invFst' i)@.
+invChainDiagFstTo :: Distributive k
   => Diagonalizable k -> Diagram (Chain To) (n+1) n (Matrix k)
   -> Inv (DiagramTrafo (Chain To) (n+1) n (Matrix k))
-invChainToDiagFst dgz a@(DiagramChainTo _ chs) = case chs of
+invChainDiagFstTo dgz a@(DiagramChainTo _ chs) = case chs of
   Nil     -> one a
   m:|chs' -> Inv t f where
     
@@ -151,15 +166,16 @@ invChainToDiagFst dgz a@(DiagramChainTo _ chs) = case chs of
     (*>) :: Multiplicative x => x -> FinList n x -> FinList n x
     (*>) _ Nil     = Nil
     (*>) l (x:|xs) = (l*x):|xs
-
+{-
 -- | isomorphism from the given chain diagram to a chain diagram with first matrix a diagonal matrix
 -- with non zero entries.
 invChainDiagFst :: Distributive k
   => Diagonalizable k -> Diagram (Chain t) (n+1) n (Matrix k)
   -> Inv (DiagramTrafo (Chain t) (n+1) n (Matrix k))
 invChainDiagFst d a     = case a of
-  DiagramChainTo _ _   -> invChainToDiagFst d a
+  DiagramChainTo _ _   -> invChainDiagFstTo d a
   DiagramChainFrom _ _ -> error "nyi"
+-}
 
 --------------------------------------------------------------------------------
 -- Monic -
@@ -170,21 +186,45 @@ invChainDiagFst d a     = case a of
 --
 -- (1) For all @f@ and @x@ in @__d__@ with @'end' x '==' 'start' f@ and @'not' ('isZero' f)@ holds:
 -- If @'isZero' (f '*' x)@ then @'isZero' x@.
-class Distributive d => Monic d
+data Monic d where Monic :: Distributive d => Monic d
 
-instance Monic Q
+--------------------------------------------------------------------------------
+-- monField -
+
+-- | whitness for beeing 'Monic'.
+monField :: Field k => Monic k
+monField = Monic
+
+--------------------------------------------------------------------------------
+-- monZ -
+
+-- | whitness for beeing 'Monic'.
+monZ :: Monic Z
+monZ = Monic
+
+--------------------------------------------------------------------------------
+-- invFst -
+
+invFst :: Inv x -> x
+invFst (Inv t _) = t
+
+--------------------------------------------------------------------------------
+-- invSnd -
+
+invSnd :: Inv x -> x
+invSnd (Inv _ f) = f
 
 --------------------------------------------------------------------------------
 -- invChainDiag -
 
 -- | isomorphism from the given chain-to diagram with consecutive zero matrices to a chain-to diagram
 -- with diagonal entries.
-invChainToDiag :: (Galoisian k, Monic k)
-  => Diagonalizable k
+invChainDiagTo :: Galoisian k
+  => Monic k -> Diagonalizable k
   -> Any n
   -> Diagram (Chain To) (n+1) n (Matrix k) -> Inv (DiagramTrafo (Chain To) (n+1) n (Matrix k))
-invChainToDiag dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,n'Ats) of
-  (Ats,Ats) -> β * α where
+invChainDiagTo mc@Monic dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,n'Ats) of
+  (Ats,Ats) -> γ {- = β * α -} where
 --            a0      a1
 --     a:   <----- <-----  ...
 --     |   |      |      |
@@ -196,9 +236,25 @@ invChainToDiag dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,
 --     v   v  c0  v  c1  v
 --     c:   <----- <-----  ...
 
-    α = invChainToDiagFst dgz a
-    β = Inv μ ν
+    -- according to the properties of invChainDiagFstTo and the construction of β it follows that
+    -- α2,α3... and β0 are one. As such it is more efficient to compute β * α given by γ.
+    γ = Inv γF γS where
 
+      γF = DiagramTrafo a c τs where
+        α0:|α1:|_  = dgts $ invFst α
+        _ :|β1:|βs = dgts $ invFst β
+        
+        τs = α0:| β1 * α1:| βs
+        
+      γS = DiagramTrafo c a τs where
+        α0:|α1:|_  = dgts $ invSnd α
+        _ :|β1:|βs = dgts $ invSnd β
+        
+        τs = α0:| α1 * β1:| βs
+           
+    α = invChainDiagFstTo dgz a
+    β = Inv μ ν
+    
     b          = end α
     b0:|b1:|bs = dgArrows b
     r          = lengthN $ mtxxs b0 -- the rank of b0
@@ -218,7 +274,7 @@ invChainToDiag dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,
     i1 = mtxJoin $ matrixBlc [r',s'] [s'] [(os,1,0)]
   
     b'             = DiagramChainTo s' (b'1:|bs) where b'1 = p1 * b1
-    β'@(Inv μ' ν') = invChainToDiag dgz n' b'
+    β'@(Inv μ' ν') = invChainDiagTo mc dgz n' b'
 
     c'       = end β'
     c'1:|c's = dgArrows c'
@@ -234,7 +290,7 @@ invChainToDiag dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSucc n'Ats,
       ν'1:|ν's = dgts ν'
       ν''1     = mtxJoin $ matrixBlc [r',s'] [r',s'] [(or,0,0),(ν'1,1,1)] 
 
-invChainToDiag dgz _ a = invChainToDiagFst dgz a
+invChainDiagTo _ dgz _ a = invChainDiagFstTo dgz a
 
 --------------------------------------------------------------------------------
 -- ConsZeroNormalForm -
@@ -327,12 +383,12 @@ instance Distributive k => Validable (ConsZeroNormalForm t n k) where
       SDualBi (Left1 c') = amapF i (SDualBi (Right1 c))
     
 --------------------------------------------------------------------------------
--- cnzNormalFormTo -
+-- invCnzNormalFormTo -
 
 -- | the normal form of a consecutive zero chain.
 --
 -- __Property__ Let @c@ be in @'ConsecutiveZero' 'To' __n__ ('Matrix' __k__)@,
--- @dgz@ be a witness of @'Diagonalizable' __k__@ and @iso = 'cnzNormalFormTo' dgz c@ for
+-- @dgz@ be a witness of @'Diagonalizable' __k__@ and @iso = 'invCnzNormalFormTo' dgz c@ for
 -- a @'Monic' __k__@, then holds:
 --
 -- (1) @'start' iso '==' c@.
@@ -347,11 +403,11 @@ instance Distributive k => Validable (ConsZeroNormalForm t n k) where
 --     @il@ is the first row index of @dl@ with a entry not equal to 'zero' and
 --     @rk@ is the last row index of @dk@  with a entry not equal to 'zero' (note: if @dk@ is
 --     is 'zero', then @rk@ is defined as @-1@.)
-cnzNormalFormTo :: (Galoisian k, Monic k)--, Attestable n)
-  => Diagonalizable k
+invCnzNormalFormTo :: Galoisian k
+  => Monic k -> Diagonalizable k
   -> Any n
   -> ConsecutiveZero To n (Matrix k) -> Inv (ConsecutiveZeroHom To n (Matrix k))
-cnzNormalFormTo dgz n (ConsecutiveZero a) = toCnzInv $ invChainToDiag dgz (SW (SW n)) a where
+invCnzNormalFormTo mc dgz n (ConsecutiveZero a) = toCnzInv $ invChainDiagTo mc dgz (SW (SW n)) a where
   
   toCnzInv :: Inv (DiagramTrafo (Chain To) (n+3) (n+2) (Matrix k))
            -> Inv (ConsecutiveZeroHom To n (Matrix k))
@@ -359,56 +415,32 @@ cnzNormalFormTo dgz n (ConsecutiveZero a) = toCnzInv $ invChainToDiag dgz (SW (S
     t' = ConsecutiveZeroHom t
     f' = ConsecutiveZeroHom f
 
-
 --------------------------------------------------------------------------------
--- prpCnzNormalFormToQ -
+-- prpInvCnzNormalFormToQ -
 
-relCnzNormalFormToQ :: (Galoisian k, Monic k, Attestable n)
-  => Diagonalizable k
+relInvCnzNormalFormToQ :: (Galoisian k, Attestable n)
+  => Monic k -> Diagonalizable k
   -> Any n -> ConsecutiveZero To n (Matrix k) -> Statement
-relCnzNormalFormToQ dgz n c
+relInvCnzNormalFormToQ mc dgz n c
   = And [ valid iso
         , Label "1" :<=>: (start iso == c) :?> Params ["c":=show c]
         , Label "2.1" :<=>: valid (ConsZeroNormalForm d)
         ] where
 
-  iso = cnzNormalFormTo dgz n c
+  iso = invCnzNormalFormTo mc dgz n c
   d   = cnzDiagram (end iso)
 
--- | validity according to 'cnzNormalFormTo' for matrices over 'Q'.
-prpCnzNormalFormToQ :: Attestable n => Any n -> Statement
-prpCnzNormalFormToQ n = Prp "CnzNormalFormToQ"
-  :<=>: Forall (xCnzToQ n) (relCnzNormalFormToQ dgzField n)
+-- | validity according to 'invCnzNormalFormTo' for matrices over 'Q'.
+prpInvCnzNormalFormToQ :: Attestable n => Any n -> Statement
+prpInvCnzNormalFormToQ n = Prp "InvCnzNormalFormToQ"
+  :<=>: Forall (xCnzToQ n) (relInvCnzNormalFormToQ monField dgzField n)
 
+--------------------------------------------------------------------------------
+-- xCnzToQ -
 
-
-mt :: (Ring r, i ~ N, j ~ N) => N -> N -> [([(r,j)],i)] -> Matrix r
-mt r c xijs = matrixTtl r c xijs' where
-  xijs' = join $ amap1 (\(xjs,i) -> amap1 (\(x,j) -> (x,i,j)) xjs) xijs
-
-m :: Matrix Q
-m = mt 4 6 ([ [2,4,6,0,2  ] `L.zip` [1..]
-            , [1,2,3,3,0.5] `L.zip` [1..]
-            , [3,6,7,1,2  ] `L.zip` [1..]
-            , [1,2,5,3,4/3] `L.zip` [1..]
-            ] `L.zip` [0..]
-           )
-
-km = limes mtxKernels (kernelDiagram m)
-
-d = ConsecutiveZero $ DiagramChainTo (end m) (m:|k:|Nil) where k = kernelFactor $ universalCone km
-
-
-xx :: X (Diagram (Chain To) N4 N3 (Matrix Q))
-xx = xStandard
-
-pp = Forall xx (valid . invChainDiagFst dgzField)
-
-
+-- | random variable for 'To'-consecutive zero matrices over 'Q'.
 xCnzToQ :: Any n -> X (ConsecutiveZero To n (Matrix Q))
 xCnzToQ = xConsZeroTo mtxKernels xStandardOrtOrientation
-
-qq = Forall (xCnzToQ (attest :: Any N3)) valid
 
 --------------------------------------------------------------------------------
 -- xConsZeroTo -
@@ -436,5 +468,4 @@ xConsZeroTo krs xo n = do
       ds <- xc krs xo n d'
       return (d':|ds)
       where dk = kernelFactor $ universalCone $ limes krs (kernelDiagram d)
-    
-
+ 
