@@ -192,15 +192,15 @@ data Monic d where Monic :: Distributive d => Monic d
 -- monField -
 
 -- | whitness for beeing 'Monic'.
-monField :: Field k => Monic k
-monField = Monic
+mncField :: Field k => Monic k
+mncField = Monic
 
 --------------------------------------------------------------------------------
--- monZ -
+-- mncZ -
 
 -- | whitness for beeing 'Monic'.
-monZ :: Monic Z
-monZ = Monic
+mncZ :: Monic Z
+mncZ = Monic
 
 --------------------------------------------------------------------------------
 -- invFst -
@@ -227,13 +227,15 @@ invChainDiagTo mc@Monic dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSu
   (Ats,Ats) -> γ {- = β * α -} where
 --            a0      a1
 --     a:   <----- <-----  ...
---     |   |      |      |
---  α  |   |      |      | ...
---     v   v  b0  v  b1  v
+--     |   |      |      ||
+--  α  |   | α0   | α1   || α2 ...
+--     |   |      |      ||
+--     v   v  b0  v  b1  ||
 --     b:   <----- <-----  ...
---     |   |      |      |
---  β  |   |      |      | ...
---     v   v  c0  v  c1  v
+--     |  ||      |      |
+--  β  |  || β0   | β1   | β2 ...
+--     |  ||      |      |
+--     v  ||  c0  v  c1  v
 --     c:   <----- <-----  ...
 
     -- according to the properties of invChainDiagFstTo and the construction of β it follows that
@@ -293,23 +295,12 @@ invChainDiagTo mc@Monic dgz (SW n'@(SW _)) a = let n'Ats = ats n' in case (atsSu
 invChainDiagTo _ dgz _ a = invChainDiagFstTo dgz a
 
 --------------------------------------------------------------------------------
--- ConsZeroNormalForm -
+-- rowDiagonal -
 
--- | predicate for consecutive zero chain diagrams beeing in normal form.
+-- | predicate for beeing row diagonal.
 --
--- __Property__ Let @'ConsZeroNormalForm' c@ be in @t'ConsZeroNormalForm' __t n k__@, then holds:
---
--- (1) @'ConsecutiveZero' c@ is 'valid'.
---
--- (2) If @__t__ ~ 'To'@, then for all @m@ in @'dgArrows' c@ and @s = 'rowHeadIndex' m@ holds:
---
---   (1) For all @(i,j)@ not in @s@ holds: @m i j@ is 'zero'.
---
---   (2) For @(i0,j)':'..@ in @s@ holds: @j '==' 0@. 
---
---   (3) For all @..(i,j)':'(i',j')..@ in @s@ holds: @i' '==' i '+' 1@ and @j' '==' j '+' 1@.
---
--- As such, @m@ has the form:
+-- __Definition__ A matrix @m@ is __/row diagonal/__ according to @__i0__@, if it has the following
+-- form:
 --
 -- @
 --           0 1 2 .. r
@@ -326,6 +317,41 @@ invChainDiagTo _ dgz _ a = invChainDiagFstTo dgz a
 --          ..  
 --          [0 ..             0]
 -- @
+--
+rowDiagonal :: N -> Matrix x -> Bool
+rowDiagonal i0 m = rd i0 0 (amap1 (\(_,i,j) -> (i,j)) $ etsxs $ mtxxs m) where
+  rd _ _ []       = True
+  rd i' j' (ij:ijs) = ((i',j') == ij) && rd (i'+1) (j'+1) ijs
+
+--------------------------------------------------------------------------------
+-- ConsZeroNormalForm -
+
+-- | predicate for consecutive zero chain diagrams beeing in normal form.
+--
+-- __Property__ Let @'ConsZeroNormalForm' c@ be in @t'ConsZeroNormalForm' __t n k__@, then holds:
+--
+-- (1) @'ConsecutiveZero' c@ is 'valid'.
+--
+-- (2) If @__t__ ~ 'To'@, then for all @m 0 ':|' m 1 ':|' .. ':|' m l@ in @'dgArrows' c@ holds:
+-- @m i@ is @'rowDiagonal' (r i) (m i)@ where @r i@ is defined by: If @1 < i@ then @r i@ is the
+-- rank of @m (i - 1)@, otherwise it is @0@.
+--
+-- (3) If @__t__ ~ 'From'@, then for all @m 0 ':|' m 1 :| ..@ in @'dgArrows' c@ holds:
+-- @m i@ is @'colDiagonal' (r i) (m i)@ where @r i@ is defined by: If @i < l@ then @r i@ is the
+-- rank of @m (i + 1)@, otherwise it is @0@.
+
+
+
+
+-- for all @m@ in @'dgArrows' c@ and @s = 'rowHeadIndex' m@ holds:
+--
+--   (1) For all @(i,j)@ not in @s@ holds: @m i j@ is 'zero'.
+--
+--   (2) For @(i0,j)':'..@ in @s@ holds: @j '==' 0@. 
+--
+--   (3) For all @..(i,j)':'(i',j')..@ in @s@ holds: @i' '==' i '+' 1@ and @j' '==' j '+' 1@.
+--
+-- As such, @m@ has the form:
 --
 -- (3) If @__t__ ~ 'From'@, then for all @m@ in @'dgArrows' c@ and @s = 'rowHeadIndex' m@ holds:
 --
@@ -433,7 +459,7 @@ relInvCnzNormalFormToQ mc dgz n c
 -- | validity according to 'invCnzNormalFormTo' for matrices over 'Q'.
 prpInvCnzNormalFormToQ :: Attestable n => Any n -> Statement
 prpInvCnzNormalFormToQ n = Prp "InvCnzNormalFormToQ"
-  :<=>: Forall (xCnzToQ n) (relInvCnzNormalFormToQ monField dgzField n)
+  :<=>: Forall (xCnzToQ n) (relInvCnzNormalFormToQ mncField dgzField n)
 
 --------------------------------------------------------------------------------
 -- xCnzToQ -
