@@ -956,3 +956,8 @@ instance Conic c => XStandardEligibleConeFactorG
   c Dst Projective Diagram (Parallel LeftToRight) N2 N1 (Matrix Q)
   where xStandardEligibleConeFactorG = xecfOrtSite $ xoTo xStandardOrtOrientation
 
+--------------------------------------------------------------------------------
+
+instance XStandardOrtSite To (Matrix Q) where
+  xStandardOrtSite = xoTo xStandardOrtOrientation
+  

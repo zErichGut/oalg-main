@@ -21,16 +21,23 @@
 module OAlg.LinearAlgebra.ConsecutiveZero
   ( -- * Normal Form
     invCnzNormalFormTo
-  , invChainDiagFstTo
   , ConsZeroNormalForm(..)
+  , rowDiagonal
+
+    -- * Diagonalizable
+  , Diagonalizable(..), diagonalForm
   , dgzField
 
+    -- * Monic
+  , Monic(..)
+  , mncField
+
     -- * Proposition
+  , prpConsZeroNormalFormTo
   , prpInvCnzNormalFormToQ
   ) where
 
 import Control.Monad
-import Data.Foldable
 
 import OAlg.Prelude
 
@@ -46,8 +53,6 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 import OAlg.Structure.Exponential
-
-import OAlg.Entity.Sequence.PSequence
 
 import OAlg.Entity.Matrix.Definition
 import OAlg.Entity.Matrix.Dim
@@ -70,15 +75,9 @@ import OAlg.Limes.KernelsAndCokernels
 import OAlg.LinearAlgebra.KernelsAndCokernels
 
 --------------------------------------------------------------------------------
-
-instance XStandardOrtSite To (Matrix Q) where
-  xStandardOrtSite = xoTo xStandardOrtOrientation
-  
-
---------------------------------------------------------------------------------
 -- Diagonalizable -
 
--- | predicate for diagonalisable matrices over a @'Distributive' __k__@@.
+-- | predicate for diagonalizable matrices over a @'Distributive' __k__@@.
 --
 -- __Property__ Let @dg@ be in @'Diagonalizable' __k__@ for a @'Distributive' __k__@, then holds:
 --
@@ -105,6 +104,7 @@ instance (Distributive k, XStandardOrtOrientation k) => Validable (Diagonalizabl
 -- | the associated diagonal form.
 diagonalForm :: Diagonalizable k -> Matrix k -> DiagonalForm k
 diagonalForm (Diagonalizable d) = d
+
 {-
 --------------------------------------------------------------------------------
 -- dgzOp -
@@ -201,18 +201,6 @@ mncField = Monic
 -- | whitness for beeing 'Monic'.
 mncZ :: Monic Z
 mncZ = Monic
-
---------------------------------------------------------------------------------
--- invFst -
-
-invFst :: Inv x -> x
-invFst (Inv t _) = t
-
---------------------------------------------------------------------------------
--- invSnd -
-
-invSnd :: Inv x -> x
-invSnd (Inv _ f) = f
 
 --------------------------------------------------------------------------------
 -- invChainDiag -
@@ -319,9 +307,11 @@ invChainDiagTo _ dgz _ a = invChainDiagFstTo dgz a
 -- @
 --
 rowDiagonal :: N -> Matrix x -> Bool
-rowDiagonal i0 m = rd i0 0 (amap1 (\(_,i,j) -> (i,j)) $ etsxs $ mtxxs m) where
-  rd _ _ []       = True
-  rd i' j' (ij:ijs) = ((i',j') == ij) && rd (i'+1) (j'+1) ijs
+rowDiagonal r m = rd (r,0) (amap1 (\(_,i,j) -> (i,j)) $ etsxs $ mtxxs m) where
+  rd ij' (ij:ijs) = (ij' == ij) && rd (succ' ij') ijs
+  rd _ _          = True
+
+  succ' (i,j) = (succ i,succ j)
 
 --------------------------------------------------------------------------------
 -- ConsZeroNormalForm -
@@ -339,28 +329,6 @@ rowDiagonal i0 m = rd i0 0 (amap1 (\(_,i,j) -> (i,j)) $ etsxs $ mtxxs m) where
 -- (3) If @__t__ ~ 'From'@, then for all @m 0 ':|' m 1 :| ..@ in @'dgArrows' c@ holds:
 -- @m i@ is @'colDiagonal' (r i) (m i)@ where @r i@ is defined by: If @i < l@ then @r i@ is the
 -- rank of @m (i + 1)@, otherwise it is @0@.
-
-
-
-
--- for all @m@ in @'dgArrows' c@ and @s = 'rowHeadIndex' m@ holds:
---
---   (1) For all @(i,j)@ not in @s@ holds: @m i j@ is 'zero'.
---
---   (2) For @(i0,j)':'..@ in @s@ holds: @j '==' 0@. 
---
---   (3) For all @..(i,j)':'(i',j')..@ in @s@ holds: @i' '==' i '+' 1@ and @j' '==' j '+' 1@.
---
--- As such, @m@ has the form:
---
--- (3) If @__t__ ~ 'From'@, then for all @m@ in @'dgArrows' c@ and @s = 'rowHeadIndex' m@ holds:
---
---   (1) For all @(i,j)@ not in @s@ holds: @m i j@ is 'zero'.
---
---   (2) For @(i,j0)':'..@ in @s@ holds: @i '==' 0@. 
---
---   (3) For all @..(i,j)':'(i',j')..@ in @s@ holds: @i' '==' i '+' 1@ and @j' '==' j '+' 1@.
---
 newtype ConsZeroNormalForm t n k = ConsZeroNormalForm (Diagram (Chain t) (n+3) (n+2) (Matrix k))
   deriving (Show,Eq)
 
@@ -371,35 +339,19 @@ newtype ConsZeroNormalForm t n k = ConsZeroNormalForm (Diagram (Chain t) (n+3) (
 prpConsZeroNormalFormTo :: Distributive k => ConsZeroNormalForm To n k -> Statement
 prpConsZeroNormalFormTo (ConsZeroNormalForm c) = Prp "ConsZeroNormalFormTo"
   :<=>: And [ valid (ConsecutiveZero c)
-            , foldr (\m v -> vldnf (mtxColRow m) && v) SValid (dgArrows c)
+            , vldRwDg 0 0 (dgArrows c)
             ] where
 
-  vldnf :: (i ~ N, j ~ N, Show k) => Col i (Row j k) -> Statement
-  vldnf (Col (PSequence rws)) = vldRws rws
-
-  vldRws :: (i ~ N, j ~ N, Show k) => [(Row j k,i)] -> Statement
-  vldRws []             = SValid
-  vldRws rws@((rw,_):_) = And [ Label "2" :<=>: vldRwsHead rw
-                              , Label "3" :<=>: vldRwsCons rws
-                              ]
-
-  vldRwsHead :: (Show k, j ~ N) => Row j k -> Statement
-  vldRwsHead rw@(Row (PSequence xjs)) = case xjs of
-    [(_,0)] -> SValid
-    _       -> False :?> Params ["rw":=show rw]
-
-  vldRwsCons :: (i ~ N, j ~ N, Show k) => [(Row j k,i)] -> Statement
-  vldRwsCons [(Row (PSequence [_]),_)] = SValid
-  vldRwsCons ((rw,i):(rw',i'):rws')    = And [ (i' == i + 1) :?> Params ["(i,i')":=show (i,i')]
-                                             , vldRwsCon rw rw'
-                                             , vldRwsCons ((rw',i'):rws')
-                                             ]
-  vldRwsCons rws                       = False :?> Params ["rws":=show rws]
-
-  vldRwsCon :: (j ~ N, Show k) => Row j k -> Row j k -> Statement
-  vldRwsCon (Row (PSequence [(_,j)])) (Row (PSequence [(_,j')]))
-    = (j' == j + 1) :?> Params ["(j,j')":=show (j,j')]
-  vldRwsCon rw rw' = False :?> Params ["(rw,rw')":=show (rw,rw')]
+  vldRwDg :: (i ~ N,r ~ N, Distributive k)
+    => i -> r -> FinList n (Matrix k) -> Statement
+  vldRwDg i r (m:|ms) = And [ rowDiagonal r m :?> Params ["i":=show i, "m":=show m]
+                            , vldRwDg (i+1) (rnk m) ms
+                            ]
+  vldRwDg _ _ _       = SValid
+                        
+  -- the rank of a diagonal matrix
+  rnk :: Matrix x -> N
+  rnk (Matrix _ _ xs) = lengthN xs
 
 instance Distributive k => Validable (ConsZeroNormalForm t n k) where
   valid cnf@(ConsZeroNormalForm c) = Label "ConsZeroNormalForm" :<=>: case c of
@@ -414,21 +366,13 @@ instance Distributive k => Validable (ConsZeroNormalForm t n k) where
 -- | the normal form of a consecutive zero chain.
 --
 -- __Property__ Let @c@ be in @'ConsecutiveZero' 'To' __n__ ('Matrix' __k__)@,
--- @dgz@ be a witness of @'Diagonalizable' __k__@ and @iso = 'invCnzNormalFormTo' dgz c@ for
--- a @'Monic' __k__@, then holds:
+-- @iso = 'invCnzNormalFormTo' dgz c@ for @mc@ in @'Monic' __k__@ and
+-- @dgz@ in @'Diagonalizable' __k__@, then holds:
 --
 -- (1) @'start' iso '==' c@.
 --
--- (2) Let @d = 'cnzDiagram' ('end' iso)@ and @ds = 'dgArrows' d@, then holds
---
---     (1) @'ConsZeroNormalForm' d@ is 'valid'.
---
---     (2) @d0@ is a diagonal matrix, where @d0 = 'head' ds@.
---
---     (3) For all @..dk':|'dl..@ in @ds@ holds: @il '==' rk '+' 1@, where
---     @il@ is the first row index of @dl@ with a entry not equal to 'zero' and
---     @rk@ is the last row index of @dk@  with a entry not equal to 'zero' (note: if @dk@ is
---     is 'zero', then @rk@ is defined as @-1@.)
+-- (2) Let @d = 'cnzDiagram' ('end' iso)@ and @ds = 'dgArrows' d@, then holds:
+-- @'ConsZeroNormalForm' d@ is 'valid'.
 invCnzNormalFormTo :: Galoisian k
   => Monic k -> Diagonalizable k
   -> Any n
@@ -450,7 +394,7 @@ relInvCnzNormalFormToQ :: (Galoisian k, Attestable n)
 relInvCnzNormalFormToQ mc dgz n c
   = And [ valid iso
         , Label "1" :<=>: (start iso == c) :?> Params ["c":=show c]
-        , Label "2.1" :<=>: valid (ConsZeroNormalForm d)
+        , Label "2" :<=>: valid (ConsZeroNormalForm d)
         ] where
 
   iso = invCnzNormalFormTo mc dgz n c
