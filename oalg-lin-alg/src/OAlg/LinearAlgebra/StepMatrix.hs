@@ -25,7 +25,7 @@ module OAlg.LinearAlgebra.StepMatrix
   , crHeadIndex
 
     -- * Diagonal Form
-  , mtxDiagonalForm
+  , mtxDiagonalForm, dgzField
 
     -- * Proposition
   , prpStepMatrixQ, prpStepMatrix
@@ -33,8 +33,7 @@ module OAlg.LinearAlgebra.StepMatrix
   ) where
 
 
-import Control.Monad (join)
-import Data.List as L (head,tail,zip,foldl,foldr,span)
+import Data.List as L (head,tail,foldl,foldr,span)
 
 import OAlg.Prelude
 
@@ -305,6 +304,13 @@ mtxDiagonalForm (Matrix rs cs xijs) = DiagonalForm dg rt ct where
   -- the transposed transformations.
   tfsFromOp :: IsoOpGal k -> TF (Op k) -> TF k
   tfsFromOp = pdfTrMapCnt . vInv2
+
+--------------------------------------------------------------------------------
+-- dgzField -
+
+-- | diagonalizables for a @'Field' __k__@.
+dgzField :: Field k => Diagonalizable k
+dgzField = Diagonalizable mtxDiagonalForm
 
 --------------------------------------------------------------------------------
 -- prpMtxDiagonalForm -

@@ -16,3 +16,6 @@ and this project adheres to the
 
 ## [3.2.2.0] - 2025-12-25
 - instance for XStandardOrtOrientation Q.
+
+## [3.2.3.0] - 2026-01-29
+- introducing Monic structures.

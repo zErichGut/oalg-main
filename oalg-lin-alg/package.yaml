@@ -22,7 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/zEri
 dependencies:
 - base >= 4.7 && < 5
 - oalg-pre >= 3.2 && < 4
-- oalg-stc >= 3.2.2 && < 4
+- oalg-stc >= 3.2.3 && < 4
 - oalg-hom >= 3.2 && < 4
 - oalg-sqc >= 3.2 && < 4
 - oalg-fin >= 3.2 && < 4

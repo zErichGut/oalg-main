@@ -24,14 +24,6 @@ module OAlg.LinearAlgebra.ConsecutiveZero
   , ConsZeroNormalForm(..)
   , rowDiagonal
 
-    -- * Diagonalizable
-  , Diagonalizable(..), diagonalForm
-  , dgzField
-
-    -- * Monic
-  , Monic(..)
-  , mncField
-
     -- * Proposition
   , prpConsZeroNormalFormTo
   , prpInvCnzNormalFormToQ
@@ -66,69 +58,13 @@ import OAlg.Entity.Diagram
 
 import OAlg.Limes.Exact.ConsecutiveZero
 
-import OAlg.LinearAlgebra.StepMatrix
-
-
 import OAlg.Limes.Definition
 import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
+
+import OAlg.LinearAlgebra.StepMatrix
 import OAlg.LinearAlgebra.KernelsAndCokernels
 
---------------------------------------------------------------------------------
--- Diagonalizable -
-
--- | predicate for diagonalizable matrices over a @'Distributive' __k__@@.
---
--- __Property__ Let @dg@ be in @'Diagonalizable' __k__@ for a @'Distributive' __k__@, then holds:
---
--- (1) @m '==' 'dgfMatrix' d@ for all @m@ in @'Matrix' __k__@, where @d = 'diagonalForm' dg m@.
-newtype Diagonalizable k = Diagonalizable (Matrix k -> DiagonalForm k)
-
---------------------------------------------------------------------------------
--- prpDiagonalizable -
-
-relDiagonalizable :: Distributive k => Diagonalizable k -> Matrix k -> Statement
-relDiagonalizable dg m = valid d && (m == dgfMatrix d) :?> Params ["m":=show m]
-  where d = diagonalForm dg m
-
--- | validity according to t'DiagonalForm'.
-prpDiagonalizable :: Distributive k => Diagonalizable k -> X (Matrix k) -> Statement
-prpDiagonalizable dg xm = Prp "Diagonalizable" :<=>: Forall xm (relDiagonalizable dg)
-  
-instance (Distributive k, XStandardOrtOrientation k) => Validable (Diagonalizable k) where
-  valid dg = prpDiagonalizable dg (xoOrt xStandardOrtOrientation) 
-  
---------------------------------------------------------------------------------
--- diagonalForm -
-
--- | the associated diagonal form.
-diagonalForm :: Diagonalizable k -> Matrix k -> DiagonalForm k
-diagonalForm (Diagonalizable d) = d
-
-{-
---------------------------------------------------------------------------------
--- dgzOp -
-
-dgzOp :: Galoisian k => Diagonalizable k -> Diagonalizable (Op k)
-dgzOp d = Diagonalizable (dOp toDualOpGal d) where
-
-  -- Matrix (Op k) -> DiagonalForm (Op k)
-  dOp :: IsoOpGal k -> Diagonalizable k -> Matrix (Op k) -> DiagonalForm (Op k)
-  dOp i d m' = dgfToOp i $ diagonalForm d m where
-    m = mtxMapCnt (vInv2 i) m'
-
-  dgfToOp :: IsoOpGal k -> DiagonalForm k -> DiagonalForm (Op k)
-  dgfToOp (Contravariant2 i) (DiagonalForm ks rt ct) = DiagonalForm ks' rt' ct' where
-    ks' = amap1 (amap i) ks
-    rt' = error "nyi"
-    ct' = error "nyi"
--}
---------------------------------------------------------------------------------
--- dgzField -
-
--- | diagonalizables for a @'Field' __k__@.
-dgzField :: Field k => Diagonalizable k
-dgzField = Diagonalizable mtxDiagonalForm
 
 --------------------------------------------------------------------------------
 -- invChainDiagFst -
@@ -176,31 +112,6 @@ invChainDiagFst d a     = case a of
   DiagramChainTo _ _   -> invChainDiagFstTo d a
   DiagramChainFrom _ _ -> error "nyi"
 -}
-
---------------------------------------------------------------------------------
--- Monic -
-
--- | distributive structures which are monic.
---
--- __Property__ Let @'Monik' __d__@, then holds:
---
--- (1) For all @f@ and @x@ in @__d__@ with @'end' x '==' 'start' f@ and @'not' ('isZero' f)@ holds:
--- If @'isZero' (f '*' x)@ then @'isZero' x@.
-data Monic d where Monic :: Distributive d => Monic d
-
---------------------------------------------------------------------------------
--- monField -
-
--- | whitness for beeing 'Monic'.
-mncField :: Field k => Monic k
-mncField = Monic
-
---------------------------------------------------------------------------------
--- mncZ -
-
--- | whitness for beeing 'Monic'.
-mncZ :: Monic Z
-mncZ = Monic
 
 --------------------------------------------------------------------------------
 -- invChainDiag -

@@ -24,7 +24,7 @@ module OAlg.Structure.Ring.Definition
   , Galoisian
   
     -- * Field
-  , Field(..)
+  , Field(..), mncField
   ) where
 
 import qualified Prelude as A
@@ -112,3 +112,10 @@ instance Field Q where
   (/) = (A./)
 
 instance Field k => Field (Op k)
+
+--------------------------------------------------------------------------------
+-- monField -
+
+-- | whitness for beeing 'Monic'.
+mncField :: Field k => Monic k
+mncField = Monic
