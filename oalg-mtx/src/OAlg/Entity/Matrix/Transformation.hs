@@ -29,6 +29,7 @@ module OAlg.Entity.Matrix.Transformation
   , DiagonalForm(..), dgfMatrix
   , DiagonalFormStrictPositive(..)
   , Diagonalizable(..), diagonalForm
+  , prpDiagonalizable
 
   )
 

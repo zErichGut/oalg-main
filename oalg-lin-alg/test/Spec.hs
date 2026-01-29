@@ -7,14 +7,18 @@ import Data.List((++))
 
 import OAlg.Prelude
 
+import OAlg.Entity.Natural hiding ((++))
+
 import OAlg.LinearAlgebra.StepMatrix
 import OAlg.LinearAlgebra.KernelsAndCokernels
+import OAlg.LinearAlgebra.ConsecutiveZero
 
 proposition :: Statement
 proposition = Prp "oalg-lin-alg"
   :<=>: And [ prpStepMatrixQ
             , prpMtxDiagonalFormQ
             , prpMtxKernelsQ
+            , prpInvCnzNormalFormToQ (attest :: Any N4)
             ]
 
 main :: IO ()

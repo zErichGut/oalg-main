@@ -40,3 +40,8 @@ and this project adheres to the
 ### Added
 - rcDiags
 - contravariant mappings for Transformation.
+
+## [3.2.1.0] - 2026-01-29
+
+### Added
+- introducing Diagonalizable structures.
