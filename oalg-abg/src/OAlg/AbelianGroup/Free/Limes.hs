@@ -47,7 +47,7 @@ import OAlg.AbelianGroup.Free.SmithNormalForm
 zmxKernel :: KernelDiagram N1 (Matrix Z) -> Kernel N1 (Matrix Z)
 zmxKernel kDgm@(DiagramParallelLR _ _ (h:|Nil)) = LimesProjective lim univ where
   
-  DiagonalForm d _ (ColTrafo t) = zmxDiagonalForm h
+  DiagonalForm d _ (ColTrafo t) = diagonalForm dgzZ h
   -- d = (rt*>h)<*ct
 
   Inv b bInv = amap GLTGL t
