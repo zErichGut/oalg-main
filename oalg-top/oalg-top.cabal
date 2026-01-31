@@ -50,10 +50,10 @@ library
     , oalg-hom >=3.2 && <4
     , oalg-lim >=3.2 && <4
     , oalg-lin-alg >=0.1 && <2
-    , oalg-mtx >=3.2 && <4
+    , oalg-mtx >=3.2.1 && <4
     , oalg-pre >=3.2 && <4
     , oalg-sqc >=3.2 && <4
-    , oalg-stc >=3.2 && <4
+    , oalg-stc >=3.2.3 && <4
   default-language: Haskell2010
 
 test-suite oalg-top-test
@@ -73,9 +73,9 @@ test-suite oalg-top-test
     , oalg-hom >=3.2 && <4
     , oalg-lim >=3.2 && <4
     , oalg-lin-alg >=0.1 && <2
-    , oalg-mtx >=3.2 && <4
+    , oalg-mtx >=3.2.1 && <4
     , oalg-pre >=3.2 && <4
     , oalg-sqc >=3.2 && <4
-    , oalg-stc >=3.2 && <4
+    , oalg-stc >=3.2.3 && <4
     , oalg-top
   default-language: Haskell2010
