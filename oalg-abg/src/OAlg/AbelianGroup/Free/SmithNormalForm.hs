@@ -17,7 +17,7 @@
 module OAlg.AbelianGroup.Free.SmithNormalForm
   (
     -- * Diagonal Form
-    zmxDiagonalForm
+    dgzZ -- , zmxDiagonalForm
 
     -- * Smith Normal Form
   , smithNormalForm, smithNormalForm'
@@ -207,6 +207,13 @@ dnf3 dr dc r rws _ rw@(_:_) (ds,trs,tcs)
 zmxDiagonalForm :: Matrix Z -> DiagonalForm Z
 zmxDiagonalForm m = m'
   where DiagonalFormStrictPositive m' = zmxDiagonalFormStrictPositive m
+
+--------------------------------------------------------------------------------
+-- dgzZ -
+
+-- | whitens that matrices over 'Z' are diagonalizable.
+dgzZ :: Diagonalizable Z
+dgzZ = Diagonalizable zmxDiagonalForm
 
 --------------------------------------------------------------------------------
 -- zmxDiagonalFormStrictPositive -

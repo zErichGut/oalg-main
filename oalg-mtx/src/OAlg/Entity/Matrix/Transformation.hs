@@ -1,12 +1,13 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs, StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
+
 
 -- |
 -- Module      : OAlg.Entity.Matrix.Transformation
@@ -27,6 +28,9 @@ module OAlg.Entity.Matrix.Transformation
     -- * Diagonal Form
   , DiagonalForm(..), dgfMatrix
   , DiagonalFormStrictPositive(..)
+  , Diagonalizable(..), diagonalForm
+  , prpDiagonalizable
+
   )
 
   where
@@ -294,4 +298,54 @@ instance Number k => Validable (DiagonalFormStrictPositive k) where
                        ]
                    
 -- instance Number k => Entity (DiagonalFormStrictPositive k)
+
+--------------------------------------------------------------------------------
+-- Diagonalizable -
+
+-- | predicate for diagonalizable matrices over a @'Distributive' __k__@@.
+--
+-- __Property__ Let @dg@ be in @'Diagonalizable' __k__@ for a @'Distributive' __k__@, then holds:
+--
+-- (1) @m '==' 'dgfMatrix' d@ for all @m@ in @'Matrix' __k__@, where @d = 'diagonalForm' dg m@.
+newtype Diagonalizable k = Diagonalizable (Matrix k -> DiagonalForm k)
+
+--------------------------------------------------------------------------------
+-- prpDiagonalizable -
+
+relDiagonalizable :: Distributive k => Diagonalizable k -> Matrix k -> Statement
+relDiagonalizable dg m = valid d && (m == dgfMatrix d) :?> Params ["m":=show m]
+  where d = diagonalForm dg m
+
+-- | validity according to t'DiagonalForm'.
+prpDiagonalizable :: Distributive k => Diagonalizable k -> X (Matrix k) -> Statement
+prpDiagonalizable dg xm = Prp "Diagonalizable" :<=>: Forall xm (relDiagonalizable dg)
+  
+instance (Distributive k, XStandardOrtOrientation k) => Validable (Diagonalizable k) where
+  valid dg = prpDiagonalizable dg (xoOrt xStandardOrtOrientation) 
+  
+--------------------------------------------------------------------------------
+-- diagonalForm -
+
+-- | the associated diagonal form.
+diagonalForm :: Diagonalizable k -> Matrix k -> DiagonalForm k
+diagonalForm (Diagonalizable d) = d
+
+{-
+--------------------------------------------------------------------------------
+-- dgzOp -
+
+dgzOp :: Galoisian k => Diagonalizable k -> Diagonalizable (Op k)
+dgzOp d = Diagonalizable (dOp toDualOpGal d) where
+
+  -- Matrix (Op k) -> DiagonalForm (Op k)
+  dOp :: IsoOpGal k -> Diagonalizable k -> Matrix (Op k) -> DiagonalForm (Op k)
+  dOp i d m' = dgfToOp i $ diagonalForm d m where
+    m = mtxMapCnt (vInv2 i) m'
+
+  dgfToOp :: IsoOpGal k -> DiagonalForm k -> DiagonalForm (Op k)
+  dgfToOp (Contravariant2 i) (DiagonalForm ks rt ct) = DiagonalForm ks' rt' ct' where
+    ks' = amap1 (amap i) ks
+    rt' = error "nyi"
+    ct' = error "nyi"
+-}
 

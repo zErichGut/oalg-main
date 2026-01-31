@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE GADTs #-}
 
 -- |
 -- Module      : OAlg.Structure.Distributive.Definition
@@ -21,6 +22,9 @@ module OAlg.Structure.Distributive.Definition
 
     -- * Transposable
   , TransposableDistributive
+
+    -- * Monic
+  , Monic(..), mncZ  
   )
   where
 
@@ -138,4 +142,22 @@ instance TransformableFbr Dst
 instance TransformableFbrOrt Dst
 instance TransformableAdd Dst
 instance TransformableDst Dst
+
+--------------------------------------------------------------------------------
+-- Monic -
+
+-- | distributive structures which are monic.
+--
+-- __Property__ Let @'Monik' __d__@, then holds:
+--
+-- (1) For all @f@ and @x@ in @__d__@ with @'end' x '==' 'start' f@ and @'not' ('isZero' f)@ holds:
+-- If @'isZero' (f '*' x)@ then @'isZero' x@.
+data Monic d where Monic :: Distributive d => Monic d
+
+--------------------------------------------------------------------------------
+-- mncZ -
+
+-- | whitness for beeing 'Monic'.
+mncZ :: Monic Z
+mncZ = Monic
 

@@ -533,7 +533,7 @@ abhKernelFreeFromCyG s@(SliceDiagramKernel (SliceFrom k h))
       cftUniv (ConeKernel s x) = kUniv (ConeKernel (diagram s) x)
       
     where
-      DiagonalForm d _ (ColTrafo t) = zmxDiagonalForm (abhz h)
+      DiagonalForm d _ (ColTrafo t) = diagonalForm dgzZ (abhz h)
       -- d = (rt*>h)<*ct
     
       m = lengthN (start h)

@@ -1,0 +1,36 @@
+
+{-# LANGUAGE NoImplicitPrelude #-}
+
+import Control.Monad
+
+import Data.List((++))
+
+import OAlg.Prelude
+
+import OAlg.Entity.Natural hiding ((++))
+
+import OAlg.LinearAlgebra.StepMatrix
+import OAlg.LinearAlgebra.KernelsAndCokernels
+import OAlg.LinearAlgebra.ConsecutiveZero
+
+proposition :: Statement
+proposition = Prp "oalg-lin-alg"
+  :<=>: And [ prpStepMatrixQ
+            , prpMtxDiagonalFormQ
+            , prpMtxKernelsQ
+            , prpInvCnzNormalFormToQ (attest :: Any N4)
+            ]
+
+main :: IO ()
+main = do
+  b <- validateStatistics Sparse proposition
+
+  putStrLn ""
+  putStrLn "***************************"
+  putStrLn ("Result     " ++ show b)
+  putStrLn "***************************"
+  putStrLn ""
+  if b < ProbablyValid
+    then error (show b)
+    else return ()
+

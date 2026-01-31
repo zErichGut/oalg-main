@@ -1,0 +1,69 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           oalg-lin-alg
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/zErichGut/oalg-lin-alg#readme>
+homepage:       https://github.com/zErichGut/oalg-lin-alg#readme
+bug-reports:    https://github.com/zErichGut/oalg-lin-alg/issues
+author:         Erich.Gut
+maintainer:     zerich.gut@gmail.com
+copyright:      (c) Erich Gut
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/zErichGut/oalg-lin-alg
+
+library
+  exposed-modules:
+      OAlg.LinearAlgebra.ConsecutiveZero
+      OAlg.LinearAlgebra.KernelsAndCokernels
+      OAlg.LinearAlgebra.StepMatrix
+  other-modules:
+      Paths_oalg_lin_alg
+  autogen-modules:
+      Paths_oalg_lin_alg
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -Wno-x-partial -Wno-missing-signatures
+  build-depends:
+      base >=4.7 && <5
+    , oalg-fin >=3.2 && <4
+    , oalg-hom >=3.2 && <4
+    , oalg-lim >=3.2 && <4
+    , oalg-mtx >=3.2.1 && <4
+    , oalg-pre >=3.2 && <4
+    , oalg-sqc >=3.2 && <4
+    , oalg-stc >=3.2.3 && <4
+  default-language: Haskell2010
+
+test-suite oalg-lin-alg-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_oalg_lin_alg
+  autogen-modules:
+      Paths_oalg_lin_alg
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-unticked-promoted-constructors -Wno-name-shadowing -Wno-unused-top-binds -Wno-incomplete-uni-patterns -Wno-identities -Wno-x-partial -Wno-missing-signatures -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , oalg-fin >=3.2 && <4
+    , oalg-hom >=3.2 && <4
+    , oalg-lim >=3.2 && <4
+    , oalg-lin-alg
+    , oalg-mtx >=3.2.1 && <4
+    , oalg-pre >=3.2 && <4
+    , oalg-sqc >=3.2 && <4
+    , oalg-stc >=3.2.3 && <4
+  default-language: Haskell2010

@@ -41,7 +41,7 @@ dependencies:
 - oalg-sqc >= 3.2 && < 4
 - oalg-fin >= 3.2 && < 4
 - oalg-lim >= 3.2 && < 4
-- oalg-mtx >= 3.2 && < 4
+- oalg-mtx >= 3.2.1 && < 4
 
 
 ghc-options:

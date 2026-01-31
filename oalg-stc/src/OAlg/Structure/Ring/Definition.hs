@@ -24,7 +24,7 @@ module OAlg.Structure.Ring.Definition
   , Galoisian
   
     -- * Field
-  , Field(..)
+  , Field(..), mncField
   ) where
 
 import qualified Prelude as A
@@ -34,6 +34,7 @@ import OAlg.Prelude
 import OAlg.Data.Singleton
 
 import OAlg.Structure.Oriented.Definition
+import OAlg.Structure.Oriented.Opposite
 import OAlg.Structure.Multiplicative.Definition
 import OAlg.Structure.Additive.Definition
 import OAlg.Structure.Distributive.Definition
@@ -109,5 +110,12 @@ class Galoisian r => Field r  where
 
 instance Field Q where
   (/) = (A./)
-  
 
+instance Field k => Field (Op k)
+
+--------------------------------------------------------------------------------
+-- monField -
+
+-- | whitness for beeing 'Monic'.
+mncField :: Field k => Monic k
+mncField = Monic

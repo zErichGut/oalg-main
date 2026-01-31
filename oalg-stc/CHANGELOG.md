@@ -11,3 +11,11 @@ and this project adheres to the
 ## [3.2.0.0] - 2025-12-14
 - extraction from oalg-base 3.1.1.0
 
+## [3.2.1.0] - 2025-12-25
+- instance for opposite field.
+
+## [3.2.2.0] - 2025-12-25
+- instance for XStandardOrtOrientation Q.
+
+## [3.2.3.0] - 2026-01-29
+- introducing Monic structures.

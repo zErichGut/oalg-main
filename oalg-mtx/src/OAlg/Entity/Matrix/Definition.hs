@@ -76,6 +76,7 @@ import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Number
 
+import OAlg.Entity.Natural
 import OAlg.Entity.Diagram
 import OAlg.Entity.Product
 import OAlg.Entity.Sequence hiding (span)
@@ -91,8 +92,7 @@ import OAlg.Hom.Distributive
 import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Entries
 
-import OAlg.Limes.Cone.Conic
-import OAlg.Limes.Perspective
+import OAlg.Limes.Cone
 import OAlg.Limes.Definition.Proposition
 
 --------------------------------------------------------------------------------
@@ -852,7 +852,7 @@ xoDim l h (XOrtOrientation xo _) = do
   return (productDim pcl :> productDim prw)
 
 instance (Distributive x, XStandardOrtOrientation x) => XStandardOrtOrientation (Matrix x) where
-  xStandardOrtOrientation = xMatrix 1 xo (xoDim 0 5 xo) where xo = xStandardOrtOrientation
+  xStandardOrtOrientation = xMatrix 1 xo (xoDim 0 13 xo) where xo = xStandardOrtOrientation
 
 instance TransformableG Matrix DstX DstX where tauG Struct = Struct
 instance TransformableGRefl Matrix DstX
@@ -937,6 +937,10 @@ instance
   => XStandardEligibleConeG c Mlt p d Discrete n m (Matrix Z) where
   xStandardEligibleConeG = xecDiscrete xStandardOrtOrientation
 
+instance Conic c
+  => XStandardEligibleConeG c Dst Projective Diagram (Parallel LeftToRight) N2 N1 (Matrix Q)
+  where xStandardEligibleConeG = xecfEligibleCone xStandardEligibleConeFactorG
+
 --------------------------------------------------------------------------------
 -- XStandardEligibleConeFactorG -
 
@@ -948,3 +952,12 @@ instance Conic c
   => XStandardEligibleConeFactorG c Mlt Injective d Discrete n m (Matrix Z) where
   xStandardEligibleConeFactorG = xecfOrtSite (xoFrom xStandardOrtOrientation)
 
+instance Conic c => XStandardEligibleConeFactorG
+  c Dst Projective Diagram (Parallel LeftToRight) N2 N1 (Matrix Q)
+  where xStandardEligibleConeFactorG = xecfOrtSite $ xoTo xStandardOrtOrientation
+
+--------------------------------------------------------------------------------
+
+instance XStandardOrtSite To (Matrix Q) where
+  xStandardOrtSite = xoTo xStandardOrtOrientation
+  

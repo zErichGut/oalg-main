@@ -30,7 +30,8 @@ module OAlg.Structure.Multiplicative.Definition
   , Commutative
   
     -- * Invertible
-  , Invertible(..), Inv(..)
+  , Invertible(..)
+  , Inv(..), invFst, invSnd
 
     -- * Cayleyan
   , Cayleyan
@@ -341,6 +342,23 @@ instance Cayleyan c => Cayleyan (Op c)
 -- of type @'Inv' __c__@ to @__c__@. But restricted to the 'valid' ones it is injective,
 -- because the inverses of a @f@ in @__c__@ are uniquely determined by @f@.
 data Inv c = Inv c c deriving (Show,Eq)
+
+--------------------------------------------------------------------------------
+-- invFst -
+
+-- | the invertable it selfe, i.e. the first component of 'Inv'.
+invFst :: Inv x -> x
+invFst (Inv t _) = t
+
+--------------------------------------------------------------------------------
+-- invSnd -
+
+-- | the inverse of the invertable, i.e. the second component of 'Inv'.
+invSnd :: Inv x -> x
+invSnd (Inv _ f) = f
+
+--------------------------------------------------------------------------------
+-- Inv - Instances -
 
 instance Embeddable (Inv c) c where
   inj (Inv f _) = f

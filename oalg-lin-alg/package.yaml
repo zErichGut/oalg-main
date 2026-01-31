@@ -1,6 +1,6 @@
-name:                oalg-mtx
-version:             3.2.1.0
-github:              "zErichGut/oalg-mtx"
+name:                oalg-lin-alg
+version:             0.1.0.0
+github:              "zErichGut/oalg-lin-alg"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
 maintainer:          "zerich.gut@gmail.com"
@@ -11,26 +11,23 @@ extra-source-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
-synopsis:          Matrix over oriented algebraic structures.
-category:          Mathematics, Linear Algebra
-
+# synopsis:            Linear Algebra
+# category:            Mathematics, Algebra
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:
-  Matrices over oriented algebraic structures
-  
-  Please see the README on GitHub at <https://github.com/zErichGut/oalg-mtx#readme>
+description:         Please see the README on GitHub at <https://github.com/zErichGut/oalg-lin-alg#readme>
 
 dependencies:
 - base >= 4.7 && < 5
 - oalg-pre >= 3.2 && < 4
-- oalg-stc >= 3.2 && < 4
+- oalg-stc >= 3.2.3 && < 4
 - oalg-hom >= 3.2 && < 4
 - oalg-sqc >= 3.2 && < 4
 - oalg-fin >= 3.2 && < 4
 - oalg-lim >= 3.2 && < 4
+- oalg-mtx >= 3.2.1 && < 4
 
 ghc-options:
 - -Wall
@@ -48,23 +45,14 @@ ghc-options:
 - -Wno-incomplete-uni-patterns
 # - -Wno-incomplete-patterns
 - -Wno-identities
+- -Wno-x-partial
+- -Wno-missing-signatures
 
 library:
   source-dirs: src
 
-# executables:
-#   oalg-mtx-exe:
-#     main:                Main.hs
-#     source-dirs:         app
-#     ghc-options:
-#     - -threaded
-#     - -rtsopts
-#     - -with-rtsopts=-N
-#     dependencies:
-#     - oalg-mtx
-
 tests:
-  oalg-mtx-test:
+  oalg-lin-alg-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -72,4 +60,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - oalg-mtx
+    - oalg-lin-alg
