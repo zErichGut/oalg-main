@@ -8,6 +8,7 @@
 {-# LANGUAGE StandaloneDeriving, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds #-}
 
+
 -- |
 -- Module      : OAlg.Homology.Definition
 -- Description : homology.
@@ -18,6 +19,7 @@
 -- homology.
 module OAlg.Homology.Definition
   (
+{-    
     -- * Homology
     homology, Homology    
   , betti, Betti
@@ -31,13 +33,15 @@ module OAlg.Homology.Definition
 
     -- * Abelian
   , cnzFreeAbl, cnzFreeHomAbl
-
+-}
   ) where
 
 import OAlg.Prelude
 
 import OAlg.Structure.Oriented
+import OAlg.Structure.Multiplicative
 import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
 
 import OAlg.Entity.Diagram as D 
 import OAlg.Entity.Natural
@@ -49,11 +53,40 @@ import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
+import OAlg.AbelianGroup.Free.SmithNormalForm
 
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
+
+import OAlg.LinearAlgebra.ConsecutiveZero
+
+--------------------------------------------------------------------------------
+-- Homological -
+
+-- | homological relation between a @'Galoisian' __r__@ and a @'Distributive' __h__@.
+data Homological r h where
+  HmlgZ :: Homological Z AbHom
+
+--------------------------------------------------------------------------------
+-- hmlgMonic -
+
+hmlgMonic :: Homological r h -> Monic r
+hmlgMonic HmlgZ = mncZ
+
+--------------------------------------------------------------------------------
+-- hmlgDiagonalizable -
+
+hmlgDiagonalizable :: Homological r h -> Diagonalizable r
+hmlgDiagonalizable HmlgZ = dgzZ
+
+--------------------------------------------------------------------------------
+-- hmlgDiagFrom -
+
+hmlgDiagForm :: Galoisian r => Homological r h -> Any n
+  -> ConsecutiveZero To n (Matrix r) -> Inv (ConsecutiveZeroHom To n (Matrix r))
+hmlgDiagForm h = invCnzNormalFormTo (hmlgMonic h) (hmlgDiagonalizable h)
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -61,21 +94,10 @@ import OAlg.Limes.Exact.Free
 type Homology = VarianceFreeLiftable To
 
 --------------------------------------------------------------------------------
--- Homological -
-
-class (Distributive h, SlicedFree h) => Homological h where
-  kernelsSomeFreeTip        :: KernelsSomeFreeFreeTip h
-  cokernelsLiftableSomeFree :: CokernelsG ConeLiftable SomeFreeSliceDiagram N1 h
-
-instance Homological AbHom where
-  kernelsSomeFreeTip        = abhKernelsSomeFreeFreeTip
-  cokernelsLiftableSomeFree = abhCokernelsLiftableSomeFree
-
---------------------------------------------------------------------------------
 -- homology -
 
-homology :: Homological h => ConsecutiveZeroFree To n h -> Homology n h
-homology = varianceFreeTo kernelsSomeFreeTip cokernelsLiftableSomeFree
+homology :: Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
+homology HmlgZ = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- Betti -
@@ -90,12 +112,18 @@ betti :: (Attestable n, Distributive h) => Homology n h -> Betti n h
 betti = deviationsTo
 
 --------------------------------------------------------------------------------
--- cnzFreeAbl -
+-- hmlgFreeZ -
 
-cnzFreeAbl :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
-cnzFreeAbl ds = ConsecutiveZeroFree ds' fs where
+hmlgFreeZ :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
+hmlgFreeZ ds = ConsecutiveZeroFree ds' fs where
   ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
   fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
+
+--------------------------------------------------------------------------------
+-- hmlgFree -
+
+hmlgFree :: Homological r h -> ConsecutiveZero To n (Matrix r) -> ConsecutiveZeroFree To n h
+hmlgFree HmlgZ = hmlgFreeZ
 
 --------------------------------------------------------------------------------
 -- HomologyHom -
@@ -105,10 +133,10 @@ type HomologyHom = VarianceFreeLiftableHom To
 --------------------------------------------------------------------------------
 -- homologyHom -
 
-homologyHom :: Homological h => ConsecutiveZeroFreeHom To n h -> HomologyHom n h
-homologyHom (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
-  a' = homology a
-  b' = homology b
+homologyHom :: Homological r h -> ConsecutiveZeroFreeHom To n h -> HomologyHom n h
+homologyHom h (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = homology h a
+  b' = homology h b
 
 --------------------------------------------------------------------------------
 -- BettiHom -
@@ -124,15 +152,24 @@ bettiHom h = deviationHomG (sld h) h where
   sld :: (Distributive h, SlicedFree h) => p h -> Struct (Dst,SldFr) h
   sld _ = Struct
 
---------------------------------------------------------------------------------
--- cnzFreeHomAbl -
 
-cnzFreeHomAbl :: (Attestable n)
+--------------------------------------------------------------------------------
+-- hmlgFreeHomZ -
+
+hmlgFreeHomZ :: Attestable n
   => ConsecutiveZeroHom To n (Matrix Z) -> ConsecutiveZeroFreeHom To n AbHom
-cnzFreeHomAbl h = ConsecutiveZeroFreeHom a' b' fs' where
-  a'  = cnzFreeAbl $ start h
-  b'  = cnzFreeAbl $ end h
+hmlgFreeHomZ h = ConsecutiveZeroFreeHom a' b' fs' where
+  a'  = hmlgFreeZ $ start h
+  b'  = hmlgFreeZ $ end h
   fs' = amap1 (amap FreeAbHom) $ cnzHomArrows h
+
+--------------------------------------------------------------------------------
+-- hmlgFreeHom -
+
+hmlgFreeHom :: Attestable n
+  => Homological r h -> ConsecutiveZeroHom To n (Matrix r) -> ConsecutiveZeroFreeHom To n h
+hmlgFreeHom HmlgZ = hmlgFreeHomZ
+
 
 
 {-
