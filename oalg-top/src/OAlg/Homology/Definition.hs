@@ -69,6 +69,9 @@ import OAlg.LinearAlgebra.ConsecutiveZero
 data Homological r h where
   HmlgZ :: Homological Z AbHom
 
+hmlgDst :: Homological r h -> Struct Dst h
+hmlgDst HmlgZ = Struct
+
 --------------------------------------------------------------------------------
 -- hmlgMonic -
 
@@ -82,11 +85,40 @@ hmlgDiagonalizable :: Homological r h -> Diagonalizable r
 hmlgDiagonalizable HmlgZ = dgzZ
 
 --------------------------------------------------------------------------------
--- hmlgDiagFrom -
+-- hmlgInvDiagForm -
 
-hmlgDiagForm :: Galoisian r => Homological r h -> Any n
+hmlgInvDiagForm :: Galoisian r => Homological r h -> Any n
   -> ConsecutiveZero To n (Matrix r) -> Inv (ConsecutiveZeroHom To n (Matrix r))
-hmlgDiagForm h = invCnzNormalFormTo (hmlgMonic h) (hmlgDiagonalizable h)
+hmlgInvDiagForm h = invCnzNormalFormTo (hmlgMonic h) (hmlgDiagonalizable h)
+
+--------------------------------------------------------------------------------
+-- hmlgDiagForm -
+
+hmlgDiagForm :: (Galoisian r, Attestable n)
+  => Homological r h -> ConsecutiveZero To n (Matrix r) -> ConsecutiveZero To n (Matrix r)
+hmlgDiagForm h = end . invFst . hmlgInvDiagForm h attest
+
+--------------------------------------------------------------------------------
+-- hmlgDiagFormHom -
+
+hmlgDiagFormHom :: (Galoisian r, Attestable n)
+  => Homological r h -> ConsecutiveZeroHom To n (Matrix r) -> ConsecutiveZeroHom To n (Matrix r)
+hmlgDiagFormHom h ch = j * ch * i' where
+  n        = attest
+  Inv _ i' = hmlgInvDiagForm h n (start ch)
+  Inv j _  = hmlgInvDiagForm h n (end ch)
+
+--------------------------------------------------------------------------------
+-- hmlgKernels -
+
+hmlgKernels :: Homological r h -> KernelsSomeFreeFreeTip h
+hmlgKernels HmlgZ = abhKernelsSomeFreeFreeTip
+
+--------------------------------------------------------------------------------
+-- hmlgCokernels -
+
+hmlgCokernels :: Homological r h -> CokernelsG ConeLiftable SomeFreeSliceDiagram N1 h
+hmlgCokernels HmlgZ = abhCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -96,8 +128,11 @@ type Homology = VarianceFreeLiftable To
 --------------------------------------------------------------------------------
 -- homology -
 
+homologyStruct :: Struct Dst h -> Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
+homologyStruct Struct h = varianceFreeTo (hmlgKernels h) (hmlgCokernels h)
+
 homology :: Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
-homology HmlgZ = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+homology h = homologyStruct (hmlgDst h) h
 
 --------------------------------------------------------------------------------
 -- Betti -
