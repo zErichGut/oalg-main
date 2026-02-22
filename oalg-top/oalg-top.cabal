@@ -48,7 +48,7 @@ library
     , oalg-abg >=2.1 && <3
     , oalg-fin >=3.2 && <4
     , oalg-hom >=3.2 && <4
-    , oalg-lim >=3.2 && <4
+    , oalg-lim >=3.4 && <4
     , oalg-lin-alg >=0.1 && <2
     , oalg-mtx >=3.2.1 && <4
     , oalg-pre >=3.2 && <4
@@ -71,7 +71,7 @@ test-suite oalg-top-test
     , oalg-abg >=2.1 && <3
     , oalg-fin >=3.2 && <4
     , oalg-hom >=3.2 && <4
-    , oalg-lim >=3.2 && <4
+    , oalg-lim >=3.4 && <4
     , oalg-lin-alg >=0.1 && <2
     , oalg-mtx >=3.2.1 && <4
     , oalg-pre >=3.2 && <4

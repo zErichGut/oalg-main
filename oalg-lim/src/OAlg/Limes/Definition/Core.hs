@@ -98,7 +98,12 @@ data LimesG c s p d t n m x where
 instance Show (c s p d t n m x) => Show (LimesG c s p d t n m x) where
   show (LimesProjective l _) = "LimesProjective (" ++ show l ++ ")"
   show (LimesInjective l _)  = "LimesInjective (" ++ show l ++ ")"
-  
+
+instance Eq (c s p d t n m x) => Eq (LimesG c s p d t n m x) where
+  -- the universal property is uniquely determined by the universal cone!
+  LimesProjective c _ == LimesProjective c' _ = c == c'
+  LimesInjective c _ == LimesInjective c' _   = c == c'
+
 --------------------------------------------------------------------------------
 -- Limes -
 

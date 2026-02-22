@@ -29,7 +29,7 @@ dependencies:
 - oalg-hom >= 3.2 && < 4
 - oalg-sqc >= 3.2 && < 4
 - oalg-fin >= 3.2 && < 4
-- oalg-lim >= 3.2 && < 4
+- oalg-lim >= 3.4 && < 4
 - oalg-mtx >= 3.2.1 && < 4
 - oalg-abg >= 2.1 && < 3
 - oalg-lin-alg >= 0.1 && < 2

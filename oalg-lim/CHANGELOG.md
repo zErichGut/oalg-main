@@ -11,3 +11,8 @@ and this project adheres to the
 ## [3.2.0.0] - 2025-12-14
 - extraction from oalg-base 3.1.1.0
 
+## [3.4.0.0] - 2026-02-22
+
+### Added
+- equality for LimesG.
+- Distributive structure for ConsecutiveZeroFreeHom
