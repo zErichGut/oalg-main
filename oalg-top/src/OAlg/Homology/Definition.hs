@@ -65,137 +65,6 @@ import OAlg.Limes.Exact.Free
 import OAlg.LinearAlgebra.ConsecutiveZero
 
 --------------------------------------------------------------------------------
-
-import Data.Typeable
-
-import OAlg.Structure.Exception
-import OAlg.Structure.Fibred
-import OAlg.Structure.FibredOriented
-import OAlg.Structure.Additive
-
-import OAlg.Limes.Definition
-import OAlg.Limes.Cone
-
---------------------------------------------------------------------------------
--- ConsecutiveZeroFreeHom - Distributive -
-
-type instance Root (ConsecutiveZeroFreeHom t n x) = Orientation (ConsecutiveZeroFree t n x)
-
-instance (Show x, ShowPoint x) => ShowRoot (ConsecutiveZeroFreeHom t n x)
-instance (Eq x, EqPoint x) => EqRoot (ConsecutiveZeroFreeHom t n x)
-instance (Distributive x, ValidablePoint x) => ValidableRoot (ConsecutiveZeroFreeHom t n x)
-instance (Typeable x, Typeable t, Typeable n) => TypeableRoot (ConsecutiveZeroFreeHom t n x)
-
-instance (Distributive x, Typeable t, Typeable n) => Fibred (ConsecutiveZeroFreeHom t n x)
-
-instance (Distributive x, Typeable t, Typeable n) => Additive (ConsecutiveZeroFreeHom t n x) where
-  zero (a:>b) = ConsecutiveZeroFreeHom a b fs where
-    ConsecutiveZeroHom (DiagramTrafo _ _ fs) = zero (a':>b')
-    ConsecutiveZeroFree a' _ = a
-    ConsecutiveZeroFree b' _ = b
-
-  ConsecutiveZeroFreeHom a b fs + ConsecutiveZeroFreeHom a' b' fs'
-    | a :> b == a' :> b' = ConsecutiveZeroFreeHom a b (amap1 (uncurry (+)) (fs `zip` fs'))
-    | otherwise          = throw NotAddable
-
-  ntimes n (ConsecutiveZeroFreeHom a b fs) = ConsecutiveZeroFreeHom a b fs' where
-    fs' = amap1 (ntimes n) fs 
-    
-instance (Distributive x, Abelian x, Typeable t, Typeable n)
-  => Abelian (ConsecutiveZeroFreeHom t n x) where
-  negate (ConsecutiveZeroFreeHom a b fs) = ConsecutiveZeroFreeHom a b (amap1 negate fs)
-
-  ConsecutiveZeroFreeHom a b fs - ConsecutiveZeroFreeHom a' b' fs'
-    | a :> b == a' :> b' = ConsecutiveZeroFreeHom a b (amap1 (uncurry (-)) (fs `zip` fs'))
-    | otherwise          = throw NotAddable
-
-  ztimes n (ConsecutiveZeroFreeHom a b fs) = ConsecutiveZeroFreeHom a b fs' where
-    fs' = amap1 (ztimes n) fs 
-
-instance (Distributive x, Typeable t, Typeable n) => FibredOriented (ConsecutiveZeroFreeHom t n x)
-instance (Distributive x, Typeable t, Typeable n) => Distributive (ConsecutiveZeroFreeHom t n x)
-
---------------------------------------------------------------------------------
--- VarianceHomG - Distributive -
-
-type instance Point (VarianceHomG t k c d n x) = VarianceG t k c d n x
-
-class
-  ( Conic k, Conic c
-  , Show x, ShowPoint x
-  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  )
-  => ShowVarianceG (t :: Site) k c d (n :: N') x
-
-deriving instance ShowVarianceG t k c d n x => Show (VarianceG t k c d n x)
-deriving instance ShowVarianceG t k c d n x => Show (VarianceHomG t k c d n x)
-
-instance Eq (c s p d t n m x) => Eq (LimesG c s p d t n m x) where
-  -- the universal property is uniquely determined by the universal cone!
-  LimesProjective c _ == LimesProjective c' _ = c == c'
-  LimesInjective c _ == LimesInjective c' _   = c == c'
-
-class
-  ( Conic k, Conic c
-  , Eq x, EqPoint x
-  , Eq (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Eq (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  )
-  => EqVarianceG (t :: Site) k c d (n :: N') x
-
-deriving instance EqVarianceG t k c d n x => Eq (VarianceG t k c d n x)
-deriving instance EqVarianceG t k c d n x => Eq (VarianceHomG t k c d n x)
-
-instance ShowVarianceG t k c d n x => ShowPoint (VarianceHomG t k c d n x)
-instance EqVarianceG t k c d n x => EqPoint (VarianceHomG t k c d n x)
-
-instance
-  ( Distributive x
-  , Diagrammatic d
-  , Conic k, Conic c
-  , XStandardEligibleConeG k Dst Projective d (Parallel LeftToRight) N2 N1 x
-  , XStandardEligibleConeG c Dst Injective d (Parallel RightToLeft) N2 N1 x
-  , XStandardEligibleConeFactorG k Dst Projective d (Parallel LeftToRight) N2 N1 x
-  , XStandardEligibleConeFactorG c Dst Injective d (Parallel RightToLeft) N2 N1 x
-  , Show (d (Parallel LeftToRight) N2 N1 x)
-  , Show (d (Parallel RightToLeft) N2 N1 x)
-  , ShowVarianceG t k c d n x
-  , Eq (d (Parallel LeftToRight) N2 N1 x)
-  , Eq (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (d (Parallel LeftToRight) N2 N1 x)
-  , Validable (d (Parallel RightToLeft) N2 N1 x)
-  , Validable (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Validable (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  , Typeable d
-  )
-  => Validable (VarianceG t k c d n x) where
-  valid (VarianceG cz kcs) = Label "VarianceG" :<=>: valid cz && valid kcs
-  
--- instance Validable (VarianceG t k c d n x) => ValidablePoint (VarianceHomG t k c d n x)
-
-{-
-instance
-  (Typeable t, Typeable k, Typeable c, Typeable d, Typeable n, Typeable x)
-  => TypeablePoint (VarianceHomG t k c d n x)
-  
-instance
-  ( Show x, ShowPoint x
-  , Show (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Show (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-  
-  , EqPoint x, Eq x
-  , Eq (k Dst Projective d (Parallel LeftToRight) N2 N1 x)
-  , Eq (c Dst Injective d (Parallel RightToLeft) N2 N1 x)
-
-  , Validable (VarianceG t k c d n x)
-  , Validable (VarianceHomG t k c d n x)
-  , Typeable t, Typeable k, Typeable c, Typeable d, Typeable n, Typeable x
-  )
-  => Oriented (VarianceHomG t k c d n x) where
-  orientation (VarianceHomG a b _) = a :> b
--}
---------------------------------------------------------------------------------
 -- Homological -
 
 -- | homological relation between a @'Galoisian' __r__@ and a @'Distributive' __h__@.
@@ -345,22 +214,14 @@ data HomologyApp r h n x y where
   HD :: (Galoisian r, Attestable n)
     => Homological r h
     -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroHom To n (Matrix r))
-  HF :: (Galoisian r, Attestable n)
-    => Homological r h
-    -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroFreeHom To n h)
   H :: (Distributive h, Attestable n)
     => Homological r h
-    -> HomologyApp r h n (ConsecutiveZeroFreeHom To n h) (HomologyHom n h)
-  B :: (Attestable n)
-    => Homological r h
-    -> HomologyApp r h n (HomologyHom n h) (BettiHom n h)
+    -> HomologyApp r h n (ConsecutiveZeroHom To n h) (BettiHom n h)
 
 instance Morphism (HomologyApp r h n) where
   type ObjectClass (HomologyApp r h n) = Dst
-  domain (HD _) = Struct
-  domain (HF _) = Struct
-  domain (H _)  = Struct
-  -- domain (B _)  = Struct
+  homomorphous (HD _) = Struct :>: Struct
+  homomorphous (H _)  = Struct :>: Struct
 
 
 {-
