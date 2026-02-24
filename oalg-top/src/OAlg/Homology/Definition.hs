@@ -9,8 +9,6 @@
 {-# LANGUAGE DataKinds #-}
 
 
-{-# LANGUAGE UndecidableInstances #-}
-
 -- |
 -- Module      : OAlg.Homology.Definition
 -- Description : homology.
@@ -51,12 +49,14 @@ import OAlg.Entity.FinList as F
 import OAlg.Entity.Slice
 import OAlg.Entity.Matrix
 
+import OAlg.Hom.Oriented
 import OAlg.Hom.Distributive
 
 import OAlg.AbelianGroup.Definition
 import OAlg.AbelianGroup.KernelsAndCokernels
 import OAlg.AbelianGroup.Free.SmithNormalForm
 
+import OAlg.Limes.Cone
 import OAlg.Limes.KernelsAndCokernels
 import OAlg.Limes.Exact.ConsecutiveZero
 import OAlg.Limes.Exact.Deviation
@@ -125,6 +125,134 @@ hmlgCokernels HmlgZ = abhCokernelsLiftableSomeFree
 --------------------------------------------------------------------------------
 -- Homology -
 
+-- | homology as 'Point's for 'HomologyHom'.
+--
+-- __Note__ The reason why we do not define 'Homology' as @'VarianceFreeLiftable' 'To'@ is,
+-- because it is not possible to define a 'Distributive' structure on @'VarianceFreeLiftableHom' 'To'@.
+-- The problem would be to define an equality on 'ConeLiftable',
+type Homology = VarianceG To Cone Cone SomeFreeSliceDiagram 
+
+--------------------------------------------------------------------------------
+-- ff -
+
+ff :: VarianceG To k c SomeFreeSliceDiagram n x -> Homology n x
+ff = error "nyi"
+
+--------------------------------------------------------------------------------
+-- homology -
+
+homologyStruct :: Struct Dst h -> Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
+homologyStruct Struct h = ff . varianceFreeTo (hmlgKernels h) (hmlgCokernels h)
+
+homology :: Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
+homology h = homologyStruct (hmlgDst h) h
+
+--------------------------------------------------------------------------------
+-- Betti -
+
+type Betti n = Deviation (n+1)
+
+--------------------------------------------------------------------------------
+-- betti -
+
+-- | the homology groups.
+betti :: (Attestable n, Distributive h) => Homology n h -> Betti n h
+betti = deviationsTo
+
+--------------------------------------------------------------------------------
+-- hmlgFreeZ -
+
+hmlgFreeZ :: ConsecutiveZero To n (Matrix Z) -> ConsecutiveZeroFree To n AbHom
+hmlgFreeZ ds = ConsecutiveZeroFree ds' fs where
+  ds' = cnzMapCov (homDisjOpDst FreeAbHom) ds
+  fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
+
+--------------------------------------------------------------------------------
+-- hmlgFree -
+
+hmlgFree :: Homological r h -> ConsecutiveZero To n (Matrix r) -> ConsecutiveZeroFree To n h
+hmlgFree HmlgZ = hmlgFreeZ
+
+
+--------------------------------------------------------------------------------
+-- HomologyHom -
+
+type HomologyHom = VarianceHomG To Cone Cone SomeFreeSliceDiagram
+
+--------------------------------------------------------------------------------
+-- homologyHom -
+
+homologyHom :: Homological r h -> ConsecutiveZeroFreeHom To n h -> HomologyHom n h
+homologyHom h (ConsecutiveZeroFreeHom a b fs) = VarianceHomG a' b' fs where
+  a' = homology h a
+  b' = homology h b
+
+--------------------------------------------------------------------------------
+-- BettiHom -
+
+type BettiHom n = DeviationHom (n+1)
+
+--------------------------------------------------------------------------------
+-- bettiHom -
+
+bettiHom :: (Distributive h, SlicedFree h, Attestable n)
+  => HomologyHom n h -> BettiHom n h
+bettiHom h = deviationHomG (sld h) h where
+  sld :: (Distributive h, SlicedFree h) => p h -> Struct (Dst,SldFr) h
+  sld _ = Struct
+
+--------------------------------------------------------------------------------
+-- hmlgFreeHomZ -
+
+hmlgFreeHomZ :: Attestable n
+  => ConsecutiveZeroHom To n (Matrix Z) -> ConsecutiveZeroFreeHom To n AbHom
+hmlgFreeHomZ h = ConsecutiveZeroFreeHom a' b' fs' where
+  a'  = hmlgFreeZ $ start h
+  b'  = hmlgFreeZ $ end h
+  fs' = amap1 (amap FreeAbHom) $ cnzHomArrows h
+
+--------------------------------------------------------------------------------
+-- hmlgFreeHom -
+
+hmlgFreeHom :: Attestable n
+  => Homological r h -> ConsecutiveZeroHom To n (Matrix r) -> ConsecutiveZeroFreeHom To n h
+hmlgFreeHom HmlgZ = hmlgFreeHomZ
+
+--------------------------------------------------------------------------------
+-- HomologyHom -
+
+data HomologyApp r h n x y where
+  HD :: (Galoisian r, Attestable n)
+    => Homological r h
+    -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroHom To n (Matrix r))
+  H :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+    => Homological r h
+    -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (BettiHom n h)
+
+instance Morphism (HomologyApp r h n) where
+  type ObjectClass (HomologyApp r h n) = Dst
+  homomorphous (HD _) = Struct :>: Struct
+  homomorphous (H _)  = Struct :>: Struct
+
+instance ApplicativeG Id (HomologyApp r h n) (->) where
+  amapG (HD h) = toIdG (hmlgDiagFormHom h)
+  amapG (H h)  = toIdG (bettiHom . homologyHom h . hmlgFreeHom h)
+
+instance ApplicativeG Pnt (HomologyApp r h n) (->) where
+  amapG (HD h) = toPntG (hmlgDiagForm h)
+  amapG (H h)  = toPntG (betti . homology h . hmlgFree h)
+  
+instance HomOriented (HomologyApp r h n)
+
+
+
+
+
+
+{-
+--------------------------------------------------------------------------------
+-- Homology -
+
 type Homology = VarianceFreeLiftable To
 
 --------------------------------------------------------------------------------
@@ -189,7 +317,6 @@ bettiHom h = deviationHomG (sld h) h where
   sld :: (Distributive h, SlicedFree h) => p h -> Struct (Dst,SldFr) h
   sld _ = Struct
 
-
 --------------------------------------------------------------------------------
 -- hmlgFreeHomZ -
 
@@ -214,14 +341,29 @@ data HomologyApp r h n x y where
   HD :: (Galoisian r, Attestable n)
     => Homological r h
     -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroHom To n (Matrix r))
-  H :: (Distributive h, Attestable n)
+  H :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
     => Homological r h
-    -> HomologyApp r h n (ConsecutiveZeroHom To n h) (BettiHom n h)
+    -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (BettiHom n h)
 
 instance Morphism (HomologyApp r h n) where
   type ObjectClass (HomologyApp r h n) = Dst
   homomorphous (HD _) = Struct :>: Struct
   homomorphous (H _)  = Struct :>: Struct
+
+instance ApplicativeG Id (HomologyApp r h n) (->) where
+  amapG (HD h) = toIdG (hmlgDiagFormHom h)
+  amapG (H h)  = toIdG (bettiHom . homologyHom h . hmlgFreeHom h)
+
+instance ApplicativeG Pnt (HomologyApp r h n) (->) where
+  amapG (HD h) = toPntG (hmlgDiagForm h)
+  amapG (H h)  = toPntG (betti . homology h . hmlgFree h)
+  
+instance HomOriented (HomologyApp r h n)
+-}
+
+
+
+
 
 
 {-
