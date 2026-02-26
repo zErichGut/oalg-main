@@ -243,9 +243,9 @@ instance ApplicativeG Pnt (HomologyApp r h n) (->) where
   amapG (B h) = toPntG (betti . homology h)
 
 instance ApplicativeG Rt (HomologyApp r h n) (->) where
-  amapG h@(D _) = amapRt (amap1 (pmap h))
-  amapG h@(F _) = amapRt (amap1 (pmap h))
-  amapG h@(B _) = amapRt (amap1 (pmap h))
+  amapG h@(D _) = amapRt (omap h)
+  amapG h@(F _) = amapRt (omap h)
+  amapG h@(B _) = amapRt (omap h)
 
 instance HomOriented (HomologyApp r h n)
 instance HomMultiplicative (HomologyApp r h n)
