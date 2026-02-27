@@ -19,21 +19,22 @@
 -- homology.
 module OAlg.Homology.Definition
   (
-{-    
+
+    -- * Homological
+    Homological(..), hmlgDst, hmlgMonic, hmlgDiagonalizable
+  , hmlgKernels, hmlgCokernels
+
+    -- * HomologyApp
+  , HomologyApp(..)
+  
     -- * Homology
-    homology, Homology    
+  , homology, Homology    
   , betti, Betti
   
     -- * Homomorphism
   , homologyHom, HomologyHom
   , bettiHom, BettiHom
 
-    -- * Homological
-  , Homological(..)
-
-    -- * Abelian
-  , cnzFreeAbl, cnzFreeHomAbl
--}
   ) where
 
 import OAlg.Prelude
@@ -135,7 +136,7 @@ type Homology = VarianceFreeLiftable To
 -- homology -
 
 homologyStruct :: Struct Dst h -> Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
-homologyStruct Struct h = varianceFreeTo (hmlgKernels h) (hmlgCokernels h)
+homologyStruct Struct h = varianceFreeLiftableTo (hmlgKernels h) (hmlgCokernels h)
 
 homology :: Homological r h -> ConsecutiveZeroFree To n h -> Homology n h
 homology h = homologyStruct (hmlgDst h) h
@@ -214,45 +215,49 @@ hmlgFreeHom HmlgZ = hmlgFreeHomZ
 -- HomologyApp -
 
 data HomologyApp r h n x y where
-  D :: (Galoisian r, Attestable n)
-    => Homological r h
+  D :: Homological r h
     -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroHom To n (Matrix r))
     
-  F :: (Galoisian r, Distributive h, SlicedFree h, Attestable n)
-    => Homological r h
+  F :: Homological r h
     -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroFreeHom To n h)
 
-  B :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
-    => Homological r h
+  B :: Homological r h
     -> HomologyApp r h n (ConsecutiveZeroFreeHom To n h) (BettiHom n h)
 
-instance Morphism (HomologyApp r h n) where
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => Morphism (HomologyApp r h n) where
   type ObjectClass (HomologyApp r h n) = Dst
   homomorphous (D _) = Struct :>: Struct
   homomorphous (F _) = Struct :>: Struct
   homomorphous (B _) = Struct :>: Struct
 
-instance ApplicativeG Id (HomologyApp r h n) (->) where
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => ApplicativeG Id (HomologyApp r h n) (->) where
   amapG (D h) = toIdG (hmlgDiagFormHom h)
   amapG (F h) = toIdG (hmlgFreeHom h)
   amapG (B h) = toIdG (bettiHom . homologyHom h)
 
-instance ApplicativeG Pnt (HomologyApp r h n) (->) where
+instance (Galoisian r, Distributive h, Attestable n)
+  => ApplicativeG Pnt (HomologyApp r h n) (->) where
   amapG (D h) = toPntG (hmlgDiagForm h)
   amapG (F h) = toPntG (hmlgFree h)
   amapG (B h) = toPntG (betti . homology h)
 
-instance ApplicativeG Rt (HomologyApp r h n) (->) where
+instance (Galoisian r, Distributive h, Attestable n)
+  => ApplicativeG Rt (HomologyApp r h n) (->) where
   amapG h@(D _) = amapRt (omap h)
   amapG h@(F _) = amapRt (omap h)
   amapG h@(B _) = amapRt (omap h)
 
-instance HomOriented (HomologyApp r h n)
-instance HomMultiplicative (HomologyApp r h n)
-instance HomFibred (HomologyApp r h n)
-instance HomAdditive (HomologyApp r h n)
-instance HomFibredOriented (HomologyApp r h n)
-instance HomDistributive (HomologyApp r h n)
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n) => HomOriented (HomologyApp r h n)
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => HomMultiplicative (HomologyApp r h n)
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n) => HomFibred (HomologyApp r h n)
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n) => HomAdditive (HomologyApp r h n)
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => HomFibredOriented (HomologyApp r h n)
+instance (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => HomDistributive (HomologyApp r h n)
 
 
 
@@ -270,7 +275,7 @@ ccxCnzFreeAbl = cnzFreeAbl . ccxConsecutiveZero where
 -- cnzFreeAblHomology -
 
 cnzFreeAblHomology :: ConsecutiveZeroFree To n AbHom -> Homology n
-cnzFreeAblHomology = varianceFreeTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
+cnzFreeAblHomology = varianceFreeLiftableTo abhKernelsSomeFreeFreeTip abhCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- HomologyHom -

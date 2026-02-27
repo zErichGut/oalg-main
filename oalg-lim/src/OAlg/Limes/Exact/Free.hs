@@ -21,7 +21,7 @@
 module OAlg.Limes.Exact.Free
   (
     -- * Variance
-    varianceFreeTo, VarianceFreeLiftable
+    varianceFreeLiftableTo, VarianceFreeLiftable
     
     -- * Free Consecutive Zero
   , ConsecutiveZeroFree(..), cnzfDiagram
@@ -183,14 +183,15 @@ instance
 type VarianceFreeLiftable t = VarianceG t (ConicFreeTip Cone) ConeLiftable SomeFreeSliceDiagram
 
 --------------------------------------------------------------------------------
--- varianceFreeTo -
+-- varianceFreeLiftableTo -
 
 -- | variance according to 'KernelsSomeFreeFreeTip' and 'CokernelsLiftableSomeFree'. 
-varianceFreeTo :: Distributive x
+varianceFreeLiftableTo :: Distributive x
   => KernelsSomeFreeFreeTip x
   -> CokernelsLiftableSomeFree x
   -> ConsecutiveZeroFree To n x -> VarianceFreeLiftable To n x
-varianceFreeTo kers cokers (ConsecutiveZeroFree c fs) = VarianceG c (kcs kers cokers c fs) where
+varianceFreeLiftableTo kers cokers (ConsecutiveZeroFree c fs)
+  = VarianceG c (kcs kers cokers c fs) where
 
   kc :: Distributive x
     => KernelsG (ConicFreeTip Cone) SomeFreeSliceDiagram N1 x

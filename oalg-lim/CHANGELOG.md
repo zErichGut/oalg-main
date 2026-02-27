@@ -16,3 +16,8 @@ and this project adheres to the
 ### Added
 - equality for LimesG.
 - Distributive structure for ConsecutiveZeroFreeHom
+
+## [3.4.0.1] - 2026-02-27
+
+### Chainged
+- varinceFreeTo to varianceFreeLiftableTo
