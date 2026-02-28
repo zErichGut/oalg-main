@@ -22,6 +22,7 @@
 -- Definition of topological spaces.
 module OAlg.Topology.Definition
   (
+{-    
     -- * Space
     Space(..), Model(..)
   , spcAbstract, spcDim
@@ -35,7 +36,7 @@ module OAlg.Topology.Definition
     -- * Homology
   , HCat, Hmlg(..), HomologyType(..)
   , hChC, hChC', hCrd, hBetti, hZ, hZ'
-
+-}
   ) where
 
 
@@ -51,6 +52,7 @@ import OAlg.Structure.Exception
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
 import OAlg.Structure.Additive
+import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 
 import OAlg.Hom.Oriented
@@ -58,6 +60,7 @@ import OAlg.Hom.Multiplicative
 import OAlg.Hom.Distributive ()
 
 import OAlg.Entity.Natural as N hiding ((++))
+import OAlg.Entity.Slice
 import OAlg.Entity.Matrix
 
 import OAlg.Limes.Exact.Free
@@ -197,6 +200,86 @@ instance (AttestableSimplexType s, Typeable m) => Multiplicative (Continuous s m
       Just Refl                       -> CntAbstract (cpmMlt f g)
       Nothing                         -> throw NotMultiplicable
 
+
+--------------------------------------------------------------------------------
+-- Hmlg -
+
+data Hmlg n x y where
+  ChC  :: (Ring r, Commutative r, AttestableSimplexType s, Typeable m)
+       => ChainComplexType -> Any n -> Hmlg n (Continuous s m) (ChainComplexHom r n)
+  Crd  :: Ring r => Hmlg n (ChainComplexHom r n) (CardsHom n)
+  Cnz  :: Ring r => Hmlg n (ChainComplexHom r n) (ConsecutiveZeroHom To n (Matrix r))
+  Hmlg :: (Galoisian r, SlicedFree h, Distributive h)
+       => HomologyApp r h n x y -> Hmlg n x y
+
+instance Attestable n => Morphism (Hmlg n) where
+  type ObjectClass (Hmlg n) = Mlt
+  homomorphous (ChC _ _) = Struct :>: Struct
+  homomorphous Crd       = Struct :>: Struct
+  homomorphous Cnz       = Struct :>: Struct
+  homomorphous (Hmlg h)  = hmphMlt (homomorphous h) where
+    hmphMlt :: Homomorphous Dst x y -> Homomorphous Mlt x y
+    hmphMlt (Struct :>: Struct) = Struct :>: Struct
+    
+instance Attestable n => ApplicativeG Id (Hmlg n) (->) where
+  amapG (ChC t n) (Id f) = Id $ case cntAbstract f of
+    CntAbstract f'      -> case cpmHomEntOrd f' of
+      Struct:>:Struct   -> chainComplexHom t n f'
+
+  amapG Crd (Id c)       = Id $ ccxCardsHom c
+  amapG Cnz (Id c)       = Id $ ccxConsecutiveZeroHom c
+  amapG (Hmlg h) x       = amapG h x
+  
+instance Attestable n => ApplicativeG Pnt (Hmlg n) (->) where
+  amapG h (Pnt x)    =  Pnt $ case homomorphous h of
+    Struct:>:Struct -> start $ amap h (one x) 
+
+instance Attestable n => HomOriented (Hmlg n)
+instance Attestable n => HomMultiplicative (Hmlg n)
+
+
+--------------------------------------------------------------------------------
+-- HCat -
+
+-- | category of homology operators.
+type HCat n = Path (Hmlg n)
+
+hC :: (Ring r, Commutative r, AttestableSimplexType s, Typeable m)
+  => ChainComplexType -> Any n -> HCat n (Continuous s m) (ChainComplexHom r n)
+hC t n = ChC t n :. IdPath Struct
+
+hC' :: (Ring r, Commutative r, AttestableSimplexType s, Typeable m)
+  => q s -> ChainComplexType -> Any n -> HCat n (Continuous s m) (ChainComplexHom r n)
+hC' _ = hC
+
+hN :: (Ring r, Attestable n) => HCat n (ChainComplexHom r n) (CardsHom n)
+hN = Crd :. IdPath Struct
+
+hZ :: (Ring r, Attestable n) => HCat n (ChainComplexHom r n) (ConsecutiveZeroHom To n (Matrix r))
+hZ = Cnz :. IdPath Struct
+
+hD :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => Homological r h
+  -> HCat n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroHom To n (Matrix r))
+hD h = Hmlg (D h) :. IdPath Struct 
+
+hF :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => Homological r h
+  -> HCat n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroFreeHom To n h)
+hF h = Hmlg (F h) :. IdPath Struct
+
+hB :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => Homological r h
+  -> HCat n (ConsecutiveZeroFreeHom To n h) (BettiHom n h)
+hB h = Hmlg (B h) :. IdPath Struct
+
+
+{-
+hBetti :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => Homological r h -> HCat n (ChainComplexHom r n) (BettiHom n h)
+hBetti h = error "nyi" -- Betti t :. IdPath Struct
+-}
+{-
 --------------------------------------------------------------------------------
 -- HomologyType -
 
@@ -275,4 +358,4 @@ hZ t n = hBetti HmlgTypeZ . hChC t n -- Hmlg t HmlgTypeZ n :. IdPath Struct
 hZ' :: (Attestable n, AttestableSimplexType s, Typeable m)
   => q s -> ChainComplexType -> Any n -> HCat (Continuous s m) (BettiHom n AbHom)
 hZ' _ = hZ
-
+-}
