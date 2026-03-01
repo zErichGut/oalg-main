@@ -22,7 +22,7 @@
 -- Definition of topological spaces.
 module OAlg.Topology.Definition
   (
-{-    
+
     -- * Space
     Space(..), Model(..)
   , spcAbstract, spcDim
@@ -34,9 +34,10 @@ module OAlg.Topology.Definition
   , cntAbstract
 
     -- * Homology
-  , HCat, Hmlg(..), HomologyType(..)
-  , hChC, hChC', hCrd, hBetti, hZ, hZ'
--}
+  , hC, hC', hN, hZ, hD, hF, hB
+  , Homological(..)
+  , HCat
+
   ) where
 
 
@@ -65,8 +66,6 @@ import OAlg.Entity.Matrix
 
 import OAlg.Limes.Exact.Free
 import OAlg.Limes.Exact.ConsecutiveZero
-
-import OAlg.AbelianGroup.Definition
 
 import OAlg.Homology.Simplical
 import OAlg.Homology.Complex
