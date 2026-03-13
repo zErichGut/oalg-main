@@ -36,6 +36,7 @@ import OAlg.Category.Map
 import OAlg.Data.Either
 import OAlg.Data.Filterable
 
+import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.PartiallyOrdered
 
@@ -294,4 +295,5 @@ torus = tip $ universalCone $ limes cntProductsAsc t
 
 torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
 
-
+h = HmlgZ
+ccTorus = pmap (hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)) torus

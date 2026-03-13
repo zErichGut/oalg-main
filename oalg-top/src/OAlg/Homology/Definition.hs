@@ -68,6 +68,54 @@ import OAlg.Limes.Exact.Deviation
 import OAlg.Limes.Exact.Free
 
 import OAlg.LinearAlgebra.ConsecutiveZero
+import OAlg.LinearAlgebra.StepMatrix
+
+
+
+import OAlg.Limes.Definition
+import OAlg.Limes.Cone
+import OAlg.Limes.Limits
+
+import OAlg.Data.Singleton
+import OAlg.Structure.Exponential
+
+--------------------------------------------------------------------------------
+-- limesCone -
+
+-- | the underlying concrete limes.
+limesCone :: Conic c => LimesG c s p d t n m x -> LimesG Cone s p d t n m x
+limesCone (LimesProjective c u) = LimesProjective (cone c) u
+limesCone (LimesInjective c u)  = LimesInjective (cone c) u
+
+--------------------------------------------------------------------------------
+-- Matrix - Sliced (Free k) -
+
+instance (Ring x, Attestable k) => Sliced (Free k) (Matrix x) where
+  slicePoint (Free k) = dim unit ^ lengthN k
+  
+--------------------------------------------------------------------------------
+-- fldKernelsSomeFreeFreeTip -
+
+fldKernelSomeFreeFreeTip :: Field x
+  => KernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
+  -> KernelSomeFreeFreeTip (Matrix x)
+fldKernelSomeFreeFreeTip = error "nyi"
+
+
+fldKernelsSomeFreeFreeTip :: Field x => KernelsSomeFreeFreeTip (Matrix x)
+fldKernelsSomeFreeFreeTip = LimitsG fldKernelSomeFreeFreeTip
+
+
+--------------------------------------------------------------------------------
+-- fldCokernelsLiftableSomeFree -
+
+fldCokernelsLiftableSomeFree :: Field x => CokernelsG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
+fldCokernelsLiftableSomeFree = error "nyi"
+
+
+
+
+
 
 --------------------------------------------------------------------------------
 -- Homological -
@@ -75,21 +123,26 @@ import OAlg.LinearAlgebra.ConsecutiveZero
 -- | homological relation between a @'Galoisian' __r__@ and a @'Distributive' __h__@.
 data Homological r h where
   HmlgZ :: Homological Z AbHom
+  HmlgF :: Field x => Homological x (Matrix x)
 
 hmlgDst :: Homological r h -> Struct Dst h
 hmlgDst HmlgZ = Struct
+hmlgDst HmlgF = Struct
 
 --------------------------------------------------------------------------------
 -- hmlgMonic -
 
 hmlgMonic :: Homological r h -> Monic r
 hmlgMonic HmlgZ = mncZ
+hmlgMonic HmlgF = mncField
 
 --------------------------------------------------------------------------------
 -- hmlgDiagonalizable -
 
 hmlgDiagonalizable :: Homological r h -> Diagonalizable r
 hmlgDiagonalizable HmlgZ = dgzZ
+hmlgDiagonalizable HmlgF = dgzField
+
 
 --------------------------------------------------------------------------------
 -- hmlgInvDiagForm -
@@ -120,12 +173,14 @@ hmlgDiagFormHom h ch = j * ch * i' where
 
 hmlgKernels :: Homological r h -> KernelsSomeFreeFreeTip h
 hmlgKernels HmlgZ = abhKernelsSomeFreeFreeTip
+hmlgKernels HmlgF = fldKernelsSomeFreeFreeTip
 
 --------------------------------------------------------------------------------
 -- hmlgCokernels -
 
 hmlgCokernels :: Homological r h -> CokernelsG ConeLiftable SomeFreeSliceDiagram N1 h
 hmlgCokernels HmlgZ = abhCokernelsLiftableSomeFree
+hmlgCokernels HmlgF = fldCokernelsLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- Homology -
@@ -162,10 +217,17 @@ hmlgFreeZ ds = ConsecutiveZeroFree ds' fs where
   fs  = amap1 (fromJust . abgSomeFree) $ tail $ dgPoints $ cnzDiagram ds'
 
 --------------------------------------------------------------------------------
+-- hmlgFreeRing -
+
+hmlgFreeRing :: Ring x => ConsecutiveZero To n (Matrix x) -> ConsecutiveZeroFree To n (Matrix x)
+hmlgFreeRing = error "nyi"
+
+--------------------------------------------------------------------------------
 -- hmlgFree -
 
 hmlgFree :: Homological r h -> ConsecutiveZero To n (Matrix r) -> ConsecutiveZeroFree To n h
 hmlgFree HmlgZ = hmlgFreeZ
+hmlgFree HmlgF = hmlgFreeRing
 
 --------------------------------------------------------------------------------
 -- HomologyHom -
@@ -205,22 +267,33 @@ hmlgFreeHomZ h = ConsecutiveZeroFreeHom a' b' fs' where
   fs' = amap1 (amap FreeAbHom) $ cnzHomArrows h
 
 --------------------------------------------------------------------------------
+-- hmlgFreeHomRing -
+
+hmlgFreeHomRing :: Ring x
+  => ConsecutiveZeroHom To n (Matrix x) -> ConsecutiveZeroFreeHom To n (Matrix x)
+hmlgFreeHomRing = error "nyi"
+
+--------------------------------------------------------------------------------
 -- hmlgFreeHom -
 
 hmlgFreeHom :: Attestable n
   => Homological r h -> ConsecutiveZeroHom To n (Matrix r) -> ConsecutiveZeroFreeHom To n h
 hmlgFreeHom HmlgZ = hmlgFreeHomZ
+hmlgFreeHom HmlgF = hmlgFreeHomRing
 
 --------------------------------------------------------------------------------
 -- HomologyApp -
 
 data HomologyApp r h n x y where
+  -- | diagonalization.
   D :: Homological r h
     -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroHom To n (Matrix r))
-    
+
+  -- | embedding to 'Free'.
   F :: Homological r h
     -> HomologyApp r h n (ConsecutiveZeroHom To n (Matrix r)) (ConsecutiveZeroFreeHom To n h)
 
+  -- | Betti numbers.
   B :: Homological r h
     -> HomologyApp r h n (ConsecutiveZeroFreeHom To n h) (BettiHom n h)
 

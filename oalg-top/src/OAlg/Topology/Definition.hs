@@ -248,8 +248,9 @@ hC :: (Ring r, Commutative r, AttestableSimplexType s, Typeable m)
 hC t n = ChC t n :. IdPath Struct
 
 hC' :: (Ring r, Commutative r, AttestableSimplexType s, Typeable m)
-  => q s -> ChainComplexType -> Any n -> HCat n (Continuous s m) (ChainComplexHom r n)
-hC' _ = hC
+  => q s -> Homological r h
+  -> ChainComplexType -> Any n -> HCat n (Continuous s m) (ChainComplexHom r n)
+hC' _ _ = hC
 
 hN :: (Ring r, Attestable n) => HCat n (ChainComplexHom r n) (CardsHom n)
 hN = Crd :. IdPath Struct
