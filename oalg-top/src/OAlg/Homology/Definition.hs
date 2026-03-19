@@ -79,6 +79,8 @@ import OAlg.Limes.Limits
 import OAlg.Data.Singleton
 import OAlg.Structure.Exponential
 
+import OAlg.LinearAlgebra.KernelsAndCokernels
+
 --------------------------------------------------------------------------------
 -- limesCone -
 
@@ -92,18 +94,26 @@ limesCone (LimesInjective c u)  = LimesInjective (cone c) u
 
 instance (Ring x, Attestable k) => Sliced (Free k) (Matrix x) where
   slicePoint (Free k) = dim unit ^ lengthN k
-  
+
 --------------------------------------------------------------------------------
--- fldKernelsSomeFreeFreeTip -
+-- rngKernelsSomeFreeFreeTip -
 
-fldKernelSomeFreeFreeTip :: Field x
-  => KernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
+rngKernelSomeFreeFreeTip :: Ring x
+  => Kernels N1 (Matrix x)
+  -> KernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
   -> KernelSomeFreeFreeTip (Matrix x)
-fldKernelSomeFreeFreeTip = error "nyi"
+rngKernelSomeFreeFreeTip krs d@(SomeFreeSliceKernel (SliceFrom k m)) = LimesProjective cn uv where
+  kr  = limes krs (diagram d)
+  cn' = universalCone kr
+  
+  cn = case someNatural $ lengthN $ tip $ cn' of
+    SomeNatural k -> ConicFreeTip (Free k) (ConeKernel d $ kernelFactor cn')
+
+  uv (ConeKernel d f) = universalFactor kr (ConeKernel (diagram d) f)
 
 
-fldKernelsSomeFreeFreeTip :: Field x => KernelsSomeFreeFreeTip (Matrix x)
-fldKernelsSomeFreeFreeTip = LimitsG fldKernelSomeFreeFreeTip
+rngKernelsSomeFreeFreeTip :: Ring x => Kernels N1 (Matrix x) -> KernelsSomeFreeFreeTip (Matrix x)
+rngKernelsSomeFreeFreeTip = LimitsG . rngKernelSomeFreeFreeTip
 
 
 --------------------------------------------------------------------------------
@@ -112,6 +122,13 @@ fldKernelsSomeFreeFreeTip = LimitsG fldKernelSomeFreeFreeTip
 fldCokernelsLiftableSomeFree :: Field x => CokernelsG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
 fldCokernelsLiftableSomeFree = error "nyi"
 
+--------------------------------------------------------------------------------
+-- rngSomeFree -
+
+-- | the dimension of a matrix over a ring as a free point.
+rngSomeFree :: Ring x => Dim' x -> SomeFree (Matrix x)
+rngSomeFree n = case someNatural $ lengthN n of
+    SomeNatural n' -> SomeFree $ Free n'
 
 
 
@@ -173,7 +190,7 @@ hmlgDiagFormHom h ch = j * ch * i' where
 
 hmlgKernels :: Homological r h -> KernelsSomeFreeFreeTip h
 hmlgKernels HmlgZ = abhKernelsSomeFreeFreeTip
-hmlgKernels HmlgF = fldKernelsSomeFreeFreeTip
+hmlgKernels HmlgF = rngKernelsSomeFreeFreeTip mtxKernels
 
 --------------------------------------------------------------------------------
 -- hmlgCokernels -
@@ -220,7 +237,8 @@ hmlgFreeZ ds = ConsecutiveZeroFree ds' fs where
 -- hmlgFreeRing -
 
 hmlgFreeRing :: Ring x => ConsecutiveZero To n (Matrix x) -> ConsecutiveZeroFree To n (Matrix x)
-hmlgFreeRing = error "nyi"
+hmlgFreeRing c@(ConsecutiveZero d) = ConsecutiveZeroFree c sf where
+  sf = amap1 rngSomeFree $ tail $ dgPoints d
 
 --------------------------------------------------------------------------------
 -- hmlgFree -
@@ -269,9 +287,12 @@ hmlgFreeHomZ h = ConsecutiveZeroFreeHom a' b' fs' where
 --------------------------------------------------------------------------------
 -- hmlgFreeHomRing -
 
-hmlgFreeHomRing :: Ring x
+hmlgFreeHomRing :: (Attestable n, Ring x)
   => ConsecutiveZeroHom To n (Matrix x) -> ConsecutiveZeroFreeHom To n (Matrix x)
-hmlgFreeHomRing = error "nyi"
+hmlgFreeHomRing h = ConsecutiveZeroFreeHom a' b' fs where
+  a' = hmlgFreeRing $ start h
+  b' = hmlgFreeRing $ end h
+  fs = cnzHomArrows h
 
 --------------------------------------------------------------------------------
 -- hmlgFreeHom -
