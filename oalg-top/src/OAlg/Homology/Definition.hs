@@ -72,6 +72,8 @@ import OAlg.LinearAlgebra.StepMatrix
 
 
 
+import OAlg.Category.SDuality
+
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
@@ -131,9 +133,103 @@ rngSomeFree n = case someNatural $ lengthN n of
     SomeNatural n' -> SomeFree $ Free n'
 
 
+{-
+--------------------------------------------------------------------------------
+-- Monomorph -
+
+-- | mono morphisms within a 'Multiplicative' structure.
+--
+-- __Property__ Let @'Monomorph' i@ be in @'Monomorph' __x__@ where @__x__@ is a 'Multiplicative'
+-- structure, then holds:
+--
+-- (1) For all parrallel @f@, @g@ in @__x__@ - i.e. @'orientation' f '==' 'orientation' g@ - with
+-- @'end' f '==' 'start' i@ and @i '*' f '==' i '*' g@ follows that @f '==' g@.
+newtype Monomorph x = Monomorph x deriving (Show,Eq,Ord)
+-}
+
+--------------------------------------------------------------------------------
+-- Morphology -
+
+data Morphology = Monomorph | Epimorph deriving (Show,Read,Ord,Eq,Enum,Bounded)
+
+type instance Dual Monomorph = Epimorph
+type instance Dual Epimorph  = Monomorph
+
+instance Validable Morphology where
+  valid Monomorph = SValid
+  valid _         = SValid
+
+--------------------------------------------------------------------------------
+-- Arrow -
+
+-- | mono and epi morphisms within a 'Multiplicative' structure.
+--
+-- __Property__ Let @m@ be in @'Arrow' __m x__@ where @__x__@ is a 'Multiplicative'
+-- structure, then holds:
+--
+-- (1) If @m@ matches @'Mono' i@ for some @i@ in @__x__@ then holds:
+-- For all parrallel @f@, @g@ in @__x__@ - i.e. @'orientation' f '==' 'orientation' g@ - with
+-- @'end' f '==' 'start' i@ and @i '*' f '==' i '*' g@ follows that @f '==' g@.
+--
+-- (2) If @m@ matches @'Epi' p@ for some @p@ in @__x__@ then holds:
+-- For all parrallel @f@, @g@ in @__x__@ - i.e. @'orientation' f '==' 'orientation' g@ - with
+-- @'start' f '==' 'end' p@ and @f '*' p '==' g '*' p@ follows that @f '==' g@.
+data Arrow m x where
+  Mono :: x -> Arrow Monomorph x
+  Epi  :: x -> Arrow Epimorph x
+
+
+--------------------------------------------------------------------------------
+-- arwMapCov -
+
+arwMapCov :: HomMultiplicativeDisjunctive h
+  => Variant2 Covariant (Inv2 h) x y -> Arrow m x -> Arrow m y
+arwMapCov (Covariant2 i) (Mono x) = Mono $ amap i x
+arwMapCov (Covariant2 i) (Epi x)  = Epi $ amap i x
+
+--------------------------------------------------------------------------------
+-- arwMapCnt -
+
+arwMapCnt :: HomMultiplicativeDisjunctive h
+  => Variant2 Contravariant (Inv2 h) x y -> Arrow m x -> Arrow (Dual m) y
+arwMapCnt (Contravariant2 i) (Mono x) = Epi $ amap i x
+arwMapCnt (Contravariant2 i) (Epi x)  = Mono $ amap i x
+
+--------------------------------------------------------------------------------
+-- arwMapS -
+
+type instance Dual1 (Arrow m) = Arrow (Dual m)
+
+arwMapS :: (CategoryDisjunctive h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => Inv2 h x y -> SDualBi (Arrow m) x -> SDualBi (Arrow m) y
+arwMapS = vmapBi arwMapCov arwMapCov arwMapCnt arwMapCnt
+
+instance (CategoryDisjunctive h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => ApplicativeG (SDualBi (Arrow m)) (Inv2 h) (->) where
+  amapG = arwMapS
+
+instance (CategoryDisjunctive h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => FunctorialG (SDualBi (Arrow m)) (Inv2 h) (->)
+  
+--------------------------------------------------------------------------------
+-- AA -
+
+data AA m x where
+  AAMono :: Arrow Monomorph x -> (x,x) -> AA Monomorph x
+  AAEpi  :: (x,x) -> Arrow Epimorph x -> AA Epimorph x
+  
+relArrow :: Multiplicative x => AA m x -> Statement
+relArrow (AAMono (Mono i) (f,g))
+  = ((i * f == i * g) :?> Params []) :=> (f == g) :?> Params ["(f,g)":=show (f,g)]
 
 
 
+
+
+
+
+  
+--------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Homological -
 
