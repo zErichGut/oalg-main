@@ -72,6 +72,7 @@ import OAlg.LinearAlgebra.StepMatrix
 
 
 
+import OAlg.Data.Either
 import OAlg.Category.SDuality
 
 import OAlg.Limes.Definition
@@ -150,6 +151,7 @@ newtype Monomorph x = Monomorph x deriving (Show,Eq,Ord)
 --------------------------------------------------------------------------------
 -- Morphology -
 
+-- | morphology of a 'FactorM', i.e. either mono- or epimorph
 data Morphology = Monomorph | Epimorph deriving (Show,Read,Ord,Eq,Enum,Bounded)
 
 type instance Dual Monomorph = Epimorph
@@ -160,11 +162,11 @@ instance Validable Morphology where
   valid _         = SValid
 
 --------------------------------------------------------------------------------
--- Arrow -
+-- FactorM -
 
--- | mono and epi morphisms within a 'Multiplicative' structure.
+-- | mono- and epimorphic arrows within a 'Multiplicative' structure.
 --
--- __Property__ Let @m@ be in @'Arrow' __m x__@ where @__x__@ is a 'Multiplicative'
+-- __Property__ Let @m@ be in @'FactorM' __m x__@ where @__x__@ is a 'Multiplicative'
 -- structure, then holds:
 --
 -- (1) If @m@ matches @'Mono' i@ for some @i@ in @__x__@ then holds:
@@ -174,53 +176,111 @@ instance Validable Morphology where
 -- (2) If @m@ matches @'Epi' p@ for some @p@ in @__x__@ then holds:
 -- For all parrallel @f@, @g@ in @__x__@ - i.e. @'orientation' f '==' 'orientation' g@ - with
 -- @'start' f '==' 'end' p@ and @f '*' p '==' g '*' p@ follows that @f '==' g@.
-data Arrow m x where
-  Mono :: x -> Arrow Monomorph x
-  Epi  :: x -> Arrow Epimorph x
+data FactorM m x where
+  Mono :: x -> FactorM Monomorph x
+  Epi  :: x -> FactorM Epimorph x
 
 
 --------------------------------------------------------------------------------
--- arwMapCov -
+-- fcmMapCov -
 
-arwMapCov :: HomMultiplicativeDisjunctive h
-  => Variant2 Covariant (Inv2 h) x y -> Arrow m x -> Arrow m y
-arwMapCov (Covariant2 i) (Mono x) = Mono $ amap i x
-arwMapCov (Covariant2 i) (Epi x)  = Epi $ amap i x
-
---------------------------------------------------------------------------------
--- arwMapCnt -
-
-arwMapCnt :: HomMultiplicativeDisjunctive h
-  => Variant2 Contravariant (Inv2 h) x y -> Arrow m x -> Arrow (Dual m) y
-arwMapCnt (Contravariant2 i) (Mono x) = Epi $ amap i x
-arwMapCnt (Contravariant2 i) (Epi x)  = Mono $ amap i x
+-- | covariant mapping of a 'FactorM'.
+--
+-- __Note__ We use isomorphisms to preserve monomorphic factors.
+fcmMapCov :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h)
+  => Variant2 Covariant (Inv2 h) x y -> FactorM m x -> FactorM m y
+fcmMapCov (Covariant2 i) (Mono x) = Mono $ amap i x
+fcmMapCov (Covariant2 i) (Epi x)  = Epi $ amap i x
 
 --------------------------------------------------------------------------------
--- arwMapS -
+-- fcmMapCnt -
 
-type instance Dual1 (Arrow m) = Arrow (Dual m)
+-- | contravariant mapping of a 'FactorM'.
+--
+-- __Note__ We use isomorphisms for mappings between  mono- and epimorphic factors.
+fcmMapCnt :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h)
+  => Variant2 Contravariant (Inv2 h) x y -> FactorM m x -> FactorM (Dual m) y
+fcmMapCnt (Contravariant2 i) (Mono x) = Epi $ amap i x
+fcmMapCnt (Contravariant2 i) (Epi x)  = Mono $ amap i x
 
-arwMapS :: (CategoryDisjunctive h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
-  => Inv2 h x y -> SDualBi (Arrow m) x -> SDualBi (Arrow m) y
-arwMapS = vmapBi arwMapCov arwMapCov arwMapCnt arwMapCnt
+--------------------------------------------------------------------------------
+-- fcmMapS -
 
-instance (CategoryDisjunctive h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
-  => ApplicativeG (SDualBi (Arrow m)) (Inv2 h) (->) where
-  amapG = arwMapS
+type instance Dual1 (FactorM m) = FactorM (Dual m)
 
-instance (CategoryDisjunctive h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
-  => FunctorialG (SDualBi (Arrow m)) (Inv2 h) (->)
+-- | mapping of 'FactorM'.
+fcmMapS :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => Inv2 h x y -> SDualBi (FactorM m) x -> SDualBi (FactorM m) y
+fcmMapS = vmapBi fcmMapCov fcmMapCov fcmMapCnt fcmMapCnt
+
+instance (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => ApplicativeG (SDualBi (FactorM m)) (Inv2 h) (->) where
+  amapG = fcmMapS
+
+instance (CategoryDisjunctive h, Functorial h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => FunctorialG (SDualBi (FactorM m)) (Inv2 h) (->)
   
 --------------------------------------------------------------------------------
--- AA -
+-- FactorMDiagram -
 
-data AA m x where
-  AAMono :: Arrow Monomorph x -> (x,x) -> AA Monomorph x
-  AAEpi  :: (x,x) -> Arrow Epimorph x -> AA Epimorph x
+-- | diagram for validating 'FactorM'.
+--
+-- __Property__ Let @d@ be in @'FactorMDiagram' __m x__@ where @__x__@ is a 'Multiplicative' structure,
+-- then holds:
+--
+--  (1) If @d@ matches @'FactorMDiagram' ('Mono' i) (f,g)@, then holds:
+--
+--      (1) @'orientation' f '==' 'orientation' g@.
+--
+--      (2) @'end' f '==' 'start' i@.
+--
+--  (2) If @d@ matches @'FactorMDiagram' ('Epi' i) (f,g)@, then holds:
+--
+--      (1) @'orientation' f '==' 'orientation' g@.
+--
+--      (2) @'start' f '==' 'end' i@.
+data FactorMDiagram m x = FactorMDiagram (FactorM m x) (x,x) 
+
+-- | covariant mapping of a 'FactorMDiagram'.
+fmdMapCov :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => Variant2 Covariant (Inv2 h) x y -> FactorMDiagram m x -> FactorMDiagram m y
+fmdMapCov (Covariant2 h) (FactorMDiagram i (f,g)) = FactorMDiagram i' (f',g') where
+  SDualBi (Right1 i') = amapF h (SDualBi (Right1 i))
+  f'                  = amap h f
+  g'                  = amap h g
+
+-- | contravariant mapping of a 'FactorMDiagram'.
+fmdMapCnt :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => Variant2 Contravariant (Inv2 h) x y -> FactorMDiagram m x -> FactorMDiagram (Dual m) y
+fmdMapCnt (Contravariant2 h) (FactorMDiagram i (f,g)) = FactorMDiagram i' (f',g') where
+  SDualBi (Left1 i')  = amapF h (SDualBi (Right1 i))
+  f'                  = amap h f
+  g'                  = amap h g
+
+type instance Dual1 (FactorMDiagram m) = FactorMDiagram (Dual m)
+
+-- | mapping of a 'FactorMDiagram'.
+fmdMapS :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => Inv2 h x y -> SDualBi (FactorMDiagram m) x -> SDualBi (FactorMDiagram m) y
+fmdMapS = vmapBi fmdMapCov fmdMapCov fmdMapCnt fmdMapCnt
+
+instance (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => ApplicativeG (SDualBi (FactorMDiagram m)) (Inv2 h) (->) where
+  amapG = fmdMapS
   
-relArrow :: Multiplicative x => AA m x -> Statement
-relArrow (AAMono (Mono i) (f,g))
+instance (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
+  => FunctorialG (SDualBi (FactorMDiagram m)) (Inv2 h) (->)
+
+--------------------------------------------------------------------------------
+-- relFactorM -
+
+-- | validating a 'FactorM'.
+relFactorM :: Multiplicative x => FactorMDiagram m x -> Statement
+relFactorM (FactorMDiagram (Mono i) (f,g))
   = ((i * f == i * g) :?> Params []) :=> (f == g) :?> Params ["(f,g)":=show (f,g)]
+relFactorM fd@(FactorMDiagram (Epi _) _) = relFactorM fd' where
+  Contravariant2 i    = toDualOpMlt 
+  SDualBi (Left1 fd') = amapF i (SDualBi (Right1 fd))
 
 
 
