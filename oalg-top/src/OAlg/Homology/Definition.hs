@@ -71,7 +71,7 @@ import OAlg.LinearAlgebra.ConsecutiveZero
 import OAlg.LinearAlgebra.StepMatrix
 
 
-
+import Control.Monad
 import OAlg.Data.Either
 import OAlg.Category.SDuality
 
@@ -134,20 +134,6 @@ rngSomeFree n = case someNatural $ lengthN n of
     SomeNatural n' -> SomeFree $ Free n'
 
 
-{-
---------------------------------------------------------------------------------
--- Monomorph -
-
--- | mono morphisms within a 'Multiplicative' structure.
---
--- __Property__ Let @'Monomorph' i@ be in @'Monomorph' __x__@ where @__x__@ is a 'Multiplicative'
--- structure, then holds:
---
--- (1) For all parrallel @f@, @g@ in @__x__@ - i.e. @'orientation' f '==' 'orientation' g@ - with
--- @'end' f '==' 'start' i@ and @i '*' f '==' i '*' g@ follows that @f '==' g@.
-newtype Monomorph x = Monomorph x deriving (Show,Eq,Ord)
--}
-
 --------------------------------------------------------------------------------
 -- Morphology -
 
@@ -180,6 +166,9 @@ data FactorM m x where
   Mono :: x -> FactorM Monomorph x
   Epi  :: x -> FactorM Epimorph x
 
+deriving instance Show x => Show (FactorM m x)
+deriving instance Eq x => Eq (FactorM m x)
+deriving instance Ord x => Ord (FactorM m x)
 
 --------------------------------------------------------------------------------
 -- fcmMapCov -
@@ -239,7 +228,10 @@ instance (CategoryDisjunctive h, Functorial h, Functorial h, HomMultiplicativeDi
 --      (1) @'orientation' f '==' 'orientation' g@.
 --
 --      (2) @'start' f '==' 'end' i@.
-data FactorMDiagram m x = FactorMDiagram (FactorM m x) (x,x) 
+data FactorMDiagram m x = FactorMDiagram (FactorM m x) (x,x) deriving (Show,Eq,Ord)
+
+--------------------------------------------------------------------------------
+-- mapping -
 
 -- | covariant mapping of a 'FactorMDiagram'.
 fmdMapCov :: (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
@@ -272,17 +264,49 @@ instance (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, D
   => FunctorialG (SDualBi (FactorMDiagram m)) (Inv2 h) (->)
 
 --------------------------------------------------------------------------------
+-- xoFactorMDiagram -
+
+xoFactorMDiagram :: Multiplicative x => XOrtOrientation x -> FactorM m x -> X (FactorMDiagram m x)
+xoFactorMDiagram xo m@(Mono i) = do
+  s <- xoPoint xo
+  f <- xoArrow xo (s :> end i)
+  g <- xoArrow xo (s :> end i)
+  return (FactorMDiagram m (f,g))
+xoFactorMDiagram xo m@(Epi _)
+  = amap1 (fmdMapCnt $ Contravariant2 $ inv2 i) $ xoFactorMDiagram xo' m' where
+  
+    xo'                = coXOrtOrientation xo
+    Contravariant2 i   = toDualOpMlt
+    SDualBi (Left1 m') = amapF i (SDualBi (Right1 m))
+  
+--------------------------------------------------------------------------------
+-- relFactroMDiagram -
+
+relFactorMDiagram :: Multiplicative x => FactorMDiagram m x -> Statement
+relFactorMDiagram (FactorMDiagram (Mono i) (f,g))
+  = And [ Label "1.1" :<=>: (orientation f == orientation g) :?> Params ["(f,g)":=show (f,g)]
+        , Label "1,2" :<=>: (start i == end f) :?> Params ["(i,f)":=show (i,f)]
+        ]
+relFactorMDiagram d@(FactorMDiagram (Epi _) _) = relFactorMDiagram d' where
+  Contravariant2 i   = toDualOpMlt 
+  SDualBi (Left1 d') = amapF i (SDualBi (Right1 d))
+
+  
+--------------------------------------------------------------------------------
 -- relFactorM -
 
 -- | validating a 'FactorM'.
 relFactorM :: Multiplicative x => FactorMDiagram m x -> Statement
 relFactorM (FactorMDiagram (Mono i) (f,g))
-  = ((i * f == i * g) :?> Params []) :=> (f == g) :?> Params ["(f,g)":=show (f,g)]
+  = ((f /= g) :?> Params []) :=> (i * f /= i * g) :?> Params ["(f,g)":=show (f,g)]
+  -- we use this condition to avoid a lot of denied permisses!
 relFactorM fd@(FactorMDiagram (Epi _) _) = relFactorM fd' where
   Contravariant2 i    = toDualOpMlt 
   SDualBi (Left1 fd') = amapF i (SDualBi (Right1 fd))
 
-
+instance (Multiplicative x, XStandardOrtOrientation x) => Validable (FactorM m x) where
+  valid m = Label "FactorM" :<=>: Forall (xD m) relFactorM where
+    xD = xoFactorMDiagram xStandardOrtOrientation
 
 
 
