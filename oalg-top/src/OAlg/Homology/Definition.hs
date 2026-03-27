@@ -72,9 +72,13 @@ import OAlg.LinearAlgebra.StepMatrix
 
 
 import Control.Monad
-import OAlg.Data.Either
+
 import OAlg.Category.SDuality
 
+import OAlg.Data.Either
+
+import OAlg.Structure.Operational
+import OAlg.Entity.Slice.Liftable
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
@@ -105,7 +109,7 @@ rngKernelSomeFreeFreeTip :: Ring x
   => Kernels N1 (Matrix x)
   -> KernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
   -> KernelSomeFreeFreeTip (Matrix x)
-rngKernelSomeFreeFreeTip krs d@(SomeFreeSliceKernel (SliceFrom k m)) = LimesProjective cn uv where
+rngKernelSomeFreeFreeTip krs d@(SomeFreeSliceKernel (SliceFrom _ _)) = LimesProjective cn uv where
   kr  = limes krs (diagram d)
   cn' = universalCone kr
   
@@ -130,7 +134,17 @@ cokernelFactorEpi = Epi . cokernelFactor . universalCone
 
 -- | the induced injective liftable.
 fldLiftableFreeEpi :: Field x => FactorM Epimorph (Matrix x) -> LiftableFree Injective (Matrix x)
-fldLiftableFreeEpi = error "nyi"
+fldLiftableFreeEpi p = LiftableFree (lft p) where
+  lft :: Field x => FactorM Epimorph (Matrix x) -> Any k -> Liftable Injective (Free k) (Matrix x)
+  lft (Epi p) k = case ats k of
+    Ats -> LiftableInjective p lfts where
+      lfts (SliceFrom i f) | end p /= end f = throw NotLiftable
+                           | otherwise      = SliceFrom i rf'c
+        where rf   = r *> f
+              rf'  = Matrix (end rf) (start f) $ mtxxs rf
+              rf'c = rf' <* c
+    where DiagonalForm _ r c = mtxDiagonalForm p
+          -- as x is a field, the diagonal contains only ones and has the same length as (end f)  
 
 --------------------------------------------------------------------------------
 -- fldCokernelsLiftableSomeFree -
@@ -138,8 +152,8 @@ fldLiftableFreeEpi = error "nyi"
 fldCokernelLiftableSomeFree :: Field x
   => CokernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
   -> CokernelG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
-fldCokernelLiftableSomeFree d@(SomeFreeSliceCokernel (SliceFrom k m)) = LimesInjective cn uv where
-  ck = limes mtxCokernels $ cokernelDiagram m
+fldCokernelLiftableSomeFree d@(SomeFreeSliceCokernel (SliceTo _ _)) = LimesInjective cn uv where
+  ck = limes mtxCokernels (diagram d)
   
   cn = ConeCokernelLiftable cn' lf' where
     cn' = ConeCokernel d $ cokernelFactor $ universalCone ck
@@ -333,6 +347,7 @@ relFactorM fd@(FactorMDiagram (Epi _) _) = relFactorM fd' where
 instance (Multiplicative x, XStandardOrtOrientation x) => Validable (FactorM m x) where
   valid m = Label "FactorM" :<=>: Forall (xD m) relFactorM where
     xD = xoFactorMDiagram xStandardOrtOrientation
+
 
 
 
