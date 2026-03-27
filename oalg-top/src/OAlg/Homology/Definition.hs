@@ -118,12 +118,38 @@ rngKernelSomeFreeFreeTip krs d@(SomeFreeSliceKernel (SliceFrom k m)) = LimesProj
 rngKernelsSomeFreeFreeTip :: Ring x => Kernels N1 (Matrix x) -> KernelsSomeFreeFreeTip (Matrix x)
 rngKernelsSomeFreeFreeTip = LimitsG . rngKernelSomeFreeFreeTip
 
+--------------------------------------------------------------------------------
+-- cokernelFactorEpi -
+
+-- | the epimorph factor of its universal shell.
+cokernelFactorEpi :: Cokernel n x -> FactorM Epimorph x
+cokernelFactorEpi = Epi . cokernelFactor . universalCone
+
+--------------------------------------------------------------------------------
+-- fldLiftableFreeEpi -
+
+-- | the induced injective liftable.
+fldLiftableFreeEpi :: Field x => FactorM Epimorph (Matrix x) -> LiftableFree Injective (Matrix x)
+fldLiftableFreeEpi = error "nyi"
 
 --------------------------------------------------------------------------------
 -- fldCokernelsLiftableSomeFree -
 
+fldCokernelLiftableSomeFree :: Field x
+  => CokernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
+  -> CokernelG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
+fldCokernelLiftableSomeFree d@(SomeFreeSliceCokernel (SliceFrom k m)) = LimesInjective cn uv where
+  ck = limes mtxCokernels $ cokernelDiagram m
+  
+  cn = ConeCokernelLiftable cn' lf' where
+    cn' = ConeCokernel d $ cokernelFactor $ universalCone ck
+    lf' = fldLiftableFreeEpi $ cokernelFactorEpi ck
+
+  uv (ConeCokernel d f) = universalFactor ck (ConeCokernel (diagram d) f)
+
+
 fldCokernelsLiftableSomeFree :: Field x => CokernelsG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
-fldCokernelsLiftableSomeFree = error "nyi"
+fldCokernelsLiftableSomeFree = LimitsG fldCokernelLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- rngSomeFree -
