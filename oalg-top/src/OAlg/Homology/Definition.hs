@@ -35,6 +35,8 @@ module OAlg.Homology.Definition
   , homologyHom, HomologyHom
   , bettiHom, BettiHom
 
+  , Mod(..)
+
   ) where
 
 import OAlg.Prelude
@@ -73,20 +75,33 @@ import OAlg.LinearAlgebra.StepMatrix
 
 import Control.Monad
 
+import OAlg.Control.Solver
 import OAlg.Category.SDuality
 
+import OAlg.Data.Singleton
+import OAlg.Data.Canonical
 import OAlg.Data.Either
+import OAlg.Data.Constructable
 
-import OAlg.Structure.Operational
 import OAlg.Entity.Slice.Liftable
+
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 
-import OAlg.Data.Singleton
+import OAlg.Structure.Exception
+import OAlg.Structure.Additive
+import OAlg.Structure.FibredOriented
+import OAlg.Structure.Operational
 import OAlg.Structure.Exponential
+import OAlg.Structure.Number
+import OAlg.Structure.Vectorial
+import OAlg.Structure.Algebraic
 
 import OAlg.LinearAlgebra.KernelsAndCokernels
+import OAlg.AbelianGroup.Euclid
+
+import GHC.TypeLits hiding (type (+),Mod)
 
 --------------------------------------------------------------------------------
 -- limesCone -
@@ -349,11 +364,82 @@ instance (Multiplicative x, XStandardOrtOrientation x) => Validable (FactorM m x
     xD = xoFactorMDiagram xStandardOrtOrientation
 
 
+--------------------------------------------------------------------------------
+-- Mod -
+
+newtype Mod (n :: Nat) = Mod Z deriving Show
+
+mdzBase :: KnownNat n => Mod n -> N
+mdzBase m@(Mod _) = prj $ natVal m
+
+mdzRdc :: KnownNat n => Mod n -> Mod n
+mdzRdc m@(Mod n) = Mod (mod0 n (mdzBase m))
+
+instance Exposable (Mod n) where
+  type Form (Mod n) = Z
+  form (Mod n) = n
+
+instance KnownNat n => Constructable (Mod n) where
+  make n = mdzRdc (Mod n) 
 
 
+instance KnownNat n => Eq (Mod n) where
+  a == b = a' == b' where
+    Mod a' = mdzRdc a
+    Mod b' = mdzRdc b
 
+instance Validable (Mod n) where
+  valid (Mod n) = valid n
 
-  
+type instance Point (Mod n) = ()
+instance ShowPoint (Mod n)
+instance EqPoint (Mod n)
+instance SingletonPoint (Mod n)
+instance ValidablePoint (Mod n)
+instance TypeablePoint (Mod n)
+
+instance KnownNat n => Oriented (Mod n) where
+  orientation = const (():>())
+
+instance KnownNat n => Multiplicative (Mod n) where
+  one _ = make 1
+  Mod a * Mod b = make (a*b)
+  npower (Mod a) n = make $ npower a n
+
+instance KnownNat n => Commutative (Mod n)
+
+instance KnownNat n => Invertible (Mod n) where
+  tryToInvert m@(Mod a) | g == 1    = return (make s)
+                         | otherwise = failure NotInvertible 
+    where (g,s,_) = euclid a (inj $ mdzBase m)
+
+type instance Root (Mod n) = Orientation ()
+instance ShowRoot (Mod n)
+instance EqRoot (Mod n)
+instance ValidableRoot (Mod n)
+instance TypeableRoot (Mod n)
+
+instance KnownNat n => Fibred (Mod n)
+
+instance KnownNat n => Additive (Mod n) where
+  zero _ = make 0
+  Mod a + Mod b = make (a+b)
+  ntimes n (Mod a) = make $ ntimes n a
+
+instance KnownNat n => Abelian (Mod n) where
+  negate (Mod a) = make (negate a)
+  Mod a - Mod b = make (a-b)
+  ztimes z (Mod a) = make $ ztimes z a
+
+instance KnownNat n => FibredOriented (Mod n)
+instance KnownNat n => Distributive (Mod n)
+instance KnownNat n => Vectorial (Mod n) where
+  type Scalar (Mod n) = Z
+  (!) = ztimes
+instance KnownNat n => Algebraic (Mod n)
+
+instance Field (Mod 2) where a / b = a * invert b
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Homological -
