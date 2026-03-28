@@ -189,6 +189,9 @@ rngSomeFree n = case someNatural $ lengthN n of
     SomeNatural n' -> SomeFree $ Free n'
 
 
+instance Field x => SlicedFree (Matrix x) where
+  slicedFree = Struct
+  
 --------------------------------------------------------------------------------
 -- Morphology -
 

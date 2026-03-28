@@ -45,12 +45,14 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
+import OAlg.Entity.Matrix
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.ProductsAndSums
 
+import OAlg.Homology.Definition
 import OAlg.Homology.Simplical hiding (simplex)
 import OAlg.Homology.Complex hiding (cpxProduct, cpxProductAsc)
 import OAlg.Homology.ChainComplex
@@ -296,4 +298,7 @@ torus = tip $ universalCone $ limes cntProductsAsc t
 torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
 
 h = HmlgZ
-ccTorus = pmap (hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)) torus
+f2 = HmlgF :: f ~ Mod 2 => Homological f (Matrix f)
+ccTorus h = pmap (hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)) torus
+
+b h = hB h . hF h . hD h . hZ . hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5) 
