@@ -35,7 +35,8 @@ module OAlg.Homology.Definition
   , homologyHom, HomologyHom
   , bettiHom, BettiHom
 
-  , Mod(..)
+  -- , Mod(..)
+  , F2(..)
 
   ) where
 
@@ -366,7 +367,58 @@ instance (Multiplicative x, XStandardOrtOrientation x) => Validable (FactorM m x
   valid m = Label "FactorM" :<=>: Forall (xD m) relFactorM where
     xD = xoFactorMDiagram xStandardOrtOrientation
 
+--------------------------------------------------------------------------------
+-- F2 -
 
+newtype F2 = F2 Bool deriving (Eq,Ord)
+
+instance Show F2 where
+  show (F2 False) = "0"
+  show (F2 True)   = "1"
+  
+instance Validable F2 where valid (F2 b) = valid b
+
+type instance Point F2 = ()
+instance ShowPoint F2
+instance EqPoint F2
+instance ValidablePoint F2
+instance TypeablePoint F2
+
+instance Oriented F2 where orientation _ = ():>()
+
+instance Multiplicative F2 where
+  one _ = F2 True
+  F2 a * F2 b = F2 (a&&b)
+
+instance Commutative F2
+
+instance Invertible F2 where
+  tryToInvert (F2 False) = failure NotInvertible
+  tryToInvert a          = return a
+
+type instance Root F2 = Orientation ()
+instance ShowRoot F2
+instance EqRoot F2
+instance SingletonPoint F2
+instance ValidableRoot F2
+instance TypeableRoot F2
+
+instance Fibred F2
+
+instance Additive F2 where
+  zero _ = F2 False
+  
+  F2 False + b      = b
+  a + F2 False      = a
+  F2 True + F2 True = F2 False
+
+instance Abelian F2 where negate = id
+
+instance FibredOriented F2
+instance Distributive F2
+instance Field F2
+  
+{-
 --------------------------------------------------------------------------------
 -- Mod -
 
@@ -442,7 +494,7 @@ instance KnownNat n => Vectorial (Mod n) where
 instance KnownNat n => Algebraic (Mod n)
 
 instance Field (Mod 2) where a / b = a * invert b
-
+-}
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Homological -

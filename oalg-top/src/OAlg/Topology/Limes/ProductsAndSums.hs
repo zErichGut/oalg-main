@@ -298,7 +298,7 @@ torus = tip $ universalCone $ limes cntProductsAsc t
 torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
 
 h = HmlgZ
-f2 = HmlgF :: f ~ Mod 2 => Homological f (Matrix f)
+f2 = HmlgF :: f ~ F2 => Homological f (Matrix f)
 ccTorus h = pmap (hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)) torus
 
 b h = hB h . hF h . hD h . hZ . hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5) 
