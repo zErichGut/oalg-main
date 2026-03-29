@@ -67,6 +67,7 @@ instance FibredOriented Integer
 instance FibredOriented N
 instance FibredOriented Z
 instance FibredOriented Q
+instance FibredOriented F2
 instance Entity p => FibredOriented (Orientation p)
 instance FibredOriented x => FibredOriented (Id x)
 instance FibredOriented x => Fibred (Op x)

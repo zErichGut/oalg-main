@@ -125,6 +125,15 @@ instance Additive Q where
   (+) = (A.+)
   ntimes n q = inj n * q
 
+instance Additive F2 where
+  zero _ = 0
+  (+) = (A.+)
+  
+  ntimes _ 0 = 0
+  ntimes n _ = if A.mod (toInteger n) 2 == 0 then 0 else 1 where
+    toInteger = (prj :: Z -> Integer) . (inj :: N -> Z)
+
+
 instance Entity p => Additive (Orientation p) where
   zero = id
   a + b | a == b = a
@@ -230,6 +239,13 @@ instance Abelian Q where
   negate = A.negate
   (-)    = (A.-)
   ztimes z i = inj z * i
+
+instance Abelian F2 where
+  negate = id
+  
+  ztimes _ 0 = 0
+  ztimes z _ = if A.mod (toInteger z) 2 == 0 then 0 else 1 where
+    toInteger = (prj :: Z -> Integer)
 
 instance Entity p => Abelian (Orientation p) where
   negate = id

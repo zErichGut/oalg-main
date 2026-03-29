@@ -145,6 +145,13 @@ instance ValidableRoot Q
 instance SingletonRoot Q
 instance TypeableRoot Q
 
+type instance Root F2 = Orientation ()
+instance ShowRoot F2
+instance EqRoot F2
+instance ValidableRoot F2
+instance SingletonRoot F2
+instance TypeableRoot F2
+
 type instance Root (Orientation p) = Orientation p
 instance Show p => ShowRoot (Orientation p)
 instance Eq p => EqRoot (Orientation p)

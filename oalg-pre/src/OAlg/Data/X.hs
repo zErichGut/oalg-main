@@ -32,7 +32,7 @@ module OAlg.Data.X
   , xTupple2, xTupple3
   , xTakeN, xTakeB, xList
   , xOneOf, xOneOfX, xOneOfW, xOneOfXW
-  , xN, xNB, xZ, xZB, xQ
+  , xN, xNB, xZ, xZB, xQ, xF2
   
     -- * Tools
   , sum', putDistribution, putDistribution', putDistributionIO
@@ -381,6 +381,13 @@ xNB l h = fmap prj (xZB (inj l) (inj h))
 -- | uniformly distributed random variable of 'Q'.
 xQ :: X Q
 xQ = fmap (uncurry (%)) (xTupple2 xZ (xNL 1))
+
+--------------------------------------------------------------------------------
+-- xF2 -
+
+-- | uniformly distributed random variable of 'F2'.
+xF2 :: X F2
+xF2 = xEnum
 
 --------------------------------------------------------------------------------
 -- xOneOf -

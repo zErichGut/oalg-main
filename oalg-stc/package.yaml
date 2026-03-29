@@ -1,5 +1,5 @@
 name:                oalg-stc
-version:             3.2.3.0
+version:             3.2.4.0
 github:              "zErichGut/oalg-stc"
 license:             BSD-3-Clause
 author:              "Erich.Gut"
@@ -36,7 +36,7 @@ description:
 
 dependencies:
 - base >= 4.7 && < 5
-- oalg-pre >= 3.2 && < 4
+- oalg-pre >= 3.2.1 && < 4
 
 
 ghc-options:

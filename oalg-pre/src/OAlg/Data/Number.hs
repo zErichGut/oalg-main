@@ -20,6 +20,9 @@ module OAlg.Data.Number
     -- * Rationals
   , Q(), (%), numerator, denominator
 
+    -- * F2
+  , F2()
+
     -- * Enum
   , Enum(..), enum
   )
@@ -155,6 +158,9 @@ instance Embeddable Int Z where
 instance Projectible Int Z where
   prj = fromEnum
 
+instance Projectible F2 Z where
+  prj (Z z) = fromInteger z
+  
 instance Embeddable Integer Z where
   inj       = Z
 
@@ -218,3 +224,28 @@ numerator (Q x) = Z (R.numerator x)
 instance Transposable Q where
   transpose = id
 
+--------------------------------------------------------------------------------
+-- F2 -
+
+-- | consists of @0@ and @1@ where the operations are given by 'Z' modulo @2@,
+newtype F2 = F2 Bool deriving (Eq,Ord,Enum,Bounded,NFData)
+
+instance Show F2 where
+  show (F2 False) = "0"
+  show (F2 True)  = "1"
+  
+  
+instance Num F2 where
+  F2 False + b = b
+  a + F2 False = a
+  _ + _        = F2 False
+
+  negate = id
+
+  F2 a * F2 b = F2 (a&&b)
+
+  abs = id
+
+  signum = const (F2 True)
+
+  fromInteger z = F2 (mod z 2 /= 0)

@@ -38,6 +38,7 @@ library
       OAlg.Entity.Diagram.Proposition
       OAlg.Entity.Diagram.Quiver
       OAlg.Entity.Diagram.Transformation
+      OAlg.Entity.FactorM
       OAlg.Entity.Slice
       OAlg.Entity.Slice.Adjunction
       OAlg.Entity.Slice.Definition

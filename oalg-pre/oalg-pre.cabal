@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-pre
-version:        3.2.0.0
+version:        3.2.1.0
 synopsis:       Prelude for OAlg.
 description:    Basic definitions for algebraic structures on oriented entities.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-pre#readme>

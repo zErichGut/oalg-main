@@ -161,6 +161,15 @@ instance ValidablePoint Q
 instance TypeablePoint Q
 instance XStandardPoint Q
 
+type instance Point F2 = ()
+instance ShowPoint F2
+instance EqPoint F2
+instance OrdPoint F2
+instance SingletonPoint F2
+instance ValidablePoint F2
+instance TypeablePoint F2
+instance XStandardPoint F2
+
 type instance Point (SomeMorphism m) = SomeObjectClass m
 instance ShowPoint (SomeMorphism m)
 instance EqPoint (SomeMorphism m)

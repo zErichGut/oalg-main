@@ -19,3 +19,6 @@ and this project adheres to the
 
 ## [3.2.3.0] - 2026-01-29
 - introducing Monic structures.
+
+## [3.2.4.0] - 2026-03-29
+- introducing F2 as a Field.

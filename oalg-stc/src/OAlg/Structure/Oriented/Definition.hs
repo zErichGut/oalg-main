@@ -108,6 +108,9 @@ instance Oriented Z where
 instance Oriented Q where
   orientation _ = ():>()
 
+instance Oriented F2 where
+  orientation _ = ():>()
+
 instance Oriented x => Oriented (Id x) where
   orientation (Id x) = orientation x
 

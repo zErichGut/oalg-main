@@ -82,6 +82,7 @@ instance Fibred Integer
 instance Fibred N
 instance Fibred Z
 instance Fibred Q
+instance Fibred F2
 instance Entity p => Fibred (Orientation p)
 instance Fibred x => Fibred (Id x) where root (Id x) = root x
 instance Entity a => Fibred (R a) where  root _ = ()

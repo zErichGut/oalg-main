@@ -111,6 +111,8 @@ class Galoisian r => Field r  where
 instance Field Q where
   (/) = (A./)
 
+instance Field F2
+
 instance Field k => Field (Op k)
 
 --------------------------------------------------------------------------------

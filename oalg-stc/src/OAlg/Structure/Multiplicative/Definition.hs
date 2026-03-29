@@ -146,6 +146,11 @@ instance Multiplicative Q where
   one _ = 1
   (*) = (A.*)
 
+instance Multiplicative F2 where
+  one _ = 1
+  (*) = (A.*)
+  npower a _ = a
+
 instance Entity p => Multiplicative (Orientation p) where
   one p = p :> p
   (c :> d) * (a :> b) | b == c    = a :> d
@@ -223,6 +228,7 @@ instance Commutative Integer
 instance Commutative N
 instance Commutative Z
 instance Commutative Q
+instance Commutative F2
 instance Commutative c => Commutative (Op c)
 
 ----------------------------------------
@@ -291,6 +297,11 @@ instance Invertible Z where
 
 instance Invertible Q where
   tryToInvert q = if q == 0 then failure NotInvertible else return (1 A./ q)
+
+
+instance Invertible F2 where
+  tryToInvert 0 = failure NotInvertible
+  tryToInvert a = return a
 
 instance Entity p => Invertible (Orientation p) where
   tryToInvert = return . transpose

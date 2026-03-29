@@ -76,6 +76,7 @@ instance XStandard x => XStandard (Id x) where xStandard = amap1 Id xStandard
 instance XStandard N where xStandard = xN
 instance XStandard Z where xStandard = xZ
 instance XStandard Q where xStandard = xQ
+instance XStandard F2 where xStandard = xF2
 
 --------------------------------------------------------------------------------
 -- xStandard' -
@@ -155,6 +156,9 @@ instance Validable Z where
   valid = rnfValid
   
 instance Validable Q where
+  valid = rnfValid
+
+instance Validable F2 where
   valid = rnfValid
 
 instance Validable x => Validable (Closure x) where

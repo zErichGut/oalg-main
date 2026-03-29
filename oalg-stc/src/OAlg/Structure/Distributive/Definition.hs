@@ -72,6 +72,7 @@ instance Distributive Integer
 instance Distributive N
 instance Distributive Z
 instance Distributive Q
+instance Distributive F2
 instance Entity p => Distributive (Orientation p)
 instance Distributive d => Distributive (Op d)
 instance Distributive d => Distributive (Id d)
