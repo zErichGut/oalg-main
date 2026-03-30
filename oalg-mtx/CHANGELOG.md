@@ -45,3 +45,8 @@ and this project adheres to the
 
 ### Added
 - introducing Diagonalizable structures.
+
+## [3.2.2.0] - 2026-03-30
+
+### Added
+- matrices with free dimensions over a ring.

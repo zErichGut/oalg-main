@@ -38,6 +38,9 @@ module OAlg.Entity.Matrix.Definition
   , mtxMapS, mtxMapCov, mtxMapCnt
   , isoCoMatrixOp
 
+    -- * Free
+  , rngSomeFree
+
     -- * X
   -- , XStandardOrientationMatrix(..)
   , xMatrix, xMatrixTtl
@@ -72,6 +75,7 @@ import OAlg.Structure.FibredOriented
 import OAlg.Structure.Additive
 import OAlg.Structure.Vectorial
 import OAlg.Structure.Distributive
+import OAlg.Structure.Ring
 import OAlg.Structure.Algebraic
 import OAlg.Structure.Exponential
 import OAlg.Structure.Number
@@ -80,6 +84,7 @@ import OAlg.Entity.Natural
 import OAlg.Entity.Diagram
 import OAlg.Entity.Product
 import OAlg.Entity.Sequence hiding (span)
+import OAlg.Entity.Slice
 
 import OAlg.Hom.Definition
 import OAlg.Hom.Oriented
@@ -812,6 +817,23 @@ instance
 isoCoMatrixOp :: Distributive x
   => Variant2 Contravariant (IsoCo Matrix Dst Op) (Matrix x) (Matrix (Op x))
 isoCoMatrixOp = isoCo Struct
+
+--------------------------------------------------------------------------------
+-- Matrix - Sliced (Free k) -
+
+instance (Ring x, Attestable k) => Sliced (Free k) (Matrix x) where
+  slicePoint (Free k) = dim unit ^ lengthN k
+
+instance Ring x => SlicedFree (Matrix x) where
+  slicedFree = Struct
+
+--------------------------------------------------------------------------------
+-- rngSomeFree -
+
+-- | the dimension of a matrix over a ring as a free point.
+rngSomeFree :: Ring x => Dim' x -> SomeFree (Matrix x)
+rngSomeFree n = case someNatural $ lengthN n of
+    SomeNatural n' -> SomeFree $ Free n'
 
 --------------------------------------------------------------------------------
 -- xMatrixRL -

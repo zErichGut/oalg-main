@@ -17,9 +17,21 @@
 -- License     : BSD3
 -- Maintainer  : zerich.gut@gmail.com
 -- 
--- mono and epi morphic factors.
+-- mono- and epimorphic factors for 'Multiplicative' structures.
 module OAlg.Entity.FactorM
-  (
+  ( -- * FactorM
+    FactorM(..), Morphology(..)
+
+    -- * Mapping
+  , fcmMapCov, fcmMapCnt, fcmMapS
+
+    -- * Limes
+  , kernelFactorMono, cokernelFactorEpi
+
+    -- * Proposition
+  , relFactorM, FactorMDiagram(..)
+  , fmdMapCov, fmdMapCnt, fmdMapS
+  , xoFactorMDiagram
   ) where
 
 import Control.Monad
@@ -35,6 +47,9 @@ import OAlg.Structure.Oriented
 import OAlg.Structure.Multiplicative
 
 import OAlg.Hom.Multiplicative
+
+import OAlg.Limes.Definition
+import OAlg.Limes.KernelsAndCokernels
 
 --------------------------------------------------------------------------------
 -- Morphology -
@@ -111,6 +126,20 @@ instance (CategoryDisjunctive h, Functorial h, HomMultiplicativeDisjunctive h, D
 instance (CategoryDisjunctive h, Functorial h, Functorial h, HomMultiplicativeDisjunctive h, Dual (Dual m) ~ m)
   => FunctorialG (SDualBi (FactorM m)) (Inv2 h) (->)
   
+--------------------------------------------------------------------------------
+-- kernelFactorMono -
+
+-- | the monomorphic factor of its universal shell.
+kernelFactorMono :: Kernel n x -> FactorM Monomorph x
+kernelFactorMono =  Mono . kernelFactor . universalCone
+
+--------------------------------------------------------------------------------
+-- cokernelFactorEpi -
+
+-- | the epimorphic factor of its universal shell.
+cokernelFactorEpi :: Cokernel n x -> FactorM Epimorph x
+cokernelFactorEpi = Epi . cokernelFactor . universalCone
+
 --------------------------------------------------------------------------------
 -- FactorMDiagram -
 

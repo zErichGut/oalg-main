@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           oalg-lim
-version:        3.4.0.1
+version:        3.4.1
 synopsis:       Limits for oriented algebraic structures.
 description:    Limits - in context of categories - serve as a backbone for solving algebraic problems, e. g. finding all solutions of the equation @a * x == 0@ is given by the kernel of @a@.
                 Please see the README on GitHub at <https://github.com/zErichGut/oalg-lim#readme>

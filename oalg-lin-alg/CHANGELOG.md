@@ -8,4 +8,6 @@ and this project adheres to the
 
 ## Unreleased
 
-## 0.1.0.0 - YYYY-MM-DD
+## [0.2.0.0] - 2026-03-30
+- introducing step form for matricies over a field.
+- kernels and cokernes for matrices over a field.

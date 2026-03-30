@@ -20,6 +20,8 @@
 -- Kernels and cokernels for matrices over a field.
 module OAlg.LinearAlgebra.KernelsAndCokernels
   ( mtxKernels, mtxCokernels
+  , rngKernelsSomeFreeFreeTip
+  , fldCokernelsLiftableSomeFree
   , prpMtxKernelsQ
   ) where
 
@@ -39,6 +41,7 @@ import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 import OAlg.Structure.Exponential
+import OAlg.Structure.Operational
 
 import OAlg.Entity.Sequence.Definition as S
 import OAlg.Entity.Sequence.PSequence
@@ -51,6 +54,10 @@ import OAlg.Entity.Diagram
 import OAlg.Entity.Matrix.Dim
 import OAlg.Entity.Matrix.Definition
 import OAlg.Entity.Matrix.Entries
+import OAlg.Entity.Matrix.Transformation
+import OAlg.Entity.Slice
+import OAlg.Entity.Slice.Liftable
+import OAlg.Entity.FactorM
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
@@ -160,6 +167,63 @@ mtxCokernels :: Field k => Cokernels N1 (Matrix k)
 mtxCokernels = ckrs where
   Contravariant2 i     = isoCoMatrixOp
   SDualBi (Left1 ckrs) = amapF (inv2 i) (SDualBi (Right1 mtxKernels))
+
+
+--------------------------------------------------------------------------------
+-- rngKernelsSomeFreeFreeTip -
+
+rngKernelSomeFreeFreeTip :: Ring x
+  => Kernels N1 (Matrix x)
+  -> KernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
+  -> KernelSomeFreeFreeTip (Matrix x)
+rngKernelSomeFreeFreeTip krs d@(SomeFreeSliceKernel (SliceFrom _ _)) = LimesProjective cn uv where
+  kr  = limes krs (diagram d)
+  cn' = universalCone kr
+  
+  cn = case someNatural $ lengthN $ tip $ cn' of
+    SomeNatural k -> ConicFreeTip (Free k) (ConeKernel d $ kernelFactor cn')
+
+  uv (ConeKernel d f) = universalFactor kr (ConeKernel (diagram d) f)
+
+
+rngKernelsSomeFreeFreeTip :: Ring x => Kernels N1 (Matrix x) -> KernelsSomeFreeFreeTip (Matrix x)
+rngKernelsSomeFreeFreeTip = LimitsG . rngKernelSomeFreeFreeTip
+
+--------------------------------------------------------------------------------
+-- fldLiftableFreeEpi -
+
+-- | the induced injective liftable.
+fldLiftableFreeEpi :: Field x => FactorM Epimorph (Matrix x) -> LiftableFree Injective (Matrix x)
+fldLiftableFreeEpi p = LiftableFree (lft p) where
+  lft :: Field x => FactorM Epimorph (Matrix x) -> Any k -> Liftable Injective (Free k) (Matrix x)
+  lft (Epi p) k = case ats k of
+    Ats -> LiftableInjective p lfts where
+      lfts (SliceFrom i f) | end p /= end f = throw NotLiftable
+                           | otherwise      = SliceFrom i rf'c
+        where rf   = r *> f
+              rf'  = Matrix (end rf) (start f) $ mtxxs rf
+              rf'c = rf' <* c
+    where DiagonalForm _ r c = mtxDiagonalForm p
+          -- as x is a field, the diagonal contains only ones and has the same length as (end f)  
+
+--------------------------------------------------------------------------------
+-- fldCokernelsLiftableSomeFree -
+
+fldCokernelLiftableSomeFree :: Field x
+  => CokernelDiagrammatic SomeFreeSliceDiagram N1 (Matrix x)
+  -> CokernelG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
+fldCokernelLiftableSomeFree d@(SomeFreeSliceCokernel (SliceTo _ _)) = LimesInjective cn uv where
+  ck = limes mtxCokernels (diagram d)
+  
+  cn = ConeCokernelLiftable cn' lf' where
+    cn' = ConeCokernel d $ cokernelFactor $ universalCone ck
+    lf' = fldLiftableFreeEpi $ cokernelFactorEpi ck
+
+  uv (ConeCokernel d f) = universalFactor ck (ConeCokernel (diagram d) f)
+
+
+fldCokernelsLiftableSomeFree :: Field x => CokernelsG ConeLiftable SomeFreeSliceDiagram N1 (Matrix x)
+fldCokernelsLiftableSomeFree = LimitsG fldCokernelLiftableSomeFree
 
 --------------------------------------------------------------------------------
 -- prpMtxKernels -

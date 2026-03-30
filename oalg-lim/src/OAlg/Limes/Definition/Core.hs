@@ -110,6 +110,16 @@ instance Eq (c s p d t n m x) => Eq (LimesG c s p d t n m x) where
 -- | limes for 'Cone's over 'Diagram's.
 type Limes s p = LimesG Cone s p Diagram
 
+{-
+--------------------------------------------------------------------------------
+-- limesCone -
+
+-- | the underlying concrete limes.
+limesCone :: Conic c => LimesG c s p d t n m x -> LimesG Cone s p d t n m x
+limesCone (LimesProjective c u) = LimesProjective (cone c) u
+limesCone (LimesInjective c u)  = LimesInjective (cone c) u
+-}
+
 --------------------------------------------------------------------------------
 -- universalCone -
 

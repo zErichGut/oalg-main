@@ -21,3 +21,9 @@ and this project adheres to the
 
 ### Chainged
 - varinceFreeTo to varianceFreeLiftableTo
+
+## [3.4.1.0] - 2026-03-30
+
+### Added
+- introducing FactroM for mono- and epimorphic factors.
+- limesCone for the underlying concrete limes
