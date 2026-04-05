@@ -25,7 +25,7 @@ module OAlg.Topology.Definition
 
     -- * Space
     Space(..), Model(..)
-  , spcAbstract, spcDim
+  , spcAbstract, dimension, skeleton, border
   , spcChainComplexSet, spcChainComplexSetZ
 
     -- * Continuous
@@ -67,7 +67,7 @@ import OAlg.Entity.Matrix
 import OAlg.Limes.Exact.Free
 import OAlg.Limes.Exact.ConsecutiveZero
 
-import OAlg.Homology.Simplical
+import OAlg.Homology.Simplical hiding (dimension)
 import OAlg.Homology.Complex
 import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition
@@ -109,11 +109,28 @@ spcAbstract x@(SpaceAbstract _) = x
 spcAbstract (SpaceConcrete c)   = SpaceAbstract c
 
 --------------------------------------------------------------------------------
--- spcDim -
+-- dimension -
 
-spcDim :: Space m -> Z
-spcDim (SpaceAbstract (Complex g)) = (inj $ lengthN g) - 2
-spcDim s = spcDim $ spcAbstract s
+-- | the dimenson of a space @c@, i.e. the dimenson of its underlying complex.
+dimension :: Space m -> Z
+dimension (SpaceAbstract cpx) = cpxDim cpx
+dimension c                   = dimension $ spcAbstract c
+
+--------------------------------------------------------------------------------
+-- border -
+
+border :: Space m -> Space m
+border c = skeleton (pred $ dimension c) c
+
+--------------------------------------------------------------------------------
+-- skeleton -
+
+-- | the @p@-skeleton of a space @c@, i.e. the sub space of @c@ consisting of all simplices with
+--- dimension less or equal to @p@.
+skeleton :: Z -> Space m -> Space m
+skeleton p c = case c of
+  SpaceAbstract cpx -> SpaceAbstract $ cpxSkeleton p cpx 
+  SpaceConcrete cpx -> SpaceConcrete $ cpxSkeleton p cpx
 
 --------------------------------------------------------------------------------
 -- spcChainComplexSet -

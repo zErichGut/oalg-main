@@ -25,7 +25,8 @@ module OAlg.Homology.Complex
 
     -- * Complex of Set Simplices
     Complex(..), cpxDim, cpxElem, complex
-  , cpxVertices, cpxSimplices, cpxGenerators
+  , cpxVertices, cpxSimplices, cpxSkeleton
+  , cpxGenerators
 
     -- * Constructions
   , cpxProduct, cpxProductAsc
@@ -47,7 +48,7 @@ module OAlg.Homology.Complex
 
 import Control.Monad
 
-import Data.List as L ((++),repeat)
+import Data.List as L ((++),repeat,takeWhile)
 import Data.Foldable (foldl)
 
 import OAlg.Prelude
@@ -127,6 +128,10 @@ instance (Entity x, Ord x) => Validable (Complex x) where
 -- cpxDim -
 
 -- | the dimension of a complex, i.e. the maximal dimension of its simplices.
+--
+-- __Properties__ For all @c@ in @'Complex' __x__@ holds:
+--
+-- (1) @-1 '<=' 'cpxDim' c@. 
 cpxDim :: Complex x -> Z
 cpxDim (Complex g) = (inj $ lengthN g) - 2
 
@@ -155,6 +160,15 @@ cpxElem (Complex g) = isElem $ setIndex $ gphset g where
 
 cpx :: N -> Complex N
 cpx n = complex [Set [1..n]]
+
+--------------------------------------------------------------------------------
+-- cpxSkeleton -
+
+-- | the @p@-skeleton of a complex @c@, i.e. the sub complex of @c@ consisting of all simplices with
+-- dimension less or equal to @p@.
+cpxSkeleton :: Z -> Complex x -> Complex x
+cpxSkeleton p (Complex (Graph ssx)) = Complex $ Graph $ takeWhile ((<=p') . fst) ssx where
+  p' = p `max` (-1)
 
 --------------------------------------------------------------------------------
 -- complex -

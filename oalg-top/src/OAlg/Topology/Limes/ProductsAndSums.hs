@@ -33,6 +33,7 @@ import OAlg.Prelude
 
 import OAlg.Category.Map
 
+import OAlg.Data.Canonical
 import OAlg.Data.Either
 import OAlg.Data.Filterable
 
@@ -53,7 +54,7 @@ import OAlg.Limes.Limits
 import OAlg.Limes.ProductsAndSums
 
 import OAlg.Homology.Definition
-import OAlg.Homology.Simplical hiding (simplex)
+import OAlg.Homology.Simplical hiding (simplex,dimension)
 import OAlg.Homology.Complex hiding (cpxProduct, cpxProductAsc)
 import OAlg.Homology.ChainComplex
 
@@ -262,21 +263,6 @@ cntSums2 = LimitsG $ cntSum2
 cntSums :: AttestableSimplexType s => Sums n (Continuous s Abstract)
 cntSums = sums (sums0 spcInitial) cntSums2
 
-
---------------------------------------------------------------------------------
--- spcBorder -
-
-dropLast :: [a] -> [a]
-dropLast []     = []
-dropLast [_]    = []
-dropLast (x:xs) = x:dropLast xs
-
-spcBorder :: Space m -> Space m
-spcBorder (SpaceAbstract (Complex (Graph ssx)))
-  = SpaceAbstract $ Complex $ Graph $ case ssx of
-  [_] -> ssx
-  _   -> dropLast ssx
-
 --------------------------------------------------------------------------------
 -- simplex -
 
@@ -287,10 +273,10 @@ simplex n = SpaceAbstract $ complex $ [Set [0..n]]
 -- sphere -
 
 sphere :: N -> Space Abstract
-sphere n = spcBorder $ simplex (n+1)
+sphere n = border $ simplex (n+1)
 
-t :: Diagram Discrete N3 N0 (Continuous Asc Abstract)
-t = DiagramDiscrete (s:|s:|s:|Nil) where s = sphere 1
+t :: Diagram Discrete N4 N0 (Continuous Asc Abstract)
+t = DiagramDiscrete (s:|s:|s:|s:|Nil) where s = sphere 1
 
 torus :: Space Abstract
 torus = tip $ universalCone $ limes cntProductsAsc t
