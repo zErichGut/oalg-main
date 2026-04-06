@@ -36,6 +36,7 @@ library
       OAlg.Topology.Definition
       OAlg.Topology.Limes.ProductsAndSums
       OAlg.Topology.Limes.TerminalAndInitialSpace
+      OAlg.Topology.Standard
   other-modules:
       Paths_oalg_top
   hs-source-dirs:

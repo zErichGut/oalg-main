@@ -19,7 +19,7 @@
 module OAlg.Topology.Limes.ProductsAndSums
   (
     -- * Products
-    cntProductsAsc
+    cntProductsAsc, (<*>)
 
     -- * Sums
   , cntSums
@@ -33,11 +33,9 @@ import OAlg.Prelude
 
 import OAlg.Category.Map
 
-import OAlg.Data.Canonical
 import OAlg.Data.Either
 import OAlg.Data.Filterable
 
-import OAlg.Structure.Oriented
 import OAlg.Structure.Additive
 import OAlg.Structure.PartiallyOrdered
 
@@ -46,17 +44,14 @@ import OAlg.Entity.Natural
 import OAlg.Entity.FinList as F
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
-import OAlg.Entity.Matrix
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
 import OAlg.Limes.Limits
 import OAlg.Limes.ProductsAndSums
 
-import OAlg.Homology.Definition
 import OAlg.Homology.Simplical hiding (simplex,dimension)
 import OAlg.Homology.Complex hiding (cpxProduct, cpxProductAsc)
-import OAlg.Homology.ChainComplex
 
 import OAlg.Topology.Definition
 import OAlg.Topology.Limes.TerminalAndInitialSpace
@@ -178,6 +173,15 @@ cntProductsAsc :: Products n (Continuous Asc Abstract)
 cntProductsAsc = products (products0 spcTerminalAsc) cntProducts2Asc
 
 --------------------------------------------------------------------------------
+-- <*> -
+
+infixr 7 <*>
+  
+(<*>) :: Space Abstract -> Space Abstract -> Space Abstract 
+a <*> b = tip $ universalCone $ limes cntProductsAsc ab where
+  ab = DiagramDiscrete (a :| b :| Nil) :: Diagram Discrete N2 N0 (Continuous Asc Abstract)
+
+--------------------------------------------------------------------------------
 -- cpxSum2 -
 
 cpxSum2 :: (Entity x, Ord x, Entity y, Ord y, AttestableSimplexType s)
@@ -262,32 +266,3 @@ cntSums2 = LimitsG $ cntSum2
 
 cntSums :: AttestableSimplexType s => Sums n (Continuous s Abstract)
 cntSums = sums (sums0 spcInitial) cntSums2
-
---------------------------------------------------------------------------------
--- simplex -
-
-simplex :: N -> Space Abstract
-simplex n = SpaceAbstract $ complex $ [Set [0..n]]
-
---------------------------------------------------------------------------------
--- sphere -
-
-sphere :: N -> Space Abstract
-sphere n = border $ simplex (n+1)
-
-t :: Diagram Discrete N4 N0 (Continuous Asc Abstract)
-t = DiagramDiscrete (s:|s:|s:|s:|Nil) where s = sphere 1
-
-torus :: Space Abstract
-torus = tip $ universalCone $ limes cntProductsAsc t
-
-torus' = spcChainComplexSetZ ChainComplexStandard SpxTypeAsc (attest :: Any N3) torus 
-
-z = HmlgZ
-f2 = HmlgF :: f ~ F2 => Homological f (Matrix f)
-ccTorus h = pmap (hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)) torus
-
-c h = hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)
--- b h = hB h . hF h . hD h . hZ . hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)
-b h = hB h . hF h . hD h . hZ
--- n h = hN . hC' SpxTypeSet h ChainComplexStandard (attest :: Any N5)

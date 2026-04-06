@@ -47,12 +47,9 @@ import OAlg.Prelude
 
 import OAlg.Category.Path
 
-import OAlg.Data.Canonical
-
 import OAlg.Structure.Exception
 import OAlg.Structure.Oriented hiding (Path(..))
 import OAlg.Structure.Multiplicative
-import OAlg.Structure.Additive
 import OAlg.Structure.Distributive
 import OAlg.Structure.Ring
 
