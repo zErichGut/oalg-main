@@ -21,7 +21,7 @@ module OAlg.Topology.Limes.EqualizersAndCoequalizers
   (
   ) where
 
--- import Control.Monad as M
+import Control.Monad as M
 
 -- import Data.Typeable
 
@@ -29,7 +29,7 @@ import Data.List (zip)
 
 import OAlg.Prelude
 
--- import OAlg.Category.Map
+import OAlg.Category.Map
 
 -- import OAlg.Data.Either
 -- import OAlg.Data.Filterable
@@ -117,6 +117,9 @@ mtxColVecs m = vcs (cols m) (mtxRowCol m) where
 --------------------------------------------------------------------------------
 -- cpxConnectionGraph -
 
+-- | the connection classes of a complex, represented as a 'Graph' where the first component of its
+-- associations is a vertex in the given complex together with its connection class - i.e. the
+-- @0@-th homology class according to 'F2' - represented by a 'Vector' over 'F2'. 
 cpxConnectionGraph :: (Entity x, Ord x) => Complex x -> Graph x (Vector F2)
 cpxConnectionGraph cx = Graph (vx `zip` mtxColVecs (p * v)) where
   vx = setxs $ cpxVertices cx
@@ -131,7 +134,31 @@ cpxConnectionGraph cx = Graph (vx `zip` mtxColVecs (p * v)) where
   cc = chainComplex ChainComplexStandard SpxTypeSet (attest :: Any N0) cx
   cf = pmap (hF f2 . hZ) cc
   f2 = HmlgF :: f ~ F2 => Homological f (Matrix f)
-  
+
+
 --------------------------------------------------------------------------------
--- 
+-- cpxMap -
+
+-- | the induced complex map with domain equal to the given one.
+cpxMapStruct :: Homomorphous EntOrd x y
+  -> Complex x -> Map EntOrd x y -> ComplexMap [] (Complex x) (Complex y)
+cpxMapStruct s@(Struct:>:Struct) a f = ComplexMap SpxTypeLst a b f where
+  b = complex $ join $ amap1 (setxs . amap1 (mapSet s f) . snd) $ gphxs $ cpxGenerators a
+  
+  mapSet :: Homomorphous EntOrd x y -> Map EntOrd x y -> Map EntOrd (Set x) (Set y)
+  mapSet (Struct:>:Struct) f = Map (amapG f) 
+
+-- | the induced complex map with domain equal to the given one.
+cpxMap :: Complex x -> Map EntOrd x y -> ComplexMap [] (Complex x) (Complex y)
+cpxMap c f = cpxMapStruct (homomorphous f) c f
+
+--------------------------------------------------------------------------------
+--
+s :: Complex Symbol
 s = complex [Set [A,B],Set [B,C],Set [D,E],Set [F]] 
+
+f :: Map EntOrd Symbol (Vector F2)
+f = Map (fromJust . gphLookup (cpxConnectionGraph s))
+
+ff :: ComplexMap [] (Complex Symbol) (Complex (Vector F2))
+ff = cpxMap s f
