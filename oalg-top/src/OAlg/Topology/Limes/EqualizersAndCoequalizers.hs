@@ -23,14 +23,15 @@ module OAlg.Topology.Limes.EqualizersAndCoequalizers
 
 import Control.Monad as M
 
--- import Data.Typeable
+import Data.Typeable
 
-import Data.List (zip)
+import Data.List (zip,(++),groupBy,head)
 
 import OAlg.Prelude
 
 import OAlg.Category.Map
 
+import OAlg.Data.Ord
 -- import OAlg.Data.Either
 -- import OAlg.Data.Filterable
 
@@ -40,9 +41,9 @@ import OAlg.Structure.Multiplicative
 import OAlg.Structure.Ring
 -- import OAlg.Structure.PartiallyOrdered
 
--- import OAlg.Entity.Diagram
-import OAlg.Entity.Natural
-import OAlg.Entity.FinList as F hiding (zip)
+import OAlg.Entity.Diagram
+import OAlg.Entity.Natural hiding ((++))
+import OAlg.Entity.FinList as F hiding (zip,(++),head)
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
@@ -51,24 +52,20 @@ import OAlg.Entity.Matrix
 
 import OAlg.Limes.Definition
 import OAlg.Limes.Cone
--- import OAlg.Limes.Limits
+import OAlg.Limes.Limits
 import OAlg.Limes.KernelsAndCokernels
+import OAlg.Limes.EqualizersAndCoequalizers
 import OAlg.Limes.Exact.Deviation
 
 import OAlg.Homology.Simplical hiding (simplex,dimension)
 import OAlg.Homology.Complex -- hiding (cpxProduct, cpxProductAsc)
 import OAlg.Homology.ChainComplex
-import OAlg.Homology.Definition hiding (B,D,F)
+import OAlg.Homology.Definition -- hiding (B,D,F)
 
 import OAlg.Topology.Definition
 -- import OAlg.Topology.Limes.TerminalAndInitialSpace
 
-import OAlg.Data.Symbol
-
---------------------------------------------------------------------------------
--- Vertex -
-
-data Vertex where Vertex :: (Entity x, Ord x) => x -> Vertex
+import qualified OAlg.Data.Symbol as S
 
 --------------------------------------------------------------------------------
 -- connectionClasses -
@@ -153,12 +150,117 @@ cpxMap :: Complex x -> Map EntOrd x y -> ComplexMap [] (Complex x) (Complex y)
 cpxMap c f = cpxMapStruct (homomorphous f) c f
 
 --------------------------------------------------------------------------------
---
-s :: Complex Symbol
-s = complex [Set [A,B],Set [B,C],Set [D,E],Set [F]] 
+-- gphInv -
 
+-- | a /inverse/ graph
+gphInv :: Ord x => Graph i x -> Graph x i
+gphInv g = Graph $ amap1 head $ groupBy (<=>) $ sortFst $ amap1 swp $ gphxs g where
+  (x,_) <=> (y,_) = x == y
+  
+  swp :: (a,b) -> (b,a)
+  swp (a,b) = (b,a)
+  
+--------------------------------------------------------------------------------
+-- cntCoequalizerLst -
+
+--  pre:
+--  - cpxDomain mf == cpxDomain mg
+--  - cpxRange mf == cpxRange mg
+coeqStruct :: Homomorphous EntOrd x y
+  -> ComplexMap [] (Complex x) (Complex y) -> ComplexMap [] (Complex x) (Complex y)
+  -> ( ComplexMap [] (Complex y) (Complex (Vector F2))
+     , Map EntOrd (Vector F2) y
+     )
+coeqStruct (Struct:>:Struct) mf mg = (cpxMap cy (Map h),Map i) where
+  ComplexMap _ cx cy (Map f) = mf
+  ComplexMap _ _ _ (Map g)   = mg
+
+  -- definition of the quotient complex
+  ch = complex (  [Set [y]       | y <- setxs $ cpxVertices cy]
+               ++ [set [f x,g x] | x <- setxs $ cpxVertices cx]
+               )
+       
+  gh = cpxConnectionGraph ch      
+  h  = fromJust . gphLookup gh
+
+  gi = gphInv gh
+  i  = fromJust . gphLookup gi
+
+
+coeq :: ComplexMap [] (Complex x) (Complex y) -> ComplexMap [] (Complex x) (Complex y)
+  -> ( ComplexMap [] (Complex y) (Complex (Vector F2))
+     , Map EntOrd (Vector F2) y
+     )     
+coeq f@(ComplexMap _ _ _ mf) = coeqStruct (homomorphous mf) f
+
+
+cntCoequalizerLst :: f ~ Continuous [] Abstract => CoequalizerDiagram N2 f -> Coequalizer N2 f
+cntCoequalizerLst d@(DiagramParallelRL
+                       (SpaceAbstract cy) (SpaceAbstract cx)
+                       (CntAbstract cf:|CntAbstract cg:|Nil)
+                    )
+  = cq d (eqVType cf cg) cf cg where
+
+  eqVType :: ComplexMap s (Complex x) (Complex y) -> ComplexMap s (Complex x') (Complex y')
+          -> (Maybe (x :~: x'),Maybe (y :~: y'))
+  eqVType (ComplexMap _ _ _ (Map _)) (ComplexMap _ _ _ (Map _)) = (eqT,eqT)
+  
+  cq :: f ~ Continuous [] Abstract
+     => CoequalizerDiagram N2 f
+     -> (Maybe (x :~: x'),Maybe (y :~: y'))
+     -> ComplexMap [] (Complex x) (Complex y) -> ComplexMap [] (Complex x') (Complex y')
+     -> Coequalizer N2 f
+  cq d (Just Refl,Just Refl) f g = error "nyi"
+
+--------------------------------------------------------------------------------
+-- cntCoequalizersLst -
+
+cntCoequalizersLst :: Coequalizers N2 (Continuous [] Abstract)
+cntCoequalizersLst = LimitsG cntCoequalizerLst
+
+--------------------------------------------------------------------------------
+--
+
+{-
+p :: Complex S.Symbol
+p = complex [Set [S.A,S.B,S.D],Set [S.A,S.C,S.D]]
+
+i :: Complex N
+i = complex [Set[0,1]]
+
+f :: ComplexMap [] (Complex N) (Complex S.Symbol)
+f = ComplexMap SpxTypeLst i p (Map f') where
+  f' 0 = S.A
+  f' 1 = S.B
+
+g :: ComplexMap [] (Complex N) (Complex S.Symbol)
+g = ComplexMap SpxTypeLst i p (Map g') where
+  g' 0 = S.C
+  g' 1 = S.D
+
+t :: ComplexMap [] (Complex S.Symbol) (Complex (Vector F2))
+t = coeq f g
+
+f2 :: f ~ F2 => Homological F2 (Matrix F2)
+f2 = HmlgF
+
+z = HmlgZ
+
+ccStruct :: (Ring r, Commutative r)
+  => Homomorphous EntOrd x y -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom r N3
+ccStruct (Struct:>:Struct) = chainComplexHom ChainComplexStandard attest
+
+cc :: ComplexMap s (Complex x) (Complex y) -> ChainComplexHom F2 N3
+cc f@(ComplexMap _ _ _ mf) = ccStruct (homomorphous mf) f
+
+ccZ :: ComplexMap s (Complex x) (Complex y) -> ChainComplexHom Z N3
+ccZ f@(ComplexMap _ _ _ mf) = ccStruct (homomorphous mf) f
+-}
+
+{-
 f :: Map EntOrd Symbol (Vector F2)
 f = Map (fromJust . gphLookup (cpxConnectionGraph s))
 
 ff :: ComplexMap [] (Complex Symbol) (Complex (Vector F2))
 ff = cpxMap s f
+-}

@@ -24,7 +24,7 @@ module OAlg.Topology.Definition
   (
 
     -- * Space
-    Space(..), Model(..)
+    Space(..), Model(..), eqVertexType
   , spcAbstract, dimension, skeleton, border
   , spcChainComplexSet, spcChainComplexSetZ
 
