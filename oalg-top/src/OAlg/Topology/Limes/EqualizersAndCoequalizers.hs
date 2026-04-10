@@ -25,13 +25,13 @@ import Control.Monad as M
 
 import Data.Typeable
 
-import Data.List (zip,(++),groupBy,head)
+import Data.List (zip,(++),groupBy,head,tail,reverse)
 
 import OAlg.Prelude
 
 import OAlg.Category.Map
 
-import OAlg.Data.Ord
+-- import OAlg.Data.Ord
 -- import OAlg.Data.Either
 -- import OAlg.Data.Filterable
 
@@ -43,7 +43,7 @@ import OAlg.Structure.Ring
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural hiding ((++))
-import OAlg.Entity.FinList as F hiding (zip,(++),head)
+import OAlg.Entity.FinList as F hiding (zip,(++),head,tail)
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
@@ -73,7 +73,7 @@ import qualified OAlg.Data.Symbol as S
 -- | the various connection classes.
 connectionClasses :: Space m -> Matrix F2
 connectionClasses u@(SpaceConcrete _) = connectionClasses $ spcAbstract u
-connectionClasses u@(SpaceAbstract cx) = p * v where
+connectionClasses (SpaceAbstract cx)  = p * v where
   p = cokernelFactor $ universalCone ckr
   v = universalFactor kr (ConeKernel d o) where
     d = universalDiagram kr
@@ -195,22 +195,39 @@ coeq f@(ComplexMap _ _ _ mf) = coeqStruct (homomorphous mf) f
 
 
 cntCoequalizerLst :: f ~ Continuous [] Abstract => CoequalizerDiagram N2 f -> Coequalizer N2 f
-cntCoequalizerLst d@(DiagramParallelRL
-                       (SpaceAbstract cy) (SpaceAbstract cx)
-                       (CntAbstract cf:|CntAbstract cg:|Nil)
-                    )
-  = cq d (eqVType cf cg) cf cg where
+cntCoequalizerLst d@(DiagramParallelRL _ _ (CntAbstract cf:|CntAbstract cg:|Nil))
+  = cq d (eqxy cf cg) cf cg where
 
-  eqVType :: ComplexMap s (Complex x) (Complex y) -> ComplexMap s (Complex x') (Complex y')
-          -> (Maybe (x :~: x'),Maybe (y :~: y'))
-  eqVType (ComplexMap _ _ _ (Map _)) (ComplexMap _ _ _ (Map _)) = (eqT,eqT)
+  eqxy :: ComplexMap s (Complex x) (Complex y) -> ComplexMap s (Complex x') (Complex y')
+       -> (Maybe (x :~: x'),Maybe (y :~: y'))
+  eqxy (ComplexMap _ _ _ (Map _)) (ComplexMap _ _ _ (Map _)) = (eqT,eqT)
+
+  eqx :: Map EntOrd (Vector F2) x -> ComplexMap s (Complex x') (Complex y')
+      -> Maybe (x :~: x')
+  eqx (Map _) (ComplexMap _ _ _ (Map _)) = eqT
   
   cq :: f ~ Continuous [] Abstract
      => CoequalizerDiagram N2 f
      -> (Maybe (x :~: x'),Maybe (y :~: y'))
      -> ComplexMap [] (Complex x) (Complex y) -> ComplexMap [] (Complex x') (Complex y')
      -> Coequalizer N2 f
-  cq d (Just Refl,Just Refl) f g = error "nyi"
+  cq d (Just Refl,Just Refl) f g = LimesInjective cn (uv t i) where
+    (p,i) = coeq f g
+    
+    t  = cpmRange p
+    cn = ConeInjective d (SpaceAbstract t) (CntAbstract p:| CntAbstract (p `cpmMlt` f):|Nil)
+
+
+
+    uv :: f ~ Continuous [] Abstract
+       => Complex (Vector F2)
+       -> Map EntOrd (Vector F2) x
+       -> CoequalizerCone N2 f -> f
+    uv t i (ConeInjective _ _ (CntAbstract h@(ComplexMap s _ cy mh) :|_)) = case eqx i h of
+      Just Refl -> CntAbstract (ComplexMap s t cy (mh . i))
+      Nothing   -> throw $ InvalidData "not eligible cone"
+    
+  cq _ _ _ _ = throw $ InvalidData "CoequalizerDiagram"
 
 --------------------------------------------------------------------------------
 -- cntCoequalizersLst -
@@ -221,6 +238,19 @@ cntCoequalizersLst = LimitsG cntCoequalizerLst
 --------------------------------------------------------------------------------
 --
 
+cpxPath :: (Entity x, Ord x, Enum x) => x -> x -> Complex x
+cpxPath l h = complex $ amap1 (\(x,y) -> set [x,y]) $ (xs `zip` tail xs) where xs = [l..h]
+
+line :: (Entity x, Ord x, Enum x) => x -> x -> Space Abstract
+line l h = SpaceAbstract $ cpxPath l h
+
+cpmReverse :: (Entity x, Ord x) => Complex x -> ComplexMap [] (Complex x) (Complex x)
+cpmReverse c = ComplexMap SpxTypeLst c c (Map (fromJust . gphLookup rv)) where
+  vs = setxs $ cpxVertices c
+  rv = Graph (vs `zip` reverse vs)
+
+cntReverse :: Space Abstract -> Continuous [] Abstract
+cntReverse (SpaceAbstract c) = CntAbstract $ cpmReverse c
 {-
 p :: Complex S.Symbol
 p = complex [Set [S.A,S.B,S.D],Set [S.A,S.C,S.D]]
