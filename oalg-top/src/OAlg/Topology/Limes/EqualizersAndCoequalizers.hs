@@ -25,7 +25,7 @@ import Control.Monad as M
 
 import Data.Typeable
 
-import Data.List (zip,(++),groupBy,head,tail,reverse)
+import Data.List as L (zip,(++),groupBy,head,tail,reverse)
 
 import OAlg.Prelude
 
@@ -43,7 +43,7 @@ import OAlg.Structure.Ring
 
 import OAlg.Entity.Diagram
 import OAlg.Entity.Natural hiding ((++))
-import OAlg.Entity.FinList as F hiding (zip,(++),head,tail)
+import OAlg.Entity.FinList as F hiding (zip,(++),tail)
 import OAlg.Entity.Sequence.PSequence
 import OAlg.Entity.Sequence.Set
 import OAlg.Entity.Sequence.Graph
@@ -63,6 +63,7 @@ import OAlg.Homology.ChainComplex
 import OAlg.Homology.Definition -- hiding (B,D,F)
 
 import OAlg.Topology.Definition
+import OAlg.Topology.Limes.ProductsAndSums hiding (line)
 -- import OAlg.Topology.Limes.TerminalAndInitialSpace
 
 import qualified OAlg.Data.Symbol as S
@@ -154,7 +155,7 @@ cpxMap c f = cpxMapStruct (homomorphous f) c f
 
 -- | a /inverse/ graph
 gphInv :: Ord x => Graph i x -> Graph x i
-gphInv g = Graph $ amap1 head $ groupBy (<=>) $ sortFst $ amap1 swp $ gphxs g where
+gphInv g = Graph $ amap1 L.head $ groupBy (<=>) $ sortFst $ amap1 swp $ gphxs g where
   (x,_) <=> (y,_) = x == y
   
   swp :: (a,b) -> (b,a)
@@ -251,6 +252,45 @@ cpmReverse c = ComplexMap SpxTypeLst c c (Map (fromJust . gphLookup rv)) where
 
 cntReverse :: Space Abstract -> Continuous [] Abstract
 cntReverse (SpaceAbstract c) = CntAbstract $ cpmReverse c
+
+ff :: (Entity x, Ord x, Enum x)
+  => x -> x -> Diagram (Parallel RightToLeft) N2 N2 (Continuous [] Abstract)
+ff xl xh                               = case (p,l) of
+  (SpaceAbstract cp,SpaceAbstract cl) -> case eqv cp cl of
+    Nothing                           -> throw $ ImplementationError ""
+    Just Refl                         -> DiagramParallelRL p l (b:|t:|Nil) where
+      -- if vl is empty, the resulting maps b and t are still valid!
+      vl = setxs $ cpxVertices cl
+      vb = L.head vl
+      vt = L.head $ reverse vl
+      b  = CntAbstract (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
+        g = Graph $ amap1 (\v -> (v,(vb,v))) vl
+      t  = CntAbstract (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
+        g = Graph $ amap1 (\v -> (v,(vt,v))) vl
+    
+  where
+    p = l <*> l
+    l = line xl xh
+
+    eqv :: (Typeable x, Typeable x') => Complex x -> Complex x' -> Maybe (x :~: (x',x'))
+    eqv _ _ = eqT
+
+
+e  = ff S.A S.E
+
+e' = DiagramParallelRL p l (b':|t:|Nil) where
+  DiagramParallelRL p l (b:|t:|Nil) = e
+  b' = b * cntReverse l
+  
+le = limes cntCoequalizersLst e
+ue = universalCone le
+ue' = universalCone $ limes cntCoequalizersLst e'
+
+z = HmlgZ
+
+eC h n = hC' SpxTypeSet h ChainComplexStandard n
+
+
 {-
 p :: Complex S.Symbol
 p = complex [Set [S.A,S.B,S.D],Set [S.A,S.C,S.D]]
