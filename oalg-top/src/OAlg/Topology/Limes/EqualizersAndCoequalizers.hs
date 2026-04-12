@@ -254,8 +254,9 @@ cntReverse :: Space Abstract -> Continuous [] Abstract
 cntReverse (SpaceAbstract c) = CntAbstract $ cpmReverse c
 
 ff :: (Entity x, Ord x, Enum x)
-  => x -> x -> Diagram (Parallel RightToLeft) N2 N2 (Continuous [] Abstract)
-ff xl xh                               = case (p,l) of
+  => Bool
+  -> x -> x -> Diagram (Parallel RightToLeft) N2 N2 (Continuous [] Abstract)
+ff k xl xh                               = case (p,l) of
   (SpaceAbstract cp,SpaceAbstract cl) -> case eqv cp cl of
     Nothing                           -> throw $ ImplementationError ""
     Just Refl                         -> DiagramParallelRL p l (b:|t:|Nil) where
@@ -264,9 +265,11 @@ ff xl xh                               = case (p,l) of
       vb = L.head vl
       vt = L.head $ reverse vl
       b  = CntAbstract (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
-        g = Graph $ amap1 (\v -> (v,(vb,v))) vl
+        -- g = Graph $ amap1 (\v -> (v,(vb,v))) vl
+        g = Graph $ amap1 (\v -> (v,gg k vb v)) vl
       t  = CntAbstract (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
-        g = Graph $ amap1 (\v -> (v,(vt,v))) vl
+        -- g = Graph $ amap1 (\v -> (v,(vt,v))) vl
+        g = Graph $ amap1 (\v -> (v,gg k vt v)) vl
     
   where
     p = l <*> l
@@ -275,17 +278,43 @@ ff xl xh                               = case (p,l) of
     eqv :: (Typeable x, Typeable x') => Complex x -> Complex x' -> Maybe (x :~: (x',x'))
     eqv _ _ = eqT
 
+    gg :: Bool -> x -> x -> (x,x)
+    gg True x0 x  = (x0,x)
+    gg False x0 x = (x,x0)
 
-e  = ff S.A S.E
+
+kl :: (Entity x, Ord x, Enum x)
+  => Bool -> Bool
+  -> x -> x -> CoequalizerDiagram N2 (Continuous [] Abstract)
+kl a b xl xh = DiagramParallelRL p ll (f:|g:|Nil) where
+
+  DiagramParallelRL p l (btm:|top:|Nil) = ff True xl xh
+  DiagramParallelRL _ _ (lft:|rgt:|Nil) = ff False xl xh
+
+  rv b f = case b of
+    True -> f
+    _    -> f * cntReverse (start f)
+
+  dg = DiagramDiscrete (l:|l:|Nil)
+  sm = limes cntSums dg
+  ll = tip $ universalCone sm
+  f = universalFactor sm (ConeInjective dg p (btm:|lft:|Nil))
+  g = universalFactor sm (ConeInjective dg p (rv a top:|rv b rgt:|Nil))
+  -- g = universalFactor sm (ConeInjective dg p (rv a top:|rv b rgt:|Nil))
+
+e  = ff True S.A S.D
 
 e' = DiagramParallelRL p l (b':|t:|Nil) where
   DiagramParallelRL p l (b:|t:|Nil) = e
   b' = b * cntReverse l
-  
+
+lmkl a b = limes cntCoequalizersLst (kl a b S.A S.D)
+
+{-  
 le = limes cntCoequalizersLst e
 ue = universalCone le
 ue' = universalCone $ limes cntCoequalizersLst e'
-
+-}
 z = HmlgZ
 
 eC h n = hC' SpxTypeSet h ChainComplexStandard n

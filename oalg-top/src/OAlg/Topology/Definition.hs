@@ -34,7 +34,7 @@ module OAlg.Topology.Definition
   , cntAbstract
 
     -- * Homology
-  , hC, hC', hN, hZ, hD, hF, hB
+  , hC, hC', hN, hZ, hD, hF, hB, hB'
   , Homological(..)
   , HCat
 
@@ -287,7 +287,10 @@ hB :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
   -> HCat n (ConsecutiveZeroFreeHom To n h) (BettiHom n h)
 hB h = Hmlg (B h) :. IdPath Struct
 
-
+hB' :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
+  => Homological r h
+  -> HCat n (ChainComplexHom r n) (BettiHom n h)
+hB' h = hB h . hF h . hD h . hZ
 {-
 hBetti :: (Galoisian r, SlicedFree h, Distributive h, Attestable n)
   => Homological r h -> HCat n (ChainComplexHom r n) (BettiHom n h)
