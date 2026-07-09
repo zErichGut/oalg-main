@@ -71,10 +71,9 @@ import qualified OAlg.Data.Symbol as S
 --------------------------------------------------------------------------------
 -- connectionClasses -
 
--- | the various connection classes.
-connectionClasses :: Space m -> Matrix F2
-connectionClasses u@(SpaceConcrete _) = connectionClasses $ spcAbstract u
-connectionClasses (SpaceAbstract cx)  = p * v where
+-- | the connection classes.
+connectionClasses :: Space -> Matrix F2
+connectionClasses (Space cx)  = p * v where
   p = cokernelFactor $ universalCone ckr
   v = universalFactor kr (ConeKernel d o) where
     d = universalDiagram kr
@@ -137,7 +136,8 @@ cpxConnectionGraph cx = Graph (vx `zip` mtxColVecs (p * v)) where
 --------------------------------------------------------------------------------
 -- cpxMap -
 
--- | the induced complex map with domain equal to the given one.
+-- | the induced complex map with domain equal to the given one and range as the least complex
+-- such that the given map defines a complex map.
 cpxMapStruct :: Homomorphous EntOrd x y
   -> Complex x -> Map EntOrd x y -> ComplexMap [] (Complex x) (Complex y)
 cpxMapStruct s@(Struct:>:Struct) a f = ComplexMap SpxTypeLst a b f where
@@ -194,9 +194,8 @@ coeq :: ComplexMap [] (Complex x) (Complex y) -> ComplexMap [] (Complex x) (Comp
      )     
 coeq f@(ComplexMap _ _ _ mf) = coeqStruct (homomorphous mf) f
 
-
-cntCoequalizerLst :: f ~ Continuous [] Abstract => CoequalizerDiagram N2 f -> Coequalizer N2 f
-cntCoequalizerLst d@(DiagramParallelRL _ _ (CntAbstract cf:|CntAbstract cg:|Nil))
+cntCoequalizerLst :: f ~ Continuous [] => CoequalizerDiagram N2 f -> Coequalizer N2 f
+cntCoequalizerLst d@(DiagramParallelRL _ _ (Continuous cf:|Continuous cg:|Nil))
   = cq d (eqxy cf cg) cf cg where
 
   eqxy :: ComplexMap s (Complex x) (Complex y) -> ComplexMap s (Complex x') (Complex y')
@@ -207,7 +206,7 @@ cntCoequalizerLst d@(DiagramParallelRL _ _ (CntAbstract cf:|CntAbstract cg:|Nil)
       -> Maybe (x :~: x')
   eqx (Map _) (ComplexMap _ _ _ (Map _)) = eqT
   
-  cq :: f ~ Continuous [] Abstract
+  cq :: f ~ Continuous []
      => CoequalizerDiagram N2 f
      -> (Maybe (x :~: x'),Maybe (y :~: y'))
      -> ComplexMap [] (Complex x) (Complex y) -> ComplexMap [] (Complex x') (Complex y')
@@ -216,58 +215,64 @@ cntCoequalizerLst d@(DiagramParallelRL _ _ (CntAbstract cf:|CntAbstract cg:|Nil)
     (p,i) = coeq f g
     
     t  = cpmRange p
-    cn = ConeInjective d (SpaceAbstract t) (CntAbstract p:| CntAbstract (p `cpmMlt` f):|Nil)
+    cn = ConeInjective d (Space t) (Continuous p:| Continuous (p `cpmMlt` f):|Nil)
 
 
 
-    uv :: f ~ Continuous [] Abstract
+    uv :: f ~ Continuous []
        => Complex (Vector F2)
        -> Map EntOrd (Vector F2) x
        -> CoequalizerCone N2 f -> f
-    uv t i (ConeInjective _ _ (CntAbstract h@(ComplexMap s _ cy mh) :|_)) = case eqx i h of
-      Just Refl -> CntAbstract (ComplexMap s t cy (mh . i))
+    uv t i (ConeInjective _ _ (Continuous h@(ComplexMap s _ cy mh) :|_)) = case eqx i h of
+      Just Refl -> Continuous (ComplexMap s t cy (mh . i))
       Nothing   -> throw $ InvalidData "not eligible cone"
     
   cq _ _ _ _ = throw $ InvalidData "CoequalizerDiagram"
 
+
 --------------------------------------------------------------------------------
 -- cntCoequalizersLst -
 
-cntCoequalizersLst :: Coequalizers N2 (Continuous [] Abstract)
+-- | coequalizers for continuous functions.
+cntCoequalizersLst :: Coequalizers N2 (Continuous [])
 cntCoequalizersLst = LimitsG cntCoequalizerLst
 
 --------------------------------------------------------------------------------
 --
 
+-- | a path form the first given to the second given point as a complex.
 cpxPath :: (Entity x, Ord x, Enum x) => x -> x -> Complex x
 cpxPath l h = complex $ amap1 (\(x,y) -> set [x,y]) $ (xs `zip` tail xs) where xs = [l..h]
 
-line :: (Entity x, Ord x, Enum x) => x -> x -> Space Abstract
-line l h = SpaceAbstract $ cpxPath l h
+-- | the line from the first given point to the secone point.
+line :: (Entity x, Ord x, Enum x) => x -> x -> Space
+line l h = Space $ cpxPath l h
 
+-- | each complex give rise to complex map where each point is mapped to its /reverse/.
 cpmReverse :: (Entity x, Ord x) => Complex x -> ComplexMap [] (Complex x) (Complex x)
 cpmReverse c = ComplexMap SpxTypeLst c c (Map (fromJust . gphLookup rv)) where
   vs = setxs $ cpxVertices c
   rv = Graph (vs `zip` reverse vs)
 
-cntReverse :: Space Abstract -> Continuous [] Abstract
-cntReverse (SpaceAbstract c) = CntAbstract $ cpmReverse c
+-- | each space give rise to continous function where each point is mapped to its /reverse/.
+cntReverse :: Space -> Continuous []
+cntReverse (Space c) = Continuous $ cpmReverse c
 
 ff :: (Entity x, Ord x, Enum x)
   => Bool
-  -> x -> x -> Diagram (Parallel RightToLeft) N2 N2 (Continuous [] Abstract)
+  -> x -> x -> Diagram (Parallel RightToLeft) N2 N2 (Continuous [])
 ff k xl xh                               = case (p,l) of
-  (SpaceAbstract cp,SpaceAbstract cl) -> case eqv cp cl of
+  (Space cp,Space cl) -> case eqv cp cl of
     Nothing                           -> throw $ ImplementationError ""
     Just Refl                         -> DiagramParallelRL p l (b:|t:|Nil) where
       -- if vl is empty, the resulting maps b and t are still valid!
       vl = setxs $ cpxVertices cl
       vb = L.head vl
       vt = L.head $ reverse vl
-      b  = CntAbstract (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
+      b  = Continuous (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
         -- g = Graph $ amap1 (\v -> (v,(vb,v))) vl
         g = Graph $ amap1 (\v -> (v,gg k vb v)) vl
-      t  = CntAbstract (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
+      t  = Continuous (ComplexMap SpxTypeLst cl cp (Map (fromJust . gphLookup g))) where
         -- g = Graph $ amap1 (\v -> (v,(vt,v))) vl
         g = Graph $ amap1 (\v -> (v,gg k vt v)) vl
     
@@ -285,7 +290,7 @@ ff k xl xh                               = case (p,l) of
 
 kl :: (Entity x, Ord x, Enum x)
   => Bool -> Bool
-  -> x -> x -> CoequalizerDiagram N2 (Continuous [] Abstract)
+  -> x -> x -> CoequalizerDiagram N2 (Continuous [])
 kl a b xl xh = DiagramParallelRL p ll (f:|g:|Nil) where
 
   DiagramParallelRL p l (btm:|top:|Nil) = ff True xl xh
@@ -309,6 +314,7 @@ e' = DiagramParallelRL p l (b':|t:|Nil) where
   b' = b * cntReverse l
 
 lmkl a b = limes cntCoequalizersLst (kl a b S.A S.D)
+pkl a b = F.head $ shell $ cone $ universalCone $ lmkl a b
 
 {-  
 le = limes cntCoequalizersLst e
@@ -316,50 +322,9 @@ ue = universalCone le
 ue' = universalCone $ limes cntCoequalizersLst e'
 -}
 z = HmlgZ
+f2 = HmlgF :: f ~ F2 =>  Homological f (Matrix f)
+fq = HmlgF :: f ~ Q =>  Homological f (Matrix f)
 
-eC h n = hC' SpxTypeSet h ChainComplexStandard n
+eC h n = hB' h . hC' SpxTypeLst h ChainComplexStandard n
 
 
-{-
-p :: Complex S.Symbol
-p = complex [Set [S.A,S.B,S.D],Set [S.A,S.C,S.D]]
-
-i :: Complex N
-i = complex [Set[0,1]]
-
-f :: ComplexMap [] (Complex N) (Complex S.Symbol)
-f = ComplexMap SpxTypeLst i p (Map f') where
-  f' 0 = S.A
-  f' 1 = S.B
-
-g :: ComplexMap [] (Complex N) (Complex S.Symbol)
-g = ComplexMap SpxTypeLst i p (Map g') where
-  g' 0 = S.C
-  g' 1 = S.D
-
-t :: ComplexMap [] (Complex S.Symbol) (Complex (Vector F2))
-t = coeq f g
-
-f2 :: f ~ F2 => Homological F2 (Matrix F2)
-f2 = HmlgF
-
-z = HmlgZ
-
-ccStruct :: (Ring r, Commutative r)
-  => Homomorphous EntOrd x y -> ComplexMap s (Complex x) (Complex y) -> ChainComplexHom r N3
-ccStruct (Struct:>:Struct) = chainComplexHom ChainComplexStandard attest
-
-cc :: ComplexMap s (Complex x) (Complex y) -> ChainComplexHom F2 N3
-cc f@(ComplexMap _ _ _ mf) = ccStruct (homomorphous mf) f
-
-ccZ :: ComplexMap s (Complex x) (Complex y) -> ChainComplexHom Z N3
-ccZ f@(ComplexMap _ _ _ mf) = ccStruct (homomorphous mf) f
--}
-
-{-
-f :: Map EntOrd Symbol (Vector F2)
-f = Map (fromJust . gphLookup (cpxConnectionGraph s))
-
-ff :: ComplexMap [] (Complex Symbol) (Complex (Vector F2))
-ff = cpxMap s f
--}

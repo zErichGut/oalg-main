@@ -56,6 +56,7 @@ import OAlg.Homology.Complex hiding (cpxProduct, cpxProductAsc)
 import OAlg.Topology.Definition
 import OAlg.Topology.Limes.TerminalAndInitialSpace
 
+
 --------------------------------------------------------------------------------
 -- cpxProductAsc -
 
@@ -110,22 +111,22 @@ cpxProductAsc a b = (ab,mFst,mSnd) where
 --------------------------------------------------------------------------------
 -- cntProduct2Asc -
 
-cntProduct2Asc :: Diagram Discrete N2 N0 (Continuous Asc Abstract)
-  -> Product N2 (Continuous Asc Abstract)
-cntProduct2Asc d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
+cntProduct2Asc :: Diagram Discrete N2 N0 (Continuous Asc)
+  -> Product N2 (Continuous Asc)
+cntProduct2Asc d@(DiagramDiscrete (Space a:|Space b:|Nil))
   = LimesProjective abCn (abUn ab) where
   
   (ab,mFst,mSnd) = cpxProductAsc a b
 
-  abCn = ConeProjective d (SpaceAbstract ab) (CntAbstract mFst:|CntAbstract mSnd:|Nil)
+  abCn = ConeProjective d (Space ab) (Continuous mFst:|Continuous mSnd:|Nil)
 
   abUn :: (Entity x, Ord x, Entity y, Ord y)
-    => Complex (x,y) -> ProductCone N2 (Continuous Asc Abstract)
-    -> Continuous Asc Abstract
-  abUn ab (ConeProjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
+    => Complex (x,y) -> ProductCone N2 (Continuous Asc)
+    -> Continuous Asc
+  abUn ab (ConeProjective _ (Space t)  (Continuous f:|Continuous g:|Nil))
     = case elg ab t f g of
       Nothing                    -> throw $ NotEligibleCone
-      Just (Refl,Refl,Refl,Refl) -> CntAbstract fg where
+      Just (Refl,Refl,Refl,Refl) -> Continuous fg where
         fg = ComplexMap s t ab (Map (\t -> (f' t, g' t)))
         ComplexMap s _ _ (Map f') = f
         ComplexMap _ _ _ (Map g') = g
@@ -163,13 +164,13 @@ cntProduct2Asc d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
 --------------------------------------------------------------------------------
 -- cntProducts2Asc -
 
-cntProducts2Asc :: Products N2 (Continuous Asc Abstract)
+cntProducts2Asc :: Products N2 (Continuous Asc)
 cntProducts2Asc = LimitsG cntProduct2Asc
 
 --------------------------------------------------------------------------------
 -- cntProductsAsc -
 
-cntProductsAsc :: Products n (Continuous Asc Abstract)
+cntProductsAsc :: Products n (Continuous Asc)
 cntProductsAsc = products (products0 spcTerminalAsc) cntProducts2Asc
 
 --------------------------------------------------------------------------------
@@ -177,9 +178,9 @@ cntProductsAsc = products (products0 spcTerminalAsc) cntProducts2Asc
 
 infixr 7 <*>
   
-(<*>) :: Space Abstract -> Space Abstract -> Space Abstract 
+(<*>) :: Space -> Space -> Space
 a <*> b = tip $ universalCone $ limes cntProductsAsc ab where
-  ab = DiagramDiscrete (a :| b :| Nil) :: Diagram Discrete N2 N0 (Continuous Asc Abstract)
+  ab = DiagramDiscrete (a :| b :| Nil) :: Diagram Discrete N2 N0 (Continuous Asc)
 
 --------------------------------------------------------------------------------
 -- cpxSum2 -
@@ -206,21 +207,21 @@ cpxSum2 a@(Complex ssx) b@(Complex ssy) = (ab, mFst, mSnd) where
 -- cntSum2 -
 
 cntSum2 :: AttestableSimplexType s
-  => Diagram Discrete N2 N0 (Continuous s Abstract)
-  -> Sum N2 (Continuous s Abstract)
-cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
+  => Diagram Discrete N2 N0 (Continuous s)
+  -> Sum N2 (Continuous s)
+cntSum2 d@(DiagramDiscrete (Space a:|Space b:|Nil))
   = LimesInjective abCn (abUn simplexType ab) where
   (ab,mFst,mSnd) = cpxSum2 a b
   
-  abCn = ConeInjective d (SpaceAbstract ab) (CntAbstract mFst:|CntAbstract mSnd:|Nil)
+  abCn = ConeInjective d (Space ab) (Continuous mFst:|Continuous mSnd:|Nil)
 
   abUn :: (Entity x, Ord x, Entity y, Ord y)
-    => SimplexType s -> Complex (Either x y) -> SumCone N2 (Continuous s Abstract)
-    -> Continuous s Abstract
-  abUn s ab (ConeInjective _ (SpaceAbstract t)  (CntAbstract f:|CntAbstract g:|Nil))
+    => SimplexType s -> Complex (Either x y) -> SumCone N2 (Continuous s)
+    -> Continuous s
+  abUn s ab (ConeInjective _ (Space t)  (Continuous f:|Continuous g:|Nil))
     = case elg ab t f g of
       Nothing                    -> throw $ NotEligibleCone
-      Just (Refl,Refl,Refl,Refl) -> CntAbstract $ ComplexMap s ab t (Map fg) where
+      Just (Refl,Refl,Refl,Refl) -> Continuous $ ComplexMap s ab t (Map fg) where
         
         fg (Left x) = f' x
         fg (Right y) = g' y
@@ -258,11 +259,12 @@ cntSum2 d@(DiagramDiscrete (SpaceAbstract a:|SpaceAbstract b:|Nil))
 --------------------------------------------------------------------------------
 -- cntSums2 -
 
-cntSums2 :: AttestableSimplexType s => Sums N2 (Continuous s Abstract)
+cntSums2 :: AttestableSimplexType s => Sums N2 (Continuous s)
 cntSums2 = LimitsG $ cntSum2
 
 --------------------------------------------------------------------------------
 -- cntSums -
 
-cntSums :: AttestableSimplexType s => Sums n (Continuous s Abstract)
+cntSums :: AttestableSimplexType s => Sums n (Continuous s)
 cntSums = sums (sums0 spcInitial) cntSums2
+

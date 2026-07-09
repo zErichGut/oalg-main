@@ -34,6 +34,7 @@ library
       OAlg.Homology.Eval.Definition
       OAlg.Homology.Simplical
       OAlg.Topology.Definition
+      OAlg.Topology.Limes.EqualizersAndCoequalizers
       OAlg.Topology.Limes.ProductsAndSums
       OAlg.Topology.Limes.TerminalAndInitialSpace
       OAlg.Topology.Standard
